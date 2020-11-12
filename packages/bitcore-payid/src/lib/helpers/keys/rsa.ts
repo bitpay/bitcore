@@ -1,23 +1,102 @@
-import asn from 'asn1.js';
+import BN from 'bn.js';
+import { ASN1, ASN1Encoding, BaseJWK, Ipksc1Priv, Ipksc1Pub, KeyConverterClass, RSAPrivateJWK, RSAPublicJWK } from '../../../index.d';
+import { toUrlBase64 } from '../converters/base64';
+import { RSAPrivateKey, RSAPublicKey } from './asn1/rsa';
+import JsonWebKey from './jwk';
 
-export const RSAPrivateKey = asn.define('RSAPrivateKey', function() {
-  this.seq().obj(
-    this.key('version').int(),
-    this.key('n').int(), // modulus
-    this.key('e').int(), // public exponent
-    this.key('d').int(), // private exponent
-    this.key('p').int(), // prime1
-    this.key('q').int(), // prime2
-    this.key('dp').int(), // d mod (p-1)
-    this.key('dq').int(), // d mod (q-1)
-    this.key('qi').int(), // (1/q) mod p
-    this.key('other').any().optional()
-  );
-});
+// RSA only
 
-export const RSAPublicKey = asn.define('RSAPublicKey', function() {
-  this.seq().obj(
-    this.key('n').int(), // modulus
-    this.key('e').int() // public exponent
-  );
-});
+// Private
+
+export class Private implements KeyConverterClass {
+  private asn: ASN1<Ipksc1Priv> = null;
+  private key: Ipksc1Priv = null;
+
+  constructor(jwk?: RSAPrivateJWK) {
+    this.asn = RSAPrivateKey;
+    if (jwk) {
+      this.key = {
+        version: jwk.version,
+        n: new BN(Buffer.from(jwk.n, 'base64')),
+        e: new BN(Buffer.from(jwk.e, 'base64')),
+        d: new BN(Buffer.from(jwk.d, 'base64')),
+        p: new BN(Buffer.from(jwk.p, 'base64')),
+        q: new BN(Buffer.from(jwk.q, 'base64')),
+        dp: new BN(Buffer.from(jwk.dp, 'base64')),
+        dq: new BN(Buffer.from(jwk.dq, 'base64')),
+        qi: new BN(Buffer.from(jwk.qi, 'base64'))
+      };
+    }
+  }
+
+  encode(enc: ASN1Encoding, options = {}): Buffer {
+    const encodedKey = this.asn.encode(this.key, enc, { label: 'RSA PRIVATE KEY', ...options });
+    return encodedKey;
+  }
+
+  decode(data: string | Buffer, enc: ASN1Encoding, options = {}): Private {
+    this.key = this.asn.decode(data, enc, { label: 'RSA PRIVATE KEY', ...options });
+    return this;
+  }
+
+  toJWK(): RSAPrivateJWK {
+    const jwk: BaseJWK.RSAPrivate = {
+      kty: 'RSA',
+      use: 'sig',
+      version: this.key.version,
+      n: toUrlBase64(this.key.n.toBuffer()),
+      e: toUrlBase64(this.key.e.toBuffer()),
+      d: toUrlBase64(this.key.d.toBuffer()),
+      p: toUrlBase64(this.key.p.toBuffer()),
+      q: toUrlBase64(this.key.q.toBuffer()),
+      dp: toUrlBase64(this.key.dp.toBuffer()),
+      dq: toUrlBase64(this.key.dq.toBuffer()),
+      qi: toUrlBase64(this.key.qi.toBuffer()),
+      length: this.key.n.toBuffer().length * 8
+    };
+    return new JsonWebKey(jwk, 'private');
+  }
+}
+
+// Public
+
+export class Public implements KeyConverterClass {
+  private asn: ASN1<Ipksc1Pub> = null;
+  private key: Ipksc1Pub = null;
+
+  constructor(jwk?: RSAPublicJWK) {
+    this.asn = RSAPublicKey;
+    if (jwk) {
+      this.key = {
+        n: new BN(Buffer.from(jwk.n, 'base64')),
+        e: new BN(Buffer.from(jwk.e, 'base64'))
+      };
+    }
+  }
+
+  encode(enc: ASN1Encoding, options = {}) {
+    const encodedKey = this.asn.encode(this.key, enc, { label: 'RSA PUBLIC KEY', ...options });
+    return encodedKey;
+  }
+
+  decode(data: string | Buffer, enc: ASN1Encoding, options = {}): Public {
+    this.key = this.asn.decode(data, enc, { label: 'RSA PUBLIC KEY', ...options });
+    return this;
+  }
+
+  toJWK(): RSAPublicJWK {
+    const jwk: BaseJWK.RSAPublic = {
+      kty: 'RSA',
+      use: 'sig',
+      n: toUrlBase64(this.key.n.toBuffer()),
+      e: toUrlBase64(this.key.e.toBuffer()),
+      length: this.key.n.toBuffer().length * 8
+    };
+    return new JsonWebKey(jwk, 'public');
+  }
+}
+
+export default {
+  Private,
+  Public
+};

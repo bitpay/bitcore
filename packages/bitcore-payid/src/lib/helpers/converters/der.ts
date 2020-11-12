@@ -1,3 +1,5 @@
+import { Algorithm } from '../../../index.d';
+
 const MAX_OCTET = 0x80;
 const CLASS_UNIVERSAL = 0;
 const PRIMITIVE_BIT = 0x20;
@@ -5,8 +7,6 @@ const TAG_SEQ = 0x10;
 const TAG_INT = 0x02;
 const ENCODED_TAG_SEQ = (TAG_SEQ | PRIMITIVE_BIT) | (CLASS_UNIVERSAL << 6);
 const ENCODED_TAG_INT = TAG_INT | (CLASS_UNIVERSAL << 6);
-
-export type Algorithm = 'ES256' | 'ES256K' | 'ES384' | 'ES512';
 
 const getParamSize = keySize => ((keySize / 8) | 0) + (keySize % 8 === 0 ? 0 : 1);
 

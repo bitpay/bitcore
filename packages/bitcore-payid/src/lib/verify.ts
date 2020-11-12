@@ -1,9 +1,10 @@
 import elliptic from 'elliptic';
 import hash from 'hash.js';
 import { UNSUPPPORTED_KEY_TYPE } from '../errors';
-import { ECPublicJWK, EdDSAPublicJWK, GeneralJWS, PublicJWK, RSAPublicJWK } from '../index.d';
-import { Algorithm, toDER } from './helpers/converters/der';
-import PKCS1 from './helpers/keys/pkcs1';
+import { EcAlgorithm, ECPublicJWK, EdDSAPublicJWK, GeneralJWS, PublicJWK, RsaAlgorithm, RSAPublicJWK } from '../index.d';
+import { signatureAlgorithmMap } from './helpers/converters/algorithm';
+import { toDER } from './helpers/converters/der';
+import PKCS1 from './helpers/keys/rsa';
 import { inBrowser } from './utils';
 
 class Verifier {
@@ -20,7 +21,7 @@ class Verifier {
     try {
       const parsedProt = JSON.parse(Buffer.from(signedAddressPayload.signatures[0].protected, 'base64').toString());
 
-      const { jwk }: { jwk: PublicJWK } = parsedProt;
+      const jwk: PublicJWK = parsedProt.jwk;
       const signature = signedAddressPayload.signatures[0].signature;
       const toCompare = Buffer.concat([
         Buffer.from(signedAddressPayload.signatures[0].protected),
@@ -34,10 +35,10 @@ class Verifier {
           verified = this._verifyEC(signature, toCompare, jwk as ECPublicJWK, parsedProt.alg);
           break;
         case 'OKP':
-          verified = this._verifyEdDSA(signature, toCompare, jwk as EdDSAPublicJWK);
+          verified = this._verifyEdDSA(signature, toCompare, jwk as EdDSAPublicJWK); // Doesn't get the alg param because it's implicit when verifying EdDSA sigs
           break;
         case 'RSA':
-          verified = await this._verifyRSA(signature, toCompare, jwk as RSAPublicJWK);
+          verified = await this._verifyRSA(signature, toCompare, jwk as RSAPublicJWK, parsedProt.alg);
           break;
         default:
           throw new Error(UNSUPPPORTED_KEY_TYPE);
@@ -50,7 +51,7 @@ class Verifier {
     }
   }
 
-  private _verifyEC(signature: string, compareTo: Buffer, jwk: ECPublicJWK, alg: Algorithm): boolean {
+  private _verifyEC(signature: string, compareTo: Buffer, jwk: ECPublicJWK, alg: EcAlgorithm): boolean {
     const keyCurve = new elliptic.ec(jwk.crv);
     const x = Buffer.from(jwk.x, 'base64').toString('hex');
     const y = Buffer.from(jwk.y, 'base64').toString('hex');
@@ -63,30 +64,36 @@ class Verifier {
   }
 
   private _verifyEdDSA(signature: string, compareTo: Buffer, jwk: EdDSAPublicJWK): boolean {
-    const eddsa = new elliptic.eddsa(jwk.crv).keyFromPublic(jwk.x);
-    const verified = eddsa.verify(compareTo, Array.from(signature));
-    return verified;
-  }
-
-  private async _verifyRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK): Promise<boolean> {
-    if (inBrowser()) {
-      return this._verifyInBrowserRSA(signature, compareTo, jwk);
+    if (!jwk.crv && jwk.crv.toLowerCase() !== 'ed25519') {
+      throw new Error(UNSUPPPORTED_KEY_TYPE);
     }
-    return this._verifyNodeRSA(signature, compareTo, jwk);
-  }
-
-  private async _verifyInBrowserRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK): Promise<boolean> {
-    const key = await window.crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
-    const verified = await window.crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, Buffer.from(signature, 'base64'), compareTo);
+    const hexPoint = Buffer.from(jwk.x, 'base64').toString('hex');
+    const eddsa = new elliptic.eddsa(jwk.crv.toLowerCase()).keyFromPublic(hexPoint);
+    const sigBuf = Buffer.from(signature, 'base64');
+    const verified = eddsa.verify(compareTo, Array.from(sigBuf));
     return verified;
   }
 
-  private _verifyNodeRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK): boolean {
+  private async _verifyRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK, alg: RsaAlgorithm): Promise<boolean> {
+    if (inBrowser()) {
+      return this._verifyInBrowserRSA(signature, compareTo, jwk, alg);
+    }
+    return this._verifyNodeRSA(signature, compareTo, jwk, alg);
+  }
+
+  private async _verifyInBrowserRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK, alg: RsaAlgorithm): Promise<boolean> {
+    const algorithm = signatureAlgorithmMap[alg];
+    const key = await window.crypto.subtle.importKey('jwk', jwk, { name: algorithm.name, hash: algorithm.alg }, false, ['verify']);
+    const verified = await window.crypto.subtle.verify(algorithm.name, key, Buffer.from(signature, 'base64'), compareTo);
+    return verified;
+  }
+
+  private _verifyNodeRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK, alg: RsaAlgorithm): boolean {
     const crypto = require('crypto');
     const pem = new PKCS1.Public(jwk).encode('pem');
-    const key = crypto.createPublicKey(pem);
     const sigBuf = Buffer.from(signature, 'base64');
-    const verified = crypto.verify('SHA256', compareTo, key, sigBuf);
+    const hashAlg = signatureAlgorithmMap[alg].alg.replace(/-/g, ''); // SHA256, SHA384, or SHA512
+    const verified = crypto.verify(hashAlg, compareTo, pem, sigBuf);
     return verified;
   }
 }

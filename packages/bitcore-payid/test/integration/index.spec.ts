@@ -1,17 +1,19 @@
-// import {
-//   AddressDetailsType,
-//   getDefaultAlgorithm,
-//   IdentityKeySigningParams,
-//   sign,
-//   toKey
-// } from '@payid-org/utils';
+import {
+  AddressDetailsType,
+  getDefaultAlgorithm,
+  IdentityKeySigningParams,
+  sign,
+  toKey,
+  verifySignedAddress
+} from '@payid-org/utils';
 import Bitcore from 'bitcore-lib';
 import { expect } from 'chai';
-// import crypto from 'crypto';
+import crypto from 'crypto';
 import sinon from 'sinon';
 import * as errors from '../../src/errors';
 import PayId from '../../src/index';
-import { inBrowser } from '../../src/lib/utils';
+import * as utils from '../../src/lib/utils';
+import Verify from '../../src/lib/verify';
 import * as TestKeys from '../keys';
 import TestSignatures from '../signatures';
 
@@ -57,18 +59,25 @@ describe('PayId', () => {
     };
   });
 
-  // it('should', () => {
-  //   // const pk = crypto.createPrivateKey(TestKeys.EC.privateKey);
-  //   // const jwk = toKey(pk as any);
-  //   const pk = PayId['_convertIdentityKeyToJWK'](keys.bitcoreHD.toString());
-  //   const jwk = toKey(pk as any);
-  //   const sigParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk as any));
+  it('should', () => {
+    try {
+      const pk = crypto.createPrivateKey(TestKeys.RSA.privateKey);
+      // const jwk = toKey(pk as any);
+      // const pk = PayId['_convertIdentityKeyToJWK'](keys.bitcoreHD.toString());
+      const jwk = toKey(pk as any);
+      const sigParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk as any));
 
-  //   const btcSig = sign(payId, addressBTC, sigParams);
-  //   // const ethSig = sign(payId, addressETH, sigParams);
-  //   // const xrpSig = sign(payId, addressXRP, sigParams);
+      const btcSig = sign(payId, addressBTC, sigParams);
+      console.log(btcSig);
+      // const ethSig = sign(payId, addressETH, sigParams);
+      // const xrpSig = sign(payId, addressXRP, sigParams);
 
-  // });
+      const v = verifySignedAddress(payId, btcSig);
+      expect(v).to.be.true;
+    } catch (err) {
+      expect(err).to.not.exist;
+    }
+  });
 
   describe('sign', () => {
     it('should sign with Bitcore HD key', async () => {
@@ -205,6 +214,34 @@ describe('PayId', () => {
 
         const verified = await PayId.verify(payId, address);
         expect(verified).be.false;
+      });
+
+      describe('keys', () => {
+        it('should verify signature signed with EC key', async () => {
+          const verified = await PayId.verify(payId, signatures.secp256k1.BTC);
+          expect(verified).be.true;
+        });
+        it('should verify signature signed with ED25519 key', async () => {
+          const verified = await PayId.verify(payId, signatures.ed25519.BTC);
+          expect(verified).be.true;
+        });
+        it('should verify signature signed with RSA key', async () => {
+          const inBrowserSpy = sinon.spy(utils, 'inBrowser');
+          const _inBrowserVerifySpy = sinon.spy(Verify, '_verifyInBrowserRSA');
+          const _nodeVerifySpy = sinon.spy(Verify, '_verifyNodeRSA');
+
+          const verified = await PayId.verify(payId, signatures.rsa.BTC);
+          expect(verified).be.true;
+
+          expect(inBrowserSpy.callCount).to.equal(1);
+          if (utils.inBrowser()) {
+            expect(_inBrowserVerifySpy.callCount).to.equal(1);
+            expect(_nodeVerifySpy.callCount).to.equal(0);
+          } else {
+            expect(_inBrowserVerifySpy.callCount).to.equal(0);
+            expect(_nodeVerifySpy.callCount).to.equal(1);
+          }
+        });
       });
 
       describe('GeneralJWS', () => {

@@ -4,13 +4,36 @@ import {
   REQUIRE_PRIVATE_KEY,
   REQUIRE_PUBLIC_KEY
 } from '../../../errors';
-import PKCS1 from '../keys/pkcs1';
-import PKCS8 from '../keys/pkcs8';
-import SEC1 from '../keys/sec1';
-import SPKI from '../keys/spki';
+import { KeyConverter } from '../../../index.d';
+import SEC1 from '../keys/ec';
+import PKCS8 from '../keys/private';
+import SPKI from '../keys/public';
+import PKCS1 from '../keys/rsa';
+
+const keyMap = {
+  private: {
+    generic: [PKCS8],
+    ec: [SEC1],
+    rsa: [PKCS1.Private],
+    unknown: [PKCS8, SEC1, PKCS1.Private]
+  },
+  public: {
+    generic: [SPKI],
+    ec: [],
+    rsa: [PKCS1.Public],
+    unknown: [SPKI, PKCS1.Public]
+  }
+};
+
+const PARSE_ERRORS = {
+  private: CANNOT_PARSE_PRIVATEKEY,
+  public: CANNOT_PARSE_PUBLICKEY
+};
 
 export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
   let encoding: 'der' | 'pem' = 'der';
+  let keyType = 'unknown';
+  let options = {};
 
   if (/^-----BEGIN .*(PRIVATE |PUBLIC )?KEY-----/.test(input.toString())) {
     encoding = 'pem';
@@ -23,7 +46,16 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
         throw new Error(REQUIRE_PUBLIC_KEY);
       }
     }
+
+    keyType = getKeyType(input.toString());
+    if (!keyType) {
+      keyType = 'generic';
+    }
+
+    options = { label: `${keyType === 'generic' ? '' : keyType} ${keyDomain} key`.trim().toUpperCase() };
   } else if (typeof input === 'string') {
+    // We can pretty safely assume it'll be either hex or base64.
+    // Possibly could add base58 support later on, but that's probably an unnecessary edge case.
     if (/^(0x)?[0-9a-f]+$/.test(input.toLowerCase())) {
       input = Buffer.from(input, 'hex');
     } else {
@@ -32,34 +64,16 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
   }
 
   let jwk;
-  switch (domain) {
-    case 'private':
-    default:
-      try {
-        jwk = new PKCS8().decode(input, encoding, { label: 'private key' }).toJWK();
-      } catch (err) {
-        try {
-          jwk = new SEC1().decode(input, encoding, { label: 'ec private key' }).toJWK();
-        } catch (err) {
-          try {
-            jwk = new PKCS1.Private().decode(input, encoding, { label: 'rsa private key' }).toJWK();
-          } catch (err) {
-            throw new Error(CANNOT_PARSE_PRIVATEKEY);
-          }
-        }
-      }
+
+  const converters: KeyConverter[] = keyMap[domain][keyType];
+  for (let Converter of converters) {
+    try {
+      jwk = new Converter().decode(input, encoding, options).toJWK();
       break;
-    case 'public':
-      try {
-        jwk = new SPKI().decode(input, encoding).toJWK();
-      } catch (err) {
-        try {
-          jwk = new PKCS1.Public().decode(input, encoding).toJWK();
-        } catch (err) {
-          throw new Error(CANNOT_PARSE_PUBLICKEY);
-        }
-      }
-      break;
+    } catch (err) {}
+  }
+  if (!jwk) {
+    throw new Error(PARSE_ERRORS[domain]);
   }
   return jwk;
 };
@@ -75,4 +89,16 @@ const getKeyDomain = (pem: string) => {
   header = header.substr(domainStartIdx);
   const headerDomain = header.substr(0, header.search(/\s/));
   return headerDomain.toLowerCase();
+};
+
+const getKeyType = (pem: string) => {
+  let header = pem.split('\n')[0];
+  const domainStartIdx = header.search(/(PUBLIC|PRIVATE)/);
+
+  header = header.substr(0, domainStartIdx);
+  header = header.replace(/-----/g, '');
+  header = header.replace('BEGIN', '');
+  header = header.trim();
+
+  return header.toLowerCase();
 };

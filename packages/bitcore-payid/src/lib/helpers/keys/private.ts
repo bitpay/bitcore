@@ -1,52 +1,37 @@
-import asn from 'asn1.js';
-import BN from 'bn.js';
 import { eddsa } from 'elliptic';
 import { UNSUPPPORTED_KEY_TYPE } from '../../../errors';
 import {
+  ASN1,
   ASN1Encoding,
   BaseJWK,
   ECPrivateJWK,
   EdDSAPrivateJWK,
+  Iokp,
+  Ipkcs8,
+  Isec1,
+  KeyConverterClass,
   RSAPrivateJWK,
   SupportedCurves
 } from '../../../index.d';
 import { toUrlBase64 } from '../converters/base64';
-import { ECPrivateKey } from './ec';
-import { OKPPrivateKey } from './ed25519';
+import { ECPrivateKey } from './asn1/ec';
+import { OKPPrivateKey } from './asn1/ed25519';
+import { PrivateKey } from './asn1/private';
 import JsonWebKey from './jwk';
-import objIds from './objectIdentifiers';
-import PKCS1 from './pkcs1';
+import PKCS1 from './rsa';
 
 // Private only
 
-interface PrivateKey {
-  version: BN;
-  attributes: {
-    type: string;
-    curve?: string;
-  };
-  privateKey: any;
-}
-
-class PrivateKeyClass {
-  private asn = null;
-  private key: PrivateKey = null;
+class PrivateKeyClass implements KeyConverterClass {
+  private asn: ASN1<Ipkcs8> = null;
+  private key: Ipkcs8 = null;
 
   constructor() {
-    this.asn = asn.define('pkcs8', function() {
-      this.seq().obj(
-        this.key('version').int(),
-        this.key('attributes').seq().obj(
-          this.key('type').objid(objIds),
-          this.key('curve').objid(objIds).optional()
-        ),
-        this.key('privateKey').octstr()
-      );
-    });
+    this.asn = PrivateKey;
   }
 
   decode(data: string | Buffer, enc: ASN1Encoding, options = {}): PrivateKeyClass {
-    this.key = this.asn.decode(data, enc, options);
+    this.key = this.asn.decode(data, enc, { label: 'PRIVATE KEY', ...options });
     return this;
   }
 
@@ -64,11 +49,11 @@ class PrivateKeyClass {
   }
 
   private _rsa(): RSAPrivateJWK {
-    return new PKCS1.Private().decode(this.key.privateKey, 'der').toJWK();
+    return new PKCS1.Private().decode(this.key.privateKey as Buffer, 'der').toJWK();
   }
 
   private _ec(): ECPrivateJWK {
-    this.key.privateKey = ECPrivateKey.decode(this.key.privateKey, 'der');
+    this.key.privateKey = ECPrivateKey.decode(this.key.privateKey as Buffer, 'der') as Isec1;
     const pubKey = this.key.privateKey.publicKey.data;
     const pubKeyXYLen = (pubKey.length - 1) / 2;
     const jwk: BaseJWK.ECPrivate =  {
@@ -85,7 +70,7 @@ class PrivateKeyClass {
   }
 
   private _okp(): EdDSAPrivateJWK { // Currently only supports ed25519
-    this.key.privateKey = OKPPrivateKey.decode(this.key.privateKey, 'der');
+    this.key.privateKey = OKPPrivateKey.decode(this.key.privateKey as Buffer, 'der') as Iokp;
     const ecKey = new eddsa('ed25519').keyFromSecret(this.key.privateKey);
 
     const jwk: BaseJWK.EdDSAPrivate = {

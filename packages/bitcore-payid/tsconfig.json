@@ -29,8 +29,8 @@
       ]
     },
     "outDir": "ts_build",
-    // "inlineSourceMap": true,
-    "sourceMap": true
+    "inlineSourceMap": true,
+    // "sourceMap": true
   },
   "include": [
     "src/**/*.ts",

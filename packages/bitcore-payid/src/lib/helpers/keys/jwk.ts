@@ -1,4 +1,4 @@
-import { JWK } from '../../../index.d';
+import { Algorithm, JWK } from '../../../index.d';
 
 const pubMembers = {
   EC: ['x', 'y'],
@@ -13,7 +13,6 @@ const privMembers = {
 };
 
 const universalMembers = ['kty', 'kid', 'use', 'key_ops', 'crv', 'length'];
-
 
 class JsonWebKey {
   kty = undefined;
@@ -69,6 +68,18 @@ class JsonWebKey {
     }
 
     return json;
+  }
+
+  getDefaultSigningAlgorithm(): Algorithm {
+    switch (this.kty) {
+      case 'RSA':
+      default:
+        return 'RS512';
+      case 'EC':
+        return 'ES256K';
+      case 'OKP':
+        return 'HS256';
+    }
   }
 }
 

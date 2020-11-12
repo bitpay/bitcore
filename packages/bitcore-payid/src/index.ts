@@ -1,14 +1,6 @@
-// import {
-//   AddressDetailsType,
-//   getDefaultAlgorithm,
-//   IdentityKeySigningParams,
-//   signWithKeys,
-//   toKey,
-//   verifySignedAddress,
-// } from '@payid-org/utils';
 import Bitcore from 'bitcore-lib';
 import * as errors from './errors';
-import { BaseJWK, ECPrivateJWK, GeneralJWS, IVerifyPayId, JWK, PrivateJWK } from './index.d';
+import { BaseJWK, ECPrivateJWK, GeneralJWS, IVerifyPayId, PrivateJWK } from './index.d';
 import { toUrlBase64 } from './lib/helpers/converters/base64';
 import { toJWK } from './lib/helpers/converters/key';
 import JsonWebKey from './lib/helpers/keys/jwk';
@@ -40,7 +32,7 @@ class PayId {
       }
     };
 
-    const sig = await Signer.sign({ payId, payIdAddress: addy }, 'ES256K', jwk);
+    const sig = await Signer.sign({ payId, payIdAddress: addy }, jwk);
     return sig;
   }
 

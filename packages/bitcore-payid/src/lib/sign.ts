@@ -1,16 +1,19 @@
 import elliptic from 'elliptic';
 import hash from 'hash.js';
 import { UNSUPPPORTED_KEY_TYPE } from '../errors';
-import { ECPrivateJWK, EdDSAPrivateJWK, GeneralJWS, PrivateJWK, RSAPrivateJWK, SlickJWK } from '../index.d';
+import { Algorithm, ECPrivateJWK, EdDSAPrivateJWK, GeneralJWS, PrivateJWK, RSAPrivateJWK, SlickJWK } from '../index.d';
 import { inBrowser } from '../lib/utils';
 import { toUrlBase64 } from './helpers/converters/base64';
-import { Algorithm, toIEEEP1363 } from './helpers/converters/der';
-import PKCS1 from './helpers/keys/pkcs1';
+import { toIEEEP1363 } from './helpers/converters/der';
+import PKCS1 from './helpers/keys/rsa';
 
 class Signer {
   constructor() {}
 
-  async sign(payload: string | object, alg: Algorithm, jwk: PrivateJWK): Promise<GeneralJWS> {
+  async sign(payload: string | object, jwk: PrivateJWK, alg?: Algorithm): Promise<GeneralJWS> {
+    if (!alg) {
+      alg = jwk.getDefaultSigningAlgorithm();
+    }
     const pubJwk: SlickJWK = jwk.toPublic().toJSON();
     const protectedHeader = {
       name: 'identityKey',
@@ -96,7 +99,7 @@ class Signer {
     const crypto = require('crypto');
     const pem = new PKCS1.Private(jwk).encode('pem');
     const key = crypto.createPrivateKey(pem);
-    let sig = crypto.sign('SHA256', toSign, { key, dsaEncoding: 'der' });
+    let sig = crypto.sign('SHA512', toSign, { key, dsaEncoding: 'der' });
     return sig;
   }
 }

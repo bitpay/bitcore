@@ -1,4 +1,8 @@
 import BN from 'bn.js';
+import SEC1 from './lib/helpers/keys/ec';
+import SPKI from './lib/helpers/keys/public';
+import * as PKCS1 from './lib/helpers/keys/rsa';
+import PKCS8 from './lib/helpers/keys/private';
 
 export interface IVerifyPayId {
   address: string;
@@ -18,6 +22,64 @@ export interface GeneralJWS {
 }
 
 export type SupportedCurves = 'secp256k1' | 'ed25519';
+
+/** ASN1 Formats */
+
+export interface ASN1<T> {
+  decode(data: string | Buffer, enc: ASN1Encoding, options?: Object): T;
+  encode(data: T, enc: ASN1Encoding, options?: Object): Buffer;
+}
+
+export interface Ipkcs8 {
+  version: BN;
+  attributes: {
+    type: string;
+    curve?: SupportedCurves;
+  };
+  privateKey: Buffer | Isec1 | Iokp;
+}
+
+
+export interface Ipksc1Priv {
+  version: BN;
+  n: BN;
+  e: BN;
+  d: BN;
+  p: BN;
+  q: BN;
+  dp: BN;
+  dq: BN;
+  qi: BN;
+  other?: any;
+}
+
+export interface Ipksc1Pub {
+  n: BN;
+  e: BN;
+}
+
+export interface Ispki {
+  attributes: {
+    type: string;
+    curve?: SupportedCurves;
+  };
+  publicKey: {
+    data: Buffer;
+    unused: number;
+  };
+}
+
+export interface Isec1 {
+  version: BN;
+  privateKey: Buffer;
+  curve?: SupportedCurves;
+  publicKey?: {
+    data: Buffer;
+    unused: number;
+  };
+}
+
+export type Iokp = Buffer;
 
 /** Base Keys */
 export namespace BaseKey {
@@ -83,10 +145,12 @@ export interface PrivateJWK extends JWK {
   private: boolean;
   public: boolean;
   toPublic(): PublicJWK;
-  toJSON()
+  toJSON();
+  getDefaultSigningAlgorithm(): Algorithm;
 }
 export interface PublicJWK extends JWK {
-  toJSON()
+  toJSON();
+  getDefaultSigningAlgorithm(): Algorithm;
 }
 
 /** Full JWK key types */
@@ -99,9 +163,22 @@ export interface ECPrivateJWK extends PrivateJWK, BaseKey.ECPrivate {}
 export interface EdDSAPublicJWK extends PublicJWK, BaseKey.EdDSAPublic {}
 export interface EdDSAPrivateJWK extends PrivateJWK, BaseKey.EdDSAPrivate {}
 
+export interface KeyConverter {
+  new (jwk?: RSAPublicJWK): KeyConverterClass;
+}
+export interface KeyConverterClass {
+  encode?(enc: ASN1Encoding, options?: Object): Buffer;
+  decode(data: string | Buffer, enc: ASN1Encoding, options?: Object): PKCS8 | SPKI | SEC1 | PKCS1.Private | PKCS1.Public;
+  toJWK(): RSAPublicJWK | RSAPrivateJWK | ECPublicJWK | ECPrivateJWK | EdDSAPublicJWK | EdDSAPrivateJWK;
+}
 
 /** Misc key stuff */
 export type ASN1Encoding = 'der' | 'pem';
 export type PublicKeyFromat = 'PKCS1' | 'SPKI';
 export type PrivateKeyFormat = 'PKCS1' | 'PKCS8' | 'SEC1';
 export type KeyFormat = PublicKeyFromat | PrivateKeyFormat;
+export type HmacAlgorithm = 'HS256' | 'HS384' | 'HS512';
+export type RsaAlgorithm = 'RS256' | 'RS384' | 'RS512' | 'PS256' | 'PS384' | 'PS512';
+export type EcdsaAlgorithm = 'ES256' | 'ES384' | 'ES512'
+export type EcAlgorithm = 'ES256K';
+export type Algorithm = HmacAlgorithm | RsaAlgorithm | EcdsaAlgorithm | EcAlgorithm;
