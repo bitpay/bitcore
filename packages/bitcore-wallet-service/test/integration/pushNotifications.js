@@ -82,7 +82,7 @@ describe('Push notifications', function() {
                 defaultUnit: 'btc',
                 subjectPrefix: '',
                 pushServerUrl: 'http://localhost:8000',
-                fcmGoogleCredentialsPath: 'path_to_service_account.json'
+                authorizationKey: 'secret',
               },
             }, function(err) {
               should.not.exist(err);
@@ -109,16 +109,15 @@ describe('Push notifications', function() {
           }, {
             isGlobal: true
           }, function(err) {
-            should.not.exist(err);
             setTimeout(function() {
               var calls = requestStub.getCalls();
               var args = _.map(calls, function(c) {
                 return c.args[0];
               });
               calls.length.should.equal(1);
-              args[0].body.message.notification.title.should.contain('New payment received');
-              args[0].body.message.notification.body.should.contain('123,000');
-              args[0].body.message.notification.body.should.contain('bits');
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('123,000');
+              args[0].body.notification.body.should.contain('bits');
               done();
             }, 100);
           });
@@ -238,7 +237,7 @@ describe('Push notifications', function() {
                 defaultUnit: 'btc',
                 subjectPrefix: '',
                 pushServerUrl: 'http://localhost:8000',
-                fcmGoogleCredentialsPath: 'path_to_service_account.json'
+                authorizationKey: 'secret',
               },
             }, function(err) {
               should.not.exist(err);
@@ -274,14 +273,14 @@ describe('Push notifications', function() {
 
               calls.length.should.equal(3);
 
-              args[0].body.message.notification.title.should.contain('Nuevo pago recibido');
-              args[0].body.message.notification.body.should.contain('0.123');
+              args[0].body.notification.title.should.contain('Nuevo pago recibido');
+              args[0].body.notification.body.should.contain('0.123');
 
-              args[1].body.message.notification.title.should.contain('New payment received');
-              args[1].body.message.notification.body.should.contain('123,000');
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.body.should.contain('123,000');
 
-              args[2].body.message.notification.title.should.contain('New payment received');
-              args[2].body.message.notification.body.should.contain('123,000');
+              args[2].body.notification.title.should.contain('New payment received');
+              args[2].body.notification.body.should.contain('123,000');
               done();
             }, 100);
           });
@@ -393,7 +392,7 @@ describe('Push notifications', function() {
               return c.args[0];
             });
 
-            args[0].body.message.notification.title.should.contain('Payment proposal rejected');
+            args[0].body.notification.title.should.contain('Payment proposal rejected');
             done();
           }, 100);
         });
@@ -450,11 +449,11 @@ describe('Push notifications', function() {
               return c.args[0];
             });
 
-            args[0].body.message.notification.title.should.contain('Payment sent');
-            args[1].body.message.notification.title.should.contain('Payment sent');
+            args[0].body.notification.title.should.contain('Payment sent');
+            args[1].body.notification.title.should.contain('Payment sent');
 
-            sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[0].body.message.data.copayerId);
-            sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[1].body.message.data.copayerId);
+            sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[0].body.data.copayerId);
+            sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[1].body.data.copayerId);
             done();
           }, 100);
         });
@@ -491,7 +490,7 @@ describe('Push notifications', function() {
               defaultUnit: 'btc',
               subjectPrefix: '',
               pushServerUrl: 'http://localhost:8000',
-              fcmGoogleCredentialsPath: 'path_to_service_account.json'
+              authorizationKey: 'secret',
             },
           }, function(err) {
             should.not.exist(err);
@@ -529,7 +528,7 @@ describe('Push notifications', function() {
           var args = _.filter(_.map(calls, function(call) {
             return call.args[0];
           }), function(arg) {
-            return arg.body.message.notification.title == 'New copayer';
+            return arg.body.notification.title == 'New copayer';
           });
 
           server.getWallet(null, function(err, wallet) {
@@ -541,24 +540,24 @@ describe('Push notifications', function() {
             var hashedCopayerIds = _.map(wallet.copayers, function(copayer) {
               return sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(copayer.id));
             });
-            hashedCopayerIds[0].should.equal((args[0].body.message.data.copayerId));
-            hashedCopayerIds[1].should.not.equal((args[0].body.message.data.copayerId));
+            hashedCopayerIds[0].should.equal((args[0].body.data.copayerId));
+            hashedCopayerIds[1].should.not.equal((args[0].body.data.copayerId));
 
             /*
               Second call - copayer3 joined
               copayer3 should notify to copayer1
             */
-            hashedCopayerIds[0].should.equal((args[1].body.message.data.copayerId));
+            hashedCopayerIds[0].should.equal((args[1].body.data.copayerId));
 
             /*
               Third call - copayer3 joined
               copayer3 should notify to copayer2
             */
-            hashedCopayerIds[1].should.equal((args[2].body.message.data.copayerId));
+            hashedCopayerIds[1].should.equal((args[2].body.data.copayerId));
 
             // copayer3 should NOT notify any other copayer
-            hashedCopayerIds[2].should.not.equal((args[1].body.message.data.copayerId));
-            hashedCopayerIds[2].should.not.equal((args[2].body.message.data.copayerId));
+            hashedCopayerIds[2].should.not.equal((args[1].body.data.copayerId));
+            hashedCopayerIds[2].should.not.equal((args[2].body.data.copayerId));
             done();
           });
         }, 100);
@@ -615,7 +614,7 @@ describe('Push notifications', function() {
                 defaultUnit: 'eth',
                 subjectPrefix: '',
                 pushServerUrl: 'http://localhost:8000',
-                fcmGoogleCredentialsPath: 'path_to_service_account.json'
+                authorizationKey: 'secret',
               },
             }, function(err) {
               should.not.exist(err);
@@ -649,10 +648,10 @@ describe('Push notifications', function() {
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[0].body.message.notification.title.should.contain('New payment received');
-              args[0].body.message.notification.title.should.contain('New payment received');
-              args[0].body.message.notification.body.should.contain('4.00');
-              args[0].body.message.data.tokenAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
               done();
             }, 100);
           });
@@ -682,9 +681,9 @@ describe('Push notifications', function() {
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[0].body.message.notification.title.should.contain('Nuevo pago recibido');
-              args[0].body.message.notification.body.should.contain('4.00');
-              args[0].body.message.data.tokenAddress.should.equal('0x8E870D67F660D95d5be530380D0eC0bd388289E1');
+              args[0].body.notification.title.should.contain('Nuevo pago recibido');
+              args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0x8E870D67F660D95d5be530380D0eC0bd388289E1');
               done();
             }, 100);
           });
@@ -714,9 +713,9 @@ describe('Push notifications', function() {
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[0].body.message.notification.title.should.contain('New payment received');
-              args[0].body.message.notification.body.should.contain('4.00');
-              args[0].body.message.data.tokenAddress.should.equal('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd');
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd');
               done();
             }, 100);
           });
