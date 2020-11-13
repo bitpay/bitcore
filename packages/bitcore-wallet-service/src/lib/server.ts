@@ -2188,6 +2188,12 @@ export class WalletService {
 
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
+          if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+            let Err = Errors.NETWORK_SUSPENDED;
+            Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+            return cb(Err);
+          }
+
           checkTxpAlreadyExists(opts.txProposalId, (err, txp) => {
             if (err) return cb(err);
             if (txp) return cb(null, txp);
@@ -2352,6 +2358,12 @@ export class WalletService {
     this._runLocked(cb, cb => {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
+
+        if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+          let Err = Errors.NETWORK_SUSPENDED;
+          Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+          return cb(Err);
+        }
 
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
@@ -2585,6 +2597,12 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        let Err = Errors.NETWORK_SUSPENDED;
+        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        return cb(Err);
+      }
+
       this.getTx(
         {
           txProposalId: opts.txProposalId
@@ -2690,6 +2708,12 @@ export class WalletService {
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
+
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        let Err = Errors.NETWORK_SUSPENDED;
+        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        return cb(Err);
+      }
 
       this.getTx(
         {
