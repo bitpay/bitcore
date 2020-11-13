@@ -1,6 +1,7 @@
 import {
   CANNOT_PARSE_PRIVATEKEY,
   CANNOT_PARSE_PUBLICKEY,
+  MISSING_ENCODING,
   REQUIRE_PRIVATE_KEY,
   REQUIRE_PUBLIC_KEY
 } from '../../../errors';
@@ -30,11 +31,18 @@ const PARSE_ERRORS = {
   public: CANNOT_PARSE_PUBLICKEY
 };
 
-export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
+/**
+ * Converts EC, EdDSA (Ed25519), or RSA key to JWK.
+ * @param input The key in Buffer or string format.
+ * @param domain Specify whether input is a public or private key.
+ * @param enc (optional) Current encoding of input. Required if input is a string.
+ */
+export const toJWK = (input: string | Buffer, domain: 'private'|'public', enc?: BufferEncoding) => {
   let encoding: 'der' | 'pem' = 'der';
   let keyType = 'unknown';
   let options = {};
 
+  // Handle PEM string.
   if (/^-----BEGIN .*(PRIVATE |PUBLIC )?KEY-----/.test(input.toString())) {
     encoding = 'pem';
     // Check that the key is the expected domain
@@ -47,24 +55,22 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
       }
     }
 
+    // Getting the key type can help reduce the number of errant decoding calls later.
     keyType = getKeyType(input.toString());
     if (!keyType) {
       keyType = 'generic';
     }
 
     options = { label: `${keyType === 'generic' ? '' : keyType} ${keyDomain} key`.trim().toUpperCase() };
-  } else if (typeof input === 'string') {
-    // We can pretty safely assume it'll be either hex or base64.
-    // Possibly could add base58 support later on, but that's probably an unnecessary edge case.
-    if (/^(0x)?[0-9a-f]+$/.test(input.toLowerCase())) {
-      input = Buffer.from(input, 'hex');
-    } else {
-      input = Buffer.from(input, 'base64');
-    }
+  } else if (typeof input === 'string' && !enc) {
+    throw new Error(MISSING_ENCODING); // Need string encoding if it's not a PEM string.
+  } else {
+    input = Buffer.from(input as any, enc); // If input is already a buffer, this is harmless.
   }
 
   let jwk;
 
+  // Decode the key and convert to JWK
   const converters: KeyConverter[] = keyMap[domain][keyType];
   for (let Converter of converters) {
     try {
@@ -78,6 +84,10 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
   return jwk;
 };
 
+/**
+ * Extract the key domain (public or private) from the PEM string header.
+ * @param pem PEM key string.
+ */
 const getKeyDomain = (pem: string) => {
   let header = pem.split('\n')[0];
   const domainStartIdx = header.search(/(PUBLIC|PRIVATE)/);
@@ -91,6 +101,10 @@ const getKeyDomain = (pem: string) => {
   return headerDomain.toLowerCase();
 };
 
+/**
+ * Extract the key type (EC or RSA) from the PEM string header.
+ * @param pem PEM key string.
+ */
 const getKeyType = (pem: string) => {
   let header = pem.split('\n')[0];
   const domainStartIdx = header.search(/(PUBLIC|PRIVATE)/);

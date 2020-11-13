@@ -1,7 +1,7 @@
 import elliptic from 'elliptic';
 import hash from 'hash.js';
 import { UNSUPPPORTED_KEY_TYPE } from '../errors';
-import { Algorithm, EcAlgorithm, ECPrivateJWK, EdDSAPrivateJWK, GeneralJWS, PrivateJWK, RsaAlgorithm, RSAPrivateJWK, SlickJWK } from '../index.d';
+import { Algorithm, EcAlgorithm, ECPrivateJWK, EdDSAPrivateJWK, GeneralJWS, IAddress, ISigningPayload, PrivateJWK, RsaAlgorithm, RSAPrivateJWK, SlickJWK } from '../index.d';
 import { inBrowser } from '../lib/utils';
 import { signatureAlgorithmMap } from './helpers/converters/algorithm';
 import { toUrlBase64 } from './helpers/converters/base64';
@@ -11,7 +11,13 @@ import PKCS1 from './helpers/keys/rsa';
 class Signer {
   constructor() {}
 
-  async sign(payload: string | object, jwk: PrivateJWK, alg?: Algorithm): Promise<GeneralJWS> {
+  /**
+   * Signs BTC, ETH, and XRP addresses in PayId compatible format using EC (secp256k1), EdDSA (Ed25519), or RSA keys.
+   * @param payload Payload to sign.
+   * @param jwk JSON Web Key to use for signing.
+   * @param alg (optional) Signing algorithm to use.
+   */
+  async sign(payload: string | ISigningPayload, jwk: PrivateJWK, alg?: Algorithm): Promise<GeneralJWS> {
     if (!alg) {
       alg = jwk.getDefaultSigningAlgorithm();
     }
@@ -61,6 +67,12 @@ class Signer {
     return retval;
   }
 
+  /**
+   * Sign with elliptic curve key.
+   * @param toSign Buffer of payload to be signed.
+   * @param jwk JSON Web Key to sign with.
+   * @param alg Signing algorithm.
+   */
   private _signEC(toSign: Buffer, jwk: ECPrivateJWK, alg: EcAlgorithm): Buffer {
     const keyCurve = new elliptic.ec(jwk.crv);
     const d = Buffer.from(jwk.d, 'base64').toString('hex');
@@ -73,13 +85,28 @@ class Signer {
     return sig;
   }
 
+  /**
+   * Sign with EdDSA (Ed25519) key.
+   * NOTE: The signing algorithm is implicit with EdDSA key types.
+   * @param toSign Buffer of payload to be signed.
+   * @param jwk JSON Web Key to sign with.
+   */
   private _signEdDSA(toSign: Buffer, jwk: EdDSAPrivateJWK): Buffer {
+    if (jwk.crv !== 'ed25519') {
+      throw new Error(UNSUPPPORTED_KEY_TYPE);
+    }
     const eddsa = new elliptic.eddsa(jwk.crv).keyFromSecret(jwk.d);
     let sig = eddsa.sign(toSign);
     sig = Buffer.from(sig.toBytes()); // Already in IEEE-P1363 format
     return sig;
   }
 
+  /**
+   * Sign with RSA key.
+   * @param toSign Buffer of payload to be signed.
+   * @param jwk JSON Web Key to sign with.
+   * @param alg Signing algorithm.
+   */
   private async _signRSA(toSign: Buffer, jwk: RSAPrivateJWK, alg: RsaAlgorithm): Promise<Buffer> {
     let sig: Buffer;
     if (inBrowser()) {
@@ -90,6 +117,10 @@ class Signer {
     return sig;
   }
 
+  /**
+   * This is called from this._signRSA(). All parameters mirror that.
+   * This method is called if this lib is imported in a browser environment.
+   */
   private async _signInBrowserRSA(toSign: Buffer, jwk: RSAPrivateJWK, alg: RsaAlgorithm): Promise<Buffer> {
     const algorithm = signatureAlgorithmMap[alg];
     const key = await window.crypto.subtle.importKey('jwk', jwk.toJSON(), { name: algorithm.name, hash: algorithm.alg }, false, ['sign']);
@@ -97,6 +128,10 @@ class Signer {
     return Buffer.from(sig);
   }
 
+  /**
+   * This is called from this._signRSA(). All parameters mirror that.
+   * This method is called if this lib is imported in a Node.js environment.
+   */
   private _signNodeRSA(toSign: Buffer, jwk: RSAPrivateJWK, alg: RsaAlgorithm): Buffer {
     const crypto = require('crypto');
     const pem = new PKCS1.Private(jwk).encode('pem');

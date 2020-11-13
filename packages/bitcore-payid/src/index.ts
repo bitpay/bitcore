@@ -1,6 +1,6 @@
 import Bitcore from 'bitcore-lib';
 import * as errors from './errors';
-import { BaseJWK, ECPrivateJWK, GeneralJWS, IVerifyPayId, PrivateJWK } from './index.d';
+import { BaseJWK, ECPrivateJWK, GeneralJWS, IAddress, IVerifyPayId, PrivateJWK } from './index.d';
 import { toUrlBase64 } from './lib/helpers/converters/base64';
 import { toJWK } from './lib/helpers/converters/key';
 import JsonWebKey from './lib/helpers/keys/jwk';
@@ -21,9 +21,9 @@ class PayId {
    * @param {string} environment (Optional) Specify the chain environment. Default: 'mainnet'
    */
   async sign(payId: string, address: string, currency: string, identityKey: string | Buffer, environment: string = 'mainnet'): Promise<GeneralJWS> {
-    let jwk = this._convertIdentityKeyToJWK(identityKey);
+    let jwk: PrivateJWK = this._convertIdentityKeyToJWK(identityKey);
 
-    const addy = {
+    const addy: IAddress = {
       paymentNetwork: currency,
       environment,
       addressDetailsType: 'CryptoAddressDetails',

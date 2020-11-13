@@ -21,6 +21,20 @@ export interface GeneralJWS {
   }]
 }
 
+export interface IAddress {
+  paymentNetwork: string,
+  environment: string,
+  addressDetailsType: 'CryptoAddressDetails',
+  addressDetails: {
+    address: string;
+  }
+}
+
+export interface ISigningPayload {
+  payId: string;
+  payIdAddress: IAddress;
+}
+
 export type SupportedCurves = 'secp256k1' | 'ed25519';
 
 /** ASN1 Formats */
