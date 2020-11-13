@@ -6,3 +6,5 @@ export const CANNOT_PARSE_PRIVATEKEY = 'Unable to parse private key.';
 export const CANNOT_PARSE_PUBLICKEY = 'Unable to parse public key.';
 
 export const UNSUPPPORTED_KEY_TYPE = 'Unsupported key type. Key type must be EC (secp256k1), EdDSA (Ed25519), or RSA';
+
+export const JWK_INVALID_KEY_TYPE = 'Key type must be EC, RSA, OKP';

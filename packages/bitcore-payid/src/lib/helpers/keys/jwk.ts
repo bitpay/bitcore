@@ -1,3 +1,4 @@
+import { JWK_INVALID_KEY_TYPE } from '../../../../src/errors';
 import { Algorithm, JWK } from '../../../index.d';
 
 const pubMembers = {
@@ -12,7 +13,13 @@ const privMembers = {
   RSA: ['d', 'p', 'q', 'dp', 'dq', 'qi']
 };
 
-const universalMembers = ['kty', 'kid', 'use', 'key_ops', 'crv', 'length'];
+const baseMembers = {
+  EC: ['crv'],
+  OKP: ['crv'],
+  RSA: ['length']
+};
+
+const universalMembers = ['kty', 'kid', 'key_ops'];
 
 class JsonWebKey {
   kty = undefined;
@@ -37,10 +44,22 @@ class JsonWebKey {
   qi = undefined;
 
   constructor(key: JWK, domain: 'private' | 'public') {
-    for (let i in key) {
+    if (pubMembers[key.kty] === undefined) {
+      throw new Error(JWK_INVALID_KEY_TYPE);
+    }
+
+    // For safety, assume a public key if domain !== private
+    this.private = domain === 'private';
+
+    for (let i of universalMembers) {
       this[i] = key[i];
     }
-    this.private = domain === 'private';
+
+    const expectedMembers = baseMembers[key.kty].concat(pubMembers[key.kty], this.private ? privMembers[key.kty] : []);
+    for (let i of expectedMembers) {
+      this[i] = key[i] || null; // Set omitted expected member to null
+    }
+
   }
 
   toPublic() {
@@ -48,10 +67,8 @@ class JsonWebKey {
       return this;
     }
 
-    let pubs = pubMembers[this.kty];
     const key = {};
-    const allMembers = [...universalMembers, ...pubs];
-    for (let i of allMembers) {
+    for (let i of this._getMembers(false)) {
       key[i] = this[i];
     }
     return new JsonWebKey(key as JWK, 'public');
@@ -59,11 +76,7 @@ class JsonWebKey {
 
   toJSON() {
     const json = {};
-    let allMembers = [...universalMembers, ...pubMembers[this.kty]];
-    if (this.private) {
-      allMembers = allMembers.concat(privMembers[this.kty]);
-    }
-    for (let i of allMembers) {
+    for (let i of this._getMembers(true)) {
       json[i] = this[i];
     }
 
@@ -80,6 +93,15 @@ class JsonWebKey {
       case 'OKP':
         return 'HS256';
     }
+  }
+
+  private _getMembers(includePrivate: boolean = false) {
+    return [
+      ...universalMembers,
+      ...baseMembers[this.kty],
+      ...pubMembers[this.kty],
+      ...(this.private && includePrivate ? privMembers[this.kty] : [])
+    ];
   }
 }
 

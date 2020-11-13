@@ -15,7 +15,8 @@
     "start": "npm run build && node ts_build/src/index.js",
     "build": "npm run clean && tsc",
     "clean": "rm -rf ts_build",
-    "test:all": "npm run build && mocha -r ts-node/register 'test/**/*.spec.ts'",
+    "precommit": "npm run test:all",
+    "test:all": "npm run build && mocha -r ts-node/register 'test/**/*.spec.ts' && karma start",
     "test:unit": "npm run build && mocha -r ts-node/register 'test/unit/**/*.spec.ts'",
     "test:integration": "npm run build && mocha -r ts-node/register 'test/integration/**/*.spec.ts'",
     "test:karma": "npm run build && karma start"
