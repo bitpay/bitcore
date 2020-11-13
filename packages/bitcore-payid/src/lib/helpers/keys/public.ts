@@ -1,7 +1,11 @@
+import BN from 'bn.js';
 import { UNSUPPPORTED_KEY_TYPE } from '../../../errors';
 import {
   ASN1,
+  ASN1Attributes,
+  ASN1AttributesChoice,
   ASN1Encoding,
+  ASN1Options,
   BaseJWK,
   ECPublicJWK,
   EdDSAPublicJWK,
@@ -23,7 +27,7 @@ const typeMap = {
 };
 
 const componentsToBuffer = {
-  RSA: (jwk: RSAPublicJWK) => RSAPublicKey.encode({ n: Buffer.from(jwk.n, 'base64'), e: Buffer.from(jwk.e, 'base64') }, 'der'),
+  RSA: (jwk: RSAPublicJWK) => RSAPublicKey.encode({ n: new BN(Buffer.from(jwk.n, 'base64').toString('hex'), 'hex'), e: new BN(Buffer.from(jwk.e, 'base64').toString('hex'), 'hex') }, 'der'),
   EC: (jwk: ECPublicJWK) => Buffer.concat([Uint8Array.from([0x04]), Buffer.from(jwk.x, 'base64'), Buffer.from(jwk.y, 'base64')]),
   OKP: (jwk: EdDSAPublicJWK) => Buffer.from(jwk.x, 'base64')
 };
@@ -36,18 +40,21 @@ class PublicKey implements KeyConverterClass {
     this.asn = PublicKeyASN;
 
     if (jwk) {
+      const attributes: ASN1Attributes<ASN1AttributesChoice> = { type: typeMap[jwk.kty] };
+      if (jwk.kty === 'RSA') {
+        attributes.curve = { type: 'null', value: null };
+      } else if (jwk.kty === 'EC') {
+        attributes.curve = { type: 'curve', value: jwk.crv };
+      }
       this.key = {
-        attributes: {
-          type: typeMap[jwk.kty],
-          curve: jwk.crv
-        },
+        attributes,
         publicKey: { data: componentsToBuffer[jwk.kty](jwk as any), unused: 0 }
       };
     }
   }
 
-  encode(enc: ASN1Encoding, options = {}): Buffer {
-    return this.asn.encode(this.key, enc, { label: 'PUBLIC KEY', ...options });
+  encode(enc: ASN1Encoding, options: ASN1Options = {}): Buffer | string {
+    return this.asn.encode(this.key, enc, enc === 'der' ? null : { label: 'PUBLIC KEY', ...options });
   }
 
   decode(data: string | Buffer, enc: ASN1Encoding, options = {}): PublicKey {
@@ -80,7 +87,7 @@ class PublicKey implements KeyConverterClass {
     const jwk: BaseJWK.ECPublic = {
       kty: 'EC',
       use: 'sig',
-      crv: this.key.attributes.curve,
+      crv: this.key.attributes.curve.value,
       version: 0,
       x: toUrlBase64(pubKey.slice(1, pubKeyXYLen + 1)),
       y: toUrlBase64(pubKey.slice(pubKeyXYLen + 1))
@@ -106,7 +113,7 @@ class PublicKey implements KeyConverterClass {
       version: 0,
       n: toUrlBase64(pubKey.n.toBuffer()),
       e: toUrlBase64(pubKey.e.toBuffer()),
-      length: pubKey.n.length * 8
+      length: pubKey.n.toBuffer().length * 8
     };
     return jwk;
   }

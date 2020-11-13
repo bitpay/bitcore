@@ -58,7 +58,7 @@ class PrivateKeyClass implements KeyConverterClass {
     const pubKeyXYLen = (pubKey.length - 1) / 2;
     const jwk: BaseJWK.ECPrivate =  {
       kty: 'EC',
-      crv: this.key.attributes.curve as SupportedCurves,
+      crv: this.key.attributes.curve,
       use: 'sig',
       version: this.key.version,
       d: toUrlBase64(this.key.privateKey.privateKey),

@@ -1,14 +1,14 @@
-import {
-  AddressDetailsType,
-  getDefaultAlgorithm,
-  IdentityKeySigningParams,
-  sign,
-  toKey,
-  verifySignedAddress
-} from '@payid-org/utils';
+// import {
+//   AddressDetailsType,
+//   getDefaultAlgorithm,
+//   IdentityKeySigningParams,
+//   sign,
+//   toKey,
+//   verifySignedAddress
+// } from '@payid-org/utils';
 import Bitcore from 'bitcore-lib';
 import { expect } from 'chai';
-import crypto from 'crypto';
+// import crypto from 'crypto';
 import sinon from 'sinon';
 import * as errors from '../../src/errors';
 import PayId from '../../src/index';
@@ -59,25 +59,25 @@ describe('PayId', () => {
     };
   });
 
-  it('should', () => {
-    try {
-      const pk = crypto.createPrivateKey(TestKeys.RSA.privateKey);
-      // const jwk = toKey(pk as any);
-      // const pk = PayId['_convertIdentityKeyToJWK'](keys.bitcoreHD.toString());
-      const jwk = toKey(pk as any);
-      const sigParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk as any));
+  // it('should', () => {
+  //   try {
+  //     const pk = crypto.createPrivateKey(TestKeys.RSA.privateKey);
+  //     // const jwk = toKey(pk as any);
+  //     // const pk = PayId['_convertIdentityKeyToJWK'](keys.bitcoreHD.toString());
+  //     const jwk = toKey(pk as any);
+  //     const sigParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk as any));
 
-      const btcSig = sign(payId, addressBTC, sigParams);
-      console.log(btcSig);
-      // const ethSig = sign(payId, addressETH, sigParams);
-      // const xrpSig = sign(payId, addressXRP, sigParams);
+  //     const btcSig = sign(payId, addressBTC, sigParams);
+  //     console.log(btcSig);
+  //     // const ethSig = sign(payId, addressETH, sigParams);
+  //     // const xrpSig = sign(payId, addressXRP, sigParams);
 
-      const v = verifySignedAddress(payId, btcSig);
-      expect(v).to.be.true;
-    } catch (err) {
-      expect(err).to.not.exist;
-    }
-  });
+  //     const v = verifySignedAddress(payId, btcSig);
+  //     expect(v).to.be.true;
+  //   } catch (err) {
+  //     expect(err).to.not.exist;
+  //   }
+  // });
 
   describe('sign', () => {
     it('should sign with Bitcore HD key', async () => {
@@ -182,6 +182,7 @@ describe('PayId', () => {
     describe('PayId.org utils signatures', () => {
       let signatures;
       before(() => {
+        // These signatures were created with PayId official utils
         signatures = TestSignatures.payIdOrgUtils;
       });
 

@@ -1,5 +1,5 @@
 import BN from 'bn.js';
-import { ASN1, ASN1Encoding, BaseJWK, Ipksc1Priv, Ipksc1Pub, KeyConverterClass, RSAPrivateJWK, RSAPublicJWK } from '../../../index.d';
+import { ASN1, ASN1Encoding, ASN1Options, BaseJWK, Ipksc1Priv, Ipksc1Pub, KeyConverterClass, RSAPrivateJWK, RSAPublicJWK } from '../../../index.d';
 import { toUrlBase64 } from '../converters/base64';
 import { RSAPrivateKey, RSAPublicKey } from './asn1/rsa';
 import JsonWebKey from './jwk';
@@ -16,7 +16,7 @@ export class Private implements KeyConverterClass {
     this.asn = RSAPrivateKey;
     if (jwk) {
       this.key = {
-        version: jwk.version,
+        version: new BN(jwk.version),
         n: new BN(Buffer.from(jwk.n, 'base64')),
         e: new BN(Buffer.from(jwk.e, 'base64')),
         d: new BN(Buffer.from(jwk.d, 'base64')),
@@ -29,8 +29,8 @@ export class Private implements KeyConverterClass {
     }
   }
 
-  encode(enc: ASN1Encoding, options = {}): Buffer {
-    const encodedKey = this.asn.encode(this.key, enc, { label: 'RSA PRIVATE KEY', ...options });
+  encode(enc: ASN1Encoding, options: ASN1Options = {}): Buffer | string {
+    const encodedKey = this.asn.encode(this.key, enc, enc === 'der' ? null : { label: 'RSA PRIVATE KEY', ...options });
     return encodedKey;
   }
 
@@ -43,7 +43,7 @@ export class Private implements KeyConverterClass {
     const jwk: BaseJWK.RSAPrivate = {
       kty: 'RSA',
       use: 'sig',
-      version: this.key.version,
+      version: this.key.version.toString(),
       n: toUrlBase64(this.key.n.toBuffer()),
       e: toUrlBase64(this.key.e.toBuffer()),
       d: toUrlBase64(this.key.d.toBuffer()),
@@ -74,12 +74,12 @@ export class Public implements KeyConverterClass {
     }
   }
 
-  encode(enc: ASN1Encoding, options = {}) {
-    const encodedKey = this.asn.encode(this.key, enc, { label: 'RSA PUBLIC KEY', ...options });
+  encode(enc: ASN1Encoding, options: ASN1Options = {}): Buffer | string {
+    const encodedKey = this.asn.encode(this.key, enc, enc === 'der' ? null : { label: 'RSA PUBLIC KEY', ...options });
     return encodedKey;
   }
 
-  decode(data: string | Buffer, enc: ASN1Encoding, options = {}): Public {
+  decode(data: string | Buffer, enc: ASN1Encoding, options: ASN1Options = {}): Public {
     this.key = this.asn.decode(data, enc, { label: 'RSA PUBLIC KEY', ...options });
     return this;
   }

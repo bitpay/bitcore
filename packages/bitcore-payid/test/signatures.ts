@@ -15,7 +15,6 @@ export const payIdOrgUtils = {
       ]
     }
   },
-  // bitcoreHD: 'PniFt1CL0-C3nySuLEIlimQA1ve8rG6l7A9dMFDe_iNoMKLD8SW1DDKgmDmysBQ7K59xckijdx56LKeRkrAueg',
   bitcore: {
     BTC: {
       payload: payloadBTC,
@@ -27,14 +26,12 @@ export const payIdOrgUtils = {
       ]
     }
   },
-  // bitcore: 'iUlxCwpGe6IY0CHXC4Oq0U_97oRBbSYwSPyzQC7v8NFLrRgod-7qE4Yyufi7Yv4ju1typvSyKqY8c5m3aDOKnw',
   secp256k1: {
     BTC: {
       payload: payloadBTC,
       signatures: [
         {
           protected: 'eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NksiLCJ0eXAiOiJKT1NFK0pTT04iLCJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCIsIm5hbWUiXSwiandrIjp7ImNydiI6InNlY3AyNTZrMSIsIngiOiJ6R1lpTk1jQ2tvOG1henVibGRZNHhqOVc5T3JEaGpJakZiOEYtMlhjT2RBIiwieSI6ImI0SDU4STBjcnlQUnoxT0ZhdVBzTU9STTJ0cFQxcXNiVy1YRUpfZ3pGMDAiLCJrdHkiOiJFQyIsImtpZCI6Ilp4YWhCcUpjQU54S0RTd2xMY2RoRnYwbDVVWGpnazlOWEQ1bDZZMkJrZmcifX0',
-          // signature: '-U5uCYFqhbeFfx8R50i-KH4flih2TxhBwvsiM1YsBc_0lHbN6zlv5cCr5D8XkXFQPBceeuU_59wDDx2ciFQ0Kw'
           signature: 'q43YPN75Lt4Li9DKdoE5UkANA6NE-D1H9nUaHw-i08kNY4caUq_63WnM46VbcNLjZkYXdZltdMf4tmP1hRAYtg',
 
         }
@@ -59,34 +56,28 @@ export const payIdOrgUtils = {
       ]
     }
   },
-  // secp256k1: 'Cvly1N03cFb1jfmHIT_n8-3lZ6L5PYGB_POFodyjUTzNosGb1Gv7-V-vAKmi_gP4-VCOCMjDP_xXUOwZ8JSPxA',
   ed25519: {
     BTC: {
       payload: payloadBTC,
       signatures: [
         {
-          // protected: 'eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFZERTQSIsInR5cCI6IkpPU0UrSlNPTiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0IiwibmFtZSJdLCJqd2siOnsiY3J2IjoiRWQyNTUxOSIsIngiOiIzMVFNN2o3UXdLM01NdG56eXJ1dVRHWXZLWDhJTmctMjZuU0xUYmFsOXg0Iiwia3R5IjoiT0tQIiwia2lkIjoiSjNjN0cwSENTUm5xdnZiYXpUVnNkcDNzOFpNWkdreXM5T29HcGp6M3B3MCJ9fQ',
-          // signature: 'SpafOi2PFDDP_3ru47vyQHxwW3Vbff8NvUhFoJymkJJSx59Hr7iC92GXUcSpCyX-fDYiltc0VkrjBXy69VeSDA'
           protected: 'eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFZERTQSIsInR5cCI6IkpPU0UrSlNPTiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0IiwibmFtZSJdLCJqd2siOnsiY3J2IjoiRWQyNTUxOSIsIngiOiJoaWRmYVVUa1d6ZURrY1FISnBZYmltUF9NazgtbFloX3lobHAxZDVieGtnIiwia3R5IjoiT0tQIiwia2lkIjoiUXJIZjdqbmlXTlVib0VNeU9kY3BFTnMtRnJqQ0pVZFZqQjBFdUdFRmljMCJ9fQ',
           signature: 'VPnJGPfGYWkoSuB1YctLgY9J76su9NePe0eq9xOgKyjP7StFKHEGfzuIh5WTtlgmn5hGiujHEiv6E2G3JW8GCQ'
         }
       ]
     }
   },
-  // ed25519: 'c1erZi83H5qwDGYD0Xi2ZfCidhOYJaJ9wYxOPKDEyOaVE7MuA4pKDIm9JqfzpJSf5qZDXnb1c-MiaOt_0RtNAQ',
   rsa: {
     BTC: {
       payload: payloadBTC,
       signatures: [
         {
           protected: 'eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJSUzUxMiIsInR5cCI6IkpPU0UrSlNPTiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0IiwibmFtZSJdLCJqd2siOnsiZSI6IkFRQUIiLCJuIjoid3dnOGxjcGVZZ01McUF6LTlTMDhteW11WDdnVGpZX0tUZjR0WTJWVmdpZmZGSDlNelIzMld2YjIwU18wMWs0cnlzcGlEV1ZtTW1DS0pGbnRUeno1ejFtaUQ4NFVvTlBnRE1IbDBGQVhyMW5OenNXelUzV2xLY2xGUkx0LXlRMjdhczVnMUpZWGhKbDhiWXA4NVdpNWQydzBmSUZBS282UURYZi00dVhub1dqdVBUbHBSWlVzdkRLZVhUczVtZjJtbTFzdV8zRkVoSlQ3ZGpxVzZXbHhNZzBxNVZHX2l0SGtYN3JvY3RYd0k3bFV0RDZUQWFaeXY3dHAtNXBrN0l6dS1pLXFOTWZKanFjNlQyZGxwOEZxUDBOQ2Q4V2ZGbFlWWjZKd0hmTUJWSmdrUFUtYktIRkdmUnlGVWZiN0duYkVwdjRTelh2X2JaWkV5SkJyb2lpSzh3Iiwia3R5IjoiUlNBIiwia2lkIjoiNExwZ3FhdzRYMXFIR2NGZnFyNjZYYlo5RTNvVV9DZmstN01xV3FhYWcxMCJ9fQ',
-          // signature: 'v2_dCLnUFvHie8ggKTqC16nPLm8gNKTHWgnX0LJX3oJ8wRao4Vpp0m-ruGQTodyXXdqghmoG7P17-xULJpCudSaz5ZdYJw8UkrxD4pnFdEgt6vB8J7Lz4ZGSUZ6vy-G5WSSNuhzHKQstI256VjdQLg0gqiQzowwzkWl9_EF0fyNTDovF42wUPAdUHg9CcBLlnje-1XzR9ZeiYc8whaLkUeyLVFkj8ig8NrzP6zeylHU7mAkxO2mBh2czc43riY-_tBtz-gpzWCr4arlokpGe5OBh7lHL90t5pwkj9x3XqqVchBjw82kR4gmEm6HuRvUPGFiXx-WW9lH8X5OBOGhDEA'
           signature: 'dAPdyjrwJgQpYIArsOiQ71zq70RjpnrTggrjqKaD8yMWPbKYYRpFseAw2BetoMLdFu0ZVCoFEYOlbEC8JAsf5kDgkRgx4uenNWrRTvXCPQaMTV1_VQYLTruwtsGogBZ9wwWlgvgdpRFT72XnZ256msW3StWUL1wHNXvztSQT4KSWbKo0LipyqhnF8FV2H-3qHeftIXvYNRjYP55q-yBFl5dEDAqn3oSMJw3jb2bOaY6YMjpt2gbRHis_0v9h2JN3Bb2WmDX3F3Fbil2oV87Ir-Hlanew0Pr4pXGJaMjhJA06HUmMIdFTQscujWGalAgZ-oHYGgDHX0f5TMKgwVyYeA'
         }
       ]
     }
   }
-  // rsa: 'v2_dCLnUFvHie8ggKTqC16nPLm8gNKTHWgnX0LJX3oJ8wRao4Vpp0m-ruGQTodyXXdqghmoG7P17-xULJpCudSaz5ZdYJw8UkrxD4pnFdEgt6vB8J7Lz4ZGSUZ6vy-G5WSSNuhzHKQstI256VjdQLg0gqiQzowwzkWl9_EF0fyNTDovF42wUPAdUHg9CcBLlnje-1XzR9ZeiYc8whaLkUeyLVFkj8ig8NrzP6zeylHU7mAkxO2mBh2czc43riY-_tBtz-gpzWCr4arlokpGe5OBh7lHL90t5pwkj9x3XqqVchBjw82kR4gmEm6HuRvUPGFiXx-WW9lH8X5OBOGhDEA'
 };
 
 export const bitcorePayId = {
@@ -99,7 +90,6 @@ export const bitcorePayId = {
       }
     ]
   },
-  // bitcoreHD: 'vCJHHPP8gR1Ir3iIbNQmPgxzw_sCgHc-4Ns4KogmapMLpttTbXXZMu-5F5rPQF5SSznX9tq5fHkpzdTeuwtqag',
   bitcore: {
     payload: payloadBTC,
     signatures: [
@@ -109,7 +99,6 @@ export const bitcorePayId = {
       }
     ]
   },
-  // bitcore: 'tFu4QLgZJHgEivPZgn2HSBK4ya9Y_xLk_Gfx1gaUDyMND1iKOjs1VU4aEwalMX1RZydZ-ofu4J9pCrWk3V_ZXw',
   secp256k1: {
     payload: payloadBTC,
     signatures: [
@@ -119,7 +108,6 @@ export const bitcorePayId = {
       }
     ]
   },
-  // secp256k1: 'st5lV71qYe3x-WR8564MHpuT0wM5xrMMmrJlY9g4hQddWbrmaDj9z2Joq0-SryvCU99Oh_rkU9uxfEQUvF9mwA',
   ed25519: {
     payload: payloadBTC,
     signatures: [
@@ -129,7 +117,6 @@ export const bitcorePayId = {
       }
     ]
   },
-  // ed25519: 'EywlWqXww5ufir3Ua5ybx1lhnI8PvyQ3QA38EPeweKVNjJLkCldYASBHFAcLFmMWtgW1rSEytnx1-g63MAXFAg',
   rsa: {
     payload: payloadBTC,
     signatures: [

@@ -6,7 +6,8 @@ export const PublicKey: ASN1<Ispki> = asn.define('spki', function() {
   this.seq().obj(
     this.key('attributes').seq().obj(
       this.key('type').objid(objIds),
-      this.key('curve').objid(objIds).optional()
+      // curve isn't included w/ EdDSA keys, but EC keys have the curve, and RSA has a NULL field.
+      this.key('curve').choice({ curve: this.objid(objIds), null: this.null_() }).optional()
     ),
     this.key('publicKey').bitstr()
   );

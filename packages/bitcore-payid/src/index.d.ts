@@ -30,12 +30,19 @@ export interface ASN1<T> {
   encode(data: T, enc: ASN1Encoding, options?: Object): Buffer;
 }
 
+export interface ASN1Attributes<T> {
+  type: string;
+  curve?: T;
+}
+
+export interface ASN1AttributesChoice {
+  type: 'curve' | 'null',
+  value: SupportedCurves | null;
+}
+
 export interface Ipkcs8 {
   version: BN;
-  attributes: {
-    type: string;
-    curve?: SupportedCurves;
-  };
+  attributes: ASN1Attributes<SupportedCurves>;
   privateKey: Buffer | Isec1 | Iokp;
 }
 
@@ -59,10 +66,7 @@ export interface Ipksc1Pub {
 }
 
 export interface Ispki {
-  attributes: {
-    type: string;
-    curve?: SupportedCurves;
-  };
+  attributes: ASN1Attributes<ASN1AttributesChoice>;
   publicKey: {
     data: Buffer;
     unused: number;
@@ -149,6 +153,8 @@ export interface PrivateJWK extends JWK {
   getDefaultSigningAlgorithm(): Algorithm;
 }
 export interface PublicJWK extends JWK {
+  private: boolean;
+  public: boolean;
   toJSON();
   getDefaultSigningAlgorithm(): Algorithm;
 }
@@ -167,12 +173,13 @@ export interface KeyConverter {
   new (jwk?: RSAPublicJWK): KeyConverterClass;
 }
 export interface KeyConverterClass {
-  encode?(enc: ASN1Encoding, options?: Object): Buffer;
+  encode?(enc: ASN1Encoding, options?: ASN1Options): Buffer | string;
   decode(data: string | Buffer, enc: ASN1Encoding, options?: Object): PKCS8 | SPKI | SEC1 | PKCS1.Private | PKCS1.Public;
   toJWK(): RSAPublicJWK | RSAPrivateJWK | ECPublicJWK | ECPrivateJWK | EdDSAPublicJWK | EdDSAPrivateJWK;
 }
 
 /** Misc key stuff */
+export interface ASN1Options { label?: string; }
 export type ASN1Encoding = 'der' | 'pem';
 export type PublicKeyFromat = 'PKCS1' | 'SPKI';
 export type PrivateKeyFormat = 'PKCS1' | 'PKCS8' | 'SEC1';
