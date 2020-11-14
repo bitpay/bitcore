@@ -91,7 +91,7 @@ class JsonWebKey {
       case 'EC':
         return 'ES256K';
       case 'OKP':
-        return 'HS256';
+        return 'EdDSA'; // EdDSA is unique and is the only use case for OKP right now.
     }
   }
 

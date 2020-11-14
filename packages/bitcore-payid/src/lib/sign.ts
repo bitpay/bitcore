@@ -92,10 +92,11 @@ class Signer {
    * @param jwk JSON Web Key to sign with.
    */
   private _signEdDSA(toSign: Buffer, jwk: EdDSAPrivateJWK): Buffer {
-    if (jwk.crv !== 'ed25519') {
+    if (!jwk.crv || jwk.crv.toLowerCase() !== 'ed25519') {
       throw new Error(UNSUPPPORTED_KEY_TYPE);
     }
-    const eddsa = new elliptic.eddsa(jwk.crv).keyFromSecret(jwk.d);
+    const secret = Buffer.from(jwk.d, 'base64');
+    const eddsa = new elliptic.eddsa(jwk.crv.toLowerCase()).keyFromSecret(secret);
     let sig = eddsa.sign(toSign);
     sig = Buffer.from(sig.toBytes()); // Already in IEEE-P1363 format
     return sig;

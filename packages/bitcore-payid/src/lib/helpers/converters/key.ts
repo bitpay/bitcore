@@ -1,6 +1,7 @@
 import {
   CANNOT_PARSE_PRIVATEKEY,
   CANNOT_PARSE_PUBLICKEY,
+  EXPECTED_PEM,
   MISSING_ENCODING,
   REQUIRE_PRIVATE_KEY,
   REQUIRE_PUBLIC_KEY
@@ -60,6 +61,7 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public', enc?: 
     if (!keyType) {
       keyType = 'generic';
     }
+    keyType = keyType.toLowerCase();
 
     options = { label: `${keyType === 'generic' ? '' : keyType} ${keyDomain} key`.trim().toUpperCase() };
   } else if (typeof input === 'string' && !enc) {
@@ -88,31 +90,35 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public', enc?: 
  * Extract the key domain (public or private) from the PEM string header.
  * @param pem PEM key string.
  */
-const getKeyDomain = (pem: string) => {
+export const getKeyDomain = (pem: string) => {
   let header = pem.split('\n')[0];
   const domainStartIdx = header.search(/(PUBLIC|PRIVATE)/);
 
-  // If not an asymmetric key
   if (domainStartIdx === -1) {
-    return null;
+    throw new Error(EXPECTED_PEM);
   }
+
   header = header.substr(domainStartIdx);
   const headerDomain = header.substr(0, header.search(/\s/));
-  return headerDomain.toLowerCase();
+  return headerDomain;
 };
 
 /**
  * Extract the key type (EC or RSA) from the PEM string header.
  * @param pem PEM key string.
  */
-const getKeyType = (pem: string) => {
+export const getKeyType = (pem: string) => {
   let header = pem.split('\n')[0];
   const domainStartIdx = header.search(/(PUBLIC|PRIVATE)/);
+
+  if (domainStartIdx === -1) {
+    throw new Error(EXPECTED_PEM);
+  }
 
   header = header.substr(0, domainStartIdx);
   header = header.replace(/-----/g, '');
   header = header.replace('BEGIN', '');
   header = header.trim();
 
-  return header.toLowerCase();
+  return header;
 };

@@ -76,7 +76,7 @@ class PrivateKeyClass implements KeyConverterClass {
     const jwk: BaseJWK.EdDSAPrivate = {
       kty: 'OKP',
       use: 'sig',
-      crv: this.key.attributes.type.toLowerCase() as SupportedCurves,
+      crv: this.key.attributes.type as SupportedCurves,
       version: this.key.version,
       d: toUrlBase64(this.key.privateKey),
       x: toUrlBase64(ecKey.getPublic())

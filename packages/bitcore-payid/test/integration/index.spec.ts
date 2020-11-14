@@ -1,14 +1,5 @@
-// import {
-//   AddressDetailsType,
-//   getDefaultAlgorithm,
-//   IdentityKeySigningParams,
-//   sign,
-//   toKey,
-//   verifySignedAddress
-// } from '@payid-org/utils';
 import Bitcore from 'bitcore-lib';
 import { expect } from 'chai';
-// import crypto from 'crypto';
 import sinon from 'sinon';
 import * as errors from '../../src/errors';
 import PayId from '../../src/index';
@@ -58,26 +49,6 @@ describe('PayId', () => {
       }
     };
   });
-
-  // it('should', () => {
-  //   try {
-  //     const pk = crypto.createPrivateKey(TestKeys.RSA.privateKey);
-  //     // const jwk = toKey(pk as any);
-  //     // const pk = PayId['_convertIdentityKeyToJWK'](keys.bitcoreHD.toString());
-  //     const jwk = toKey(pk as any);
-  //     const sigParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk as any));
-
-  //     const btcSig = sign(payId, addressBTC, sigParams);
-  //     console.log(btcSig);
-  //     // const ethSig = sign(payId, addressETH, sigParams);
-  //     // const xrpSig = sign(payId, addressXRP, sigParams);
-
-  //     const v = verifySignedAddress(payId, btcSig);
-  //     expect(v).to.be.true;
-  //   } catch (err) {
-  //     expect(err).to.not.exist;
-  //   }
-  // });
 
   describe('sign', () => {
     it('should sign with Bitcore HD key', async () => {
@@ -228,8 +199,8 @@ describe('PayId', () => {
         });
         it('should verify signature signed with RSA key', async () => {
           const inBrowserSpy = sinon.spy(utils, 'inBrowser');
-          const _inBrowserVerifySpy = sinon.spy(Verify, '_verifyInBrowserRSA');
-          const _nodeVerifySpy = sinon.spy(Verify, '_verifyNodeRSA');
+          const _inBrowserVerifySpy = sinon.spy(Verify, '_verifyInBrowserRSA' as any); // use 'as any' to bypass sinon's typescript restriction to public class members
+          const _nodeVerifySpy = sinon.spy(Verify, '_verifyNodeRSA' as any);
 
           const verified = await PayId.verify(payId, signatures.rsa.BTC);
           expect(verified).be.true;
@@ -334,12 +305,48 @@ describe('PayId', () => {
       const verified = await PayId.verify(payId, signed);
       expect(verified).be.true;
     });
+    if (!utils.inBrowser()) {
+      describe('Verify with PayId.org official utils', () => {
+        const { verifySignedAddress } = require('@payid-org/utils');
+
+        it('should verify BitcoreHD signature created with this lib', async () => {
+          const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.bitcoreHD.toString());
+          const verified = verifySignedAddress(payId, signed);
+          expect(verified).to.be.true;
+        });
+
+        it('should verify Bitcore signature created with this lib', async () => {
+          const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.bitcore.toString());
+          const verified = verifySignedAddress(payId, signed);
+          expect(verified).to.be.true;
+        });
+
+        it('should verify EC signature created with this lib', async () => {
+          const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ec.privateKey);
+          const verified = verifySignedAddress(payId, signed);
+          expect(verified).to.be.true;
+        });
+
+        it('should verify ED25519 signature created with this lib', async () => {
+          const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ed25519.privateKey);
+          const verified = verifySignedAddress(payId, signed);
+          expect(verified).to.be.true;
+        });
+
+        it('should verify RSA signature created with this lib', async () => {
+          const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.rsa.privateKey);
+          const verified = verifySignedAddress(payId, signed);
+          expect(verified).to.be.true;
+        });
+
+      });
+    }
   });
 
   describe('_convertIdentityKeyToJWK', () => {
     let _buildJWKFromBitcore;
     beforeEach(() => {
-      _buildJWKFromBitcore = sinon.spy(PayId, '_buildJWKFromBitcore');
+      _buildJWKFromBitcore = sinon.spy(PayId, '_buildJWKFromBitcore' as any); // use 'as any' to bypass sinon's typescript restriction to public class members
     });
     afterEach(() => {
       sinon.restore();

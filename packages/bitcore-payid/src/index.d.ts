@@ -35,7 +35,7 @@ export interface ISigningPayload {
   payIdAddress: IAddress;
 }
 
-export type SupportedCurves = 'secp256k1' | 'ed25519';
+export type SupportedCurves = 'secp256k1' | 'Ed25519';
 
 /** ASN1 Formats */
 
@@ -202,4 +202,5 @@ export type HmacAlgorithm = 'HS256' | 'HS384' | 'HS512';
 export type RsaAlgorithm = 'RS256' | 'RS384' | 'RS512' | 'PS256' | 'PS384' | 'PS512';
 export type EcdsaAlgorithm = 'ES256' | 'ES384' | 'ES512'
 export type EcAlgorithm = 'ES256K';
-export type Algorithm = HmacAlgorithm | RsaAlgorithm | EcdsaAlgorithm | EcAlgorithm;
+export type EddsaAlgorithm = 'EdDSA';
+export type Algorithm = HmacAlgorithm | RsaAlgorithm | EcdsaAlgorithm | EcAlgorithm | EddsaAlgorithm;

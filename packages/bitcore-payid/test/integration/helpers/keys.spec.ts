@@ -217,7 +217,7 @@ describe('keys', () => {
           jwk.kty.should.equal('OKP');
           jwk.private.should.be.true;
           jwk.public.should.be.false;
-          jwk.crv.should.equal('ed25519');
+          jwk.crv.should.equal('Ed25519');
           expect(jwk.d).to.exist;
           Buffer.from(jwk.d, 'base64').toString().should.equal(Instance['key'].privateKey.toString());
           expect(jwk.x).to.exist;

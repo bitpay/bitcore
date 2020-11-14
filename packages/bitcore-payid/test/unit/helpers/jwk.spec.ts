@@ -221,9 +221,10 @@ describe('JsonWebKey', () => {
       const res = jwkEC.getDefaultSigningAlgorithm();
       res.should.equal('ES256K');
     });
-    it('should return HS256 for OKP keys', () => {
+    it('should return EdDSA for OKP keys', () => {
+      // At this time, the only OKP handled in this lib is EdDSA Ed25519 curve keys.
       const res = jwkOKP.getDefaultSigningAlgorithm();
-      res.should.equal('HS256');
+      res.should.equal('EdDSA');
     });
   });
 });
