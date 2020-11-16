@@ -165,12 +165,14 @@ export interface PrivateJWK extends JWK {
   toPublic(): PublicJWK;
   toJSON();
   getDefaultSigningAlgorithm(): Algorithm;
+  getThumbprint(enc?: BufferEncoding): string;
 }
 export interface PublicJWK extends JWK {
   private: boolean;
   public: boolean;
   toJSON();
   getDefaultSigningAlgorithm(): Algorithm;
+  getThumbprint(enc?: BufferEncoding): string;
 }
 
 /** Full JWK key types */

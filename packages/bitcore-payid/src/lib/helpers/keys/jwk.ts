@@ -1,5 +1,7 @@
+import hash from 'hash.js';
 import { JWK_INVALID_KEY_TYPE } from '../../../../src/errors';
 import { Algorithm, JWK } from '../../../index.d';
+import { toUrlBase64 } from '../converters/base64';
 
 const pubMembers = {
   EC: ['x', 'y'],
@@ -16,10 +18,10 @@ const privMembers = {
 const baseMembers = {
   EC: ['crv'],
   OKP: ['crv'],
-  RSA: ['length']
+  RSA: []
 };
 
-const universalMembers = ['kty', 'kid', 'key_ops'];
+const universalMembers = ['kty', 'kid', 'key_ops', 'length'];
 
 class JsonWebKey {
   kty = undefined;
@@ -95,13 +97,36 @@ class JsonWebKey {
     }
   }
 
-  private _getMembers(includePrivate: boolean = false) {
+  private _getMembers(includePrivate: boolean = false, all: boolean = true) {
     return [
-      ...universalMembers,
       ...baseMembers[this.kty],
       ...pubMembers[this.kty],
+      ...(all ? universalMembers : []),
       ...(this.private && includePrivate ? privMembers[this.kty] : [])
     ];
+  }
+
+  /**
+   * Get JWK thumbprint
+   * @param enc (Optional) Encoding for thumbprint. Default: hex
+   */
+  getThumbprint(enc: BufferEncoding = 'hex') {
+    let members = this._getMembers(false, false);
+    members.push('kty');
+    members = members.sort((a, b) => a > b ? 1 : a < b ? -1 : 0);
+
+    const thumbprint = {};
+
+    for (let m of members) {
+      thumbprint[m] = this[m];
+    }
+    const tpBuf = Buffer.from(JSON.stringify(thumbprint));
+    const tpHash = hash.sha256().update(tpBuf).digest();
+
+    if (enc === 'base64') {
+      return toUrlBase64(Buffer.from(tpHash));
+    }
+    return Buffer.from(tpHash).toString(enc);
   }
 }
 

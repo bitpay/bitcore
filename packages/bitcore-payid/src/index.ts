@@ -1,6 +1,6 @@
 import Bitcore from 'bitcore-lib';
 import * as errors from './errors';
-import { BaseJWK, ECPrivateJWK, GeneralJWS, IAddress, IVerifyPayId, PrivateJWK } from './index.d';
+import { BaseJWK, ECPrivateJWK, GeneralJWS, IAddress, IVerifyPayId, PrivateJWK, PublicJWK } from './index.d';
 import { toUrlBase64 } from './lib/helpers/converters/base64';
 import { toJWK } from './lib/helpers/converters/key';
 import JsonWebKey from './lib/helpers/keys/jwk';
@@ -48,6 +48,30 @@ class PayId {
    *    }
    */
   async verify(payId: string, params: IVerifyPayId | GeneralJWS): Promise<boolean> {
+    let payload: GeneralJWS = this._paramsToJWS(payId, params);
+
+    const retval = await Verifier.verify(payId, payload);
+    return retval;
+  }
+
+  /**
+   * Get the thumbprint of the public key used to verify signature.
+   * @param {string} protectedHeader Protected header from JWS.
+   * @param {BufferEncoding} thumbprintEncoding (optional) String encoding for thumbprint. Default: hex
+   */
+  getThumbprint(protectedHeader: string, thumbprintEncoding?: BufferEncoding) {
+    const parsedProt = JSON.parse(Buffer.from(protectedHeader, 'base64').toString());
+
+    const jwk: PublicJWK = new JsonWebKey(parsedProt.jwk, 'public');
+    return jwk.getThumbprint(thumbprintEncoding);
+  }
+
+  /**
+   * Convert simple input (IVerifyPayId) to JWS.
+   * @param {string} payId e.g.: "alice.smith$bitpay.com", "bob.acosta$example.com"
+   * @param {IVerifyPayId | GeneralJWS} params Verifiable address payload.
+   */
+  private _paramsToJWS(payId: string, params: IVerifyPayId | GeneralJWS): GeneralJWS {
     let payload: GeneralJWS = params as GeneralJWS;
 
     if ((params as IVerifyPayId).address) {
@@ -69,9 +93,7 @@ class PayId {
         }]
       };
     }
-
-    const retval = await Verifier.verify(payId, payload);
-    return retval;
+    return payload;
   }
 
   /**

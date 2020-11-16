@@ -434,6 +434,16 @@ describe('PayId', () => {
         expect(_buildJWKFromBitcore.callCount).to.equal(0);
       }
     });
+  });
 
+  describe('getThumbprint', () => {
+    it('should return thumbprint', () => {
+      const hex = PayId.getThumbprint(TestSignatures.payIdOrgUtils.bitcoreHD.BTC.signatures[0].protected);
+      hex.should.equal('93b533499a6040c03a0bb1ee80ef1da29483666af56a662698b2a2ecda11d54a');
+    });
+    it('should return base64 thumbprint', () => {
+      const b64 = PayId.getThumbprint(TestSignatures.payIdOrgUtils.secp256k1.XRP.signatures[0].protected, 'base64');
+      b64.should.equal('ZxahBqJcANxKDSwlLcdhFv0l5UXjgk9NXD5l6Y2Bkfg');
+    });
   });
 });

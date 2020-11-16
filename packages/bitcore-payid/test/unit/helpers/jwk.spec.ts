@@ -1,7 +1,11 @@
+import Bitcore from 'bitcore-lib';
 import { expect, should } from 'chai';
 import { JWK_INVALID_KEY_TYPE } from '../../../src/errors';
 import { BaseJWK } from '../../../src/index.d';
 import JsonWebKey from '../../../src/lib/helpers/keys/jwk';
+import * as utils from '../../../src/lib/utils';
+import * as TestKeys from '../../keys';
+import * as TestSignatures from '../../signatures';
 
 should();
 
@@ -226,5 +230,104 @@ describe('JsonWebKey', () => {
       const res = jwkOKP.getDefaultSigningAlgorithm();
       res.should.equal('EdDSA');
     });
+  });
+
+  describe('getThumbprint', () => {
+    let rsaBase: BaseJWK.RSAPublic;
+    let ecBase: BaseJWK.ECPrivate;
+    let okpBase: BaseJWK.EdDSAPublic;
+    before(() => {
+      rsaBase = {
+        kty: 'RSA',
+        e: 'e_val',
+        n: 'n_val'
+      };
+      ecBase = {
+        kty: 'EC',
+        crv: 'secp256k1',
+        x: 'x_val',
+        y: 'y_val',
+        d: 'd_val'
+      };
+      okpBase = {
+        kty: 'OKP',
+        crv: 'Ed25519',
+        x: 'x_val'
+      };
+    });
+    const hash = require('hash.js');
+    it('should return RSA thumbprint', () => {
+      const jwk = new JsonWebKey(rsaBase, 'public');
+      const hex = jwk.getThumbprint();
+      hex.should.equal('bb23ccfe4222e1ef08984cae4a936eda3ca7b912e25821783aae50a6a7765270');
+    });
+    it('should return EC thumbprint', () => {
+      const jwk = new JsonWebKey(ecBase, 'public');
+      const hex = jwk.getThumbprint();
+      hex.should.equal('57b776247e0fd8395423db10852e7db26aac5153459a8601f07e38d21a8e6d1f');
+    });
+    it('should return EdDSA thumbprint', () => {
+      const jwk = new JsonWebKey(okpBase, 'public');
+      const hex = jwk.getThumbprint();
+      hex.should.equal('ec1ea5a6293e1501c3391a75d002f20ae16620dec21900686a26712873a8c9a0');
+    });
+    it('should return URL base64 thumbprint', () => {
+      const jwk = new JsonWebKey(rsaBase, 'public');
+      const hex = jwk.getThumbprint('base64');
+      hex.should.equal('uyPM_kIi4e8ImEyuSpNu2jynuRLiWCF4Oq5Qpqd2UnA');
+    });
+    if (!utils.inBrowser()) { // Compare to other JWK lib thumbprints
+      const { toKey } = require('@payid-org/utils');
+      let bitcoreHdJWK;
+      let bitcoreJWK;
+      let ecJWK;
+      let eddsaJWK;
+      let rsaJWK;
+      before(() => {
+        const bitcoreHD = Bitcore.HDPrivateKey.fromString(TestKeys.BitcoreHD);
+        const bitcore = Bitcore.PrivateKey.fromString(TestKeys.Bitcore);
+        bitcoreHdJWK = toKey({
+          kty: 'EC',
+          crv: 'secp256k1',
+          x: bitcoreHD.publicKey.point.x.toBuffer().toString('base64'),
+          y: bitcoreHD.publicKey.point.y.toBuffer().toString('base64')
+        });
+        bitcoreJWK = toKey({
+          kty: 'EC',
+          crv: 'secp256k1',
+          x: bitcore.publicKey.point.x.toBuffer().toString('base64'),
+          y: bitcore.publicKey.point.y.toBuffer().toString('base64')
+        });
+        ecJWK = toKey(TestKeys.EC.privateKey);
+        eddsaJWK = toKey(TestKeys.ED25519.privateKey);
+        rsaJWK = toKey(TestKeys.RSA.privateKey);
+      });
+      it('should be equal for BitcoreHD key', () => {
+        const jwk = new JsonWebKey(bitcoreHdJWK, bitcoreHdJWK.type);
+        const hex = jwk.getThumbprint('base64');
+        hex.should.equal(bitcoreHdJWK.thumbprint);
+      });
+      it('should be equal for Bitcore key', () => {
+        const jwk = new JsonWebKey(bitcoreJWK, bitcoreJWK.type);
+        const hex = jwk.getThumbprint('base64');
+        hex.should.equal(bitcoreJWK.thumbprint);
+      });
+      it('should be equal for EC key', () => {
+        const jwk = new JsonWebKey(ecJWK, ecJWK.type);
+        const hex = jwk.getThumbprint('base64');
+        hex.should.equal(ecJWK.thumbprint);
+      });
+      it('should be equal for EdDSA key', () => {
+        const jwk = new JsonWebKey(eddsaJWK, eddsaJWK.type);
+        const hex = jwk.getThumbprint('base64');
+        hex.should.equal(eddsaJWK.thumbprint);
+      });
+      it('should be equal for RSA key', () => {
+        const jwk = new JsonWebKey(rsaJWK, rsaJWK.type);
+        const hex = jwk.getThumbprint('base64');
+        hex.should.equal(rsaJWK.thumbprint);
+      });
+    }
+
   });
 });
