@@ -81,8 +81,7 @@ describe('Push notifications', function() {
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
-                pushServerUrl: 'http://localhost:8000',
-                fcmGoogleCredentialsPath: 'path_to_service_account.json'
+                pushServerUrl: 'http://localhost:8000'
               },
             }, function(err) {
               should.not.exist(err);

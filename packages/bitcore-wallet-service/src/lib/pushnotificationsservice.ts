@@ -165,7 +165,7 @@ export class PushNotificationsService {
                         notification.data && notification.data.multisigContractAddress
                           ? notification.data.multisigContractAddress
                           : 'null';
-                    
+
                       return {
                         message: {
                           token: sub.token,
@@ -446,6 +446,12 @@ export class PushNotificationsService {
   _getAccessToken() {
     const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
     const SCOPES = [MESSAGING_SCOPE];
+
+    if (config.pushNotificationsOpts.fcmGoogleTestAccessToken) {
+      return new Promise(function(resolve, reject) {
+        return resolve(config.pushNotificationsOpts.fcmGoogleTestAccessToken);
+      });
+    }
 
     return new Promise(function(resolve, reject) {
       const key = require(config.pushNotificationsOpts.fcmGoogleCredentialsPath);
