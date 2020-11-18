@@ -1384,6 +1384,28 @@ export class Storage {
       });
   }
 
+  fetchLatestPushNotificationSubs(cb) {
+    const now = Math.round(new Date().getTime() / 1000);
+    this.db
+      .collection(collections.PUSH_NOTIFICATION_SUBS)
+      .find({
+        createdOn: {
+          $gte: now - 10 * 60, // 10 mins ago
+          $lt: now
+        }
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+
+        if (!result) return cb();
+
+        const tokens = _.map([].concat(result), r => {
+          return PushNotificationSub.fromObj(r);
+        });
+        return cb(null, tokens);
+      });
+  }
+
   storePushNotificationSub(pushNotificationSub, cb) {
     this.db.collection(collections.PUSH_NOTIFICATION_SUBS).replaceOne(
       {

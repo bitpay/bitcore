@@ -19,26 +19,64 @@ const sjcl = require('sjcl');
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
-    filename: 'new_copayer'
+    filename: 'new_copayer',
+    notifyCreator: false,
+    notifyCreatorForegroundOnly: true,
+    notifyOthers: true
   },
   WalletComplete: {
-    filename: 'wallet_complete'
+    filename: 'wallet_complete',
+    notifyCreator: true,
+    notifyOthers: true
   },
   NewTxProposal: {
-    filename: 'new_tx_proposal'
+    filename: 'new_tx_proposal',
+    notifyCreator: false,
+    notifyCreatorForegroundOnly: true,
+    notifyOthers: true
   },
   NewOutgoingTx: {
-    filename: 'new_outgoing_tx'
+    filename: 'new_outgoing_tx',
+    notifyCreator: true,
+    notifyOthers: true
   },
   NewIncomingTx: {
-    filename: 'new_incoming_tx'
+    filename: 'new_incoming_tx',
+    notifyCreator: true,
+    notifyOthers: true
   },
   TxProposalFinallyRejected: {
-    filename: 'txp_finally_rejected'
+    filename: 'txp_finally_rejected',
+    notifyCreator: false,
+    notifyCreatorForegroundOnly: true,
+    notifyOthers: true
   },
   TxConfirmation: {
     filename: 'tx_confirmation',
-    notifyCreatorOnly: true
+    notifyCreator: true
+  },
+  NewAddress: {
+    filename: 'empty', // TODO: create templates in case of implement in app notification (eg toast)
+    notifyCreatorForegroundOnly: true
+  },
+  NewBlock: {
+    notifyCreatorForegroundOnly: true
+  },
+  TxProposalAcceptedBy: {
+    notifyCreatorForegroundOnly: true,
+    filename: 'empty' // TODO: ^
+  },
+  TxProposalFinallyAccepted: {
+    notifyCreatorForegroundOnly: true,
+    filename: 'empty' // TODO: ^
+  },
+  TxProposalRejectedBy: {
+    notifyCreatorForegroundOnly: true,
+    filename: 'empty' // TODO: ^
+  },
+  TxProposalRemoved: {
+    notifyCreatorForegroundOnly: true,
+    filename: 'empty' // TODO: ^
   }
 };
 
@@ -144,94 +182,176 @@ export class PushNotificationsService {
       logger.debug('Should send notification: ' + should);
       if (!should) return cb();
 
-      this._getRecipientsList(notification, notifType, (err, recipientsList) => {
-        if (err) return cb(err);
+      if (notification.type === 'NewBlock') {
+        return this._sendNewBlockPushNotifications(notification, cb);
+      } else {
+        this._getRecipientsList(notification, notifType, (err, recipientsList) => {
+          if (err) return cb(err);
 
-        async.waterfall(
-          [
-            next => {
-              this._readAndApplyTemplates(notification, notifType, recipientsList, next);
-            },
-            (contents, next) => {
-              async.map(
-                recipientsList,
-                (recipient: IPreferences, next) => {
-                  const content = contents[recipient.language];
+          async.waterfall(
+            [
+              next => {
+                this._readAndApplyTemplates(notification, notifType, recipientsList, next);
+              },
+              (contents, next) => {
+                async.map(
+                  recipientsList,
+                  (recipient: IPreferences, next) => {
+                    const content = contents[recipient.language];
 
-                  this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
-                    if (err) return next(err);
+                    this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
+                      if (err) return next(err);
 
-                    const notifications = _.map(subs, sub => {
-                      const tokenAddress =
-                        notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
-                      const multisigContractAddress =
-                        notification.data && notification.data.multisigContractAddress
-                          ? notification.data.multisigContractAddress
-                          : null;
-                      return {
-                        to: sub.token,
-                        priority: 'high',
-                        restricted_package_name: sub.packageName,
-                        notification: {
-                          title: content.plain.subject,
-                          body: content.plain.body,
-                          sound: 'default',
-                          click_action: 'FCM_PLUGIN_ACTIVITY',
-                          icon: 'fcm_push_icon'
-                        },
-                        data: {
-                          walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
-                          tokenAddress,
-                          multisigContractAddress,
-                          copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
-                          title: content.plain.subject,
-                          body: content.plain.body,
-                          notification_type: notification.type
+                      const notifications = _.map(subs, sub => {
+                        const tokenAddress =
+                          notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
+                        const multisigContractAddress =
+                          notification.data && notification.data.multisigContractAddress
+                            ? notification.data.multisigContractAddress
+                            : null;
+
+                        const notificationData: any = {
+                          to: sub.token,
+                          priority: 'high',
+                          restricted_package_name: sub.packageName,
+                          data: {
+                            walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
+                            tokenAddress,
+                            multisigContractAddress,
+                            copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
+                            title: content.plain.subject,
+                            body: content.plain.body,
+                            notification_type: notification.type
+                          }
+                        };
+
+                        if (notifType.notifyOthers || notifType.notifyCreator) {
+                          notificationData.notification = {
+                            title: content.plain.subject,
+                            body: content.plain.body,
+                            sound: 'default',
+                            click_action: 'FCM_PLUGIN_ACTIVITY',
+                            icon: 'fcm_push_icon'
+                          };
                         }
-                      };
+
+                        return notificationData;
+                      });
+                      return next(err, notifications);
                     });
-                    return next(err, notifications);
-                  });
-                },
-                (err, allNotifications) => {
-                  if (err) return next(err);
-                  return next(null, _.flatten(allNotifications));
-                }
-              );
-            },
-            (notifications, next) => {
-              async.each(
-                notifications,
-                (notification, next) => {
-                  this._makeRequest(notification, (err, response) => {
-                    if (err) logger.error('ERROR:' + err);
-                    if (response) {
-                      logger.debug('Request status:  ' + response.statusCode);
-                      logger.debug('Request message: ' + response.statusMessage);
-                      logger.debug('Request body:  ' + response.request.body);
+                  },
+                  (err, allNotifications) => {
+                    if (err) return next(err);
+                    return next(null, _.flatten(allNotifications));
+                  }
+                );
+              },
+              (notifications, next) => {
+                async.each(
+                  notifications,
+                  (notification, next) => {
+                    this._makeRequest(notification, (err, response) => {
+                      if (err) logger.error('ERROR:' + err);
+                      if (response) {
+                        logger.debug('Request status:  ' + response.statusCode);
+                        logger.debug('Request message: ' + response.statusMessage);
+                        logger.debug('Request body:  ' + response.request.body);
+                      }
+                      next();
+                    });
+                  },
+                  err => {
+                    return next(err);
+                  }
+                );
+              }
+            ],
+            err => {
+              if (err) {
+                logger.error('An error ocurred generating notification:' + err);
+              }
+              return cb(err);
+            }
+          );
+        });
+      }
+    });
+  }
+
+  _sendNewBlockPushNotifications(notification, cb) {
+    cb = cb || function() {};
+
+    const notifType = PUSHNOTIFICATIONS_TYPES[notification.type];
+    if (!notifType) return cb();
+
+    this.storage.fetchLatestPushNotificationSubs((err, subs) => {
+      if (err) return cb(err);
+
+      async.waterfall(
+        [
+          next => {
+            async.map(
+              subs,
+              (sub: any, next) => {
+                this.storage.fetchCopayerLookup(sub.copayerId, (err, wallet) => {
+                  if (err) return cb(err);
+
+                  const notificationData: any = {
+                    to: sub.token,
+                    priority: 'high',
+                    restricted_package_name: sub.packageName,
+                    data: {
+                      walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(wallet.walletId)),
+                      copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId)),
+                      notification_type: notification.type,
+                      tokenAddress: null,
+                      multisigContractAddress: null,
+                      title: null,
+                      body: null
                     }
-                    next();
-                  });
-                },
-                err => {
-                  return next(err);
-                }
-              );
-            }
-          ],
-          err => {
-            if (err) {
-              logger.error('An error ocurred generating notification:' + err);
-            }
-            return cb(err);
+                  };
+
+                  return next(err, notificationData);
+                });
+              },
+              (err, allNotifications) => {
+                if (err) return next(err);
+                return next(null, _.flatten(allNotifications));
+              }
+            );
+          },
+          (notifications, next) => {
+            async.each(
+              notifications,
+              (notification, next) => {
+                this._makeRequest(notification, (err, response) => {
+                  if (err) logger.error('ERROR:' + err);
+                  if (response) {
+                    logger.debug('Request status:  ' + response.statusCode);
+                    logger.debug('Request message: ' + response.statusMessage);
+                    logger.debug('Request body:  ' + response.request.body);
+                  }
+                  next();
+                });
+              },
+              err => {
+                return next(err);
+              }
+            );
           }
-        );
-      });
+        ],
+        err => {
+          if (err) {
+            logger.error('An error ocurred generating notification:' + err);
+          }
+          return cb(err);
+        }
+      );
     });
   }
 
   _checkShouldSendNotif(notification, cb) {
-    if (notification.type != 'NewTxProposal') return cb(null, true);
+    if (notification.type != 'NewTxProposal' || notification.type == 'NewBlock') return cb(null, true);
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       return cb(err, wallet && wallet.m > 1);
     });
@@ -242,7 +362,7 @@ export class PushNotificationsService {
       if (err) return cb(err);
 
       let unit;
-      if (wallet.coin != Defaults.COIN) {
+      if (wallet && wallet.coin != Defaults.COIN) {
         unit = wallet.coin;
       }
 
@@ -267,25 +387,28 @@ export class PushNotificationsService {
 
         const copayers = _.keyBy(recipientPreferences, 'copayerId');
 
-        const recipientsList = _.compact(
-          _.map(wallet.copayers, copayer => {
-            if (
-              (copayer.id == notification.creatorId && notificationType.notifyCreatorOnly) ||
-              (copayer.id != notification.creatorId && !notificationType.notifyCreatorOnly)
-            ) {
-              const p = copayers[copayer.id] || {
-                language: this.defaultLanguage,
-                unit: this.defaultUnit
-              };
-              return {
-                copayerId: copayer.id,
-                language: p.language || this.defaultLanguage,
-                unit: unit || p.unit || this.defaultUnit
-              };
-            }
-          })
-        );
-
+        const recipientsList = wallet
+          ? _.compact(
+              _.map(wallet.copayers, copayer => {
+                if (
+                  (copayer.id == notification.creatorId &&
+                    (notificationType.notifyCreator || notificationType.notifyCreatorForegroundOnly)) ||
+                  (copayer.id != notification.creatorId &&
+                    (!notificationType.notifyCreatorOnly || !notificationType.notifyCreatorForegroundOnly))
+                ) {
+                  const p = copayers[copayer.id] || {
+                    language: this.defaultLanguage,
+                    unit: this.defaultUnit
+                  };
+                  return {
+                    copayerId: copayer.id,
+                    language: p.language || this.defaultLanguage,
+                    unit: unit || p.unit || this.defaultUnit
+                  };
+                }
+              })
+            )
+          : [];
         return cb(null, recipientsList);
       });
     });

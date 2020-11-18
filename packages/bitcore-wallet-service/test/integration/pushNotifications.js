@@ -114,10 +114,10 @@ describe('Push notifications', function() {
               var args = _.map(calls, function(c) {
                 return c.args[0];
               });
-              calls.length.should.equal(1);
-              args[0].body.notification.title.should.contain('New payment received');
-              args[0].body.notification.body.should.contain('123,000');
-              args[0].body.notification.body.should.contain('bits');
+              calls.length.should.equal(2); // NewAddress, NewIncomingTx
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.body.should.contain('123,000');
+              args[1].body.notification.body.should.contain('bits');
               done();
             }, 100);
           });
@@ -125,7 +125,7 @@ describe('Push notifications', function() {
       });
     });
 
-    it('should not notify auto-payments to creator', function(done) {
+    it('should notify auto-payments to creator', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -139,7 +139,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            calls.length.should.equal(0);
+            calls.length.should.equal(2); // NewAdress, NewIncomingTx
             done();
           }, 100);
         });
@@ -160,7 +160,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            calls.length.should.equal(1);
+            calls.length.should.equal(2); // NewAdress, NewIncomingTx
             done();
           }, 100);
         });
@@ -182,7 +182,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(1);
+              calls.length.should.equal(2); // NewAdress, TxConfirmation
               done();
             }, 100);
           });
@@ -271,16 +271,16 @@ describe('Push notifications', function() {
                 return c.args[0];
               });
 
-              calls.length.should.equal(3);
+              calls.length.should.equal(6);
 
-              args[0].body.notification.title.should.contain('Nuevo pago recibido');
-              args[0].body.notification.body.should.contain('0.123');
+              args[3].body.notification.title.should.contain('Nuevo pago recibido');
+              args[3].body.notification.body.should.contain('0.123');
 
-              args[1].body.notification.title.should.contain('New payment received');
-              args[1].body.notification.body.should.contain('123,000');
+              args[4].body.notification.title.should.contain('New payment received');
+              args[4].body.notification.body.should.contain('123,000');
 
-              args[2].body.notification.title.should.contain('New payment received');
-              args[2].body.notification.body.should.contain('123,000');
+              args[5].body.notification.title.should.contain('New payment received');
+              args[5].body.notification.body.should.contain('123,000');
               done();
             }, 100);
           });
@@ -302,7 +302,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            calls.length.should.equal(3);
+            calls.length.should.equal(6);
 
             done();
           }, 100);
@@ -310,7 +310,7 @@ describe('Push notifications', function() {
       });
     });
 
-    it('should not notify auto-payments to creator', function(done) {
+    it('should notify auto-payments to creator', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -324,7 +324,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            calls.length.should.equal(2);
+            calls.length.should.equal(6);
 
             done();
           }, 100);
@@ -345,7 +345,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(2);
+              calls.length.should.equal(9);
 
               done();
             }, 100);
@@ -445,15 +445,16 @@ describe('Push notifications', function() {
 
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(_.takeRight(calls, 2), function(c) {
+            var args = _.map(_.takeRight(calls, 3), function(c) {
               return c.args[0];
             });
-
             args[0].body.notification.title.should.contain('Payment sent');
             args[1].body.notification.title.should.contain('Payment sent');
+            args[2].body.notification.title.should.contain('Payment sent');
 
             sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[0].body.data.copayerId);
             sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[1].body.data.copayerId);
+            sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.equal(args[2].body.data.copayerId);
             done();
           }, 100);
         });
@@ -644,14 +645,14 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(1);
+              calls.length.should.equal(2);
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[0].body.notification.title.should.contain('New payment received');
-              args[0].body.notification.title.should.contain('New payment received');
-              args[0].body.notification.body.should.contain('4.00');
-              args[0].body.data.tokenAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.body.should.contain('4.00');
+              args[1].body.data.tokenAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
               done();
             }, 100);
           });
@@ -677,13 +678,13 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(1);
+              calls.length.should.equal(2);
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[0].body.notification.title.should.contain('Nuevo pago recibido');
-              args[0].body.notification.body.should.contain('4.00');
-              args[0].body.data.tokenAddress.should.equal('0x8E870D67F660D95d5be530380D0eC0bd388289E1');
+              args[1].body.notification.title.should.contain('Nuevo pago recibido');
+              args[1].body.notification.body.should.contain('4.00');
+              args[1].body.data.tokenAddress.should.equal('0x8E870D67F660D95d5be530380D0eC0bd388289E1');
               done();
             }, 100);
           });
@@ -709,13 +710,13 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(1);
+              calls.length.should.equal(2);
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[0].body.notification.title.should.contain('New payment received');
-              args[0].body.notification.body.should.contain('4.00');
-              args[0].body.data.tokenAddress.should.equal('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd');
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.body.should.contain('4.00');
+              args[1].body.data.tokenAddress.should.equal('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd');
               done();
             }, 100);
           });
@@ -742,7 +743,7 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(0);
+              calls.length.should.equal(1);
               done();
             }, 100);
           });
