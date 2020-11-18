@@ -97,7 +97,10 @@ export class API extends EventEmitter {
   }
 
   initialize(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <initialize()>'
+    );
 
     this.notificationIncludeOwn = !!opts.notificationIncludeOwn;
     this._initNotifications(opts);
@@ -110,7 +113,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function() {};
+    cb = cb || function () {};
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -145,7 +148,10 @@ export class API extends EventEmitter {
     this.notificationsIntervalId = setInterval(() => {
       this._fetchLatestNotifications(interval, err => {
         if (err) {
-          if (err instanceof Errors.NOT_FOUND || err instanceof Errors.NOT_AUTHORIZED) {
+          if (
+            err instanceof Errors.NOT_FOUND ||
+            err instanceof Errors.NOT_AUTHORIZED
+          ) {
             this._disposeNotifications();
           }
         }
@@ -198,7 +204,10 @@ export class API extends EventEmitter {
       note.encryptedBody = note.body;
       note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
       note.encryptedEditedByName = note.editedByName;
-      note.editedByName = Utils.decryptMessageNoThrow(note.editedByName, encryptingKey);
+      note.editedByName = Utils.decryptMessageNoThrow(
+        note.editedByName,
+        encryptingKey
+      );
     });
   }
 
@@ -216,20 +225,31 @@ export class API extends EventEmitter {
     var encryptingKey = this.credentials.sharedEncryptingKey;
     _.each([].concat(txps), txp => {
       txp.encryptedMessage = txp.message;
-      txp.message = Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
-      txp.creatorName = Utils.decryptMessageNoThrow(txp.creatorName, encryptingKey);
+      txp.message =
+        Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
+      txp.creatorName = Utils.decryptMessageNoThrow(
+        txp.creatorName,
+        encryptingKey
+      );
 
       _.each(txp.actions, action => {
         // CopayerName encryption is optional (not available in older wallets)
-        action.copayerName = Utils.decryptMessageNoThrow(action.copayerName, encryptingKey);
+        action.copayerName = Utils.decryptMessageNoThrow(
+          action.copayerName,
+          encryptingKey
+        );
 
-        action.comment = Utils.decryptMessageNoThrow(action.comment, encryptingKey);
+        action.comment = Utils.decryptMessageNoThrow(
+          action.comment,
+          encryptingKey
+        );
         // TODO get copayerName from Credentials -> copayerId to copayerName
         // action.copayerName = null;
       });
       _.each(txp.outputs, output => {
         output.encryptedMessage = output.message;
-        output.message = Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
+        output.message =
+          Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
       });
       txp.hasUnconfirmedInputs = _.some(txp.inputs, input => {
         return input.confirmations == 0;
@@ -256,7 +276,8 @@ export class API extends EventEmitter {
     };
 
     var testHardcodedKeys = () => {
-      var words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+      var words =
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
       var xpriv = Mnemonic(words).toHDPrivateKey();
 
       if (
@@ -318,7 +339,10 @@ export class API extends EventEmitter {
   // * @param {Object} opts
   // */
   toObj() {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <toObj()>'
+    );
     return this.credentials.toObj();
   }
 
@@ -328,7 +352,10 @@ export class API extends EventEmitter {
   // * @param {Object} opts
   // */
   toString(opts) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <toString()>'
+    );
     $.checkArgument(!this.noSign, 'no Sign not supported');
     $.checkArgument(!this.password, 'password not supported');
 
@@ -363,7 +390,9 @@ export class API extends EventEmitter {
   // */
   fromString(credentials) {
     if (_.isObject(credentials)) {
-      log.warn('WARN: Please use fromObj instead of fromString when importing strings');
+      log.warn(
+        'WARN: Please use fromObj instead of fromString when importing strings'
+      );
       return this.fromObj(credentials);
     }
     let c;
@@ -393,11 +422,14 @@ export class API extends EventEmitter {
     var actualChecksum = Bitcore.crypto.Hash.sha256sha256(addrBuff)
       .toString('hex')
       .substring(0, 8);
-    var expectedChecksum = Bitcore.encoding.Base58Check.decode(encryptedPrivateKeyBase58)
+    var expectedChecksum = Bitcore.encoding.Base58Check.decode(
+      encryptedPrivateKeyBase58
+    )
       .toString('hex')
       .substring(6, 14);
 
-    if (actualChecksum != expectedChecksum) return cb(new Error('Incorrect passphrase'));
+    if (actualChecksum != expectedChecksum)
+      return cb(new Error('Incorrect passphrase'));
 
     return cb(null, privateKeyWif);
   }
@@ -429,9 +461,11 @@ export class API extends EventEmitter {
     var coin = opts.coin || 'btc';
     var signingMethod = opts.signingMethod || 'ecdsa';
 
-    if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
+    if (!_.includes(Constants.COINS, coin))
+      return cb(new Error('Invalid coin'));
 
-    if (coin == 'eth') return cb(new Error('ETH not supported for this action'));
+    if (coin == 'eth')
+      return cb(new Error('ETH not supported for this action'));
 
     var B = Bitcore_[coin];
     var privateKey = B.PrivateKey(privateKey);
@@ -450,7 +484,8 @@ export class API extends EventEmitter {
           );
         },
         (utxos, next) => {
-          if (!_.isArray(utxos) || utxos.length == 0) return next(new Error('No utxos found'));
+          if (!_.isArray(utxos) || utxos.length == 0)
+            return next(new Error('No utxos found'));
 
           var fee = opts.fee || 10000;
           var amount = _.sumBy(utxos, 'satoshis') - fee;
@@ -491,8 +526,12 @@ export class API extends EventEmitter {
     }
     opts = opts || {};
 
-    $.checkState(this.credentials);
-    if (this.credentials.isComplete() && this.credentials.hasWalletInfo()) return cb(null, true);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <openWallet()>'
+    );
+    if (this.credentials.isComplete() && this.credentials.hasWalletInfo())
+      return cb(null, true);
 
     var qs = [];
     qs.push('includeExtendedInfo=1');
@@ -512,7 +551,14 @@ export class API extends EventEmitter {
         if (!me) return cb(new Error('Copayer not in wallet'));
 
         try {
-          this.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name, opts);
+          this.credentials.addWalletInfo(
+            wallet.id,
+            wallet.name,
+            wallet.m,
+            wallet.n,
+            me.name,
+            opts
+          );
         } catch (e) {
           if (e.message) {
             log.info('Trying credentials...', e.message);
@@ -534,7 +580,9 @@ export class API extends EventEmitter {
         log.warn('Could not verify copayers key (missing wallet Private Key)');
       }
 
-      this.credentials.addPublicKeyRing(this._extractPublicKeyRing(wallet.copayers));
+      this.credentials.addPublicKeyRing(
+        this._extractPublicKeyRing(wallet.copayers)
+      );
       this.emit('walletCompleted', wallet);
 
       return cb(null, ret);
@@ -547,7 +595,12 @@ export class API extends EventEmitter {
     }
     var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
-    return _.padEnd(widBase58, 22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L') + coin;
+    return (
+      _.padEnd(widBase58, 22, '0') +
+      walletPrivKey.toWIF() +
+      (network == 'testnet' ? 'T' : 'L') +
+      coin
+    );
   }
 
   static parseSecret(secret) {
@@ -604,10 +657,17 @@ export class API extends EventEmitter {
   }
 
   _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
-    $.checkState(txp.coin);
-    $.checkState(txp.signingMethod);
+    $.checkState(
+      txp.coin,
+      'Failed state: txp.coin undefined at _addSignaturesToBitcoreTxBitcoin'
+    );
+    $.checkState(
+      txp.signingMethod,
+      'Failed state: txp.signingMethod undefined at _addSignaturesToBitcoreTxBitcoin'
+    );
     const bitcore = Bitcore_[txp.coin];
-    if (signatures.length != txp.inputs.length) throw new Error('Number of signatures does not match number of inputs');
+    if (signatures.length != txp.inputs.length)
+      throw new Error('Number of signatures does not match number of inputs');
 
     let i = 0;
     const x = new bitcore.HDPublicKey(xpub);
@@ -621,7 +681,8 @@ export class API extends EventEmitter {
           signature,
           sigtype:
             // tslint:disable-next-line:no-bitwise
-            bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
+            bitcore.crypto.Signature.SIGHASH_ALL |
+            bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
         t.inputs[i].addSignature(t, s, txp.signingMethod);
@@ -660,7 +721,10 @@ export class API extends EventEmitter {
   }
 
   _applyAllSignatures(txp, t) {
-    $.checkState(txp.status == 'accepted');
+    $.checkState(
+      txp.status == 'accepted',
+      'Failed state: txp.status at _applyAllSignatures'
+    );
 
     var sigs = this._getCurrentSignatures(txp);
     _.each(sigs, x => {
@@ -682,7 +746,15 @@ export class API extends EventEmitter {
   // * @param {String} opts.coin
   // * @param {Callback} cb
   // */
-  _doJoinWallet(walletId, walletPrivKey, xPubKey, requestPubKey, copayerName, opts, cb) {
+  _doJoinWallet(
+    walletId,
+    walletPrivKey,
+    xPubKey,
+    requestPubKey,
+    copayerName,
+    opts,
+    cb
+  ) {
     $.shouldBeFunction(cb);
 
     opts = opts || {};
@@ -690,8 +762,14 @@ export class API extends EventEmitter {
     // Adds encrypted walletPrivateKey to CustomData
     opts.customData = opts.customData || {};
     opts.customData.walletPrivKey = walletPrivKey.toString();
-    var encCustomData = Utils.encryptMessage(JSON.stringify(opts.customData), this.credentials.personalEncryptingKey);
-    var encCopayerName = Utils.encryptMessage(copayerName, this.credentials.sharedEncryptingKey);
+    var encCustomData = Utils.encryptMessage(
+      JSON.stringify(opts.customData),
+      this.credentials.personalEncryptingKey
+    );
+    var encCopayerName = Utils.encryptMessage(
+      copayerName,
+      this.credentials.sharedEncryptingKey
+    );
 
     var args: any = {
       walletId,
@@ -703,9 +781,14 @@ export class API extends EventEmitter {
     };
     if (opts.dryRun) args.dryRun = true;
 
-    if (_.isBoolean(opts.supportBIP44AndP2PKH)) args.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
+    if (_.isBoolean(opts.supportBIP44AndP2PKH))
+      args.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
-    var hash = Utils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
+    var hash = Utils.getCopayerHash(
+      args.name,
+      args.xPubKey,
+      args.requestPubKey
+    );
     args.copayerSignature = Utils.signMessage(hash, walletPrivKey);
 
     var url = '/v2/wallets/' + walletId + '/copayers';
@@ -746,7 +829,10 @@ export class API extends EventEmitter {
     const chain = Utils.getChain(coin).toLowerCase();
 
     this.request.get(
-      '/v2/feelevels/?coin=' + (chain || 'btc') + '&network=' + (network || 'livenet'),
+      '/v2/feelevels/?coin=' +
+        (chain || 'btc') +
+        '&network=' +
+        (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -789,16 +875,19 @@ export class API extends EventEmitter {
   // * @return {undefined}
   // */
   createWallet(walletName, copayerName, m, n, opts, cb) {
-    if (!this._checkKeyDerivation()) return cb(new Error('Cannot create new wallet'));
+    if (!this._checkKeyDerivation())
+      return cb(new Error('Cannot create new wallet'));
 
     if (opts) $.shouldBeObject(opts);
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
+    if (!_.includes(Constants.COINS, coin))
+      return cb(new Error('Invalid coin'));
 
     var network = opts.network || 'livenet';
-    if (!_.includes(['testnet', 'livenet'], network)) return cb(new Error('Invalid network'));
+    if (!_.includes(['testnet', 'livenet'], network))
+      return cb(new Error('Invalid network'));
 
     if (!this.credentials) {
       return cb(new Error('Import credentials first with setCredentials()'));
@@ -809,7 +898,9 @@ export class API extends EventEmitter {
     }
 
     if (network != this.credentials.network) {
-      return cb(new Error('Existing keys were created for a different network'));
+      return cb(
+        new Error('Existing keys were created for a different network')
+      );
     }
 
     var walletPrivKey = opts.walletPrivKey || new Bitcore.PrivateKey();
@@ -834,8 +925,15 @@ export class API extends EventEmitter {
       if (err) return cb(err);
 
       var walletId = res.walletId;
-      c.addWalletInfo(walletId, walletName, m, n, copayerName, { useNativeSegwit: opts.useNativeSegwit });
-      var secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+      c.addWalletInfo(walletId, walletName, m, n, copayerName, {
+        useNativeSegwit: opts.useNativeSegwit
+      });
+      var secret = API._buildSecret(
+        c.walletId,
+        c.walletPrivKey,
+        c.coin,
+        c.network
+      );
 
       this._doJoinWallet(
         walletId,
@@ -877,7 +975,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
+    if (!_.includes(Constants.COINS, coin))
+      return cb(new Error('Invalid coin'));
 
     try {
       var secretData = API.parseSecret(secret);
@@ -903,10 +1002,18 @@ export class API extends EventEmitter {
       (err, wallet) => {
         if (err) return cb(err);
         if (!opts.dryRun) {
-          this.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName, {
-            useNativeSegwit: wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
-            allowOverwrite: true
-          });
+          this.credentials.addWalletInfo(
+            wallet.id,
+            wallet.name,
+            wallet.m,
+            wallet.n,
+            copayerName,
+            {
+              useNativeSegwit:
+                wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
+              allowOverwrite: true
+            }
+          );
         }
         return cb(null, wallet);
       }
@@ -919,7 +1026,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns the wallet
   // */
   recreateWallet(cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <recreateWallet()>'
+    );
     $.checkState(this.credentials.isComplete());
     $.checkState(this.credentials.walletPrivKey);
     // $.checkState(this.credentials.hasWalletInfo());
@@ -939,8 +1049,12 @@ export class API extends EventEmitter {
         var c = this.credentials;
         var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
         var walletId = c.walletId;
-        var supportBIP44AndP2PKH = c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
-        var encWalletName = Utils.encryptMessage(c.walletName || 'recovered wallet', c.sharedEncryptingKey);
+        var supportBIP44AndP2PKH =
+          c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
+        var encWalletName = Utils.encryptMessage(
+          c.walletName || 'recovered wallet',
+          c.sharedEncryptingKey
+        );
         var coin = c.coin;
 
         var args = {
@@ -982,7 +1096,8 @@ export class API extends EventEmitter {
                 },
                 err => {
                   // Ignore error is copayer already in wallet
-                  if (err && err instanceof Errors.COPAYER_IN_WALLET) return next();
+                  if (err && err instanceof Errors.COPAYER_IN_WALLET)
+                    return next();
                   return next(err);
                 }
               );
@@ -1032,7 +1147,12 @@ export class API extends EventEmitter {
 
       var customData;
       try {
-        customData = JSON.parse(Utils.decryptMessage(me.customData, this.credentials.personalEncryptingKey));
+        customData = JSON.parse(
+          Utils.decryptMessage(
+            me.customData,
+            this.credentials.personalEncryptingKey
+          )
+        );
       } catch (e) {
         log.warn('Could not decrypt customData:', me.customData);
       }
@@ -1061,7 +1181,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns error or an array of notifications
   // */
   getNotifications(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <getNotifications()>'
+    );
 
     opts = opts || {};
 
@@ -1076,7 +1199,10 @@ export class API extends EventEmitter {
       if (err) return cb(err);
 
       var notifications = _.filter(result, notification => {
-        return opts.includeOwn || notification.creatorId != this.credentials.copayerId;
+        return (
+          opts.includeOwn ||
+          notification.creatorId != this.credentials.copayerId
+        );
       });
 
       return cb(null, notifications);
@@ -1093,7 +1219,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns error or an object with status information
   // */
   getStatus(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <getStatus()>'
+    );
 
     if (!cb) {
       cb = opts;
@@ -1121,7 +1250,12 @@ export class API extends EventEmitter {
       if (err) return cb(err);
       if (result.wallet.status == 'pending') {
         var c = this.credentials;
-        result.wallet.secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+        result.wallet.secret = API._buildSecret(
+          c.walletId,
+          c.walletPrivKey,
+          c.coin,
+          c.network
+        );
       }
 
       this._processStatus(result);
@@ -1137,7 +1271,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   getPreferences(cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <getPreferences()>'
+    );
     $.checkArgument(cb);
 
     this.request.get('/v1/preferences/', (err, preferences) => {
@@ -1154,7 +1291,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   savePreferences(preferences, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <savePreferences()>'
+    );
     $.checkArgument(cb);
 
     this.request.put('/v1/preferences/', preferences, cb);
@@ -1199,7 +1339,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or the list of utxos
   // */
   getUtxos(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getUtxos()>'
+    );
     opts = opts || {};
     var url = '/v1/utxos/';
     if (opts.addresses) {
@@ -1222,7 +1365,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or the list of coins
   // */
   getCoinsForTx(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getCoinsForTx()>'
+    );
     opts = opts || {};
     var url = '/v1/txcoins/';
     url +=
@@ -1237,10 +1383,14 @@ export class API extends EventEmitter {
 
   _getCreateTxProposalArgs(opts) {
     var args = _.cloneDeep(opts);
-    args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
+    args.message =
+      API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) ||
+      null;
     args.payProUrl = opts.payProUrl || null;
     _.each(args.outputs, o => {
-      o.message = API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) || null;
+      o.message =
+        API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) ||
+        null;
     });
 
     return args;
@@ -1272,7 +1422,10 @@ export class API extends EventEmitter {
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
   createTxProposal(opts, cb, baseUrl) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <createTxProposal()>'
+    );
     $.checkState(this.credentials.sharedEncryptingKey);
     $.checkArgument(opts);
 
@@ -1289,7 +1442,13 @@ export class API extends EventEmitter {
       if (err) return cb(err);
 
       this._processTxps(txp);
-      if (!Verifier.checkProposalCreation(args, txp, this.credentials.sharedEncryptingKey)) {
+      if (
+        !Verifier.checkProposalCreation(
+          args,
+          txp,
+          this.credentials.sharedEncryptingKey
+        )
+      ) {
         return cb(new Errors.SERVER_COMPROMISED());
       }
 
@@ -1305,7 +1464,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or null
   // */
   publishTxProposal(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <publishTxProposal()>'
+    );
     $.checkArgument(opts).checkArgument(opts.txp);
 
     $.checkState(parseInt(opts.txp.version) >= 3);
@@ -1313,7 +1475,10 @@ export class API extends EventEmitter {
     var t = Utils.buildTx(opts.txp);
     var hash = t.uncheckedSerialize();
     var args = {
-      proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
+      proposalSignature: Utils.signMessage(
+        hash,
+        this.credentials.requestPrivKey
+      )
     };
 
     var url = '/v2/txproposals/' + opts.txp.id + '/publish/';
@@ -1333,7 +1498,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or the address
   // */
   createAddress(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <createAddress()>'
+    );
 
     if (!cb) {
       cb = opts;
@@ -1341,7 +1509,8 @@ export class API extends EventEmitter {
       log.warn('DEPRECATED WARN: createAddress should receive 2 parameters.');
     }
 
-    if (!this._checkKeyDerivation()) return cb(new Error('Cannot create new address for this wallet'));
+    if (!this._checkKeyDerivation())
+      return cb(new Error('Cannot create new address for this wallet'));
 
     opts = opts || {};
 
@@ -1410,11 +1579,15 @@ export class API extends EventEmitter {
 
     opts = opts || {};
 
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getBalance()>'
+    );
 
     var args = [];
     if (opts.coin) {
-      if (!_.includes(Constants.COINS, opts.coin)) return cb(new Error('Invalid coin'));
+      if (!_.includes(Constants.COINS, opts.coin))
+        return cb(new Error('Invalid coin'));
       args.push('coin=' + opts.coin);
     }
     if (opts.tokenAddress) {
@@ -1442,7 +1615,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or array of transactions proposals
   // */
   getTxProposals(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getTxProposals()>'
+    );
 
     this.request.get('/v2/txproposals/', (err, txps) => {
       if (err) return cb(err);
@@ -1476,7 +1652,9 @@ export class API extends EventEmitter {
                     JSON.stringify(this.credentials.publicKeyRing),
                     this.credentials.personalEncryptingKey
                   ),
-              unencryptedPkr: opts.doNotEncryptPkr ? JSON.stringify(this.credentials.publicKeyRing) : null,
+              unencryptedPkr: opts.doNotEncryptPkr
+                ? JSON.stringify(this.credentials.publicKeyRing)
+                : null,
               m: this.credentials.m,
               n: this.credentials.n
             };
@@ -1503,7 +1681,12 @@ export class API extends EventEmitter {
         request: this.request
       },
       (err, paypro) => {
-        if (err) return cb(new Error('Could not fetch invoice:' + (err.message ? err.message : err)));
+        if (err)
+          return cb(
+            new Error(
+              'Could not fetch invoice:' + (err.message ? err.message : err)
+            )
+          );
         return cb(null, paypro);
       }
     );
@@ -1536,7 +1719,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   pushSignatures(txp, signatures, cb, base) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <pushSignatures()>'
+    );
     $.checkArgument(txp.creatorId);
 
     if (_.isEmpty(signatures)) {
@@ -1695,7 +1881,9 @@ export class API extends EventEmitter {
   // * @return {Object} txp - Return transaction
   // */
   signTxProposalFromAirGapped(txp, encryptedPkr, m, n, password) {
-    throw new Error('signTxProposalFromAirGapped not yet implemented in v9.0.0');
+    throw new Error(
+      'signTxProposalFromAirGapped not yet implemented in v9.0.0'
+    );
     // $.checkState(this.credentials);
 
     // if (!this.canSign())
@@ -1745,7 +1933,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
+    if (!_.includes(Constants.COINS, coin))
+      return cb(new Error('Invalid coin'));
 
     var publicKeyRing = JSON.parse(unencryptedPkr);
 
@@ -1782,7 +1971,8 @@ export class API extends EventEmitter {
     newClient.credentials.addressType = txp.addressType;
     newClient.credentials.addPublicKeyRing(publicKeyRing);
 
-    if (!Verifier.checkTxProposalSignature(newClient.credentials, txp)) throw new Error('Fake transaction proposal');
+    if (!Verifier.checkTxProposalSignature(newClient.credentials, txp))
+      throw new Error('Fake transaction proposal');
 
     return newClient._signTxp(txp);
   }
@@ -1796,12 +1986,16 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   rejectTxProposal(txp, reason, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <rejectTxProposal()>'
+    );
     $.checkArgument(cb);
 
     var url = '/v1/txproposals/' + txp.id + '/rejections/';
     var args = {
-      reason: API._encryptMessage(reason, this.credentials.sharedEncryptingKey) || ''
+      reason:
+        API._encryptMessage(reason, this.credentials.sharedEncryptingKey) || ''
     };
     this.request.post(url, args, (err, txp) => {
       if (err) return cb(err);
@@ -1820,7 +2014,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or txid
   // */
   broadcastRawTx(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <broadcastRawTx()>'
+    );
     $.checkArgument(cb);
 
     opts = opts || {};
@@ -1849,7 +2046,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   broadcastTxProposal(txp, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <broadcastTxProposal()>'
+    );
 
     this.getPayProV2(txp)
       .then(paypro => {
@@ -1871,12 +2071,16 @@ export class API extends EventEmitter {
           const signedTransactions = [];
 
           // Convert string to array if string
-          const unserializedTxs = typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
-          const serializedTxs = typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
+          const unserializedTxs =
+            typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
+          const serializedTxs =
+            typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
 
           let i = 0;
 
-          let isBtcSegwit = txp.coin == 'btc' && (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
+          let isBtcSegwit =
+            txp.coin == 'btc' &&
+            (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
           for (const unsigned of unserializedTxs) {
             let size = serializedTxs[i++].length / 2;
             if (isBtcSegwit) {
@@ -1941,7 +2145,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or empty
   // */
   removeTxProposal(txp, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <removeTxProposal()>'
+    );
 
     var url = '/v1/txproposals/' + txp.id;
     this.request.delete(url, err => {
@@ -1962,14 +2169,18 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or array of transactions
   // */
   getTxHistory(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getTxHistory()>'
+    );
 
     var args = [];
     if (opts) {
       if (opts.skip) args.push('skip=' + opts.skip);
       if (opts.limit) args.push('limit=' + opts.limit);
       if (opts.tokenAddress) args.push('tokenAddress=' + opts.tokenAddress);
-      if (opts.multisigContractAddress) args.push('multisigContractAddress=' + opts.multisigContractAddress);
+      if (opts.multisigContractAddress)
+        args.push('multisigContractAddress=' + opts.multisigContractAddress);
       if (opts.includeExtendedInfo) args.push('includeExtendedInfo=1');
     }
     var qs = '';
@@ -1992,7 +2203,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or transaction
   // */
   getTx(id, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getTx()>'
+    );
 
     var url = '/v1/txproposals/' + id;
     this.request.get(url, (err, txp) => {
@@ -2012,7 +2226,10 @@ export class API extends EventEmitter {
   // * @param {Callback} cb
   // */
   startScan(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <startScan()>'
+    );
 
     var args = {
       includeCopayerBranches: opts.includeCopayerBranches
@@ -2036,14 +2253,27 @@ export class API extends EventEmitter {
   // * return the accesses Wallet and the requestPrivateKey
   // */
   addAccess(opts, cb) {
-    $.checkState(this.credentials);
-    $.shouldBeString(opts.requestPrivKey, 'no requestPrivKey at addAccess() ');
-    $.shouldBeString(opts.signature, 'no signature at addAccess()');
+    $.checkState(
+      this.credentials,
+      'Failed state: no this.credentials at <addAccess()>'
+    );
+    $.shouldBeString(
+      opts.requestPrivKey,
+      'Failed state: no requestPrivKey at addAccess() '
+    );
+    $.shouldBeString(
+      opts.signature,
+      'Failed state: no signature at addAccess()'
+    );
 
     opts = opts || {};
-    var requestPubKey = new Bitcore.PrivateKey(opts.requestPrivKey).toPublicKey().toString();
+    var requestPubKey = new Bitcore.PrivateKey(opts.requestPrivKey)
+      .toPublicKey()
+      .toString();
     var copayerId = this.credentials.copayerId;
-    var encCopayerName = opts.name ? Utils.encryptMessage(opts.name, this.credentials.sharedEncryptingKey) : null;
+    var encCopayerName = opts.name
+      ? Utils.encryptMessage(opts.name, this.credentials.sharedEncryptingKey)
+      : null;
 
     var opts2 = {
       copayerId,
@@ -2067,7 +2297,10 @@ export class API extends EventEmitter {
   // * @param {string} opts.txid - The txid to associate this note with
   // */
   getTxNote(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <getTxNote()>'
+    );
 
     opts = opts || {};
     this.request.get('/v1/txnotes/' + opts.txid + '/', (err, note) => {
@@ -2084,11 +2317,17 @@ export class API extends EventEmitter {
   // * @param {string} opts.body - The contents of the note
   // */
   editTxNote(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <editTxNote()>'
+    );
 
     opts = opts || {};
     if (opts.body) {
-      opts.body = API._encryptMessage(opts.body, this.credentials.sharedEncryptingKey);
+      opts.body = API._encryptMessage(
+        opts.body,
+        this.credentials.sharedEncryptingKey
+      );
     }
     this.request.put('/v1/txnotes/' + opts.txid + '/', opts, (err, note) => {
       if (err) return cb(err);
@@ -2103,7 +2342,10 @@ export class API extends EventEmitter {
   // * @param {string} opts.minTs - The starting timestamp
   // */
   getTxNotes(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <getTxNotes()>'
+    );
 
     opts = opts || {};
     var args = [];
@@ -2279,7 +2521,10 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns error or an object with status information
   // */
   getStatusByIdentifier(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(
+      this.credentials,
+      'Failed state: this.credentials at <getStatusByIdentifier()>'
+    );
 
     opts = opts || {};
 
@@ -2287,17 +2532,25 @@ export class API extends EventEmitter {
     qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
     qs.push('walletCheck=' + (opts.walletCheck ? '1' : '0'));
 
-    this.request.get('/v1/wallets/' + opts.identifier + '?' + qs.join('&'), (err, result) => {
-      if (err || !result || !result.wallet) return cb(err);
-      if (result.wallet.status == 'pending') {
-        var c = this.credentials;
-        result.wallet.secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+    this.request.get(
+      '/v1/wallets/' + opts.identifier + '?' + qs.join('&'),
+      (err, result) => {
+        if (err || !result || !result.wallet) return cb(err);
+        if (result.wallet.status == 'pending') {
+          var c = this.credentials;
+          result.wallet.secret = API._buildSecret(
+            c.walletId,
+            c.walletPrivKey,
+            c.coin,
+            c.network
+          );
+        }
+
+        this._processStatus(result);
+
+        return cb(err, result);
       }
-
-      this._processStatus(result);
-
-      return cb(err, result);
-    });
+    );
   }
 
   /*
@@ -2351,7 +2604,10 @@ export class API extends EventEmitter {
   static upgradeCredentialsV1(x) {
     $.shouldBeObject(x);
 
-    if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted && !x.xPubKey)) {
+    if (
+      !_.isUndefined(x.version) ||
+      (!x.xPrivKey && !x.xPrivKeyEncrypted && !x.xPubKey)
+    ) {
       throw new Error('Could not recognize old version');
     }
 
@@ -2427,7 +2683,7 @@ export class API extends EventEmitter {
     if (newKeys.length > 0) {
       // Find and merge dup keys.
       let credGroups = _.groupBy(newCrededentials, x => {
-        $.checkState(x.xPubKey, 'no xPubKey at credentials!');
+        $.checkState(x.xPubKey, 'Failed state: no xPubKey at credentials!');
         let xpub = new Bitcore.HDPublicKey(x.xPubKey);
         let fingerPrint = xpub.fingerPrint.toString('hex');
         return fingerPrint;
@@ -2475,7 +2731,10 @@ export class API extends EventEmitter {
   // */
 
   static serverAssistedImport(opts, clientOpts, callback) {
-    $.checkArgument(opts.words || opts.xPrivKey, 'provide opts.words or opts.xPrivKey');
+    $.checkArgument(
+      opts.words || opts.xPrivKey,
+      'provide opts.words or opts.xPrivKey'
+    );
 
     let copayerIdAlreadyTested = {};
     var checkCredentials = (key, opts, icb) => {
@@ -2493,7 +2752,9 @@ export class API extends EventEmitter {
         copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
       }
 
-      let client = clientOpts.clientFactory ? clientOpts.clientFactory() : new API(clientOpts);
+      let client = clientOpts.clientFactory
+        ? clientOpts.clientFactory()
+        : new API(clientOpts);
 
       client.fromString(c);
       client.openWallet({}, (err, status) => {
@@ -2504,9 +2765,15 @@ export class API extends EventEmitter {
 
         // Exists
         if (!err) {
-          if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
+          if (
+            opts.coin == 'btc' &&
+            (status.wallet.addressType == 'P2WPKH' ||
+              status.wallet.addressType == 'P2WSH')
+          ) {
             client.credentials.addressType =
-              status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+              status.wallet.n == 1
+                ? Constants.SCRIPT_TYPES.P2WPKH
+                : Constants.SCRIPT_TYPES.P2WSH;
           }
           let clients = [client];
           // Eth wallet with tokens?
@@ -2519,7 +2786,9 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(token);
+              const tokenCredentials = client.credentials.getTokenCredentials(
+                token
+              );
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2532,12 +2801,14 @@ export class API extends EventEmitter {
               log.info(
                 `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
               );
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials({
-                walletName: info.walletName,
-                multisigContractAddress: info.multisigContractAddress,
-                n: info.n,
-                m: info.m
-              });
+              const multisigEthCredentials = client.credentials.getMultisigEthCredentials(
+                {
+                  walletName: info.walletName,
+                  multisigContractAddress: info.multisigContractAddress,
+                  n: info.n,
+                  m: info.m
+                }
+              );
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
@@ -2550,7 +2821,9 @@ export class API extends EventEmitter {
                     return;
                   }
                   log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(token);
+                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(
+                    token
+                  );
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);
@@ -2560,7 +2833,10 @@ export class API extends EventEmitter {
           }
           return icb(null, clients);
         }
-        if (err instanceof Errors.NOT_AUTHORIZED || err instanceof Errors.WALLET_DOES_NOT_EXIST) {
+        if (
+          err instanceof Errors.NOT_AUTHORIZED ||
+          err instanceof Errors.WALLET_DOES_NOT_EXIST
+        ) {
           return icb();
         }
 
@@ -2628,7 +2904,13 @@ export class API extends EventEmitter {
             clients = clients.concat(iclients);
 
             // Accounts not allowed?
-            if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45) return next();
+            if (
+              key.use0forBCH ||
+              !key.compliantDerivation ||
+              key.use44forMultisig ||
+              key.BIP45
+            )
+              return next();
 
             // Now, lets scan all accounts for the found client
             let cont = true,
@@ -2714,7 +2996,11 @@ export class API extends EventEmitter {
 
             k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...s });
           } else {
-            k = new Key({ seedData: opts.xPrivKey, seedType: 'extendedPrivateKey', ...s });
+            k = new Key({
+              seedData: opts.xPrivKey,
+              seedType: 'extendedPrivateKey',
+              ...s
+            });
           }
         } catch (e) {
           log.info('Backup error:', e);
@@ -2752,10 +3038,14 @@ export class API extends EventEmitter {
 
   simplexPaymentRequest(data): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.request.post('/v1/service/simplex/paymentRequest', data, (err, data) => {
-        if (err) return reject(err);
-        return resolve(data);
-      });
+      this.request.post(
+        '/v1/service/simplex/paymentRequest',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
     });
   }
 
@@ -2764,28 +3054,39 @@ export class API extends EventEmitter {
       let qs = [];
       qs.push('env=' + data.env);
 
-      this.request.get('/v1/service/simplex/events/?' + qs.join('&'), (err, data) => {
-        if (err) return reject(err);
-        return resolve(data);
-      });
+      this.request.get(
+        '/v1/service/simplex/events/?' + qs.join('&'),
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
     });
   }
 
   wyreWalletOrderQuotation(data): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.request.post('/v1/service/wyre/walletOrderQuotation', data, (err, data) => {
-        if (err) return reject(err);
-        return resolve(data);
-      });
+      this.request.post(
+        '/v1/service/wyre/walletOrderQuotation',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
     });
   }
 
   wyreWalletOrderReservation(data): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.request.post('/v1/service/wyre/walletOrderReservation', data, (err, data) => {
-        if (err) return reject(err);
-        return resolve(data);
-      });
+      this.request.post(
+        '/v1/service/wyre/walletOrderReservation',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
     });
   }
 }

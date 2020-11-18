@@ -122,7 +122,7 @@ export class PushNotificationsService {
       ],
       err => {
         if (err) {
-          logger.error(err);
+          logger.error('ERROR:' + err);
         }
         return cb(err);
       }
@@ -141,7 +141,7 @@ export class PushNotificationsService {
     this._checkShouldSendNotif(notification, (err, should) => {
       if (err) return cb(err);
 
-      logger.debug('Should send notification: ', should);
+      logger.debug('Should send notification: ' + should);
       if (!should) return cb();
 
       this._getRecipientsList(notification, notifType, (err, recipientsList) => {
@@ -204,11 +204,11 @@ export class PushNotificationsService {
                 notifications,
                 (notification, next) => {
                   this._makeRequest(notification, (err, response) => {
-                    if (err) logger.error(err);
+                    if (err) logger.error('ERROR:' + err);
                     if (response) {
-                      logger.debug('Request status: ', response.statusCode);
-                      logger.debug('Request message: ', response.statusMessage);
-                      logger.debug('Request body: ', response.request.body);
+                      logger.debug('Request status:  ' + response.statusCode);
+                      logger.debug('Request message: ' + response.statusMessage);
+                      logger.debug('Request body:  ' + response.request.body);
                     }
                     next();
                   });
@@ -221,7 +221,7 @@ export class PushNotificationsService {
           ],
           err => {
             if (err) {
-              logger.error('An error ocurred generating notification', err);
+              logger.error('An error ocurred generating notification:' + err);
             }
             return cb(err);
           }
@@ -406,7 +406,7 @@ export class PushNotificationsService {
       try {
         return Mustache.render(t, data);
       } catch (e) {
-        logger.error('Could not apply data to template', e);
+        logger.error('Could not apply data to template:' + e);
         error = e;
       }
     });

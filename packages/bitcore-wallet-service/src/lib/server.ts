@@ -151,7 +151,7 @@ export class WalletService {
    * @param {Callback} cb
    */
   static initialize(opts, cb) {
-    $.shouldBeFunction(cb);
+    $.shouldBeFunction(cb, '');
 
     opts = opts || {};
     blockchainExplorer = opts.blockchainExplorer;
@@ -376,7 +376,7 @@ export class WalletService {
   }
 
   _runLocked(cb, task, waitTime?: number) {
-    $.checkState(this.walletId);
+    $.checkState(this.walletId, 'Failed state: this.walletId undefined at <_runLocked()>');
 
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
@@ -813,7 +813,7 @@ export class WalletService {
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
 
-    $.checkState(walletId);
+    $.checkState(walletId, 'Failed state: walletId undefined at <_notify()>');
 
     const notification = Notification.create({
       type,
@@ -2188,6 +2188,12 @@ export class WalletService {
 
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
+          if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+            let Err = Errors.NETWORK_SUSPENDED;
+            Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+            return cb(Err);
+          }
+
           checkTxpAlreadyExists(opts.txProposalId, (err, txp) => {
             if (err) return cb(err);
             if (txp) return cb(null, txp);
@@ -2312,10 +2318,9 @@ export class WalletService {
                 next => {
                   if (opts.dryRun) return next();
 
-                  if (txp.coin == 'bch') {
-                    if (opts.noCashAddr && txp.changeAddress) {
-                      txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, 'copay');
-                    }
+                  if (txp.coin == 'bch' && txp.changeAddress) {
+                    const format = opts.noCashAddr ? 'copay' : 'cashaddr';
+                    txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
                   }
 
                   this.storage.storeTx(wallet.id, txp, next);
@@ -2354,6 +2359,12 @@ export class WalletService {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
 
+        if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+          let Err = Errors.NETWORK_SUSPENDED;
+          Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+          return cb(Err);
+        }
+
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
@@ -2386,10 +2397,9 @@ export class WalletService {
               if (err) return cb(err);
 
               this._notifyTxProposalAction('NewTxProposal', txp, () => {
-                if (opts.noCashAddr && txp.coin == 'bch') {
-                  if (txp.changeAddress) {
-                    txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, 'copay');
-                  }
+                if (txp.coin == 'bch' && txp.changeAddress) {
+                  const format = opts.noCashAddr ? 'copay' : 'cashaddr';
+                  txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
                 }
                 return cb(null, txp);
               });
@@ -2587,6 +2597,12 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        let Err = Errors.NETWORK_SUSPENDED;
+        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        return cb(Err);
+      }
+
       this.getTx(
         {
           txProposalId: opts.txProposalId
@@ -2662,7 +2678,7 @@ export class WalletService {
   }
 
   _processBroadcast(txp, opts, cb) {
-    $.checkState(txp.txid);
+    $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processBroadcast()>');
     opts = opts || {};
 
     txp.setBroadcasted();
@@ -2692,6 +2708,12 @@ export class WalletService {
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
+
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        let Err = Errors.NETWORK_SUSPENDED;
+        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        return cb(Err);
+      }
 
       this.getTx(
         {
@@ -2869,19 +2891,19 @@ export class WalletService {
               return txp.status == 'broadcasted';
             });
 
-            if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
+            if (txps[0] && txps[0].coin == 'bch') {
+              const format = opts.noCashAddr ? 'copay' : 'cashaddr';
               _.each(txps, x => {
                 if (x.changeAddress) {
-                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, 'copay');
+                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, format);
                 }
                 _.each(x.outputs, x => {
                   if (x.toAddress) {
-                    x.toAddress = BCHAddressTranslator.translate(x.toAddress, 'copay');
+                    x.toAddress = BCHAddressTranslator.translate(x.toAddress, format);
                   }
                 });
               });
             }
-
             return cb(err, txps);
           }
         );

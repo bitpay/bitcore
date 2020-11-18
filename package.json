@@ -1,11 +1,11 @@
 {
-  "version": "8.22.2",
+  "version": "8.23.1",
   "prettier": {
     "singleQuote": true,
     "printWidth": 120
   },
   "scripts": {
-    "build": "docker build -t bitcore-node .",
+    "build": "docker build -t bitcore-node . ",
     "watch": "./node_modules/.bin/lerna run watch --parallel",
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
