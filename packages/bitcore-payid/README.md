@@ -13,9 +13,11 @@ This is a library to assist [PayId](https://payid.org/) integration with Bitcore
 import Bitcore from 'bitcore-lib';
 import PayId from 'bitcore-payid';
 
+// ...
+
 const privKey = new Bitcore.HDPrivateKey(); // or Bitcore.PrivateKey() for a non-hierarchically derived private key
 
-const signed = PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKey.toString());
+const signed = await PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKey.toString());
 ```
 
 * Node crypto key
@@ -23,10 +25,12 @@ const signed = PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKe
 import crypto from 'crypto';
 import PayId from 'bitcore-payid';
 
+// ...
+
 const keys = crypto.generateKeyPair('ec'); // could be 'rsa' too
 const privKey = keys.privateKey.export({ format: 'pem', type: 'pkcs8' });
 
-const signed = PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKey);
+const signed = await PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKey);
 ```
 
 * From file
@@ -35,9 +39,11 @@ const signed = PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKe
 import fs from 'fs';
 import PayId from 'bitcore-payid';
 
+// ...
+
 const privKey = fs.readFileSync('/path/to/private/key');
 
-const signed = PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKey);
+const signed = await PayId.sign('alex$example.com', 'bitcoinaddress123', 'BTC', privKey);
 ```
 
 It is recommended to store the signed.signatures' `signatures` and `protected` properties. `protected` can be thought of as the public key to verify the signature because it contains the ingredients to build the public key as a JWK, but you could also discard the `protected` property if you intend to rebuild it at verification time.
@@ -52,6 +58,6 @@ import PayId from 'PayId';
 
 // ...
 
-const isValid = PayId.verify('alice$example.com', verifiableAddress);
+const isValid = await PayId.verify('alice$example.com', verifiableAddress);
 ```
 

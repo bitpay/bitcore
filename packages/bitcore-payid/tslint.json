@@ -56,7 +56,8 @@
     "array-type": false,
     "eofline": false,
     "new-parens": false,
-    "object-literal-key-quotes": false
+    "object-literal-key-quotes": false,
+    "no-bitwise": false
   },
   "rulesDirectory": []
 }
