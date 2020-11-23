@@ -394,8 +394,8 @@ const BALANCE_DFLT = {
 
 let balance;
 
-blockchainExplorerMock.setBalance = (balance) => {
-  balance = BALANCE_DFLT;; 
+blockchainExplorerMock.setBalance = (balance_in) => {
+  balance = balance_in;
 };
 
 blockchainExplorerMock.getBalance = (nbBlocks, cb) => {
@@ -5580,14 +5580,14 @@ describe('client API', function() {
     });
 
 
-    describe.skip("BitInt", () => {
+    describe.only("BitInt", () => {
       it('Send and broadcast in 1-1 wallet ETH', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, w => {
           clients[0].createAddress((err, x0) => {
             should.not.exist(err,err);
             //should.exist(x0.address);
             blockchainExplorerMock.setBalance({
-              confirmed:  9123456789012345678901234567890,
+              confirmed:  9123456789012345678901234567890n,
               unconfirmed: 0,
             });
             var opts = {
