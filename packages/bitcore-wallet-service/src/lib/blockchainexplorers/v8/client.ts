@@ -25,7 +25,7 @@ export class Client {
     const privateKey = this.authKey.bn.toBuffer({ size: 32 });
     const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
 
-    return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
+    return secp256k1.ecdsaSign(messageHash, privateKey).signature.toString();
   }
 
   async register(params) {

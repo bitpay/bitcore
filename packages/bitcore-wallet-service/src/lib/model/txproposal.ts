@@ -29,7 +29,7 @@ export interface ITxProposal {
   changeAddress: string;
   inputs: any[];
   outputs: Array<{
-    amount: number;
+    amount: BigInt;
     address: string;
     toAddress?: string;
     message?: string;
@@ -49,7 +49,7 @@ export interface ITxProposal {
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
   customData: any;
-  amount: string;
+  amount: BigInt;
   fee: number;
   version: number;
   broadcastedOn: number;
@@ -86,7 +86,7 @@ export class TxProposal {
   changeAddress: any;
   inputs: any[];
   outputs: Array<{
-    amount: number;
+    amount: BigInt;
     address?: string;
     toAddress?: string;
     message?: string;
@@ -107,7 +107,7 @@ export class TxProposal {
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
   customData: any;
-  amount: string | number;
+  amount: BigInt;
   fee: number;
   version: number;
   broadcastedOn: number;

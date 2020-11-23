@@ -359,10 +359,10 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     amounts = _.isArray(amounts) ? amounts : [amounts];
     blockchainExplorer.getBalance = function(opts, cb) {
       if (opts.tokenAddress) {
-        return cb(null, {unconfirmed:0, confirmed: 2e6, balance: 2e6 });
+        return cb(null, {unconfirmed:0n, confirmed: BigInt(2e6), balance: BitInt(2e6) });
       }
-      let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
-      return cb(null, {unconfirmed:0, confirmed: conf, balance: conf });
+      let conf =  _.sum(_.map(amounts, x =>  x*BigInt(1e18)));
+      return cb(null, {unconfirmed:0n, confirmed: conf, balance: conf });
     }
     blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
     return cb();
@@ -370,16 +370,16 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
   if (wallet.coin == 'eth') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
-    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
+    let conf =  _.sum(_.map(amounts, x =>  x*BigInt(1e18)));
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0n, confirmed: BigInt(conf), balance: BigInt(conf) });
     return cb();
   }
 
   if (wallet.coin == 'xrp') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e6).toFixed(0))));
+    let conf =  _.sum(_.map(amounts, x =>  x*BigInt(1e6)));
     conf =  conf + Defaults.MIN_XRP_BALANCE;
-    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0n,confirmed:  BigInt(conf), balance: BigInt(conf) });
     return cb();
   }
 

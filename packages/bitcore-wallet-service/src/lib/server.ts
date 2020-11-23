@@ -2005,6 +2005,13 @@ export class WalletService {
             }
           );
         },
+        // Transforms all amounts to bigint.
+        next => {
+          opts.outputs.forEach((x) => {
+            x.amount = BigInt(x.amount);
+          });
+          next();
+        },
         next => {
           if (opts.validateOutputs === false) return next();
           const validationError = this._validateOutputs(opts, wallet, next);
@@ -3019,7 +3026,7 @@ export class WalletService {
       if (tx.category == 'move' && !indexedSend[tx.txid]) {
         const output = {
           address: tx.address,
-          amount: Math.abs(tx.satoshis)
+          amount: BigInt(Math.abs(tx.satoshis))
         };
 
         if (moves[tx.txid]) {

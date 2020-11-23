@@ -37,7 +37,12 @@ export class EthChain implements IChain {
    * @returns {Object} balance - Total amount & locked amount.
    */
   private convertBitcoreBalance(bitcoreBalance, locked) {
-    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+      let { unconfirmed, confirmed, balance } = bitcoreBalance;
+
+    // Be sure to convert balance to BigInt;
+      unconfirmed = BigInt(unconfirmed);
+      confirmed = BigInt(confirmed);
+      balance = BigInt(balance);
     // we ASUME all locked as confirmed, for ETH.
     const convertedBalance = {
       totalAmount: balance,
@@ -78,7 +83,7 @@ export class EthChain implements IChain {
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
         // Do not lock eth multisig amount
-        const lockedSum = opts.multisigContractAddress ? 0 : _.sumBy(txps, 'amount') || 0;
+        const lockedSum = opts.multisigContractAddress ? BigInt(0) : _.sumBy(txps, 'amount') || BigInt(0);
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
@@ -92,6 +97,7 @@ export class EthChain implements IChain {
             ];
             convertedBalance.byAddress = byAddress;
           }
+
           return cb(null, convertedBalance);
         });
       });
@@ -178,7 +184,7 @@ export class EthChain implements IChain {
     const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
     const recipients = outputs.map(output => {
       return {
-        amount: output.amount,
+        amount: output.amount.toString(10),  // CWC accepts STRINGs in amount
         address: output.toAddress,
         data: output.data,
         gasLimit: output.gasLimit
@@ -333,7 +339,7 @@ export class EthChain implements IChain {
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
-    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
+    if (!(typeof output.amount === 'bigint') || output.amount < 0){
       return false;
     }
     return true;

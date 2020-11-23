@@ -3902,7 +3902,7 @@ describe('Wallet service', function() {
           it.only('should create a Big amount tx', function(done) {
             let old = blockchainExplorer.getTransactionCount;
             blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
-            helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+            helpers.stubUtxos(server, wallet, [123456789012345678901234567890n], { coin }, function() {
               let amount = 123456789012345678901234567890n; 
               var txOpts = {
                 outputs: [{
@@ -3920,28 +3920,18 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err,err);
                 should.exist(tx);
-                tx.walletM.should.equal(1);
-                tx.walletN.should.equal(1);
-                tx.requiredRejections.should.equal(1);
-                tx.requiredSignatures.should.equal(1);
-                tx.isAccepted().should.equal.false;
-                tx.isRejected().should.equal.false;
-                tx.isPending().should.equal.true;
-                tx.isTemporary().should.equal.true;
-                tx.amount.should.equal(8000);
+                tx.amount.toString().should.equal(amount.toString());
                 tx.feePerKb.should.equal(123e2);
                 tx.outputs[0].toAddress.should.equal(addressStr);
-                tx.outputs[0].amount.should.equal(amount);
+                tx.outputs[0].amount.toString().should.equal(amount.toString());
+                tx.gasPrice.should.equal(12300);
+                tx.nonce.should.equal('5');
 
-                if(coin == 'eth') {
-                  tx.gasPrice.should.equal(12300);
-                  tx.nonce.should.equal('5');
-                  tx.outputs.should.deep.equal([{
-                    toAddress: addressStr,
-                    gasLimit: 21000,
-                    amount: amount,
-                  }]);
-                }
+                tx.outputs.should.deep.equal([{
+                  toAddress: addressStr,
+                  gasLimit: 21000,
+                  amount: amount,
+                }]);
 
                 should.not.exist(tx.feeLevel);
                 server.getPendingTxs({}, function(err, txs) {
@@ -3953,7 +3943,6 @@ describe('Wallet service', function() {
               });
             });
           });
-
         }
 
 
