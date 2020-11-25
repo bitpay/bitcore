@@ -154,8 +154,8 @@ export class V8 {
       x => {
         const u = {
           address: x.address,
-          satoshis: x.value,
-          amount: x.value / 1e8,
+          satoshis: BigInt(x.value),  // in Sats  
+          amount: x.value / 1e8,      // In BTC
           scriptPubKey: x.script,
           txid: x.mintTxid,
           vout: x.mintIndex,
@@ -333,6 +333,8 @@ export class V8 {
         }
         // v8 field name differences
         if (tx.value) tx.amount = tx.satoshis / 1e8;
+
+        tx.satoshis = BigInt(tx.satoshis);
 
         if (tx.height >= 0) txs.push(tx);
         else unconf.push(tx);

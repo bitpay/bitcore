@@ -40,7 +40,7 @@ export class BtcChain implements IChain {
           byAddress[key] = {
             address: key,
             path: value.path,
-            amount: 0
+            amount: BigInt(0),
           };
         });
 
@@ -63,14 +63,14 @@ export class BtcChain implements IChain {
 
       const info = {
         size: 0,
-        amount: 0,
+        amount: BigInt(0),
         fee: 0,
         feePerKb: 0,
         inputs: [],
         utxosBelowFee: 0,
-        amountBelowFee: 0,
+        amountBelowFee:  BigInt(0),
         utxosAboveMaxSize: 0,
-        amountAboveMaxSize: 0
+        amountAboveMaxSize: BigInt(0),
       };
 
       let inputs = _.reject(utxos, 'locked');
@@ -106,14 +106,14 @@ export class BtcChain implements IChain {
         });
 
         info.utxosBelowFee = partitionedByAmount[1].length;
-        info.amountBelowFee = _.sumBy(partitionedByAmount[1], 'satoshis');
+        info.amountBelowFee = Utils.sumByB(partitionedByAmount[1], 'satoshis');
         inputs = partitionedByAmount[0];
 
         _.each(inputs, (input, i) => {
           const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
           if (sizeInKb > MAX_TX_SIZE_IN_KB) {
             info.utxosAboveMaxSize = inputs.length - i;
-            info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
+            info.amountAboveMaxSize = Utils.sumByB(_.slice(inputs, i), 'satoshis');
             return false;
           }
           txp.inputs.push(input);
@@ -122,7 +122,7 @@ export class BtcChain implements IChain {
         if (_.isEmpty(txp.inputs)) return cb(null, info);
 
         const fee = this.getEstimatedFee(txp);
-        const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
+        const amount =BigInt( _.sumBy(txp.inputs, 'satoshis') - fee );
 
         if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
@@ -140,7 +140,7 @@ export class BtcChain implements IChain {
   }
 
   getDustAmountValue() {
-    return this.bitcoreLib.Transaction.DUST_AMOUNT;
+    return BigInt(this.bitcoreLib.Transaction.DUST_AMOUNT);
   }
 
   getTransactionCount() {
@@ -184,7 +184,7 @@ export class BtcChain implements IChain {
   checkDust(output) {
     const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
 
-    if (output.amount < dustThreshold) {
+    if (output.amount < BigInt(dustThreshold)) {
       return Errors.DUST_AMOUNT;
     }
   }
@@ -322,7 +322,7 @@ export class BtcChain implements IChain {
         vout: x.vout,
         outputIndex: x.outputIndex,
         scriptPubKey: x.scriptPubKey,
-        satoshis: x.satoshis,
+        satoshis: Number( x.satoshis),
         publicKeys: x.publicKeys
       };
     });
@@ -350,11 +350,11 @@ export class BtcChain implements IChain {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
             script: o.script,
-            satoshis: o.amount
+            satoshis: Number(o.amount)
           })
         );
       } else {
-        t.to(o.toAddress, o.amount);
+        t.to(o.toAddress, Number(o.amount));
       }
     });
 
@@ -468,13 +468,14 @@ export class BtcChain implements IChain {
 
   totalizeUtxos(utxos) {
     const balance = {
-      totalAmount: _.sumBy(utxos, 'satoshis'),
-      lockedAmount: _.sumBy(_.filter(utxos, 'locked'), 'satoshis'),
-      totalConfirmedAmount: _.sumBy(_.filter(utxos, 'confirmations'), 'satoshis'),
-      lockedConfirmedAmount: _.sumBy(_.filter(_.filter(utxos, 'locked'), 'confirmations'), 'satoshis'),
+      totalAmount: Utils.sumByB(utxos, 'satoshis'),
+      lockedAmount: Utils.sumByB(_.filter(utxos, 'locked'), 'satoshis'),
+      totalConfirmedAmount: Utils.sumByB(_.filter(utxos, 'confirmations'), 'satoshis'),
+      lockedConfirmedAmount: Utils.sumByB(_.filter(_.filter(utxos, 'locked'), 'confirmations'), 'satoshis'),
       availableAmount: undefined,
       availableConfirmedAmount: undefined
     };
+
     balance.availableAmount = balance.totalAmount - balance.lockedAmount;
     balance.availableConfirmedAmount = balance.totalConfirmedAmount - balance.lockedConfirmedAmount;
 
@@ -490,11 +491,12 @@ export class BtcChain implements IChain {
       return cb(this.checkTx(txp));
     }
 
-    const txpAmount = txp.getTotalAmount();
+    // no need to use BigInt here. Max Satoshis < JS's Max Safe integer;
+    const txpAmount = Number(txp.getTotalAmount());
     const baseTxpSize = this.getEstimatedSize(txp);
-    const baseTxpFee = (baseTxpSize * txp.feePerKb) / 1000;
+    const baseTxpFee = baseTxpSize * txp.feePerKb / 1000;
     const sizePerInput = this.getEstimatedSizeForSingleInput(txp);
-    const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
+    const feePerInput = sizePerInput * txp.feePerKb / 1000;
 
     const sanitizeUtxos = utxos => {
       const excludeIndex = _.reduce(
@@ -516,8 +518,9 @@ export class BtcChain implements IChain {
     };
 
     const select = (utxos, coin, cb) => {
-      const totalValueInUtxos = _.sumBy(utxos, 'satoshis');
-      const netValueInUtxos = totalValueInUtxos - (baseTxpFee - utxos.length * feePerInput);
+      // Use JS Number for internal BTC selections
+      const totalValueInUtxos = Number( Utils.sumByB(utxos, 'satoshis'));
+      const netValueInUtxos = totalValueInUtxos - baseTxpFee - utxos.length * feePerInput;
 
       if (totalValueInUtxos < txpAmount) {
         logger.debug(
@@ -579,8 +582,9 @@ export class BtcChain implements IChain {
         total += input.satoshis;
         netTotal += netInputAmount;
 
-        const txpSize = baseTxpSize + selected.length * sizePerInput;
-        fee = Math.round(baseTxpFee + selected.length * feePerInput);
+        const l = selected.length;
+        const txpSize = baseTxpSize + l * sizePerInput;
+        fee = Math.round(baseTxpFee + l * feePerInput);
 
         // logger.debug('Tx size: ' + Utils.formatSize(txpSize) + ', Tx fee: ' + Utils.formatAmountInBtc(fee));
 
@@ -636,7 +640,7 @@ export class BtcChain implements IChain {
         if (!_.isEmpty(bigInputs)) {
           const input = _.head(bigInputs);
           // logger.debug('Using big input: ', Utils.formatUtxos(input));
-          total = input.satoshis;
+          total = Number(input.satoshis);
           fee = Math.round(baseTxpFee + feePerInput);
           netTotal = total - fee;
           selected = [input];
@@ -664,7 +668,6 @@ export class BtcChain implements IChain {
 
       let totalAmount;
       let availableAmount;
-
       const balance = this.totalizeUtxos(utxos);
       if (txp.excludeUnconfirmedUtxos) {
         totalAmount = balance.totalConfirmedAmount;
@@ -738,12 +741,12 @@ export class BtcChain implements IChain {
 
           err = this.checkTx(txp);
           if (!err) {
-            const change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
+            const change = Utils.sumByB(txp.inputs, 'satoshis') - Utils.sumByB(txp.outputs, 'amount') ;//- BigInt(txp.fee);
             logger.debug(
               'Successfully built transaction. Total fees: ' +
                 Utils.formatAmountInBtc(txp.fee) +
                 ', total change: ' +
-                Utils.formatAmountInBtc(change)
+                Utils.formatAmountInBtc(BigInt(change) - BigInt(txp.fee))
             );
           } else {
             logger.debug('Error building transaction', err);
@@ -760,7 +763,7 @@ export class BtcChain implements IChain {
   }
 
   checkValidTxAmount(output): boolean {
-    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
+    if (!(typeof output.amount === 'bigint') || output.amount < BigInt(0)) {
       return false;
     }
     return true;

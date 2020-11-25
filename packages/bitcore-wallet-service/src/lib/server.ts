@@ -2007,7 +2007,7 @@ export class WalletService {
         },
         // Transforms all amounts to bigint.
         next => {
-          opts.outputs.forEach((x) => {
+          opts.outputs.forEach(x => {
             x.amount = BigInt(x.amount);
           });
           next();

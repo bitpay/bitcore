@@ -31,6 +31,12 @@ export class Utils {
     return parseFloat(number.toPrecision(12));
   }
 
+
+  // overrides lodash sumBy to return bigInt 0 if null results.
+  static sumByB(array, it): BigInt {
+    return BigInt(_.sumBy(array,it) || 0);
+  };
+
   /* TODO: It would be nice to be compatible with bitcoind signmessage. How
    * the hash is calculated there? */
   static hashMessage(text, noReverse) {
@@ -103,6 +109,8 @@ export class Utils {
       };
       return units;
     }, {} as { [currency: string]: { toSatoshis: number; maxDecimals: number; minDecimals: number } });
+
+    if (typeof satoshis == 'bigint') satoshis = Number(satoshis);
 
     $.shouldBeNumber(satoshis);
     $.checkArgument(_.includes(_.keys(UNITS), unit));

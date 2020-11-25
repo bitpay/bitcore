@@ -420,7 +420,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         return {
           txid: helpers.randomTXID(),
           vout: _.random(0, 10),
-          satoshis: parsed.amount,
+          satoshis: BigInt(parsed.amount),
           scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
           address: address.address,
           confirmations: parsed.confirmations,

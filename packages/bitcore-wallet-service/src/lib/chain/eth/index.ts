@@ -37,12 +37,12 @@ export class EthChain implements IChain {
    * @returns {Object} balance - Total amount & locked amount.
    */
   private convertBitcoreBalance(bitcoreBalance, locked) {
-      let { unconfirmed, confirmed, balance } = bitcoreBalance;
+    let { unconfirmed, confirmed, balance } = bitcoreBalance;
 
     // Be sure to convert balance to BigInt;
-      unconfirmed = BigInt(unconfirmed);
-      confirmed = BigInt(confirmed);
-      balance = BigInt(balance);
+    unconfirmed = BigInt(unconfirmed);
+    confirmed = BigInt(confirmed);
+    balance = BigInt(balance);
     // we ASUME all locked as confirmed, for ETH.
     const convertedBalance = {
       totalAmount: balance,
@@ -184,7 +184,7 @@ export class EthChain implements IChain {
     const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
     const recipients = outputs.map(output => {
       return {
-        amount: output.amount.toString(10),  // CWC accepts STRINGs in amount
+        amount: output.amount.toString(10), // CWC accepts STRINGs in amount
         address: output.toAddress,
         data: output.data,
         gasLimit: output.gasLimit
@@ -339,7 +339,7 @@ export class EthChain implements IChain {
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
-    if (!(typeof output.amount === 'bigint') || output.amount < 0){
+    if (!(typeof output.amount === 'bigint') || output.amount < 0) {
       return false;
     }
     return true;
