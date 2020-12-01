@@ -250,7 +250,6 @@ export class ExpressApp {
       res.setHeader('Cache-Control', `public, max-age=${seconds}, stale-if-error=${10 * seconds}`);
     }
 
-
     // retrieve latest version of copay
     router.get('/latest-version', async (req, res) => {
       SetPublicCache(res, 10 * ONE_MINUTE);
@@ -1167,6 +1166,25 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/fiatrates/:coin/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      const opts = {
+        coin: req.params['coin'],
+        code: req.query.code || null,
+        ts: req.query.ts ? +req.query.ts : null
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getFiatRates(opts, (err, rates) => {
+        if (err) return returnError(err, res, req);
+        res.json(rates);
+      });
+    });
+
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
@@ -1291,17 +1309,35 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/service/payId/:payId', (req, res) => {
+      let server;
+      const payId = req.params['payId'];
+      const opts = {
+        handle: payId.split('$')[0],
+        domain: payId.split('$')[1]
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .discoverPayId(opts)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
 
     // Set no-cache by default
     this.app.use((req, res, next) => {
-      res.setHeader('Cache-Control', `no-store`);
+      res.setHeader('Cache-Control', 'no-store');
       next();
     });
 
     this.app.use(opts.basePath || '/bws/api', router);
-
-
- 
 
     if (config.staticRoot) {
       logger.debug(`Serving static files from ${config.staticRoot}`);

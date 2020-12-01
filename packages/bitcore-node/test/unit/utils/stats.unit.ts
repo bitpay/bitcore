@@ -1,8 +1,12 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
 import { StatsUtil } from '../../../src/utils/stats';
+import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Stats Util', () => {
+  before(unitBeforeHelper);
+  after(unitAfterHelper);
+
   describe('Quartiles of 20', () => {
     const values = new Array(20).fill(0).map((_, i) => i);
     it('should give back the midpoint between 0 and 5', () => {

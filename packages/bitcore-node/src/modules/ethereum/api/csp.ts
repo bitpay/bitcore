@@ -127,7 +127,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
 
         const roundedGwei = (quartileMedian / 1e9).toFixed(2);
-        const feerate = Number(roundedGwei) * 1e9;
+        const gwei = Number(roundedGwei) || 0;
+        const feerate = gwei * 1e9;
         return { feerate, blocks: target };
       },
       CacheStorage.Times.Minute
@@ -146,7 +147,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       cacheKey,
       async () => {
         if (tokenAddress) {
-          const token = await this.erc20For(network, params.args.tokenAddress);
+          const token = await this.erc20For(network, tokenAddress);
           const balance = await token.methods.balanceOf(address).call();
           const numberBalance = Number(balance);
           return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
@@ -201,7 +202,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         }
         found = await this.populateReceipt(found);
         const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
-        return { ...convertedTx, confirmations } as any;
+        return { ...convertedTx, confirmations };
       } else {
         return undefined;
       }
@@ -236,7 +237,12 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     const { req, res, args, chain, network, address } = params;
     const { limit, since, tokenAddress } = args;
     if (!args.tokenAddress) {
-      const query = { chain, network, $or: [{ from: address }, { to: address }] };
+      const query = {
+        $or: [
+          { chain, network, from: address },
+          { chain, network, to: address }
+        ]
+      };
       Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req!, res!);
     } else {
       try {
@@ -494,7 +500,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           $or: [
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
-            { chain, network, 'internal.action.to': { $in: addressBatch } }
+            { chain, network, 'internal.action.to': { $in: addressBatch } },
+            { chain, network, 'abiType.params.0.value': { $in: addressBatch.map(address => address.toLowerCase()) } }
           ]
         },
         { $addToSet: { wallets: params.wallet._id } }

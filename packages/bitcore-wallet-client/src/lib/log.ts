@@ -18,12 +18,12 @@ var DEFAULT_LOG_LEVEL = 'silent';
 //  * @param {string} name - a name for the logger. This will show up on every log call
 //  * @constructor
 //  */
-var Logger = function(name) {
+var Logger = function (name) {
   this.name = name || 'log';
   this.level = DEFAULT_LOG_LEVEL;
 };
 
-Logger.prototype.getLevels = function() {
+Logger.prototype.getLevels = function () {
   return levels;
 };
 
@@ -37,12 +37,12 @@ var levels = {
   fatal: 5
 };
 
-_.each(levels, function(level, levelName) {
+_.each(levels, function (level, levelName) {
   if (levelName === 'silent') {
     // dont create a log.silent() method
     return;
   }
-  Logger.prototype[levelName] = function() {
+  Logger.prototype[levelName] = function () {
     if (this.level === 'silent') {
       return;
     }
@@ -91,7 +91,7 @@ _.each(levels, function(level, levelName) {
 //  *
 //  * @param {string} level - the name of the logging level
 //  */
-Logger.prototype.setLevel = function(level) {
+Logger.prototype.setLevel = function (level) {
   this.level = level;
 };
 

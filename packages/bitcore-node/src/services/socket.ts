@@ -96,14 +96,11 @@ export class SocketService {
   async stop() {
     logger.info('Stopping Socket Service');
     this.stopped = true;
-    this.eventService.blockEvent.removeAllListeners();
-    this.eventService.txEvent.removeAllListeners();
-    this.eventService.addressCoinEvent.removeAllListeners();
   }
 
   async wireup() {
     this.eventService.txEvent.on('tx', async (tx: TxEvent) => {
-      if (this.io) {
+      if (!this.stopped && this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
@@ -122,14 +119,14 @@ export class SocketService {
     });
 
     this.eventService.blockEvent.on('block', (block: BlockEvent) => {
-      if (this.io) {
+      if (!this.stopped && this.io) {
         const { chain, network } = block;
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
       }
     });
 
     this.eventService.addressCoinEvent.on('coin', async (addressCoin: CoinEvent) => {
-      if (this.io) {
+      if (!this.stopped && this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;
         const sanitizedCoin = SanitizeWallet(coin);

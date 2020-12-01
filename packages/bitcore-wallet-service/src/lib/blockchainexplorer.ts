@@ -27,7 +27,7 @@ const PROVIDERS = {
 };
 
 export function BlockChainExplorer(opts) {
-  $.checkArgument(opts);
+  $.checkArgument(opts, 'Failed state: opts undefined at <BlockChainExplorer()>');
 
   const provider = opts.provider || 'v8';
   const coin = ChainService.getChain(opts.coin || Defaults.COIN).toLowerCase();

@@ -6,8 +6,14 @@ import { PruningService } from '../../../src/services/pruning';
 const Pruning = new PruningService({ transactionModel: TransactionStorage, coinModel: CoinStorage });
 import '../../../src/utils/polyfills';
 import { resetDatabase } from '../../helpers';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Pruning Service', function() {
+  const suite = this;
+  this.timeout(30000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
+
   beforeEach(async () => {
     await resetDatabase();
     process.env.DRYRUN = 'false';

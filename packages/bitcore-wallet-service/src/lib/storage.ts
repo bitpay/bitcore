@@ -233,7 +233,10 @@ export class Storage {
   storeWalletAndUpdateCopayersLookup(wallet, cb) {
     const copayerLookups = _.map(wallet.copayers, copayer => {
       try {
-        $.checkState(copayer.requestPubKeys);
+        $.checkState(
+          copayer.requestPubKeys,
+          'Failed state: copayer.requestPubkeys undefined at <storeWalletAndUpdateCopayersLookup()>'
+        );
       } catch (e) {
         return cb(e);
       }
@@ -383,11 +386,7 @@ export class Storage {
           const actionsById = {};
           const txs = _.compact(
             _.map(result, tx => {
-              // filter 48hrs+ transactions... To avoid "stuck" txps since delete and reject are not implemented on the contract
-              if (
-                !tx.multisigContractAddress ||
-                tx.createdOn < Math.floor(Date.now() / 1000) - Constants.ETH_MULTISIG_TX_PROPOSAL_EXPIRE_TIME
-              ) {
+              if (!tx.multisigContractAddress) {
                 return undefined;
               }
               tx.status = 'pending';
@@ -1161,15 +1160,24 @@ export class Storage {
         const last: CacheItem = _.last(items);
 
         try {
-          $.checkState(last.txid, 'missing txid in tx to be cached');
-          $.checkState(last.blockheight, 'missing blockheight in tx to be cached');
-          $.checkState(first.blockheight, 'missing blockheight in tx to be cached');
-          $.checkState(last.blockheight >= 0, 'blockheight <=0 om tx to be cached');
+          $.checkState(last.txid, 'Failed state: missing txid in tx to be cached at <storeHistoryCacheV8()>');
+          $.checkState(
+            last.blockheight,
+            'Failed state: missing blockheight in tx to be cached at <storeHistoryCacheV8()>'
+          );
+          $.checkState(
+            first.blockheight,
+            'Failed state: missing blockheight in tx to be cached at <storeHistoryCacheV8()>'
+          );
+          $.checkState(
+            last.blockheight >= 0,
+            'Failed state: blockheight <=0 om tx to be cached at <storeHistoryCacheV8()>'
+          );
 
           // note there is a .reverse before.
           $.checkState(
             first.blockheight <= last.blockheight,
-            'tx to be cached are in wrong order (lastest should be first)'
+            'Failed state: tx to be cached are in wrong order (lastest should be first)'
           );
         } catch (e) {
           return cb(e);

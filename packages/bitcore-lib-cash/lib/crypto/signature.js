@@ -64,7 +64,7 @@ Signature.fromCompact = function(buf) {
 
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
   // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype 
-  if((buf.length === 64) && buf[0] != 0x30) {
+  if((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
     let obj = Signature.parseSchnorrEncodedSig(buf);
     let sig = new Signature();
     sig.r = obj.r;
@@ -72,7 +72,7 @@ Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
     sig.isSchnorr = true;
     return sig;
   } if (buf.length === 64 && buf[0] === 0x30) {
-    return "64 DER (ecdsa) signautres not allowed";
+    return "64 DER (ecdsa) signatures not allowed";
   }
   
   var obj = Signature.parseDER(buf, strict);

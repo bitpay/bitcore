@@ -143,7 +143,7 @@ export class TxProposal {
 
     // x.version = opts.version || 5; // DISABLED 2020-04-07
     x.version = opts.version || 3;
-    $.checkState(x.version <= 3, 'txp version 4 not allowed yet');
+    $.checkState(x.version <= 3, 'Failed state: txp version 4 not allowed yet at <create()>');
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
@@ -173,7 +173,10 @@ export class TxProposal {
     x.excludeUnconfirmedUtxos = opts.excludeUnconfirmedUtxos;
 
     x.addressType = opts.addressType || (x.walletN > 1 ? Constants.SCRIPT_TYPES.P2SH : Constants.SCRIPT_TYPES.P2PKH);
-    $.checkState(Utils.checkValueInCollection(x.addressType, Constants.SCRIPT_TYPES));
+    $.checkState(
+      Utils.checkValueInCollection(x.addressType, Constants.SCRIPT_TYPES),
+      'Failed state: addressType not in ScriptTypes at <create()>'
+    );
 
     x.customData = opts.customData;
 
@@ -420,7 +423,7 @@ export class TxProposal {
   }
 
   setBroadcasted() {
-    $.checkState(this.txid);
+    $.checkState(this.txid, 'Failed state: this.txid at <setBroadcasted()>');
     this.status = 'broadcasted';
     this.broadcastedOn = Math.floor(Date.now() / 1000);
   }

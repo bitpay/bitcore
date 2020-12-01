@@ -23,7 +23,10 @@ export class Verifier {
    * @returns {Boolean} true or false
    */
   static checkAddress(credentials, address) {
-    $.checkState(credentials.isComplete());
+    $.checkState(
+      credentials.isComplete(),
+      'Failed state: credentials at <checkAddress>'
+    );
 
     var local = Utils.deriveAddress(
       address.type || credentials.addressType,
@@ -33,7 +36,10 @@ export class Verifier {
       credentials.network,
       credentials.coin
     );
-    return local.address == address.address && _.difference(local.publicKeys, address.publicKeys).length === 0;
+    return (
+      local.address == address.address &&
+      _.difference(local.publicKeys, address.publicKeys).length === 0
+    );
   }
 
   /**
@@ -44,7 +50,10 @@ export class Verifier {
    * @returns {Boolean} true or false
    */
   static checkCopayers(credentials, copayers) {
-    $.checkState(credentials.walletPrivKey);
+    $.checkState(
+      credentials.walletPrivKey,
+      'Failed state: credentials at <checkCopayers>'
+    );
     var walletPubKey = Bitcore.PrivateKey.fromString(credentials.walletPrivKey)
       .toPublicKey()
       .toString();
@@ -75,7 +84,11 @@ export class Verifier {
         log.error('Missing copayer fields in server response');
         error = true;
       } else {
-        var hash = Utils.getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
+        var hash = Utils.getCopayerHash(
+          copayer.encryptedName || copayer.name,
+          copayer.xPubKey,
+          copayer.requestPubKey
+        );
         if (!Utils.verifyMessage(hash, copayer.signature, walletPubKey)) {
           log.error('Invalid signatures in server response');
           error = true;
@@ -118,8 +131,10 @@ export class Verifier {
     if (txp.changeAddress) {
       changeAddress = txp.changeAddress.address;
     }
-    if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
-    if (_.isNumber(args.feePerKb) && txp.feePerKb != args.feePerKb) return false;
+    if (args.changeAddress && !strEqual(changeAddress, args.changeAddress))
+      return false;
+    if (_.isNumber(args.feePerKb) && txp.feePerKb != args.feePerKb)
+      return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
     var decryptedMessage = null;
@@ -129,17 +144,27 @@ export class Verifier {
       return false;
     }
     if (!strEqual(txp.message, decryptedMessage)) return false;
-    if ((args.customData || txp.customData) && !_.isEqual(txp.customData, args.customData)) return false;
+    if (
+      (args.customData || txp.customData) &&
+      !_.isEqual(txp.customData, args.customData)
+    )
+      return false;
 
     return true;
   }
 
   static checkTxProposalSignature(credentials, txp) {
     $.checkArgument(txp.creatorId);
-    $.checkState(credentials.isComplete());
+    $.checkState(
+      credentials.isComplete(),
+      'Failed state: credentials at checkTxProposalSignature'
+    );
 
     var creatorKeys = _.find(credentials.publicKeyRing, item => {
-      if (Utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
+      if (
+        Utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId
+      )
+        return true;
     });
 
     if (!creatorKeys) return false;
@@ -148,7 +173,13 @@ export class Verifier {
     // If the txp using a selfsigned pub key?
     if (txp.proposalSignaturePubKey) {
       // Verify it...
-      if (!Utils.verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
+      if (
+        !Utils.verifyRequestPubKey(
+          txp.proposalSignaturePubKey,
+          txp.proposalSignaturePubKeySig,
+          creatorKeys.xPubKey
+        )
+      )
         return false;
 
       creatorSigningPubKey = txp.proposalSignaturePubKey;
@@ -165,10 +196,20 @@ export class Verifier {
       throw new Error('Transaction proposal not supported');
     }
 
-    log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
-    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey)) return false;
+    log.debug(
+      'Regenerating & verifying tx proposal hash -> Hash: ',
+      hash,
+      ' Signature: ',
+      txp.proposalSignature
+    );
+    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
+      return false;
 
-    if (Constants.UTXO_COINS.includes(txp.coin) && !this.checkAddress(credentials, txp.changeAddress)) return false;
+    if (
+      Constants.UTXO_COINS.includes(txp.coin) &&
+      !this.checkAddress(credentials, txp.changeAddress)
+    )
+      return false;
 
     return true;
   }
@@ -189,12 +230,14 @@ export class Verifier {
 
     if (amount != _.sumBy(payproOpts.instructions, 'amount')) return false;
 
-    if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress) return false;
+    if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress)
+      return false;
 
     // Workaround for cashaddr/legacy address problems...
     if (
       txp.coin == 'bch' &&
-      new BCHAddress(toAddress).toString() != new BCHAddress(payproOpts.instructions[0].toAddress).toString()
+      new BCHAddress(toAddress).toString() !=
+        new BCHAddress(payproOpts.instructions[0].toAddress).toString()
     )
       return false;
 

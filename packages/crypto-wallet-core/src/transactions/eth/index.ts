@@ -52,7 +52,13 @@ export class ETHTxProvider {
 
   getSignatureObject(params: { tx: string; key: Key }) {
     const { tx, key } = params;
-    const signingKey = new ethers.utils.SigningKey(key.privKey);
+    // To complain with new ethers
+    let k = key.privKey;
+    if (k.substr(0, 2) != '0x') {
+      k = '0x' + k;
+    }
+
+    const signingKey = new ethers.utils.SigningKey(k);
     const signDigest = signingKey.signDigest.bind(signingKey);
     return signDigest(ethers.utils.keccak256(tx));
   }

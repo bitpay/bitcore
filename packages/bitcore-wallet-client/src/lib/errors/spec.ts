@@ -77,7 +77,8 @@ var errorSpec = [
   },
   {
     name: 'LOCKED_ETH_FEE',
-    message: 'Your ETH linked wallet funds are locked by pending spend proposals.'
+    message:
+      'Your ETH linked wallet funds are locked by pending spend proposals.'
   },
   {
     name: 'DUST_AMOUNT',
@@ -126,11 +127,13 @@ var errorSpec = [
   },
   {
     name: 'UNABLE_TO_PARSE_PAYMENT',
-    message: 'We were unable to parse your payment. Please try again or contact your wallet provider.'
+    message:
+      'We were unable to parse your payment. Please try again or contact your wallet provider.'
   },
   {
     name: 'NO_TRASACTION',
-    message: 'Your request did not include a transaction. Please try again or contact your wallet provider.'
+    message:
+      'Your request did not include a transaction. Please try again or contact your wallet provider.'
   },
   {
     name: 'INVALID_TX_FORMAT',
@@ -139,15 +142,18 @@ var errorSpec = [
   },
   {
     name: 'UNABLE_TO_PARSE_TX',
-    message: 'We were unable to parse the transaction you sent. Please try again or contact your wallet provider.'
+    message:
+      'We were unable to parse the transaction you sent. Please try again or contact your wallet provider.'
   },
   {
     name: 'WRONG_ADDRESS',
-    message: 'The transaction you sent does not have any output to the address on the invoice'
+    message:
+      'The transaction you sent does not have any output to the address on the invoice'
   },
   {
     name: 'WRONG_AMOUNT',
-    message: 'The amount on the transaction does not match the amount requested. This payment will not be accepted.'
+    message:
+      'The amount on the transaction does not match the amount requested. This payment will not be accepted.'
   },
   {
     name: 'NOT_ENOUGH_FEE',
@@ -155,11 +161,13 @@ var errorSpec = [
   },
   {
     name: 'BTC_NOT_BCH',
-    message: 'This invoice is priced in BTC, not BCH. Please try with a BTC wallet instead.'
+    message:
+      'This invoice is priced in BTC, not BCH. Please try with a BTC wallet instead.'
   },
   {
     name: 'REQUEST_TIMEOUT',
-    message: 'The PayPro request has timed out. Please connect to the internet or try again later.'
+    message:
+      'The PayPro request has timed out. Please connect to the internet or try again later.'
   },
   {
     name: 'INVALID_REQUEST',

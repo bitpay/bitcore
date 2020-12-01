@@ -350,8 +350,8 @@ describe('Fiat rate service', function() {
         rate: 234.56,
       }];
       var bch = [{
-          code: 'USD',
-          rate: 120,
+        code: 'USD',
+        rate: 120,
       }, {
         code: 'EUR',
         rate: 120,
@@ -428,6 +428,90 @@ describe('Fiat rate service', function() {
                 });
               });
             });
+          });
+        });
+      });
+    });
+  });
+
+  describe('#getRates', function() {
+    const bchRates = [
+      { code: "USD", value: 268.94 },
+      { code: "INR", value: 19680.35 },
+      { code: "EUR", value: 226.37 },
+      { code: "CAD", value: 352.33 },
+      { code: "COP", value: 1026617.26 },
+      { code: "NGN", value: 104201.93 },
+      { code: "GBP", value: 201.62 },
+      { code: "ARS", value: 19900.21 },
+      { code: "AUD", value: 365.8 },
+      { code: "BRL", value: 1456.93 },
+      { code: "JPY", value: 1124900.43 },
+      { code: "NZD", value: 16119.66 }
+    ]
+    it('should get rates for all the supported fiat currencies of the specified coin', function(done) {
+      service.storage.storeFiatRate('bch', bchRates, function(err) {
+        should.not.exist(err);
+        service.getRates({
+          coin: 'bch'
+        }, function(err, res) {
+          should.not.exist(err);
+          res.length.should.equal(bchRates.length);
+          done();
+        });
+      });
+    });
+    it('should get rate for the specified coin and currency if they are supported', function(done) {
+      service.storage.storeFiatRate('bch', bchRates, function(err) {
+        should.not.exist(err);
+        service.getRates({
+          coin: 'bch',
+          code: 'EUR'
+        }, function(err, res) {
+          should.not.exist(err);
+          res[0].rate.should.equal(226.37);
+          done();
+        });
+      });
+    });
+    it('should throw error if the specified currency code is not supported', function(done) {
+      service.storage.storeFiatRate('bch', bchRates, function(err) {
+        should.not.exist(err);
+        service.getRates({
+          coin: 'bch',
+          code: 'AOA'
+        }, function(err) {
+          should.exist(err);
+          err.should.equal('AOA is not supported');
+          done();
+        });
+      });
+    });
+    it('should get rate for specific ts', function(done) {
+      var clock = sinon.useFakeTimers({ toFake: ['Date'] });
+      clock.tick(20);
+      service.storage.storeFiatRate('btc', [{
+        code: 'USD',
+        value: 123.45,
+      }], function(err) {
+        should.not.exist(err);
+        clock.tick(100);
+        service.storage.storeFiatRate('btc', [{
+          code: 'USD',
+          value: 345.67,
+        }], function(err) {
+          should.not.exist(err);
+          service.getRates({
+            coin: 'btc',
+            code: 'USD',
+            ts: 50,
+          }, function(err, res) {
+            should.not.exist(err);
+            res[0].ts.should.equal(50);
+            res[0].rate.should.equal(123.45);
+            res[0].fetchedOn.should.equal(20);
+            clock.restore();
+            done();
           });
         });
       });

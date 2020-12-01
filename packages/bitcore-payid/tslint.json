@@ -1,0 +1,63 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "jsRules": {},
+  "rules": {
+    "no-submodule-imports": [
+      true,
+      "src"
+    ],
+    "member-ordering": false,
+    "variable-name": false,
+    "no-empty": false,
+    "no-shadowed-variable": false,
+    "one-variable-per-declaration": false,
+    "triple-equals": false,
+    "no-implicit-dependencies": false,
+    "object-literal-sort-keys": false,
+    "interface-name": false,
+    "prefer-for-of": false,
+    "forin": false,
+    "prefer-const": false,
+    "no-unused-expression": false,
+    "no-eval": false,
+    "no-object-literal-type-assertion": false,
+    "max-classes-per-file": false,
+    "no-string-literal": false,
+    "no-var-keyword": false,
+    "curly": false,
+    "member-access": false,
+    "quotemark": [
+      true,
+      "single",
+      "avoid-escape"
+    ],
+    "trailing-comma": [
+      true,
+      {
+        "singleline": "never",
+        "multiline": {
+          "objects": "ignore"
+        }
+      }
+    ],
+    "only-arrow-functions": false,
+    "no-var-requires": false,
+    "radix": false,
+    "no-console": false,
+    "arrow-parens": false,
+    "max-line-length": false,
+    "space-before-function-paren": [
+      false,
+      "never"
+    ],
+    "array-type": false,
+    "eofline": false,
+    "new-parens": false,
+    "object-literal-key-quotes": false,
+    "no-bitwise": false
+  },
+  "rulesDirectory": []
+}

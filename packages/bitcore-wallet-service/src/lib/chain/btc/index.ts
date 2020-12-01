@@ -272,7 +272,7 @@ export class BtcChain implements IChain {
   }
 
   getEstimatedFee(txp) {
-    $.checkState(_.isNumber(txp.feePerKb));
+    $.checkState(_.isNumber(txp.feePerKb), 'Failed state: txp.feePerKb is not a number at <getEstimatedFee()>');
     let fee;
 
     // if TX is ready? no estimation is needed.
@@ -331,7 +331,7 @@ export class BtcChain implements IChain {
       case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
         _.each(inputs, i => {
-          $.checkState(i.publicKeys, 'Inputs should include public keys');
+          $.checkState(i.publicKeys, 'Failed state: Inputs should include public keys at <getBitcoreTx()>');
           t.from(i, i.publicKeys, txp.requiredSignatures);
         });
         break;
@@ -342,7 +342,10 @@ export class BtcChain implements IChain {
     }
 
     _.each(txp.outputs, o => {
-      $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+      $.checkState(
+        o.script || o.toAddress,
+        'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
+      );
       if (o.script) {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
@@ -366,7 +369,10 @@ export class BtcChain implements IChain {
       const outputOrder = _.reject(txp.outputOrder, (order: number) => {
         return order >= t.outputs.length;
       });
-      $.checkState(t.outputs.length == outputOrder.length);
+      $.checkState(
+        t.outputs.length == outputOrder.length,
+        'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
+      );
       t.sortOutputs(outputs => {
         return _.map(outputOrder, i => {
           return outputs[i];
@@ -378,8 +384,14 @@ export class BtcChain implements IChain {
     const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
     const totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
-    $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enough-inputs');
-    $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'fee-too-high');
+    $.checkState(
+      totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
+      'Failed state: not-enough-inputs at <getBitcoreTx()>'
+    );
+    $.checkState(
+      totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
+      'Failed state: fee-too-high at <getBitcoreTx()>'
+    );
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
@@ -418,7 +430,11 @@ export class BtcChain implements IChain {
       return ex;
     }
 
-    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError) return Errors.INSUFFICIENT_FUNDS_FOR_FEE;
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError)
+      return new ClientError(
+        Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
+        Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + ' + coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb
+      );
     if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs) return Errors.DUST_AMOUNT;
     return bitcoreError;
   }
@@ -501,7 +517,7 @@ export class BtcChain implements IChain {
 
     const select = (utxos, coin, cb) => {
       const totalValueInUtxos = _.sumBy(utxos, 'satoshis');
-      const netValueInUtxos = totalValueInUtxos - baseTxpFee - utxos.length * feePerInput;
+      const netValueInUtxos = totalValueInUtxos - (baseTxpFee - utxos.length * feePerInput);
 
       if (totalValueInUtxos < txpAmount) {
         logger.debug(
@@ -522,7 +538,12 @@ export class BtcChain implements IChain {
             ')'
         );
 
-        return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+        return cb(
+          new ClientError(
+            Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
+            Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + ' + coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb
+          )
+        );
       }
 
       const bigInputThreshold = txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR + (baseTxpFee + feePerInput);
@@ -623,8 +644,14 @@ export class BtcChain implements IChain {
       }
 
       if (_.isEmpty(selected)) {
-        // logger.debug('Could not find enough funds within this utxo subset');
-        return cb(error || Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+        // log.debug('Could not find enough funds within this utxo subset');
+        return cb(
+          error ||
+            new ClientError(
+              Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
+              Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + ' + coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb
+            )
+        );
       }
 
       return cb(null, selected, fee);

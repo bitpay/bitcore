@@ -12,55 +12,69 @@ export class RippleEventAdapter {
   async start() {
     this.stopping = false;
     console.log('Starting websocket adapter for Ripple');
-    const networks = this.services.Config.chainNetworks()
-      .filter(c => c.chain === 'XRP')
-      .map(c => c.network);
-    const chain = 'XRP';
-    const csp = this.services.CSP.get({ chain }) as RippleStateProvider;
 
-    for (let network of networks) {
-      try {
-        const client = await csp.getClient(network);
+    this.services.Event.events.on('stop', () => {
+      this.stop();
+    });
 
-        client.on('ledger', async ledger => {
-          this.services.Event.blockEvent.emit('block', { chain, network, ...ledger });
-        });
+    this.services.Event.events.on('start', async () => {
+      const networks = this.services.Config.chainNetworks()
+        .filter(c => c.chain === 'XRP')
+        .map(c => c.network);
+      const chain = 'XRP';
+      const csp = this.services.CSP.get({ chain }) as RippleStateProvider;
 
-        client.connection.on('disconnected', () => {
-          if (!this.stopping) {
-            client.connection.reconnect();
-          }
-        });
+      for (let network of networks) {
+        try {
+          const client = await csp.getClient(network);
 
-        client.connection.on('transaction', async tx => {
-          const address = tx.transaction.Account;
-          const transformedTx = { ...csp.transform(tx, network), wallets: new Array<ObjectId>() };
-          if ('chain' in transformedTx) {
-            const transformedCoins = csp.transformToCoins(tx, network);
-            const { transaction, coins } = await csp.tag(chain, network, transformedTx, transformedCoins);
-            this.services.Event.txEvent.emit('tx', { chain, network, ...transaction });
-            if (coins && coins.length) {
-              for (const coin of coins) {
-                this.services.Event.addressCoinEvent.emit('coin', { address, coin });
+          client.on('ledger', async ledger => {
+            if (this.stopping) {
+              return;
+            }
+            this.services.Event.blockEvent.emit('block', { chain, network, ...ledger });
+          });
+
+          client.connection.on('disconnected', () => {
+            if (!this.stopping) {
+              client.connection.reconnect();
+            }
+          });
+
+          client.connection.on('transaction', async tx => {
+            if (this.stopping) {
+              return;
+            }
+            const address = tx.transaction.Account;
+            const transformedTx = { ...csp.transform(tx, network), wallets: new Array<ObjectId>() };
+            if ('chain' in transformedTx) {
+              const transformedCoins = csp.transformToCoins(tx, network);
+              const { transaction, coins } = await csp.tag(chain, network, transformedTx, transformedCoins);
+              this.services.Event.txEvent.emit('tx', { chain, network, ...transaction });
+              if (coins && coins.length) {
+                for (const coin of coins) {
+                  this.services.Event.addressCoinEvent.emit('coin', { address, coin });
+                }
               }
             }
-          }
-        });
+          });
 
-        await client.connection.request({
-          method: 'subscribe',
-          streams: ['ledger', 'transactions_proposed']
-        });
-      } catch (e) {
-        logger.error('Error connecting to XRP', e.message);
+          await client.connection.request({
+            method: 'subscribe',
+            streams: ['ledger', 'transactions_proposed']
+          });
+        } catch (e) {
+          logger.error('Error connecting to XRP', e.message);
+        }
       }
-    }
+    });
   }
 
   async stop() {
     this.stopping = true;
     for (const client of this.clients) {
       client.connection.removeAllListeners();
+      client.disconnect();
     }
   }
 }

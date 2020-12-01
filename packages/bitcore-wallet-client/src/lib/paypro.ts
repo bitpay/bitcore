@@ -4,7 +4,7 @@ var $ = require('preconditions').singleton();
 const URL = require('url');
 const _ = require('lodash');
 const superagent = require('superagent');
-var Bitcore = BitcoreLib;
+const Bitcore = BitcoreLib;
 const Errors = require('./errors');
 var Bitcore_ = {
   btc: Bitcore,
@@ -41,7 +41,9 @@ export class PayPro {
     if (network == 'livenet') network = 'main';
 
     if (!requestUrl) {
-      return callback(new Error('You must provide the original payment request url'));
+      return callback(
+        new Error('You must provide the original payment request url')
+      );
     }
     if (!trustedKeys) {
       return callback(new Error('You must provide a set of trusted keys'));
@@ -76,14 +78,26 @@ export class PayPro {
       return callback(new Error('Invalid identity header'));
     }
     if (!trustedKeys[identity]) {
-      return callback(new Error(`Response signed by unknown key (${identity}), unable to validate`));
+      return callback(
+        new Error(
+          `Response signed by unknown key (${identity}), unable to validate`
+        )
+      );
     }
 
     let keyData = trustedKeys[identity];
     if (keyData.domains.indexOf(host) === -1) {
-      return callback(new Error(`The key on the response (${identity}) is not trusted for domain ${host}`));
+      return callback(
+        new Error(
+          `The key on the response (${identity}) is not trusted for domain ${host}`
+        )
+      );
     } else if (!keyData.networks.includes(network)) {
-      return callback(new Error(`The key on the response is not trusted for transactions on the '${network}' network`));
+      return callback(
+        new Error(
+          `The key on the response is not trusted for transactions on the '${network}' network`
+        )
+      );
     }
 
     var hashbuf = Buffer.from(hash, 'hex');
@@ -115,11 +129,14 @@ export class PayPro {
   static runRequest(opts, cb) {
     $.checkArgument(opts.network, 'should pass network');
     var r = this.r[opts.method.toLowerCase()](opts.url);
-    _.each(opts.headers, function(v, k) {
+    _.each(opts.headers, function (v, k) {
       if (v) r.set(k, v);
     });
     if (opts.args) {
-      if (opts.method.toLowerCase() == 'post' || opts.method.toLowerCase() == 'put') {
+      if (
+        opts.method.toLowerCase() == 'post' ||
+        opts.method.toLowerCase() == 'put'
+      ) {
         r.send(opts.args);
       } else {
         r.query(opts.args);
@@ -158,24 +175,36 @@ export class PayPro {
 
       // Step 1: Check digest from header
       let digest = res.headers.digest.toString().split('=')[1];
-      let hash = Bitcore.crypto.Hash.sha256(Buffer.from(body, 'utf8')).toString('hex');
+      let hash = Bitcore.crypto.Hash.sha256(Buffer.from(body, 'utf8')).toString(
+        'hex'
+      );
 
       if (digest !== hash) {
-        return cb(new Error(`Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`));
+        return cb(
+          new Error(
+            `Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`
+          )
+        );
       }
       // Step 2: verify digest's signature
-      PayPro._verify(opts.url, res.headers, opts.network, opts.trustedKeys, err => {
-        if (err) return cb(err);
+      PayPro._verify(
+        opts.url,
+        res.headers,
+        opts.network,
+        opts.trustedKeys,
+        err => {
+          if (err) return cb(err);
 
-        let ret;
-        try {
-          ret = JSON.parse(body);
-        } catch (e) {
-          return cb(new Error('Could not payment request:' + body));
+          let ret;
+          try {
+            ret = JSON.parse(body);
+          } catch (e) {
+            return cb(new Error('Could not payment request:' + body));
+          }
+          ret.verified = 1;
+          return cb(null, ret);
         }
-        ret.verified = 1;
-        return cb(null, ret);
-      });
+      );
     });
   }
 
@@ -194,7 +223,7 @@ export class PayPro {
     opts.method = 'GET';
     opts.network = opts.network || 'livenet';
 
-    PayPro.runRequest(opts, function(err, data) {
+    PayPro.runRequest(opts, function (err, data) {
       if (err) return cb(err);
 
       var ret: any = {};
@@ -210,12 +239,14 @@ export class PayPro {
       if (!data.network) return cb(new Error('No network at payment request'));
 
       // currency
-      if (data.currency != COIN) return cb(new Error('Currency mismatch. Expecting:' + COIN));
+      if (data.currency != COIN)
+        return cb(new Error('Currency mismatch. Expecting:' + COIN));
 
       ret.coin = coin;
 
       // fee
-      if (data.requiredFeeRate > MAX_FEE_PER_KB) return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
+      if (data.requiredFeeRate > MAX_FEE_PER_KB)
+        return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
 
       ret.requiredFeeRate = data.requiredFeeRate;
 
@@ -230,7 +261,9 @@ export class PayPro {
       ret.amount = data.outputs[0].amount;
 
       try {
-        ret.toAddress = new bitcore.Address(data.outputs[0].address).toString(true);
+        ret.toAddress = new bitcore.Address(data.outputs[0].address).toString(
+          true
+        );
       } catch (e) {
         return cb(new Error('Bad output address ' + e));
       }
@@ -270,9 +303,13 @@ export class PayPro {
     opts.noVerify = true;
 
     // verify request
-    PayPro.runRequest(opts, function(err, rawData) {
+    PayPro.runRequest(opts, function (err, rawData) {
       if (err) {
-        console.log('Error at verify-payment:', err.message ? err.message : '', opts);
+        console.log(
+          'Error at verify-payment:',
+          err.message ? err.message : '',
+          opts
+        );
         return cb(err);
       }
 
@@ -296,9 +333,13 @@ export class PayPro {
       // Do not verify payment message's response
       opts.noVerify = true;
 
-      PayPro.runRequest(opts, function(err, rawData) {
+      PayPro.runRequest(opts, function (err, rawData) {
         if (err) {
-          console.log('Error at payment:', err.message ? err.message : '', opts);
+          console.log(
+            'Error at payment:',
+            err.message ? err.message : '',
+            opts
+          );
           return cb(err);
         }
 

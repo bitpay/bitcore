@@ -91,7 +91,7 @@ export class BlockchainMonitor {
                 userAgent: WalletService.getServiceVersion()
               });
             }
-            $.checkState(explorer);
+            $.checkState(explorer, 'Failed State: explorer undefined at <start()>');
 
             this._initExplorer(pair.coin, pair.network, explorer);
             this.explorers[pair.coin][pair.network] = explorer;
@@ -118,7 +118,7 @@ export class BlockchainMonitor {
           done();
         },
         done => {
-          this.lock = opts.lock || new Lock(opts.lockOpts);
+          this.lock = opts.lock || new Lock(this.storage);
           done();
         }
       ],
@@ -255,7 +255,7 @@ export class BlockchainMonitor {
             address: out.address,
             amount: out.amount,
             tokenAddress: out.tokenAddress,
-            multisigContractAdderss: out.multisigContractAdderss
+            multisigContractAddress: out.multisigContractAddress
           },
           walletId
         });

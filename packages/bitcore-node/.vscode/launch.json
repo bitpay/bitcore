@@ -32,7 +32,10 @@
       "type": "node",
       "request": "launch",
       "name": "Debug Integration Tests",
-      "program": "${workspaceRoot}/build/test/runners/integration.js",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "args": [
+        "${workspaceRoot}/build/test/integration/**/*.js"
+      ],
       "protocol": "auto",
       "preLaunchTask": "npm: tsc"
     }

@@ -1,8 +1,22 @@
 import { expect } from 'chai';
+import { Request, Response } from 'express-serve-static-core';
+import * as sinon from 'sinon';
+import { Transform } from 'stream';
 import { CacheStorage } from '../../../src/models/cache';
 import { ETH } from '../../../src/modules/ethereum/api/csp';
 import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
+import { IEthTransaction } from '../../../src/modules/ethereum/types';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+
 describe('Ethereum API', function() {
+  const chain = 'ETH';
+  const network = 'testnet';
+
+  const suite = this;
+  this.timeout(30000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
+
   it('should return undefined for garbage data', () => {
     const data = 'garbage';
     const decoded = EthTransactionStorage.abiDecode(data);
@@ -56,11 +70,225 @@ describe('Ethereum API', function() {
   it('should be able to get the fees', async () => {
     const chain = 'ETH';
     const network = 'testnet';
-    const target = 1;
-    const cacheKey = `getFee-${chain}-${network}-${target}`;
-    const fee = await ETH.getFee({ chain, network, target });
-    expect(fee).to.exist;
-    const cached = await CacheStorage.getGlobal(cacheKey);
-    expect(fee).to.deep.eq(cached);
+    let target = 1;
+    while (target <= 4) {
+      const cacheKey = `getFee-${chain}-${network}-${target}`;
+      const fee = await ETH.getFee({ chain, network, target });
+      expect(fee).to.exist;
+      const cached = await CacheStorage.getGlobal(cacheKey);
+      expect(fee).to.deep.eq(cached);
+      target++;
+    }
+  });
+
+  it('should estimate fees by most recent transactions', async () => {
+    const chain = 'ETH';
+    const network = 'testnet';
+    const txs = new Array(4000).fill({}).map(_ => {
+      return {
+        chain,
+        network,
+        blockHeight: 1,
+        gasPrice: 10 * 1e9
+      } as IEthTransaction;
+    });
+    await CacheStorage.collection.remove({});
+    await EthTransactionStorage.collection.deleteMany({});
+    await EthTransactionStorage.collection.insertMany(txs);
+    const estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
+    for (const estimate of estimates) {
+      expect(estimate.feerate).to.be.gt(0);
+      expect(estimate.feerate).to.be.eq(10000000000);
+    }
+  });
+
+  it('should return cached fee for a minute', async () => {
+    const chain = 'ETH';
+    const network = 'testnet';
+    const txs = new Array(4000).fill({}).map(_ => {
+      return {
+        chain,
+        network,
+        blockHeight: 1,
+        gasPrice: 10 * 1e9
+      } as IEthTransaction;
+    });
+    await CacheStorage.collection.remove({})
+    await EthTransactionStorage.collection.deleteMany({});
+    await EthTransactionStorage.collection.insertMany(txs);
+    let estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
+
+    await EthTransactionStorage.collection.deleteMany({});
+    estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
+    for (const estimate of estimates) {
+      expect(estimate.feerate).to.be.gt(0);
+      expect(estimate.feerate).to.be.eq(10000000000);
+    }
+  });
+
+  it('should be able to get address token balance', async () => {
+    const sandbox = sinon.createSandbox();
+    const address = '0xb8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const token = {
+      name: 'Test Token',
+      decimals: 10,
+      symbol: 'TST'
+    };
+
+    const tokenStub = {
+      methods: {
+        name: () => ({ call: sandbox.stub().resolves(token.name) }),
+        decimals: () => ({ call: sandbox.stub().resolves(token.decimals) }),
+        symbol: () => ({ call: sandbox.stub().resolves(token.symbol) }),
+        balanceOf: () => ({ call: sandbox.stub().resolves(0) })
+      }
+    };
+    sandbox.stub(ETH, 'erc20For').resolves(tokenStub);
+    const balance = await ETH.getBalanceForAddress({ chain, network, address, args: { tokenAddress: address } });
+    expect(balance).to.deep.eq({ confirmed: 0, unconfirmed: 0, balance: 0 });
+    sandbox.restore();
+  });
+
+  it('should be able to get address ETH balance', async () => {
+    const address = '0xb8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const balance = await ETH.getBalanceForAddress({ chain, network, address, args: {} });
+    expect(balance).to.deep.eq({ confirmed: 0, unconfirmed: 0, balance: 0 });
+  });
+
+  it('should stream ETH transactions for address', async () => {
+    const address = '0xb8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const txCount = 100;
+    const txs = new Array(txCount).fill({}).map(() => {
+      return {
+        chain,
+        network,
+        blockHeight: 1,
+        gasPrice: 10 * 1e9,
+        data: Buffer.from(''),
+        from: address
+      } as IEthTransaction;
+    });
+    await EthTransactionStorage.collection.deleteMany({});
+    await EthTransactionStorage.collection.insertMany(txs);
+
+    const res = (new Transform({
+      transform: (data, _, cb) => {
+        cb(null, data);
+      }
+    }) as unknown) as Response;
+    res.type = () => res;
+
+    const req = (new Transform({
+      transform: (_data, _, cb) => {
+        cb(null);
+      }
+    }) as unknown) as Request;
+
+    await ETH.streamAddressTransactions({ chain, network, address, res, req, args: {} });
+    let counter = 0;
+    await new Promise(r => {
+      res
+        .on('data', () => {
+          counter++;
+        })
+        .on('end', () => {
+          r();
+        });
+    });
+
+    const commaCount = txCount - 1;
+    const bracketCount = 2;
+    const expected = txCount + commaCount + bracketCount;
+    expect(counter).to.eq(expected);
+  });
+
+  it('should stream ETH transactions for block', async () => {
+    const txCount = 100;
+    const txs = new Array(txCount).fill({}).map(() => {
+      return {
+        chain,
+        network,
+        blockHeight: 1,
+        gasPrice: 10 * 1e9,
+        data: Buffer.from('')
+      } as IEthTransaction;
+    });
+    await EthTransactionStorage.collection.deleteMany({});
+    await EthTransactionStorage.collection.insertMany(txs);
+
+    const res = (new Transform({
+      transform: (data, _, cb) => {
+        cb(null, data);
+      }
+    }) as unknown) as Response;
+    res.type = () => res;
+
+    const req = (new Transform({
+      transform: (_data, _, cb) => {
+        cb(null);
+      }
+    }) as unknown) as Request;
+
+    await ETH.streamTransactions({ chain, network, res, req, args: { blockHeight: 1 } });
+    let counter = 0;
+    await new Promise(r => {
+      res
+        .on('data', () => {
+          counter++;
+        })
+        .on('end', () => {
+          r();
+        });
+    });
+
+    const commaCount = txCount - 1;
+    const bracketCount = 2;
+    const expected = txCount + commaCount + bracketCount;
+    expect(counter).to.eq(expected);
+  });
+
+  it('should stream ETH transactions for blockHash', async () => {
+    const txCount = 100;
+    const txs = new Array(txCount).fill({}).map(() => {
+      return {
+        chain,
+        network,
+        blockHash: '12345',
+        gasPrice: 10 * 1e9,
+        data: Buffer.from('')
+      } as IEthTransaction;
+    });
+    await EthTransactionStorage.collection.deleteMany({});
+    await EthTransactionStorage.collection.insertMany(txs);
+
+    const res = (new Transform({
+      transform: (data, _, cb) => {
+        cb(null, data);
+      }
+    }) as unknown) as Response;
+    res.type = () => res;
+
+    const req = (new Transform({
+      transform: (_data, _, cb) => {
+        cb(null);
+      }
+    }) as unknown) as Request;
+
+    await ETH.streamTransactions({ chain, network, res, req, args: { blockHash: '12345' } });
+    let counter = 0;
+    await new Promise(r => {
+      res
+        .on('data', () => {
+          counter++;
+        })
+        .on('end', () => {
+          r();
+        });
+    });
+
+    const commaCount = txCount - 1;
+    const bracketCount = 2;
+    const expected = txCount + commaCount + bracketCount;
+    expect(counter).to.eq(expected);
   });
 });

@@ -4,11 +4,30 @@ import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
 import logger from '../../logger';
+import { ERC20Abi } from './abi-erc20';
+import { InvoiceAbi } from './abi-invoice';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
+
+function requireUncached(module) {
+  delete require.cache[require.resolve(module)];
+  return require(module);
+}
+
+const Erc20Decoder = requireUncached('abi-decoder');
+Erc20Decoder.addABI(ERC20Abi);
+function getErc20Decoder() {
+  return Erc20Decoder;
+}
+
+const InvoiceDecoder = requireUncached('abi-decoder');
+InvoiceDecoder.addABI(InvoiceAbi);
+function getInvoiceDecoder() {
+  return InvoiceDecoder;
+}
 
 export class EthChain implements IChain {
   /**
@@ -119,29 +138,34 @@ export class EthChain implements IChain {
         const { from } = opts;
         const { coin, network } = wallet;
         let inGasLimit;
+        let gasLimit;
+        let fee = 0;
         for (let output of opts.outputs) {
-          try {
-            inGasLimit = await server.estimateGas({
-              coin,
-              network,
-              from,
-              to: opts.tokenAddress || opts.multisigContractAddress || output.toAddress,
-              value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
-              data: output.data,
-              gasPrice
-            });
-            output.gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-          } catch (err) {
-            output.gasLimit = Defaults.DEFAULT_GAS_LIMIT;
+          if (!output.gasLimit) {
+            try {
+              inGasLimit = await server.estimateGas({
+                coin,
+                network,
+                from,
+                to: opts.multisigContractAddress || (opts.tokenAddress && !opts.payProUrl) || output.toAddress,
+                value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
+                data: output.data,
+                gasPrice
+              });
+              output.gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+            } catch (err) {
+              output.gasLimit = Defaults.DEFAULT_GAS_LIMIT;
+            }
+          } else {
+            inGasLimit = output.gasLimit;
           }
+          if (_.isNumber(opts.fee)) {
+            // This is used for sendmax
+            gasPrice = feePerKb = Number((opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
+          }
+          gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+          fee += feePerKb * gasLimit;
         }
-        if (_.isNumber(opts.fee)) {
-          // This is used for sendmax
-          gasPrice = feePerKb = Number((opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
-        }
-
-        const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-        const fee = feePerKb * gasLimit;
         return resolve({ feePerKb, gasPrice, gasLimit, fee });
       });
     });
@@ -150,8 +174,8 @@ export class EthChain implements IChain {
   getBitcoreTx(txp, opts = { signed: true }) {
     const { data, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
-    const isETHMULTISIG = multisigContractAddress && !payProUrl;
-    const chain = isERC20 ? 'ERC20' : isETHMULTISIG ? 'ETHMULTISIG' : 'ETH';
+    const isETHMULTISIG = multisigContractAddress;
+    const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,
@@ -225,14 +249,68 @@ export class EthChain implements IChain {
       (err, balance) => {
         if (err) return cb(err);
 
+        const getInvoiceValue = txp => {
+          let totalAmount;
+
+          /* invoice outputs data example:
+          abiDecoder.decodeMethod(txp.outputs[0].data)
+          { name: 'approve',
+            params:
+            [ { name: '_spender',
+                value: '0xc27ed3df0de776246cdad5a052a9982473fceab8',
+                type: 'address' },
+              { name: '_value', value: '1380623310000000', type: 'uint256' } ] }
+
+          > abiDecoder.decodeMethod(txp.outputs[1].data)
+          { name: 'pay',
+            params:
+            [ { name: 'value', value: '1000000', type: 'uint256' },
+              { name: 'gasPrice', value: '40000000000', type: 'uint256' },
+              { name: 'expiration', value: '1604123733282', type: 'uint256' },
+              ... ] }
+          */
+
+          txp.outputs.forEach(output => {
+            // We use a custom contract call (pay) instead of the transfer ERC20 method
+            const decodedData = getInvoiceDecoder().decodeMethod(output.data);
+            if (decodedData && decodedData.name === 'pay') {
+              totalAmount = decodedData.params[0].value;
+            }
+          });
+          return totalAmount;
+        };
+
         const { totalAmount, availableAmount } = balance;
-        if (totalAmount < txp.getTotalAmount()) {
+
+        /* If its paypro its an already created ERC20 transaction and we need to get the actual invoice value from the data
+        invoice outputs example:
+        "outputs":[{
+            "amount":0,
+            "toAddress":"0x44d69d16C711BF966E3d00A46f96e02D16BDdf1f",
+            "message":null,
+            "data":"...",
+            "gasLimit":29041
+          },
+          {
+            "amount":0,
+            "toAddress":"0xc27eD3DF0DE776246cdAD5a052A9982473FceaB8",
+            "message":null,
+            "data":"...",
+            "gasLimit":200000
+        }]
+        */
+        const txpTotalAmount =
+          (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
+            ? getInvoiceValue(txp)
+            : txp.getTotalAmount(opts);
+
+        if (totalAmount < txpTotalAmount) {
           return cb(Errors.INSUFFICIENT_FUNDS);
-        } else if (availableAmount < txp.getTotalAmount()) {
+        } else if (availableAmount < txpTotalAmount) {
           return cb(Errors.LOCKED_FUNDS);
         } else {
           if (opts.tokenAddress || opts.multisigContractAddress) {
-            // ETH wallet balance
+            // ETH linked wallet balance
             server.getBalance({}, (err, ethBalance) => {
               if (err) return cb(err);
               const { totalAmount, availableAmount } = ethBalance;
@@ -321,6 +399,7 @@ export class EthChain implements IChain {
   }
 
   onTx(tx) {
+    // TODO: Multisig ERC20 - Internal txs ¿?
     let tokenAddress;
     let multisigContractAddress;
     let address;
@@ -333,6 +412,10 @@ export class EthChain implements IChain {
       multisigContractAddress = tx.to;
       address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
       amount = tx.abiType.params[1].value;
+    } else if (tx.abiType && tx.abiType.type === 'MULTISIG' && tx.abiType.name === 'confirmTransaction') {
+      multisigContractAddress = tx.to;
+      address = Web3.utils.toChecksumAddress(tx.internal[0].action.to);
+      amount = tx.internal[0].action.value;
     } else {
       address = tx.to;
       amount = tx.value;

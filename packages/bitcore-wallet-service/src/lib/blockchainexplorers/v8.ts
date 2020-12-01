@@ -77,7 +77,7 @@ export class V8 {
   }
 
   _getAuthClient(wallet) {
-    $.checkState(wallet.beAuthPrivateKey2);
+    $.checkState(wallet.beAuthPrivateKey2, 'Failed state: wallet.beAuthPrivateKey2 at <_getAuthClient()>');
     return new this.Client({
       baseUrl: this.baseUrl,
       authKey: Bitcore_[this.coin].PrivateKey(wallet.beAuthPrivateKey2)
@@ -146,7 +146,7 @@ export class V8 {
   }
 
   _transformUtxos(unspent, bcheight) {
-    $.checkState(bcheight > 0, 'No BC height passed to _transformUtxos');
+    $.checkState(bcheight > 0, 'Failed state: No BC height passed to _transformUtxos()');
     const ret = _.map(
       _.reject(unspent, x => {
         return x.spentHeight && x.spentHeight <= -3;
@@ -391,7 +391,7 @@ export class V8 {
   }
 
   getMultisigContractInstantiationInfo(opts, cb) {
-    const url = this.baseUrl + '/ethmultisig/' + opts.sender;
+    const url = `${this.baseUrl}/ethmultisig/${opts.sender}/instantiation/${opts.txId}`;
     console.log('[v8.js.378:url:] CHECKING CONTRACT INSTANTIATION INFO', url);
     this.request
       .get(url, {})

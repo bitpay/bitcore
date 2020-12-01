@@ -37,7 +37,7 @@ export class EventService {
     if (this.storageService.connected) {
       this.wireup();
     } else {
-      this.eventModel.events.on('CONNECTED', () => {
+      this.storageService.connection.on('CONNECTED', () => {
         this.wireup();
       });
     }
@@ -56,7 +56,7 @@ export class EventService {
 
     const retryTxCursor = async () => {
       const txCursor = this.eventModel.getTxTail(lastTxUpdate);
-      while (await txCursor.hasNext()) {
+      while (!this.stopped && (await txCursor.hasNext())) {
         const txEvent = await txCursor.next();
         if (txEvent) {
           const tx = txEvent.payload as TxEvent;
@@ -72,7 +72,7 @@ export class EventService {
 
     const retryBlockCursor = async () => {
       const blockCursor = this.eventModel.getBlockTail(lastBlockUpdate);
-      while (await blockCursor.hasNext()) {
+      while (!this.stopped && (await blockCursor.hasNext())) {
         const blockEvent = await blockCursor.next();
         if (blockEvent) {
           const block = blockEvent.payload as BlockEvent;
@@ -88,7 +88,7 @@ export class EventService {
 
     const retryAddressTxCursor = async () => {
       const addressTxCursor = this.eventModel.getCoinTail(lastAddressTxUpdate);
-      while (await addressTxCursor.hasNext()) {
+      while (!this.stopped && (await addressTxCursor.hasNext())) {
         const addressTx = await addressTxCursor.next();
         if (addressTx) {
           const addressCoin = addressTx.payload as CoinEvent;

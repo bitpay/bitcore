@@ -24,7 +24,9 @@ export abstract class BaseModel<T> {
       if (this.storageService.db != undefined) {
         this.connected = true;
         this.db = this.storageService.db;
-        await this.onConnect();
+        const connected = this.onConnect();
+        this.storageService.modelsConnected.push(connected);
+        await connected;
         this.events.emit('CONNECTED');
       }
     };

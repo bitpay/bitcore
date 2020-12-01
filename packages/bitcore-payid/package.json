@@ -1,0 +1,52 @@
+{
+  "name": "bitcore-payid",
+  "version": "8.23.1",
+  "description": "Bitcore library for PayID",
+  "author": "BitPay Inc",
+  "license": "MIT",
+  "main": "ts_build/src/index.js",
+  "keywords": [
+    "bitcoin",
+    "payid",
+    "bitcore"
+  ],
+  "engine": "node >= 12.0.0",
+  "scripts": {
+    "start": "npm run build && node ts_build/src/index.js",
+    "build": "npm run clean && tsc",
+    "clean": "rm -rf ts_build",
+    "precommit": "npm run test:all",
+    "test:all": "npm run build && mocha -r ts-node/register 'test/**/*.spec.ts' && karma start",
+    "test:unit": "npm run build && mocha -r ts-node/register 'test/unit/**/*.spec.ts'",
+    "test:integration": "npm run build && mocha -r ts-node/register 'test/integration/**/*.spec.ts'",
+    "test:karma": "npm run build && karma start"
+  },
+  "dependencies": {
+    "asn1.js": "5.4.1",
+    "bitcore-lib": "8.23.1",
+    "bn.js": "4.11.8",
+    "elliptic": "6.5.3",
+    "hash.js": "1.1.7"
+  },
+  "devDependencies": {
+    "@payid-org/utils": "^1.2.0",
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.0.3",
+    "@types/node": "^14.11.2",
+    "@types/sinon": "^9.0.8",
+    "chai": "^4.2.0",
+    "karma": "^5.2.3",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-firefox-launcher": "^2.1.0",
+    "karma-mocha": "^2.0.1",
+    "karma-typescript": "^5.2.0",
+    "karma-typescript-es6-transform": "^5.2.0",
+    "mocha": "^8.2.1",
+    "sinon": "^9.0.3",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
+  },
+  "peerDependencies": {
+    "bitcore-lib": "^8.23.1"
+  }
+}

@@ -1,6 +1,11 @@
 'use strict';
 
-import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from 'crypto-wallet-core';
+import {
+  BitcoreLib,
+  BitcoreLibCash,
+  Deriver,
+  Transactions
+} from 'crypto-wallet-core';
 
 import * as _ from 'lodash';
 import { Constants } from './constants';
@@ -123,7 +128,10 @@ export class Utils {
 
   static privateKeyToAESKey(privKey) {
     $.checkArgument(privKey && _.isString(privKey));
-    $.checkArgument(Bitcore.PrivateKey.isValid(privKey), 'The private key received is invalid');
+    $.checkArgument(
+      Bitcore.PrivateKey.isValid(privKey),
+      'The private key received is invalid'
+    );
     var pk = Bitcore.PrivateKey.fromString(privKey);
     return Bitcore.crypto.Hash.sha256(pk.toBuffer())
       .slice(0, 16)
@@ -169,22 +177,44 @@ export class Utils {
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2WSH:
         const nestedWitness = false;
-        bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network, nestedWitness, 'witnessscripthash');
+        bitcoreAddress = bitcore.Address.createMultisig(
+          publicKeys,
+          m,
+          network,
+          nestedWitness,
+          'witnessscripthash'
+        );
         break;
       case Constants.SCRIPT_TYPES.P2SH:
         bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
-        bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
+        bitcoreAddress = bitcore.Address.fromPublicKey(
+          publicKeys[0],
+          network,
+          'witnesspubkeyhash'
+        );
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
-        $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
+        $.checkState(
+          _.isArray(publicKeys) && publicKeys.length == 1,
+          'publicKeys array undefined'
+        );
         if (Constants.UTXO_COINS.includes(coin)) {
-          bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
+          bitcoreAddress = bitcore.Address.fromPublicKey(
+            publicKeys[0],
+            network
+          );
         } else {
           const { addressIndex, isChange } = this.parseDerivationPath(path);
           const [{ xPubKey }] = publicKeyRing;
-          bitcoreAddress = Deriver.deriveAddress(chain.toUpperCase(), network, xPubKey, addressIndex, isChange);
+          bitcoreAddress = Deriver.deriveAddress(
+            chain.toUpperCase(),
+            network,
+            xPubKey,
+            addressIndex,
+            isChange
+          );
         }
         break;
     }
@@ -214,12 +244,16 @@ export class Utils {
   }
 
   static signRequestPubKey(requestPubKey, xPrivKey) {
-    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
+    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(
+      Constants.PATHS.REQUEST_KEY_AUTH
+    ).privateKey;
     return this.signMessage(requestPubKey, priv);
   }
 
   static verifyRequestPubKey(requestPubKey, signature, xPubKey) {
-    var pub = new Bitcore.HDPublicKey(xPubKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).publicKey;
+    var pub = new Bitcore.HDPublicKey(xPubKey).deriveChild(
+      Constants.PATHS.REQUEST_KEY_AUTH
+    ).publicKey;
     return this.verifyMessage(requestPubKey, signature, pub.toString());
   }
 
@@ -259,7 +293,10 @@ export class Utils {
 
     var u = Constants.UNITS[unit];
     var precision = opts.fullPrecision ? 'full' : 'short';
-    var amount = clipDecimals(satoshis / u.toSatoshis, u[precision].maxDecimals).toFixed(u[precision].maxDecimals);
+    var amount = clipDecimals(
+      satoshis / u.toSatoshis,
+      u[precision].maxDecimals
+    ).toFixed(u[precision].maxDecimals);
     return addSeparators(
       amount,
       opts.thousandsSeparator || ',',
@@ -282,7 +319,10 @@ export class Utils {
         t.setVersion(1);
       }
 
-      $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+      $.checkState(
+        _.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType),
+        'Failed state: addressType not in SCRIPT_TYPES'
+      );
 
       switch (txp.addressType) {
         case Constants.SCRIPT_TYPES.P2WSH:
@@ -301,7 +341,10 @@ export class Utils {
         t.to(txp.toAddress, txp.amount);
       } else if (txp.outputs) {
         _.each(txp.outputs, o => {
-          $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+          $.checkState(
+            o.script || o.toAddress,
+            'Output should have either toAddress or script specified'
+          );
           if (o.script) {
             t.addOutput(
               new bitcore.Transaction.Output({
@@ -323,7 +366,10 @@ export class Utils {
         var outputOrder = _.reject(txp.outputOrder, order => {
           return order >= t.outputs.length;
         });
-        $.checkState(t.outputs.length == outputOrder.length);
+        $.checkState(
+          t.outputs.length == outputOrder.length,
+          'Failed state: t.ouputs.length == outputOrder.length at buildTx()'
+        );
         t.sortOutputs(outputs => {
           return _.map(outputOrder, i => {
             return outputs[i];
@@ -347,12 +393,25 @@ export class Utils {
         0
       );
 
-      $.checkState(totalInputs - totalOutputs >= 0);
-      $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
+      $.checkState(
+        totalInputs - totalOutputs >= 0,
+        'Failed state: totalInputs - totalOutputs >= 0 at buildTx'
+      );
+      $.checkState(
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
+        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE at buildTx'
+      );
 
       return t;
     } else {
-      const { data, destinationTag, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
+      const {
+        data,
+        destinationTag,
+        outputs,
+        payProUrl,
+        tokenAddress,
+        multisigContractAddress
+      } = txp;
       const recipients = outputs.map(output => {
         return {
           amount: output.amount,
@@ -367,8 +426,12 @@ export class Utils {
       }
       const unsignedTxs = [];
       const isERC20 = tokenAddress && !payProUrl;
-      const isETHMULTISIG = multisigContractAddress && !payProUrl;
-      const chain = isERC20 ? 'ERC20' : isETHMULTISIG ? 'ETHMULTISIG' : this.getChain(coin);
+      const isETHMULTISIG = multisigContractAddress;
+      const chain = isETHMULTISIG
+        ? 'ETHMULTISIG'
+        : isERC20
+        ? 'ERC20'
+        : this.getChain(coin);
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,

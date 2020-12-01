@@ -130,7 +130,7 @@ export class EmailService {
           done();
         },
         done => {
-          this.lock = opts.lock || new Lock(this.storage, opts.lockOpts);
+          this.lock = opts.lock || new Lock(this.storage);
           done();
         },
         done => {

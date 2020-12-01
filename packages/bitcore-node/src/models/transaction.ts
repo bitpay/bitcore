@@ -411,13 +411,13 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       let addressBatch = new Set<string>();
       let wallets: IWalletAddress[] = [];
 
-      async function findWalletsForAddresses(addresses: Array<string>) {
+      const findWalletsForAddresses = async (addresses: Array<string>) => {
         let partialWallets = await WalletAddressStorage.collection
           .find({ address: { $in: addresses }, chain, network }, { batchSize: 100 })
           .project({ wallet: 1, address: 1 })
           .toArray();
         return partialWallets;
-      }
+      };
 
       for (let mintOp of mintBatch) {
         addressBatch.add(mintOp.updateOne.update.$set.address);
