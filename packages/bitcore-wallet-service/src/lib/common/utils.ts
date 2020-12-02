@@ -31,11 +31,10 @@ export class Utils {
     return parseFloat(number.toPrecision(12));
   }
 
-
   // overrides lodash sumBy to return bigInt 0 if null results.
   static sumByB(array, it): BigInt {
-    return BigInt(_.sumBy(array,it) || 0);
-  };
+    return BigInt(_.sumBy(array, it) || 0);
+  }
 
   /* TODO: It would be nice to be compatible with bitcoind signmessage. How
    * the hash is calculated there? */
@@ -55,7 +54,9 @@ export class Utils {
     const flattenedMessage = _.isArray(message) ? _.join(message) : message;
     const hash = Utils.hashMessage(flattenedMessage, true);
 
+    console.log('[utils.ts.56]'); // TODO
     const sig = this._tryImportSignature(signature);
+    console.log('[utils.ts.58:sig:]', sig); // TODO
     if (!sig) {
       return false;
     }
@@ -84,9 +85,10 @@ export class Utils {
     try {
       let signatureBuffer = signature;
       if (!Buffer.isBuffer(signature)) {
-        signatureBuffer = new Buffer(signature, 'hex');
+        signatureBuffer = new Buffer(signatureBuffer, 'hex');
       }
-      return secp256k1.signatureImport(signatureBuffer);
+      const signatureA = new Uint8Array(signatureBuffer);
+      return secp256k1.signatureImport(signatureA);
     } catch (e) {
       return false;
     }
@@ -94,7 +96,10 @@ export class Utils {
 
   static _tryVerifyMessage(hash, sig, publicKeyBuffer) {
     try {
-      return secp256k1.verify(hash, sig, publicKeyBuffer);
+      const hashA = new Uint8Array(hash);
+      const sigA = new Uint8Array(sig);
+      const publicKeyA = new Uint8Array(publicKeyBuffer);
+      return secp256k1.ecdsaVerify(sigA, hashA, publicKeyA);
     } catch (e) {
       return false;
     }

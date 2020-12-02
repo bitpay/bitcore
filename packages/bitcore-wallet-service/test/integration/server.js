@@ -1456,7 +1456,6 @@ describe('Wallet service', function() {
             }],
             feePerKb: 100e2,
           };
-
           async.eachSeries(_.range(2), function(i, next) {
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function() {
               next();
@@ -4766,14 +4765,14 @@ describe('Wallet service', function() {
             });
           });
         });
-        it('should fail with different error for insufficient funds and locked funds', function(done) {
+        it.only('should fail with different error for insufficient funds and locked funds', function(done) {
           const ts = TO_SAT[coin];
           helpers.stubUtxos(server, wallet, [1, 1], { coin }, function() {
             let txAmount = +((1.1 * ts).toFixed(0));
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
-                amount: txAmount,
+                amount: BigInt(txAmount),
               }],
               feePerKb: 100e2,
               from: fromAddr,
@@ -4782,12 +4781,14 @@ describe('Wallet service', function() {
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err,err);
-                balance.totalAmount.should.equal(2 * ts + lockedFunds);
+                balance.totalAmount.toString().should.equal((2 * ts + lockedFunds).toString());
                 if(testFlags.noChange) {
-                  balance.lockedAmount.should.equal(txAmount + lockedFunds);
+console.log('[server.js.4786:lockedFunds:]', balance.lockedAmount,lockedFunds); // TODO
+console.log('[server.js.4786:txAmount:]',txAmount); // TODO
+                  balance.lockedAmount.toString().should.equal( (txAmount + lockedFunds).toString() );
                   txOpts.outputs[0].amount = 2 * ts;
                 } else {
-                  balance.lockedAmount.should.equal(2 * ts);
+                  balance.lockedAmount.toString().should.equal((2 * ts).toString());
                   txOpts.outputs[0].amount = 0.8 * ts;
                 }
 

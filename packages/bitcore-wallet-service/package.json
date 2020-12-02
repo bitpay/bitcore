@@ -45,7 +45,7 @@
     "read": "^1.0.5",
     "request": "^2.53.0",
     "request-promise-native": "^1.0.5",
-    "secp256k1": "^3.1.0",
+    "secp256k1": "^4.0.2",
     "sjcl": "^1.0.2",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0",

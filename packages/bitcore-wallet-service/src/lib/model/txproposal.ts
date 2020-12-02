@@ -222,11 +222,18 @@ export class TxProposal {
     x.coin = obj.coin || Defaults.COIN;
     x.network = obj.network;
     x.outputs = obj.outputs;
-    x.amount = obj.amount;
+    _.each(x.outputs, y => {
+      y.amount = BigInt(y.amount);
+    });
+
+    x.amount = BigInt(obj.amount);
     x.message = obj.message;
     x.payProUrl = obj.payProUrl;
     x.changeAddress = obj.changeAddress;
     x.inputs = obj.inputs;
+    _.each(x.inputs, y => {
+      y.satoshis = BigInt(y.satoshis);
+    });
     x.walletM = obj.walletM;
     x.walletN = obj.walletN;
     x.requiredSignatures = obj.requiredSignatures;
@@ -277,6 +284,15 @@ export class TxProposal {
   toObject() {
     const x: any = _.cloneDeep(this);
     x.isPending = this.isPending();
+
+    // Transform BigInt to storage.
+    _.each(x.outputs, y => {
+      y.amount = y.amount.toString();
+    });
+    x.amount = x.amount.toString();
+    _.each(x.inputs, y => {
+      y.satoshis = y.satoshis.toString();
+    });
     return x;
   }
 

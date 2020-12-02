@@ -40,7 +40,7 @@ export class BtcChain implements IChain {
           byAddress[key] = {
             address: key,
             path: value.path,
-            amount: BigInt(0),
+            amount: BigInt(0)
           };
         });
 
@@ -68,9 +68,9 @@ export class BtcChain implements IChain {
         feePerKb: 0,
         inputs: [],
         utxosBelowFee: 0,
-        amountBelowFee:  BigInt(0),
+        amountBelowFee: BigInt(0),
         utxosAboveMaxSize: 0,
-        amountAboveMaxSize: BigInt(0),
+        amountAboveMaxSize: BigInt(0)
       };
 
       let inputs = _.reject(utxos, 'locked');
@@ -102,7 +102,8 @@ export class BtcChain implements IChain {
         const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
         const partitionedByAmount = _.partition(inputs, input => {
-          return input.satoshis > feePerInput;
+          const inputSats = Number(input.satoshis);
+          return inputSats > feePerInput;
         });
 
         info.utxosBelowFee = partitionedByAmount[1].length;
@@ -122,7 +123,7 @@ export class BtcChain implements IChain {
         if (_.isEmpty(txp.inputs)) return cb(null, info);
 
         const fee = this.getEstimatedFee(txp);
-        const amount =BigInt( _.sumBy(txp.inputs, 'satoshis') - fee );
+        const amount = BigInt(_.sumBy(txp.inputs, 'satoshis') - fee);
 
         if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
@@ -322,7 +323,7 @@ export class BtcChain implements IChain {
         vout: x.vout,
         outputIndex: x.outputIndex,
         scriptPubKey: x.scriptPubKey,
-        satoshis: Number( x.satoshis),
+        satoshis: Number(x.satoshis),
         publicKeys: x.publicKeys
       };
     });
@@ -346,6 +347,7 @@ export class BtcChain implements IChain {
         o.script || o.toAddress,
         'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
       );
+
       if (o.script) {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
@@ -494,9 +496,9 @@ export class BtcChain implements IChain {
     // no need to use BigInt here. Max Satoshis < JS's Max Safe integer;
     const txpAmount = Number(txp.getTotalAmount());
     const baseTxpSize = this.getEstimatedSize(txp);
-    const baseTxpFee = baseTxpSize * txp.feePerKb / 1000;
+    const baseTxpFee = (baseTxpSize * txp.feePerKb) / 1000;
     const sizePerInput = this.getEstimatedSizeForSingleInput(txp);
-    const feePerInput = sizePerInput * txp.feePerKb / 1000;
+    const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
     const sanitizeUtxos = utxos => {
       const excludeIndex = _.reduce(
@@ -519,7 +521,7 @@ export class BtcChain implements IChain {
 
     const select = (utxos, coin, cb) => {
       // Use JS Number for internal BTC selections
-      const totalValueInUtxos = Number( Utils.sumByB(utxos, 'satoshis'));
+      const totalValueInUtxos = Number(Utils.sumByB(utxos, 'satoshis'));
       const netValueInUtxos = totalValueInUtxos - baseTxpFee - utxos.length * feePerInput;
 
       if (totalValueInUtxos < txpAmount) {
@@ -573,13 +575,14 @@ export class BtcChain implements IChain {
       _.each(smallInputs, (input, i) => {
         // logger.debug('Input #' + i + ': ' + Utils.formatUtxos(input));
 
-        const netInputAmount = input.satoshis - feePerInput;
+        const inputSats = Number(input.satoshis);
+        const netInputAmount = inputSats - feePerInput;
 
         // logger.debug('The input contributes ' + Utils.formatAmountInBtc(netInputAmount));
 
         selected.push(input);
 
-        total += input.satoshis;
+        total += inputSats;
         netTotal += netInputAmount;
 
         const l = selected.length;
@@ -635,12 +638,12 @@ export class BtcChain implements IChain {
 
       if (netTotal < txpAmount) {
         // logger.debug('Could not reach Txp total (' + Utils.formatAmountInBtc(txpAmount) + '), still missing: ' + Utils.formatAmountInBtc(txpAmount - netTotal));
-
         selected = [];
         if (!_.isEmpty(bigInputs)) {
           const input = _.head(bigInputs);
+          const inputSats = Number(input.satoshis);
           // logger.debug('Using big input: ', Utils.formatUtxos(input));
-          total = Number(input.satoshis);
+          total = inputSats;
           fee = Math.round(baseTxpFee + feePerInput);
           netTotal = total - fee;
           selected = [input];
@@ -741,7 +744,7 @@ export class BtcChain implements IChain {
 
           err = this.checkTx(txp);
           if (!err) {
-            const change = Utils.sumByB(txp.inputs, 'satoshis') - Utils.sumByB(txp.outputs, 'amount') ;//- BigInt(txp.fee);
+            const change = Utils.sumByB(txp.inputs, 'satoshis') - Utils.sumByB(txp.outputs, 'amount'); // - BigInt(txp.fee);
             logger.debug(
               'Successfully built transaction. Total fees: ' +
                 Utils.formatAmountInBtc(txp.fee) +

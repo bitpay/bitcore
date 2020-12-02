@@ -655,7 +655,6 @@ export class Storage {
     });
 
     cursor.on('end', () => {
-      console.log(`Migration to cash address of ${walletId} Finished`);
       return this.clearWalletCache(walletId, cb);
     });
 

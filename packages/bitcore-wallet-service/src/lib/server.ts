@@ -2335,7 +2335,6 @@ export class WalletService {
               ],
               err => {
                 if (err) return cb(err);
-
                 if (txp.coin == 'bch') {
                   if (opts.returnOrigAddrOutputs) {
                     logger.info('Returning Orig BCH address outputs for compat');
@@ -2973,7 +2972,6 @@ export class WalletService {
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
 
-    // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
     const now = Math.floor(Date.now() / 1000);
 
     // One fee per TXID
@@ -3123,7 +3121,6 @@ export class WalletService {
         }
       );
 
-      // console.log('[server.js.2965:ret:] END',ret); //TODO
       return cb(null, ret);
     });
   }

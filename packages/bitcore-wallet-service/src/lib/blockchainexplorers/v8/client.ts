@@ -22,8 +22,9 @@ export class Client {
 
   sign(params: { method: string; url: string; payload?: any }) {
     const message = this.getMessage(params);
-    const privateKey = this.authKey.bn.toBuffer({ size: 32 });
-    const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
+    console.log('[client.ts.24:message:]', message); // TODO
+    const privateKey = new Uint8Array(this.authKey.bn.toBuffer({ size: 32 }));
+    const messageHash = new Uint8Array(bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message)));
 
     return secp256k1.ecdsaSign(messageHash, privateKey).signature.toString();
   }

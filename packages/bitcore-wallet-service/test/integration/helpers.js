@@ -370,14 +370,14 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
   if (wallet.coin == 'eth') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  x*BigInt(1e18)));
+    let conf =  _.sum(_.map(amounts, x =>  BigInt(x)*BigInt(1e18)));
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0n, confirmed: BigInt(conf), balance: BigInt(conf) });
     return cb();
   }
 
   if (wallet.coin == 'xrp') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  x*BigInt(1e6)));
+    let conf =  _.sum(_.map(amounts, x =>  BigInt(x)*BigInt(1e6)));
     conf =  conf + Defaults.MIN_XRP_BALANCE;
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0n,confirmed:  BigInt(conf), balance: BigInt(conf) });
     return cb();
