@@ -34,6 +34,16 @@ var TestData = require('../testdata');
 var helpers = require('./helpers');
 var storage, blockchainExplorer, request;
 
+
+const dump = function(x) {
+  console.log(
+  JSON.stringify(x, (key, value) =>
+            typeof value === 'bigint'
+                ? value.toString()
+                : value // return everything else unchanged
+        ));
+};
+
 const TO_SAT = {
   'bch': 1e8,
   'btc': 1e8,
@@ -41,6 +51,8 @@ const TO_SAT = {
   'usdc': 1e6,
   'xrp': 1e6
 };
+
+const MAX_PRECISION = 1e6;
 
 const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
 
@@ -3812,10 +3824,10 @@ describe('Wallet service', function() {
     const idKey = x.key;
     const addressStr = x.addr;
     const testFlags = x.flags;
-    const lockedFunds = x.lockedFunds;
+    const lockedFunds = BigInt(x.lockedFunds);
     let fromAddr;
 
-    describe.only('#createTx ' + coin + ' flags' + JSON.stringify(testFlags), function() {
+    describe('#createTx ' + coin + ' flags' + JSON.stringify(testFlags), function() {
 
       describe('Tx proposal creation & publishing ' + coin, function() {
         var server, wallet;
@@ -3871,10 +3883,10 @@ describe('Wallet service', function() {
               tx.isRejected().should.equal.false;
               tx.isPending().should.equal.true;
               tx.isTemporary().should.equal.true;
-              tx.amount.toString().should.equal('8000');
+              helpers.checkBig(tx.amount,8000);
               tx.feePerKb.should.equal(123e2);
               tx.outputs[0].toAddress.should.equal(addressStr);
-              tx.outputs[0].amount.toString().should.equal(amount.toString());
+              helpers.checkBig(tx.outputs[0].amount,amount);
 
               if(coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
@@ -3919,10 +3931,10 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err,err);
                 should.exist(tx);
-                tx.amount.toString().should.equal(amount.toString());
+                helpers.checkBig(tx.amount,amount);
                 tx.feePerKb.should.equal(123e2);
                 tx.outputs[0].toAddress.should.equal(addressStr);
-                tx.outputs[0].amount.toString().should.equal(amount.toString());
+                helpers.checkBig(tx.outputs[0].amount,amount);
                 tx.gasPrice.should.equal(12300);
                 tx.nonce.should.equal('5');
 
@@ -4139,7 +4151,7 @@ describe('Wallet service', function() {
                 server.createTx(txOpts, function(err, tx) {
                   should.not.exist(err,err);
                   should.exist(tx);
-                  tx.amount.should.equal(helpers.toSatoshi(0.8));
+                  helpers.checkBig(tx.amount,helpers.toSatoshi(0.8));
                   should.not.exist(tx.feePerKb);
                   tx.fee.should.equal(1000e2);
                   var t = ChainService.getBitcoreTx(tx);
@@ -4690,7 +4702,7 @@ describe('Wallet service', function() {
         });
         it('should support creating a tx with no change address', function(done) {
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-            var max = 3 * ts - 7000; // Fees for this tx at 100bits/kB = 7000 sat
+            var max = 3n * BigInt(ts) - 7000n; // Fees for this tx at 100bits/kB = 7000 sat
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4700,12 +4712,14 @@ describe('Wallet service', function() {
               from: fromAddr,
             };
             txOpts = Object.assign(txOpts, testFlags);
+
+            dump(txOpts);
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err,err);
               should.exist(txp);
               var t = ChainService.getBitcoreTx(txp).toObject();
               t.outputs.length.should.equal(1);
-              t.outputs[0].satoshis.should.equal(max);
+              helpers.checkBig(t.outputs[0].satoshis, max);
               done();
             });
           });
@@ -4765,10 +4779,11 @@ describe('Wallet service', function() {
             });
           });
         });
-        it.only('should fail with different error for insufficient funds and locked funds', function(done) {
+        it('should fail with different error for insufficient funds and locked funds', function(done) {
           const ts = TO_SAT[coin];
+          const ts2 = BigInt((ts/MAX_PRECISION).toFixed(0));
           helpers.stubUtxos(server, wallet, [1, 1], { coin }, function() {
-            let txAmount = +((1.1 * ts).toFixed(0));
+            let txAmount = BigInt( (1.1 * MAX_PRECISION).toFixed(0))*ts2;
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4778,17 +4793,16 @@ describe('Wallet service', function() {
               from: fromAddr,
             };
             txOpts = Object.assign(txOpts, testFlags);
+            //dump(txOpts);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err,err);
-                balance.totalAmount.toString().should.equal((2 * ts + lockedFunds).toString());
+                helpers.checkBig(balance.totalAmount,BigInt(2 * ts) + lockedFunds);
                 if(testFlags.noChange) {
-console.log('[server.js.4786:lockedFunds:]', balance.lockedAmount,lockedFunds); // TODO
-console.log('[server.js.4786:txAmount:]',txAmount); // TODO
-                  balance.lockedAmount.toString().should.equal( (txAmount + lockedFunds).toString() );
+                  helpers.checkBig(balance.lockedAmount,txAmount + lockedFunds);
                   txOpts.outputs[0].amount = 2 * ts;
                 } else {
-                  balance.lockedAmount.toString().should.equal((2 * ts).toString());
+                  helpers.checkBig(balance.lockedAmount,2 * ts);
                   txOpts.outputs[0].amount = 0.8 * ts;
                 }
 
@@ -4865,7 +4879,7 @@ console.log('[server.js.4786:txAmount:]',txAmount); // TODO
                 should.exist(tx);
                 var bitcoreTx = ChainService.getBitcoreTx(tx);
                 bitcoreTx.outputs.length.should.equal(1);
-                bitcoreTx.outputs[0].satoshis.should.equal(tx.amount);
+                helpers.checkBig(bitcoreTx.outputs[0].satoshis,tx.amount);
                 done();
               });
             });
@@ -4891,11 +4905,11 @@ console.log('[server.js.4786:txAmount:]',txAmount); // TODO
                     txs.length.should.equal(2);
                     server.getBalance({}, function(err, balance) {
                       should.not.exist(err,err);
-                      balance.totalAmount.should.equal(3.6 * TO_SAT[coin]);
+                      helpers.checkBig(balance.totalAmount, 3.6 * TO_SAT[coin] );
                       if(coin == 'eth') {
                         balance.lockedAmount.should.equal(2300000000000000000);
                       } else {
-                        balance.lockedAmount.should.equal(3.6 * TO_SAT[coin]);
+                        helpers.checkBig(balance.lockedAmount,3.6 * TO_SAT[coin]);
                       }
                       done();
                     });
@@ -4927,15 +4941,17 @@ console.log('[server.js.4786:txAmount:]',txAmount); // TODO
                     txs.length.should.equal(1);
                     server.getBalance({}, function(err, balance) {
                       should.not.exist(err,err);
-                      balance.totalAmount.should.equal(3.6 * TO_SAT[coin]);
+                      helpers.checkBig(balance.totalAmount, 3.6 * TO_SAT[coin]);
                       if(coin != 'eth') {
                         var amountInputs = _.sumBy(txs[0].inputs, 'satoshis');
-                        balance.lockedAmount.should.equal(amountInputs);
-                        balance.lockedAmount.should.be.below(balance.totalAmount);
-                        balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
+                        helpers.checkBig(balance.lockedAmount,amountInputs);
+                        balance.lockedAmount.toString().should.be.below(balance.totalAmount.toString());
+                        helpers.checkBig(balance.availableAmount, balance.totalAmount - balance.lockedAmount);
                       } else {
                         balance.lockedAmount.should.equal(1.5 * TO_SAT[coin]);
                       }
+
+console.log('[server.js.4951]'); // TODO
                       done();
                     });
                   });
@@ -4962,13 +4978,13 @@ console.log('[server.js.4786:txAmount:]',txAmount); // TODO
               should.not.exist(err,err);
               should.exist(tx);
               should.not.exist(tx.changeAddress);
-              tx.amount.should.equal(3 * TO_SAT[coin] - tx.fee);
+              tx.amount.toString().should.equal( ( 3 * TO_SAT[coin] - tx.fee).toString());
 
               var t = ChainService.getBitcoreTx(tx);
               t.getFee().should.equal(tx.fee);
               should.not.exist(t.getChangeOutput());
               t.toObject().inputs.length.should.equal(tx.inputs.length);
-              t.toObject().outputs[0].satoshis.should.equal(tx.amount);
+              t.toObject().outputs[0].satoshis.toString().should.equal(tx.amount.toString());
               done();
             });
           });
@@ -5006,7 +5022,7 @@ console.log('[server.js.4786:txAmount:]',txAmount); // TODO
                   server.broadcastTx({
                     txProposalId: txp.id
                   }, function(err, txp) {
-                    txp.amount.should.equal(3 * TO_SAT[coin] - txp.fee);
+                    txp.amount.toString().should.equal((3 * TO_SAT[coin] - txp.fee).toString());
 
                     var t = ChainService.getBitcoreTx(txp);
                     t.getFee().should.equal(txp.fee);
@@ -5101,7 +5117,7 @@ console.log('[server.js.4786:txAmount:]',txAmount); // TODO
                   changeOutput = t.getChangeOutput().satoshis;
                   outputs = _.without(_.map(t.outputs, 'satoshis'), changeOutput);
 
-                  outputs.should.deep.equal(_.map(txOpts.outputs, 'amount'));
+                  outputs.should.deep.equal(_.map(txOpts.outputs, (x) => { return Number(x.amount) }));
                   done();
                 });
               });

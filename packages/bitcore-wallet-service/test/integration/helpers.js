@@ -646,8 +646,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
 
   server.createTx(txOpts, function(err, txp) {
-    if (err) console.log(err);
-    should.not.exist(err, "Error creating a TX");
+    if (err) console.log("Error creating TX:", err);
     should.exist(txp,"Error... no txp");
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
     server.publishTx(publishOpts, function(err) {
@@ -707,6 +706,10 @@ helpers.historyCacheTest = function(items) {
   });
 
   return ret;
+};
+
+helpers.checkBig = function(x,y) {
+  x.toString().should.be.equal(y.toString());
 };
 
 module.exports = helpers;

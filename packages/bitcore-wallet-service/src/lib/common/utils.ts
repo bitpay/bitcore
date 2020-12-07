@@ -1,6 +1,6 @@
 import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
-
+import 'source-map-support/register';
 const $ = require('preconditions').singleton();
 const bitcore = require('bitcore-lib');
 const crypto = bitcore.crypto;
@@ -53,10 +53,7 @@ export class Utils {
 
     const flattenedMessage = _.isArray(message) ? _.join(message) : message;
     const hash = Utils.hashMessage(flattenedMessage, true);
-
-    console.log('[utils.ts.56]'); // TODO
     const sig = this._tryImportSignature(signature);
-    console.log('[utils.ts.58:sig:]', sig); // TODO
     if (!sig) {
       return false;
     }
@@ -115,34 +112,91 @@ export class Utils {
       return units;
     }, {} as { [currency: string]: { toSatoshis: number; maxDecimals: number; minDecimals: number } });
 
-    if (typeof satoshis == 'bigint') satoshis = Number(satoshis);
+    if (typeof satoshis == 'number') satoshis = BigInt(satoshis);
 
-    $.shouldBeNumber(satoshis);
+    $.checkArgument(typeof satoshis == 'bigint');
     $.checkArgument(_.includes(_.keys(UNITS), unit));
-
-    function addSeparators(nStr, thousands, decimal, minDecimals) {
-      nStr = nStr.replace('.', decimal);
-      const x = nStr.split(decimal);
-      let x0 = x[0];
-      let x1 = x[1];
-
-      x1 = _.dropRightWhile(x1, (n, i) => {
-        return n == '0' && i >= minDecimals;
-      }).join('');
-      const x2 = x.length > 1 ? decimal + x1 : '';
-
-      x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
-      return x0 + x2;
-    }
-
     opts = opts || {};
 
     if (!UNITS[unit]) {
-      return Number(satoshis).toLocaleString();
+      return satoshis.toLocaleString();
     }
     const u = _.assign(UNITS[unit], opts);
-    const amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
-    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);
+    const decimal = u.decimalSeparator || '.';
+    const thousands = u.thousandsSeparator || ',';
+
+    function getAmount(sats) {
+      const toSatoshis = BigInt(u.toSatoshis);
+
+
+      // This is to round the last digit:
+      const decForRounding = 3;
+      const decForRoundingPlus = 3 + u.maxDecimals;
+      let decForRounding10 = BigInt(10 ** (decForRounding + u.maxDecimals));
+      if (decForRounding10 > toSatoshis) decForRounding10 = toSatoshis;
+
+      let divisor = toSatoshis / decForRounding10;
+      const amountWithRounding = (sats / divisor).toString(); 
+      const extra = amountWithRounding.substr(amountWithRounding.length - decForRounding + 1); 
+
+      let half = '5';
+      half = _.padEnd(half,extra.length, '0');
+
+      let maxDec10 = BigInt(10 ** u.maxDecimals);
+      let amount = sats / (toSatoshis/maxDec10);
+      if (BigInt(extra) >BigInt(half)) amount ++;
+
+      let ret = amount.toString();
+      if (!u.maxDecimals) { 
+        return ret;
+      }
+
+      // add dec separator
+      // 1.  pad with 0s.
+      ret = _.padStart(ret, ret.length +  u.maxDecimals, '0');
+
+      // 2. move separator
+      const l = ret.length - u.maxDecimals;
+      ret = ret.substr(0, l) +( ( l > 0) ?  decimal + ret.substr(l) : '');
+
+      // 3. remove leading ceros
+      let i = 0;
+      while(ret.charAt(i) == '0') i++;
+      if (ret.charAt(i) == decimal || ret.length==1) i--;
+      ret = ret.substr(i);
+
+      // 4. remove endnig ceros
+      if (ret.indexOf(decimal)) {
+        let i = ret.length - 1;
+        while(ret.charAt(i) == '0') i--;
+        ret = ret.substr(0, i + 1);
+      };
+      return ret;
+    };
+
+    function addMinDecimals(nStr) {
+      const x = nStr.split(decimal);
+      if (!u.minDecimals || ( x[1] && x[1].length >= u.minDecimals)) {
+        return nStr;
+      }
+
+      let toAdd = '';
+      let l = x[1] ? x[1].length : 0;
+      toAdd = _.padEnd(x[1], u.minDecimals - l, '0');
+      return x[0] + decimal + toAdd;
+    };
+
+    function addSeparators(nStr) {
+      const x = nStr.split(decimal);
+      x[0] = x[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+      const x1 = x.length > 1 ? decimal + x[1] : '';
+      return x[0] + x1;
+    };
+
+    let ret = getAmount(satoshis); 
+    ret = addSeparators(ret);
+    ret = addMinDecimals(ret);
+    return ret;
   }
 
   static formatAmountInBtc(amount) {

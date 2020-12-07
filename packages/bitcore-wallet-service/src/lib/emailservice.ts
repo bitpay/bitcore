@@ -322,15 +322,19 @@ export class EmailService {
   }
 
   _readAndApplyTemplates(notification, emailType, recipientsList: Recipient[], cb) {
+
+console.log('[emailservice.ts.325]'); // TODO
     async.map(
       recipientsList,
       (recipient, next) => {
+console.log('[emailservice.ts.329:recipient:]',recipient); // TODO
         async.waterfall(
           [
             next => {
               this._getDataForTemplate(notification, recipient, next);
             },
             (data, next) => {
+console.log('[emailservice.ts.335:data:]',data); // TODO
               async.map(
                 ['plain', 'html'],
                 (type, next) => {
@@ -357,6 +361,7 @@ export class EmailService {
         );
       },
       (err, res: any) => {
+console.log('[emailservice.ts.362:err:]',err); // TODO
         return cb(err, _.fromPairs(res.filter(Boolean)));
       }
     );
@@ -372,6 +377,7 @@ export class EmailService {
   sendEmail(notification, cb) {
     cb = cb || function() {};
 
+console.log('[emailservice.ts.374]'); // TODO
     const emailType = EMAIL_TYPES[notification.type];
     if (!emailType) return cb();
 
@@ -380,6 +386,7 @@ export class EmailService {
       if (!should) return cb();
 
       this._getRecipientsList(notification, emailType, (err, recipientsList: Recipient[]) => {
+console.log('[emailservice.ts.383:recipientsList:]',recipientsList); // TODO
         if (_.isEmpty(recipientsList)) return cb();
 
         // TODO: Optimize so one process does not have to wait until all others are done
@@ -387,15 +394,19 @@ export class EmailService {
         // to serve another request.
         this.lock.runLocked('email-' + notification.id, {}, cb, cb => {
           this.storage.fetchEmailByNotification(notification.id, (err, email) => {
+console.log('[emailservice.ts.390:email:]',email); // TODO
             if (err) return cb(err);
             if (email) return cb();
 
             async.waterfall(
               [
                 next => {
+
+console.log('[emailservice.ts.399]'); // TODO
                   this._readAndApplyTemplates(notification, emailType, recipientsList, next);
                 },
                 (contents, next) => {
+console.log('[emailservice.ts.401:contents:]',contents); // TODO
                   async.map(
                     recipientsList,
                     (recipient, next) => {
@@ -410,6 +421,8 @@ export class EmailService {
                         bodyHtml: content.html ? content.html.body : null,
                         notificationId: notification.id
                       });
+
+console.log('[emailservice.ts.416]'); // TODO
                       this.storage.storeEmail(email, err => {
                         return next(err, email);
                       });
@@ -418,6 +431,8 @@ export class EmailService {
                   );
                 },
                 (emails, next) => {
+
+console.log('[emailservice.ts.421]', email); // TODO
                   async.each(
                     emails,
                     (email: any, next) => {
@@ -431,6 +446,7 @@ export class EmailService {
                       });
                     },
                     err => {
+                      logger.warn(err);
                       return next();
                     }
                   );

@@ -17,7 +17,14 @@ export class XrpChain implements IChain {
    * @returns {Object} balance - Total amount & locked amount.
    */
   private convertBitcoreBalance(bitcoreBalance, locked) {
-    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+    let { unconfirmed, confirmed, balance } = bitcoreBalance;
+
+    // Be sure to convert balance to BigInt;
+    unconfirmed = BigInt(unconfirmed);
+    confirmed = BigInt(confirmed);
+    balance = BigInt(balance);
+    locked = BigInt(locked);
+
     let activatedLocked = locked;
     // If XRP address has a min balance of 20 XRP, subtract activation fee for true spendable balance.
     if (balance > 0) {
@@ -75,7 +82,7 @@ export class XrpChain implements IChain {
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
-        amount: availableAmount - fee,
+        amount: availableAmount - BigInt(fee),
         feePerKb: opts.feePerKb,
         fee
       });
@@ -181,7 +188,7 @@ export class XrpChain implements IChain {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      const minXrpBalance = 20000000; // 20 XRP * 1e6
+      const minXrpBalance = BigInt(20000000); // 20 XRP * 1e6
       if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
@@ -195,7 +202,7 @@ export class XrpChain implements IChain {
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
-    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
+    if (!(typeof output.amount === 'bigint') || output.amount < BigInt(0)) {
       return false;
     }
     return true;

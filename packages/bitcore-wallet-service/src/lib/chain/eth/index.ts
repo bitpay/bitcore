@@ -77,16 +77,13 @@ export class EthChain implements IChain {
     }
 
     bc.getBalance(wallet, (err, balance) => {
-      console.log('[index.ts.79:balance:]', balance); // TODO
       if (err) {
         return cb(err);
       }
       server.getPendingTxs(opts, (err, txps) => {
-        console.log('[index.ts.84:txps:]', txps); // TODO
         if (err) return cb(err);
         // Do not lock eth multisig amount
         const lockedSum = opts.multisigContractAddress ? BigInt(0) : _.sumBy(txps, 'amount') || BigInt(0);
-        console.log('[index.ts.87:lockedSum:]', lockedSum); // TODO
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
@@ -115,7 +112,7 @@ export class EthChain implements IChain {
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
-        amount: availableAmount - fee,
+        amount: availableAmount - BigInt(fee),
         feePerKb: opts.feePerKb,
         fee
       });

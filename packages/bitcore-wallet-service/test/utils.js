@@ -80,7 +80,6 @@ describe('Utils', function() {
   });
 
   describe('#formatAmount', function() {
-    it('should successfully format amount', function() {
       var cases = [{
         args: [1, 'bit'],
         expected: '0',
@@ -118,7 +117,6 @@ describe('Utils', function() {
         args: [129900000, 'bch'],
         expected: '1.299',
       }, {
-
         args: [1234567899999, 'btc'],
         expected: '12,345.679',
       }, {
@@ -140,9 +138,10 @@ describe('Utils', function() {
       },];
 
       _.each(cases, function(testCase) {
-        Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
+        it('should successfully format amount ' + testCase.expected, function() {
+          Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
+        });
       });
-    });
   });
 
   describe('#getAddressCoin', function() {

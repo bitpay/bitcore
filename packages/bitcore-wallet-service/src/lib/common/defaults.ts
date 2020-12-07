@@ -223,5 +223,5 @@ module.exports = {
   MIN_GAS_LIMIT: 21000,
 
   // XRP has a non-refundable mininum activation fee / balance
-  MIN_XRP_BALANCE: 20000000
+  MIN_XRP_BALANCE: BigInt(20000000)
 };

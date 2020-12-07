@@ -123,7 +123,7 @@ export class BtcChain implements IChain {
         if (_.isEmpty(txp.inputs)) return cb(null, info);
 
         const fee = this.getEstimatedFee(txp);
-        const amount = BigInt(_.sumBy(txp.inputs, 'satoshis') - fee);
+        const amount = Utils.sumByB(txp.inputs, 'satoshis') - BigInt(fee);
 
         if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
@@ -282,6 +282,7 @@ export class BtcChain implements IChain {
       const totalOutputs = _.sumBy(txp.outputs, 'amount');
       if (totalInputs && totalOutputs) {
         fee = totalInputs - totalOutputs;
+        fee = Number(fee); 
       }
     }
 
@@ -766,7 +767,7 @@ export class BtcChain implements IChain {
   }
 
   checkValidTxAmount(output): boolean {
-    if (!(typeof output.amount === 'bigint') || output.amount < BigInt(0)) {
+    if (!(typeof output.amount === 'bigint') || output.amount <= BigInt(0)) {
       return false;
     }
     return true;
