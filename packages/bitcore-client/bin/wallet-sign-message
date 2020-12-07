@@ -5,7 +5,7 @@
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
-const { Deriver, BitcoreLib } = require('crypto-wallet-core');
+const { BitcoreLib } = require('crypto-wallet-core');
 
 program
   .version(require('../package.json').version)
@@ -25,13 +25,7 @@ const main = async () => {
     wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet = await wallet.unlock(password);
 
-    const privateKey = await Deriver.derivePrivateKey(
-      wallet.chain,
-      wallet.network,
-      wallet.unlocked.masterKey,
-      index,
-      change
-    );
+    const privateKey = await wallet.derivePrivateKey(change, index);
 
     const bitcoreMessage = new BitcoreLib.Message(message);
     const bitcorePrivateKey = new BitcoreLib.PrivateKey(privateKey.privKey);
