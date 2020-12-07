@@ -494,6 +494,57 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
   return txs;
 };
 
+helpers.createMultiRecipientsTxV8 = function (nRecipients, mySelf, changeAdd) {
+  var txs = [];
+  const txTime = '2020-12-04T16:14:00.000Z';
+  const idTx = 'idmr';
+  const txid = 'txidmr0';
+
+  if (mySelf) {
+    txs.push({
+      id: idTx + txs.length.toString(),
+      txid: txid,
+      size: 226,
+      category: 'move',
+      satoshis: 30001,
+      // this is translated on V8.prototype.getTransactions
+      amount: 30001 / 1e8,
+      height: -1,
+      blockTime: txTime,
+      address: mySelf,
+    });
+    txs.push({
+      id: idTx + txs.length.toString(),
+      txid: txid,
+      size: 226,
+      category: 'move',
+      satoshis: 30001,
+      // this is translated on V8.prototype.getTransactions
+      amount: 30001 / 1e8,
+      height: -1,
+      blockTime: txTime,
+      address: changeAdd,
+    });
+  }
+
+  var i = 0;
+  while (i < nRecipients.length) {
+    txs.push({
+      id: idTx + txs.length.toString(),
+      txid: txid,
+      size: 226,
+      category: 'send',
+      satoshis: 30001,
+      // this is translated on V8.prototype.getTransactions
+      amount: 30001 / 1e8,
+      height: -1,
+      blockTime: txTime,
+      address: nRecipients[i]
+    });
+    i++;
+  }
+  return txs;
+};
 
 helpers.stubHistory = function(nr, bcHeight, txs) {
   txs= helpers.createTxsV8(nr,bcHeight, txs);
