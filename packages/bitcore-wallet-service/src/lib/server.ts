@@ -2972,6 +2972,7 @@ export class WalletService {
     // One fee per TXID
     const indexedFee: any = _.keyBy(_.filter(txs, { category: 'fee' } as any), 'txid');
     const indexedSend = _.keyBy(_.filter(txs, { category: 'send' } as any), 'txid');
+    var txWithMissunderstoodMoves = [];
     const seenSend = {};
     const seenReceive = {};
 
@@ -3016,7 +3017,7 @@ export class WalletService {
       }
 
       // move without send?
-      if (tx.category == 'move' && !indexedSend[tx.txid]) {
+      if (tx.category == 'move') {
         const output = {
           address: tx.address,
           amount: Math.abs(tx.satoshis)
@@ -3024,6 +3025,9 @@ export class WalletService {
 
         if (moves[tx.txid]) {
           moves[tx.txid].outputs.push(output);
+          if (moves[tx.txid].outputs.length > 1 && indexedSend[tx.txid]) {
+            txWithMissunderstoodMoves.push(tx.txid);
+          }
           return false;
         } else {
           moves[tx.txid] = tx;
@@ -3054,7 +3058,7 @@ export class WalletService {
         const isChangeAddress = _.countBy(_.filter(addrs, { isChange: true }), 'address');
         _.each(moves, x => {
           _.remove(x.outputs, i => {
-            return isChangeAddress[i.address];
+            return isChangeAddress[i.address] || indexedSend[x.txid];
           });
         });
         return cb2();
@@ -3080,8 +3084,11 @@ export class WalletService {
             action: undefined,
             addressTo: undefined,
             outputs: undefined,
-            dust: false
+            missunderstoodOutputs: undefined,
+            dust: false,
           };
+          
+          ret.missunderstoodOutputs = txWithMissunderstoodMoves && txWithMissunderstoodMoves.indexOf(tx.txid) >= 0;
           switch (tx.category) {
             case 'send':
               ret.action = 'sent';
@@ -3112,7 +3119,8 @@ export class WalletService {
           // filter out dust
         }),
         x => {
-          return !x.dust;
+          // Remove txs with no outputs
+          return !x.dust && x.outputs.length > 0;
         }
       );
 
