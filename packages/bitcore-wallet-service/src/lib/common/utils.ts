@@ -32,8 +32,10 @@ export class Utils {
   }
 
   // overrides lodash sumBy to return bigInt 0 if null results.
-  static sumByB(array, it): BigInt {
-    return BigInt(_.sumBy(array, it) || 0);
+  static sumByB(array, it, doAbs?): BigInt {
+    let ret = BigInt(_.sumBy(array, it) || 0);
+    if (doAbs && ret <0 ) ret = ret * BigInt(-1);
+    return ret;
   }
 
   /* TODO: It would be nice to be compatible with bitcoind signmessage. How
@@ -128,7 +130,6 @@ export class Utils {
     function getAmount(sats) {
       const toSatoshis = BigInt(u.toSatoshis);
 
-
       // This is to round the last digit:
       const decForRounding = 3;
       const decForRoundingPlus = 3 + u.maxDecimals;
@@ -136,47 +137,47 @@ export class Utils {
       if (decForRounding10 > toSatoshis) decForRounding10 = toSatoshis;
 
       let divisor = toSatoshis / decForRounding10;
-      const amountWithRounding = (sats / divisor).toString(); 
-      const extra = amountWithRounding.substr(amountWithRounding.length - decForRounding + 1); 
+      const amountWithRounding = (sats / divisor).toString();
+      const extra = amountWithRounding.substr(amountWithRounding.length - decForRounding + 1);
 
       let half = '5';
-      half = _.padEnd(half,extra.length, '0');
+      half = _.padEnd(half, extra.length, '0');
 
       let maxDec10 = BigInt(10 ** u.maxDecimals);
-      let amount = sats / (toSatoshis/maxDec10);
-      if (BigInt(extra) >BigInt(half)) amount ++;
+      let amount = sats / (toSatoshis / maxDec10);
+      if (BigInt(extra) > BigInt(half)) amount++;
 
       let ret = amount.toString();
-      if (!u.maxDecimals) { 
+      if (!u.maxDecimals) {
         return ret;
       }
 
       // add dec separator
       // 1.  pad with 0s.
-      ret = _.padStart(ret, ret.length +  u.maxDecimals, '0');
+      ret = _.padStart(ret, ret.length + u.maxDecimals, '0');
 
       // 2. move separator
       const l = ret.length - u.maxDecimals;
-      ret = ret.substr(0, l) +( ( l > 0) ?  decimal + ret.substr(l) : '');
+      ret = ret.substr(0, l) + (l > 0 ? decimal + ret.substr(l) : '');
 
       // 3. remove leading ceros
       let i = 0;
-      while(ret.charAt(i) == '0') i++;
-      if (ret.charAt(i) == decimal || ret.length==1) i--;
+      while (ret.charAt(i) == '0') i++;
+      if (ret.charAt(i) == decimal || ret.length == 1) i--;
       ret = ret.substr(i);
 
       // 4. remove endnig ceros
       if (ret.indexOf(decimal)) {
         let i = ret.length - 1;
-        while(ret.charAt(i) == '0') i--;
+        while (ret.charAt(i) == '0') i--;
         ret = ret.substr(0, i + 1);
-      };
+      }
       return ret;
-    };
+    }
 
     function addMinDecimals(nStr) {
       const x = nStr.split(decimal);
-      if (!u.minDecimals || ( x[1] && x[1].length >= u.minDecimals)) {
+      if (!u.minDecimals || (x[1] && x[1].length >= u.minDecimals)) {
         return nStr;
       }
 
@@ -184,16 +185,16 @@ export class Utils {
       let l = x[1] ? x[1].length : 0;
       toAdd = _.padEnd(x[1], u.minDecimals - l, '0');
       return x[0] + decimal + toAdd;
-    };
+    }
 
     function addSeparators(nStr) {
       const x = nStr.split(decimal);
       x[0] = x[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
       const x1 = x.length > 1 ? decimal + x[1] : '';
       return x[0] + x1;
-    };
+    }
 
-    let ret = getAmount(satoshis); 
+    let ret = getAmount(satoshis);
     ret = addSeparators(ret);
     ret = addMinDecimals(ret);
     return ret;

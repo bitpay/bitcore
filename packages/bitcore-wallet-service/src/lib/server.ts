@@ -2994,8 +2994,10 @@ export class WalletService {
 
         const output = {
           address: tx.address,
-          amount: Math.abs(tx.satoshis)
+          amount: tx.satoshis
         };
+        if (output.amount < BigInt(0)) output.amount = output.amount * BigInt(-1);
+
         if (seenReceive[tx.txid]) {
           seenReceive[tx.txid].outputs.push(output);
           return false;
@@ -3005,11 +3007,14 @@ export class WalletService {
           return true;
         }
       }
+
       if (tx.category == 'send') {
         const output = {
           address: tx.address,
-          amount: Math.abs(tx.satoshis)
+          amount: tx.satoshis,
         };
+        if (output.amount < BigInt(0)) output.amount = output.amount * BigInt(-1);
+
         if (seenSend[tx.txid]) {
           seenSend[tx.txid].outputs.push(output);
           return false;
@@ -3024,8 +3029,9 @@ export class WalletService {
       if (tx.category == 'move' && !indexedSend[tx.txid]) {
         const output = {
           address: tx.address,
-          amount: BigInt(Math.abs(tx.satoshis))
+          amount: BigInt(tx.satoshis)
         };
+        if (output.amount < BigInt(0)) output.amount = output.amount * BigInt(-1);
 
         if (moves[tx.txid]) {
           moves[tx.txid].outputs.push(output);
@@ -3081,7 +3087,7 @@ export class WalletService {
             fees: tx.fee || (indexedFee[tx.txid] ? Math.abs(indexedFee[tx.txid].satoshis) : null),
             time: t,
             size: tx.size,
-            amount: 0,
+            amount: BigInt(0),
             action: undefined,
             addressTo: undefined,
             outputs: undefined,
@@ -3090,19 +3096,19 @@ export class WalletService {
           switch (tx.category) {
             case 'send':
               ret.action = 'sent';
-              ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
+              ret.amount = Utils.sumByB(tx.outputs, 'amount', true) || Math.abs(tx.satoshis);
               ret.addressTo = tx.outputs ? tx.outputs[0].address : null;
               ret.outputs = tx.outputs;
               break;
             case 'receive':
               ret.action = 'received';
               ret.outputs = tx.outputs;
-              ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
+              ret.amount = Utils.sumByB(tx.outputs, 'amount', true) || Math.abs(tx.satoshis);
               ret.dust = ret.amount < dustThreshold;
               break;
             case 'move':
               ret.action = 'moved';
-              ret.amount = Math.abs(tx.satoshis);
+              ret.amount = Utils.sumByB(tx.satoshis, null, true);
               ret.addressTo = tx.outputs && tx.outputs.length ? tx.outputs[0].address : null;
               ret.outputs = tx.outputs;
               break;
@@ -3296,7 +3302,7 @@ export class WalletService {
       const filter: { isMine?: boolean; isChange?: boolean } = {};
       if (_.isBoolean(isMine)) filter.isMine = isMine;
       if (_.isBoolean(isChange)) filter.isChange = isChange;
-      return _.sumBy(_.filter(items, filter), 'amount');
+      return Utils.sumByB(_.filter(items, filter), 'amount');
     };
 
     const classify = items => {
@@ -3311,23 +3317,26 @@ export class WalletService {
       });
     };
 
+    const Z = BigInt(0);
+    const MO = BigInt(-1);
+
     if (tx.outputs.length || tx.inputs.length) {
       inputs = classify(tx.inputs);
       outputs = classify(tx.outputs);
       amountIn = sum(inputs, true);
       amountOut = sum(outputs, true, false);
       amountOutChange = sum(outputs, true, true);
-      if (amountIn == amountOut + amountOutChange + (amountIn > 0 ? tx.fees : 0)) {
+      if (amountIn == amountOut + amountOutChange + (amountIn > Z ? BigInt(tx.fees) : Z)) {
         amount = amountOut;
         action = 'moved';
       } else {
         // BWS standard sent
         // (amountIn > 0 && amountOutChange >0 && outputs.length <= 2)
-        amount = amountIn - amountOut - amountOutChange - (amountIn > 0 && amountOutChange > 0 ? tx.fees : 0);
-        action = amount > 0 ? 'sent' : 'received';
+        amount = amountIn - amountOut - amountOutChange - (amountIn > Z && amountOutChange > Z ? BigInt(tx.fees) : Z);
+        action = amount > Z ? 'sent' : 'received';
       }
 
-      amount = Math.abs(amount);
+      if (amount < Z) amount = amount * MO;
       if (action == 'sent' || action == 'moved') {
         const firstExternalOutput = outputs.find(o => o.isMine === false);
         addressTo = firstExternalOutput ? firstExternalOutput.address : null;
@@ -3403,16 +3412,20 @@ export class WalletService {
       _.each(tx.outputs, output => {
         const query = {
           toAddress: output.address,
-          amount: output.amount
+          amount: BigInt(output.amount),
         };
         if (proposal.outputs) {
-          const txpOut = proposal.outputs.find(o => o.toAddress === output.address && o.amount === output.amount);
-          output.message = txpOut ? txpOut.message : null;
+          const txpOut = proposal.outputs.find(o => o.toAddress === output.address && o.amount == output.amount);
+          if (txpOut) {
+            output.message = txpOut.message;
+            output.amount = txpOut.amount;
+          }
         }
       });
+//      tx.amount = proposal.amount; // no need, values should be the same
       tx.customData = proposal.customData;
-
       tx.createdOn = proposal.createdOn;
+
       if (opts.includeExtendedInfo) {
         tx.raw = proposal.raw;
       }
@@ -3938,6 +3951,7 @@ export class WalletService {
             } else {
               this.logd(`History from bc ${from}/${to}: ${finalTxs.length} txs`);
             }
+
             return cb(null, finalTxs, !!res.txs.fromCache, !!res.txs.useStream);
           });
         }

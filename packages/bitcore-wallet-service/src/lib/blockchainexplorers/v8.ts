@@ -153,9 +153,9 @@ export class V8 {
       }),
       x => {
         const u = {
-          address: x.address,
-          satoshis: BigInt(x.value), // in Sats
-          amount: x.value / 1e8, // In BTC
+          address: x.address, 
+          satoshis: BigInt(x.value), // in Sats (or Wei)
+          // amount: x.value / 1e8, // In BTC not used
           scriptPubKey: x.script,
           txid: x.mintTxid,
           vout: x.mintIndex,
@@ -331,9 +331,9 @@ export class V8 {
           logger.error('v8 error at JSON.parse:' + e + ' Parsing:' + rawTx + ':');
           return cb(e);
         }
-        // v8 field name differences
-        if (tx.value) tx.amount = tx.satoshis / 1e8;
 
+        // v8 field name differences
+        // if (tx.value) tx.amount = tx.satoshis / 1e8; // legacy BTC value
         tx.satoshis = BigInt(tx.satoshis);
 
         if (tx.height >= 0) txs.push(tx);

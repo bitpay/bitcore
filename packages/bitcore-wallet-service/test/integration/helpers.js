@@ -321,7 +321,7 @@ helpers._parseAmount = function(str) {
     confirmations: _.random(6, 100),
   };
 
-  if (_.isNumber(str)) str = str.toString();
+  if (_.isNumber(str) || typeof str == 'bigint') str = str.toString();
 
   var re = /^((?:\d+c)|u)?\s*([\d\.]+)\s*(btc|bit|sat)?$/;
   var match = str.match(re);

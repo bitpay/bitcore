@@ -4950,8 +4950,6 @@ describe('Wallet service', function() {
                       } else {
                         balance.lockedAmount.should.equal(1.5 * TO_SAT[coin]);
                       }
-
-console.log('[server.js.4951]'); // TODO
                       done();
                     });
                   });

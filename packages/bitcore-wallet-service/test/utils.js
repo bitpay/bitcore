@@ -135,6 +135,15 @@ describe('Utils', function() {
           decimalSeparator: ','
         }],
         expected: '12 345,679',
+      }, {
+        args: [1234567890123456789012345678n, 'btc', {
+        }],
+        expected: '12,345,678,901,234,567,890.123457',
+      }, {
+        args: [1234567890123456789012345678n, 'eth', {
+        }],
+        expected: '1,234,567,890.123457',
+ 
       },];
 
       _.each(cases, function(testCase) {

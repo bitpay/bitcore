@@ -282,7 +282,7 @@ export class BtcChain implements IChain {
       const totalOutputs = _.sumBy(txp.outputs, 'amount');
       if (totalInputs && totalOutputs) {
         fee = totalInputs - totalOutputs;
-        fee = Number(fee); 
+        fee = Number(fee);
       }
     }
 
@@ -353,7 +353,7 @@ export class BtcChain implements IChain {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
             script: o.script,
-            satoshis: Number(o.amount)
+            satoshis: Number(o.amount),
           })
         );
       } else {

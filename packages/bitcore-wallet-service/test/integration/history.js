@@ -146,7 +146,7 @@ describe('History', function() {
         should.exist(txs);
         txs.length.should.equal(2);
         // one tx from 2 items
-        txs[0].amount.should.equal(40001);
+        helpers.checkBig(txs[0].amount,40001);
 
 
         txs[0].outputs.should.deep.equal([
@@ -160,8 +160,7 @@ describe('History', function() {
           }]);
 
         txs[0].txid.should.equal('txid0');
-
-        txs[1].amount.should.equal(30001);
+        helpers.checkBig(txs[1].amount,30001);
         done();
       });
     });
@@ -182,7 +181,7 @@ describe('History', function() {
         should.exist(txs);
         txs.length.should.equal(2);
         // one tx from 2 items
-        txs[0].amount.should.equal(30001);
+        helpers.checkBig(txs[0].amount,30001);
 
 
         txs[0].outputs.should.deep.equal([
@@ -193,8 +192,7 @@ describe('History', function() {
           ]);
 
         txs[0].txid.should.equal('txid0');
-
-        txs[1].amount.should.equal(30001);
+        helpers.checkBig(txs[1].amount,30001);
         done();
       });
     });
@@ -741,7 +739,7 @@ describe('History', function() {
                 tx.createdOn.should.equal(txp.createdOn);
 
                 tx.action.should.equal('sent');
-                tx.amount.should.equal(0.8e8);
+                helpers.checkBig(tx.amount,0.8e8);
                 tx.addressTo.should.equal(external);
                 tx.actions.length.should.equal(1);
                 tx.actions[0].type.should.equal('accept');
@@ -834,24 +832,25 @@ describe('History', function() {
                 var tx = txs[0];
                 tx.createdOn.should.equal(txp.createdOn);
                 tx.action.should.equal('sent');
-                tx.amount.should.equal(0.8e8);
+                helpers.checkBig(tx.amount,0.8e8);
 
-                should.not.exist(tx.raw);
+                should.not.exist(tx.raw, 'no raw');
                 tx.message.should.equal('some message');
                 tx.addressTo.should.equal(external);
                 tx.actions.length.should.equal(1);
                 tx.actions[0].type.should.equal('accept');
                 tx.actions[0].copayerName.should.equal('copayer 1');
                 tx.outputs[0].address.should.equal(external);
-                tx.outputs[0].amount.should.equal(0.5e8);
+                helpers.checkBig(tx.outputs[0].amount,0.5e8);
                 should.not.exist(tx.outputs[0].message);
                 should.not.exist(tx.outputs[0]['isMine']);
                 should.not.exist(tx.outputs[0]['isChange']);
                 tx.outputs[1].address.should.equal(external);
-                tx.outputs[1].amount.should.equal(0.3e8);
-                should.exist(tx.outputs[1].message);
+                helpers.checkBig(tx.outputs[1].amount,0.3e8);
+                should.exist(tx.outputs[1].message, 'message');
                 tx.outputs[1].message.should.equal('message #2');
-                should.exist(tx.customData);
+
+                should.exist(tx.customData, 'custom data');
                 should.exist(tx.customData["test"]);
                 done();
               });
@@ -958,6 +957,9 @@ describe('History', function() {
         should.not.exist(err);
         should.exist(txs)
         txs.length.should.equal(9);
+        const  o = txs[2].outputs;
+        delete txs[2].outputs;
+
         txs[2].should.deep.equal({
           id: '5ddbf28d4ff191801711a948',
           txid:
@@ -970,12 +972,12 @@ describe('History', function() {
           amount: 0,
           action: 'sent',
           addressTo: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-          outputs:
-          [ { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-            amount: 0 } ],
           dust: false,
           lowFees: false,
         });
+
+        o[0].address.should.be.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
+        helpers.checkBig(o[0].amount, 0);
         done();
       });
     });

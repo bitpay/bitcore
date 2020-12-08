@@ -277,7 +277,6 @@ export class TxProposal {
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;
     }
-
     return x;
   }
 

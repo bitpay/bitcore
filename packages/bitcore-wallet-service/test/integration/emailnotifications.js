@@ -85,8 +85,7 @@ describe('Email notifications', function() {
         });
     });
 
-    it.only('should notify copayers a new tx proposal has been created', function(done) {
-
+    it('should notify copayers a new tx proposal has been created', function(done) {
       var _readTemplateFile_old = emailService._readTemplateFile;
       emailService._readTemplateFile = function(language, filename, cb) {
         if (_.endsWith(filename, '.html')) {
@@ -129,6 +128,53 @@ describe('Email notifications', function() {
         });
       });
     });
+
+
+    it('should notify copayers a bigint new tx proposal has been created', function(done) {
+      var _readTemplateFile_old = emailService._readTemplateFile;
+      emailService._readTemplateFile = function(language, filename, cb) {
+        if (_.endsWith(filename, '.html')) {
+          return cb(null, '<html><body>{{walletName}}</body></html>');
+        } else {
+          _readTemplateFile_old.call(emailService, language, filename, cb);
+        }
+      };
+
+      helpers.stubUtxos(server, wallet, [12345678n], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+            amount: 1234567n
+          }],
+          feePerKb: 100e2
+        };
+
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+
+          setTimeout(function() {
+            var calls = mailerStub.send.getCalls();
+            calls.length.should.equal(2);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment proposal');
+            should.exist(one.html);
+            one.html.indexOf('<html>').should.equal(0);
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              emailService._readTemplateFile = _readTemplateFile_old;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+
+
 
     it('should not send email if unable to apply template to notification', function(done) {
       var _applyTemplate_old = emailService._applyTemplate;
@@ -690,6 +736,141 @@ describe('Email notifications', function() {
         });
       });
     });
+  });
+
+  describe('1-1 ETH wallet', function() {
+    beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1,  {coin:'eth'}, function(s, w) {
+          server = s;
+          wallet = w;
+
+          var i = 0;
+          async.eachSeries(w.copayers, function(copayer, next) {
+            helpers.getAuthServer(copayer.id, function(server) {
+              server.savePreferences({
+                email: 'copayer' + (++i) + '@domain.com',
+                unit: 'bit',
+              }, next);
+            });
+          }, function(err) {
+            should.not.exist(err);
+
+            mailerStub = sinon.stub();
+            mailerStub.send = sinon.stub();
+            mailerStub.send.returns(Promise.resolve('ok'));
+            //mailerStub.returns(Promise.reject('err'));
+
+            emailService = new EmailService();
+            emailService.start({
+              lockOpts: {},
+              messageBroker: server.messageBroker,
+              storage: helpers.getStorage(),
+              mailer: mailerStub,
+              emailOpts: {
+                from: 'bws@dummy.net',
+                subjectPrefix: '[test wallet]',
+                publicTxUrlTemplate: {
+                  eth: {
+                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+                  },
+               },
+              },
+            }, function(err) {
+              should.not.exist(err);
+              done();
+            });
+          });
+      });
+    });
+
+    it('should NOT sent notifications for SMALL incomming payments', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate incoming tx notification
+        server._notify('NewIncomingTx', {
+          txid: '999',
+          address: address,
+          amount: 221340,
+        }, function(err) {
+          setTimeout(function() {
+            var calls = mailerStub.send.getCalls();
+
+            // NOT CALLED => formatted amount = 0.00 ETH
+            calls.length.should.equal(0);
+            done();
+          }, 100);
+        });
+      });
+    });
+
+    it('should handle bigint incomming payments', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        const toEth = 1000000000000000000n;
+
+        // Simulate incoming tx notification
+        server._notify('NewIncomingTx', {
+          txid: '999',
+          address: address,
+          amount: 5n * toEth,
+        }, function(err) {
+          setTimeout(function() {
+            var calls = mailerStub.send.getCalls();
+            calls.length.should.equal(1);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer1@domain.com'], _.map(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment received');
+            one.text.should.contain('5.00 ETH');
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+
+    it('should handle bigint incomming payments (case 2)', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        const toEth = 1000000000000000000n;
+
+        // Simulate incoming tx notification
+        server._notify('NewIncomingTx', {
+          txid: '999',
+          address: address,
+          amount: 500000n * toEth, // This excess "Number" limit
+        }, function(err) {
+          setTimeout(function() {
+            var calls = mailerStub.send.getCalls();
+            calls.length.should.equal(1);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer1@domain.com'], _.map(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment received');
+            one.text.should.contain('500,000.00 ETH');
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+
   });
 
 });
