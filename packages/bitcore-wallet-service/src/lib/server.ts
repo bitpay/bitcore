@@ -2972,7 +2972,7 @@ export class WalletService {
     // One fee per TXID
     const indexedFee: any = _.keyBy(_.filter(txs, { category: 'fee' } as any), 'txid');
     const indexedSend = _.keyBy(_.filter(txs, { category: 'send' } as any), 'txid');
-    var txWithMissunderstoodMoves = [];
+    var txWithMisunderstoodMoves = [];
     const seenSend = {};
     const seenReceive = {};
 
@@ -3026,7 +3026,7 @@ export class WalletService {
         if (moves[tx.txid]) {
           moves[tx.txid].outputs.push(output);
           if (moves[tx.txid].outputs.length > 1 && indexedSend[tx.txid]) {
-            txWithMissunderstoodMoves.push(tx.txid);
+            txWithMisunderstoodMoves.push(tx.txid);
           }
           return false;
         } else {
@@ -3084,11 +3084,11 @@ export class WalletService {
             action: undefined,
             addressTo: undefined,
             outputs: undefined,
-            missunderstoodOutputs: undefined,
+            misunderstoodOutputs: undefined,
             dust: false,
           };
           
-          ret.missunderstoodOutputs = txWithMissunderstoodMoves && txWithMissunderstoodMoves.indexOf(tx.txid) >= 0;
+          ret.misunderstoodOutputs = txWithMisunderstoodMoves && txWithMisunderstoodMoves.indexOf(tx.txid) >= 0;
           switch (tx.category) {
             case 'send':
               ret.action = 'sent';

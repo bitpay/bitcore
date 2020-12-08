@@ -318,8 +318,8 @@ describe('History', function() {
         should.exist(txs);
         txs.length.should.equal(1);
 
-        // should have missunderstoodOutputs
-        txs[0].missunderstoodOutputs.should.equal(true);
+        // should have misunderstoodOutputs
+        txs[0].misunderstoodOutputs.should.equal(true);
         
         // should only have defined externals as outputs
         txs[0].outputs.length.should.equal(externals.length);
@@ -868,7 +868,7 @@ describe('History', function() {
                   tx.actions[0].copayerName.should.equal('copayer 1');
                   tx.outputs[0].address.should.equal(external);
                   tx.outputs[0].amount.should.equal(0.5e8);
-                  tx.missunderstoodOutputs.should.equal(false);
+                  tx.misunderstoodOutputs.should.equal(false);
                   should.not.exist(tx.outputs[0].message);
                   should.not.exist(tx.outputs[0]['isMine']);
                   should.not.exist(tx.outputs[0]['isChange']);
@@ -995,7 +995,7 @@ describe('History', function() {
           amount: 0,
           action: 'sent',
           addressTo: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-          missunderstoodOutputs: false,
+          misunderstoodOutputs: false,
           outputs:
           [ { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
             amount: 0 } ],
