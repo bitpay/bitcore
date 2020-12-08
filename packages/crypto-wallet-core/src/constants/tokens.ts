@@ -22,5 +22,11 @@ export let TOKEN_OPTS = {
     symbol: 'GUSD',
     decimal: 2,
     address: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+  }, 
+  '0x6b175474e89094c44da98b954eedeac495271d0f': {
+    name: 'Dai ',
+    symbol: 'DAI',
+    decimal: 18,
+    address: '0x6b175474e89094c44da98b954eedeac495271d0f'
   }
 };
