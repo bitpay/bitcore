@@ -2972,7 +2972,7 @@ export class WalletService {
     // One fee per TXID
     const indexedFee: any = _.keyBy(_.filter(txs, { category: 'fee' } as any), 'txid');
     const indexedSend = _.keyBy(_.filter(txs, { category: 'send' } as any), 'txid');
-    var txWithMisunderstoodMoves = [];
+    const txWithMisunderstoodMoves = [];
     const seenSend = {};
     const seenReceive = {};
 
