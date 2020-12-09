@@ -439,7 +439,7 @@ describe('Transaction Sign', () => {
     } catch (err) {
       error = err;
     }
-    expect(error.message).to.include('invalid hexidecimal string');
+    expect(error.message).to.include('invalid hex');
     expect(error).to.not.equal(undefined);
   });
 });
