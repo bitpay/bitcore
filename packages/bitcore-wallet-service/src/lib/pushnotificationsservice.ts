@@ -343,8 +343,9 @@ export class PushNotificationsService {
       usdc: 'USDC',
       pax: 'PAX',
       gusd: 'GUSD',
-      busd: 'BUSD', 
-      dai: 'DAI',
+      busd: 'BUSD',
+      wbtc: 'WBTC',
+      dai: 'DAI'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');

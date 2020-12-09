@@ -11,7 +11,8 @@ module.exports = {
     PAX: 'pax',
     GUSD: 'gusd',
     BUSD: 'busd',
-    DAI: 'dai'
+    DAI: 'dai',
+    WBTC: 'wbtc'
   },
 
   ERC20: {
@@ -19,7 +20,8 @@ module.exports = {
     PAX: 'pax',
     GUSD: 'gusd',
     BUSD: 'busd',
-    DAI: 'dai'
+    DAI: 'dai',
+    WBTC: 'wbtc'
   },
 
   UTXO_COINS: {
