@@ -4485,6 +4485,64 @@ export class WalletService {
     });
   }
 
+  changellyGetKeys(req) {
+    if (!config.changelly) throw new Error('Changelly missing credentials');
+
+    const keys = {
+      API: config.changelly.api,
+      API_KEY: config.changelly.apiKey,
+      SECRET: config.changelly.secret,
+    };
+
+    return keys;
+  }
+
+  changellyMakeRequest(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+    //   const message = {
+    //     "id": "test",
+    //     "jsonrpc": "2.0",
+    //     "method": "getCurrencies",
+    //     "params": {}
+    //  }
+
+    if (!checkRequired(req.body, ['method', 'jsonrpc', 'id'])) { // TODO: review required params
+      return reject(new ClientError("Changelly's request missing arguments"));
+    }
+
+      const URL: string = keys.API;
+      const sign: string = Bitcore.crypto.Hash.sha512hmac(
+        Buffer.from(JSON.stringify(req.body)),
+        Buffer.from(keys.SECRET)
+      ).toString('hex');
+
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'sign': sign,
+        'api-key': keys.API_KEY
+        };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
   getPayId(url: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const headers = {
