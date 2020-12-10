@@ -136,7 +136,7 @@ export class PushNotificationsService {
     if (!notifType) return cb();
 
     logger.debug('Notification received: ' + notification.type);
-    logger.debug(JSON.stringify(notification));
+    logger.debug(notification); // json.stringify breaks with bigint
 
     this._checkShouldSendNotif(notification, (err, should) => {
       if (err) return cb(err);
@@ -361,7 +361,7 @@ export class PushNotificationsService {
             throw new Error('Notifications for unsupported token are not allowed');
           }
         }
-        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
+        data.amount = Utils.formatAmount(data.amount, unit) + ' ' + label;
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }

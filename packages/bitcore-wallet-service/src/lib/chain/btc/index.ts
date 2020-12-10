@@ -353,7 +353,7 @@ export class BtcChain implements IChain {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
             script: o.script,
-            satoshis: Number(o.amount),
+            satoshis: Number(o.amount)
           })
         );
       } else {

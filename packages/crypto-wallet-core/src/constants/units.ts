@@ -79,11 +79,14 @@ export let UNITS = {
   gusd: {
     toSatoshis: 1e2,
     full: {
-      maxDecimals: 8,
-      minDecimals: 8
+      //      maxDecimals: 8, // can be more that  "toSatoshis"!
+      //      minDecimals: 8
+      maxDecimals: 2,
+      minDecimals: 2
     },
     short: {
-      maxDecimals: 6,
+      //      maxDecimals: 6,
+      maxDecimals: 2,
       minDecimals: 2
     }
   },

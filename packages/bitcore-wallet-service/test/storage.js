@@ -199,8 +199,8 @@ describe('Storage', function() {
         should.exist(txs);
         txs.length.should.equal(2);
         txs = _.sortBy(txs, 'amount');
-        txs[0].amount.should.equal(100);
-        txs[1].amount.should.equal(102);
+        helpers.checkBig(txs[0].amount, 100);
+        helpers.checkBig(txs[1].amount, 102);
         done();
       });
     });

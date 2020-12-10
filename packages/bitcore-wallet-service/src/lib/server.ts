@@ -2640,7 +2640,7 @@ export class WalletService {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
               this.logw('Arguments:', JSON.stringify(opts));
-              this.logw('Transaction proposal:', JSON.stringify(txp));
+              this.logw('Transaction proposal:', txp);
               const raw = ChainService.getBitcoreTx(txp).uncheckedSerialize();
               this.logw('Raw tx:', raw);
               return cb(Errors.BAD_SIGNATURES);
@@ -3011,7 +3011,7 @@ export class WalletService {
       if (tx.category == 'send') {
         const output = {
           address: tx.address,
-          amount: tx.satoshis,
+          amount: tx.satoshis
         };
         if (output.amount < BigInt(0)) output.amount = output.amount * BigInt(-1);
 
@@ -3327,12 +3327,16 @@ export class WalletService {
       amountOut = sum(outputs, true, false);
       amountOutChange = sum(outputs, true, true);
       if (amountIn == amountOut + amountOutChange + (amountIn > Z ? BigInt(tx.fees) : Z)) {
-        amount = amountOut;
+        amount = BigInt(amountOut);
         action = 'moved';
       } else {
         // BWS standard sent
         // (amountIn > 0 && amountOutChange >0 && outputs.length <= 2)
-        amount = amountIn - amountOut - amountOutChange - (amountIn > Z && amountOutChange > Z ? BigInt(tx.fees) : Z);
+        amount =
+          BigInt(amountIn) -
+          BigInt(amountOut) -
+          BigInt(amountOutChange) -
+          (amountIn > Z && amountOutChange > Z ? BigInt(tx.fees) : Z);
         action = amount > Z ? 'sent' : 'received';
       }
 
@@ -3412,7 +3416,7 @@ export class WalletService {
       _.each(tx.outputs, output => {
         const query = {
           toAddress: output.address,
-          amount: BigInt(output.amount),
+          amount: BigInt(output.amount)
         };
         if (proposal.outputs) {
           const txpOut = proposal.outputs.find(o => o.toAddress === output.address && o.amount == output.amount);
@@ -3422,7 +3426,7 @@ export class WalletService {
           }
         }
       });
-//      tx.amount = proposal.amount; // no need, values should be the same
+      //      tx.amount = proposal.amount; // no need, values should be the same
       tx.customData = proposal.customData;
       tx.createdOn = proposal.createdOn;
 

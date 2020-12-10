@@ -153,9 +153,9 @@ export class V8 {
       }),
       x => {
         const u = {
-          address: x.address, 
+          address: x.address,
           satoshis: BigInt(x.value), // in Sats (or Wei)
-          // amount: x.value / 1e8, // In BTC not used
+          amount: x.value / 1e8, // Legacy... in BTC 
           scriptPubKey: x.script,
           txid: x.mintTxid,
           vout: x.mintIndex,
@@ -333,8 +333,10 @@ export class V8 {
         }
 
         // v8 field name differences
-        // if (tx.value) tx.amount = tx.satoshis / 1e8; // legacy BTC value
-        tx.satoshis = BigInt(tx.satoshis);
+        if (tx.satoshis) {
+          tx.amount = tx.satoshis / 1e8; // legacy BTC value
+          tx.satoshis = BigInt(tx.satoshis);
+        }
 
         if (tx.height >= 0) txs.push(tx);
         else unconf.push(tx);

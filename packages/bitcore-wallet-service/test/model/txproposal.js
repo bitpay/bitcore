@@ -1,11 +1,12 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-var { TxProposal } = require('../../ts_build/lib/model/txproposal');
-var Bitcore = require('bitcore-lib');
+const _ = require('lodash');
+const chai = require('chai');
+const sinon = require('sinon');
+const should = chai.should();
+const { TxProposal } = require('../../ts_build/lib/model/txproposal');
+const Bitcore = require('bitcore-lib');
+const helpers = require('../integration/helpers');
 
 describe('TxProposal', function() {
   describe('#create', function() {
@@ -22,7 +23,7 @@ describe('TxProposal', function() {
     it('should copy a TxProposal', function() {
       var txp = TxProposal.fromObj(aTXP());
       should.exist(txp);
-      txp.amount.should.equal(aTXP().amount);
+      helpers.checkBig(txp.amount, aTXP().amount);
     });
 
     it('should copy a TxProposal, with actions', function() {
@@ -57,7 +58,7 @@ describe('TxProposal', function() {
     it('should compute total amount', function() {
       var x = TxProposal.fromObj(aTXP());
       var total = x.getTotalAmount();
-      total.should.equal(x.amount);
+      helpers.checkBig(total, x.amount);
     });
   });
 

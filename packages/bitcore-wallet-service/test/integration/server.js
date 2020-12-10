@@ -29,9 +29,11 @@ const VanillaDefaults = _.cloneDeep(Defaults);
 const Model = require('../../ts_build/lib/model');
 const BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
 
-var HugeTxs = require('./hugetx');
-var TestData = require('../testdata');
-var helpers = require('./helpers');
+const HugeTxs = require('./hugetx');
+const TestData = require('../testdata');
+const helpers = require('./helpers');
+const checkBig = helpers.checkBig;
+
 var storage, blockchainExplorer, request;
 
 
@@ -1608,7 +1610,7 @@ describe('Wallet service', function() {
         should.exist(status.wallet.copayers);
         status.wallet.copayers.length.should.equal(2);
         should.exist(status.balance);
-        status.balance.totalAmount.should.equal(0);
+        checkBig(status.balance.totalAmount,0);
         should.exist(status.preferences);
         should.exist(status.pendingTxps);
         status.pendingTxps.should.be.empty;
@@ -1683,9 +1685,9 @@ describe('Wallet service', function() {
             should.not.exist(err,err);
             status.pendingTxps.length.should.equal(1);
             var balance = status.balance;
-            balance.totalAmount.should.equal(3e8);
-            balance.lockedAmount.should.equal(tx.inputs[0].satoshis);
-            balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
+            checkBig(balance.totalAmount, 3e8);
+            checkBig(balance.lockedAmount, tx.inputs[0].satoshis);
+            checkBig(balance.availableAmount, balance.totalAmount - balance.lockedAmount);
             done();
           });
         });
@@ -2763,7 +2765,7 @@ describe('Wallet service', function() {
           should.not.exist(err,err);
           should.exist(utxos);
           utxos.length.should.equal(2);
-          _.sumBy(utxos, 'satoshis').should.equal(3 * 1e8);
+          checkBig( _.sumBy(utxos, 'satoshis'), 3 * 1e8);
           server.getMainAddresses({}, function(err, addresses) {
             var utxo = utxos[0];
             var address = _.find(addresses, {
@@ -2785,7 +2787,7 @@ describe('Wallet service', function() {
           should.not.exist(err,err);
           should.exist(utxos);
           utxos.length.should.equal(2);
-          _.sumBy(utxos, 'satoshis').should.equal(3 * 1e8);
+          checkBig( _.sumBy(utxos, 'satoshis'), 3 * 1e8);
           server.getMainAddresses({}, function(err, addresses) {
             var utxo = utxos[0];
             var address = _.find(addresses, {
@@ -2875,7 +2877,7 @@ describe('Wallet service', function() {
           should.not.exist(err,err);
           should.exist(utxos);
           utxos.length.should.equal(2);
-          _.sumBy(utxos, 'satoshis').should.equal(2 * 1e8 + 1000);
+          checkBig( _.sumBy(utxos, 'satoshis'), 2 * 1e8 + 1000);
           server.getMainAddresses({}, function(err, addresses) {
             var utxo = utxos[0];
             var address = _.find(addresses, {
@@ -2958,12 +2960,12 @@ describe('Wallet service', function() {
 
           server.getBalance(res.wallet.walletId, function(err, bal) {
             should.not.exist(err,err);
-            bal.totalAmount.should.equal(1e8);
+            checkBig(bal.totalAmount, 1e8);
             getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
 
               server2.getBalance(res.wallet.walletId, function(err, bal2) {
                 should.not.exist(err,err);
-                bal2.totalAmount.should.equal(1e8);
+                checkBig(bal2.totalAmount, 1e8);
                 done();
               });
             });
@@ -3029,11 +3031,11 @@ describe('Wallet service', function() {
           should.not.exist(err,err);
           server.getBalance(res.wallet.walletId, function(err, bal) {
             should.not.exist(err,err);
-            bal.totalAmount.should.equal(1e8);
+            checkBig(bal.totalAmount, 1e8);
             getAuthServer(opts.copayerId, reqPrivKey, function(err, server2) {
               server2.getBalance(res.wallet.walletId, function(err, bal2) {
                 should.not.exist(err,err);
-                bal2.totalAmount.should.equal(1e8);
+                 checkBig(bal2.totalAmount, 1e8);
                 done();
               });
             });
@@ -3081,18 +3083,18 @@ describe('Wallet service', function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err,err);
           should.exist(balance);
-          balance.totalAmount.should.equal(helpers.toSatoshi(6));
-          balance.lockedAmount.should.equal(0);
-          balance.availableAmount.should.equal(helpers.toSatoshi(6));
+          checkBig(balance.totalAmount,helpers.toSatoshi(6));
+          checkBig(balance.lockedAmount, 0);
+          checkBig(balance.availableAmount, helpers.toSatoshi(6));
 
-          balance.totalConfirmedAmount.should.equal(helpers.toSatoshi(4));
-          balance.lockedConfirmedAmount.should.equal(0);
-          balance.availableConfirmedAmount.should.equal(helpers.toSatoshi(4));
+          checkBig(balance.totalConfirmedAmount, helpers.toSatoshi(4));
+          checkBig(balance.lockedConfirmedAmount, 0);
+          checkBig(balance.availableConfirmedAmount, helpers.toSatoshi(4));
 
           should.exist(balance.byAddress);
           balance.byAddress.length.should.equal(2);
-          balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
-          balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
+          checkBig(balance.byAddress[0].amount, helpers.toSatoshi(4));
+          checkBig(balance.byAddress[1].amount, helpers.toSatoshi(2));
           server.getMainAddresses({}, function(err, addresses) {
             should.not.exist(err,err);
             var addresses = _.uniq(_.map(addresses, 'address'));
@@ -3106,11 +3108,11 @@ describe('Wallet service', function() {
       server.getBalance({}, function(err, balance) {
         should.not.exist(err,err);
         should.exist(balance);
-        balance.totalAmount.should.equal(0);
-        balance.lockedAmount.should.equal(0);
-        balance.availableAmount.should.equal(0);
+        checkBig(balance.totalAmount, 0);
+        checkBig(balance.lockedAmount, 0);
+        checkBig(balance.availableAmount, 0);
         should.exist(balance.byAddress);
-        balance.byAddress.length.should.equal(0);
+        balance.byAddress.length.should.be.equal(0);
         done();
       });
     });
@@ -3121,11 +3123,11 @@ describe('Wallet service', function() {
         server.getBalance({}, function(err, balance) {
           should.not.exist(err,err);
           should.exist(balance);
-          balance.totalAmount.should.equal(0);
-          balance.lockedAmount.should.equal(0);
-          balance.availableAmount.should.equal(0);
+          checkBig( balance.totalAmount, 0);
+          checkBig( balance.lockedAmount, 0);
+          checkBig( balance.availableAmount, 0);
           should.exist(balance.byAddress);
-          balance.byAddress.length.should.equal(0);
+          balance.byAddress.length.should.be.equal(0);
           done();
         });
       });
@@ -3137,7 +3139,7 @@ describe('Wallet service', function() {
           server.getBalance({}, function(err, balance) {
             should.not.exist(err,err);
             balance.byAddress.length.should.equal(1);
-            balance.byAddress[0].amount.should.equal(helpers.toSatoshi(1));
+            checkBig( balance.byAddress[0].amount, helpers.toSatoshi(1));
             balance.byAddress[0].address.should.equal(utxos[0].address);
             done();
           });
@@ -3883,10 +3885,10 @@ describe('Wallet service', function() {
               tx.isRejected().should.equal.false;
               tx.isPending().should.equal.true;
               tx.isTemporary().should.equal.true;
-              helpers.checkBig(tx.amount,8000);
+              checkBig(tx.amount,8000);
               tx.feePerKb.should.equal(123e2);
               tx.outputs[0].toAddress.should.equal(addressStr);
-              helpers.checkBig(tx.outputs[0].amount,amount);
+              checkBig(tx.outputs[0].amount,amount);
 
               if(coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
@@ -3931,10 +3933,10 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err,err);
                 should.exist(tx);
-                helpers.checkBig(tx.amount,amount);
+                checkBig(tx.amount,amount);
                 tx.feePerKb.should.equal(123e2);
                 tx.outputs[0].toAddress.should.equal(addressStr);
-                helpers.checkBig(tx.outputs[0].amount,amount);
+                checkBig(tx.outputs[0].amount,amount);
                 tx.gasPrice.should.equal(12300);
                 tx.nonce.should.equal('5');
 
@@ -4151,7 +4153,7 @@ describe('Wallet service', function() {
                 server.createTx(txOpts, function(err, tx) {
                   should.not.exist(err,err);
                   should.exist(tx);
-                  helpers.checkBig(tx.amount,helpers.toSatoshi(0.8));
+                  checkBig(tx.amount,helpers.toSatoshi(0.8));
                   should.not.exist(tx.feePerKb);
                   tx.fee.should.equal(1000e2);
                   var t = ChainService.getBitcoreTx(tx);
@@ -4719,7 +4721,7 @@ describe('Wallet service', function() {
               should.exist(txp);
               var t = ChainService.getBitcoreTx(txp).toObject();
               t.outputs.length.should.equal(1);
-              helpers.checkBig(t.outputs[0].satoshis, max);
+              checkBig(t.outputs[0].satoshis, max);
               done();
             });
           });
@@ -4797,12 +4799,12 @@ describe('Wallet service', function() {
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err,err);
-                helpers.checkBig(balance.totalAmount,BigInt(2 * ts) + lockedFunds);
+                checkBig(balance.totalAmount,BigInt(2 * ts) + lockedFunds);
                 if(testFlags.noChange) {
-                  helpers.checkBig(balance.lockedAmount,txAmount + lockedFunds);
+                  checkBig(balance.lockedAmount,txAmount + lockedFunds);
                   txOpts.outputs[0].amount = 2 * ts;
                 } else {
-                  helpers.checkBig(balance.lockedAmount,2 * ts);
+                  checkBig(balance.lockedAmount,2 * ts);
                   txOpts.outputs[0].amount = 0.8 * ts;
                 }
 
@@ -4879,7 +4881,7 @@ describe('Wallet service', function() {
                 should.exist(tx);
                 var bitcoreTx = ChainService.getBitcoreTx(tx);
                 bitcoreTx.outputs.length.should.equal(1);
-                helpers.checkBig(bitcoreTx.outputs[0].satoshis,tx.amount);
+                checkBig(bitcoreTx.outputs[0].satoshis,tx.amount);
                 done();
               });
             });
@@ -4905,11 +4907,11 @@ describe('Wallet service', function() {
                     txs.length.should.equal(2);
                     server.getBalance({}, function(err, balance) {
                       should.not.exist(err,err);
-                      helpers.checkBig(balance.totalAmount, 3.6 * TO_SAT[coin] );
+                      checkBig(balance.totalAmount, 3.6 * TO_SAT[coin] );
                       if(coin == 'eth') {
                         balance.lockedAmount.should.equal(2300000000000000000);
                       } else {
-                        helpers.checkBig(balance.lockedAmount,3.6 * TO_SAT[coin]);
+                        checkBig(balance.lockedAmount,3.6 * TO_SAT[coin]);
                       }
                       done();
                     });
@@ -4941,12 +4943,12 @@ describe('Wallet service', function() {
                     txs.length.should.equal(1);
                     server.getBalance({}, function(err, balance) {
                       should.not.exist(err,err);
-                      helpers.checkBig(balance.totalAmount, 3.6 * TO_SAT[coin]);
+                      checkBig(balance.totalAmount, 3.6 * TO_SAT[coin]);
                       if(coin != 'eth') {
                         var amountInputs = _.sumBy(txs[0].inputs, 'satoshis');
-                        helpers.checkBig(balance.lockedAmount,amountInputs);
+                        checkBig(balance.lockedAmount,amountInputs);
                         balance.lockedAmount.toString().should.be.below(balance.totalAmount.toString());
-                        helpers.checkBig(balance.availableAmount, balance.totalAmount - balance.lockedAmount);
+                        checkBig(balance.availableAmount, balance.totalAmount - balance.lockedAmount);
                       } else {
                         balance.lockedAmount.should.equal(1.5 * TO_SAT[coin]);
                       }
@@ -5282,9 +5284,9 @@ describe('Wallet service', function() {
               tx.inputs.length.should.equal(2);
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err,err);
-                balance.lockedConfirmedAmount.should.equal(helpers.toSatoshi(2.5));
-                balance.availableConfirmedAmount.should.equal(0);
-                txOpts.outputs[0].amount = 0.01e8;
+                checkBig(balance.lockedConfirmedAmount,helpers.toSatoshi(2.5));
+                checkBig(balance.availableConfirmedAmount,0);
+                txOpts.outputs[0].amount=0.01e8;
                 txOpts = Object.assign(txOpts, testFlags);
                 server.createTx(txOpts, function(err, tx) {
                   should.exist(err);
@@ -5334,7 +5336,7 @@ describe('Wallet service', function() {
               should.not.exist(err,err);
               should.exist(txp);
               txp.inputs.length.should.equal(1);
-              txp.inputs[0].satoshis.should.equal(35000);
+              checkBig(txp.inputs[0].satoshis,35000);
 
               done();
             });
@@ -5346,7 +5348,7 @@ describe('Wallet service', function() {
             var txOpts = {
               outputs: [{
                 toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-                amount: _.sumBy(utxos, 'satoshis') - 0.5e8,
+                amount: Utils.sumByB(utxos, 'satoshis') - BigInt(0.5e8),
               }],
               feePerKb: 100e2,
             };
@@ -5378,8 +5380,7 @@ describe('Wallet service', function() {
               should.not.exist(err,err);
               should.exist(txp);
               txp.inputs.length.should.equal(3);
-              txp.inputs[0].satoshis.should.equal(10000);
-
+              checkBig(txp.inputs[0].satoshis, 10000);
               done();
             });
           });
@@ -5419,7 +5420,7 @@ describe('Wallet service', function() {
               should.not.exist(err,err);
               should.exist(txp);
               txp.inputs.length.should.equal(1);
-              txp.inputs[0].satoshis.should.equal(1e8);
+              checkBig(txp.inputs[0].satoshis, 1e8);
               done();
             });
           });
@@ -5442,7 +5443,7 @@ describe('Wallet service', function() {
               should.not.exist(err,err);
               should.exist(txp);
               txp.inputs.length.should.equal(1);
-              txp.inputs[0].satoshis.should.equal(1e8);
+              checkBig(txp.inputs[0].satoshis, 1e8);
               Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR = _old;
               done();
             });
@@ -5464,7 +5465,7 @@ describe('Wallet service', function() {
               should.not.exist(err,err);
               should.exist(txp);
               txp.inputs.length.should.equal(1);
-              txp.inputs[0].satoshis.should.equal(1e8);
+              checkBig(txp.inputs[0].satoshis, 1e8);
 
               done();
             });
@@ -5484,7 +5485,7 @@ describe('Wallet service', function() {
               should.not.exist(err,err);
               should.exist(txp);
               txp.inputs.length.should.equal(1);
-              txp.inputs[0].satoshis.should.equal(9e8);
+              checkBig(txp.inputs[0].satoshis,9e8);
               done();
             });
           });
@@ -5509,7 +5510,7 @@ describe('Wallet service', function() {
                 should.not.exist(err,err);
                 should.exist(txp);
                 txp.inputs.length.should.equal(1);
-                txp.inputs[0].satoshis.should.equal(100e8);
+                checkBig(txp.inputs[0].satoshis, 100e8);
                 done();
               });
             });
@@ -5610,7 +5611,7 @@ describe('Wallet service', function() {
               should.not.exist(err,err);
               should.exist(txp);
               txp.inputs.length.should.equal(1);
-              txp.inputs[0].satoshis.should.equal(1e8);
+              checkBig(txp.inputs[0].satoshis,1e8);
               done();
             });
           });
@@ -5668,7 +5669,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err,err);
               txp.inputs.length.should.equal(1);
-              (_.sumBy(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.equal(0);
+              checkBig(Utils.sumByB(txp.inputs, 'satoshis') - txp.outputs[0].amount - BigInt(txp.fee), 0);
               var changeOutput = ChainService.getBitcoreTx(txp).getChangeOutput();
               should.not.exist(changeOutput);
               done();
@@ -5787,10 +5788,11 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err,err);
             should.exist(tx);
+            checkBig(tx.outputs[0].amount, amount);
+            delete tx.outputs[0].amount;
             tx.outputs.should.deep.equal([{
               toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
               gasLimit: 21000,
-              amount: amount,
             }]);
             tx.gasPrice.should.equal(12000000000);
             tx.outputs[0].gasLimit.should.equal(21000);
@@ -5823,18 +5825,56 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             should.not.exist(err,err);
             should.exist(tx);
+            checkBig(tx.outputs[0].amount, amount);
+            checkBig(tx.outputs[1].amount, amount);
+            delete tx.outputs[0].amount;
+            delete tx.outputs[1].amount;
             tx.outputs.should.deep.equal([{
               toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
               gasLimit: 21000,
-              amount: amount
             },{
               toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
               gasLimit: 21000,
-              amount: amount
             }]);
             tx.gasPrice.should.equal(1000000000);
             tx.outputs[0].gasLimit.should.equal(21000);
             (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(21000000000000);
+            done();
+          });
+        });
+      });
+    });
+
+
+    it('should allow to create a TX with big output (10kETH)', function(done) {
+      helpers.stubFeeLevels({
+      });
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [10000], function() {
+          let amount = BigInt(10000) * BigInt(1e18);
+          var txOpts = {
+            outputs: [{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              amount: amount,
+            }],
+            from,
+            message: 'some message',
+            customData: 'some custom data',
+            fee: 252000000000000,
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err,err);
+            should.exist(tx);
+            checkBig(tx.outputs[0].amount, amount);
+            delete tx.outputs[0].amount;
+            tx.outputs.should.deep.equal([{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              gasLimit: 21000,
+            }]);
+            tx.gasPrice.should.equal(12000000000);
+            tx.outputs[0].gasLimit.should.equal(21000);
+            (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(txOpts.fee);
             done();
           });
         });
@@ -5876,11 +5916,9 @@ describe('Wallet service', function() {
             tx.isRejected().should.equal.false;
             tx.isPending().should.equal.true;
             tx.isTemporary().should.equal.true;
-            tx.outputs.should.deep.equal([{
-              toAddress: cashAddr,
-              amount: amount,
-            }]);
-            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.outputs[0].toAddress.should.equal(cashAddr);
+            checkBig(tx.outputs[0].amount, amount);
+            checkBig(tx.amount, helpers.toSatoshi(0.8));
             tx.feePerKb.should.equal(123e2);
             should.not.exist(tx.feeLevel);
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
@@ -5890,11 +5928,8 @@ describe('Wallet service', function() {
               s.getPendingTxs({ noCashAddr: true }, function(err, txs) {
                 should.not.exist(err,err);
                 txs.length.should.equal(1);
-                txs[0].outputs.should.deep.equal([{
-                  toAddress: copayAddr,
-                  amount: amount,
-                }]);
-
+                txs[0].outputs[0].toAddress.should.equal(copayAddr);
+                checkBig(txs[0].outputs[0].amount, amount);
                 done();
               });
             });
@@ -5934,11 +5969,9 @@ describe('Wallet service', function() {
             tx.isRejected().should.equal.false;
             tx.isPending().should.equal.true;
             tx.isTemporary().should.equal.true;
-            tx.outputs.should.deep.equal([{
-              toAddress: copayAddr,
-              amount: amount,
-            }]);
-            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.outputs[0].toAddress.should.equal(copayAddr);
+            checkBig(tx.outputs[0].amount, amount);
+            checkBig(tx.amount, helpers.toSatoshi(0.8));
             tx.feePerKb.should.equal(123e2);
             should.not.exist(tx.feeLevel);
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
@@ -5949,11 +5982,8 @@ describe('Wallet service', function() {
                 should.not.exist(err,err);
                 txs.length.should.equal(1);
                 txs[0].changeAddress.address.should.equal('qz0d6gueltx0feta7z9777yk97sz9p6peu98mg5vac');
-                txs[0].outputs.should.deep.equal([{
-                  toAddress: cashAddr,
-                  amount: amount,
-                }]);
-
+                checkBig(txs[0].outputs[0].amount, amount);
+                checkBig(txs[0].outputs[0].toAddress, cashAddr);
                 done();
               });
             });
@@ -5993,11 +6023,9 @@ describe('Wallet service', function() {
             tx.isRejected().should.equal.false;
             tx.isPending().should.equal.true;
             tx.isTemporary().should.equal.true;
-            tx.outputs.should.deep.equal([{
-              toAddress: 'bitcoincash:' + cashAddr,
-              amount: amount,
-            }]);
-            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.outputs[0].toAddress.should.equal( 'bitcoincash:' + cashAddr);
+            checkBig(tx.outputs[0].amount, amount);
+            checkBig(tx.amount, helpers.toSatoshi(0.8));
             tx.feePerKb.should.equal(123e2);
             should.not.exist(tx.feeLevel);
 
@@ -6009,11 +6037,8 @@ describe('Wallet service', function() {
 
                 should.not.exist(err,err);
                 txs.length.should.equal(1);
-                txs[0].outputs.should.deep.equal([{
-                  toAddress: copayAddr,
-                  amount: amount,
-                }]);
-
+                tx.outputs[0].toAddress.should.equal('bitcoincash:' + cashAddr);
+                checkBig(tx.outputs[0].amount, amount);
                 done();
               });
             });
@@ -6053,12 +6078,10 @@ describe('Wallet service', function() {
             tx.isRejected().should.equal.false;
             tx.isPending().should.equal.true;
             tx.isTemporary().should.equal.true;
-            tx.outputs.should.deep.equal([{
-              toAddress: cashAddr,
-              amount: amount,
-              message: 'xxx',
-            }]);
-            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.outputs[0].toAddress.should.equal(cashAddr);
+            tx.outputs[0].message.should.equal('xxx');
+            checkBig(tx.outputs[0].amount, amount);
+            checkBig(tx.amount, helpers.toSatoshi(0.8));
             tx.feePerKb.should.equal(123e2);
             should.not.exist(tx.feeLevel);
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
@@ -6066,12 +6089,9 @@ describe('Wallet service', function() {
               s.getPendingTxs({ noCashAddr: true }, function(err, txs) {
                 should.not.exist(err,err);
                 txs.length.should.equal(1);
-                txs[0].outputs.should.deep.equal([{
-                  toAddress: copayAddr,
-                  message: 'xxx',
-                  amount: amount,
-                }]);
-
+                tx.outputs[0].toAddress.should.equal(cashAddr);
+                tx.outputs[0].message.should.equal('xxx');
+                checkBig(tx.outputs[0].amount, amount);
                 done();
               });
             });
@@ -6641,13 +6661,13 @@ describe('Wallet service', function() {
         should.not.exist(err,err);
         should.exist(info);
         info.size.should.equal(0);
-        info.amount.should.equal(0);
+        checkBig(info.amount, 0);
         info.fee.should.equal(0);
         info.inputs.should.be.empty;
         info.utxosBelowFee.should.equal(0);
-        info.amountBelowFee.should.equal(0);
-        info.utxosAboveMaxSize.should.equal(0);
-        info.amountAboveMaxSize.should.equal(0);
+        checkBig(info.amountBelowFee, 0);
+        checkBig(info.utxosAboveMaxSize, 0);
+        checkBig(info.amountAboveMaxSize, 0);
         done();
       });
     });
@@ -6662,11 +6682,12 @@ describe('Wallet service', function() {
           info.inputs.length.should.equal(4);
           info.size.should.equal(1254);
           info.fee.should.equal(info.size * 10000 / 1000.);
-          info.amount.should.equal(1e8 - info.fee);
+          checkBig(info.amount, 1e8 - info.fee);
           info.utxosBelowFee.should.equal(0);
-          info.amountBelowFee.should.equal(0);
-          info.utxosAboveMaxSize.should.equal(0);
-          info.amountAboveMaxSize.should.equal(0);
+        checkBig(info.amountBelowFee, 0);
+        checkBig(info.utxosAboveMaxSize, 0);
+        checkBig(info.amountAboveMaxSize, 0);
+ 
           sendTx(info, done);
         });
       });
@@ -6681,7 +6702,7 @@ describe('Wallet service', function() {
           should.exist(info);
           info.size.should.equal(654);
           info.fee.should.equal(32700);
-          info.amount.should.equal(27300);
+          checkBig(info.amount, 27300);
 
           var _min_output_amount = Defaults.MIN_OUTPUT_AMOUNT;
           Defaults.MIN_OUTPUT_AMOUNT = 300e2;
@@ -6692,7 +6713,7 @@ describe('Wallet service', function() {
             should.not.exist(err,err);
             should.exist(info);
             info.size.should.equal(0);
-            info.amount.should.equal(0);
+            checkBig(info.amount, 0);
             Defaults.MIN_OUTPUT_AMOUNT = _min_output_amount;
             done();
           });
@@ -6782,7 +6803,7 @@ describe('Wallet service', function() {
           info.inputs.length.should.equal(3);
           info.size.should.equal(954);
           info.fee.should.equal(info.size * 10000 / 1000.);
-          info.amount.should.equal(0.9e8 - info.fee);
+          checkBig(info.amount, 0.9e8 - info.fee);
           sendTx(info, done);
         });
       });
@@ -6808,7 +6829,7 @@ describe('Wallet service', function() {
             info.inputs.length.should.equal(2);
             info.size.should.equal(654);
             info.fee.should.equal(info.size * 10000 / 1000.);
-            info.amount.should.equal(0.2e8 - info.fee);
+            checkBig(info.amount,0.2e8 - info.fee);
             sendTx(info, done);
           });
         });
@@ -6827,9 +6848,9 @@ describe('Wallet service', function() {
           info.inputs.length.should.equal(4);
           info.size.should.equal(1254);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
-          info.amount.should.equal(1e8 - info.fee);
+          checkBig(info.amount,1e8 - info.fee);
           info.utxosBelowFee.should.equal(3);
-          info.amountBelowFee.should.equal(310e2);
+          checkBig(info.amountBelowFee, 310e2);
           server.getSendMaxInfo({
             feePerKb: 0.0001e8,
             returnInputs: true,
@@ -6839,9 +6860,9 @@ describe('Wallet service', function() {
             info.inputs.length.should.equal(6);
             info.size.should.equal(1853);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
-            info.amount.should.equal(1.0003e8 - info.fee);
-            info.utxosBelowFee.should.equal(1);
-            info.amountBelowFee.should.equal(1e3);
+            checkBig(info.amount, 1.0003e8 - info.fee);
+            checkBig(info.utxosBelowFee, 1);
+            checkBig(info.amountBelowFee, 1e3);
             sendTx(info, done);
           });
         });
@@ -6858,9 +6879,9 @@ describe('Wallet service', function() {
           info.inputs.should.be.empty;
           info.size.should.equal(0);
           info.fee.should.equal(0);
-          info.amount.should.equal(0);
+          checkBig(info.amount, 0);
           info.utxosBelowFee.should.equal(3);
-          info.amountBelowFee.should.equal(40e2);
+          checkBig(info.amountBelowFee, 40e2);
           done();
         });
       });
@@ -6879,7 +6900,7 @@ describe('Wallet service', function() {
             info.size.should.be.below(2000);
             info.inputs.length.should.be.below(9);
             info.utxosAboveMaxSize.should.equal(3);
-            info.amountAboveMaxSize.should.equal(3e8);
+            checkBig(info.amountAboveMaxSize, 3e8);
             sendTx(info, done);
           });
         });
@@ -9466,14 +9487,14 @@ describe('Wallet service', function() {
             err.message.should.equal('Your linked ETH wallet does not have enough ETH for fee');
             server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, tokenBalance) {
               should.not.exist(err,err);
-              tokenBalance.totalAmount.should.equal(2 * ts);
-              tokenBalance.lockedAmount.should.equal(0);
+              checkBig(tokenBalance.totalAmount, 2 * ts);
+              checkBig(tokenBalance.lockedAmount, 0);
               txOpts.outputs[0].amount = 1 * ts;
               server.getBalance({}, function(err, ethBalance) {
                 should.not.exist(err,err);
                 ethBalance.should.not.equal(tokenBalance);
-                ethBalance.totalAmount.should.equal(2000000000000000000);
-                ethBalance.lockedAmount.should.equal(0);
+                checkBig(ethBalance.totalAmount, 2000000000000000000n);
+                checkBig(ethBalance.lockedAmount, 0);
                 done();
               });
             });

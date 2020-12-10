@@ -359,9 +359,9 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     amounts = _.isArray(amounts) ? amounts : [amounts];
     blockchainExplorer.getBalance = function(opts, cb) {
       if (opts.tokenAddress) {
-        return cb(null, {unconfirmed:0n, confirmed: BigInt(2e6), balance: BitInt(2e6) });
+        return cb(null, {unconfirmed:0n, confirmed: BigInt(2e6), balance: BigInt(2e6) });
       }
-      let conf =  _.sum(_.map(amounts, x =>  x*BigInt(1e18)));
+      let conf =  _.sum(_.map(amounts, x =>  BigInt(x)*BigInt(1e18)));
       return cb(null, {unconfirmed:0n, confirmed: conf, balance: conf });
     }
     blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);

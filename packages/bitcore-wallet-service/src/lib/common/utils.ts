@@ -34,7 +34,7 @@ export class Utils {
   // overrides lodash sumBy to return bigInt 0 if null results.
   static sumByB(array, it, doAbs?): BigInt {
     let ret = BigInt(_.sumBy(array, it) || 0);
-    if (doAbs && ret <0 ) ret = ret * BigInt(-1);
+    if (doAbs && ret < 0) ret = ret * BigInt(-1);
     return ret;
   }
 
@@ -114,7 +114,9 @@ export class Utils {
       return units;
     }, {} as { [currency: string]: { toSatoshis: number; maxDecimals: number; minDecimals: number } });
 
-    if (typeof satoshis == 'number') satoshis = BigInt(satoshis);
+    if (typeof satoshis == 'number') {
+      satoshis = BigInt(Math.round(satoshis));
+    }
 
     $.checkArgument(typeof satoshis == 'bigint');
     $.checkArgument(_.includes(_.keys(UNITS), unit));

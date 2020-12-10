@@ -143,8 +143,21 @@ describe('Utils', function() {
         args: [1234567890123456789012345678n, 'eth', {
         }],
         expected: '1,234,567,890.123457',
- 
-      },];
+      }, {
+        args: [2234567890123456789012n, 'gusd', {
+        }],
+        expected: '22,345,678,901,234,567,890.12',
+      }, {
+        args: [3234567890123456789012n, 'pax', {
+        }],
+        expected: '3,234.56789',
+      }, {
+        args: [4234567890123456789012n, 'usdc', {
+        }],
+        expected: '4,234,567,890,123,456.789012',
+      },
+
+      ];
 
       _.each(cases, function(testCase) {
         it('should successfully format amount ' + testCase.expected, function() {

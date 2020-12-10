@@ -9,6 +9,7 @@ var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
 var Common = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
+const helpers = require('./integration/helpers');
 
 const V8UTXOS = [
 {"_id":"5c1d4bc47adced963b3cddb9","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"6e34d9b83631cd55ee09d907061332ba3c17246e3c1255543fb7a35e58c52e42","mintHeight":12,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":1000000,"confirmations":-1},
@@ -152,17 +153,16 @@ describe('V8', () => {
       });
 
       be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', 15, (err, utxos) => {
-        should.not.exist(err);
+        should.not.exist(err, err);
         should.exist(utxos);
         let x = utxos[2];
         x.confirmations.should.equal(0);
         x.address.should.equal('qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh');
-        x.satoshis.should.equal(2000000);
-        x.amount.should.equal(x.satoshis/1e8);
+        helpers.checkBig(x.satoshis, 2000000);
+        x.amount.should.equal(Number(x.satoshis) / 1e8);
         x.scriptPubKey.should.equal('76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac');
         x.txid.should.equal('42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449');
         x.vout.should.equal(0);
-
         utxos[1].confirmations.should.equal(1);
         utxos[0].confirmations.should.equal(4);
 
@@ -191,11 +191,11 @@ describe('V8', () => {
       });
 
       be.getAddressUtxos('36pUaXzGouNdCqUDRWRXX9NJYungJEWJC2', 571920, (err, utxos) => {
-        should.not.exist(err);
+        should.not.exist(err, err);
         should.exist(utxos);
         let x = utxos[1];
         x.confirmations.should.equal(124);
-        x.satoshis.should.equal(350000000);
+        helpers.checkBig(x.satoshis, 350000000);
         x.amount.should.equal(3.5);
         return done();
       });
