@@ -95,12 +95,12 @@ helpers.generateUtxos = (scriptType, publicKeyRing, path, requiredSignatures, am
         scriptPubKey = new Bitcore.Script.buildPublicKeyHashOut(address.address);
         break;
     }
-    should.exist(scriptPubKey);
+    should.exist(scriptPubKey, "scriptPubKey is null");
 
     var obj = {
       txid: new Bitcore.crypto.Hash.sha256(Buffer.alloc(i)).toString('hex'),
       vout: 100,
-      satoshis: helpers.toSatoshi(amount),
+      satoshis: BigInt(helpers.toSatoshi(amount)),
       scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
       address: address.address,
       path: path,
@@ -965,6 +965,48 @@ describe('client API', function() {
           '0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080'
         ]);
       });
+      it('should build an eth BIG INT txp correctly', () => {
+        const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const path = "m/44'/60'/0'";
+        const publicKeyRing = [
+          {
+            xPubKey: new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString()
+          }
+        ];
+
+        const from = Utils.deriveAddress('P2PKH', publicKeyRing, 'm/0/0', 1, 'livenet', 'eth');
+
+        const txp = {
+          version: 3,
+          from: from.address,
+          coin: 'eth',
+          outputs: [
+            {
+              toAddress: toAddress,
+              amount: 3896000000000000000000n,
+              gasLimit: 21000,
+              message: 'first output'
+            }
+          ],
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 420000000000000,
+          nonce: 6,
+          gasPrice: 20000000000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+          amount: 3896000000000000000000n,
+        };
+        var t = Utils.buildTx(txp);
+        const rawTxp = t.uncheckedSerialize();
+
+        // checked with https://www.ethereumdecoder.com/
+        rawTxp.should.deep.equal([
+          '0xed068504a817c80082520894a062a07a0a56beb2872b12f388f511d69462673089d333dc7e1b79e0000080018080'
+        ]);
+      });
+ 
       it('should protect from creating excessive fee', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -1873,9 +1915,9 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].getBalance({}, (err, balance) => {
           should.not.exist(err,err);
-          balance.totalAmount.should.equal(0);
-          balance.availableAmount.should.equal(0);
-          balance.lockedAmount.should.equal(0);
+          balance.totalAmount.should.equal('0');
+          balance.availableAmount.should.equal('0');
+          balance.lockedAmount.should.equal('0');
           done();
         });
       });
@@ -5579,8 +5621,8 @@ describe('client API', function() {
       });
     });
 
-
-    describe.only("BitInt", () => {
+// TODO
+    describe("BigInt", () => {
       it('Send and broadcast in 1-1 wallet ETH', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, w => {
           clients[0].createAddress((err, x0) => {

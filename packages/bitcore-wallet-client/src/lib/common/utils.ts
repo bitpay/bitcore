@@ -338,7 +338,7 @@ export class Utils {
       }
 
       if (txp.toAddress && txp.amount && !txp.outputs) {
-        t.to(txp.toAddress, txp.amount);
+        t.to(txp.toAddress, Number(txp.amount));  // For btc/bch => amount is number.
       } else if (txp.outputs) {
         _.each(txp.outputs, o => {
           $.checkState(
@@ -349,11 +349,11 @@ export class Utils {
             t.addOutput(
               new bitcore.Transaction.Output({
                 script: o.script,
-                satoshis: o.amount
+                satoshis: Number(o.amount),
               })
             );
           } else {
-            t.to(o.toAddress, o.amount);
+            t.to(o.toAddress,Number(o.amount));
           }
         });
       }
@@ -433,6 +433,7 @@ export class Utils {
         ? 'ERC20'
         : this.getChain(coin);
       for (let index = 0; index < recipients.length; index++) {
+        recipients[index].amount = recipients[index].amount.toString(); // web3 requirement
         const rawTx = Transactions.create({
           ...txp,
           ...recipients[index],

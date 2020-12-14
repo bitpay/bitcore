@@ -77,6 +77,7 @@ export class EthChain implements IChain {
     }
 
     bc.getBalance(wallet, (err, balance) => {
+console.log('[index.ts.79:balance:]',balance); // TODO
       if (err) {
         return cb(err);
       }

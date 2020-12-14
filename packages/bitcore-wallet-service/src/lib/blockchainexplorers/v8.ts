@@ -155,7 +155,7 @@ export class V8 {
         const u = {
           address: x.address,
           satoshis: BigInt(x.value), // in Sats (or Wei)
-          amount: x.value / 1e8, // Legacy... in BTC 
+          amount: x.value / 1e8, // Legacy... in BTC
           scriptPubKey: x.script,
           txid: x.mintTxid,
           vout: x.mintIndex,

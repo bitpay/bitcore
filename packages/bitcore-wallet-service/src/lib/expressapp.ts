@@ -16,8 +16,14 @@ const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
+// / Patch bigint for JSON serealization
+// @ts-ignore-start
+BigInt.prototype.toJSON = function() { return this.toString(); }
+// @ts-ignore-end/
+
 export class ExpressApp {
   app: express.Express;
+
 
   constructor() {
     this.app = express();
@@ -396,6 +402,7 @@ export class ExpressApp {
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
         if (req.query.serverMessageArray == '1') opts.includeServerMessages = true;
+
         server.getStatus(opts, (err, status) => {
           if (err) return returnError(err, res, req);
           res.json(status);
