@@ -4491,7 +4491,7 @@ export class WalletService {
     const keys = {
       API: config.changelly.api,
       API_KEY: config.changelly.apiKey,
-      SECRET: config.changelly.secret,
+      SECRET: config.changelly.secret
     };
 
     return keys;
@@ -4501,16 +4501,9 @@ export class WalletService {
     return new Promise((resolve, reject) => {
       const keys = this.changellyGetKeys(req);
 
-    //   const message = {
-    //     "id": "test",
-    //     "jsonrpc": "2.0",
-    //     "method": "getCurrencies",
-    //     "params": {}
-    //  }
-
-    if (!checkRequired(req.body, ['method', 'jsonrpc', 'id'])) { // TODO: review required params
-      return reject(new ClientError("Changelly's request missing arguments"));
-    }
+      if (!checkRequired(req.body, ['method', 'jsonrpc', 'id', 'params'])) {
+        return reject(new ClientError("Changelly's request missing arguments"));
+      }
 
       const URL: string = keys.API;
       const sign: string = Bitcore.crypto.Hash.sha512hmac(
@@ -4518,12 +4511,11 @@ export class WalletService {
         Buffer.from(keys.SECRET)
       ).toString('hex');
 
-
       const headers = {
         'Content-Type': 'application/json',
-        'sign': sign,
+        sign,
         'api-key': keys.API_KEY
-        };
+      };
 
       this.request.post(
         URL,

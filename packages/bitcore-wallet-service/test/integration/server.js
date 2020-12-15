@@ -9805,6 +9805,102 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('Changelly', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      config.changelly = {
+        apiKey: 'xxxx',
+        secret: 'xxxx',
+        api: 'xxxx'
+      }
+
+      fakeRequest = {
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data'}) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#changellyMakeRequest', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            id: "test",
+            jsonrpc: "2.0",
+            method: "getCurrencies",
+            params: {}
+          }
+        }
+      });
+
+      it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.changellyMakeRequest(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        delete req.body.method;
+
+        server.request = fakeRequest;
+        server.changellyMakeRequest(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Changelly\'s request missing arguments');
+        });
+      });
+
+      it('should return error if post returns error', () => {
+        req.body.method = 'getCurrencies';
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        };
+
+        server.request = fakeRequest2;
+        server.changellyMakeRequest(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Error');
+        });
+      });
+
+      it('should return error if Changelly is commented in config', () => {
+        config.changelly = undefined;
+
+        server.request = fakeRequest;
+        server.changellyMakeRequest(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Changelly missing credentials');
+        });
+      });
+    });
+  });
+
 
   describe('#getCoinsForTx', function() {
     let server, wallet;

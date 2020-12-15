@@ -1310,24 +1310,16 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/changelly/makeRequest', (req, res) => {
-      let server;
-
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      // TODO: use getServerWithAuth
-      // getServerWithAuth(req, res, server => {
-        server
-          .changellyMakeRequest(req)
-          .then(response => {
-            res.json(response);
-          })
-          .catch(err => {
-            if (err) return returnError(err, res, req);
-          });
-      // });
+      getServerWithAuth(req, res, server => {
+      server
+        .changellyMakeRequest(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
     });
 
     router.get('/v1/service/payId/:payId', (req, res) => {
