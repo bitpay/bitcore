@@ -42,7 +42,7 @@ export class EthChain implements IChain {
     // Be sure to convert balance to BigInt;
     unconfirmed = BigInt(unconfirmed);
     confirmed = BigInt(confirmed);
-    balance = BigInt(balance);
+    balance = BigInt(balance || 0);
     // we ASUME all locked as confirmed, for ETH.
     const convertedBalance = {
       totalAmount: balance,
@@ -77,7 +77,6 @@ export class EthChain implements IChain {
     }
 
     bc.getBalance(wallet, (err, balance) => {
-console.log('[index.ts.79:balance:]',balance); // TODO
       if (err) {
         return cb(err);
       }

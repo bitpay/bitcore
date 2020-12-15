@@ -1562,6 +1562,29 @@ export class API extends EventEmitter {
     });
   }
 
+  private convertBalance(inB) {
+    let ret: any = {};  
+    const fields = [
+      'totalAmount',
+      'lockedAmount',
+      'totalConfirmedAmount',
+      'lockedConfirmedAmount',
+      'availableAmount',
+      'availableConfirmedAmount',
+    ];
+
+    fields.forEach(x=> { 
+      ret[x] = BigInt(inB[x] || 0);
+    });
+
+    ret.byAddress = inB.byAddress;
+    ret.byAddress.forEach(x=> {
+      x = BigInt(x.amount || 0);
+    });
+
+    return ret;
+  };
+
   // /**
   // * Update wallet balance
   // *
@@ -1602,7 +1625,10 @@ export class API extends EventEmitter {
     }
 
     var url = '/v1/balance/' + qs;
-    this.request.get(url, cb);
+    this.request.get(url, (err, inB) => {
+      if (err) return cb(err);
+      return cb(null, this.convertBalance(inB));
+    });
   }
 
   // /**

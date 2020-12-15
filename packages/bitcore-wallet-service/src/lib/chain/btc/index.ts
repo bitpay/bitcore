@@ -45,7 +45,8 @@ export class BtcChain implements IChain {
         });
 
         _.each(utxos, utxo => {
-          byAddress[utxo.address].amount += utxo.satoshis;
+          byAddress[utxo.address].amount += BigInt(utxo.satoshis);
+          byAddress[utxo.address].amount += BigInt(utxo.satoshis);
         });
 
         balance.byAddress = _.values(byAddress);

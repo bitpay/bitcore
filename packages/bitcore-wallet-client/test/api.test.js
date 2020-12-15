@@ -17,6 +17,12 @@ var oldCredentials = require('./legacyCredentialsExports');
 
 var CWC = require('crypto-wallet-core');
 
+
+const checkBig = function(x,y) {
+  x.toString().should.be.equal(y.toString());
+};
+
+
 var Bitcore = CWC.BitcoreLib;
 var Bitcore_ = {
   btc: Bitcore,
@@ -387,9 +393,9 @@ blockchainExplorerMock.estimateGas = (nbBlocks, cb) => {
 };
 
 const BALANCE_DFLT = {
-    unconfirmed: 0,
-    confirmed: 20000000000 * 5,
-    balance: 20000000000 * 5
+    unconfirmed: BigInt(0),
+    confirmed: BigInt(20000000000 * 5),
+    balance: BigInt(20000000000 * 5),
 };
 
 let balance;
@@ -1915,9 +1921,9 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].getBalance({}, (err, balance) => {
           should.not.exist(err,err);
-          balance.totalAmount.should.equal('0');
-          balance.availableAmount.should.equal('0');
-          balance.lockedAmount.should.equal('0');
+          checkBig(balance.totalAmount, 0);
+          checkBig(balance.availableAmount, 0);
+          checkBig(balance.lockedAmount, 0);
           done();
         });
       });
@@ -2963,11 +2969,11 @@ describe('client API', function() {
         should.not.exist(err,err);
         should.exist(result);
         result.inputs.length.should.be.equal(2);
-        result.amount.should.be.equal(balance.totalAmount - result.fee);
+        checkBig(result.amount, Number(balance.totalAmount) - result.fee);
         result.utxosBelowFee.should.be.equal(0);
-        result.amountBelowFee.should.be.equal(0);
+        checkBig(result.amountBelowFee, 0);
         result.utxosAboveMaxSize.should.be.equal(0);
-        result.amountAboveMaxSize.should.be.equal(0);
+        checkBig(result.amountAboveMaxSize, 0);
         done();
       });
     });
@@ -2979,7 +2985,7 @@ describe('client API', function() {
       };
       clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err,err);
-        result.amount.should.be.equal(balance.availableConfirmedAmount - result.fee);
+        checkBig(result.amount, balance.availableConfirmedAmount - BigInt(result.fee));
         done();
       });
     });
@@ -2991,8 +2997,8 @@ describe('client API', function() {
       };
       clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err,err);
-        result.amount.should.be.equal(balance.totalAmount - result.fee);
-        done();
+        checkBig(result.amount, balance.totalAmount - BigInt(result.fee));
+        done()
       });
     });
     it('should return data without inputs', done => {
@@ -3020,7 +3026,7 @@ describe('client API', function() {
         _.each(result.inputs, i => {
           totalSatoshis = totalSatoshis + i.satoshis;
         });
-        result.amount.should.be.equal(totalSatoshis - result.fee);
+        checkBig(result.amount, totalSatoshis - result.fee);
         done();
       });
     });
@@ -3077,11 +3083,11 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 10, w.m);
           clients[0].getBalance({}, (err, bal0) => {
             should.not.exist(err,err);
-            bal0.totalAmount.should.equal(10 * 1e8);
-            bal0.lockedAmount.should.equal(0);
+            checkBig(bal0.totalAmount, 10 * 1e8);
+            checkBig(bal0.lockedAmount, 0);
             clients[1].getBalance({}, (err, bal1) => {
-              bal1.totalAmount.should.equal(10 * 1e8);
-              bal1.lockedAmount.should.equal(0);
+              checkBig(bal1.totalAmount, 10 * 1e8);
+              checkBig(bal1.lockedAmount, 0);
               done();
             });
           });
@@ -3339,7 +3345,10 @@ describe('client API', function() {
         txp.status.should.equal('temporary');
         txp.message.should.equal('hello');
         txp.outputs.length.should.equal(2);
-        _.sumBy(txp.outputs, 'amount').should.equal(3e8);
+
+        checkBig(_.reduce(txp.outputs, (x, i) => { 
+          return x + BigInt(i.amount || 0); }, 
+          BigInt(0) ), 3e8);
         txp.outputs[0].message.should.equal('world');
         _.uniqBy(txp.outputs, 'toAddress').length.should.equal(1);
         _.uniq(_.map(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
@@ -4013,7 +4022,7 @@ describe('client API', function() {
                       txp.status.should.equal('accepted');
                       clients[0].getBalance({}, (err, balance) => {
                         should.not.exist(err,err);
-                        balance.lockedAmount.should.equal(5e8);
+                        checkBig(balance.lockedAmount, 5e8);
                         done();
                       });
                     });
@@ -4783,7 +4792,7 @@ describe('client API', function() {
             should.not.exist(err,err);
             var tx = txps[0];
             // From the hardcoded paypro request
-            tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+            checkBig(tx.outputs[0].amount, DATA.instructions[0].outputs[0].amount);
             tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
             tx.message.should.equal(DATA.memo);
             tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
@@ -4812,7 +4821,7 @@ describe('client API', function() {
             should.not.exist(err,err);
             var tx = txps[0];
             // From the hardcoded paypro request
-            tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+            checkBig(tx.outputs[0].amount, DATA.instructions[0].outputs[0].amount);
             tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
             tx.message.should.equal(DATA.memo);
             tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
@@ -4962,7 +4971,7 @@ describe('client API', function() {
           should.not.exist(err,err);
           var tx = txps[0];
 
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+          checkBig(tx.outputs[0].amount, DATA.instructions[0].outputs[0].amount);
           tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
@@ -5210,7 +5219,7 @@ describe('client API', function() {
           should.not.exist(err,err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.amount.should.equal(DATA.instructions[0].outputs[0].amount);
+          checkBig(tx.amount, DATA.instructions[0].outputs[0].amount);
           tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
@@ -5304,7 +5313,7 @@ describe('client API', function() {
           x2.creatorName.should.equal('creator');
           x2.message.should.equal('hello');
           x2.outputs[0].toAddress.should.equal(toAddress);
-          x2.outputs[0].amount.should.equal(10000);
+          checkBig(x2.outputs[0].amount, 10000);
           x2.outputs[0].message.should.equal('world');
           clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
           let signatures = keys[0].sign(clients[0].getRootPath(), x2);
@@ -5460,8 +5469,8 @@ describe('client API', function() {
               w.copayers.length.should.equal(3);
               w.status.should.equal('complete');
               var b = st.balance;
-              b.totalAmount.should.equal(1000000000);
-              b.lockedAmount.should.equal(1000000000);
+              checkBig(b.totalAmount, 1000000000);
+              checkBig(b.lockedAmount, 1000000000);
               let signatures = keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err, err);
