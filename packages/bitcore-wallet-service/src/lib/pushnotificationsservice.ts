@@ -288,6 +288,9 @@ export class PushNotificationsService {
       this.storage.fetchLatestPushNotificationSubs((err, subs) => {
         if (err) return cb(err);
 
+        logger.info(
+          `Sending NewBlock [${notification.data.coin}/${notification.data.network}] notifications to: ${subs.length} subscribers`
+        );
         async.map(
           subs,
           (sub: any, next) => {
