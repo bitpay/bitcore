@@ -3089,4 +3089,43 @@ export class API extends EventEmitter {
       );
     });
   }
+
+  changellyGetPairsParams(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/changelly/getPairsParams',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  changellyGetFixRateForAmount(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/changelly/getFixRateForAmount',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  changellyCreateFixTransaction(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/changelly/createFixTransaction',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
 }

@@ -4497,19 +4497,34 @@ export class WalletService {
     return keys;
   }
 
-  changellyMakeRequest(req): Promise<any> {
+  changellySignRequests(message, secret: string) {
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly request');
+
+    const sign: string = Bitcore.crypto.Hash.sha512hmac(
+      Buffer.from(JSON.stringify(message)),
+      Buffer.from(secret)
+    ).toString('hex');
+
+    return sign;
+  }
+
+  changellyGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.changellyGetKeys(req);
 
-      if (!checkRequired(req.body, ['method', 'jsonrpc', 'id', 'params'])) {
-        return reject(new ClientError("Changelly's request missing arguments"));
+      if (!checkRequired(req.body, ['id'])) {
+        return reject(new ClientError("changellyGetCurrencies request missing arguments"));
       }
 
+      const message = {
+        jsonrpc: '2.0',
+        id: req.body.id,
+        method: req.body.full ? 'getCurrenciesFull' : 'getCurrencies',
+        params: {}
+      };
+
       const URL: string = keys.API;
-      const sign: string = Bitcore.crypto.Hash.sha512hmac(
-        Buffer.from(JSON.stringify(req.body)),
-        Buffer.from(keys.SECRET)
-      ).toString('hex');
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
       const headers = {
         'Content-Type': 'application/json',
@@ -4521,7 +4536,195 @@ export class WalletService {
         URL,
         {
           headers,
-          body: req.body,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetPairsParams(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
+        return reject(new ClientError("changellyGetPairsParams request missing arguments"));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getPairsParams',
+        params: [
+          {
+            from: req.body.coinFrom,
+            to: req.body.coinTo
+          }
+        ]
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetFixRateForAmount(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
+        return reject(new ClientError("changellyGetFixRateForAmount request missing arguments"));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getFixRateForAmount',
+        params: [
+          {
+            from: req.body.coinFrom,
+            to: req.body.coinTo,
+            amountFrom: req.body.amountFrom
+          }
+        ]
+      }
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyCreateFixTransaction(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom', 'addressTo', 'fixedRateId', 'refundAddress'])) {
+        return reject(new ClientError("changellyCreateFixTransaction request missing arguments"));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'createFixTransaction',
+        params: {
+          from: req.body.coinFrom,
+          to: req.body.coinTo,
+          address: req.body.addressTo,
+          amountFrom: req.body.amountFrom,
+          rateId: req.body.fixedRateId,
+          refundAddress: req.body.refundAddress
+        }
+      }
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetStatus(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
+        return reject(new ClientError("changellyGetStatus request missing arguments"));
+      }
+
+      const message = {
+        jsonrpc: '2.0',
+        id: req.body.id,
+        method: 'getStatus',
+        params: {
+          id: req.body.exchangeTxId
+        }
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
           json: true
         },
         (err, data) => {
