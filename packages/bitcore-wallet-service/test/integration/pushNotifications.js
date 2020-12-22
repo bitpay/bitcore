@@ -14,6 +14,8 @@ var sjcl = require('sjcl');
 
 var { WalletService } = require('../../ts_build/lib/server');
 var { PushNotificationsService } = require('../../ts_build/lib/pushnotificationsservice');
+const { Storage } = require('../../ts_build/lib/storage')
+const ObjectID  = require('mongodb').ObjectID;
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
@@ -115,6 +117,7 @@ describe('Push notifications', function() {
                 return c.args[0];
               });
               calls.length.should.equal(2); // NewAddress, NewIncomingTx
+              should.not.exist(args[0].body.notification);
               args[1].body.notification.title.should.contain('New payment received');
               args[1].body.notification.body.should.contain('123,000');
               args[1].body.notification.body.should.contain('bits');
@@ -139,7 +142,11 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
             calls.length.should.equal(2); // NewAdress, NewIncomingTx
+            should.not.exist(args[0].body.notification);
             done();
           }, 100);
         });
@@ -160,7 +167,11 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
             calls.length.should.equal(2); // NewAdress, NewIncomingTx
+            should.not.exist(args[0].body.notification);
             done();
           }, 100);
         });
@@ -182,10 +193,118 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
+              var args = _.map(calls, function(c) {
+                return c.args[0];
+              });
               calls.length.should.equal(2); // NewAdress, TxConfirmation
+              should.not.exist(args[0].body.notification);
               done();
             }, 100);
           });
+        });
+      });
+    });
+
+    it('should notify creator when txp is accepted by himself and the app is open', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate txp accepted by creator
+        server._notify('TxProposalAcceptedBy', {
+          txid: '123'
+        }, {
+          isGlobal: true
+        }, function(err) {
+          setTimeout(function() {
+            var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            calls.length.should.equal(2); // NewAdress, TxProposalAcceptedBy
+            should.not.exist(args[0].body.notification);
+            should.exist(args[0].body.data);
+            should.not.exist(args[1].body.notification);
+            should.exist(args[1].body.data);
+            done();
+          }, 100);
+        });
+      });
+    });
+
+    it('should notify creator when txp is finally accepeted by himself and the app is open', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+         // Simulate txp accepted by creator
+        server._notify('TxProposalFinallyAccepted', {
+          txid: '123'
+        }, {
+          isGlobal: true
+        }, function(err) {
+          setTimeout(function() {
+            var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            calls.length.should.equal(2); // NewAdress, TxProposalFinallyAccepted
+            should.not.exist(args[0].body.notification);
+            should.exist(args[0].body.data);
+            should.not.exist(args[1].body.notification);
+            should.exist(args[1].body.data);
+            done();
+          }, 100);
+        });
+      });
+    });
+
+    it('should notify creator when txp is rejected by himself and the app is open', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate txp rejected by creator
+        server._notify('TxProposalRejectedBy', {
+          txid: '1234'
+        }, {
+          isGlobal: true
+        }, function(err) {
+          setTimeout(function() {
+            var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            calls.length.should.equal(2); // NewAdress, TxProposalRejectedBy
+            should.not.exist(args[0].body.notification);
+            should.exist(args[0].body.data);
+            should.not.exist(args[1].body.notification);
+            should.exist(args[1].body.data);
+            done();
+          }, 100);
+        });
+      });
+    });
+
+    it('should notify creator when txp is removed and the app is open', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate txp removed
+        server._notify('TxProposalRemoved', {
+          txid: '1234'
+        }, {
+          isGlobal: true
+        }, function(err) {
+          setTimeout(function() {
+            var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            calls.length.should.equal(2); // NewAdress, TxProposalRemoved
+            should.not.exist(args[0].body.notification);
+            should.exist(args[0].body.data);
+            should.not.exist(args[1].body.notification);
+            should.exist(args[1].body.data);
+            done();
+          }, 100);
         });
       });
     });
@@ -750,5 +869,106 @@ describe('Push notifications', function() {
         });
       });
     });
+  });
+
+  describe('Any wallet', function() {
+    beforeEach(function(done) {
+      helpers.beforeEach(function(res) {
+        helpers.createAndJoinWallet(1, 1, function(s, w) {
+          server = s;
+          wallet = w;
+
+          var i = 0;
+          async.eachSeries(w.copayers, function(copayer, next) {
+            helpers.getAuthServer(copayer.id, function(server) {
+              async.parallel([
+
+                function(done) {
+                  server.savePreferences({
+                    email: 'copayer' + (++i) + '@domain.com',
+                    language: 'en',
+                    unit: 'bit',
+                  }, done);
+                },
+                function(done) {
+                  server.pushNotificationsSubscribe({
+                   token: 'DEVICE_TOKEN',
+                    packageName: 'com.wallet',
+                    platform: 'Android',
+                  }, server.pushNotificationsSubscribe({
+                    token: 'DEVICE_TOKEN2',
+                    packageName: 'com.my-other-wallet',
+                    platform: 'iOS',
+                  }, done));
+                },
+              ], next);
+
+            });
+          }, function(err) {
+            should.not.exist(err);
+
+            requestStub = sinon.stub();
+            requestStub.yields();
+
+            pushNotificationsService = new PushNotificationsService();
+            pushNotificationsService.start({
+              lockOpts: {},
+              messageBroker: server.messageBroker,
+              storage: helpers.getStorage(),
+              request: requestStub,
+              pushNotificationsOpts: {
+                templatePath: 'templates',
+                defaultLanguage: 'en',
+                defaultUnit: 'btc',
+                subjectPrefix: '',
+                pushServerUrl: 'http://localhost:8000',
+                authorizationKey: 'secret',
+              },
+            }, function(err) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+    
+    it('should notify NewBlock to all devices subscribed in the last 10 minutes', function(done) {
+      var collections = Storage.collections;
+      const oldSubscription = {
+         "_id" : new ObjectID("5fb57ecde3de1d285042a551"), 
+         "version" : "1.0.0", 
+         "createdOn" : 1605729997, 
+         "copayerId" : wallet.copayers[0].id, 
+         "token" : "DEVICE_TOKEN3", 
+         "packageName" : "com.my-other-wallet2", 
+         "platform" : "any" 
+      }
+
+      server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertOne(oldSubscription,function(err) {
+        should.not.exist(err);
+        
+        // Simulate new block notification
+        server._notify('NewBlock', {
+          hash: 'dummy hash',
+        }, {
+            isGlobal: true
+          }, function(err) {
+            should.not.exist(err);
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              var args = _.map(calls, function(c) {
+                return c.args[0];
+              });
+              calls.length.should.equal(2); // DEVICE_TOKEN, DEVICE_TOKEN2
+              should.not.exist(args[0].body.notification);
+              should.exist(args[0].body.data);
+              should.not.exist(args[1].body.notification);
+              should.exist(args[1].body.data);
+              done();
+            }, 100);
+          });
+        });
+      });
   });
 });

@@ -188,62 +188,49 @@ export class PushNotificationsService {
         async.waterfall(
           [
             next => {
-              notification.type === 'NewBlock'
-                ? next(null, [])
-                : this._readAndApplyTemplates(notification, notifType, recipientsList, next);
+              notification.type !== 'NewBlock'
+                ? this._readAndApplyTemplates(notification, notifType, recipientsList, next)
+                : next(null, []);
             },
             (contents, next) => {
-              async.map(
-                recipientsList,
-                (recipient: IPreferences, next) => {
-                  const content = contents ? contents[recipient.language] : null;
+              this._getSubscriptions(notification, recipientsList, contents, next);
+            },
+            (subs, next) => {
+              const notifications = _.map(subs, sub => {
+                const tokenAddress =
+                  notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
+                const multisigContractAddress =
+                  notification.data && notification.data.multisigContractAddress
+                    ? notification.data.multisigContractAddress
+                    : null;
 
-                  this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
-                    if (err) return next(err);
+                const notificationData: any = {
+                  to: sub.token,
+                  priority: 'high',
+                  restricted_package_name: sub.packageName,
+                  data: {
+                    walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId || sub.walletId)),
+                    tokenAddress,
+                    multisigContractAddress,
+                    copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId)),
+                    title: sub?.plain?.subject,
+                    body: sub?.plain?.body,
+                    notification_type: notification.type
+                  }
+                };
 
-                    const notifications = _.map(subs, sub => {
-                      const tokenAddress =
-                        notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
-                      const multisigContractAddress =
-                        notification.data && notification.data.multisigContractAddress
-                          ? notification.data.multisigContractAddress
-                          : null;
-
-                      const notificationData: any = {
-                        to: sub.token,
-                        priority: 'high',
-                        restricted_package_name: sub.packageName,
-                        data: {
-                          walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.walletId)),
-                          tokenAddress,
-                          multisigContractAddress,
-                          copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
-                          title: content?.plain?.subject,
-                          body: content?.plain?.body,
-                          notification_type: notification.type
-                        }
-                      };
-
-                      if (notifType.notifyOthers || notifType.notifyCreator) {
-                        notificationData.notification = {
-                          title: content.plain.subject,
-                          body: content.plain.body,
-                          sound: 'default',
-                          click_action: 'FCM_PLUGIN_ACTIVITY',
-                          icon: 'fcm_push_icon'
-                        };
-                      }
-
-                      return notificationData;
-                    });
-                    return next(err, notifications);
-                  });
-                },
-                (err, allNotifications) => {
-                  if (err) return next(err);
-                  return next(null, _.flatten(allNotifications));
+                if (notifType.notifyOthers || notifType.notifyCreator) {
+                  notificationData.notification = {
+                    title: sub?.plain?.subject,
+                    body: sub?.plain?.body,
+                    sound: 'default',
+                    click_action: 'FCM_PLUGIN_ACTIVITY',
+                    icon: 'fcm_push_icon'
+                  };
                 }
-              );
+                return notificationData;
+              });
+              return next(err, notifications);
             },
             (notifications, next) => {
               async.each(
@@ -277,43 +264,14 @@ export class PushNotificationsService {
   }
 
   _checkShouldSendNotif(notification, cb) {
-    if (notification.type != 'NewTxProposal' || notification.type == 'NewBlock') return cb(null, true);
+    if (notification.type != 'NewTxProposal') return cb(null, true);
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       return cb(err, wallet && wallet.m > 1);
     });
   }
 
   _getRecipientsList(notification, notificationType, cb) {
-    if (notification.type === 'NewBlock') {
-      this.storage.fetchLatestPushNotificationSubs((err, subs) => {
-        if (err) return cb(err);
-
-        logger.info(
-          `Sending NewBlock [${notification.data.coin}/${notification.data.network}] notifications to: ${subs.length} subscribers`
-        );
-        async.map(
-          subs,
-          (sub: any, next) => {
-            this.storage.fetchCopayerLookup(sub.copayerId, (err, wallet) => {
-              if (err) return cb(err);
-
-              const recipient: any = {
-                walletId: wallet.walletId,
-                copayerId: sub.copayerId,
-                language: this.defaultLanguage,
-                unit: this.defaultUnit
-              };
-
-              return next(err, recipient);
-            });
-          },
-          (err, recipientList) => {
-            if (err) return cb(err);
-            return cb(null, _.flatten(recipientList));
-          }
-        );
-      });
-    } else {
+    if (notification.type !== 'NewBlock') {
       this.storage.fetchWallet(notification.walletId, (err, wallet) => {
         if (err) return cb(err);
 
@@ -369,7 +327,7 @@ export class PushNotificationsService {
           return cb(null, recipientsList);
         });
       });
-    }
+    } else return cb(null, []);
   }
 
   _readAndApplyTemplates(notification, notifType, recipientsList, cb) {
@@ -522,6 +480,51 @@ export class PushNotificationsService {
       subject: lines[0],
       body: _.tail(lines).join('\n')
     };
+  }
+
+  _getSubscriptions(notification, recipientsList, contents, cb) {
+    if (notification.type !== 'NewBlock') {
+      async.map(
+        recipientsList,
+        (recipient: IPreferences, next) => {
+          const content = contents ? contents[recipient.language] : null;
+
+          this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
+            if (err) return next(err);
+
+            subs[0].plain = content.plain;
+            return next(err, subs);
+          });
+        },
+        (err, allSubs) => {
+          if (err) return cb(err);
+          return cb(null, _.flatten(allSubs));
+        }
+      );
+    } else {
+      this.storage.fetchLatestPushNotificationSubs((err, subs) => {
+        if (err) return cb(err);
+
+        logger.info(
+          `Sending NewBlock [${notification.data.coin}/${notification.data.network}] notifications to: ${subs.length} subscribers`
+        );
+        async.map(
+          subs,
+          (sub: any, next) => {
+            this.storage.fetchCopayerLookup(sub.copayerId, (err, wallet) => {
+              if (err) return cb(err);
+
+              sub.walletId = wallet.walletId;
+              return next(err, sub);
+            });
+          },
+          (err, subs) => {
+            if (err) return cb(err);
+            return cb(null, _.flatten(subs));
+          }
+        );
+      });
+    }
   }
 
   _makeRequest(opts, cb) {
