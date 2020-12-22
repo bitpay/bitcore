@@ -16,6 +16,7 @@ const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
+const $ = require('preconditions').singleton();
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -60,7 +61,8 @@ const PUSHNOTIFICATIONS_TYPES = {
     notifyCreatorForegroundOnly: true
   },
   NewBlock: {
-    notifyCreatorForegroundOnly: true
+    notifyCreatorForegroundOnly: true,
+    filename: 'empty' // TODO: ^
   },
   TxProposalAcceptedBy: {
     notifyCreatorForegroundOnly: true,
@@ -188,9 +190,7 @@ export class PushNotificationsService {
         async.waterfall(
           [
             next => {
-              notification.type !== 'NewBlock'
-                ? this._readAndApplyTemplates(notification, notifType, recipientsList, next)
-                : next(null, []);
+              this._readAndApplyTemplates(notification, notifType, recipientsList, next);
             },
             (contents, next) => {
               this._getSubscriptions(notification, recipientsList, contents, next);
@@ -230,6 +230,13 @@ export class PushNotificationsService {
                 }
                 return notificationData;
               });
+
+              if (notifications && notifications[0] && notifications[0].notification)
+                $.checkState(
+                  subs.length < 10,
+                  "'Failed state: The recipient list for this push notification is >= 10'"
+                );
+
               return next(err, notifications);
             },
             (notifications, next) => {
