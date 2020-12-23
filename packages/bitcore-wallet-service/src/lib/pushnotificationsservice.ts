@@ -233,8 +233,8 @@ export class PushNotificationsService {
 
               if (notifications && notifications[0] && notifications[0].notification)
                 $.checkState(
-                  subs.length < 20,
-                  "'Failed state: The recipient list for this push notification is >= 20'"
+                  subs.length < 10,
+                  "'Failed state: The recipient list for this push notification is >= 10'"
                 );
 
               return next(err, notifications);
@@ -498,7 +498,8 @@ export class PushNotificationsService {
 
           this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
             if (err) return next(err);
-            if(subs && subs[0]) subs[0].plain = content.plain;
+
+            subs[0].plain = content.plain;
             return next(err, subs);
           });
         },
