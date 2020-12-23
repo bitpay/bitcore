@@ -14,8 +14,6 @@ var sjcl = require('sjcl');
 
 var { WalletService } = require('../../ts_build/lib/server');
 var { PushNotificationsService } = require('../../ts_build/lib/pushnotificationsservice');
-const { Storage } = require('../../ts_build/lib/storage')
-const ObjectID  = require('mongodb').ObjectID;
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
@@ -116,11 +114,10 @@ describe('Push notifications', function() {
               var args = _.map(calls, function(c) {
                 return c.args[0];
               });
-              calls.length.should.equal(2); // NewAddress, NewIncomingTx
-              should.not.exist(args[0].body.notification);
-              args[1].body.notification.title.should.contain('New payment received');
-              args[1].body.notification.body.should.contain('123,000');
-              args[1].body.notification.body.should.contain('bits');
+              calls.length.should.equal(1);
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('123,000');
+              args[0].body.notification.body.should.contain('bits');
               done();
             }, 100);
           });
@@ -128,7 +125,7 @@ describe('Push notifications', function() {
       });
     });
 
-    it('should notify auto-payments to creator', function(done) {
+    it('should not notify auto-payments to creator', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -142,11 +139,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            calls.length.should.equal(2); // NewAdress, NewIncomingTx
-            should.not.exist(args[0].body.notification);
+            calls.length.should.equal(0);
             done();
           }, 100);
         });
@@ -167,11 +160,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            calls.length.should.equal(2); // NewAdress, NewIncomingTx
-            should.not.exist(args[0].body.notification);
+            calls.length.should.equal(1);
             done();
           }, 100);
         });
@@ -193,118 +182,10 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
-                return c.args[0];
-              });
-              calls.length.should.equal(2); // NewAdress, TxConfirmation
-              should.not.exist(args[0].body.notification);
+              calls.length.should.equal(1);
               done();
             }, 100);
           });
-        });
-      });
-    });
-
-    it('should notify creator when txp is accepted by himself and the app is open', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
-
-        // Simulate txp accepted by creator
-        server._notify('TxProposalAcceptedBy', {
-          txid: '123'
-        }, {
-          isGlobal: true
-        }, function(err) {
-          setTimeout(function() {
-            var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            calls.length.should.equal(2); // NewAdress, TxProposalAcceptedBy
-            should.not.exist(args[0].body.notification);
-            should.exist(args[0].body.data);
-            should.not.exist(args[1].body.notification);
-            should.exist(args[1].body.data);
-            done();
-          }, 100);
-        });
-      });
-    });
-
-    it('should notify creator when txp is finally accepeted by himself and the app is open', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
-
-         // Simulate txp accepted by creator
-        server._notify('TxProposalFinallyAccepted', {
-          txid: '123'
-        }, {
-          isGlobal: true
-        }, function(err) {
-          setTimeout(function() {
-            var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            calls.length.should.equal(2); // NewAdress, TxProposalFinallyAccepted
-            should.not.exist(args[0].body.notification);
-            should.exist(args[0].body.data);
-            should.not.exist(args[1].body.notification);
-            should.exist(args[1].body.data);
-            done();
-          }, 100);
-        });
-      });
-    });
-
-    it('should notify creator when txp is rejected by himself and the app is open', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
-
-        // Simulate txp rejected by creator
-        server._notify('TxProposalRejectedBy', {
-          txid: '1234'
-        }, {
-          isGlobal: true
-        }, function(err) {
-          setTimeout(function() {
-            var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            calls.length.should.equal(2); // NewAdress, TxProposalRejectedBy
-            should.not.exist(args[0].body.notification);
-            should.exist(args[0].body.data);
-            should.not.exist(args[1].body.notification);
-            should.exist(args[1].body.data);
-            done();
-          }, 100);
-        });
-      });
-    });
-
-    it('should notify creator when txp is removed and the app is open', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
-
-        // Simulate txp removed
-        server._notify('TxProposalRemoved', {
-          txid: '1234'
-        }, {
-          isGlobal: true
-        }, function(err) {
-          setTimeout(function() {
-            var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            calls.length.should.equal(2); // NewAdress, TxProposalRemoved
-            should.not.exist(args[0].body.notification);
-            should.exist(args[0].body.data);
-            should.not.exist(args[1].body.notification);
-            should.exist(args[1].body.data);
-            done();
-          }, 100);
         });
       });
     });
@@ -390,16 +271,16 @@ describe('Push notifications', function() {
                 return c.args[0];
               });
 
-              calls.length.should.equal(6);
+              calls.length.should.equal(3);
 
-              args[3].body.notification.title.should.contain('Nuevo pago recibido');
-              args[3].body.notification.body.should.contain('0.123');
+              args[0].body.notification.title.should.contain('Nuevo pago recibido');
+              args[0].body.notification.body.should.contain('0.123');
 
-              args[4].body.notification.title.should.contain('New payment received');
-              args[4].body.notification.body.should.contain('123,000');
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.body.should.contain('123,000');
 
-              args[5].body.notification.title.should.contain('New payment received');
-              args[5].body.notification.body.should.contain('123,000');
+              args[2].body.notification.title.should.contain('New payment received');
+              args[2].body.notification.body.should.contain('123,000');
               done();
             }, 100);
           });
@@ -421,7 +302,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            calls.length.should.equal(6);
+            calls.length.should.equal(3);
 
             done();
           }, 100);
@@ -429,7 +310,7 @@ describe('Push notifications', function() {
       });
     });
 
-    it('should notify auto-payments to creator', function(done) {
+    it('should not notify auto-payments to creator', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -443,7 +324,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            calls.length.should.equal(6);
+            calls.length.should.equal(2);
 
             done();
           }, 100);
@@ -464,7 +345,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(9);
+              calls.length.should.equal(2);
 
               done();
             }, 100);
@@ -564,16 +445,15 @@ describe('Push notifications', function() {
 
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(_.takeRight(calls, 3), function(c) {
+            var args = _.map(_.takeRight(calls, 2), function(c) {
               return c.args[0];
             });
+
             args[0].body.notification.title.should.contain('Payment sent');
             args[1].body.notification.title.should.contain('Payment sent');
-            args[2].body.notification.title.should.contain('Payment sent');
 
             sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[0].body.data.copayerId);
             sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.not.equal(args[1].body.data.copayerId);
-            sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(server.copayerId)).should.equal(args[2].body.data.copayerId);
             done();
           }, 100);
         });
@@ -764,14 +644,14 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(2);
+              calls.length.should.equal(1);
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[1].body.notification.title.should.contain('New payment received');
-              args[1].body.notification.title.should.contain('New payment received');
-              args[1].body.notification.body.should.contain('4.00');
-              args[1].body.data.tokenAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
               done();
             }, 100);
           });
@@ -797,13 +677,13 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(2);
+              calls.length.should.equal(1);
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[1].body.notification.title.should.contain('Nuevo pago recibido');
-              args[1].body.notification.body.should.contain('4.00');
-              args[1].body.data.tokenAddress.should.equal('0x8E870D67F660D95d5be530380D0eC0bd388289E1');
+              args[0].body.notification.title.should.contain('Nuevo pago recibido');
+              args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0x8E870D67F660D95d5be530380D0eC0bd388289E1');
               done();
             }, 100);
           });
@@ -829,13 +709,13 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(2);
+              calls.length.should.equal(1);
               var args = _.map(_.takeRight(calls, 2), function(c) {
                 return c.args[0];
               });
-              args[1].body.notification.title.should.contain('New payment received');
-              args[1].body.notification.body.should.contain('4.00');
-              args[1].body.data.tokenAddress.should.equal('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd');
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd');
               done();
             }, 100);
           });
@@ -862,113 +742,12 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(1);
+              calls.length.should.equal(0);
               done();
             }, 100);
           });
         });
       });
     });
-  });
-
-  describe('Any wallet', function() {
-    beforeEach(function(done) {
-      helpers.beforeEach(function(res) {
-        helpers.createAndJoinWallet(1, 1, function(s, w) {
-          server = s;
-          wallet = w;
-
-          var i = 0;
-          async.eachSeries(w.copayers, function(copayer, next) {
-            helpers.getAuthServer(copayer.id, function(server) {
-              async.parallel([
-
-                function(done) {
-                  server.savePreferences({
-                    email: 'copayer' + (++i) + '@domain.com',
-                    language: 'en',
-                    unit: 'bit',
-                  }, done);
-                },
-                function(done) {
-                  server.pushNotificationsSubscribe({
-                   token: 'DEVICE_TOKEN',
-                    packageName: 'com.wallet',
-                    platform: 'Android',
-                  }, server.pushNotificationsSubscribe({
-                    token: 'DEVICE_TOKEN2',
-                    packageName: 'com.my-other-wallet',
-                    platform: 'iOS',
-                  }, done));
-                },
-              ], next);
-
-            });
-          }, function(err) {
-            should.not.exist(err);
-
-            requestStub = sinon.stub();
-            requestStub.yields();
-
-            pushNotificationsService = new PushNotificationsService();
-            pushNotificationsService.start({
-              lockOpts: {},
-              messageBroker: server.messageBroker,
-              storage: helpers.getStorage(),
-              request: requestStub,
-              pushNotificationsOpts: {
-                templatePath: 'templates',
-                defaultLanguage: 'en',
-                defaultUnit: 'btc',
-                subjectPrefix: '',
-                pushServerUrl: 'http://localhost:8000',
-                authorizationKey: 'secret',
-              },
-            }, function(err) {
-              should.not.exist(err);
-              done();
-            });
-          });
-        });
-      });
-    });
-    
-    it('should notify NewBlock to all devices subscribed in the last 10 minutes', function(done) {
-      var collections = Storage.collections;
-      const oldSubscription = {
-         "_id" : new ObjectID("5fb57ecde3de1d285042a551"), 
-         "version" : "1.0.0", 
-         "createdOn" : 1605729997, 
-         "copayerId" : wallet.copayers[0].id, 
-         "token" : "DEVICE_TOKEN3", 
-         "packageName" : "com.my-other-wallet2", 
-         "platform" : "any" 
-      }
-
-      server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertOne(oldSubscription,function(err) {
-        should.not.exist(err);
-        
-        // Simulate new block notification
-        server._notify('NewBlock', {
-          hash: 'dummy hash',
-        }, {
-            isGlobal: true
-          }, function(err) {
-            should.not.exist(err);
-            setTimeout(function() {
-              var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
-                return c.args[0];
-              });
-              calls.length.should.equal(2); // DEVICE_TOKEN, DEVICE_TOKEN2
-              should.not.exist(args[0].body.notification);
-              should.exist(args[0].body.data);
-              should.not.exist(args[1].body.notification);
-              should.exist(args[1].body.data);
-              done();
-            }, 100);
-          });
-        });
-      });
   });
 });

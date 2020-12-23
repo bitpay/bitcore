@@ -41,13 +41,6 @@ const collections = {
 
 const Common = require('./common');
 const Constants = Common.Constants;
-const Defaults = Common.Defaults;
-
-const ObjectID = mongodb.ObjectID;
-
-var objectIdDate = function(date) {
-  return Math.floor(date / 1000).toString(16) + '0000000000000000';
-};
 export class Storage {
   static BCHEIGHT_KEY = 'bcheight';
   static collections = collections;
@@ -1379,28 +1372,6 @@ export class Storage {
       .find({
         copayerId
       })
-      .toArray((err, result) => {
-        if (err) return cb(err);
-
-        if (!result) return cb();
-
-        const tokens = _.map([].concat(result), r => {
-          return PushNotificationSub.fromObj(r);
-        });
-        return cb(null, tokens);
-      });
-  }
-
-  fetchLatestPushNotificationSubs(cb) {
-    const fromDate = new Date().getTime() - Defaults.PUSH_NOTIFICATION_SUBS_TIME;
-    this.db
-      .collection(collections.PUSH_NOTIFICATION_SUBS)
-      .find({
-        _id: {
-          $gte: new ObjectID(objectIdDate(fromDate))
-        }
-      })
-      .sort({ _id: -1 })
       .toArray((err, result) => {
         if (err) return cb(err);
 
