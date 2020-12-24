@@ -468,7 +468,17 @@ export class PushNotificationsService {
   }
 
   _getSubscriptions(notification, notifType, recipientsList, contents, cb) {
-    if (!notifType.broadcastToActiveUsers) {
+    if (notifType.broadcastToActiveUsers) {
+      this.storage.fetchLatestPushNotificationSubs((err, subs) => {
+        if (err) return cb(err);
+
+        const allSubs = _.reject(subs, sub => !sub.walletId);
+        logger.info(
+          `Sending NewBlock [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} subscribers`
+        );
+        return cb(null, allSubs);
+      });
+    } else {
       async.map(
         recipientsList,
         (recipient: IPreferences, next) => {
@@ -486,16 +496,6 @@ export class PushNotificationsService {
           return cb(null, _.flatten(allSubs));
         }
       );
-    } else {
-      this.storage.fetchLatestPushNotificationSubs((err, subs) => {
-        if (err) return cb(err);
-
-        const allSubs = _.reject(subs, sub => !sub.walletId);
-        logger.info(
-          `Sending NewBlock [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} subscribers`
-        );
-        return cb(null, allSubs);
-      });
     }
   }
 
