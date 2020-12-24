@@ -4191,6 +4191,7 @@ export class WalletService {
    * @param {string} opts.token - The token representing the app/device.
    * @param {string} [opts.packageName] - The restricted_package_name option associated with this token.
    * @param {string} [opts.platform] - The platform associated with this token.
+   * @param {string} [opts.walletId] - The walletId associated with this token.
    */
   pushNotificationsSubscribe(opts, cb) {
     if (!checkRequired(opts, ['token'], cb)) return;
@@ -4198,7 +4199,8 @@ export class WalletService {
       copayerId: this.copayerId,
       token: opts.token,
       packageName: opts.packageName,
-      platform: opts.platform
+      platform: opts.platform,
+      walletId: opts.walletId
     });
 
     this.storage.storePushNotificationSub(sub, cb);

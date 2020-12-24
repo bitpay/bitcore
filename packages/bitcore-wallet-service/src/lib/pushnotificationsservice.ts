@@ -37,8 +37,26 @@ const PUSHNOTIFICATIONS_TYPES = {
     filename: 'txp_finally_rejected'
   },
   TxConfirmation: {
-    filename: 'tx_confirmation',
-    notifyCreatorOnly: true
+    filename: 'tx_confirmation'
+  },
+  NewAddress: {
+    dataOnly: true
+  },
+  NewBlock: {
+    dataOnly: true,
+    broadcastToActiveUsers: true
+  },
+  TxProposalAcceptedBy: {
+    dataOnly: true
+  },
+  TxProposalFinallyAccepted: {
+    dataOnly: true
+  },
+  TxProposalRejectedBy: {
+    dataOnly: true
+  },
+  TxProposalRemoved: {
+    dataOnly: true
   }
 };
 
@@ -153,51 +171,56 @@ export class PushNotificationsService {
               this._readAndApplyTemplates(notification, notifType, recipientsList, next);
             },
             (contents, next) => {
-              async.map(
-                recipientsList,
-                (recipient: IPreferences, next) => {
-                  const content = contents[recipient.language];
+              this._getSubscriptions(notification, notifType, recipientsList, contents, next);
+            },
+            (subs, next) => {
+              const notifications = _.map(subs, sub => {
+                const tokenAddress =
+                  notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
+                const multisigContractAddress =
+                  notification.data && notification.data.multisigContractAddress
+                    ? notification.data.multisigContractAddress
+                    : null;
 
-                  this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
-                    if (err) return next(err);
+                const notificationData: any = {
+                  to: sub.token,
+                  priority: 'high',
+                  restricted_package_name: sub.packageName,
+                  data: {
+                    walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId || sub.walletId)),
+                    tokenAddress,
+                    multisigContractAddress,
+                    copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId)),
+                    title: sub?.plain?.subject,
+                    body: sub?.plain?.body,
+                    notification_type: notification.type
+                  }
+                };
 
-                    const notifications = _.map(subs, sub => {
-                      const tokenAddress =
-                        notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
-                      const multisigContractAddress =
-                        notification.data && notification.data.multisigContractAddress
-                          ? notification.data.multisigContractAddress
-                          : null;
-                      return {
-                        to: sub.token,
-                        priority: 'high',
-                        restricted_package_name: sub.packageName,
-                        notification: {
-                          title: content.plain.subject,
-                          body: content.plain.body,
-                          sound: 'default',
-                          click_action: 'FCM_PLUGIN_ACTIVITY',
-                          icon: 'fcm_push_icon'
-                        },
-                        data: {
-                          walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
-                          tokenAddress,
-                          multisigContractAddress,
-                          copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
-                          title: content.plain.subject,
-                          body: content.plain.body,
-                          notification_type: notification.type
-                        }
-                      };
-                    });
-                    return next(err, notifications);
-                  });
-                },
-                (err, allNotifications) => {
-                  if (err) return next(err);
-                  return next(null, _.flatten(allNotifications));
+                if (!notifType.dataOnly) {
+                  notificationData.notification = {
+                    title: sub?.plain?.subject,
+                    body: sub?.plain?.body,
+                    sound: 'default',
+                    click_action: 'FCM_PLUGIN_ACTIVITY',
+                    icon: 'fcm_push_icon'
+                  };
                 }
-              );
+                return notificationData;
+              });
+
+              if (
+                notifications &&
+                notifications[0] &&
+                notifications[0].notification &&
+                subs.length > Defaults.PUSH_NOTIFICATION_LIMIT
+              ) {
+                logger.warn(
+                  `The recipient list for this push notification is greater than the established limit (${Defaults.PUSH_NOTIFICATION_LIMIT})`
+                );
+              }
+
+              return next(err, notifications);
             },
             (notifications, next) => {
               async.each(
@@ -238,11 +261,13 @@ export class PushNotificationsService {
   }
 
   _getRecipientsList(notification, notificationType, cb) {
+    if (notificationType.broadcastToActiveUsers) return cb(null, []);
+
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
 
       let unit;
-      if (wallet.coin != Defaults.COIN) {
+      if (wallet && wallet.coin != Defaults.COIN) {
         unit = wallet.coin;
       }
 
@@ -259,7 +284,7 @@ export class PushNotificationsService {
 
             return {
               copayerId: p.copayerId,
-              language: p.language,
+              language: p.language || this.defaultLanguage,
               unit: unit || p.unit || this.defaultUnit
             };
           })
@@ -267,31 +292,30 @@ export class PushNotificationsService {
 
         const copayers = _.keyBy(recipientPreferences, 'copayerId');
 
-        const recipientsList = _.compact(
-          _.map(wallet.copayers, copayer => {
-            if (
-              (copayer.id == notification.creatorId && notificationType.notifyCreatorOnly) ||
-              (copayer.id != notification.creatorId && !notificationType.notifyCreatorOnly)
-            ) {
-              const p = copayers[copayer.id] || {
-                language: this.defaultLanguage,
-                unit: this.defaultUnit
-              };
-              return {
-                copayerId: copayer.id,
-                language: p.language || this.defaultLanguage,
-                unit: unit || p.unit || this.defaultUnit
-              };
-            }
-          })
-        );
-
+        const recipientsList = wallet
+          ? _.compact(
+              _.map(wallet.copayers, copayer => {
+                const p = copayers[copayer.id] || {
+                  language: this.defaultLanguage,
+                  unit: this.defaultUnit
+                };
+                return {
+                  walletId: notification.walletId,
+                  copayerId: copayer.id,
+                  language: p.language || this.defaultLanguage,
+                  unit: unit || p.unit || this.defaultUnit
+                };
+              })
+            )
+          : [];
         return cb(null, recipientsList);
       });
     });
   }
 
   _readAndApplyTemplates(notification, notifType, recipientsList, cb) {
+    if (!notifType.filename) return cb(null, []);
+
     async.map(
       recipientsList,
       (recipient: { language: string }, next) => {
@@ -441,6 +465,38 @@ export class PushNotificationsService {
       subject: lines[0],
       body: _.tail(lines).join('\n')
     };
+  }
+
+  _getSubscriptions(notification, notifType, recipientsList, contents, cb) {
+    if (!notifType.broadcastToActiveUsers) {
+      async.map(
+        recipientsList,
+        (recipient: IPreferences, next) => {
+          const content = contents ? contents[recipient.language] : null;
+
+          this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
+            if (err) return next(err);
+
+            const subscriptions = subs && subs.length ? subs.map(obj => ({ ...obj, plain: content?.plain })) : subs;
+            return next(err, subscriptions);
+          });
+        },
+        (err, allSubs) => {
+          if (err) return cb(err);
+          return cb(null, _.flatten(allSubs));
+        }
+      );
+    } else {
+      this.storage.fetchLatestPushNotificationSubs((err, subs) => {
+        if (err) return cb(err);
+
+        const allSubs = _.reject(subs, sub => !sub.walletId);
+        logger.info(
+          `Sending NewBlock [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} subscribers`
+        );
+        return cb(null, allSubs);
+      });
+    }
   }
 
   _makeRequest(opts, cb) {

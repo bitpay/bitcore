@@ -8933,6 +8933,7 @@ describe('Wallet service', function() {
           token: 'DEVICE_TOKEN',
           packageName: 'com.wallet',
           platform: 'Android',
+          walletId: '123'
         }, function(err) {
           should.not.exist(err);
           server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
@@ -8955,11 +8956,13 @@ describe('Wallet service', function() {
           token: 'DEVICE_TOKEN',
           packageName: 'com.wallet',
           platform: 'Android',
+          walletId: '123'
         }, function(err) {
           server.pushNotificationsSubscribe({
             token: 'DEVICE_TOKEN2',
             packageName: 'com.my-other-wallet',
             platform: 'iOS',
+            walletId: '123'
           }, function(err) {
             should.not.exist(err);
             server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
@@ -8983,6 +8986,7 @@ describe('Wallet service', function() {
               token: 'DEVICE_TOKEN',
               packageName: 'com.wallet',
               platform: 'Android',
+            walletId: '123'
             }, next);
           },
           function(next) {
@@ -8990,6 +8994,7 @@ describe('Wallet service', function() {
               token: 'DEVICE_TOKEN2',
               packageName: 'com.my-other-wallet',
               platform: 'iOS',
+            walletId: '123'
             }, next);
           },
           function(next) {
