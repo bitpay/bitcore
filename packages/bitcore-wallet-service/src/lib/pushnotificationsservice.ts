@@ -191,13 +191,13 @@ export class PushNotificationsService {
                     tokenAddress,
                     multisigContractAddress,
                     copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId)),
-                    title: sub?.plain?.subject,
-                    body: sub?.plain?.body,
                     notification_type: notification.type
                   }
                 };
 
                 if (!notifType.dataOnly) {
+                  notification.title = sub?.plain?.subject;
+                  notification.body = sub?.plain?.body;
                   notificationData.notification = {
                     title: sub?.plain?.subject,
                     body: sub?.plain?.body,
@@ -265,9 +265,10 @@ export class PushNotificationsService {
 
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
+      if (!wallet) return cb(null, []);
 
       let unit;
-      if (wallet && wallet.coin != Defaults.COIN) {
+      if (wallet.coin != Defaults.COIN) {
         unit = wallet.coin;
       }
 
@@ -292,22 +293,20 @@ export class PushNotificationsService {
 
         const copayers = _.keyBy(recipientPreferences, 'copayerId');
 
-        const recipientsList = wallet
-          ? _.compact(
-              _.map(wallet.copayers, copayer => {
-                const p = copayers[copayer.id] || {
-                  language: this.defaultLanguage,
-                  unit: this.defaultUnit
-                };
-                return {
-                  walletId: notification.walletId,
-                  copayerId: copayer.id,
-                  language: p.language || this.defaultLanguage,
-                  unit: unit || p.unit || this.defaultUnit
-                };
-              })
-            )
-          : [];
+        const recipientsList = _.compact(
+          _.map(wallet.copayers, copayer => {
+            const p = copayers[copayer.id] || {
+              language: this.defaultLanguage,
+              unit: this.defaultUnit
+            };
+            return {
+              walletId: notification.walletId,
+              copayerId: copayer.id,
+              language: p.language || this.defaultLanguage,
+              unit: unit || p.unit || this.defaultUnit
+            };
+          })
+        );
         return cb(null, recipientsList);
       });
     });
@@ -474,7 +473,7 @@ export class PushNotificationsService {
 
         const allSubs = _.reject(subs, sub => !sub.walletId);
         logger.info(
-          `Sending NewBlock [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} subscribers`
+          `Sending ${notification.type} [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} subscribers`
         );
         return cb(null, allSubs);
       });
