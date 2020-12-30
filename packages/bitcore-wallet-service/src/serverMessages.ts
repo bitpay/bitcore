@@ -17,25 +17,11 @@ module.exports = (wallet, appName, appVersion, userAgent) => {
   if (wallet.network == 'livenet' && appName.toLowerCase() === 'copay') {
     serverMessages.push({
       title: userAgent.includes('Android') ? 'No Longer Supported' : 'Support Ending Soon',
-      body: userAgent.includes('Android') ? 
-            'No longer supported, please migrate to Bitpay Wallet, ASAP.' :
-            'Support ending soon, please migrate to Bitpay Wallet.',
+      body: userAgent.includes('Android')
+        ? 'No longer supported, please migrate to Bitpay Wallet, ASAP.'
+        : 'Support ending soon, please migrate to Bitpay Wallet.',
       link: 'http://bitpay.com',
-      id: appName+'2',
-      dismissible: true,
-      category: 'critical',
-      app: appName,
-      priority: 1
-    });
-  }
-  if (wallet.network == 'testnet'&& appName.toLowerCase() === 'copay') {
-    serverMessages.push({
-      title: userAgent.includes('Android') ? 'No Longer Supported' : 'Support Ending Soon',
-      body: userAgent.includes('Android') ? 
-            'No longer supported, please migrate to Bitpay Wallet, ASAP.' :
-            'Support ending soon, please migrate to Bitpay Wallet.',
-      link: 'http://bitpay.com',
-      id: appName+'2',
+      id: appName + '2',
       dismissible: true,
       category: 'critical',
       app: appName,
