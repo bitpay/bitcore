@@ -66,13 +66,13 @@ export let UNITS = {
     }
   },
   wbtc: {
-    toSatoshis: 1e9,
+    toSatoshis: 1e8,
     full: {
       maxDecimals: 8,
       minDecimals: 8
     },
     short: {
-      maxDecimals: 6,
+      maxDecimals: 8,
       minDecimals: 2
     }
   },

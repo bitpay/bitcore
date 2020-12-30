@@ -21,7 +21,18 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
-  COINS: ['btc', 'bch', 'eth', 'xrp', 'usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc'],
+  COINS: [
+    'btc',
+    'bch',
+    'eth',
+    'xrp',
+    'usdc',
+    'pax',
+    'gusd',
+    'busd',
+    'dai',
+    'wbtc'
+  ],
   ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc'],
   UTXO_COINS: ['btc', 'bch'],
   TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,

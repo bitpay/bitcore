@@ -32,7 +32,7 @@ export let TOKEN_OPTS = {
   '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': {
     name: 'Wrapped Bitcoin',
     symbol: 'WBTC',
-    decimal: 18,
+    decimal: 9,
     address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
-  },
+  }
 };

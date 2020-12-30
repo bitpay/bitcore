@@ -130,7 +130,7 @@ export class FiatRateService {
     opts = opts || {};
 
     const now = Date.now();
-    const coin = opts.coin || 'btc';
+    let coin = opts.coin || 'btc';
     //    const provider = opts.provider || this.defaultProvider;
     const ts = _.isNumber(opts.ts) || _.isArray(opts.ts) ? opts.ts : now;
 
