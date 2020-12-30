@@ -137,6 +137,12 @@ export class FiatRateService {
     async.map(
       [].concat(ts),
       (ts, cb) => {
+        if (coin === 'wbtc') {
+          coin = 'btc'
+        } 
+        if (coin === 'dai') {
+          coin = 'usdc'
+        }
         this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
           if (err) return cb(err);
           if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
