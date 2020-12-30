@@ -4486,7 +4486,10 @@ export class WalletService {
   }
 
   changellyGetKeys(req) {
-    if (!config.changelly) throw new Error('Changelly missing credentials');
+    if (!config.changelly) {
+      logger.warn('Changelly missing credentials');
+      throw new Error('ClientError: Service not configured.');
+    }
 
     const keys = {
       API: config.changelly.api,
@@ -4541,7 +4544,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            return reject(err.body ?? err);
           } else {
             return resolve(data.body);
           }
@@ -4588,7 +4591,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            return reject(err.body ?? err);
           } else {
             return resolve(data.body);
           }
@@ -4636,7 +4639,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            return reject(err.body ?? err);
           } else {
             return resolve(data.body);
           }
@@ -4685,7 +4688,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            return reject(err.body ?? err);
           } else {
             return resolve(data.body);
           }
@@ -4729,7 +4732,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            return reject(err.body ?? err);
           } else {
             return resolve(data.body);
           }
