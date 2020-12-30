@@ -1691,14 +1691,14 @@ describe('Wallet service', function() {
         should.exist(status.serverMessages);
         _.isArray(status.serverMessages).should.be.true;
         status.serverMessages.should.deep.equal([{
-          title: 'Test message 2',
-          body: 'Only for bitpay livenet wallets',
+          title: 'Test message',
+          body: 'Only for bitpay, old wallets',
           link: 'http://bitpay.com',
-          id: 'bitpay2',
+          id: 'bitpay1',
           dismissible: true,
           category: 'critical',
           app: 'bitpay',
-          priority: 1
+          priority: 2
         }]);
         done();
       });
