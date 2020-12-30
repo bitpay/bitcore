@@ -8926,7 +8926,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should subscribe copayer to push notifications service', function(done) {
+    it('should subscribe copayer to push notifications service (backward compatible)', function(done) {
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
         server.pushNotificationsSubscribe({
@@ -8948,7 +8948,32 @@ describe('Wallet service', function() {
         });
       });
     });
-    it('should allow multiple subscriptions for the same copayer', function(done) {
+
+    it('should subscribe copayer to push notifications service', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.pushNotificationsSubscribe({
+          token: 'DEVICE_TOKEN',
+          packageName: 'com.wallet',
+          platform: 'Android',
+          walletId: '123'
+        }, function(err) {
+          should.not.exist(err);
+          server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+            should.not.exist(err);
+            should.exist(subs);
+            subs.length.should.equal(1);
+            var s = subs[0];
+            s.token.should.equal('DEVICE_TOKEN');
+            s.packageName.should.equal('com.wallet');
+            s.platform.should.equal('Android')
+            done();
+          });
+        });
+      });
+    });
+
+    it('should allow multiple subscriptions for the same copayer (backward compatible)', function(done) {
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
         server.pushNotificationsSubscribe({
@@ -8973,7 +8998,34 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should unsubscribe copayer to push notifications service', function(done) {
+    it('should allow multiple subscriptions for the same copayer', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        server.pushNotificationsSubscribe({
+          token: 'DEVICE_TOKEN',
+          packageName: 'com.wallet',
+          platform: 'Android',
+          walletId: '123'
+        }, function(err) {
+          server.pushNotificationsSubscribe({
+            token: 'DEVICE_TOKEN2',
+            packageName: 'com.my-other-wallet',
+            platform: 'iOS',
+            walletId: '123'
+          }, function(err) {
+            should.not.exist(err);
+            server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(2);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should unsubscribe copayer to push notifications service (backward compatible)', function(done) {
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
         async.series([
@@ -8989,7 +9041,67 @@ describe('Wallet service', function() {
             server.pushNotificationsSubscribe({
               token: 'DEVICE_TOKEN2',
               packageName: 'com.my-other-wallet',
+              platform: 'iOS'
+            }, next);
+          },
+          function(next) {
+            server.pushNotificationsUnsubscribe({
+              token: 'DEVICE_TOKEN2'
+            }, next);
+          },
+          function(next) {
+            server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.token.should.equal('DEVICE_TOKEN');
+              next();
+            });
+          },
+          function(next) {
+            helpers.getAuthServer(wallet.copayers[1].id, function(server) {
+              server.pushNotificationsUnsubscribe({
+                token: 'DEVICE_TOKEN'
+              }, next);
+            });
+          },
+          function(next) {
+            server.storage.fetchPushNotificationSubs(wallet.copayers[0].id, function(err, subs) {
+              should.not.exist(err);
+              should.exist(subs);
+              subs.length.should.equal(1);
+              var s = subs[0];
+              s.token.should.equal('DEVICE_TOKEN');
+              next();
+            });
+          },
+        ], function(err) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+
+    it('should unsubscribe copayer to push notifications service', function(done) {
+      helpers.getAuthServer(wallet.copayers[0].id, function(server) {
+        should.exist(server);
+        async.series([
+
+          function(next) {
+            server.pushNotificationsSubscribe({
+              token: 'DEVICE_TOKEN',
+              packageName: 'com.wallet',
+              platform: 'Android',
+              walletId: '123'
+            }, next);
+          },
+          function(next) {
+            server.pushNotificationsSubscribe({
+              token: 'DEVICE_TOKEN2',
+              packageName: 'com.my-other-wallet',
               platform: 'iOS',
+              walletId: '123'
             }, next);
           },
           function(next) {
@@ -9804,7 +9916,6 @@ describe('Wallet service', function() {
       });
     });
   });
-
 
   describe('#getCoinsForTx', function() {
     let server, wallet;

@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+const { BitcoreLib } = require('crypto-wallet-core');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--index <index>', 'REQUIRED - address index to sign message with)')
+  .option('--message <message>', 'REQUIRED - message to be signed')
+  .option('--change [change]', 'optional - if the address is a change address')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, index, message, change, storageType } = program;
+  let wallet;
+  try {
+    const password = await promptly.password('Wallet Password:');
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+    wallet = await wallet.unlock(password);
+
+    const privateKey = await wallet.derivePrivateKey(change, index);
+
+    const bitcoreMessage = new BitcoreLib.Message(message);
+    const bitcorePrivateKey = new BitcoreLib.PrivateKey(privateKey.privKey);
+    const signature = bitcoreMessage.sign(bitcorePrivateKey);
+    const address = wallet.deriveAddress(index, change);
+
+    console.log({
+      address,
+      message,
+      signature
+    });
+
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

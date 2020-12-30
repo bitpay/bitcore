@@ -138,10 +138,10 @@ export class FiatRateService {
       [].concat(ts),
       (ts, cb) => {
         if (coin === 'wbtc') {
-          coin = 'btc'
-        } 
+          coin = 'btc';
+        }
         if (coin === 'dai') {
-          coin = 'usdc'
+          coin = 'usdc';
         }
         this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
           if (err) return cb(err);
