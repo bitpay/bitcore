@@ -709,9 +709,8 @@ export class WalletService {
               });
             }
             status.wallet = wallet;
-
             if (opts.includeServerMessages) {
-              status.serverMessages = serverMessages(wallet, this.appName, this.appVersion);
+              status.serverMessages = serverMessages(wallet, this.appName, this.appVersion, this.userAgent);
             } else {
               status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
             }
