@@ -9917,7 +9917,6 @@ describe('Wallet service', function() {
     });
   });
 
-
   describe('#getCoinsForTx', function() {
     let server, wallet;
     beforeEach(function() {
