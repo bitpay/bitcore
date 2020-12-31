@@ -12,6 +12,8 @@ const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
 var config = require('../../ts_build/config.js');
+var test_config = require('../test-config.js');
+
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
@@ -1680,9 +1682,11 @@ describe('Wallet service', function() {
         });
       });
     });
-    it('should get status including server messages', function(done) {
+    it('should get status including server messages from android', function(done) {
       server.appName = 'bitpay';
+      server.userAgent = 'android';
       server.appVersion = { major: 5, minor: 0, patch: 0 };
+      server.serverMessages = test_config.serverMessages;
       server.getStatus({
         includeServerMessages: true
       }, function(err, status) {
@@ -1693,6 +1697,31 @@ describe('Wallet service', function() {
         status.serverMessages.should.deep.equal([{
           title: 'Test message',
           body: 'Only for bitpay, old wallets',
+          link: 'http://bitpay.com',
+          id: 'bitpay1',
+          dismissible: true,
+          category: 'critical',
+          app: 'bitpay',
+          priority: 2
+        }]);
+        done();
+      });
+    });
+    it('should get status including server messages for non-android', function(done) {
+      server.appName = 'bitpay';
+      server.userAgent = 'ios';
+      server.appVersion = { major: 5, minor: 0, patch: 0 };
+      server.serverMessages = test_config.serverMessages;
+      server.getStatus({
+        includeServerMessages: true
+      }, function(err, status) {
+        should.not.exist(err);
+        should.exist(status);
+        should.exist(status.serverMessages);
+        _.isArray(status.serverMessages).should.be.true;
+        status.serverMessages.should.deep.equal([{
+          title: 'Test message',
+          body: 'Message for all Non-Android platforms',
           link: 'http://bitpay.com',
           id: 'bitpay1',
           dismissible: true,

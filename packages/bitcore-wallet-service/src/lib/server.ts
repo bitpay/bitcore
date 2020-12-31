@@ -88,6 +88,7 @@ export interface IWalletService {
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
+  serverMessages: any;
 }
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
@@ -114,6 +115,7 @@ export class WalletService {
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
   request;
+  serverMessages: any;
 
   constructor() {
     if (!initialized) {
@@ -127,6 +129,7 @@ export class WalletService {
     this.messageBroker = messageBroker;
     this.fiatRateService = fiatRateService;
     this.notifyTicker = 0;
+    this.serverMessages = config.serverMessages;
     // for testing
     //
     this.request = request;
@@ -710,7 +713,13 @@ export class WalletService {
             }
             status.wallet = wallet;
             if (opts.includeServerMessages) {
-              status.serverMessages = serverMessages(wallet, this.appName, this.appVersion, this.userAgent);
+              status.serverMessages = serverMessages(
+                this.serverMessages,
+                wallet,
+                this.appName,
+                this.appVersion,
+                this.userAgent
+              );
             } else {
               status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
             }

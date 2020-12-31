@@ -1,32 +1,20 @@
-module.exports = (wallet, appName, appVersion, userAgent) => {
-  if (!appVersion || !appName) return;
-
-  const serverMessages = [];
-  if (wallet.network == 'livenet' && appVersion.major == 5) {
-    serverMessages.push({
-      title: 'Test message',
-      body: 'Only for bitpay, old wallets',
-      link: 'http://bitpay.com',
-      id: 'bitpay1',
-      dismissible: true,
-      category: 'critical',
-      app: 'bitpay',
-      priority: 2
-    });
-  }
-  if (wallet.network == 'livenet' && appName.toLowerCase() === 'copay') {
-    serverMessages.push({
-      title: userAgent.includes('Android') ? 'No Longer Supported' : 'Support Ending Soon',
-      body: userAgent.includes('Android')
-        ? 'No longer supported, please migrate to Bitpay Wallet, ASAP.'
-        : 'Support ending soon, please migrate to Bitpay Wallet.',
-      link: 'http://bitpay.com',
-      id: appName + '2',
-      dismissible: true,
-      category: 'critical',
-      app: appName,
-      priority: 1
-    });
-  }
-  return serverMessages;
+module.exports = (serverMessages, wallet, appName, appVersion, userAgent) => {
+  if (!serverMessages || !appVersion || !appName) return;
+  const _serverMessages = serverMessages.filter(msg => {
+    return (
+      msg.walletNetwork == wallet.network &&
+      (!msg.appName ||
+        !msg.appName.length ||
+        (msg.appName && msg.appName.find(app => appName.toLowerCase().includes(app.toLowerCase())))) &&
+      ((msg.platforms && msg.platforms[0] === '*') ||
+        !msg.platforms ||
+        !msg.platforms.length ||
+        (msg.platforms &&
+          msg.platforms.find(plat => userAgent.toLowerCase().includes(plat.toLowerCase())) &&
+          (!msg.exceptPlatforms ||
+            !msg.exceptPlatforms.length ||
+            msg.platforms.find(plat => !userAgent.toLowerCase().includes(plat.toLowerCase())))))
+    );
+  });
+  return _serverMessages && _serverMessages.length > 0 ? _serverMessages[0].message : [];
 };
