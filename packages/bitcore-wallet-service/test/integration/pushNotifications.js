@@ -938,23 +938,23 @@ describe('Push notifications', function() {
         });
       });
     });
-    
+
     it('should notify NewBlock to all devices subscribed in the last 10 minutes', function(done) {
       var collections = Storage.collections;
       const oldSubscription = {
-         "_id" : new ObjectID("5fb57ecde3de1d285042a551"), 
-         "version" : "1.0.0", 
-         "createdOn" : 1605729997, 
-         "copayerId" : wallet.copayers[0].id, 
-         "token" : "DEVICE_TOKEN3", 
-         "packageName" : "com.my-other-wallet2", 
+         "_id" : new ObjectID("5fb57ecde3de1d285042a551"),
+         "version" : "1.0.0",
+         "createdOn" : 1605729997,
+         "copayerId" : wallet.copayers[0].id,
+         "token" : "DEVICE_TOKEN3",
+         "packageName" : "com.my-other-wallet2",
          "platform" : "any",
-         "walletId" : "123" 
+         "walletId" : "123"
       }
 
       server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertOne(oldSubscription,function(err) {
         should.not.exist(err);
-        
+
         // Simulate new block notification
         server._notify('NewBlock', {
           hash: 'dummy hash',
@@ -972,6 +972,73 @@ describe('Push notifications', function() {
               should.exist(args[0].body.data);
               should.not.exist(args[1].body.notification);
               should.exist(args[1].body.data);
+              done();
+            }, 100);
+          });
+        });
+      });
+
+    it('should notify only one NewBlock push notification for each device', function(done) {
+        var collections = Storage.collections;
+        const subs = [{
+           "version" : "1.0.0",
+           "createdOn" : Math.floor(Date.now() / 1000),
+           "copayerId" : wallet.copayers[0].id,
+           "token" : "DEVICE_TOKEN",
+           "packageName" : "com.my-other-wallet",
+           "platform" : "any",
+           "walletId" : "123"
+        },
+        {
+          "version" : "1.0.0",
+          "createdOn" : Math.floor(Date.now() / 1000),
+          "copayerId" : wallet.copayers[0].id,
+          "token" : "DEVICE_TOKEN2",
+          "packageName" : "com.my-other-wallet2",
+          "platform" : "any",
+          "walletId" : "123"
+        },
+        {
+          "version" : "1.0.0",
+          "createdOn" : Math.floor(Date.now() / 1000),
+          "copayerId" : wallet.copayers[0].id,
+          "token" : "DEVICE_TOKEN2",
+          "packageName" : "com.my-other-wallet2",
+          "platform" : "any",
+          "walletId" : "123"
+        },
+        {
+          "version" : "1.0.0",
+          "createdOn" : Math.floor(Date.now() / 1000),
+          "copayerId" : wallet.copayers[0].id,
+          "token" : "DEVICE_TOKEN3",
+          "packageName" : "com.my-other-wallet3",
+          "platform" : "any",
+          "walletId" : "123"
+        }];
+
+        server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertMany(subs,function(err) {
+          should.not.exist(err);
+
+          // Simulate new block notification
+          server._notify('NewBlock', {
+            hash: 'dummy hash',
+          }, {
+              isGlobal: true
+          }, function(err) {
+            should.not.exist(err);
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              var args = _.map(calls, function(c) {
+                return c.args[0];
+              });
+              calls.length.should.equal(3); // DEVICE_TOKEN, DEVICE_TOKEN2, DEVICE_TOKEN3
+              should.not.exist(args[0].body.notification);
+              should.exist(args[0].body.data);
+              should.not.exist(args[1].body.notification);
+              should.exist(args[1].body.data);
+              should.not.exist(args[2].body.notification);
+              should.exist(args[2].body.data);
               done();
             }, 100);
           });

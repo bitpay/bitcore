@@ -473,9 +473,12 @@ export class PushNotificationsService {
       this.storage.fetchLatestPushNotificationSubs((err, subs) => {
         if (err) return cb(err);
 
-        const allSubs = _.reject(subs, sub => !sub.walletId);
+        const allSubs = _.uniqBy(
+          _.reject(subs, sub => !sub.walletId),
+          'token'
+        );
         logger.info(
-          `Sending ${notification.type} [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} subscribers`
+          `Sending ${notification.type} [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} devices`
         );
         return cb(null, allSubs);
       });
