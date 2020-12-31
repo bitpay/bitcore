@@ -137,10 +137,14 @@ export class FiatRateService {
     async.map(
       [].concat(ts),
       (ts, cb) => {
+
+        // Temporary rates for Wallet Beta. TODO: Remove this
         if (coin === 'wbtc') {
+          logger.info('Using btc for wbtc rate.');
           coin = 'btc';
         }
         if (coin === 'dai') {
+          logger.info('Using usdc for dai rate.');
           coin = 'usdc';
         }
         this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
