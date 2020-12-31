@@ -54,6 +54,28 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  dai: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  wbtc: {
+    toSatoshis: 1e8,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 8,
+      minDecimals: 2
+    }
+  },
   usdc: {
     toSatoshis: 1e6,
     full: {

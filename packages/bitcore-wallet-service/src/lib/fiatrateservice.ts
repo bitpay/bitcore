@@ -130,13 +130,19 @@ export class FiatRateService {
     opts = opts || {};
 
     const now = Date.now();
-    const coin = opts.coin || 'btc';
+    let coin = opts.coin || 'btc';
     //    const provider = opts.provider || this.defaultProvider;
     const ts = _.isNumber(opts.ts) || _.isArray(opts.ts) ? opts.ts : now;
 
     async.map(
       [].concat(ts),
       (ts, cb) => {
+        if (coin === 'wbtc') {
+          coin = 'btc';
+        }
+        if (coin === 'dai') {
+          coin = 'usdc';
+        }
         this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
           if (err) return cb(err);
           if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
