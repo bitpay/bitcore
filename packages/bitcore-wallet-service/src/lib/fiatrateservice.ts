@@ -137,7 +137,6 @@ export class FiatRateService {
     async.map(
       [].concat(ts),
       (ts, cb) => {
-
         // Temporary rates for Wallet Beta. TODO: Remove this
         if (coin === 'wbtc') {
           logger.info('Using btc for wbtc rate.');
