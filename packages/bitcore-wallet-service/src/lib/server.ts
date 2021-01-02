@@ -4518,7 +4518,7 @@ export class WalletService {
       const keys = this.changellyGetKeys(req);
 
       if (!checkRequired(req.body, ['id'])) {
-        return reject(new ClientError("changellyGetCurrencies request missing arguments"));
+        return reject(new ClientError('changellyGetCurrencies request missing arguments'));
       }
 
       const message = {
@@ -4560,7 +4560,7 @@ export class WalletService {
       const keys = this.changellyGetKeys(req);
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
-        return reject(new ClientError("changellyGetPairsParams request missing arguments"));
+        return reject(new ClientError('changellyGetPairsParams request missing arguments'));
       }
 
       const message = {
@@ -4607,7 +4607,7 @@ export class WalletService {
       const keys = this.changellyGetKeys(req);
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
-        return reject(new ClientError("changellyGetFixRateForAmount request missing arguments"));
+        return reject(new ClientError('changellyGetFixRateForAmount request missing arguments'));
       }
 
       const message = {
@@ -4621,7 +4621,7 @@ export class WalletService {
             amountFrom: req.body.amountFrom
           }
         ]
-      }
+      };
 
       const URL: string = keys.API;
       const sign: string = this.changellySignRequests(message, keys.SECRET);
@@ -4654,8 +4654,18 @@ export class WalletService {
     return new Promise((resolve, reject) => {
       const keys = this.changellyGetKeys(req);
 
-      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom', 'addressTo', 'fixedRateId', 'refundAddress'])) {
-        return reject(new ClientError("changellyCreateFixTransaction request missing arguments"));
+      if (
+        !checkRequired(req.body, [
+          'id',
+          'coinFrom',
+          'coinTo',
+          'amountFrom',
+          'addressTo',
+          'fixedRateId',
+          'refundAddress'
+        ])
+      ) {
+        return reject(new ClientError('changellyCreateFixTransaction request missing arguments'));
       }
 
       const message = {
@@ -4670,7 +4680,7 @@ export class WalletService {
           rateId: req.body.fixedRateId,
           refundAddress: req.body.refundAddress
         }
-      }
+      };
 
       const URL: string = keys.API;
       const sign: string = this.changellySignRequests(message, keys.SECRET);
@@ -4704,7 +4714,7 @@ export class WalletService {
       const keys = this.changellyGetKeys(req);
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
-        return reject(new ClientError("changellyGetStatus request missing arguments"));
+        return reject(new ClientError('changellyGetStatus request missing arguments'));
       }
 
       const message = {
