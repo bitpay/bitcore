@@ -55,6 +55,26 @@ export class Client {
       url += `?tokenAddress=${payload.tokenContractAddress}`;
     }
     const signature = this.sign({ method: 'GET', url });
+    console.log(url);
+    console.log(signature);
+    return request.get(url, {
+      headers: { 'x-signature': signature },
+      json: true
+    });
+  }
+
+  async getBalanceAtBlock(params: { payload?: any; pubKey: string; block?: string }) {
+    const { payload, pubKey, block } = params;
+    let url = `${this.apiUrl}/wallet/${pubKey}/balanceAtBlock`;
+    if (block) {
+      url += `/${block}`;
+    }
+    if (payload && payload.tokenContractAddress) {
+      url += `?tokenAddress=${payload.tokenContractAddress}`;
+    }
+    const signature = this.sign({ method: 'GET', url });
+    console.log(url);
+    console.log(signature);
     return request.get(url, {
       headers: { 'x-signature': signature },
       json: true
