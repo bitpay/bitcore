@@ -191,13 +191,13 @@ export class PushNotificationsService {
                     tokenAddress,
                     multisigContractAddress,
                     copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId)),
-                    notification_type: notification.type
+                    notification_type: notification.type,
+                    title: sub?.plain?.subject,
+                    body: sub?.plain?.body
                   }
                 };
 
                 if (!notifType.dataOnly) {
-                  notification.title = sub?.plain?.subject;
-                  notification.body = sub?.plain?.body;
                   notificationData.notification = {
                     title: sub?.plain?.subject,
                     body: sub?.plain?.body,
