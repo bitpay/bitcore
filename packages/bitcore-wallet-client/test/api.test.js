@@ -5352,7 +5352,8 @@ describe('client API', function() {
               {
                 amount: 10000000,
                 toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
-                message: 'output 0'
+                message: 'output 0',
+                gasLimit: 21000
               }
             ],
             message: 'hello',

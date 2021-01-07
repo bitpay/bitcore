@@ -4642,11 +4642,12 @@ describe('Wallet service', function() {
         });
         it('should support creating a tx with no change address', function(done) {
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-            var max = 3 * ts - 7000; // Fees for this tx at 100bits/kB = 7000 sat
+            var max = 3 * ts - (coin == 'eth' ? 210000000 : 7000); // Fees for this tx at 100bits/kB = 7000 sat
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
                 amount: max,
+                gasLimit: (coin == 'eth') ? 21000 : null
               }],
               feePerKb: 100e2,
               from: fromAddr,
