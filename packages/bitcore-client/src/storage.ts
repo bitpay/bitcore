@@ -3,13 +3,14 @@ import { PassThrough } from 'stream';
 import { Encryption } from './encryption';
 import { Level } from './storage/level';
 import { Mongo } from './storage/mongo';
+import { TextFile } from './storage/textFile';
 import { KeyImport } from './wallet';
 
 const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
 
 export class Storage {
   path: string;
-  db: Array<Mongo | Level>;
+  db: Array<Mongo | Level | TextFile>;
   collection: 'bitcoreWallets';
   url?: string;
   errorIfExists?: boolean;
@@ -18,7 +19,7 @@ export class Storage {
   constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean; storageType?: string }) {
     const { path, createIfMissing, errorIfExists } = params;
     let { storageType } = params;
-    if (storageType && !['Mongo', 'Level'].includes(storageType)) {
+    if (storageType && !['Mongo', 'Level', 'TextFile'].includes(storageType)) {
       throw new Error('Storage Type passed in must be Mongo or Level');
     }
     this.path = path;
@@ -26,7 +27,8 @@ export class Storage {
     this.errorIfExists = errorIfExists;
     const dbMap = {
       Mongo,
-      Level
+      Level,
+      TextFile
     };
     this.db = [];
     if (dbMap[storageType]) {
@@ -60,7 +62,6 @@ export class Storage {
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    let wallet;
     for (let db of this.db) {
       try {
         await db.deleteWallet({ name });
