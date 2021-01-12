@@ -76,7 +76,7 @@ export class Storage {
     for (let db of this.db) {
       const listWalletStream = await db.listWallets();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => --this.db.length === 0 && passThrough.end());
+      listWalletStream.once('end', () => this.db.length-- === 0 && passThrough.end());
     }
     return passThrough;
   }
