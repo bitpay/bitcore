@@ -4642,11 +4642,12 @@ describe('Wallet service', function() {
         });
         it('should support creating a tx with no change address', function(done) {
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-            var max = 3 * ts - 7000; // Fees for this tx at 100bits/kB = 7000 sat
+            var max = 3 * ts - (coin == 'eth' ? 210000000 : 7000); // Fees for this tx at 100bits/kB = 7000 sat
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
                 amount: max,
+                gasLimit: (coin == 'eth') ? 21000 : null
               }],
               feePerKb: 100e2,
               from: fromAddr,
@@ -5771,6 +5772,33 @@ describe('Wallet service', function() {
             tx.gasPrice.should.equal(1000000000);
             tx.outputs[0].gasLimit.should.equal(21000);
             (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(21000000000000);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should fail if not enough available amount to cover fees', function(done) {
+      helpers.stubFeeLevels({
+      });
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          let amount = 2.1 * 1e18;
+          var txOpts = {
+            outputs: [{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              amount: amount,
+            }],
+            from,
+            message: 'some message',
+            customData: 'some custom data',
+            fee: 1 * 1e18
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, txp) {
+            should.exist(err);
+            should.not.exist(txp);
+            err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
             done();
           });
         });
