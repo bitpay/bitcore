@@ -8,7 +8,7 @@ const Errors = require('../../errors/errordefinitions');
 export class BchChain extends BtcChain implements IChain {
   constructor() {
     super(BitcoreLibCash);
-    this.feeSafetyMargin = 0.1;
+    this.feeSafetyMargin = 0.01;
   }
 
   validateAddress(wallet, inaddr, opts) {
