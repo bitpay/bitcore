@@ -7,6 +7,8 @@ const chai = require('chai');
 const sinon = require('sinon');
 const  CWC = require('crypto-wallet-core');
 
+const LOG_LEVEL = 'debug';
+
 const should = chai.should();
 const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
@@ -56,7 +58,7 @@ describe('Wallet service', function() {
 
   });
   beforeEach(function(done) {
-    transport.level= 'error';
+    transport.level= LOG_LEVEL;
     config.suspendedChains = [];
 
     // restore defaults, cp values
@@ -5173,7 +5175,7 @@ describe('Wallet service', function() {
           });
         });
         afterEach(function() {
-          transport.level= 'info';
+          transport.level= LOG_LEVEL;
         });
 
         it('should exclude unconfirmed utxos if specified', function(done) {
@@ -5197,7 +5199,7 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
-                err.message.should.equal('Insufficient funds for fee + coin: btc feePerKb: 10000');
+                err.message.should.include('Insufficient funds for fee. Coin: btc feePerKb: 10000');
                 done();
               });
             });
@@ -5690,6 +5692,66 @@ describe('Wallet service', function() {
       });
     };
   });
+
+  describe('#createTX Segwit tests', () => {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, {
+        coin: 'btc',
+        useNativeSegwit: true,
+      }, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+
+    it('should set the desired Fee rate on segwit TXs', function(done) {
+       logger.level = 'debug';
+      helpers.stubFeeLevels({
+      });
+      let addr= '134kthjj3BaGTRMPiB1moohBdtKfyCrt9c';
+      let amount = 75919000;
+      helpers.stubUtxos(server, wallet, [0.36023362, 0.39923362 ], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: addr,
+            amount: amount,
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          feePerKb: 129 * 1000,
+        };
+        txOpts = Object.assign(txOpts);
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: txp.id,
+            signatures: signatures,
+          }, function(err, txp) {
+            should.not.exist(err, err);
+            should.exist(txp);
+
+            helpers.stubBroadcast(txp.txid);
+            server.broadcastTx({
+              txProposalId: txp.id
+            }, function(err, txp) {
+              should.not.exist(err, err);
+              txp.outputs.should.deep.equal([{
+                toAddress: addr,
+                amount: amount,
+              }]);
+
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+
 
   describe('#createTX ETH Only tests', () => {
     var server, wallet;
@@ -6567,6 +6629,8 @@ describe('Wallet service', function() {
     });
   });
 
+
+
   describe('#getSendMaxInfo', function() {
     var server, wallet;
     beforeEach(function(done) {
@@ -6624,7 +6688,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1254);
+          info.size.should.equal(1235);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(0);
@@ -6643,9 +6707,9 @@ describe('Wallet service', function() {
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
-          info.size.should.equal(654);
-          info.fee.should.equal(32700);
-          info.amount.should.equal(27300);
+          info.size.should.equal(644);
+          info.fee.should.equal(32200);
+          info.amount.should.equal(27800);
 
           var _min_output_amount = Defaults.MIN_OUTPUT_AMOUNT;
           Defaults.MIN_OUTPUT_AMOUNT = 300e2;
@@ -6686,7 +6750,7 @@ describe('Wallet service', function() {
         });
       });
       it('should assume "normal" fee level if not specified', function(done) {
-        helpers.stubFeeLevels({
+        helpers.stubfeelevels({
           1: 400e2,
           2: 200e2,
           6: 180e2,
@@ -6744,7 +6808,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(3);
-          info.size.should.equal(954);
+          info.size.should.equal(940);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(0.9e8 - info.fee);
           sendTx(info, done);
@@ -6770,7 +6834,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(2);
-            info.size.should.equal(654);
+            info.size.should.equal(644);
             info.fee.should.equal(info.size * 10000 / 1000.);
             info.amount.should.equal(0.2e8 - info.fee);
             sendTx(info, done);
@@ -6789,7 +6853,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1254);
+          info.size.should.equal(1235);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(3);
@@ -6801,7 +6865,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(6);
-            info.size.should.equal(1853);
+            info.size.should.equal(1826);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0003e8 - info.fee);
             info.utxosBelowFee.should.equal(1);
@@ -6849,6 +6913,137 @@ describe('Wallet service', function() {
         });
     });
   })
+
+
+  describe.only('Check requiredFeeRate  BTC', function() {
+    var server, wallet;
+
+    beforeEach(function(done) {
+      helpers.stubFeeLevels({
+        1: 40002,
+        2: 20000,
+        6: 18000,
+        24: 9001,
+      }, true);
+      done();
+    });
+
+    const cases = [
+      {
+        requiredFeeRate: 10000,
+        sendMax: true,
+        fromSegwit: false,
+        utxos: [1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        requiredFeeRate: 10000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [0.1, 0.2, 0.3, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [0.1, 0.3, 0.4],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+     {
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: ['100000 sat', '20000 sat'],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000, 
+        }],
+      },
+
+    ];
+
+    function checkTx(txOpts, requiredFeeRate, cb) {
+     helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
+        server.signTx({
+          txProposalId: tx.id,
+          signatures: signatures,
+        }, function(err, txp) {
+          should.not.exist(err, err);
+          should.exist(txp.raw);
+          txp.status.should.equal('accepted');
+//console.log('[server.js.6981:txp:]',txp); // TODO
+
+          var t = ChainService.getBitcoreTx(txp);
+          const vSize = t._estimateSize();
+          // Check size and fee rate
+          const actualSize = txp.raw.length/2;
+          const actualFeeRate = t.getFee() /  (txOpts.useNativeSegwit? vSize : actualSize) * 1000;
+          console.log(`Wire Size:${actualSize} vSize: ${vSize} Fee: ${t.getFee()} ActualRate:${actualFeeRate} RequiredRate:${requiredFeeRate}`);
+
+          // size should be above (or equal) the required FeeRate
+          actualFeeRate.should.be.above(requiredFeeRate);
+          actualFeeRate.should.be.below(requiredFeeRate * 1.5); // no more that 50% extra
+
+
+          return cb();
+        });
+      });
+    };
+
+    let i=0;
+    cases.forEach( x => {
+      it('case ' + i++, function(done) {
+        helpers.createAndJoinWallet(1, 1, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+          server = s;
+          wallet = w;
+          helpers.stubUtxos(server, wallet, x.utxos, function() {
+            server.getSendMaxInfo({
+              feePerKb: x.requiredFeeRate, 
+              returnInputs: true,
+            }, function(err, info) {
+              should.not.exist(err, err);
+              should.exist(info);
+
+              var txOpts = {
+                outputs: x.outputs,
+              };
+
+              if (x.sendMax) {
+
+console.log('[server.js.7023]', info); // TODO
+                txOpts.fee =  info.fee;
+                txOpts.inputs = info.inputs;
+                txOpts.outputs[0].amount =  info.amount;
+              } else {
+                txOpts.feePerKb = x.requiredFeeRate;
+              }
+              checkTx(txOpts, x.requiredFeeRate, done);
+            });
+          });
+        });
+      });
+    });
+  });
 
   describe('#rejectTx', function() {
     var server, wallet, txid;

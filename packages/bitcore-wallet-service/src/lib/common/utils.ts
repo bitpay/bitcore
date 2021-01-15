@@ -35,7 +35,7 @@ export class Utils {
    * the hash is calculated there? */
   static hashMessage(text, noReverse) {
     $.checkArgument(text);
-    const buf =  Buffer.from(text);
+    const buf = Buffer.from(text);
     let ret = crypto.Hash.sha256sha256(buf);
     if (!noReverse) {
       ret = new bitcore.encoding.BufferReader(ret).readReverse();
