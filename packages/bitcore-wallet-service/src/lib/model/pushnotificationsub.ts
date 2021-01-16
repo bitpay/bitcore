@@ -5,6 +5,7 @@ export interface IPushNotificationSub {
   token: string;
   packageName: string;
   platform: string;
+  walletId: string;
 }
 export class PushNotificationSub {
   version: string;
@@ -13,6 +14,7 @@ export class PushNotificationSub {
   token: string;
   packageName: string;
   platform: string;
+  walletId: string;
 
   static create(opts) {
     opts = opts || {};
@@ -25,6 +27,7 @@ export class PushNotificationSub {
     x.token = opts.token;
     x.packageName = opts.packageName;
     x.platform = opts.platform;
+    x.walletId = opts.walletId;
     return x;
   }
 
@@ -37,6 +40,7 @@ export class PushNotificationSub {
     x.token = obj.token;
     x.packageName = obj.packageName;
     x.platform = obj.platform;
+    x.walletId = obj.walletId;
     return x;
   }
 }

@@ -1309,6 +1309,79 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/changelly/getCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .changellyGetCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
+    router.post('/v1/service/changelly/getPairsParams', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .changellyGetPairsParams(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/changelly/getFixRateForAmount', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .changellyGetFixRateForAmount(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/changelly/createFixTransaction', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .changellyCreateFixTransaction(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/changelly/getStatus', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .changellyGetStatus(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
     router.get('/v1/service/payId/:payId', (req, res) => {
       let server;
       const payId = req.params['payId'];

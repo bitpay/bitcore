@@ -8,8 +8,8 @@ function format(message, args) {
     .replace('{1}', args[1])
     .replace('{2}', args[2]);
 }
-var traverseNode = function(parent, errorDefinition) {
-  var NodeError = function() {
+var traverseNode = function (parent, errorDefinition) {
+  var NodeError = function () {
     if (_.isString(errorDefinition.message)) {
       this.message = format(errorDefinition.message, arguments);
     } else if (_.isFunction(errorDefinition.message)) {
@@ -29,20 +29,20 @@ var traverseNode = function(parent, errorDefinition) {
 };
 
 /* jshint latedef: false */
-var childDefinitions = function(parent, childDefinitions) {
-  _.each(childDefinitions, function(childDefinition) {
+var childDefinitions = function (parent, childDefinitions) {
+  _.each(childDefinitions, function (childDefinition) {
     traverseNode(parent, childDefinition);
   });
 };
 /* jshint latedef: true */
 
-var traverseRoot = function(parent, errorsDefinition) {
+var traverseRoot = function (parent, errorsDefinition) {
   childDefinitions(parent, errorsDefinition);
   return parent;
 };
 
 var bwc: any = {};
-bwc.Error = function() {
+bwc.Error = function () {
   this.message = 'Internal error';
   this.stack = this.message + '\n' + new Error().stack;
 };
@@ -54,6 +54,6 @@ traverseRoot(bwc.Error, data);
 
 module.exports = bwc.Error;
 
-module.exports.extend = function(spec) {
+module.exports.extend = function (spec) {
   return traverseNode(bwc.Error, spec);
 };

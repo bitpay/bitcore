@@ -2188,6 +2188,12 @@ export class WalletService {
 
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
+          if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+            let Err = Errors.NETWORK_SUSPENDED;
+            Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+            return cb(Err);
+          }
+
           checkTxpAlreadyExists(opts.txProposalId, (err, txp) => {
             if (err) return cb(err);
             if (txp) return cb(null, txp);
@@ -2352,6 +2358,12 @@ export class WalletService {
     this._runLocked(cb, cb => {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
+
+        if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+          let Err = Errors.NETWORK_SUSPENDED;
+          Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+          return cb(Err);
+        }
 
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
@@ -2585,6 +2597,12 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        let Err = Errors.NETWORK_SUSPENDED;
+        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        return cb(Err);
+      }
+
       this.getTx(
         {
           txProposalId: opts.txProposalId
@@ -2690,6 +2708,12 @@ export class WalletService {
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
+
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        let Err = Errors.NETWORK_SUSPENDED;
+        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        return cb(Err);
+      }
 
       this.getTx(
         {
@@ -4167,6 +4191,7 @@ export class WalletService {
    * @param {string} opts.token - The token representing the app/device.
    * @param {string} [opts.packageName] - The restricted_package_name option associated with this token.
    * @param {string} [opts.platform] - The platform associated with this token.
+   * @param {string} [opts.walletId] - The walletId associated with this token.
    */
   pushNotificationsSubscribe(opts, cb) {
     if (!checkRequired(opts, ['token'], cb)) return;
@@ -4174,7 +4199,8 @@ export class WalletService {
       copayerId: this.copayerId,
       token: opts.token,
       packageName: opts.packageName,
-      platform: opts.platform
+      platform: opts.platform,
+      walletId: opts.walletId
     });
 
     this.storage.storePushNotificationSub(sub, cb);
@@ -4453,6 +4479,272 @@ export class WalletService {
         (err, data) => {
           if (err) {
             return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetKeys(req) {
+    if (!config.changelly) {
+      logger.warn('Changelly missing credentials');
+      throw new Error('ClientError: Service not configured.');
+    }
+
+    const keys = {
+      API: config.changelly.api,
+      API_KEY: config.changelly.apiKey,
+      SECRET: config.changelly.secret
+    };
+
+    return keys;
+  }
+
+  changellySignRequests(message, secret: string) {
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly request');
+
+    const sign: string = Bitcore.crypto.Hash.sha512hmac(
+      Buffer.from(JSON.stringify(message)),
+      Buffer.from(secret)
+    ).toString('hex');
+
+    return sign;
+  }
+
+  changellyGetCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id'])) {
+        return reject(new ClientError('changellyGetCurrencies request missing arguments'));
+      }
+
+      const message = {
+        jsonrpc: '2.0',
+        id: req.body.id,
+        method: req.body.full ? 'getCurrenciesFull' : 'getCurrencies',
+        params: {}
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetPairsParams(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
+        return reject(new ClientError('changellyGetPairsParams request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getPairsParams',
+        params: [
+          {
+            from: req.body.coinFrom,
+            to: req.body.coinTo
+          }
+        ]
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetFixRateForAmount(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
+        return reject(new ClientError('changellyGetFixRateForAmount request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getFixRateForAmount',
+        params: [
+          {
+            from: req.body.coinFrom,
+            to: req.body.coinTo,
+            amountFrom: req.body.amountFrom
+          }
+        ]
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyCreateFixTransaction(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (
+        !checkRequired(req.body, [
+          'id',
+          'coinFrom',
+          'coinTo',
+          'amountFrom',
+          'addressTo',
+          'fixedRateId',
+          'refundAddress'
+        ])
+      ) {
+        return reject(new ClientError('changellyCreateFixTransaction request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'createFixTransaction',
+        params: {
+          from: req.body.coinFrom,
+          to: req.body.coinTo,
+          address: req.body.addressTo,
+          amountFrom: req.body.amountFrom,
+          rateId: req.body.fixedRateId,
+          refundAddress: req.body.refundAddress
+        }
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetStatus(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
+        return reject(new ClientError('changellyGetStatus request missing arguments'));
+      }
+
+      const message = {
+        jsonrpc: '2.0',
+        id: req.body.id,
+        method: 'getStatus',
+        params: {
+          id: req.body.exchangeTxId
+        }
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
           } else {
             return resolve(data.body);
           }
