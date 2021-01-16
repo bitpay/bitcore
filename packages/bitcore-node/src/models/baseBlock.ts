@@ -61,7 +61,7 @@ export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
       })
       .sort({ height: -1 })
       .limit(100)
-      .project({ hash: 1, previousBlockHash: 1, nextBlockHash: 1 })
+      .project({ _id: 0, hash: 1, previousBlockHash: 1, nextBlockHash: 1 })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
 

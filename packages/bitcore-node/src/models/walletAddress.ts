@@ -67,7 +67,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           let exists = (
             await WalletAddressStorage.collection
               .find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } })
-              .project({ address: 1, processed: 1 })
+              .project({ _id: 0, address: 1, processed: 1 })
               .toArray()
           )
             .filter(walletAddress => walletAddress.processed)
@@ -154,7 +154,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         }
         const coinStream = CoinStorage.collection
           .find({ chain, network, address: { $in: addressBatch } })
-          .project({ mintTxid: 1, spentTxid: 1 });
+          .project({ _id: 0, mintTxid: 1, spentTxid: 1 });
         coinStream.on('data', (coin: ICoin) => {
           if (!this.txids[coin.mintTxid]) {
             this.txids[coin.mintTxid] = true;

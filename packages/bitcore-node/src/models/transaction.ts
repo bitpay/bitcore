@@ -324,7 +324,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       }
       const spent = await CoinStorage.collection
         .find(spentQuery)
-        .project({ spentTxid: 1, value: 1, wallets: 1 })
+        .project({ _id: 0, spentTxid: 1, value: 1, wallets: 1 })
         .toArray();
       interface CoinGroup {
         [txid: string]: { total: number; wallets: Array<ObjectID> };
@@ -414,7 +414,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       const findWalletsForAddresses = async (addresses: Array<string>) => {
         let partialWallets = await WalletAddressStorage.collection
           .find({ address: { $in: addresses }, chain, network }, { batchSize: 100 })
-          .project({ wallet: 1, address: 1 })
+          .project({ _id: 0, wallet: 1, address: 1 })
           .toArray();
         return partialWallets;
       };
@@ -473,7 +473,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
           mintHeight: height,
           $or: [{ spentHeight: { $lt: SpentHeightIndicators.minimum } }, { spentHeight: { $gte: forkHeight } }]
         })
-        .project({ mintTxid: 1, mintIndex: 1 })
+        .project({ _id: 0, mintTxid: 1, mintIndex: 1 })
         .toArray();
       for (let parentChainCoin of parentChainCoins) {
         parentChainCoinsMap.set(`${parentChainCoin.mintTxid}:${parentChainCoin.mintIndex}`, true);
@@ -653,7 +653,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         spentHeight: SpentHeightIndicators.pending,
         mintTxid: { $in: spendOps.map(s => s.updateOne.filter.mintTxid) }
       })
-      .project({ mintTxid: 1, mintIndex: 1, spentTxid: 1 })
+      .project({ _id: 0, mintTxid: 1, mintIndex: 1, spentTxid: 1 })
       .toArray();
     coins = coins.filter(
       c =>

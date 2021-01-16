@@ -113,7 +113,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       async () => {
         const txs = await EthTransactionStorage.collection
           .find({ chain, network, blockHeight: { $gt: 0 } })
-          .project({ gasPrice: 1, blockHeight: 1 })
+          .project({ _id: 0, gasPrice: 1, blockHeight: 1 })
           .sort({ blockHeight: -1 })
           .limit(20 * 200)
           .toArray();

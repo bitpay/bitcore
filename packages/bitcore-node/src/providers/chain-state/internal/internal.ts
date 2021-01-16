@@ -299,7 +299,7 @@ export class InternalStateProvider implements IChainStateService {
   async walletCheck(params: WalletCheckParams) {
     let { chain, network, wallet } = params;
     return new Promise(resolve => {
-      const addressStream = WalletAddressStorage.collection.find({ chain, network, wallet }).project({ address: 1 });
+      const addressStream = WalletAddressStorage.collection.find({ chain, network, wallet }).project({ _id: 0, address: 1 });
       let sum = 0;
       let lastAddress;
       addressStream.on('data', (walletAddress: IWalletAddress) => {

@@ -26,7 +26,7 @@ export class ListTransactionsStream extends Transform {
           },
           { batchSize: 10000 }
         )
-        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
+        .project({ _id: 0, address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
         .toArray();
       outputs.forEach(output => {
@@ -85,7 +85,7 @@ export class ListTransactionsStream extends Transform {
           'wallets.0': { $exists: true },
           mintTxid: transaction.txid
         })
-        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
+        .project({ _id: 0, address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
         .toArray();
       outputs.forEach(output => {
