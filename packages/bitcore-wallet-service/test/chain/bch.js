@@ -53,8 +53,8 @@ describe('Chain BCH', function() {
 
 
       // Check margin is ~0.1
-      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.above(0.05);
-      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.15);
+      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.above(0.005);
+      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.015);
     });
 
  

@@ -200,7 +200,7 @@ export class Wallet {
       this.network +
       this.coin +
       salt;
-    seed = bitcore.crypto.Hash.sha256(new Buffer(seed));
+    seed = bitcore.crypto.Hash.sha256(Buffer.from(seed));
     const priv = bitcore.PrivateKey(seed, this.network);
 
     this.beAuthPrivateKey2 = priv.toString();
