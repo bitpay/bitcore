@@ -1045,7 +1045,7 @@ Transaction.prototype._estimateSize = function() {
   _.each(this.outputs, function(output) {
     result += output.script.toBuffer().length + 9;
   });
-  return result;
+  return Math.ceil(result);
 };
 
 Transaction.prototype._removeOutput = function(index) {

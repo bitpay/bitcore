@@ -201,8 +201,8 @@ export class BtcChain implements IChain {
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 69; // vsize
 
-      case Constants.SCRIPT_TYPES.P2WSH:
-        return 32 + 4 + 1 + (txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4; // vsize
+      case Constants.SCRIPT_TYPES.P2WSH: 
+        return Math.ceil(32 + 4 + 1 + ( 5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4); // vsize
 
       case Constants.SCRIPT_TYPES.P2SH:
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE;
@@ -217,15 +217,12 @@ export class BtcChain implements IChain {
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleOutput(address?: string) {
     let addressType = '';
-
-    console.log('[index.ts.221:address:]', address); // TODO
     if (address) {
       const a = this.bitcoreLib.Address(address);
       addressType = a.type;
     }
 
     let scriptSize;
-    console.log('[index.ts.226:addressType:]', addressType); // TODO
     switch (addressType) {
       case 'pubkeyhash':
         scriptSize = 25;
@@ -241,7 +238,7 @@ export class BtcChain implements IChain {
         break;
       default:
         scriptSize = 34;
-        logger.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
+        // logger.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
         break;
     }
     return scriptSize + 8 + 1; // value + script length
@@ -249,11 +246,9 @@ export class BtcChain implements IChain {
 
   getEstimatedSize(txp) {
     const overhead = 4 + 4 + 1 + 1; // version, locktime, ninputs, noutputs
-
     // This assumed ALL inputs of the wallet are the same time
     const inputSize = this.getEstimatedSizeForSingleInput(txp);
     const nbInputs = txp.inputs.length;
-
     let outputsSize = 0;
     let outputs = _.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
     let addresses = outputs.map(x => x.toAddress);
@@ -264,7 +259,7 @@ export class BtcChain implements IChain {
       outputsSize += this.getEstimatedSizeForSingleOutput(x);
     });
 
-    // If there is no output yet defined, (eg: get sendmax info), add a single, default, output);
+    // If there is no *output* yet defined, (eg: get sendmax info), add a single, default, output);
     if (!outputsSize) {
       outputsSize = this.getEstimatedSizeForSingleOutput();
     }
@@ -498,6 +493,12 @@ export class BtcChain implements IChain {
     const sizePerInput = this.getEstimatedSizeForSingleInput(txp);
     const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
+    logger.debug(
+      `Amount ${Utils.formatAmountInBtc(
+        txpAmount
+      )} baseSize ${baseTxpSize} baseTxpFee ${baseTxpFee} sizePerInput ${sizePerInput}  feePerInput ${feePerInput}`
+    );
+
     const sanitizeUtxos = utxos => {
       const excludeIndex = _.reduce(
         opts.utxosToExclude,
@@ -627,7 +628,11 @@ export class BtcChain implements IChain {
 
           const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
-            // logger.debug('Change below dust threshold (' + Utils.formatAmountInBtc(dustThreshold) + '). Incrementing fee to remove change.');
+            logger.debug(
+              'Change below dust threshold (' +
+                Utils.formatAmountInBtc(dustThreshold) +
+                '). Incrementing fee to remove change.'
+            );
             // Remove dust change by incrementing fee
             fee += changeAmount;
           }
@@ -637,7 +642,12 @@ export class BtcChain implements IChain {
       });
 
       if (netTotal < txpAmount) {
-        // logger.debug('Could not reach Txp total (' + Utils.formatAmountInBtc(txpAmount) + '), still missing: ' + Utils.formatAmountInBtc(txpAmount - netTotal));
+        logger.debug(
+          'Could not reach Txp total (' +
+            Utils.formatAmountInBtc(txpAmount) +
+            '), still missing: ' +
+            Utils.formatAmountInBtc(txpAmount - netTotal)
+        );
 
         selected = [];
         if (!_.isEmpty(bigInputs)) {

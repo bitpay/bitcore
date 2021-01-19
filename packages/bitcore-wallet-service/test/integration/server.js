@@ -7,7 +7,8 @@ const chai = require('chai');
 const sinon = require('sinon');
 const  CWC = require('crypto-wallet-core');
 
-const LOG_LEVEL = 'debug';
+const LOG_LEVEL = 'info';
+//const LOG_LEVEL = 'debug';
 
 const should = chai.should();
 const { logger, transport } = require('../../ts_build/lib/logger.js');
@@ -5167,7 +5168,6 @@ describe('Wallet service', function() {
       describe('UTXO Selection ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
-          // logger.level = 'debug';
           helpers.createAndJoinWallet(1, 2, function(s, w) {
             server = s;
             wallet = w;
@@ -5708,7 +5708,6 @@ describe('Wallet service', function() {
 
 
     it('should set the desired Fee rate on segwit TXs', function(done) {
-       logger.level = 'debug';
       helpers.stubFeeLevels({
       });
       let addr= '134kthjj3BaGTRMPiB1moohBdtKfyCrt9c';
@@ -6750,7 +6749,7 @@ describe('Wallet service', function() {
         });
       });
       it('should assume "normal" fee level if not specified', function(done) {
-        helpers.stubfeelevels({
+        helpers.stubFeeLevels({
           1: 400e2,
           2: 200e2,
           6: 180e2,
@@ -6915,7 +6914,7 @@ describe('Wallet service', function() {
   })
 
 
-  describe.only('Check requiredFeeRate  BTC', function() {
+  describe('Check requiredFeeRate  BTC', function() {
     var server, wallet;
 
     beforeEach(function(done) {
@@ -6930,6 +6929,7 @@ describe('Wallet service', function() {
 
     const cases = [
       {
+        name: 'Legacy, sendmax',
         requiredFeeRate: 10000,
         sendMax: true,
         fromSegwit: false,
@@ -6940,6 +6940,7 @@ describe('Wallet service', function() {
         }],
       },
       {
+        name: 'Segwit, sendmax',
         requiredFeeRate: 10000,
         sendMax: true,
         fromSegwit: true,
@@ -6950,6 +6951,7 @@ describe('Wallet service', function() {
         }],
       },
       {
+        name: 'Segwit, sendmax, 4 inputs',
         requiredFeeRate: 25000,
         sendMax: true,
         fromSegwit: true,
@@ -6960,6 +6962,7 @@ describe('Wallet service', function() {
         }],
       },
       {
+        name: 'Segwit, sendmax, 3 inputs',
         requiredFeeRate: 25000,
         sendMax: true,
         fromSegwit: true,
@@ -6970,52 +6973,341 @@ describe('Wallet service', function() {
         }],
       },
      {
+        name: 'Segwit, non-sendmax, 2 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
-        utxos: ['100000 sat', '20000 sat'],
+        utxos: [1, 2],
         outputs:  [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000, 
         }],
+       vSize: 141, // from https://btc.com/tools/tx/decode
       },
-
+     {
+        name: 'Segwit, non-sendmax, 3 inputs',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: ['100000 sat', '20000 sat', 1],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000, 
+        }],
+       vSize: 141, // from https://btc.com/tools/tx/decode
+      },
+     {
+        name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [1.2],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8, 
+        }],
+       vSize: 144,
+      },
+     {
+        name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [0.4, 0.4, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8, 
+        }],
+      },
+     {
+        name: 'Segwit, non-sendmax, 6 inputs',
+        requiredFeeRate: 30000,
+        fromSegwit: true,
+        utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 1e8, 
+        }],
+      },
+      {
+        n: 2,
+        name: 'Legacy, sendmax',
+        requiredFeeRate: 10000,
+        sendMax: true,
+        fromSegwit: false,
+        utxos: [1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        n: 2,
+        vSize:123, // from https://btc.com/tools/tx/decode
+        name: 'Segwit, sendmax',
+        requiredFeeRate: 10000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        n: 2,
+        name: 'Segwit, sendmax, 4 inputs',
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [0.1, 0.2, 0.3, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        n: 2,
+        name: 'Segwit, sendmax, 3 inputs',
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [0.1, 0.3, 0.4],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+     {
+        n: 2,
+        name: 'Segwit, non-sendmax, 2 inputs',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [1, 2],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000, 
+        }],
+       vSize: 141, // from https://btc.com/tools/tx/decode
+      },
+     {
+        n: 2,
+        name: 'Segwit, non-sendmax, 3 inputs',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: ['100000 sat', '20000 sat', 1],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000, 
+        }],
+       vSize: 141, // from https://btc.com/tools/tx/decode
+      },
+     {
+        n: 2,
+        name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [1.1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8, 
+        }],
+       vSize: 144,
+      },
+ 
+     {
+        n: 2,
+       vSize: 321,
+        name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [0.4, 0.4, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8, 
+        }],
+      },
+    {
+        n: 2,
+        name: 'Segwit, non-sendmax, 6 inputs',
+        requiredFeeRate: 30000,
+        fromSegwit: true,
+        utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 1e8, 
+        }],
+      },
+      {
+        m: 2,
+        n: 3,
+        name: 'Legacy, sendmax',
+        requiredFeeRate: 10000,
+        sendMax: true,
+        fromSegwit: false,
+        utxos: [1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        m: 2,
+        n: 3,
+        vSize:123, // from https://btc.com/tools/tx/decode
+        name: 'Segwit, sendmax',
+        requiredFeeRate: 10000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        m: 2,
+        n: 3,
+        name: 'Segwit, sendmax, 4 inputs',
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [0.1, 0.2, 0.3, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        m: 2,
+        n: 3,
+        name: 'Segwit, sendmax, 3 inputs',
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: true,
+        utxos: [0.1, 0.3, 0.4],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+     {
+        m: 2,
+        n: 3,
+        name: 'Segwit, non-sendmax, 2 inputs',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [1, 2],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000, 
+        }],
+       vSize: 141, // from https://btc.com/tools/tx/decode
+      },
+     {
+        m: 2,
+        n: 3,
+        name: 'Segwit, non-sendmax, 3 inputs',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: ['100000 sat', '20000 sat', 1],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000, 
+        }],
+       vSize: 141, // from https://btc.com/tools/tx/decode
+      },
+     {
+        m: 2,
+        n: 3,
+        name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [1.1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8, 
+        }],
+       vSize: 144,
+      },
+ 
+     {
+        m: 2,
+        n: 3,
+       vSize: 321,
+        name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: true,
+        utxos: [0.4, 0.4, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8, 
+        }],
+      },
+    {
+        m: 2,
+        n: 3,
+        name: 'Segwit, non-sendmax, 6 inputs',
+        requiredFeeRate: 30000,
+        fromSegwit: true,
+        utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 1e8, 
+        }],
+      },
     ];
 
-    function checkTx(txOpts, requiredFeeRate, cb) {
-     helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
-        var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
-        server.signTx({
-          txProposalId: tx.id,
-          signatures: signatures,
-        }, function(err, txp) {
-          should.not.exist(err, err);
+    function checkTx(txOpts, x, cb) {
+      function sign(copayerM, tx, cb) {
+        helpers.getAuthServer(wallet.copayers[copayerM].id, function(server) {
+          var signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: tx.id,
+            signatures: signatures,
+          }, function(err, txp) {
+            should.not.exist(err, err);
+
+            if (++copayerM == x.m) {
+              return cb(txp);
+            } else {
+              return sign(copayerM, tx, cb);
+            }
+          });
+        });
+      }
+
+
+      helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+        sign(0, tx, (txp) => {
+
           should.exist(txp.raw);
+          // console.log('[server.js.7038]', txp.raw); // TODO
           txp.status.should.equal('accepted');
-//console.log('[server.js.6981:txp:]',txp); // TODO
+          //console.log('[server.js.6981:txp:]',txp); // TODO
 
           var t = ChainService.getBitcoreTx(txp);
-          const vSize = t._estimateSize();
+          const vSize = x.vSize || t._estimateSize(); // use given vSize if available
           // Check size and fee rate
-          const actualSize = txp.raw.length/2;
-          const actualFeeRate = t.getFee() /  (txOpts.useNativeSegwit? vSize : actualSize) * 1000;
-          console.log(`Wire Size:${actualSize} vSize: ${vSize} Fee: ${t.getFee()} ActualRate:${actualFeeRate} RequiredRate:${requiredFeeRate}`);
+          const actualSize = txp.raw.length / 2;
+          const actualFeeRate = t.getFee() /  (x.fromSegwit ? vSize : actualSize) * 1000;
+          //console.log('[server.js.7001:log:]',txp.raw); // TODO
+          console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
 
           // size should be above (or equal) the required FeeRate
-          actualFeeRate.should.be.above(requiredFeeRate);
-          actualFeeRate.should.be.below(requiredFeeRate * 1.5); // no more that 50% extra
-
-
+          actualFeeRate.should.not.be.below(x.requiredFeeRate);
+          actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
           return cb();
         });
       });
     };
-
     let i=0;
     cases.forEach( x => {
-      it('case ' + i++, function(done) {
-        helpers.createAndJoinWallet(1, 1, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+
+      x.m = x.m || 1;
+      x.n = x.n || 1;
+      it(`case  ${i++} : ${x.name} (${x.m}-of-${x.n})`, function(done) {
+
+        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit}, function(s, w) {
           server = s;
           wallet = w;
+
           helpers.stubUtxos(server, wallet, x.utxos, function() {
             server.getSendMaxInfo({
               feePerKb: x.requiredFeeRate, 
@@ -7029,15 +7321,13 @@ describe('Wallet service', function() {
               };
 
               if (x.sendMax) {
-
-console.log('[server.js.7023]', info); // TODO
                 txOpts.fee =  info.fee;
                 txOpts.inputs = info.inputs;
                 txOpts.outputs[0].amount =  info.amount;
               } else {
                 txOpts.feePerKb = x.requiredFeeRate;
               }
-              checkTx(txOpts, x.requiredFeeRate, done);
+              checkTx(txOpts, x, done);
             });
           });
         });
