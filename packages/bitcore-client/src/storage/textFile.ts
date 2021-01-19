@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as stream from 'stream';
 import { StreamUtil } from '../stream-util';
+import { Wallet } from '../wallet';
 
 export class TextFile {
   db: string;
@@ -51,7 +52,7 @@ export class TextFile {
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    const wallets:Array<Object> = await new Promise(((resolve, reject) => {
+    const wallets:Array<object> = await new Promise(((resolve, reject) => {
       const walletArray = [];
       fs.createReadStream(this.walletFileName, {flags: 'r', encoding: 'utf8'})
         .pipe(StreamUtil.jsonlBufferToObjectMode())
@@ -63,15 +64,18 @@ export class TextFile {
         .on('end', () => {
           resolve(walletArray);
         })
-        .on("error", (err) => reject(err));
+        .on('error', (err) => reject(err));
     }));
-    const walletStream = new stream.Readable({ objectMode: true });
-    for (const wallet of wallets) {
-      walletStream.push(wallet);
-    }
-    walletStream.push(null);
-    const writeStream = fs.createWriteStream(this.walletFileName, {flags: 'w', encoding: 'utf8'});
-    walletStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
+    return new Promise(resolve => {
+      const walletStream = new stream.Readable({ objectMode: true });
+      for (const wallet of wallets) {
+        walletStream.push(wallet);
+      }
+      walletStream.push(null);
+      const writeStream = fs.createWriteStream(this.walletFileName, {flags: 'w', encoding: 'utf8'});
+      walletStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
+      writeStream.once('close', () => { resolve() });
+    });
   }
 
   async listWallets() {
@@ -106,6 +110,22 @@ export class TextFile {
   async saveWallet(params) {
     const { wallet } = params;
     delete wallet.storage;
+    const wallets:Array<Wallet> = await new Promise(((resolve, reject) => {
+      const walletArray = [];
+      fs.createReadStream(this.walletFileName, {flags: 'r', encoding: 'utf8'})
+        .pipe(StreamUtil.jsonlBufferToObjectMode())
+        .on('data', (wallet) => {
+          walletArray.push(wallet);
+        })
+        .on('end', () => {
+          resolve(walletArray);
+        })
+        .on('error', (err) => reject(err));
+    }));
+    const walletAlreadyExists = wallets.find(savedWallet => savedWallet.name === wallet.name);
+    if (walletAlreadyExists) {
+      await this.deleteWallet({ name: wallet.name });
+    }
     return new Promise((resolve) => {
       const walletStream = new stream.Readable({ objectMode: true });
       const writeStream = fs.createWriteStream(this.walletFileName, { flags: 'a' });
@@ -135,10 +155,13 @@ export class TextFile {
   async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
     const { name, key, toStore } = params;
     const objectToSave = { name, address: key.address, toStore };
-    const readStream = new stream.Readable({ objectMode: true });
-    const writeStream = fs.createWriteStream(this.addressFileName, { flags: 'a' });
-    readStream.push(objectToSave);
-    readStream.push(null);
-    readStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
+    return new Promise((resolve) => {
+      const readStream = new stream.Readable({ objectMode: true });
+      const writeStream = fs.createWriteStream(this.addressFileName, { flags: 'a' });
+      readStream.push(objectToSave);
+      readStream.push(null);
+      readStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
+      writeStream.once('close', () => { resolve() });
+    });
   }
 }

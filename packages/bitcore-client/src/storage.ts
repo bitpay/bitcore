@@ -20,7 +20,7 @@ export class Storage {
     const { path, createIfMissing, errorIfExists } = params;
     let { storageType } = params;
     if (storageType && !['Mongo', 'Level', 'TextFile'].includes(storageType)) {
-      throw new Error('Storage Type passed in must be Mongo or Level');
+      throw new Error('Storage Type passed in must be Mongo, Level, or TextFile');
     }
     this.path = path;
     this.createIfMissing = createIfMissing;
