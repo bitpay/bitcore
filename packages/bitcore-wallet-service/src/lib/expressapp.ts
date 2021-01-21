@@ -1129,6 +1129,18 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/clearcache', (req, res) => {
+      let server: WalletService;
+      try {
+        server = getServer(req, res);
+        server.clearWalletCache(req).then(val => {
+          res.json({ val });
+        });
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.get('/v1/fiatrates/:code/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;

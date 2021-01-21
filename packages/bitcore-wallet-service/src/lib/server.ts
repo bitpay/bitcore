@@ -4812,6 +4812,14 @@ export class WalletService {
       );
     });
   }
+
+  clearWalletCache(req): Promise<boolean> {
+    return new Promise(resolve => {
+      this.storage.clearWalletCache(this.walletId, () => {
+        resolve(true);
+      });
+    });
+  }
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {
