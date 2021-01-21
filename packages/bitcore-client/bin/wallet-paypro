@@ -18,10 +18,11 @@ program
   .option('--from [from]', 'optional - from account for XRP')
   .option('--payProUri [payProUri]', 'REQUIRED - payment protocol URI')
   .option('--token, [token]', 'optional - ERC-20 token to pay with')
+  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, token, nonce: inputNonce, from: inputFrom } = program;
+  const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program;
   let { payProUri } = program;
   if (payProUri.includes('=')) {
     const split = payProUri.split('=');
@@ -56,7 +57,7 @@ const main = async () => {
 
   //  Payment-Request
   let wallet;
-  wallet = await Wallet.loadWallet({ name, path });
+  wallet = await Wallet.loadWallet({ name, path, storageType });
   const from = inputFrom || await wallet.deriveAddress(0);
   let nonce;
   const { chain } = wallet;
