@@ -105,9 +105,6 @@ export class Storage {
   }): Promise<KeyImport> {
     const { address, name, encryptionKey, keepAlive, open } = params;
     const payload = await this.storageType.getKey({ name, address, keepAlive, open });
-    if (!payload || !payload.address) {
-      throw new Error('Cannot get key to sign');
-    }
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
     if (encryptionKey && pubKey) {
