@@ -430,7 +430,40 @@ describe('ExpressApp', function() {
             });
           });
         });
+        
       });
+      describe('Clear cache', function(done) {
+        it('/v1/clearcache/', function(done) {
+          let resolveStub = sinon.stub().callsFake( () => { return Promise.resolve(true)});
+          let server = {
+            clearWalletCache: resolveStub
+          };
+          let {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+            './server': {
+              WalletService:  {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server)
+              }
+            }
+          });
+          start(TestExpressApp, function() {
+            let requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/clearcache/',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              },
+              method: 'post'
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              done();
+            });
+          });
+        });  
+      })
     });
   });
 });

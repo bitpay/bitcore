@@ -1131,8 +1131,9 @@ export class ExpressApp {
 
     router.post('/v1/clearcache/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
-        server.clearWalletCache(req).then((val) => {
-          res.json({ val });
+        server.clearWalletCache().then((val) => {
+          if(val){ res.sendStatus(200); }
+          else { res.sendStatus(500); }
         });
       });
     });
