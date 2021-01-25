@@ -841,7 +841,7 @@ export class API extends EventEmitter {
   }
 
   clearCache(cb) {
-    this.request.post('/v1/clearcache/', (err, res) => {
+    this.request.post('/v1/clearcache/', {}, (err, res) => {
       return cb(err, res);
     });
   }
