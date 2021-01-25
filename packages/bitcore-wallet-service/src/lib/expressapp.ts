@@ -828,13 +828,11 @@ export class ExpressApp {
           feeLevel?: number;
           returnInputs?: boolean;
           excludeUnconfirmedUtxos?: boolean;
-          usePayPro?: boolean;
         } = {};
         if (q.feePerKb) opts.feePerKb = +q.feePerKb;
         if (q.feeLevel) opts.feeLevel = q.feeLevel;
         if (q.excludeUnconfirmedUtxos == '1') opts.excludeUnconfirmedUtxos = true;
         if (q.returnInputs == '1') opts.returnInputs = true;
-        if (q.usePayPro == '1') opts.usePayPro = true;
         server.getSendMaxInfo(opts, (err, info) => {
           if (err) return returnError(err, res, req);
           res.json(info);

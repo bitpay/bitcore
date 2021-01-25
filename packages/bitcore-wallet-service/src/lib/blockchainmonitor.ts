@@ -343,7 +343,7 @@ export class BlockchainMonitor {
     this.storage.clearGlobalCache(cacheKey, () => {});
 
     if (coin == 'xrp') {
-      return
+      return;
     }
 
     if (network == 'testnet') {

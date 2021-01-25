@@ -10,7 +10,7 @@ export class BchChain extends BtcChain implements IChain {
     super(BitcoreLibCash);
   }
 
-  getInputSizeSafetyMargin(txp: any): number {
+  getInputSizeSafetyMargin(opts: any): number {
     return 0;
   }
 

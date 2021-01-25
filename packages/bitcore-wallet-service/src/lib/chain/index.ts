@@ -31,8 +31,8 @@ export interface IChain {
     } & any,
     cb
   );
-  getInputSizeSafetyMargin(txp: any): number;
-  getSizeSafetyMargin(txp: any): number;
+  getInputSizeSafetyMargin(opts: any): number;
+  getSizeSafetyMargin(opts: any): number;
   getDustAmountValue();
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);

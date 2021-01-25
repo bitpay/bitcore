@@ -2459,7 +2459,6 @@ export class API extends EventEmitter {
     if (opts.returnInputs) args.push('returnInputs=1');
 
     var qs = '';
-
     if (args.length > 0) qs = '?' + args.join('&');
 
     var url = '/v1/sendmaxinfo/' + qs;
