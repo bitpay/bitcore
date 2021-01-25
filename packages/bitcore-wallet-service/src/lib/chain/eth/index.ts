@@ -51,6 +51,14 @@ export class EthChain implements IChain {
     return convertedBalance;
   }
 
+  getSizeSafetyMargin() {
+    return 0;
+  }
+
+  getInputSizeSafetyMargin() {
+    return 0;
+  }
+
   notifyConfirmations() {
     return false;
   }
