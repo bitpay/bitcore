@@ -13,10 +13,24 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class BtcChain implements IChain {
-  protected feeSafetyMargin: number;
-
   constructor(private bitcoreLib = BitcoreLib) {
-    this.feeSafetyMargin = 0.005;
+  }
+
+  getSizeSafetyMargin(txp): number {
+    if (txp.payProUrl) {
+      return 0.02;
+    } else {
+      return 0.005;
+    } 
+  }
+
+
+  getInputSizeSafetyMargin (txp: any): number {
+     if (txp.payProUrl) {
+      return 3;
+    } else {
+      return 0;
+    } 
   }
 
   getWalletBalance(server, wallet, opts, cb) {
@@ -54,6 +68,7 @@ export class BtcChain implements IChain {
     );
   }
 
+  // opts.payProUrl => only to use different safety margin or not
   getWalletSendMaxInfo(server, wallet, opts, cb) {
     server.getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
@@ -94,7 +109,8 @@ export class BtcChain implements IChain {
           network: wallet.network,
           walletM: wallet.m,
           walletN: wallet.n,
-          feePerKb
+          feePerKb,
+          payProUrl: opts.payProUrl,
         });
 
         const baseTxpSize = this.getEstimatedSize(txp);
@@ -193,23 +209,24 @@ export class BtcChain implements IChain {
   getEstimatedSizeForSingleInput(txp) {
     const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_DATA
     const PUBKEY_SIZE = 33 + 1; // +1 OP_DATA
+    const inputSafetyMargin = this.getInputSizeSafetyMargin(txp);
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
-        return 147;
+        return 147 + inputSafetyMargin;
 
       case Constants.SCRIPT_TYPES.P2WPKH:
-        return 69; // vsize
+        return 69 + inputSafetyMargin; // vsize
 
       case Constants.SCRIPT_TYPES.P2WSH: 
-        return Math.ceil(32 + 4 + 1 + ( 5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4); // vsize
+        return Math.ceil(32 + 4 + 1 + ( 5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4) + inputSafetyMargin; // vsize
 
       case Constants.SCRIPT_TYPES.P2SH:
-        return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE;
+        return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
 
       default:
         logger.warn('Unknown address type at getEstimatedSizeForSingleInput:', txp.addressType);
-        return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE;
+        return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
     }
   }
 
@@ -265,7 +282,7 @@ export class BtcChain implements IChain {
     }
 
     const size = overhead + inputSize * nbInputs + outputsSize;
-    return parseInt((size * (1 + this.feeSafetyMargin)).toFixed(0));
+    return Math.ceil(size * 1 + this.getSizeSafetyMargin(txp));
   }
 
   getEstimatedFee(txp) {

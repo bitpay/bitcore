@@ -5711,7 +5711,7 @@ describe('Wallet service', function() {
       helpers.stubFeeLevels({
       });
       let addr= '134kthjj3BaGTRMPiB1moohBdtKfyCrt9c';
-      let amount = 75919000;
+      let amount = 75909000;
       helpers.stubUtxos(server, wallet, [0.36023362, 0.39923362 ], function() {
         var txOpts = {
           outputs: [{
@@ -6628,8 +6628,6 @@ describe('Wallet service', function() {
     });
   });
 
-
-
   describe('#getSendMaxInfo', function() {
     var server, wallet;
     beforeEach(function(done) {
@@ -6687,7 +6685,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1235);
+          info.size.should.equal(1230);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(0);
@@ -6706,9 +6704,9 @@ describe('Wallet service', function() {
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
-          info.size.should.equal(644);
-          info.fee.should.equal(32200);
-          info.amount.should.equal(27800);
+          info.size.should.equal(642);
+          info.fee.should.equal(32100);
+          info.amount.should.equal(27900);
 
           var _min_output_amount = Defaults.MIN_OUTPUT_AMOUNT;
           Defaults.MIN_OUTPUT_AMOUNT = 300e2;
@@ -6807,7 +6805,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(3);
-          info.size.should.equal(940);
+          info.size.should.equal(936);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(0.9e8 - info.fee);
           sendTx(info, done);
@@ -6833,7 +6831,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(2);
-            info.size.should.equal(644);
+            info.size.should.equal(642);
             info.fee.should.equal(info.size * 10000 / 1000.);
             info.amount.should.equal(0.2e8 - info.fee);
             sendTx(info, done);
@@ -6852,7 +6850,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1235);
+          info.size.should.equal(1230);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(3);
@@ -6864,7 +6862,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(6);
-            info.size.should.equal(1826);
+            info.size.should.equal(1818);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0003e8 - info.fee);
             info.utxosBelowFee.should.equal(1);
@@ -6912,6 +6910,95 @@ describe('Wallet service', function() {
         });
     });
   })
+
+  describe('#getSendMaxInfo PAYPRO', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 3, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    function sendTx(info, cb) {
+      var txOpts = {
+        payProUrl: 'aaa.bbb',
+        outputs: [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: info.amount,
+        }],
+        inputs: info.inputs,
+        fee: info.fee,
+      };
+      server.createTx(txOpts, function(err, tx) {
+        should.not.exist(err);
+        should.exist(tx);
+        var t = ChainService.getBitcoreTx(tx);
+        t.toObject().inputs.length.should.equal(info.inputs.length);
+        t.getFee().should.equal(info.fee);
+        should.not.exist(t.getChangeOutput());
+        return cb();
+      });
+    };
+
+    it('should correctly get send max info', function(done) {
+      helpers.stubUtxos(server, wallet, [0.1, 0.2, 0.3, 0.4], function() {
+        server.getSendMaxInfo({
+          feePerKb: 10000,
+          returnInputs: true,
+          payProUrl: 'aaa.bbb',
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.inputs.length.should.equal(4);
+          info.size.should.equal(1242);
+          info.fee.should.equal(info.size * 10000 / 1000.);
+          info.amount.should.equal(1e8 - info.fee);
+          info.utxosBelowFee.should.equal(0);
+          info.amountBelowFee.should.equal(0);
+          info.utxosAboveMaxSize.should.equal(0);
+          info.amountAboveMaxSize.should.equal(0);
+          sendTx(info, done);
+        });
+      });
+    });
+    it('should ignore utxos not contributing to total amount (below their cost in fee)', function(done) {
+
+      // 10 sat and 100 sat should be completely ignored. (under dust)
+      helpers.stubUtxos(server, wallet, ['u0.1', '100 sat', 0.2, 0.3, 0.4, '10bit', '100bit', '200bit', '10 sat'], function() {
+        server.getSendMaxInfo({
+          feePerKb: 0.001e8,
+          returnInputs: true,
+          payProUrl: 'aaa.bbb',
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.inputs.length.should.equal(4);
+          info.size.should.equal(1242);
+          info.fee.should.equal(info.size * 0.001e8 / 1000.);
+          info.amount.should.equal(1e8 - info.fee);
+          info.utxosBelowFee.should.equal(3);
+          info.amountBelowFee.should.equal(310e2);
+          server.getSendMaxInfo({
+            feePerKb: 0.0001e8,
+            returnInputs: true,
+          }, function(err, info) {
+            should.not.exist(err);
+            should.exist(info);
+            info.inputs.length.should.equal(6);
+            info.size.should.equal(1818);
+            info.fee.should.equal(info.size * 0.0001e8 / 1000.);
+            info.amount.should.equal(1.0003e8 - info.fee);
+            info.utxosBelowFee.should.equal(1);
+            info.amountBelowFee.should.equal(1e3);
+            sendTx(info, done);
+          });
+        });
+      });
+    });
+  })
+
 
 
   describe('Check requiredFeeRate  BTC', function() {
@@ -7293,13 +7380,14 @@ describe('Wallet service', function() {
           // size should be above (or equal) the required FeeRate
           actualFeeRate.should.not.be.below(x.requiredFeeRate);
           actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
-          return cb();
+          return cb(actualFeeRate);
         });
       });
     };
     let i=0;
     cases.forEach( x => {
 
+      x.i = i;
       x.m = x.m || 1;
       x.n = x.n || 1;
       it(`case  ${i++} : ${x.name} (${x.m}-of-${x.n})`, function(done) {
@@ -7312,6 +7400,7 @@ describe('Wallet service', function() {
             server.getSendMaxInfo({
               feePerKb: x.requiredFeeRate, 
               returnInputs: true,
+              payProUrl: 'aaa.com',
             }, function(err, info) {
               should.not.exist(err, err);
               should.exist(info);
@@ -7327,7 +7416,33 @@ describe('Wallet service', function() {
               } else {
                 txOpts.feePerKb = x.requiredFeeRate;
               }
-              checkTx(txOpts, x, done);
+              txOpts.payProUrl = 'aaa.com';
+
+              checkTx(txOpts, x, (fee1) => {
+                if (x.i == 8) {
+                  helpers.beforeEach(() => {
+                    // check with paypro fee is bigger.
+                    console.log(`## case  ${x.i} : Again with no paypro`);
+                    helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+                      server = s;
+                      wallet = w;
+
+                      helpers.stubUtxos(server, wallet, x.utxos, function() {
+
+                        txOpts.payProUrl = null;
+                        checkTx(txOpts, x, (fee2) => {
+                          console.log(`## Fee PayPro: ${fee1} vs ${fee2}`);
+                          fee1.should.be.above(fee2);
+                          done();
+                        });
+                      });
+                    });
+                  });
+                } else {
+                  done();
+                }
+
+              });
             });
           });
         });
