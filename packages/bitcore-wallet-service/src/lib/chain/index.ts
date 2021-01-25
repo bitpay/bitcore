@@ -22,9 +22,17 @@ export interface IChain {
   getWalletSendMaxInfo(
     server: WalletService,
     wallet: IWallet,
-    opts: { excludeUnconfirmedUtxos: string; returnInputs: string; from: string; feePerKb: number } & any,
+    opts: {
+      excludeUnconfirmedUtxos: string;
+      returnInputs: string;
+      from: string;
+      feePerKb: number;
+      useProUrl: boolean;
+    } & any,
     cb
   );
+  getInputSizeSafetyMargin(opts: any): number;
+  getSizeSafetyMargin(opts: any): number;
   getDustAmountValue();
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);

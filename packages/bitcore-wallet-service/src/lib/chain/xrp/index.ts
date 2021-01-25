@@ -39,6 +39,14 @@ export class XrpChain implements IChain {
     return false;
   }
 
+  getSizeSafetyMargin() {
+    return 0;
+  }
+
+  getInputSizeSafetyMargin() {
+    return 0;
+  }
+
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
     bc.getBalance(wallet, (err, balance) => {

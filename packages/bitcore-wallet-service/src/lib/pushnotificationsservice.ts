@@ -196,8 +196,8 @@ export class PushNotificationsService {
                 };
 
                 if (!notifType.dataOnly) {
-                  notification.title = sub?.plain?.subject;
-                  notification.body = sub?.plain?.body;
+                  notificationData.data.title = sub?.plain?.subject;
+                  notificationData.data.body = sub?.plain?.body;
                   notificationData.notification = {
                     title: sub?.plain?.subject,
                     body: sub?.plain?.body,
