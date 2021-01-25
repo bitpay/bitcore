@@ -110,11 +110,11 @@ export class BtcChain implements IChain {
           network: wallet.network,
           walletM: wallet.m,
           walletN: wallet.n,
-          feePerKb,
+          feePerKb
         });
 
-        const baseTxpSize = this.getEstimatedSize(txp, { conservativeEstimation: true});
-        const sizePerInput = this.getEstimatedSizeForSingleInput(txp, { conservativeEstimation: true});
+        const baseTxpSize = this.getEstimatedSize(txp, { conservativeEstimation: true });
+        const sizePerInput = this.getEstimatedSizeForSingleInput(txp, { conservativeEstimation: true });
         const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
         const partitionedByAmount = _.partition(inputs, input => {
@@ -137,12 +137,12 @@ export class BtcChain implements IChain {
 
         if (_.isEmpty(txp.inputs)) return cb(null, info);
 
-        const fee = this.getEstimatedFee(txp, {conservativeEstimation: true});
+        const fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
         const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
 
         if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
-        info.size = this.getEstimatedSize(txp, {conservativeEstimation: true} );
+        info.size = this.getEstimatedSize(txp, { conservativeEstimation: true });
         info.fee = fee;
         info.amount = amount;
 
@@ -206,11 +206,10 @@ export class BtcChain implements IChain {
   }
 
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
-  getEstimatedSizeForSingleInput(txp, opts = { conservativeEstimation: false}) {
-    
+  getEstimatedSizeForSingleInput(txp, opts = { conservativeEstimation: false }) {
     const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_DATA
     const PUBKEY_SIZE = 33 + 1; // +1 OP_DATA
-    const inputSafetyMargin = this.getInputSizeSafetyMargin({conservativeEstimation: opts.conservativeEstimation});
+    const inputSafetyMargin = this.getInputSizeSafetyMargin({ conservativeEstimation: opts.conservativeEstimation });
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
@@ -425,7 +424,7 @@ export class BtcChain implements IChain {
     let bitcoreError;
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
-    if (this.getEstimatedSize(txp, {conservativeEstimation: true}) / 1000 > MAX_TX_SIZE_IN_KB) 
+    if (this.getEstimatedSize(txp, { conservativeEstimation: true }) / 1000 > MAX_TX_SIZE_IN_KB)
       return Errors.TX_MAX_SIZE_EXCEEDED;
 
     const serializationOpts = {
@@ -502,13 +501,13 @@ export class BtcChain implements IChain {
 
     // todo: check inputs are ours and have enough value
     if (txp.inputs && !_.isEmpty(txp.inputs)) {
-      if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, {conservativeEstimation: true});
+      if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
       return cb(this.checkTx(txp));
     }
 
-    const feeOpts= { conservativeEstimation: opts.payProUrl ? true : false};
+    const feeOpts = { conservativeEstimation: opts.payProUrl ? true : false };
     const txpAmount = txp.getTotalAmount();
-    const baseTxpSize = this.getEstimatedSize(txp, feeOpts );
+    const baseTxpSize = this.getEstimatedSize(txp, feeOpts);
     const baseTxpFee = (baseTxpSize * txp.feePerKb) / 1000;
     const sizePerInput = this.getEstimatedSizeForSingleInput(txp, feeOpts);
     const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
