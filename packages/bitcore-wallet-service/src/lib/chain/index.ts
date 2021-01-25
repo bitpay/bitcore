@@ -22,7 +22,13 @@ export interface IChain {
   getWalletSendMaxInfo(
     server: WalletService,
     wallet: IWallet,
-    opts: { excludeUnconfirmedUtxos: string; returnInputs: string; from: string; feePerKb: number, payProUrl: string } & any,
+    opts: {
+      excludeUnconfirmedUtxos: string;
+      returnInputs: string;
+      from: string;
+      feePerKb: number;
+      useProUrl: boolean;
+    } & any,
     cb
   );
   getInputSizeSafetyMargin(txp: any): number;

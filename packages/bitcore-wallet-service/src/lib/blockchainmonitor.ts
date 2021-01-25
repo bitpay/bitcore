@@ -342,7 +342,11 @@ export class BlockchainMonitor {
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
     this.storage.clearGlobalCache(cacheKey, () => {});
 
-    if (network == 'testnet' || coin == 'xrp') {
+    if (coin == 'xrp') {
+      return
+    }
+
+    if (network == 'testnet') {
       throttledNewBlocks(this, coin, network, hash);
     } else {
       this._notifyNewBlock(coin, network, hash);

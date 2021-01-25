@@ -13,24 +13,22 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class BtcChain implements IChain {
-  constructor(private bitcoreLib = BitcoreLib) {
-  }
+  constructor(private bitcoreLib = BitcoreLib) {}
 
   getSizeSafetyMargin(txp): number {
     if (txp.payProUrl) {
       return 0.02;
     } else {
       return 0.005;
-    } 
+    }
   }
 
-
-  getInputSizeSafetyMargin (txp: any): number {
-     if (txp.payProUrl) {
+  getInputSizeSafetyMargin(txp: any): number {
+    if (txp.payProUrl) {
       return 3;
     } else {
       return 0;
-    } 
+    }
   }
 
   getWalletBalance(server, wallet, opts, cb) {
@@ -110,7 +108,7 @@ export class BtcChain implements IChain {
           walletM: wallet.m,
           walletN: wallet.n,
           feePerKb,
-          payProUrl: opts.payProUrl,
+          payProUrl: opts.usePayPro ? 'aaa.com' : null,
         });
 
         const baseTxpSize = this.getEstimatedSize(txp);
@@ -218,8 +216,8 @@ export class BtcChain implements IChain {
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 69 + inputSafetyMargin; // vsize
 
-      case Constants.SCRIPT_TYPES.P2WSH: 
-        return Math.ceil(32 + 4 + 1 + ( 5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4) + inputSafetyMargin; // vsize
+      case Constants.SCRIPT_TYPES.P2WSH:
+        return Math.ceil(32 + 4 + 1 + (5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4) + inputSafetyMargin; // vsize
 
       case Constants.SCRIPT_TYPES.P2SH:
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
