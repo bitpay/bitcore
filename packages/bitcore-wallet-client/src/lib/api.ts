@@ -2076,26 +2076,36 @@ export class API extends EventEmitter {
           const serializedTxs =
             typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
 
-          let i = 0;
+
+          const weightedSize = [];
+
 
           let isBtcSegwit =
             txp.coin == 'btc' &&
             (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
+
+          let i = 0;
           for (const unsigned of unserializedTxs) {
-            let size = serializedTxs[i++].length / 2;
+            let size;
             if (isBtcSegwit) {
-              let unsignedSize = unsigned.length / 2;
-              size = Math.floor(size - (unsignedSize * 3) / 4);
+              // we dont have a fast way to calculate weigthedSize`
+              size = Math.floor(txp.fee/txp.feePerKb*1000) - 10;
+            } else {
+              size = serializedTxs[i].length / 2;
             }
             unsignedTransactions.push({
               tx: unsigned,
               weightedSize: size
             });
+            weightedSize.push(size);
+
+            i++;
           }
+          i = 0;
           for (const signed of serializedTxs) {
             signedTransactions.push({
               tx: signed,
-              weightedSize: signed.length / 2
+              weightedSize: weightedSize[i++],
             });
           }
           PayProV2.verifyUnsignedPayment({
