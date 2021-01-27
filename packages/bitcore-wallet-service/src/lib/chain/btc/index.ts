@@ -11,27 +11,30 @@ const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
+const config = require('../../../config');
 
 export class BtcChain implements IChain {
-  constructor(private bitcoreLib = BitcoreLib) {}
 
-  getSizeSafetyMargin(opts: any): number {
-    opts = opts || {};
+  protected sizeEstimationMargin: number; 
+  protected inputSizeEstimationMargin: number; 
 
-    if (opts.conservativeEstimation) {
-      return 0.02;
-    } else {
-      return 0.005;
-    }
+  constructor(private bitcoreLib = BitcoreLib) {
+    this.sizeEstimationMargin = config.btc?.sizeEstimationMargin ??  0.01;
+    this.inputSizeEstimationMargin = config.btc?.inputSizeEstimationMargin ??  2;;
   }
 
-  getInputSizeSafetyMargin(opts: any): number {
-    opts = opts || {};
+  getSizeSafetyMargin(opts: any = {} ): number {
     if (opts.conservativeEstimation) {
-      return 3;
-    } else {
-      return 0;
+      return this.sizeEstimationMargin;
     }
+    return 0;
+  }
+
+  getInputSizeSafetyMargin(opts: any = {}): number {
+    if (opts.conservativeEstimation) {
+      return this.inputSizeEstimationMargin;
+    }
+    return 0;
   }
 
   getWalletBalance(server, wallet, opts, cb) {

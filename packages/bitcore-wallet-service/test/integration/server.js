@@ -6685,7 +6685,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1242);
+          info.size.should.equal(1238);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(0);
@@ -6704,9 +6704,9 @@ describe('Wallet service', function() {
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
-          info.size.should.equal(648);
-          info.fee.should.equal(32400);
-          info.amount.should.equal(27600);
+          info.size.should.equal(646);
+          info.fee.should.equal(32300);
+          info.amount.should.equal(27700);
 
           var _min_output_amount = Defaults.MIN_OUTPUT_AMOUNT;
           Defaults.MIN_OUTPUT_AMOUNT = 300e2;
@@ -6805,7 +6805,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(3);
-          info.size.should.equal(945);
+          info.size.should.equal(942);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(0.9e8 - info.fee);
           sendTx(info, done);
@@ -6831,7 +6831,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(2);
-            info.size.should.equal(648);
+            info.size.should.equal(646);
             info.fee.should.equal(info.size * 10000 / 1000.);
             info.amount.should.equal(0.2e8 - info.fee);
             sendTx(info, done);
@@ -6850,7 +6850,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1242);
+          info.size.should.equal(1238);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(3);
@@ -6862,7 +6862,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(6);
-            info.size.should.equal(1836);
+            info.size.should.equal(1830);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0003e8 - info.fee);
             info.utxosBelowFee.should.equal(1);
