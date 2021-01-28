@@ -256,7 +256,7 @@ export class ExpressApp {
       try {
         res.setHeader('User-Agent', 'copay');
         var options = {
-          uri: 'https://api.github.com/repos/bitpay/copay/releases/latest',
+          uri: 'https://api.github.com/repos/bitpay/wallet/releases/latest',
           headers: {
             'User-Agent': 'Copay'
           },
