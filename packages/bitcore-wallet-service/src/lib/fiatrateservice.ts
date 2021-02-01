@@ -6,23 +6,8 @@ import { Storage } from './storage';
 const $ = require('preconditions').singleton();
 const Common = require('./common');
 const Defaults = Common.Defaults;
+const Constants = Common.Constants;
 import logger from './logger';
-
-const fiatCurrencies = [
-  { code: 'USD', name: 'US Dollar' },
-  { code: 'INR', name: 'Indian Rupee' },
-  { code: 'GBP', name: 'Pound Sterling' },
-  { code: 'EUR', name: 'Eurozone Euro' },
-  { code: 'CAD', name: 'Canadian Dollar' },
-  { code: 'COP', name: 'Colombian Peso' },
-  { code: 'NGN', name: 'Nigerian Naira' },
-  { code: 'BRL', name: 'Brazilian Real' },
-  { code: 'ARS', name: 'Argentine Peso' },
-  { code: 'AUD', name: 'Australian Dollar' },
-  { code: 'JPY', name: 'Japanese Yen' },
-  { code: 'NZD', name: 'New Zealand Dollar' }
-];
-
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -115,7 +100,7 @@ export class FiatRateService {
           return cb(new Error('No parse function for provider ' + provider.name));
         }
         try {
-          const rates = _.filter(provider.parseFn(body), x => _.some(fiatCurrencies, ['code', x.code]));
+          const rates = _.filter(provider.parseFn(body), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
           return cb(null, rates);
         } catch (e) {
           return cb(e);
@@ -169,6 +154,56 @@ export class FiatRateService {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRates()>');
 
     opts = opts || {};
+
+    const now = Date.now();
+    const ts = opts.ts ? opts.ts : now;
+    let fiatFiltered = [];
+    let rates = [];
+
+    if (opts.code) {
+      fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
+      if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
+    }
+    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
+
+    async.map(
+      _.values(Constants.COINS),
+      (coin, cb) => {
+        rates[coin] = [];
+        async.map(
+          currencies,
+          (currency, cb) => {
+            this.storage.fetchFiatRate(coin, currency.code, ts, (err, rate) => {
+              if (err) return cb(err);
+              if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
+              return cb(null, {
+                ts: +ts,
+                rate: rate ? rate.value : undefined,
+                fetchedOn: rate ? rate.ts : undefined,
+                code: currency.code,
+                name: currency.name
+              });
+            });
+          },
+          (err, res: any) => {
+            if (err) return cb(err);
+            var obj = {};
+            obj[coin] = res;
+            return cb(null, obj);
+          }
+        );
+      },
+      (err, res: any) => {
+        if (err) return cb(err);
+        return cb(null, Object.assign({}, ...res));
+      }
+    );
+  }
+
+  getRatesByCoin(opts, cb) {
+    $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesByCoin()>');
+
+    opts = opts || {};
     const rates = [];
 
     const now = Date.now();
@@ -177,10 +212,10 @@ export class FiatRateService {
     let fiatFiltered = [];
 
     if (opts.code) {
-      fiatFiltered = _.filter(fiatCurrencies, ['code', opts.code]);
+      fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
-    const currencies = fiatFiltered.length ? fiatFiltered : fiatCurrencies;
+    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
 
     async.map(
       currencies,
