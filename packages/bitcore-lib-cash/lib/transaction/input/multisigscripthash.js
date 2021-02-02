@@ -167,7 +167,7 @@ MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signa
 
 MultiSigScriptHashInput.OPCODES_SIZE = 7; // serialized size (<=3) + 0 .. N .. M OP_CHECKMULTISIG
 MultiSigScriptHashInput.SIGNATURE_SIZE = 74; // size (1) + DER (<=72) + sighash (1)
-MultiSigScriptHashInput.PUBKEY_SIZE = 34; // size (1) + DER (<=33)
+MultiSigScriptHashInput.PUBKEY_SIZE = 66; // size (1) + DER (<=65)
 
 MultiSigScriptHashInput.prototype._estimateSize = function() {
   return MultiSigScriptHashInput.OPCODES_SIZE +

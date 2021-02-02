@@ -211,7 +211,7 @@ export class BtcChain implements IChain {
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleInput(txp, opts = { conservativeEstimation: false }) {
     const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_DATA
-    const PUBKEY_SIZE = 33 + 1; // +1 OP_DATA
+    const PUBKEY_SIZE = 65 + 1; // +1 OP_DATA
     const inputSafetyMargin = this.getInputSizeSafetyMargin({ conservativeEstimation: opts.conservativeEstimation });
 
     switch (txp.addressType) {
