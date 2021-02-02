@@ -228,5 +228,20 @@ module.exports = {
   // Time to get the latest push notification subscriptions. In ms.
   PUSH_NOTIFICATION_SUBS_TIME: 10 * 60 * 1000, // 10 min.
 
-  PUSH_NOTIFICATION_LIMIT: 10
+  PUSH_NOTIFICATION_LIMIT: 10,
+
+  FIAT_CURRENCIES: [
+    { code: 'USD', name: 'US Dollar' },
+    { code: 'INR', name: 'Indian Rupee' },
+    { code: 'GBP', name: 'Pound Sterling' },
+    { code: 'EUR', name: 'Eurozone Euro' },
+    { code: 'CAD', name: 'Canadian Dollar' },
+    { code: 'COP', name: 'Colombian Peso' },
+    { code: 'NGN', name: 'Nigerian Naira' },
+    { code: 'BRL', name: 'Brazilian Real' },
+    { code: 'ARS', name: 'Argentine Peso' },
+    { code: 'AUD', name: 'Australian Dollar' },
+    { code: 'JPY', name: 'Japanese Yen' },
+    { code: 'NZD', name: 'New Zealand Dollar' }
+  ]
 };

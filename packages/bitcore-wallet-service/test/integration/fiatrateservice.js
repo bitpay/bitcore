@@ -9,6 +9,9 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
+var Common = require('../../ts_build/lib/common');
+var Defaults = Common.Defaults;
+var Constants = Common.Constants;
 
 var helpers = require('./helpers');
 
@@ -215,13 +218,13 @@ describe('Fiat rate service', function() {
 
             res[coin][3].ts.should.equal(100);
             res[coin][3].rate.should.equal(1.00);
-  
+
             res[coin][2].ts.should.equal(200);
             res[coin][2].rate.should.equal(2.00);
-  
+
             res[coin][1].ts.should.equal(300);
             res[coin][1].rate.should.equal(3.00);
-  
+
             res[coin][0].ts.should.equal(400);
             res[coin][0].rate.should.equal(4.00);
           }
@@ -435,6 +438,75 @@ describe('Fiat rate service', function() {
   });
 
   describe('#getRates', function() {
+    it('should get the rates of each coin in all supported fiat currencies', function(done) {
+        service.getRates({}, function(err, res) {
+          should.not.exist(err);
+          Object.keys(res).forEach(key=>{
+            res[key].length.should.equal(Defaults.FIAT_CURRENCIES.length);
+          })
+          done();
+        });
+    });
+    it('should get the rates of all coins supported', function(done) {
+      service.getRates({}, function(err, res) {
+        should.not.exist(err);
+        Object.keys(res).length.should.equal( Object.keys(Constants.COINS).length)
+        done();
+      });
+    });
+    it('should get rates of all coins in the specified fiat currency if it is supported', function(done) {
+        service.getRates({
+          code: 'EUR'
+        }, function(err, res) {
+          should.not.exist(err);
+          Object.keys(res).length.should.equal( Object.keys(Constants.COINS).length)
+          Object.keys(res).forEach(key=>{
+            res[key].length.should.equal(1);
+          })
+          done();
+        });
+    });
+    it('should throw error if the specified fiat currency code is not supported', function(done) {
+        service.getRates({
+          code: 'AOA'
+        }, function(err) {
+          should.exist(err);
+          err.should.equal('AOA is not supported');
+          done();
+        });
+    });
+    it('should get rate for specific ts', function(done) {
+      var clock = sinon.useFakeTimers({ toFake: ['Date'] });
+      clock.tick(20);
+      service.storage.storeFiatRate('btc', [{
+        code: 'USD',
+        value: 123.45,
+      }], function(err) {
+        should.not.exist(err);
+        clock.tick(100);
+        service.storage.storeFiatRate('btc', [{
+          code: 'USD',
+          value: 345.67,
+        }], function(err) {
+          should.not.exist(err);
+          service.getRates({
+            coin: 'btc',
+            code: 'USD',
+            ts: 50,
+          }, function(err, res) {
+            should.not.exist(err);
+            Object.keys(res).forEach(key=>{
+              res[key][0].ts.should.equal(50);
+            })
+            clock.restore();
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  describe('#getRatesByCoin', function() {
     const bchRates = [
       { code: "USD", value: 268.94 },
       { code: "INR", value: 19680.35 },
@@ -452,7 +524,7 @@ describe('Fiat rate service', function() {
     it('should get rates for all the supported fiat currencies of the specified coin', function(done) {
       service.storage.storeFiatRate('bch', bchRates, function(err) {
         should.not.exist(err);
-        service.getRates({
+        service.getRatesByCoin({
           coin: 'bch'
         }, function(err, res) {
           should.not.exist(err);
@@ -464,7 +536,7 @@ describe('Fiat rate service', function() {
     it('should get rate for the specified coin and currency if they are supported', function(done) {
       service.storage.storeFiatRate('bch', bchRates, function(err) {
         should.not.exist(err);
-        service.getRates({
+        service.getRatesByCoin({
           coin: 'bch',
           code: 'EUR'
         }, function(err, res) {
@@ -477,7 +549,7 @@ describe('Fiat rate service', function() {
     it('should throw error if the specified currency code is not supported', function(done) {
       service.storage.storeFiatRate('bch', bchRates, function(err) {
         should.not.exist(err);
-        service.getRates({
+        service.getRatesByCoin({
           coin: 'bch',
           code: 'AOA'
         }, function(err) {
@@ -501,7 +573,7 @@ describe('Fiat rate service', function() {
           value: 345.67,
         }], function(err) {
           should.not.exist(err);
-          service.getRates({
+          service.getRatesByCoin({
             coin: 'btc',
             code: 'USD',
             ts: 50,
