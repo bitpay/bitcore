@@ -4430,8 +4430,14 @@ export class WalletService {
       const keys = this.wyreGetKeys(req);
       req.body.accountId = keys.ACCOUNT_ID;
 
-      if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'country'])) {
-        return reject(new ClientError("Wyre's request missing arguments"));
+      if (req.body.amountIncludeFees) {
+        if (!checkRequired(req.body, ['sourceAmount', 'sourceCurrency', 'destCurrency', 'dest', 'country', 'walletType'])) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
+      } else {
+        if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'country'])) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
       }
 
       const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
@@ -4470,8 +4476,14 @@ export class WalletService {
       const keys = this.wyreGetKeys(req);
       req.body.referrerAccountId = keys.ACCOUNT_ID;
 
-      if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'paymentMethod'])) {
-        return reject(new ClientError("Wyre's request missing arguments"));
+      if (req.body.amountIncludeFees) {
+        if (!checkRequired(req.body, ['sourceAmount', 'sourceCurrency', 'destCurrency', 'dest', 'country', 'paymentMethod'])) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
+      } else {
+        if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'paymentMethod'])) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
       }
 
       const URL: string = `${keys.API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
