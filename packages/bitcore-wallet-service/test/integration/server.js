@@ -10385,6 +10385,53 @@ describe('Wallet service', function() {
           err.message.should.equal('Wyre missing credentials');
         });
       });
+
+      it('should return error if amountIncludeFees is true but sourceAmount is not present', () => {
+        req = {
+          headers: {},
+          body: {
+            amountIncludeFees: true,
+            env: 'sandbox',
+            amount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123',
+            country: 'US',
+            walletType: 'DEBIT_CARD'
+          }
+        }
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request missing arguments');
+        });
+      });
+
+      it('should work properly if req is OK with amountIncludeFees and sourceAmount', () => {
+        req = {
+          headers: {},
+          body: {
+            amountIncludeFees: true,
+            env: 'sandbox',
+            sourceAmount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123',
+            country: 'US',
+            walletType: 'DEBIT_CARD'
+          }
+        }
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
     });
 
     describe('#wyreWalletOrderReservation', () => {
@@ -10451,6 +10498,53 @@ describe('Wallet service', function() {
         }).catch(err => {
           should.exist(err);
           err.message.should.equal('Wyre missing credentials');
+        });
+      });
+
+      it('should return error if amountIncludeFees is true but sourceAmount is not present', () => {
+        req = {
+          headers: {},
+          body: {
+            amountIncludeFees: true,
+            env: 'sandbox',
+            amount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123',
+            country: 'US',
+            paymentMethod: 'debit-card'
+          }
+        }
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request missing arguments');
+        });
+      });
+
+      it('should work properly if req is OK with amountIncludeFees and sourceAmount', () => {
+        req = {
+          headers: {},
+          body: {
+            amountIncludeFees: true,
+            env: 'sandbox',
+            sourceAmount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123',
+            country: 'US',
+            paymentMethod: 'debit-card'
+          }
+        }
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
     });
