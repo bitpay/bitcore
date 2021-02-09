@@ -31,13 +31,13 @@ const PUSHNOTIFICATIONS_TYPES = {
     filename: 'new_outgoing_tx'
   },
   NewIncomingTx: {
-    filename: 'new_incoming_tx'
+    filename: ['new_incoming_tx_testnet', 'new_incoming_tx']
   },
   TxProposalFinallyRejected: {
     filename: 'txp_finally_rejected'
   },
   TxConfirmation: {
-    filename: 'tx_confirmation'
+    filename: ['tx_confirmation_sender', 'tx_confirmation_receiver']
   },
   NewAddress: {
     dataOnly: true
@@ -150,8 +150,14 @@ export class PushNotificationsService {
   _sendPushNotifications(notification, cb) {
     cb = cb || function() {};
 
-    const notifType = PUSHNOTIFICATIONS_TYPES[notification.type];
+    const notifType = _.cloneDeep(PUSHNOTIFICATIONS_TYPES[notification.type]);
     if (!notifType) return cb();
+
+    if (notification.type === 'NewIncomingTx') {
+      notifType.filename = notification.data.network === 'testnet' ? notifType.filename[0] : notifType.filename[1];
+    } else if (notification.type === 'TxConfirmation') {
+      notifType.filename = notification.isCreator ? notifType.filename[0] : notifType.filename[1];
+    }
 
     logger.debug('Notification received: ' + notification.type);
     logger.debug(JSON.stringify(notification));
@@ -175,6 +181,8 @@ export class PushNotificationsService {
             },
             (subs, next) => {
               const notifications = _.map(subs, sub => {
+                if (notification.type === 'NewTxProposal' && sub.copayerId === notification.creatorId) return;
+
                 const tokenAddress =
                   notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
                 const multisigContractAddress =
