@@ -1261,6 +1261,19 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/services', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getServicesData((err, response) => {
+        if (err) return returnError(err, res, req);
+        res.json(response);
+      });
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
         server

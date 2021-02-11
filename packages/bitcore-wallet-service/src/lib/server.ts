@@ -4263,6 +4263,11 @@ export class WalletService {
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
   }
 
+  getServicesData(cb) {
+    const data = config.services ?? {};
+    return cb(null, data);
+  }
+
   simplexGetKeys(req) {
     if (!config.simplex) throw new Error('Simplex missing credentials');
 
