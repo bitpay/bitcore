@@ -4436,7 +4436,9 @@ export class WalletService {
       req.body.accountId = keys.ACCOUNT_ID;
 
       if (req.body.amountIncludeFees) {
-        if (!checkRequired(req.body, ['sourceAmount', 'sourceCurrency', 'destCurrency', 'dest', 'country', 'walletType'])) {
+        if (
+          !checkRequired(req.body, ['sourceAmount', 'sourceCurrency', 'destCurrency', 'dest', 'country', 'walletType'])
+        ) {
           return reject(new ClientError("Wyre's request missing arguments"));
         }
       } else {
@@ -4482,7 +4484,16 @@ export class WalletService {
       req.body.referrerAccountId = keys.ACCOUNT_ID;
 
       if (req.body.amountIncludeFees) {
-        if (!checkRequired(req.body, ['sourceAmount', 'sourceCurrency', 'destCurrency', 'dest', 'country', 'paymentMethod'])) {
+        if (
+          !checkRequired(req.body, [
+            'sourceAmount',
+            'sourceCurrency',
+            'destCurrency',
+            'dest',
+            'country',
+            'paymentMethod'
+          ])
+        ) {
           return reject(new ClientError("Wyre's request missing arguments"));
         }
       } else {

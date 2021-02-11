@@ -21,7 +21,7 @@ type throttledNewBlocksFnType = (that: any, coin: any, network: any, hash: any) 
 
 var throttledNewBlocks = _.throttle((that, coin, network, hash) => {
   that._notifyNewBlock(coin, network, hash);
-  //that._handleTxConfirmations(coin, network, hash); // no need to throttledNewBlocks
+  // that._handleTxConfirmations(coin, network, hash); // no need to throttledNewBlocks
 }, Defaults.NEW_BLOCK_THROTTLE_TIME_MIN * 60 * 1000) as throttledNewBlocksFnType;
 
 export class BlockchainMonitor {
@@ -336,7 +336,6 @@ export class BlockchainMonitor {
   }
 
   _handleNewBlock(coin, network, hash) {
-
     // clear height cache.
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
     this.storage.clearGlobalCache(cacheKey, () => {});
