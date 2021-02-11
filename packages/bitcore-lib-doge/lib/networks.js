@@ -139,10 +139,13 @@ addNetwork({
   dnsSeeds: [
     'seed.multidoge.org',
     'seed2.multidoge.org',
-    'multidoge.org',
     'veryseed.denarius.pro',
     'muchseed.denarius.pro',
-    'suchseed.denarius.pro'
+    'suchseed.denarius.pro',
+    'seed.dogecoin.com',
+    'seed.dogechain.info',
+    'seed.mophides.com',
+    'seed.dglibrary.org'
   ]
 });
 
@@ -174,7 +177,6 @@ var TESTNET = {
   PORT: 44556,
   NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfdd2c8f1),
   DNS_SEEDS: [
-    'jrn.me.uk',
     'testseed.jrn.me.uk'
   ]
 };
