@@ -130,19 +130,19 @@ addNetwork({
   name: 'livenet',
   alias: 'mainnet',
   pubkeyhash: 0x30,
-  privatekey: 0xb0,
-  scripthash: 0x32,
-  xpubkey: 0x019da462,
-  xprivkey: 0x019d9cfe,
+  privatekey: 0x9e,
+  scripthash: 0x16,
+  xpubkey: 0x02facafd,
+  xprivkey: 0x02fac398,
   networkMagic: 0xfbc0b6db,
-  port: 9333,
+  port: 22556,
   dnsSeeds: [
-    'dnsseed.litecointools.com',
-    'dnsseed.litecoinpool.org',
-    'dnsseed.ltc.xurious.com',
-    'dnsseed.koin-project.com',
-    'seed-a.litecoin.loshan.co.uk',
-    'dnsseed.thrasher.io'
+    'seed.multidoge.org',
+    'seed2.multidoge.org',
+    'multidoge.org',
+    'veryseed.denarius.pro',
+    'muchseed.denarius.pro',
+    'suchseed.denarius.pro'
   ]
 });
 
@@ -155,11 +155,11 @@ var livenet = get('livenet');
 addNetwork({
   name: 'testnet',
   alias: 'regtest',
-  pubkeyhash: 0x6f,
-  privatekey: 0xef,
-  scripthash: 0x3a,
-  xpubkey: 0x0436f6e1,
-  xprivkey: 0x0436ef7d
+  pubkeyhash: 0x71,
+  privatekey: 0xf1,
+  scripthash: 0xc4,
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394
 });
 
 /**
@@ -171,11 +171,11 @@ var testnet = get('testnet');
 // Add configurable values for testnet/regtest
 
 var TESTNET = {
-  PORT: 19335,
+  PORT: 44556,
   NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfdd2c8f1),
   DNS_SEEDS: [
-    'testnet-seed.litecointools.com',
-    'seed-b.litecoin.loshan.co.uk'
+    'jrn.me.uk',
+    'testseed.jrn.me.uk'
   ]
 };
 
@@ -186,7 +186,7 @@ for (var key in TESTNET) {
 }
 
 var REGTEST = {
-  PORT: 19444,
+  PORT: 18444,
   NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfabfb5da),
   DNS_SEEDS: []
 };
