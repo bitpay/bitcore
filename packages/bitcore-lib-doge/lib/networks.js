@@ -129,12 +129,12 @@ function removeNetwork(network) {
 addNetwork({
   name: 'livenet',
   alias: 'mainnet',
-  pubkeyhash: 0x30,
+  pubkeyhash: 0x1e,
   privatekey: 0x9e,
   scripthash: 0x16,
   xpubkey: 0x02facafd,
   xprivkey: 0x02fac398,
-  networkMagic: 0xfbc0b6db,
+  networkMagic: 0xc0c0c0c0,
   port: 22556,
   dnsSeeds: [
     'seed.multidoge.org',
@@ -175,7 +175,7 @@ var testnet = get('testnet');
 
 var TESTNET = {
   PORT: 44556,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfdd2c8f1),
+  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfcc1b7dc),
   DNS_SEEDS: [
     'testseed.jrn.me.uk'
   ]
