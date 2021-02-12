@@ -9,8 +9,8 @@ var Unit = require('./unit');
 /**
  * Litecore URI
  *
- * Instantiate an URI from a litecoin URI String or an Object. An URI instance
- * can be created with a litecoin uri string or an object. All instances of
+ * Instantiate an URI from a dogecoin URI String or an Object. An URI instance
+ * can be created with a dogecoin uri string or an object. All instances of
  * URI are valid, the static method isValid allows checking before instantiation.
  *
  * All standard parameters can be found as members of the class, the address
@@ -20,13 +20,13 @@ var Unit = require('./unit');
  * @example
  * ```javascript
  *
- * var uri = new URI('litecoin:LLNxdByMgALUxS7KjNq6wbfqwQmgqGqfAB?amount=1.2');
+ * var uri = new URI('dogecoin:DE1wEbm9D6JqEhqGtyD52BkHQmQ5N18J84?amount=1.2');
  * console.log(uri.address, uri.amount);
  * ```
  *
- * @param {string|Object} data - A litecoin URI string or an Object
+ * @param {string|Object} data - A dogecoin URI string or an Object
  * @param {Array.<string>=} knownParams - Required non-standard params
- * @throws {TypeError} Invalid litecoin address
+ * @throws {TypeError} Invalid dogecoin address
  * @throws {TypeError} Invalid amount
  * @throws {Error} Unknown required argument
  * @returns {URI} A new valid and frozen instance of URI
@@ -78,16 +78,16 @@ URI.fromObject = function fromObject(json) {
 };
 
 /**
- * Check if an litecoin URI string is valid
+ * Check if an dogecoin URI string is valid
  *
  * @example
  * ```javascript
  *
- * var valid = URI.isValid('litecoin:LLNxdByMgALUxS7KjNq6wbfqwQmgqGqfAB');
+ * var valid = URI.isValid('dogecoin:DE1wEbm9D6JqEhqGtyD52BkHQmQ5N18J84');
  * // true
  * ```
  *
- * @param {string|Object} data - A litecoin URI string or an Object
+ * @param {string|Object} data - A dogecoin URI string or an Object
  * @param {Array.<string>=} knownParams - Required non-standard params
  * @returns {boolean} Result of uri validation
  */
@@ -101,17 +101,17 @@ URI.isValid = function(arg, knownParams) {
 };
 
 /**
- * Convert a litecoin URI string into a simple object.
+ * Convert a dogecoin URI string into a simple object.
  *
- * @param {string} uri - A litecoin URI string
- * @throws {TypeError} Invalid litecoin URI
+ * @param {string} uri - A dogecoin URI string
+ * @throws {TypeError} Invalid dogecoin URI
  * @returns {Object} An object with the parsed params
  */
 URI.parse = function(uri) {
   var info = URL.parse(uri, true);
 
-  if (info.protocol !== 'litecoin:') {
-    throw new TypeError('Invalid litecoin URI');
+  if (info.protocol !== 'dogecoin:') {
+    throw new TypeError('Invalid dogecoin URI');
   }
 
   // workaround to host insensitiveness
@@ -127,7 +127,7 @@ URI.Members = ['address', 'amount', 'message', 'label', 'r'];
  * Internal function to load the URI instance with an object.
  *
  * @param {Object} obj - Object with the information
- * @throws {TypeError} Invalid litecoin address
+ * @throws {TypeError} Invalid dogecoin address
  * @throws {TypeError} Invalid amount
  * @throws {Error} Unknown required argument
  */
@@ -135,7 +135,7 @@ URI.prototype._fromObject = function(obj) {
   /* jshint maxcomplexity: 10 */
 
   if (!Address.isValid(obj.address)) {
-    throw new TypeError('Invalid litecoin address');
+    throw new TypeError('Invalid dogecoin address');
   }
 
   this.address = new Address(obj.address);
@@ -186,7 +186,7 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
 /**
  * Will return a the string representation of the URI
  *
- * @returns {string} Litecoin URI string
+ * @returns {string} Dogecoin URI string
  */
 URI.prototype.toString = function() {
   var query = {};
@@ -205,7 +205,7 @@ URI.prototype.toString = function() {
   _.extend(query, this.extras);
 
   return URL.format({
-    protocol: 'litecoin:',
+    protocol: 'dogecoin:',
     host: this.address,
     query: query
   });
@@ -214,7 +214,7 @@ URI.prototype.toString = function() {
 /**
  * Will return a string formatted for the console
  *
- * @returns {string} Litecoin URI
+ * @returns {string} Dogecoin URI
  */
 URI.prototype.inspect = function() {
   return '<URI: ' + this.toString() + '>';
