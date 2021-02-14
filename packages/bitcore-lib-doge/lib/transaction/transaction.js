@@ -63,13 +63,13 @@ var DEFAULT_NLOCKTIME = 0;
 var MAX_BLOCK_SIZE = 1000000;
 
 // Minimum amount for an output for it not to be considered a dust output
-Transaction.DUST_AMOUNT = 546;
+Transaction.DUST_AMOUNT = 100000001;
 
 // Margin of error to allow fees in the vecinity of the expected value but doesn't allow a big difference
 Transaction.FEE_SECURITY_MARGIN = 15;
 
 // max amount of satoshis in circulation
-Transaction.MAX_MONEY = 84000000 * 1e8; // Litecoin has 84M coins
+Transaction.MAX_MONEY = 10000000000 * 1e8; // Litecoin has 84M coins
 
 // nlocktime limit to be considered block height rather than a timestamp
 Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT = 5e8;
@@ -78,7 +78,7 @@ Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT = 5e8;
 Transaction.NLOCKTIME_MAX_VALUE = 4294967295;
 
 // Value used for fee estimation (satoshis per kilobyte)
-Transaction.FEE_PER_KB = 100000; // Litecoin default fees is 0.001 LTC
+Transaction.FEE_PER_KB = 100000000; // Litecoin default fees is 0.001 LTC
 
 // Safe upper bound for change address script size in bytes
 Transaction.CHANGE_OUTPUT_MAX_SIZE = 20 + 4 + 34 + 4;
