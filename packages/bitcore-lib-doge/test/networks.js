@@ -18,16 +18,15 @@ describe('Networks', function() {
   it('will enable/disable regtest Network', function() {
     networks.enableRegtest();
     networks.testnet.networkMagic.should.deep.equal(new Buffer('fabfb5da', 'hex'));
-    networks.testnet.port.should.equal(19444);
+    networks.testnet.port.should.equal(18444);
     networks.testnet.dnsSeeds.should.deep.equal([]);
     networks.testnet.regtestEnabled.should.equal(true);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fdd2c8f1', 'hex'));
-    networks.testnet.port.should.equal(19335);
+    networks.testnet.networkMagic.should.deep.equal(new Buffer('fcc1b7dc', 'hex'));
+    networks.testnet.port.should.equal(44556);
     networks.testnet.dnsSeeds.should.deep.equal([
-      'testnet-seed.litecointools.com',
-      'seed-b.litecoin.loshan.co.uk'
+      'testseed.jrn.me.uk',
     ]);
   });
 
@@ -100,14 +99,14 @@ describe('Networks', function() {
   });
 
   it('tests only for the specified key', function() {
-    expect(networks.get(0x6f, 'pubkeyhash')).to.equal(networks.testnet);
-    expect(networks.get(0x6f, 'privatekey')).to.equal(undefined);
+    expect(networks.get(0x71, 'pubkeyhash')).to.equal(networks.testnet);
+    expect(networks.get(0x71, 'privatekey')).to.equal(undefined);
   });
 
   it('can test for multiple keys', function() {
-    expect(networks.get(0x6f, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
-    expect(networks.get(0x3a, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
-    expect(networks.get(0x6f, ['privatekey', 'port'])).to.equal(undefined);
+    expect(networks.get(0x71, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
+    expect(networks.get(0xc4, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
+    expect(networks.get(0x71, ['privatekey', 'port'])).to.equal(undefined);
   });
 
   it('converts to string using the "name" property', function() {
