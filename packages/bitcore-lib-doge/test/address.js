@@ -16,10 +16,9 @@ var validbase58 = require('./data/bitcoind/base58_keys_valid.json');
 var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
 
 describe('Address', function() {
-
-  var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
-  var buf = Buffer.concat([new Buffer([48]), pubkeyhash]);
-  var str = 'LQiX3WFFnc6JDULSRRG3Dsjza3VmhJ5pCP';
+  var pubkeyhash = Buffer.from('4a0529a63fcc33e4f51688311b89b97371b5c76c', 'hex');
+  var buf = Buffer.concat([Buffer.from([30]), pubkeyhash]);
+  var str = 'DBtUjAUFWHqS1y8CgetQtPW6YKDhffyFT4';
 
   it('can\'t build without data', function() {
     (function() {
@@ -68,36 +67,36 @@ describe('Address', function() {
 
   // livenet valid
   var PKHLivenet = [
-    'LQ9hsXxwkqG7C8rwjUktmvRUvhat7Qh8BQ',
-    'LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK',
-    'LW3Z5seTcn3EgxNUHiCpxwRT4Dag3gy41e',
-    'LdCzEQjTA6h54qNe1PAPDtWAsr8KrrFuMy',
-    '    LdCzEQjTA6h54qNe1PAPDtWAsr8KrrFuMy   \t\n'
+    'D77Z1nmgSZxJTmtN65n2MVF9yvLSB4MpiC',
+    'DGYdw7jC17b9SappjsrAsaghhDTS8sV5Mx',
+    'DExWunrSkF2P9NAzW4JpEeC38uC3z36cCk',
+    'DMYFDsuFamS4kogsiqxQRXK9diCfmJzNLh',
+    '    DQJXChtyuN3aiU3W6pG4mgnykisHH5hqst   \t\n'
   ];
 
   // livenet p2sh
   var P2SHLivenet = [
-    'MAEpCKqAsN9619X9HnyQnar4AUpP4cDRLk',
-    'MA92SP8F2rjGoWM4NdVSRt1eJqxGzML8LA',
-    'MDexQKL1vBbvRX4J7BUReK5vwJspyKC14q',
-    'MWwgqasit2aZdtrRPLSrQjC8rQEKMrGPit',
-    '\t \nMWwgqasit2aZdtrRPLSrQjC8rQEKMrGPit \r'
+    'A7HRQk3GFCW2QasvdZxXuYj8kkQK5QrYLs',
+    'A3RHoAQLPDSuBewbuvt5NMqEKasqs9ty3C',
+    'A3YUuiZjn3FzW2i6KqFVgHaN5r5fjvwEJ1',
+    'AFVkW8WgPP2rsTdAeyogFK9k8gXJ1LZwrb',
+    'A2CUbyEtqGUjngAjxpGmM5Nwhrz72gh23v',
+    '\t \AD21pKoCWcrqrUW4oRv5xUaGwCfXhiyx6y \r'
   ];
 
   // testnet p2sh
   var P2SHTestnet = [
-    'Qacg4vM9pZEwMSPtnfBM2tDKyjnnXXYc77',
-    'Qhrz7JPBZBcexJxT8hD8tbonVDeYUnGspZ',
-    'QS39xXsxUoZ8wkFnmRqGgvWnChGYCmqoPJ',
-    'QeTneucyqtDYVsSxLE5bKaq26NR9uWbqPL'
+    '2MsvyG12kxxipe276Au4zKqvd2xdrBuHWb3',
+    '2MvY1BBau2C6jRC1hNX5LmviLrpvVG386TM',
+    '2N22vuiMGhfqD77vPqsXPiALBfn6oUTtFtH',
+    '2N1Gz97rN7P6VCj9xf64wWFqQZgpUng1mM3'
   ];
 
   //livenet bad checksums
   var badChecksums = [
-    '15vkcKf7gB23wLAnZLmbVuMiiVDc3nq4a2',
-    '1A6ut1tWnUq1SEQLMr4ttDh24wcbj4w2TT',
-    '1BpbpfLdY7oBS9gK7aDXgvMgr1DpvNH3B2',
-    '1Jz2yCRd5ST1p2gUqFB5wsSQfdmEJaffg7'
+    '461QQ2sYWxU7H2PV4oBwJGNch8XVTYYbZxU',
+    '461QQ2sYWxASd2PV4oBwJGNch8XVTYYbZxU',
+    'DRjyUS2uuieEPkhZNdQz8hE5YycxVEqSXA', ///////
   ];
 
   //livenet non-base58
@@ -110,26 +109,26 @@ describe('Address', function() {
 
   //testnet valid
   var PKHTestnet = [
-    'n28S35tqEMbt6vNad7A5K3mZ7vdn8dZ86X',
-    'n45x3R2w2jaSC62BMa9MeJCd3TXxgvDEmm',
-    'mursDVxqNQmmwWHACpM9VHwVVSfTddGsEM',
-    'mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS'
+    'ngbSgr1dhCqsLg6Z5tpsaCspwrH72x2Zk3',
+    'ngao4q8auS6YuDKYPkzjt7zKYYT8LzkGZS',
+    'nbo7vyCuiMxiYW4thwwuaTHQdCoqinmzJz',
+    'nagGnGDKWYpvnphf9rgo3xtQhAxiEM1QGD'
   ];
 
   describe('validation', function() {
 
     it('getValidationError detects network mismatchs', function() {
-      var error = Address.getValidationError('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'testnet');
+      var error = Address.getValidationError('D77Z1nmgSZxJTmtN65n2MVF9yvLSB4MpiC', 'testnet');
       should.exist(error);
     });
 
     it('isValid returns true on a valid address', function() {
-      var valid = Address.isValid('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'livenet');
+      var valid = Address.isValid('D77Z1nmgSZxJTmtN65n2MVF9yvLSB4MpiC', 'livenet');
       valid.should.equal(true);
     });
 
     it('isValid returns false on network mismatch', function() {
-      var valid = Address.isValid('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'testnet');
+      var valid = Address.isValid('D77Z1nmgSZxJTmtN65n2MVF9yvLSB4MpiC', 'testnet');
       valid.should.equal(false);
     });
 
@@ -214,10 +213,10 @@ describe('Address', function() {
     });
 
     it('addresses with whitespace are validated correctly', function() {
-      var ws = '  \r \t    \n LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK \t \n            \r';
+      var ws = '  \r \t    \n DD4KSSuBJqcjuTcvUg1CgUKeurPUFeEZkE \t \n            \r';
       var error = Address.getValidationError(ws);
       should.not.exist(error);
-      Address.fromString(ws).toString().should.equal('LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK');
+      Address.fromString(ws).toString().should.equal('DD4KSSuBJqcjuTcvUg1CgUKeurPUFeEZkE');
     });
   });
 
@@ -330,24 +329,23 @@ describe('Address', function() {
     });
 
     it('should make this address from a compressed pubkey', function() {
-      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var pubkey = new PublicKey('02789418bb8aee5a63471c09d3402b9d06a1c3d7975635a4a5258e89dff3547079');
       var address = Address.fromPublicKey(pubkey, 'livenet');
-      address.toString().should.equal('LTuEM81fckTP7hSdGEPAqQYKrCpu5Wp7F2');
+      address.toString().should.equal('DKLLdArnsyhkuPhxDbWYEBgLpQDLerRNrZ');
     });
 
     it('should use the default network for pubkey', function() {
-      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var pubkey = new PublicKey('02789418bb8aee5a63471c09d3402b9d06a1c3d7975635a4a5258e89dff3547079');
       var address = Address.fromPublicKey(pubkey);
       address.network.should.equal(Networks.defaultNetwork);
     });
 
     it('should make this address from an uncompressed pubkey', function() {
-      var pubkey = new PublicKey('0485e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b00' +
-        '4833fef26c8be4c4823754869ff4e46755b85d851077771c220e2610496a29d98');
+      var pubkey = new PublicKey('0450A38BD7F0AC212FEBA77354A9B036A32E0F7C81FC4E0C5ADCA7C549C4505D2522458C2D9AE3CEFD684E039194B72C8A10F9CB9D4764AB26FCC2718D421D3B84');
       var a = Address.fromPublicKey(pubkey, 'livenet');
-      a.toString().should.equal('LQXV3vGZP8x1vneE9EGN9Ggj4uFQwZkqgZ');
+      a.toString().should.equal('DFJ1z7FVd8CEodkQ41w54bmCDYhrNd24Dv');
       var b = new Address(pubkey, 'livenet', 'pubkeyhash');
-      b.toString().should.equal('LQXV3vGZP8x1vneE9EGN9Ggj4uFQwZkqgZ');
+      b.toString().should.equal('DFJ1z7FVd8CEodkQ41w54bmCDYhrNd24Dv');
     });
 
     it('should classify from a custom network', function() {
@@ -379,29 +377,30 @@ describe('Address', function() {
       });
       it('should make this address from a p2pkh output script', function() {
         var s = new Script('OP_DUP OP_HASH160 20 ' +
-          '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
+        '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
         var buf = s.toBuffer();
         var a = Address.fromScript(s, 'livenet');
-        a.toString().should.equal('LdY75CNRKwNfGgnVwrfzZbsCSVKKTLTvNT');
+        a.toString().should.equal('DPTFMF1EYh2tYtGwWJgFqLy37QgLdSSDQW');
         var b = new Address(s, 'livenet');
-        b.toString().should.equal('LdY75CNRKwNfGgnVwrfzZbsCSVKKTLTvNT');
+        b.toString().should.equal('DPTFMF1EYh2tYtGwWJgFqLy37QgLdSSDQW');
       });
 
       it('should make this address from a p2sh input script', function() {
         var s = Script.fromString('OP_HASH160 20 0xa6ed4af315271e657ee307828f54a4365fa5d20f OP_EQUAL');
         var a = Address.fromScript(s, 'livenet');
-        a.toString().should.equal('MP7nffWprdM6CxdxdCAc4ESzb3XsQQPZMp');
+        a.toString().should.equal('A7eu6dAkyaNZJpjXwSqgUipxxvKTTjJKzY');
         var b = new Address(s, 'livenet');
-        b.toString().should.equal('MP7nffWprdM6CxdxdCAc4ESzb3XsQQPZMp');
+        b.toString().should.equal('A7eu6dAkyaNZJpjXwSqgUipxxvKTTjJKzY');
       });
 
       it('returns the same address if the script is a pay to public key hash out', function() {
-        var address = 'LQXV3vGZP8x1vneE9EGN9Ggj4uFQwZkqgZ';
+        var address = 'D77Z1nmgSZxJTmtN65n2MVF9yvLSB4MpiC';
         var script = Script.buildPublicKeyHashOut(new Address(address));
+        console.log(script);
         Address(script, Networks.livenet).toString().should.equal(address);
       });
       it('returns the same address if the script is a pay to script hash out', function() {
-        var address = 'MHkuYq6Sz31ofGwL5eqMau2grNwBCLJo11';
+        var address = 'A7eu6dAkyaNZJpjXwSqgUipxxvKTTjJKzY';
         var script = Script.buildScriptHashOut(new Address(address));
         Address(script, Networks.livenet).toString().should.equal(address);
       });
@@ -487,7 +486,7 @@ describe('Address', function() {
   describe('#inspect', function() {
     it('should output formatted output correctly', function() {
       var address = new Address(str);
-      var output = '<Address: LQiX3WFFnc6JDULSRRG3Dsjza3VmhJ5pCP, type: pubkeyhash, network: livenet>';
+      var output = '<Address: DBtUjAUFWHqS1y8CgetQtPW6YKDhffyFT4, type: pubkeyhash, network: livenet>';
       address.inspect().should.equal(output);
     });
   });
@@ -535,14 +534,14 @@ describe('Address', function() {
 
     it('can create an address from a set of public keys', function() {
       var address = Address.createMultisig(publics, 2, Networks.livenet);
-      address.toString().should.equal('MN6yhK8peWnHTd3PaKkKWcoUocPcWD9Cmx');
+      address.toString().should.equal('A6e68GnkmTokZV8xtaRPw7BTBVBCeFFwuT');
       address = new Address(publics, 2, Networks.livenet);
-      address.toString().should.equal('MN6yhK8peWnHTd3PaKkKWcoUocPcWD9Cmx');
+      address.toString().should.equal('A6e68GnkmTokZV8xtaRPw7BTBVBCeFFwuT');
     });
 
     it('works on testnet also', function() {
       var address = Address.createMultisig(publics, 2, Networks.testnet);
-      address.toString().should.equal('QaooaBX8KxVJ16A5mgQsPcymqeTAFqTmhh');
+      address.toString().should.equal('2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf');
     });
 
     it('can also be created by Address.createMultisig', function() {
