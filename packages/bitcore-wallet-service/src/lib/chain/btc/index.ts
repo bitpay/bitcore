@@ -14,16 +14,15 @@ const Errors = require('../../errors/errordefinitions');
 const config = require('../../../config');
 
 export class BtcChain implements IChain {
-
-  protected sizeEstimationMargin: number; 
-  protected inputSizeEstimationMargin: number; 
+  protected sizeEstimationMargin: number;
+  protected inputSizeEstimationMargin: number;
 
   constructor(private bitcoreLib = BitcoreLib) {
-    this.sizeEstimationMargin = config.btc?.sizeEstimationMargin ??  0.01;
-    this.inputSizeEstimationMargin = config.btc?.inputSizeEstimationMargin ??  2;;
+    this.sizeEstimationMargin = config.btc?.sizeEstimationMargin ?? 0.01;
+    this.inputSizeEstimationMargin = config.btc?.inputSizeEstimationMargin ?? 2;
   }
 
-  getSizeSafetyMargin(opts: any = {} ): number {
+  getSizeSafetyMargin(opts: any = {}): number {
     if (opts.conservativeEstimation) {
       return this.sizeEstimationMargin;
     }

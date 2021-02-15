@@ -82,6 +82,9 @@ module.exports = {
   maintenanceOpts: {
     maintenanceMode: false
   },
+  services: {
+    buyCrypto: { simplexPromotion202002: false }
+  },
   suspendedChains: [],
   staticRoot: '/tmp/static'
   // simplex: {

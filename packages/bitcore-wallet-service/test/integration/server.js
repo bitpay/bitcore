@@ -10726,4 +10726,21 @@ describe('Wallet service', function() {
       });
     });
   });
-});
+
+  describe('#clearCache', () => {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+    it('clearWalletCache', () => {
+      server.clearWalletCache({}).then((val) => {
+        should.exist(val);
+        val.should.equal(true);
+      });
+    });
+  });
+})
