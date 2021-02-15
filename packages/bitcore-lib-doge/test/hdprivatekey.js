@@ -13,8 +13,8 @@ var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var Base58Check = bitcore.encoding.Base58Check;
 
-var xprivkey = 'Ltpv71G8qDifUiNetP6nmxPA5STrUVmv2J9YSmXajv8VsYBUyuPhvN9xCaQrfX2wo5xxJNtEazYCFRUu5FmokYMM79pcqz8pcdo4rNXAFPgyB4k';
-var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","privateKey":"e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35","checksum":-1489917903,"xprivkey":"Ltpv71G8qDifUiNetP6nmxPA5STrUVmv2J9YSmXajv8VsYBUyuPhvN9xCaQrfX2wo5xxJNtEazYCFRUu5FmokYMM79pcqz8pcdo4rNXAFPgyB4k"}';
+var xprivkey = 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR';
+var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","privateKey":"e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35","checksum":-1564833822,"xprivkey":"dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR"}';
 describe('HDPrivate key interface', function() {
   /* jshint maxstatements: 50 */
   var expectFail = function(func, error) {
@@ -93,8 +93,8 @@ describe('HDPrivate key interface', function() {
   });
 
   describe('public key', function() {
-    var testnetKey = new HDPrivateKey('ttpv96BtqegdxXcePuExhVwms6Q9nPtEbFKC2txyjpTpycy6dSt7AuAfK3EHTSsf3qKgkD2kGfmRbMXvM8tkcV4i4GF3uU6fewDoAnXdzMVL99i');
-    var livenetKey = new HDPrivateKey('Ltpv71G8qDifUiNetcgj3gpe5PerjX2sK9yVfFFMbmxsBXGGyUwdKsJConpcJhEPH5x9E4HH5EA8U8hSTkSVnYvUpW7fWhfun8d7LwSSSt6Tecx');
+    var testnetKey = new HDPrivateKey('tprv8gbXMN21rnoHSFnYp9U1KDjxt6eQNXufff7Asxrr3Ti9FrMXK1i2YWNdEH85mdRigEKgMRk9KF2PJo3VU6pGJypc1UnyiBKxJ3ZwKynLgJp');
+    var livenetKey = new HDPrivateKey('dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR');
 
     it('matches the network', function() {
       testnetKey.publicKey.network.should.equal(Networks.testnet);
@@ -264,7 +264,7 @@ describe('HDPrivate key interface', function() {
   });
 
   describe('conversion to/from buffer', function() {
-    var str = 'Ltpv71G8qDifUiNetP6nmxPA5STrUVmv2J9YSmXajv8VsYBUyuPhvN9xCaQrfX2wo5xxJNtEazYCFRUu5FmokYMM79pcqz8pcdo4rNXAFPgyB4k';
+    var str = 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR';
     it('should roundtrip to/from a buffer', function() {
       var priv = new HDPrivateKey(str);
       var toBuffer = priv.toBuffer();
@@ -283,9 +283,8 @@ describe('HDPrivate key interface', function() {
       'childIndex': 0,
       'chainCode': '873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
       'privateKey': 'e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35',
-      'checksum': -1489917903,
-      'xprivkey': 'Ltpv71G8qDifUiNetP6nmxPA5STrUVmv2J9YSmXajv8VsYBUyuPhvN9xCaQrfX2wo5' +
-        'xxJNtEazYCFRUu5FmokYMM79pcqz8pcdo4rNXAFPgyB4k'
+      'checksum': -1564833822,
+      'xprivkey': 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR'
     };
     it('toObject leaves no Buffer instances', function() {
       var privKey = new HDPrivateKey(xprivkey);
