@@ -124,18 +124,18 @@ describe('Interpreter', function() {
 
     it('should verify these simple transaction', function() {
       // first we create a transaction
-      var privateKey = new PrivateKey('cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY');
+      var privateKey = new PrivateKey('QRnivs36yg7VgWZZ3kqZzofXEaLh27X46zzAupJUpcqqybvHSjra');
       var publicKey = privateKey.publicKey;
       var fromAddress = publicKey.toAddress();
-      var toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+      var toAddress = 'DS1csbTjWURfExDwVKg12p9c8Vha6CGsG3';
       var scriptPubkey = Script.buildPublicKeyHashOut(fromAddress);
       var utxo = {
-        address: fromAddress,
-        txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
-        outputIndex: 0,
-        script: scriptPubkey,
-        satoshis: 100000
-      };
+        "txid" : "fd1d3baa6c7f35fc8f176a9fb180487ddf462a27c1707d24af0100fed41d5221",
+        "vout" : 0,
+        "address" : "DE1wEbm9D6JqEhqGtyD52BkHQmQ5N18J84",
+        "scriptPubKey" : "76a914615e740f1219a7b7b84530accdf6722bb255e5cf88ac",
+        "amount" : 75.000
+    };
       var tx = new Transaction()
         .from(utxo)
         .to(toAddress, 100000)
