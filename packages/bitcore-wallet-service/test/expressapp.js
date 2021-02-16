@@ -140,10 +140,10 @@ describe('ExpressApp', function() {
       it('latest-copay-version', function(done) {
 
           var htmlString = {
-            "url": "https://api.github.com/repos/bitpay/copay/releases/21158137",
-            "assets_url": "https://api.github.com/repos/bitpay/copay/releases/21158137/assets",
-            "upload_url": "https://uploads.github.com/repos/bitpay/copay/releases/21158137/assets{?name,label}",
-            "html_url": "https://github.com/bitpay/copay/releases/tag/v8.2.2",
+            "url": "https://api.github.com/repos/bitpay/wallet/releases/21158137",
+            "assets_url": "https://api.github.com/repos/bitpay/wallet/releases/21158137/assets",
+            "upload_url": "https://uploads.github.com/repos/bitpay/wallet/releases/21158137/assets{?name,label}",
+            "html_url": "https://github.com/bitpay/wallet/releases/tag/v8.2.2",
             "id": 21158137,
             "node_id": "MDc6UmVsZWFzZTIxMTU4MTM3",
             "tag_name": "v8.2.2",
@@ -176,8 +176,8 @@ describe('ExpressApp', function() {
             "assets": [
           
             ],
-            "tarball_url": "https://api.github.com/repos/bitpay/copay/tarball/v7.1.1",
-            "zipball_url": "https://api.github.com/repos/bitpay/copay/zipball/v7.1.1",
+            "tarball_url": "https://api.github.com/repos/bitpay/wallet/tarball/v7.1.1",
+            "zipball_url": "https://api.github.com/repos/bitpay/wallet/zipball/v7.1.1",
             "body": "### Changelog\r\n\r\nNEW\r\n\r\n* ETH Testnet support\r\n* EUR Gift Cards\r\n* Export Key to another wallet as QR code\r\n\r\nBUG FIXES\r\n\r\n* Open app from ETH link (only Desktop)\r\n* Clear badge of pending notification (iOS)\r\n* UI issues on Settings Page\r\n* Send-max for top up cards\r\n\r\n### Download\r\n\r\n<table>\r\n<tbody>\r\n<tr>\r\n<td>App</td>\r\n<td>for Mac OS</td>\r\n<td>for Windows</td>\r\n<td>for Linux</td>\r\n</tr>\r\n<tr>\r\n<td>\r\n<a href=\"https://bitpay.com/wallet\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48089088-68afa480-e1e2-11e8-83a8-361d0440528c.png\" alt=\"BitPay\"></a>\r\n</td>\r\n<td>\r\n<a href=\"https://itunes.apple.com/us/app/bitpay/id1440200291?ls=1&mt=12\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48092454-7ddd0100-e1eb-11e8-9e13-3fe80bba7f00.png\" alt=\"mac\" width=\"120\"></a>\r\n</td>\r\n<td>\r\n<a href=\"https://www.microsoft.com/store/apps/9NBR15SK4ZJV\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48092465-82091e80-e1eb-11e8-9e06-36b36cd44021.png\" alt=\"windows\" width=\"120\"></a>\r\n</td>\r\n<td>\r\n<a href=\"https://snapcraft.io/bitpay\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48092664-09ef2880-e1ec-11e8-94a2-184446cb7183.png\" alt=\"linux\" width=\"120\"></a>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td>\r\n<a href=\"https://copay.io\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48089097-6cdbc200-e1e2-11e8-9e54-363d54ae8fc6.png\" alt=\"Copay\"></a>\r\n</td>\r\n<td>\r\n<a href=\"https://itunes.apple.com/us/app/copay/id1440201813\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48092454-7ddd0100-e1eb-11e8-9e13-3fe80bba7f00.png\" alt=\"mac\" width=\"120\"></a>\r\n</td>\r\n<td>\r\n<a href=\"https://www.microsoft.com/store/apps/9MZGT30HL9DF\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48092465-82091e80-e1eb-11e8-9e06-36b36cd44021.png\" alt=\"windows\" width=\"120\"></a>\r\n</td>\r\n<td>\r\n<a href=\"https://snapcraft.io/copay\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/237435/48092664-09ef2880-e1ec-11e8-94a2-184446cb7183.png\" alt=\"linux\" width=\"120\"></a>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>"
           };
           
@@ -430,7 +430,40 @@ describe('ExpressApp', function() {
             });
           });
         });
+        
       });
+      describe('Clear cache', function(done) {
+        it('/v1/clearcache/', function(done) {
+          let resolveStub = sinon.stub().callsFake( () => { return Promise.resolve(true)});
+          let server = {
+            clearWalletCache: resolveStub
+          };
+          let {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+            './server': {
+              WalletService:  {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server)
+              }
+            }
+          });
+          start(TestExpressApp, function() {
+            let requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/clearcache/',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              },
+              method: 'post'
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              done();
+            });
+          });
+        });  
+      })
     });
   });
 });

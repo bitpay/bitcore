@@ -256,7 +256,7 @@ export class ExpressApp {
       try {
         res.setHeader('User-Agent', 'copay');
         var options = {
-          uri: 'https://api.github.com/repos/bitpay/copay/releases/latest',
+          uri: 'https://api.github.com/repos/bitpay/wallet/releases/latest',
           headers: {
             'User-Agent': 'Copay'
           },
@@ -1129,6 +1129,18 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/clearcache/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server.clearWalletCache().then(val => {
+          if (val) {
+            res.sendStatus(200);
+          } else {
+            res.sendStatus(500);
+          }
+        });
+      });
+    });
+
     router.get('/v1/fiatrates/:code/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
@@ -1166,6 +1178,24 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/fiatrates/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      const opts = {
+        code: req.query.code || null,
+        ts: req.query.ts ? +req.query.ts : null
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getFiatRates(opts, (err, rates) => {
+        if (err) return returnError(err, res, req);
+        res.json(rates);
+      });
+    });
+
     router.get('/v3/fiatrates/:coin/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
@@ -1179,7 +1209,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getFiatRates(opts, (err, rates) => {
+      server.getFiatRatesByCoin(opts, (err, rates) => {
         if (err) return returnError(err, res, req);
         res.json(rates);
       });
@@ -1240,6 +1270,19 @@ export class ExpressApp {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
+      });
+    });
+
+    router.get('/v1/services', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getServicesData((err, response) => {
+        if (err) return returnError(err, res, req);
+        res.json(response);
       });
     });
 
@@ -1307,6 +1350,79 @@ export class ExpressApp {
             if (err) return returnError(err, res, req);
           });
       });
+    });
+
+    router.post('/v1/service/changelly/getCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .changellyGetCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
+    router.post('/v1/service/changelly/getPairsParams', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .changellyGetPairsParams(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/changelly/getFixRateForAmount', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .changellyGetFixRateForAmount(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/changelly/createFixTransaction', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .changellyCreateFixTransaction(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/changelly/getStatus', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .changellyGetStatus(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
     });
 
     router.get('/v1/service/payId/:payId', (req, res) => {

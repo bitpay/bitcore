@@ -465,12 +465,12 @@ export class Wallet {
     return address;
   }
 
-  async derivePrivateKey(isChange) {
+  async derivePrivateKey(isChange, addressIndex = 0) {
     const keyToImport = await Deriver.derivePrivateKey(
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      this.addressIndex || 0,
+      addressIndex || this.addressIndex || 0,
       isChange
     );
     return keyToImport;

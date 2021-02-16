@@ -51,6 +51,14 @@ export class EthChain implements IChain {
     return convertedBalance;
   }
 
+  getSizeSafetyMargin() {
+    return 0;
+  }
+
+  getInputSizeSafetyMargin() {
+    return 0;
+  }
+
   notifyConfirmations() {
     return false;
   }
@@ -322,6 +330,8 @@ export class EthChain implements IChain {
                 return cb(this.checkTx(txp));
               }
             });
+          } else if (availableAmount - txp.fee < txpTotalAmount) {
+            return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
           } else {
             return cb(this.checkTx(txp));
           }

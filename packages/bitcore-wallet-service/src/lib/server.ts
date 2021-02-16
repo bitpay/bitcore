@@ -1722,6 +1722,7 @@ export class WalletService {
    * @param {number} opts.feePerKb - Optional. Specify the fee per KB for this TX (in satoshi).
    * @param {string} opts.excludeUnconfirmedUtxos[=false] - Optional. Do not use UTXOs of unconfirmed transactions as inputs
    * @param {string} opts.returnInputs[=false] - Optional. Return the list of UTXOs that would be included in the tx.
+   * @param {string} opts.usePayPro[=false] - Optional. Use fee estimation for paypro
    * @param {string} opts.from - Optional. Specify the sender ETH address.
    * @returns {Object} sendMaxInfo
    */
@@ -4150,6 +4151,23 @@ export class WalletService {
   }
 
   /**
+   * Returns exchange rates of the supported fiat currencies for all coins.
+   * @param {Object} opts
+   * @param {String} [opts.code] - Currency ISO code (e.g: USD, EUR, ARS).
+   * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
+   * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+   * @returns {Array} rates - The exchange rate.
+   */
+  getFiatRates(opts, cb) {
+    if (_.isNaN(opts.ts) || _.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
+
+    this.fiatRateService.getRates(opts, (err, rates) => {
+      if (err) return cb(err);
+      return cb(null, rates);
+    });
+  }
+
+  /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
    * @param {Object} opts
    * @param {String} opts.coin - The coin requested (btc, bch, eth, xrp).
@@ -4158,11 +4176,11 @@ export class WalletService {
    * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
    * @returns {Array} rates - The exchange rate.
    */
-  getFiatRates(opts, cb) {
+  getFiatRatesByCoin(opts, cb) {
     if (!checkRequired(opts, ['coin'], cb)) return;
     if (_.isNaN(opts.ts) || _.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
 
-    this.fiatRateService.getRates(opts, (err, rate) => {
+    this.fiatRateService.getRatesByCoin(opts, (err, rate) => {
       if (err) return cb(err);
       return cb(null, rate);
     });
@@ -4191,6 +4209,7 @@ export class WalletService {
    * @param {string} opts.token - The token representing the app/device.
    * @param {string} [opts.packageName] - The restricted_package_name option associated with this token.
    * @param {string} [opts.platform] - The platform associated with this token.
+   * @param {string} [opts.walletId] - The walletId associated with this token.
    */
   pushNotificationsSubscribe(opts, cb) {
     if (!checkRequired(opts, ['token'], cb)) return;
@@ -4198,7 +4217,8 @@ export class WalletService {
       copayerId: this.copayerId,
       token: opts.token,
       packageName: opts.packageName,
-      platform: opts.platform
+      platform: opts.platform,
+      walletId: opts.walletId
     });
 
     this.storage.storePushNotificationSub(sub, cb);
@@ -4241,6 +4261,11 @@ export class WalletService {
     if (!checkRequired(opts, ['txid'], cb)) return;
 
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
+  }
+
+  getServicesData(cb) {
+    const data = config.services ?? {};
+    return cb(null, data);
   }
 
   simplexGetKeys(req) {
@@ -4410,8 +4435,16 @@ export class WalletService {
       const keys = this.wyreGetKeys(req);
       req.body.accountId = keys.ACCOUNT_ID;
 
-      if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'country'])) {
-        return reject(new ClientError("Wyre's request missing arguments"));
+      if (req.body.amountIncludeFees) {
+        if (
+          !checkRequired(req.body, ['sourceAmount', 'sourceCurrency', 'destCurrency', 'dest', 'country', 'walletType'])
+        ) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
+      } else {
+        if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'country'])) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
       }
 
       const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
@@ -4450,8 +4483,23 @@ export class WalletService {
       const keys = this.wyreGetKeys(req);
       req.body.referrerAccountId = keys.ACCOUNT_ID;
 
-      if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'paymentMethod'])) {
-        return reject(new ClientError("Wyre's request missing arguments"));
+      if (req.body.amountIncludeFees) {
+        if (
+          !checkRequired(req.body, [
+            'sourceAmount',
+            'sourceCurrency',
+            'destCurrency',
+            'dest',
+            'country',
+            'paymentMethod'
+          ])
+        ) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
+      } else {
+        if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'paymentMethod'])) {
+          return reject(new ClientError("Wyre's request missing arguments"));
+        }
       }
 
       const URL: string = `${keys.API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
@@ -4477,6 +4525,272 @@ export class WalletService {
         (err, data) => {
           if (err) {
             return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetKeys(req) {
+    if (!config.changelly) {
+      logger.warn('Changelly missing credentials');
+      throw new Error('ClientError: Service not configured.');
+    }
+
+    const keys = {
+      API: config.changelly.api,
+      API_KEY: config.changelly.apiKey,
+      SECRET: config.changelly.secret
+    };
+
+    return keys;
+  }
+
+  changellySignRequests(message, secret: string) {
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly request');
+
+    const sign: string = Bitcore.crypto.Hash.sha512hmac(
+      Buffer.from(JSON.stringify(message)),
+      Buffer.from(secret)
+    ).toString('hex');
+
+    return sign;
+  }
+
+  changellyGetCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id'])) {
+        return reject(new ClientError('changellyGetCurrencies request missing arguments'));
+      }
+
+      const message = {
+        jsonrpc: '2.0',
+        id: req.body.id,
+        method: req.body.full ? 'getCurrenciesFull' : 'getCurrencies',
+        params: {}
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetPairsParams(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
+        return reject(new ClientError('changellyGetPairsParams request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getPairsParams',
+        params: [
+          {
+            from: req.body.coinFrom,
+            to: req.body.coinTo
+          }
+        ]
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetFixRateForAmount(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
+        return reject(new ClientError('changellyGetFixRateForAmount request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getFixRateForAmount',
+        params: [
+          {
+            from: req.body.coinFrom,
+            to: req.body.coinTo,
+            amountFrom: req.body.amountFrom
+          }
+        ]
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyCreateFixTransaction(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (
+        !checkRequired(req.body, [
+          'id',
+          'coinFrom',
+          'coinTo',
+          'amountFrom',
+          'addressTo',
+          'fixedRateId',
+          'refundAddress'
+        ])
+      ) {
+        return reject(new ClientError('changellyCreateFixTransaction request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'createFixTransaction',
+        params: {
+          from: req.body.coinFrom,
+          to: req.body.coinTo,
+          address: req.body.addressTo,
+          amountFrom: req.body.amountFrom,
+          rateId: req.body.fixedRateId,
+          refundAddress: req.body.refundAddress
+        }
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetStatus(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.changellyGetKeys(req);
+
+      if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
+        return reject(new ClientError('changellyGetStatus request missing arguments'));
+      }
+
+      const message = {
+        jsonrpc: '2.0',
+        id: req.body.id,
+        method: 'getStatus',
+        params: {
+          id: req.body.exchangeTxId
+        }
+      };
+
+      const URL: string = keys.API;
+      const sign: string = this.changellySignRequests(message, keys.SECRET);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        sign,
+        'api-key': keys.API_KEY
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
           } else {
             return resolve(data.body);
           }
@@ -4542,6 +4856,14 @@ export class WalletService {
           }
         }
       );
+    });
+  }
+
+  clearWalletCache(): Promise<boolean> {
+    return new Promise(resolve => {
+      this.storage.clearWalletCache(this.walletId, () => {
+        resolve(true);
+      });
     });
   }
 }

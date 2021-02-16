@@ -840,6 +840,12 @@ export class API extends EventEmitter {
     );
   }
 
+  clearCache(cb) {
+    this.request.post('/v1/clearcache/', {}, (err, res) => {
+      return cb(err, res);
+    });
+  }
+
   // /**
   // * Get service version
   // *
@@ -2076,26 +2082,34 @@ export class API extends EventEmitter {
           const serializedTxs =
             typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
 
-          let i = 0;
+          const weightedSize = [];
 
           let isBtcSegwit =
             txp.coin == 'btc' &&
             (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
+
+          let i = 0;
           for (const unsigned of unserializedTxs) {
-            let size = serializedTxs[i++].length / 2;
+            let size;
             if (isBtcSegwit) {
-              let unsignedSize = unsigned.length / 2;
-              size = Math.floor(size - (unsignedSize * 3) / 4);
+              // we dont have a fast way to calculate weigthedSize`
+              size = Math.floor((txp.fee / txp.feePerKb) * 1000) - 10;
+            } else {
+              size = serializedTxs[i].length / 2;
             }
             unsignedTransactions.push({
               tx: unsigned,
               weightedSize: size
             });
+            weightedSize.push(size);
+
+            i++;
           }
+          i = 0;
           for (const signed of serializedTxs) {
             signedTransactions.push({
               tx: signed,
-              weightedSize: signed.length / 2
+              weightedSize: weightedSize[i++]
             });
           }
           PayProV2.verifyUnsignedPayment({
@@ -2459,7 +2473,6 @@ export class API extends EventEmitter {
     if (opts.returnInputs) args.push('returnInputs=1');
 
     var qs = '';
-
     if (args.length > 0) qs = '?' + args.join('&');
 
     var url = '/v1/sendmaxinfo/' + qs;
@@ -3081,6 +3094,45 @@ export class API extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.request.post(
         '/v1/service/wyre/walletOrderReservation',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  changellyGetPairsParams(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/changelly/getPairsParams',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  changellyGetFixRateForAmount(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/changelly/getFixRateForAmount',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  changellyCreateFixTransaction(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/changelly/createFixTransaction',
         data,
         (err, data) => {
           if (err) return reject(err);
