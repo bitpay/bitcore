@@ -229,9 +229,9 @@ export class PushNotificationsService {
                   this._makeRequest(notification, (err, response) => {
                     if (err) logger.error('ERROR:' + err);
                     if (response) {
-                      logger.debug('Request status:  ' + response.statusCode);
-                      logger.debug('Request message: ' + response.statusMessage);
-                      logger.debug('Request body:  ' + response.request.body);
+                      //                      logger.debug('Request status:  ' + response.statusCode);
+                      //                      logger.debug('Request message: ' + response.statusMessage);
+                      //                      logger.debug('Request body:  ' + response.request.body);
                     }
                     next();
                   });

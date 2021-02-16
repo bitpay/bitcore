@@ -1129,6 +1129,18 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/clearcache/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server.clearWalletCache().then(val => {
+          if (val) {
+            res.sendStatus(200);
+          } else {
+            res.sendStatus(500);
+          }
+        });
+      });
+    });
+
     router.get('/v1/fiatrates/:code/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
@@ -1258,6 +1270,19 @@ export class ExpressApp {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
+      });
+    });
+
+    router.get('/v1/services', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getServicesData((err, response) => {
+        if (err) return returnError(err, res, req);
+        res.json(response);
       });
     });
 

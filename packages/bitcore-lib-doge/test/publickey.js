@@ -58,18 +58,16 @@ describe('PublicKey', function() {
 
       var knownKeys = [
         {
-          wif: 'T6hzmaKRuDUWBkfnBvS87XdT71YYdBSu9J9PEiSHmpQCzwJ4y8aP',
-          priv: '6d1229a6b24c2e775c062870ad26bc261051e0198c67203167273c7c62538846',
-          pub: '03d6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01',
-          pubx: 'd6106302d2698d6a41e9c9a114269e7be7c6a0081317de444bb2980bf9265a01',
-          puby: 'e05fb262e64b108991a29979809fcef9d3e70cafceb3248c922c17d83d66bc9d'
+          wif: 'QP5rQxpaP8HHPEdCEqxTjiHGWRvsyPvzZJeJ9BCxpfT13FN9VesQ',
+          pub: '021e4b9e64d05b0082a5319c829660267593364b8175e2f14ca2c2307c9b861790',
+          pubx: '1e4b9e64d05b0082a5319c829660267593364b8175e2f14ca2c2307c9b861790',
+          puby: 'b298391731718bc0f8ef642c59d52bd5380ae2c791cbcb07937f920d91129b44'
         },
         {
-          wif: 'TBBwtgfMRo5hj1ugQScHepSnCUeuq8iJATPuuhekMcRyH2QDs3mk',
-          priv: 'f2cc9d2b008927db94b89e04e2f6e70c180e547b3e5e564b06b8215d1c264b53',
-          pub: '03e275faa35bd1e88f5df6e8f9f6edb93bdf1d65f4915efc79fd7a726ec0c21700',
-          pubx: 'e275faa35bd1e88f5df6e8f9f6edb93bdf1d65f4915efc79fd7a726ec0c21700',
-          puby: '367216cb35b086e6686d69dddd822a8f4d52eb82ac5d9de18fdcd9bf44fa7df7'
+          wif: 'QVi86rdL3APa6TXXwPdRnKfqVfzGv6a993E5LeiHXaGGjE7cpah1',
+          pub: '028544cb0f572885c9f0cdb9b94c28b4ad7ad2c6dc7aa981816a11399fda852c73',
+          pubx: '8544cb0f572885c9f0cdb9b94c28b4ad7ad2c6dc7aa981816a11399fda852c73',
+          puby: 'a64ff95d82a5ed91b77dab510990a5b976bd2257993e85c087ae75b21086e440'
         }
       ];
 
@@ -337,13 +335,13 @@ describe('PublicKey', function() {
     it('should output this known mainnet address correctly', function() {
       var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
       var address = pk.toAddress('livenet');
-      address.toString().should.equal('LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK');
+      address.toString().should.equal('DEF1RGqA5tjHyEaw6S4TRyrcx5LthFoxqM');
     });
 
     it('should output this known testnet address correctly', function() {
       var pk = new PublicKey('0293126ccc927c111b88a0fe09baa0eca719e2a3e087e8a5d1059163f5c566feef');
       var address = pk.toAddress('testnet');
-      address.toString().should.equal('mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS');
+      address.toString().should.equal('nhCLkcA93f4NgGeWU8gSGiFoy2cL6ebzS9');
     });
 
   });
@@ -353,10 +351,10 @@ describe('PublicKey', function() {
     // wif private key, address
     // see: https://github.com/litecoin-project/litecoin/blob/master-0.10/src/test/key_tests.cpp#L20
     var data = [
-      ['6uGFQ4DSW7zh1viHZi6iiVT17CncvoaV4MHvGvJKPDaLCdymj87', 'LiUo6Zn39joYJBzPUhssbDwAywhjFcoHE3'],
-      ['6vVo7sPkeLTwVdAntrv4Gbnsyr75H8ChD3P5iyHziwaqe8mCYR5', 'LZJvLSP5SGKcFS13MHgdrVhpFUbEMB5XVC'],
-      ['T3gJYmBuZXsdd65E7NQF88ZmUP2MaUanqnZg9GFS94W7kND4Ebjq', 'Lh2G82Bi33RNuzz4UfSMZbh54jnWHVnmw8'],
-      ['T986ZKRRdnuuXLeDZuKBRrZW1ujotAncU9WTrFU1n7vMgRW75ZtF', 'LWegHWHB5rmaF5rgWYt1YN3StapRdnGJfU']
+      ['6J8csdv3eDrnJcpSEb4shfjMh2JTiG9MKzC1Yfge4Y4GyUsjdM6', 'DJRU7MLhcPwCTNRZ4e8gJzDebtG1H5M7pc'],
+      ['6J8csdv3eDrnJcpSEb4shfjMh2JTiG9MKzC1Yfge4Y4GyVc1mxU', 'DQimpZgfZP6mZWBT6sVQDor99CBjw7xV5m'],
+      ['6JdtEaLfUDBw2fgS4V3tTTDF92mr2XEhLQiM5JzBqXwSgzB5aRX', 'DHFtUFfCnRTY7RFckCs8ZD7BFwZEXFn8db'],
+      ['6JkDNMrxn9GTEdDecdCSbMrkDwA41rG3gn3izN2o3fwRTFZ8wfP', 'DGtQAxWQaXLuuhNvLHAUQ44PmFRvy6C7gC']
     ];
 
     data.forEach(function(d){
@@ -389,9 +387,9 @@ describe('PublicKey', function() {
     });
 
     it('should output known compressed pubkey with network for console', function() {
-      var privkey = PrivateKey.fromWIF('T9HHJkkinXnaU8TQEPvD1enejZszq13CWuuHzRjxbwUJkwuFo1wS');
+      var privkey = PrivateKey.fromWIF('QPn542uVdzBgCfV6nEViShboFTpDd1at8mQpQugEQHgpuLbsgcZe');
       var pubkey = new PublicKey(privkey);
-      pubkey.inspect().should.equal('<PublicKey: 03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781>');
+      pubkey.inspect().should.equal('<PublicKey: 036182e82c0003452884216518dadceebab09d803c3e7a9b2a86c43be2794a3b2d>');
     });
 
   });
