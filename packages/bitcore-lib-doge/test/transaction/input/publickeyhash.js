@@ -15,12 +15,12 @@ var Signature = bitcore.crypto.Signature;
 
 describe('PublicKeyHashInput', function() {
 
-  var privateKey = new PrivateKey('T35QnUj2z2sAg5NHg8n73RaXvrgRQb6Ubk7jeHwYatXDHFvTPJyA');
+  var privateKey = new PrivateKey('QTfg5tZJYhr9Hw1GVYuK74im5VsSN1dB6Xfuz3xYUWEBWWqNZfPx');
   var publicKey = privateKey.publicKey;
   var address = new Address(publicKey, Networks.livenet);
 
   var output = {
-    address: 'MACk3uzQWfUoPw9FVGsSZLDVeXcCKarBfA',
+    address: 'DGYdw7jC17b9SappjsrAsaghhDTS8sV5Mx',
     txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
     outputIndex: 0,
     script: new Script(address),
