@@ -6,7 +6,7 @@ import { VerificationPeer } from '../bitcoin/VerificationPeer';
 export default class DOGEModule extends BaseModule {
   constructor(services) {
     super(services);
-    services.Libs.register('DOGE', 'bitcore-lib', 'bitcore-p2p');
+    services.Libs.register('DOGE', 'bitcore-lib-doge', 'bitcore-p2p');
     services.P2P.register('DOGE', DogecoinP2PWorker);
     services.CSP.registerService('DOGE', new DOGEStateProvider());
     services.Verification.register('DOGE', VerificationPeer);
