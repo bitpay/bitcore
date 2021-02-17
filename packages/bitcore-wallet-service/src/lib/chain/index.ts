@@ -2,6 +2,7 @@ import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
+import { DogeChain } from './doge';
 import { EthChain } from './eth';
 import { XrpChain } from './xrp';
 
@@ -68,7 +69,8 @@ const chain: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
   ETH: new EthChain(),
-  XRP: new XrpChain()
+  XRP: new XrpChain(),
+  DOGE: new DogeChain()
 };
 
 class ChainProxy {
