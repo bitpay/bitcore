@@ -11,17 +11,17 @@ var UnspentOutput = bitcore.Transaction.UnspentOutput;
 describe('UnspentOutput', function() {
 
   var sampleData1 = {
-    'address': 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1',
-    'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+    'address': 'D82zqZA4KqaTPmsGegJ1ACoTXiSJ21NcZd',
+    'txId': 'fe7d174f42dce0cffa7a527e9bc8368956057619ec817648f6138b98f2533e8f',
     'outputIndex': 0,
-    'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
+    'script': 'OP_DUP OP_HASH160 1fc11f39be1729bf973a7ab6a615ca4729d64574 OP_EQUALVERIFY OP_CHECKSIG',
     'satoshis': 1020000
   };
   var sampleData2 = {
-    'txid': 'e42447187db5a29d6db161661e4bc66d61c3e499690fe5ea47f87b79ca573986',
+    'txid': 'fe7d174f42dce0cffa7a527e9bc8368956057619ec817648f6138b98f2533e8f',
     'vout': 1,
-    'address': 'mgBCJAsvzgT2qNNeXsoECg2uPKrUsZ76up',
-    'scriptPubKey': '76a914073b7eae2823efa349e3b9155b8a735526463a0f88ac',
+    'address': 'DTH54BW9S9Q1EPCCiseQCzEBgf6pTRZv3U',
+    'scriptPubKey': '76a914f2d4db28cad6502226ee484ae24505c2885cb12d88ac',
     'amount': 0.01080000
   };
 
@@ -48,19 +48,19 @@ describe('UnspentOutput', function() {
   });
 
   it('displays nicely on the console', function() {
-    var expected = '<UnspentOutput: a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458:0' +
-                   ', satoshis: 1020000, address: mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1>';
+    var expected = '<UnspentOutput: fe7d174f42dce0cffa7a527e9bc8368956057619ec817648f6138b98f2533e8f:0' +
+                   ', satoshis: 1020000, address: D82zqZA4KqaTPmsGegJ1ACoTXiSJ21NcZd>';
     expect(new UnspentOutput(sampleData1).inspect()).to.equal(expected);
   });
 
   describe('checking the constructor parameters', function() {
     var notDefined = {
-      'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      'txId': 'fe7d174f42dce0cffa7a527e9bc8368956057619ec817648f6138b98f2533e8f',
       'outputIndex': 0,
       'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
     };
     var zero = {
-      'txId': 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      'txId': 'fe7d174f42dce0cffa7a527e9bc8368956057619ec817648f6138b98f2533e8f',
       'outputIndex': 0,
       'script': 'OP_DUP OP_HASH160 20 0x88d9931ea73d60eaf7e5671efc0552b912911f2a OP_EQUALVERIFY OP_CHECKSIG',
       'amount': 0
@@ -78,7 +78,7 @@ describe('UnspentOutput', function() {
   });
 
   it('toString returns txid:vout', function() {
-    var expected = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458:0';
+    var expected = 'fe7d174f42dce0cffa7a527e9bc8368956057619ec817648f6138b98f2533e8f:0';
     expect(new UnspentOutput(sampleData1).toString()).to.equal(expected);
   });
 

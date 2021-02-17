@@ -97,6 +97,7 @@
     "bitcore-client": "^8.24.2",
     "bitcore-lib": "^8.24.2",
     "bitcore-lib-cash": "^8.24.2",
+    "bitcore-lib-doge": "^8.24.1",
     "bitcore-p2p": "^8.24.2",
     "bitcore-p2p-cash": "^8.24.2",
     "bitcore-wallet-client": "^8.24.2",

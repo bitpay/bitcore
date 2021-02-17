@@ -63,6 +63,7 @@ var DEFAULT_NLOCKTIME = 0;
 var MAX_BLOCK_SIZE = 1000000;
 
 // Minimum amount for an output for it not to be considered a dust output
+// https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/primitives/transaction.h#L197
 Transaction.DUST_AMOUNT = 100000001;
 
 // Margin of error to allow fees in the vecinity of the expected value but doesn't allow a big difference
@@ -72,7 +73,7 @@ Transaction.FEE_SECURITY_MARGIN = 15;
 // Dogecoin has 100000000000 * 1e8 coins in satoshis //10000000
 // This number can be found at (https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/amount.h)
 // This is the largest possible number that bn.js can accept; Anything larger will cause an assert error
-Transaction.MAX_MONEY =  9007199254740992;
+Transaction.MAX_MONEY =  9007199254740991;
 
 // nlocktime limit to be considered block height rather than a timestamp
 Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT = 5e8;
