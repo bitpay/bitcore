@@ -16,7 +16,10 @@ describe('Transaction deserialization', function() {
         if (vectors_valid[vIndex - 1].length === 1) {
           label = vectors_valid[vIndex - 1][0];
         };
+        
         it('vector #' + index + ' -- ' + label, function() {
+          var hexa = vector[1];
+          Transaction(hexa).serialize(true).should.equal(hexa);
           runIdx++;
         });
         index++;
@@ -33,6 +36,8 @@ describe('Transaction deserialization', function() {
           label = vectors_invalid[vIndex - 1][0];
         };
         it('vector #' + index + ' -- ' + label, function() {
+          var hexa = vector[1];
+          Transaction(hexa).serialize(true).should.equal(hexa);
           runIdx++;
         });
         index++;
