@@ -57,6 +57,7 @@ function get(arg, keys) {
  * @param {Number} data.pubkeyhash - The publickey hash prefix
  * @param {Number} data.privatekey - The privatekey prefix
  * @param {Number} data.scripthash - The scripthash prefix
+ * @param {string} data.bech32prefix - The native segwit prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
  * @param {Number} data.networkMagic - The network magic number
@@ -74,6 +75,7 @@ function addNetwork(data) {
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
+    bech32prefix: data.bech32prefix,
     xpubkey: data.xpubkey,
     xprivkey: data.xprivkey
   });
@@ -132,6 +134,7 @@ addNetwork({
   pubkeyhash: 0x1e,
   privatekey: 0x9e,
   scripthash: 0x16,
+  bech32prefix: 'bc',
   xpubkey: 0x02facafd,
   xprivkey: 0x02fac398,
   networkMagic: 0xc0c0c0c0,
@@ -161,6 +164,7 @@ addNetwork({
   pubkeyhash: 0x71,
   privatekey: 0xf1,
   scripthash: 0xc4,
+  bech32prefix: 'tb',
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394
 });
