@@ -50,6 +50,7 @@ Script.fromBitcoindString = function(str) {
       tbuf = script.toBuffer();
       bw.write(tbuf);
     } else {
+      console.log(str);
       throw new Error('Could not determine type of script value');
     }
   }
@@ -183,7 +184,10 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS;
     }
     if (flagstr.indexOf('CHECKLOCKTIMEVERIFY') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
+      flags = flags | Interpreter.SCRIPT_VERIFY_CH;
+    }
+    if (flagstr.indexOf('CHECKSEQUENCEVERIFY') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
     }
     return flags;
   };
@@ -265,6 +269,9 @@ describe('Interpreter', function() {
           var inputs = vector[0];
           var txhex = vector[1];
           var flags = getFlags(vector[2]);
+          
+          console.log(vector);
+          console.log(flags);
 
           var map = {};
           inputs.forEach(function(input) {

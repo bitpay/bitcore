@@ -232,6 +232,11 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // CLTV See BIP65 for details.
 Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9);
 
+// support CHECKSEQUENCEVERIFY opcode
+//
+// See BIP112 for details
+Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY = (1 << 10);
+
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
     if (buf[i] !== 0) {
@@ -515,8 +520,54 @@ Interpreter.prototype.step = function() {
         }
         break;
 
-      case Opcode.OP_NOP1:
       case Opcode.OP_NOP3:
+      case Opcode.OP_CHECKSEQUENCEVERIFY:
+
+        if (!(this.flags & Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)) {
+          // not enabled; treat as a NOP3
+          if (this.flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
+            this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS';
+            return false;
+          }
+          break;
+        }
+
+        if (this.stack.length < 1) {
+          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+          return false;
+        }
+
+
+        // nSequence, like nLockTime, is a 32-bit unsigned
+        // integer field. See the comment in CHECKLOCKTIMEVERIFY
+        // regarding 5-byte numeric operands.
+
+        var nSequence = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
+
+
+        // In the rare event that the argument may be < 0 due to
+        // some arithmetic being done first, you can always use
+        // 0 MAX CHECKSEQUENCEVERIFY.
+        if (nSequence.lt(new BN(0))) {
+          this.errstr = 'SCRIPT_ERR_NEGATIVE_LOCKTIME';
+          return false;
+        }
+
+        // To provide for future soft-fork extensibility, if the
+        // operand has the disabled lock-time flag set,
+        // CHECKSEQUENCEVERIFY behaves as a NOP.
+        if ((nSequence &
+          Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) != 0) {
+          break;
+        }
+
+        // Actually compare the specified lock time with the transaction.
+        if (!this.checkSequence(nSequence)) {
+          this.errstr = 'SCRIPT_ERR_UNSATISFIED_LOCKTIME';
+          return false;
+        }
+        break;
+      case Opcode.OP_NOP1:
       case Opcode.OP_NOP4:
       case Opcode.OP_NOP5:
       case Opcode.OP_NOP6:
