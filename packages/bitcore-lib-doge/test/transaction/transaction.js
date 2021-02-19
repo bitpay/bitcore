@@ -343,8 +343,8 @@ describe('Transaction', function() {
 
     it('adds just once one utxo', function() {
       var tx = new Transaction();
-      tx.from(simpleUtxoWith1BTC);
-      tx.from(simpleUtxoWith1BTC);
+      tx.from(simpleUtxoWith100DOGE);
+      tx.from(simpleUtxoWith100DOGE);
       tx.inputs.length.should.equal(1);
     });
 
@@ -407,7 +407,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(49e8);
+      transaction.outputs[1].satoshis.should.equal(4977100000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -425,7 +425,7 @@ describe('Transaction', function() {
     });
     it('accepts a P2WPKH address for change', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith1000000Satoshis)
+        .from(simpleUtxoWith1000DOGE)
         .to(toAddress, 500000)
         .change(changeAddressP2WPKH)
         .sign(privateKey);
@@ -434,7 +434,7 @@ describe('Transaction', function() {
     });
     it('accepts a P2WSH address for change', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith1000000Satoshis)
+        .from(simpleUtxoWith1000DOGE)
         .to(toAddress, 500000)
         .change(changeAddressP2WSH)
         .sign(privateKey);
@@ -462,14 +462,14 @@ describe('Transaction', function() {
     });
     it('adds no fee if no change is available', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith100000Satoshis)
+        .from(simpleUtxoWith10DOGE)
         .to(toAddress, 99000)
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);
     });
     it('adds no fee if no money is available', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith100000Satoshis)
+        .from(simpleUtxoWith10DOGE)
         .to(toAddress, 100000)
         .change(changeAddress)
         .sign(privateKey);
@@ -477,7 +477,7 @@ describe('Transaction', function() {
     });
     it('fee can be set up manually', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith100000Satoshis)
+        .from(simpleUtxoWith10DOGE)
         .to(toAddress, 80000)
         .fee(10000)
         .change(changeAddress)
@@ -487,7 +487,7 @@ describe('Transaction', function() {
     });
     it('fee per kb can be set up manually', function() {
       var inputs = _.map(_.range(10), function(i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+        var utxo = _.clone(simpleUtxoWith10DOGE);
         utxo.outputIndex = i;
         return utxo;
       });
@@ -503,7 +503,7 @@ describe('Transaction', function() {
     });
     it('fee per byte (low fee) can be set up manually', function () {
       var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+        var utxo = _.clone(simpleUtxoWith10DOGE);
         utxo.outputIndex = i;
         return utxo;
       });
@@ -519,7 +519,7 @@ describe('Transaction', function() {
     });
     it('fee per byte (high fee) can be set up manually', function () {
       var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+        var utxo = _.clone(simpleUtxoWith10DOGE);
         utxo.outputIndex = i;
         return utxo;
       });
@@ -535,7 +535,7 @@ describe('Transaction', function() {
     });
     it('fee per byte can be set up manually', function () {
       var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+        var utxo = _.clone(simpleUtxoWith10DOGE);
         utxo.outputIndex = i;
         return utxo;
       });
@@ -551,7 +551,7 @@ describe('Transaction', function() {
     });
     it('fee per byte not enough for change', function () {
       var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+        var utxo = _.clone(simpleUtxoWith10DOGE);
         utxo.outputIndex = i;
         return utxo;
       });
@@ -566,7 +566,7 @@ describe('Transaction', function() {
     });
     it('if satoshis are invalid', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith100000Satoshis)
+        .from(simpleUtxoWith100DOGE)
         .to(toAddress, 99999)
         .change(changeAddress)
         .sign(privateKey);
@@ -578,7 +578,7 @@ describe('Transaction', function() {
     });
     it('if fee is too small, fail serialization', function() {
       var transaction = new Transaction({disableDustOutputs: true})
-        .from(simpleUtxoWith10DOGE)
+        .from(simpleUtxoWith100DOGE)
         .to(toAddress, 9.99e8)
         .change(changeAddress)
         .sign(privateKey);
@@ -588,7 +588,7 @@ describe('Transaction', function() {
     });
     it('on second call to sign, change is not recalculated', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith10DOGE)
+        .from(simpleUtxoWith100DOGE)
         .to(toAddress, 10e8)
         .change(changeAddress)
         .sign(privateKey)
@@ -597,7 +597,7 @@ describe('Transaction', function() {
     });
     it('getFee() returns the difference between inputs and outputs if no change address set', function() {
       var transaction = new Transaction()
-        .from(simpleUtxoWith10DOGE)
+        .from(simpleUtxoWith100DOGE)
         .to(toAddress, 1e8);
       transaction.getFee().should.equal(9e8);
     });
@@ -1136,7 +1136,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1e8);
       transaction.inputAmount.should.equal(100000000000);
-      transaction.outputAmount.should.equal(99900000000);
+      transaction.outputAmount.should.equal(99977100000);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718
@@ -1830,11 +1830,11 @@ describe('Transaction', function() {
       });
     });
     describe('signing', function() {
-      var privateKey1 = PrivateKey.fromWIF('cNuW8LX2oeQXfKKCGxajGvqwhCgBtacwTQqiCGHzzKfmpHGY4TE9');
+      var privateKey1 = PrivateKey.fromWIF('QQWs5STTjnuVVWBsKwaZtc8SCzzKGDf5iZ6qgZyaPqqDEjLmF5tA');
       var publicKey1 = p2shPrivateKey1.toPublicKey();
-      var privateKey2 = PrivateKey.fromWIF('cTtLHt4mv6zuJytSnM7Vd6NLxyNauYLMxD818sBC8PJ1UPiVTRSs');
+      var privateKey2 = PrivateKey.fromWIF('QQWs5STTjnuVVWBsKwaZtc8SCzzKGDf5iZ6qgZyaPqqDEjLmF5tA');
       var publicKey2 = p2shPrivateKey2.toPublicKey();
-      var privateKey3 = PrivateKey.fromWIF('cQFMZ5gP9CJtUZPc9X3yFae89qaiQLspnftyxxLGvVNvM6tS6mYY');
+      var privateKey3 = PrivateKey.fromWIF('QQWs5STTjnuVVWBsKwaZtc8SCzzKGDf5iZ6qgZyaPqqDEjLmF5tA');
       var publicKey3 = p2shPrivateKey3.toPublicKey();
       var address = Address.createMultisig([
         publicKey1
@@ -1925,7 +1925,7 @@ describe('Transaction', function() {
       });
       it('will sign with p2pkh, p2wpkh, and wrapped p2wpkh', function() {
         var tx = new Transaction()
-          .from(simpleUtxoWith1BTC)
+          .from(simpleUtxoWith10DOGE)
           .from(simpleWitnessUtxoWith1BTC)
           .from(simpleWrappedWitnessUtxoWith1BTC)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
