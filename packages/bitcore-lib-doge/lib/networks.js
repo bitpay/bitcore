@@ -163,12 +163,7 @@ addNetwork({
   scripthash: 0xc4,
   bech32prefix: 'tb',
   xpubkey: 0x043587cf,
-  xprivkey: 0x04358394,
-  networkMagic: 0xfcc1b7dc,
-  port: 44556,
-  dnsSeeds: [
-    'testseed.jrn.me.uk'
-  ]
+  xprivkey: 0x04358394
 });
 
 /**
@@ -193,8 +188,6 @@ for (var key in TESTNET) {
   }
 }
 
-var regtest = get('regtest');
-
 addNetwork({
   name: 'regtest',
   alias: 'dev',
@@ -204,10 +197,9 @@ addNetwork({
   bech32prefix: 'bcrt',
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0xfabfb5da,
-  port: 18444,
-  dnsSeeds: []
 });
+
+var regtest = get('regtest');
 
 var REGTEST = {
   PORT: 18444,
