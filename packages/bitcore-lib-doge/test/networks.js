@@ -64,8 +64,7 @@ describe('Networks', function() {
   });
 
   it('can remove a custom network', function() {
-    networks.remove(customnet);
-    networks.get('customnet');
+    networks.remove('customnet');
     Object.keys(networks).should.not.contain('customnet');
   });
 
