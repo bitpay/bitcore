@@ -187,6 +187,20 @@ for (var key in TESTNET) {
   }
 }
 
+169 addNetwork({
+  name: 'regtest',
+  alias: 'dev',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  bech32prefix: 'bcrt',
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xfabfb5da,
+  port: 18444,
+  dnsSeeds: []
+});
+
 var REGTEST = {
   PORT: 18444,
   NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfabfb5da),
