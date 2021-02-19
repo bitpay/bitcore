@@ -20,6 +20,25 @@ Network.prototype.toString = function toString() {
 
 /**
  * @function
+ * @member Networks#remove
+ * Will remove a custom network
+ * @param {Network} network
+ */
+function removeNetwork(network) {
+  for (var i = 0; i < networks.length; i++) {
+    if (networks[i] === network) {
+      networks.splice(i, 1);
+    }
+  }
+  for (var key in networkMaps) {
+    if (networkMaps[key] === network) {
+      delete networkMaps[key];
+    }
+  }
+}
+
+/**
+ * @function
  * @member Networks#get
  * Retrieves the network associated with a magic number or string.
  * @param {string|number|Network} arg
@@ -44,9 +63,12 @@ function get(arg, keys) {
     }
     return undefined;
   }
-  return networkMaps[arg];
+  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
 }
-
 /**
  * @function
  * @member Networks#add
@@ -57,6 +79,7 @@ function get(arg, keys) {
  * @param {Number} data.pubkeyhash - The publickey hash prefix
  * @param {Number} data.privatekey - The privatekey prefix
  * @param {Number} data.scripthash - The scripthash prefix
+ * @param {string} data.bech32prefix - The native segwit prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
  * @param {Number} data.networkMagic - The network magic number
@@ -65,31 +88,27 @@ function get(arg, keys) {
  * @return Network
  */
 function addNetwork(data) {
-
   var network = new Network();
-
   JSUtil.defineImmutable(network, {
     name: data.name,
     alias: data.alias,
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
+    bech32prefix: data.bech32prefix,
     xpubkey: data.xpubkey,
     xprivkey: data.xprivkey
   });
-
   if (data.networkMagic) {
     JSUtil.defineImmutable(network, {
       networkMagic: BufferUtil.integerAsBuffer(data.networkMagic)
     });
   }
-
   if (data.port) {
     JSUtil.defineImmutable(network, {
       port: data.port
     });
   }
-
   if (data.dnsSeeds) {
     JSUtil.defineImmutable(network, {
       dnsSeeds: data.dnsSeeds
@@ -97,33 +116,14 @@ function addNetwork(data) {
   }
   _.each(network, function(value) {
     if (!_.isUndefined(value) && !_.isObject(value)) {
-      networkMaps[value] = network;
+      if(!networkMaps[value]) {
+        networkMaps[value] = [];
+      }
+      networkMaps[value].push(network);
     }
   });
-
   networks.push(network);
-
   return network;
-
-}
-
-/**
- * @function
- * @member Networks#remove
- * Will remove a custom network
- * @param {Network} network
- */
-function removeNetwork(network) {
-  for (var i = 0; i < networks.length; i++) {
-    if (networks[i] === network) {
-      networks.splice(i, 1);
-    }
-  }
-  for (var key in networkMaps) {
-    if (networkMaps[key] === network) {
-      delete networkMaps[key];
-    }
-  }
 }
 
 addNetwork({
@@ -172,6 +172,21 @@ addNetwork({
  */
 var testnet = get('testnet');
 
+
+addNetwork({
+  name: 'regtest',
+  alias: 'dev',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  bech32prefix: 'bcrt',
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+});
+
+var regtest = get('regtest');
+
+
 // Add configurable values for testnet/regtest
 
 var TESTNET = {
@@ -187,19 +202,6 @@ for (var key in TESTNET) {
     networkMaps[TESTNET[key]] = testnet;
   }
 }
-
-addNetwork({
-  name: 'regtest',
-  alias: 'dev',
-  pubkeyhash: 0x6f,
-  privatekey: 0xef,
-  scripthash: 0xc4,
-  bech32prefix: 'bcrt',
-  xpubkey: 0x043587cf,
-  xprivkey: 0x04358394,
-});
-
-var regtest = get('regtest');
 
 var REGTEST = {
   PORT: 18444,
