@@ -157,12 +157,18 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'regtest',
+  alias: 'test',
   pubkeyhash: 0x71,
   privatekey: 0xf1,
   scripthash: 0xc4,
+  bech32prefix: 'tb',
   xpubkey: 0x043587cf,
-  xprivkey: 0x04358394
+  xprivkey: 0x04358394,
+  networkMagic: 0xfcc1b7dc,
+  port: 44556,
+  dnsSeeds: [
+    'testseed.jrn.me.uk'
+  ]
 });
 
 /**
@@ -187,7 +193,9 @@ for (var key in TESTNET) {
   }
 }
 
-169 addNetwork({
+var regtest = get('regtest');
+
+addNetwork({
   name: 'regtest',
   alias: 'dev',
   pubkeyhash: 0x6f,
@@ -277,6 +285,7 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest
