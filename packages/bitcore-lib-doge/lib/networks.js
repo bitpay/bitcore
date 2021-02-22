@@ -251,6 +251,28 @@ Object.defineProperty(testnet, 'dnsSeeds', {
   }
 });
 
+Object.defineProperty(regtest, 'networkMagic', {
+  enumerable: true,
+  configurable: false,
+  get: function() {
+    return REGTEST.NETWORK_MAGIC;
+  }
+});
+Object.defineProperty(regtest, 'dnsSeeds', {
+  enumerable: true,
+  configurable: false,
+  get: function() {
+    return REGTEST.DNS_SEEDS;
+  }
+});
+Object.defineProperty(regtest, 'port', {
+  enumerable: true,
+  configurable: false,
+  get: function() {
+    return REGTEST.PORT;
+  }
+});
+
 /**
  * @function
  * @member Networks#enableRegtest
