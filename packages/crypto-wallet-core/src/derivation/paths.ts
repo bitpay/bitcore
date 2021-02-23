@@ -17,6 +17,11 @@ export const Paths = {
     livenet: "m/44'/144'/",
     testnet: "m/44'/144'/"
   },
+  DOGE: {
+    mainnet: "m/44'/3'/",
+    livenet: "m/44'/3'/",
+    testnet: "m/44'/3'/"
+  },
   default: {
     testnet: "m/44'/1'/"
   }

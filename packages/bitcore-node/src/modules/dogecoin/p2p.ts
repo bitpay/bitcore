@@ -10,7 +10,7 @@ import { SpentHeightIndicators } from '../../types/Coin';
 import { BitcoinBlockType, BitcoinHeaderObj, BitcoinTransaction } from '../../types/namespaces/Bitcoin';
 import { wait } from '../../utils/wait';
 
-export class DogecoinP2PWorker extends BaseP2PWorker<IBtcBlock>  {
+export class DogecoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected bitcoreLib: any;
   protected bitcoreP2p: any;
   protected chainConfig: any;

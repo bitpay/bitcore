@@ -1,9 +1,9 @@
 import { BchDeriver } from './bch';
 import { BtcDeriver } from './btc';
+import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
 import { Paths } from './paths';
 import { XrpDeriver } from './xrp';
-import { DogeDeriver } from './doge';
 
 export interface Key {
   address: string;
