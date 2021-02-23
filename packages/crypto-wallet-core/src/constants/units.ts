@@ -130,5 +130,5 @@ export let UNITS = {
       maxDecimals: 6,
       minDecimals: 2
     }
-  },
+  }
 };
