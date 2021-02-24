@@ -8,6 +8,7 @@ var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
 var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
+var Script = require('../script');
 
 var GENESIS_BITS = 0x1d00ffff;
 
