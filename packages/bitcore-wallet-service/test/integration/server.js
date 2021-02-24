@@ -3807,14 +3807,15 @@ describe('Wallet service', function() {
       addr: 'rDzTZxa7NwD9vmNf5dvTbW4FQDNSRsfPv6',
       lockedFunds: Defaults.MIN_XRP_BALANCE,
       flags: { noChange: true , noUtxoTests: true},
-    },
-    {
-      coin: 'doge',
-      key: 'id44btc',
-      addr: 'ngao4q8auS6YuDKYPkzjt7zKYYT8LzkGZS',
-      lockedFunds: 0,
-      flags: {},
     }
+    // TODO
+    // {
+    //   coin: 'doge',
+    //   key: 'id44btc',
+    //   addr: 'ngao4q8auS6YuDKYPkzjt7zKYYT8LzkGZS',
+    //   lockedFunds: 0,
+    //   flags: {},
+    // }
   ];
 
   _.each(testSet, function(x) {
