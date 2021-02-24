@@ -38,14 +38,10 @@ HeadersMessage.prototype.setPayload = function(payload) {
 
   this.headers = [];
   for (var i = 0; i < count; i++) {
-    try {
-      var header = this.BlockHeader.fromBufferReader(parser);
-      this.headers.push(header);
-      var txn_count = parser.readUInt8();
-      $.checkState(txn_count === 0, 'txn_count should always be 0');
-    } catch (e) {
-      e;
-    }
+    var header = this.BlockHeader.fromBufferReader(parser);
+    this.headers.push(header);
+    var txn_count = parser.readUInt8();
+    $.checkState(txn_count === 0, 'txn_count should always be 0');
   }
   utils.checkFinished(parser);
 };
