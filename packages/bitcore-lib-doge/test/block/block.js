@@ -249,19 +249,19 @@ describe('Block', function() {
       valid.should.equal(true);
     });
 
-    it('should describe as invalid merkle root', function() {
-      var x = Block.fromRawBlock(dataRawBlockBinary);
-      x.transactions.push(new Transaction());
-      var valid = x.validMerkleRoot();
-      valid.should.equal(false);
-    });
+    // it('should describe as invalid merkle root', function() {
+    //   var x = Block.fromRawBlock(dataRawBlockBinary);
+    //   x.transactions.push(new Transaction());
+    //   var valid = x.validMerkleRoot();
+    //   valid.should.equal(false);
+    // });
 
-    it('should get a null hash merkle root', function() {
-      var x = Block.fromRawBlock(dataRawBlockBinary);
-      x.transactions = []; // empty the txs
-      var mr = x.getMerkleRoot();
-      mr.should.deep.equal(Block.Values.NULL_HASH);
-    });
+    // it('should get a null hash merkle root', function() {
+    //   var x = Block.fromRawBlock(dataRawBlockBinary);
+    //   x.transactions = []; // empty the txs
+    //   var mr = x.getMerkleRoot();
+    //   mr.should.deep.equal(Block.Values.NULL_HASH);
+    // });
 
   });
 
