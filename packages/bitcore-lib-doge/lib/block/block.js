@@ -85,7 +85,7 @@ Block.fromObject = function fromObject(obj) {
 Block._fromBufferReader = function _fromBufferReader(br) {
   var info = {};
   $.checkState(!br.finished(), 'No block data received');
-  info.header = BlockHeader.fromBufferReader(br, true);
+  info.header = BlockHeader.fromBufferReader(br);
   var transactions = br.readVarintNum();
   info.transactions = [];
   for (var i = 0; i < transactions; i++) {
