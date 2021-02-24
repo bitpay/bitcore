@@ -298,147 +298,109 @@ BlockHeader.prototype.inspect = function inspect() {
  * @param {BufferReader} br - BufferReader containing the header
  */
 BlockHeader.prototype._parseAuxPoW = function(br) {
-  // Need to check if the next bytes are an Aux PoW block
-  // First, make sure what's left of the buffer is long enough (minimum of 182 bytes for an AuxPoW)
-  if (br.buf.length - br.pos < 182) {
-    return
+  // Reference for AuxPoW bit:
+  // https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/primitives/pureheader.h#L131
+  if (!(this.version & 1 << 8)) {
+    return this;
   }
 
-  // See if we can find the next header's 'prevHash' value. It should equal this.hash
-  const nextPrevHashPos = br.pos + 1 + 4;
-  const nextPrevHash = BufferUtil.reverse(br.buf.slice(nextPrevHashPos, nextPrevHashPos + 32));
-  if (nextPrevHash.toString('hex') === this.hash.toString('hex')) {
-    return;
-  }
-
-  // Start parsing of AuxPoW block
-
-  let startPos = br.pos;
-  try{
-    // Coinbase Txn
-    const getTxn = () => {
-      const version = br.readInt32LE();
-      // If flag is 1, then has witness(es) (see below)
-      let flag = 0;
-      if (br.buf.readUInt16BE(br.pos) === 1) {
-        flag = br.readUInt16BE();
+  // Coinbase Txn
+  const getTxn = () => {
+    const version = br.readInt32LE();
+    // If flag is 1, then has witness(es) (see below)
+    let flag = 0;
+    if (br.buf.readUInt16BE(br.pos) === 1) {
+      flag = br.readUInt16BE();
+    }
+    // Tx_ins
+    const getTxIn = () => {
+      const prevOutput = {
+        hash: br.read(32),
+        index: br.read(4)
+      };
+      const scriptLen = br.readVarintNum();
+      const script = br.read(scriptLen);
+      const sequence = br.readUInt32LE();
+      return {
+        prevOutput,
+        scriptLen,
+        script,
+        sequence
       }
-      // Tx_ins
-      const getTxIn = () => {
-        const prevOutput = {
-          hash: br.read(32),
-          index: br.read(4)
-        };
-        const scriptLen = br.readVarintNum();
-        const script = br.read(scriptLen);
-        const sequence = br.readUInt32LE();
-        return {
-          prevOutput,
-          scriptLen,
-          script,
-          sequence
-        }
+    }
+    const txInCount = br.readVarintNum();
+    const txIn = [];
+    for (let i = 0; i < txInCount; i++) {
+      txIn.push(getTxIn());
+    }
+    // Tx_outs
+    const getTxOut = () => {
+      const value = br.read(8);
+      const pkScriptLen = br.readVarintNum();
+      const pkScript = br.read(pkScriptLen);
+      return {
+        value,
+        scriptLen: pkScriptLen,
+        script: new Script(pkScript)
       }
-      const txInCount = br.readVarintNum();
-      if (txInCount !== 1) {
-        throw new Error('failed verification');
-      }
-      const txIn = [];
+    }
+    const txOutCount = br.readVarintNum();
+    const txOut = [];
+    for (let i = 0; i < txOutCount; i++) {
+      txOut.push(getTxOut());
+    }
+    // Tx_witnesses
+    const txWitnesses = [];
+    if (flag) {
       for (let i = 0; i < txInCount; i++) {
-        txIn.push(getTxIn());
+        txWitnesses.push(br.read(8))
       }
-      // Tx_outs
-      const getTxOut = () => {
-        const value = br.read(8);
-        const pkScriptLen = br.readVarintNum();
-        const pkScript = br.read(pkScriptLen);
-        return {
-          value,
-          scriptLen: pkScriptLen,
-          script: new Script(pkScript)
-        }
-      }
-      const txOutCount = br.readVarintNum();
-      if (!(txOutCount >= 2)) {
-        throw new Error('failed verification');
-      }
-      const txOut = [];
-      let opReturnIdx = -1;
-      for (let i = 0; i < txOutCount; i++) {
-        txOut.push(getTxOut());
-        if (
-          BufferUtil.equals(txOut[i].value, Buffer.alloc(8).fill(0)) &&
-          txOut[i].script.chunks[0].opcodenum === 106
-        ) {
-          opReturnIdx = i;
-        }
-      }
-      if (opReturnIdx === -1) {
-        throw new Error('failed verification');
-      }
-      // Tx_witnesses
-      const txWitnesses = [];
-      if (flag) {
-        for (let i = 0; i < txInCount; i++) {
-          txWitnesses.push(br.read(8))
-        }
-      }
-      // Locktime
-      const lockTime = br.readUInt32LE();
-      return {
-        version,
-        flag,
-        txInCount,
-        txIn,
-        txOutCount,
-        txOut,
-        txWitnesses,
-        lockTime
-      }
-    };
-    
-    // Could possibly use Transaction().fromBufferReader(br), but it's throwing due to bnNum instanceof BN === false ??
-    const coinbaseTxn = getTxn();
-    const blockHash = br.read(32);
-    
-    const merkleBranch = () => {
-      const branchLen = br.readVarintNum();
-      const branchHashes = [];
-      for (let j = 0; j < branchLen; j++) {
-        branchHashes.push(br.readReverse(32));
-      }
-      const branchSideMask = br.readInt32LE();
-      return {
-        branchLen,
-        branchHashes,
-        branchSideMask
-      }
-    };
-    
-    const coinbaseBranch = merkleBranch();
-    const blockchainBranch = merkleBranch();
-    let parentBlock = br.read(80);
-    parentBlock = new BlockHeader(parentBlock);
-
-    // Comparing blockHash to parentBlock.hash is unreliable.
-    // See testnet block hash 4ee63e64e3ffde691b00e3eea0d927d55122205c0c530897646d4fb27d8b84a1
-    //   I've not been able to reconcile the blockHash with the parentBlock.hash for that block
-    //   According to https://en.bitcoin.it/wiki/Merged_mining_specification, "The current Namecoin client doesn't check this field for validity, and as such some AuxPOW blocks have it little-endian, and some have it big-endian."
-
-    this.auxpow = {
-      coinbaseTxn,
-      blockHash,
-      coinbaseBranch,
-      blockchainBranch,
-      parentBlock
     }
-  } catch (err) {
-    if (err.code === 'ERR_OUT_OF_RANGE' || err.message.indexOf('number too large') > -1 || err.message === 'failed verification') {
-      br.pos = startPos;
-    } else {
-      throw err;
+    // Locktime
+    const lockTime = br.readUInt32LE();
+    return {
+      version,
+      flag,
+      txInCount,
+      txIn,
+      txOutCount,
+      txOut,
+      txWitnesses,
+      lockTime
     }
+  };
+  
+  // Could possibly use Transaction().fromBufferReader(br), but it's throwing due to bnNum instanceof BN === false ??
+  const coinbaseTxn = getTxn();
+  const blockHash = br.read(32);
+  
+  const merkleBranch = () => {
+    const branchLen = br.readVarintNum();
+    const branchHashes = [];
+    for (let j = 0; j < branchLen; j++) {
+      branchHashes.push(br.readReverse(32));
+    }
+    const branchSideMask = br.readInt32LE();
+    return {
+      branchLen,
+      branchHashes,
+      branchSideMask
+    }
+  };
+  
+  const coinbaseBranch = merkleBranch();
+  const blockchainBranch = merkleBranch();
+  let parentBlock = br.read(80);
+  parentBlock = new BlockHeader(parentBlock);
+
+  this.auxpow = {
+    coinbaseTxn,
+    blockHash,
+    coinbaseBranch,
+    blockchainBranch,
+    parentBlock
   }
+  
   return this;
 }
 
