@@ -179,7 +179,7 @@ HDPrivateKey.prototype.derive = function(arg, hardened) {
  * @param {string|number} arg
  * @param {boolean?} hardened
  */
-HDPrivateKey.prototype.deriveChild = function(arg, hardened) {
+HDPrivateKey.prototype.deriveNonCompliantChild = function(arg, hardened) {
   if (_.isNumber(arg)) {
     return this._deriveWithNumber(arg, hardened);
   } else if (_.isString(arg)) {

@@ -3808,11 +3808,11 @@ describe('Wallet service', function() {
       lockedFunds: Defaults.MIN_XRP_BALANCE,
       flags: { noChange: true , noUtxoTests: true},
     }
-    // TODO
+ // TODO
     // {
     //   coin: 'doge',
     //   key: 'id44btc',
-    //   addr: 'ngao4q8auS6YuDKYPkzjt7zKYYT8LzkGZS',
+    //   addr: 'DTZ1W1qmXM9w4xJa9MMp2cAjdQv4PWSs9V',
     //   lockedFunds: 0,
     //   flags: {},
     // }

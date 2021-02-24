@@ -1232,4 +1232,12 @@ Transaction.prototype.enableRBF = function() {
   return this;
 };
 
+Transaction.prototype.setVersion = function(version) {
+  $.checkArgument(
+    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION,
+    'Wrong version number');
+  this.version = version;
+  return this;
+};
+
 module.exports = Transaction;
