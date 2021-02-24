@@ -147,10 +147,14 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
 
 /**
  * @param {BufferReader} - A BufferReader of the block header
+ * @param {Boolean} - Specify if the BufferReader is a reading a full block
  * @returns {BlockHeader} - An instance of block header
  */
-BlockHeader.fromBufferReader = function fromBufferReader(br) {
+BlockHeader.fromBufferReader = function fromBufferReader(br, isBlock = false) {
   var info = BlockHeader._fromBufferReader(br);
+  if (!isBlock) {
+    BlockHeader._parseAuxPoW(br);
+  }
   return new BlockHeader(info);
 };
 
@@ -287,6 +291,105 @@ BlockHeader.prototype.validProofOfWork = function validProofOfWork() {
 BlockHeader.prototype.inspect = function inspect() {
   return '<BlockHeader ' + this.id + '>';
 };
+
+
+BlockHeader._parseAuxPoW = function(br) {
+  if (br.buf.readUInt8(br.pos) === 0) {
+    return;
+  }
+
+  // Coinbase Txn
+  const getTxn = () => {
+    const version = br.readInt32LE();
+    // If flag is 1, then has witness(es) (see below)
+    let flag = 0;
+    if (br.buf.readUInt16LE() === 1) {
+      flag = br.readUInt16LE();
+    }
+    // Tx_ins
+    const getTxIn = () => {
+      const prevOutput = br.read(36);
+      const scriptLen = br.readVarintNum();
+      const script = br.read(scriptLen);
+      const sequence = br.readUInt32LE();
+      return {
+        prevOutput,
+        scriptLen,
+        script,
+        sequence
+      }
+    }
+    const txInCount = br.readVarintNum();
+    const txIn = [];
+    for (let i = 0; i < txInCount; i++) {
+      txIn.push(getTxIn());
+    }
+    // Tx_outs
+    const getTxOut = () => {
+      const value = br.read(8);
+      const pkScriptLen = br.readVarintNum();
+      const pkScript = br.read(pkScriptLen);
+      return {
+        value,
+        pkScriptLen,
+        pkScript
+      }
+    }
+    const txOutCount = br.readVarintNum();
+    const txOut = [];
+    for (let i = 0; i < txOutCount; i++) {
+      txOut.push(getTxOut());
+    }
+    // Tx_witnesses
+    const txWitnesses = [];
+    if (flag) {
+      for (let i = 0; i < txInCount; i++) {
+        txWitnesses.push(br.read(8))
+      }
+    }
+    // Locktime
+    const lockTime = br.readUInt32LE();
+    return {
+      version,
+      flag,
+      txInCount,
+      txIn,
+      txOutCount,
+      txOut,
+      txWitnesses,
+      lockTime
+    }
+  };
+  
+  const coinbaseTxn = getTxn();
+  const blockHash = br.readReverse(32);
+  
+  const merkleBranch = () => {
+    const branchLen = br.readVarintNum();
+    const branchHashes = [];
+    for (let j = 0; j < branchLen; j++) {
+      branchHashes.push(br.readReverse(32));
+    }
+    const branchSideMask = br.readInt32LE();
+    return {
+      branchLen,
+      branchHashes,
+      branchSideMask
+    }
+  };
+  
+  const coinbaseBranch = merkleBranch();
+  const blockchainBranch = merkleBranch();
+  const parentBlock = br.read(80);
+
+  return {
+    coinbaseTxn,
+    blockHash,
+    coinbaseBranch,
+    blockchainBranch,
+    parentBlock
+  }
+}
 
 BlockHeader.Constants = {
   START_OF_HEADER: 8, // Start buffer position in raw block data
