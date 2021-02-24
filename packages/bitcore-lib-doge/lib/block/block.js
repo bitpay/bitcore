@@ -274,7 +274,7 @@ Block.prototype.inspect = function inspect() {
 };
 
 Block.Values = {
-  START_OF_BLOCK: 8, // Start of block in raw block data
+  START_OF_BLOCK: 0, // Start of block in raw block data
   NULL_HASH: Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
 
