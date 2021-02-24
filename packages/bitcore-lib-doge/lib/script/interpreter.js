@@ -619,6 +619,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
     // constrained. Testing that the transaction's sequence number do not have
     // this bit set prevents using this property to get around a
     // CHECKSEQUENCEVERIFY check.
+    var SEQUENCE_LOCKTIME_DISABLE_FLAG = Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG;
     if (txToSequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
         return false;
     }
@@ -628,7 +629,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
     var nLockTimeMask =
         Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
     var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
-    var nSequenceMasked = nSequence.and(nLockTimeMask);
+    var nSequenceMasked = nSequence.and(new BN(nLockTimeMask));
 
     // There are two kinds of nSequence: lock-by-blockheight and
     // lock-by-blocktime, distinguished by whether nSequenceMasked <
