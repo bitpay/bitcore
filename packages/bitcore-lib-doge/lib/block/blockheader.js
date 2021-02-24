@@ -8,6 +8,7 @@ var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
 var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
+var Script = require('../script');
 
 var GENESIS_BITS = 0x1d00ffff;
 
@@ -151,7 +152,9 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
  */
 BlockHeader.fromBufferReader = function fromBufferReader(br) {
   var info = BlockHeader._fromBufferReader(br);
-  return new BlockHeader(info);
+  const header = new BlockHeader(info);
+  header._parseAuxPoW(br);
+  return header;
 };
 
 /**
@@ -287,6 +290,119 @@ BlockHeader.prototype.validProofOfWork = function validProofOfWork() {
 BlockHeader.prototype.inspect = function inspect() {
   return '<BlockHeader ' + this.id + '>';
 };
+
+
+/**
+ * Parse the Aux Proof-of-Work block in the block header
+ * Ref: https://en.bitcoin.it/wiki/Merged_mining_specification#Aux_proof-of-work_block
+ * @param {BufferReader} br - BufferReader containing the header
+ */
+BlockHeader.prototype._parseAuxPoW = function(br) {
+  // Reference for AuxPoW bit:
+  // https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/primitives/pureheader.h#L131
+  if (!(this.version & 1 << 8)) {
+    return this;
+  }
+
+  // Coinbase Txn
+  const getTxn = () => {
+    const version = br.readInt32LE();
+    // If flag is 1, then has witness(es) (see below)
+    let flag = 0;
+    if (br.buf.readUInt16BE(br.pos) === 1) {
+      flag = br.readUInt16BE();
+    }
+    // Tx_ins
+    const getTxIn = () => {
+      const prevOutput = {
+        hash: br.read(32),
+        index: br.read(4)
+      };
+      const scriptLen = br.readVarintNum();
+      const script = br.read(scriptLen);
+      const sequence = br.readUInt32LE();
+      return {
+        prevOutput,
+        scriptLen,
+        script,
+        sequence
+      }
+    }
+    const txInCount = br.readVarintNum();
+    const txIn = [];
+    for (let i = 0; i < txInCount; i++) {
+      txIn.push(getTxIn());
+    }
+    // Tx_outs
+    const getTxOut = () => {
+      const value = br.read(8);
+      const pkScriptLen = br.readVarintNum();
+      const pkScript = br.read(pkScriptLen);
+      return {
+        value,
+        scriptLen: pkScriptLen,
+        script: new Script(pkScript)
+      }
+    }
+    const txOutCount = br.readVarintNum();
+    const txOut = [];
+    for (let i = 0; i < txOutCount; i++) {
+      txOut.push(getTxOut());
+    }
+    // Tx_witnesses
+    const txWitnesses = [];
+    if (flag) {
+      for (let i = 0; i < txInCount; i++) {
+        txWitnesses.push(br.read(8))
+      }
+    }
+    // Locktime
+    const lockTime = br.readUInt32LE();
+    return {
+      version,
+      flag,
+      txInCount,
+      txIn,
+      txOutCount,
+      txOut,
+      txWitnesses,
+      lockTime
+    }
+  };
+  
+  // Could possibly use Transaction().fromBufferReader(br), but it's throwing due to bnNum instanceof BN === false ??
+  const coinbaseTxn = getTxn();
+  const blockHash = br.read(32);
+  
+  const merkleBranch = () => {
+    const branchLen = br.readVarintNum();
+    const branchHashes = [];
+    for (let j = 0; j < branchLen; j++) {
+      branchHashes.push(br.readReverse(32));
+    }
+    const branchSideMask = br.readInt32LE();
+    return {
+      branchLen,
+      branchHashes,
+      branchSideMask
+    }
+  };
+  
+  const coinbaseBranch = merkleBranch();
+  const blockchainBranch = merkleBranch();
+  let parentBlock = br.read(80);
+  parentBlock = new BlockHeader(parentBlock);
+
+  this.auxpow = {
+    coinbaseTxn,
+    blockHash,
+    coinbaseBranch,
+    blockchainBranch,
+    parentBlock
+  }
+  
+  return this;
+}
 
 BlockHeader.Constants = {
   START_OF_HEADER: 8, // Start buffer position in raw block data
