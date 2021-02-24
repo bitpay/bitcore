@@ -32,7 +32,7 @@ describe('Networks', function() {
 
   it('will get network based on string "regtest" value', function() {
     var network = networks.get('regtest');
-    network.should.equal(networks.testnet);
+    network.should.equal(networks.regtest);
   });
 
   it('should be able to define a custom Network', function() {
@@ -64,9 +64,8 @@ describe('Networks', function() {
   });
 
   it('can remove a custom network', function() {
-    networks.remove(customnet);
-    var net = networks.get('customnet');
-    should.equal(net, undefined);
+    networks.remove('customnet');
+    Object.keys(networks).should.not.contain('customnet');
   });
 
   it('should not set a network map for an undefined value', function() {
