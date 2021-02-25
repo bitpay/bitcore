@@ -7,7 +7,8 @@ const promptly = require('promptly');
 const cwc = require('crypto-wallet-core');
 const libs = {
   BTC: cwc.BitcoreLib,
-  BCH: cwc.BitcoreLibCash
+  BCH: cwc.BitcoreLibCash,
+  DOGE: cwc.BitcoreLibDoge
 }
 
 program
@@ -114,7 +115,7 @@ const main = async () => {
     console.log(`txid: ${txid}`);
 
     let weightedSize;
-    if (['BTC', 'BCH'].includes(chain)) {
+    if (['BTC', 'BCH', 'DOGE'].includes(chain)) {
       const transaction = new libs[chain].Transaction(signedTx);
       weightedSize = transaction._estimateSize();
     }
@@ -141,7 +142,7 @@ const main = async () => {
   const sendPaymentResponse = await request({
     method: 'POST',
     uri: payProUri,
-    json: { chain, currency, transactions: signedTransactions},
+    json: { chain, currency, transactions: signedTransactions },
     headers: {
       'Content-Type' : 'application/payment',
       'x-paypro-version' : '2'
