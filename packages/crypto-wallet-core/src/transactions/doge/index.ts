@@ -18,7 +18,7 @@ export class DOGETxProvider extends BTCTxProvider {
       tx.fee(fee);
     }
     if (feeRate) {
-      tx.feePerKb(Number(feeRate) / 1000); // feeRate is in feePerByte
+      tx.feePerKb(Number(feeRate) * 1000); // feeRate is in feePerByte
     }
     if (change) {
       tx.change(change);
