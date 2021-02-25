@@ -11,12 +11,12 @@
     "pub": "npm run build && npm publish"
   },
   "keywords": [
-    "bitcoin",
+    "dogecoin",
     "bitcore"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-p2p.git"
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-p2p-doge"
   },
   "dependencies": {
     "bitcore-lib-doge": "^8.25.0",

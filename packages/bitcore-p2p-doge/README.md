@@ -1,25 +1,23 @@
-# Bitcore P2P
+# Bitcore P2P DOGE
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-p2p.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-p2p)
-[![Build Status](https://img.shields.io/travis/bitpay/bitcore-p2p.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-p2p)
-[![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-p2p.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-p2p?branch=master)
+[![NPM Package](https://img.shields.io/npm/v/bitcore-p2p-doge.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-p2p-doge)
 
-**The peer-to-peer networking protocol for BTC.**
+**The peer-to-peer networking protocol for DOGE.**
 
-`bitcore-p2p` adds [Bitcoin protocol](https://en.bitcoin.it/wiki/Protocol_documentation) support for Bitcore.
+`bitcore-p2p-doge` adds Dogecoin protocol support for Bitcore.
 
 See [the main bitcore repo](https://github.com/bitpay/bitcore) for more information.
 
 ## Getting Started
 
 ```sh
-npm install bitcore-p2p
+npm install bitcore-p2p-doge
 ```
 
-In order to connect to the Bitcoin network, you'll need to know the IP address of at least one node of the network, or use [Pool](./docs/pool.md) to discover peers using a DNS seed.
+In order to connect to the Dogecoin network, you'll need to know the IP address of at least one node of the network, or use [Pool](./docs/pool.md) to discover peers using a DNS seed.
 
 ```javascript
-var Peer = require('bitcore-p2p').Peer;
+var Peer = require('bitcore-p2p-doge').Peer;
 
 var peer = new Peer({host: '127.0.0.1'});
 
