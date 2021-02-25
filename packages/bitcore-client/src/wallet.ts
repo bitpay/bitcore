@@ -89,7 +89,7 @@ export class Wallet {
     }
     // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
+    const hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network));
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
