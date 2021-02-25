@@ -61,7 +61,7 @@ const main = async () => {
   const from = inputFrom || await wallet.deriveAddress(0);
   let nonce;
   const { chain } = wallet;
-  if (!['BTC', 'BCH'].includes(chain)) {
+  if (!['BTC', 'BCH', 'DOGE'].includes(chain)) {
     nonce = inputNonce || await wallet.getNonce();
   }
   const currency = token || chain;
@@ -100,7 +100,6 @@ const main = async () => {
     const params = { recipients, feeRate, from, invoiceID, data, value, utxos };
     params.nonce = Number(nonce);
     const unsignedTx = await wallet.newTx(params);
-    unsignedTransactions
     console.log(`unsignedRawTx: ${unsignedTx}`);
 
     //  Sign tx
