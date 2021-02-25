@@ -157,6 +157,9 @@ HDPrivateKey.prototype.derive = function(arg, hardened) {
 };
 
 /**
+ * WARNING: This method will not be officially supported until v1.0.0.
+ *
+ *
  * Get a derived child based on a string or number.
  *
  * If the first argument is a string, it's parsed as the full path of
@@ -168,18 +171,21 @@ HDPrivateKey.prototype.derive = function(arg, hardened) {
  * derived. If the second argument is truthy, the hardened version will be
  * derived. See the example usage for clarification.
  *
+ * WARNING: The `nonCompliant` option should NOT be used, except for older implementation
+ * that used a derivation strategy that used a non-zero padded private key.
+ *
  * @example
  * ```javascript
  * var parent = new HDPrivateKey('xprv...');
- * var child_0_1_2h = parent.derive(0).derive(1).derive(2, true);
- * var copy_of_child_0_1_2h = parent.derive("m/0/1/2'");
+ * var child_0_1_2h = parent.deriveChild(0).deriveChild(1).deriveChild(2, true);
+ * var copy_of_child_0_1_2h = parent.deriveChild("m/0/1/2'");
  * assert(child_0_1_2h.xprivkey === copy_of_child_0_1_2h);
  * ```
  *
  * @param {string|number} arg
  * @param {boolean?} hardened
  */
-HDPrivateKey.prototype.deriveNonCompliantChild = function(arg, hardened) {
+HDPrivateKey.prototype.deriveChild = function(arg, hardened) {
   if (_.isNumber(arg)) {
     return this._deriveWithNumber(arg, hardened);
   } else if (_.isString(arg)) {
@@ -188,6 +194,33 @@ HDPrivateKey.prototype.deriveNonCompliantChild = function(arg, hardened) {
     throw new hdErrors.InvalidDerivationArgument(arg);
   }
 };
+
+/**
+ * WARNING: This method will not be officially supported until v1.0.0
+ *
+ *
+ * WARNING: If this is a new implementation you should NOT use this method, you should be using
+ * `derive` instead.
+ *
+ * This method is explicitly for use and compatibility with an implementation that
+ * was not compliant with BIP32 regarding the derivation algorithm. The private key
+ * must be 32 bytes hashing, and this implementation will use the non-zero padded
+ * serialization of a private key, such that it's still possible to derive the privateKey
+ * to recover those funds.
+ *
+ * @param {string|number} arg
+ * @param {boolean?} hardened
+ */
+HDPrivateKey.prototype.deriveNonCompliantChild = function(arg, hardened) {
+  if (_.isNumber(arg)) {
+    return this._deriveWithNumber(arg, hardened, true);
+  } else if (_.isString(arg)) {
+    return this._deriveFromString(arg, true);
+  } else {
+    throw new hdErrors.InvalidDerivationArgument(arg);
+  }
+};
+
 
 HDPrivateKey.prototype._deriveWithNumber = function(index, hardened) {
   /* jshint maxstatements: 20 */
