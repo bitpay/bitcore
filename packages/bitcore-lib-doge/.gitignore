@@ -16,8 +16,8 @@ report
 .DS_Store
 
 
-litecore.js
-litecore.min.js
-litecore.js.sig
-litecore.min.js.sig
+dogecore.js
+dogecore.min.js
+dogecore.js.sig
+dogecore.min.js.sig
 tests.js
