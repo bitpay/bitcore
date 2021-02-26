@@ -317,7 +317,7 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
   var hasWitnesses = this.hasWitnesses();
 
   if (hasWitnesses && !noWitness) {
-    writer.write(new Buffer('0001', 'hex'));
+    writer.write(Buffer.from('0001', 'hex'));
   }
 
   writer.writeVarintNum(this.inputs.length);
@@ -698,47 +698,15 @@ Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
 }
 
 Transaction.prototype._fromNonP2SH = function(utxo) {
-  var clazz;
-  utxo = new UnspentOutput(utxo);
-  if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
-    clazz = PublicKeyHashInput;
-  } else if (utxo.script.isPublicKeyOut()) {
-    clazz = PublicKeyInput;
-  } else {
-    clazz = Input;
-  }
-  this.addInput(new clazz({
-    output: new Output({
-      script: utxo.script,
-      satoshis: utxo.satoshis
-    }),
-    prevTxId: utxo.txId,
-    outputIndex: utxo.outputIndex,
-    script: Script.empty()
-  }));
+  const input = this._getInputFrom(utxo);
+  this.addInput(input);
 };
 
 Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
-  var clazz;
-  utxo = new UnspentOutput(utxo);
-  if (utxo.script.isMultisigOut()) {
-    clazz = MultiSigInput;
-  } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
-    clazz = MultiSigScriptHashInput;
-  } else {
-    throw new Error("@TODO");
-  }
-  this.addInput(new clazz({
-    output: new Output({
-      script: utxo.script,
-      satoshis: utxo.satoshis
-    }),
-    prevTxId: utxo.txId,
-    outputIndex: utxo.outputIndex,
-    script: Script.empty()
-  }, pubkeys, threshold, false, opts));
+  const input = this._getInputFrom(utxo, pubkeys, threshold, opts);
+  this.addInput(input);
 };
 
 /**
@@ -1076,12 +1044,13 @@ Transaction.prototype._clearSignatures = function() {
 Transaction.prototype._estimateSize = function() {
   var result = Transaction.MAXIMUM_EXTRA_SIZE;
   _.each(this.inputs, function(input) {
+    result += 32 + 4;  // prevout size:w
     result += input._estimateSize();
   });
   _.each(this.outputs, function(output) {
     result += output.script.toBuffer().length + 9;
   });
-  return result;
+  return Math.ceil(result);
 };
 
 Transaction.prototype._removeOutput = function(index) {
@@ -1104,18 +1073,18 @@ Transaction.prototype.removeOutput = function(index) {
 Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
      return compare(first.prevTxId, second.prevTxId)
-        || first.outputIndex - second.outputIndex 
+        || first.outputIndex - second.outputIndex
         || first.i - second.i;  // to ensure stable sort
     });
     return copy;
   });
   this.sortOutputs(function(outputs) {
     var copy = Array.prototype.concat.apply([], outputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
@@ -1209,31 +1178,32 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  *
  * @param {Array|String|PrivateKey} privateKey
  * @param {number} sigtype
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.sign = function(privateKey, sigtype) {
+Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   var self = this;
   if (_.isArray(privateKey)) {
     _.each(privateKey, function(privateKey) {
-      self.sign(privateKey, sigtype);
+      self.sign(privateKey, sigtype, signingMethod);
     });
     return this;
   }
-  _.each(this.getSignatures(privateKey, sigtype), function(signature) {
-    self.applySignature(signature);
+  _.each(this.getSignatures(privateKey, sigtype, signingMethod), function(signature) {
+    self.applySignature(signature, signingMethod);
   });
   return this;
 };
 
-Transaction.prototype.getSignatures = function(privKey, sigtype) {
+Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) {
   privKey = new PrivateKey(privKey);
   sigtype = sigtype || Signature.SIGHASH_ALL;
   var transaction = this;
   var results = [];
   var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
   _.each(this.inputs, function forEachInput(input, index) {
-    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData), function(signature) {
+    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {
       results.push(signature);
     });
   });
@@ -1248,10 +1218,11 @@ Transaction.prototype.getSignatures = function(privKey, sigtype) {
  * @param {number} signature.sigtype
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
+ * @param {String} signingMethod - 'ecdsa' to sign transaction
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.applySignature = function(signature) {
-  this.inputs[signature.inputIndex].addSignature(this, signature);
+Transaction.prototype.applySignature = function(signature, signingMethod) {
+  this.inputs[signature.inputIndex].addSignature(this, signature, signingMethod);
   return this;
 };
 
@@ -1269,7 +1240,7 @@ Transaction.prototype.isFullySigned = function() {
   }));
 };
 
-Transaction.prototype.isValidSignature = function(signature) {
+Transaction.prototype.isValidSignature = function(signature, signingMethod) {
   var self = this;
   if (this.inputs[signature.inputIndex].isValidSignature === Input.prototype.isValidSignature) {
     throw new errors.Transaction.UnableToVerifySignature(
@@ -1277,13 +1248,14 @@ Transaction.prototype.isValidSignature = function(signature) {
       'This usually happens when creating a transaction from a serialized transaction'
     );
   }
-  return this.inputs[signature.inputIndex].isValidSignature(self, signature);
+  return this.inputs[signature.inputIndex].isValidSignature(self, signature, signingMethod);
 };
 
 /**
+ * @param {String} signingMethod method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @returns {bool} whether the signature is valid for this transaction input
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis) {
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, signingMethod) {
 
   if (_.isUndefined(sigversion)) {
     sigversion = 0;
@@ -1308,12 +1280,13 @@ Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, si
       pubkey,
       nin,
       scriptCodeWriter.toBuffer(),
-      satoshisBuffer
+      satoshisBuffer,
+      signingMethod
     );
     return verified;
   }
 
-  return Sighash.verify(this, sig, pubkey, nin, subscript);
+  return Sighash.verify(this, sig, pubkey, nin, subscript, signingMethod);
 };
 
 /**
@@ -1426,6 +1399,8 @@ Transaction.prototype.setVersion = function(version) {
   this.version = version;
   return this;
 };
+
+
 
 module.exports = Transaction;
 
