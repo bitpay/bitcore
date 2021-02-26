@@ -561,6 +561,66 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold) {
   return this;
 };
 
+/**
+ * associateInputs - Update inputs with utxos, allowing you to specify value, and pubkey.
+ * Populating these inputs allows for them to be signed with .sign(privKeys)
+ *
+ * @param {Array<Object>} utxos
+ * @param {Array<string | PublicKey>} pubkeys
+ * @param {number} threshold
+ * @param {Object} opts
+ * @returns {Array<number>}
+ */
+Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
+  let indexes = [];
+  for(let utxo of utxos) {
+    const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
+    indexes.push(index);
+    if(index >= 0) {
+      this.inputs[index] = this._getInputFrom(utxo, pubkeys, threshold, opts);
+    }
+  }
+  return indexes;
+}
+
+
+Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
+  var clazz;
+  utxo = new UnspentOutput(utxo);
+  if(pubkeys && threshold) {
+    if (utxo.script.isMultisigOut()) {
+      clazz = MultiSigInput;
+    } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
+      clazz = MultiSigScriptHashInput;
+    }
+  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
+    clazz = PublicKeyHashInput;
+  } else if (utxo.script.isPublicKeyOut()) {
+    clazz = PublicKeyInput;
+  } else {
+    clazz = Input;
+  }
+  return clazz;
+}
+
+
+Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
+  utxo = new UnspentOutput(utxo);
+  const InputClass = this._selectInputType(utxo, pubkeys, threshold);
+  const input = {
+    output: new Output({
+      script: utxo.script,
+      satoshis: utxo.satoshis
+    }),
+    prevTxId: utxo.txId,
+    outputIndex: utxo.outputIndex,
+    sequenceNumber: utxo.sequenceNumber,
+    script: Script.empty()
+  };
+  let args = pubkeys && threshold ? [pubkeys, threshold, false, opts] : []
+  return new InputClass(input, ...args);
+}
+
 Transaction.prototype._fromNonP2SH = function(utxo) {
   var clazz;
   utxo = new UnspentOutput(utxo);
@@ -1229,6 +1289,14 @@ Transaction.prototype.enableRBF = function() {
       input.sequenceNumber = Input.DEFAULT_RBF_SEQNUMBER;
     }
   }
+  return this;
+};
+
+Transaction.prototype.setVersion = function(version) {
+  $.checkArgument(
+    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION,
+    'Wrong version number');
+  this.version = version;
   return this;
 };
 

@@ -81,69 +81,69 @@ describe('BIP32 compliance', function() {
   });
 
   it("should get m/0' ext. private key from test vector 1", function() {
-    var privateKey = new HDPrivateKey(vector1_m_private).derive("m/0'");
+    var privateKey = new HDPrivateKey(vector1_m_private).deriveChild("m/0'");
     privateKey.xprivkey.should.equal(vector1_m0h_private);
   });
 
   it("should get m/0' ext. public key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'")
       .xpubkey.should.equal(vector1_m0h_public);
   });
 
   it("should get m/0'/1 ext. private key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'/1")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'/1")
       .xprivkey.should.equal(vector1_m0h1_private);
   });
 
   it("should get m/0'/1 ext. public key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'/1")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'/1")
       .xpubkey.should.equal(vector1_m0h1_public);
   });
 
   it("should get m/0'/1 ext. public key from m/0' public key from test vector 1", function() {
-    var derivedPublic = HDPrivateKey(vector1_m_private).derive("m/0'").hdPublicKey.derive("m/1");
+    var derivedPublic = HDPrivateKey(vector1_m_private).deriveChild("m/0'").hdPublicKey.deriveChild("m/1");
     derivedPublic.xpubkey.should.equal(vector1_m0h1_public);
   });
 
   it("should get m/0'/1/2' ext. private key from test vector 1", function() {
     var privateKey = new HDPrivateKey(vector1_m_private);
-    var derived = privateKey.derive("m/0'/1/2'");
+    var derived = privateKey.deriveChild("m/0'/1/2'");
     derived.xprivkey.should.equal(vector1_m0h12h_private);
   });
 
   it("should get m/0'/1/2' ext. public key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'/1/2'")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'/1/2'")
       .xpubkey.should.equal(vector1_m0h12h_public);
   });
 
   it("should get m/0'/1/2'/2 ext. private key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'/1/2'/2")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'/1/2'/2")
       .xprivkey.should.equal(vector1_m0h12h2_private);
   });
 
   it("should get m/0'/1/2'/2 ext. public key from m/0'/1/2' public key from test vector 1", function() {
-    var derived = HDPrivateKey(vector1_m_private).derive("m/0'/1/2'").hdPublicKey;
-    derived.derive("m/2").xpubkey.should.equal(vector1_m0h12h2_public);
+    var derived = HDPrivateKey(vector1_m_private).deriveChild("m/0'/1/2'").hdPublicKey;
+    derived.deriveChild("m/2").xpubkey.should.equal(vector1_m0h12h2_public);
   });
 
   it("should get m/0'/1/2h/2 ext. public key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'/1/2'/2")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'/1/2'/2")
       .xpubkey.should.equal(vector1_m0h12h2_public);
   });
 
   it("should get m/0'/1/2h/2/1000000000 ext. private key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'/1/2'/2/1000000000")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'/1/2'/2/1000000000")
       .xprivkey.should.equal(vector1_m0h12h21000000000_private);
   });
 
   it("should get m/0'/1/2h/2/1000000000 ext. public key from test vector 1", function() {
-    HDPrivateKey(vector1_m_private).derive("m/0'/1/2'/2/1000000000")
+    HDPrivateKey(vector1_m_private).deriveChild("m/0'/1/2'/2/1000000000")
       .xpubkey.should.equal(vector1_m0h12h21000000000_public);
   });
 
   it("should get m/0'/1/2'/2/1000000000 ext. public key from m/0'/1/2'/2 public key from test vector 1", function() {
-    var derived = HDPrivateKey(vector1_m_private).derive("m/0'/1/2'/2").hdPublicKey;
-    derived.derive("m/1000000000").xpubkey.should.equal(vector1_m0h12h21000000000_public);
+    var derived = HDPrivateKey(vector1_m_private).deriveChild("m/0'/1/2'/2").hdPublicKey;
+    derived.deriveChild("m/1000000000").xpubkey.should.equal(vector1_m0h12h21000000000_public);
   });
 
   it('should initialize test vector 2 from the extended public key', function() {
@@ -159,66 +159,66 @@ describe('BIP32 compliance', function() {
   });
 
   it("should get m/0 ext. private key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive(0).xprivkey.should.equal(vector2_m0_private);
+    HDPrivateKey(vector2_m_private).deriveChild(0).xprivkey.should.equal(vector2_m0_private);
   });
 
   it("should get m/0 ext. public key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive(0).xpubkey.should.equal(vector2_m0_public);
+    HDPrivateKey(vector2_m_private).deriveChild(0).xpubkey.should.equal(vector2_m0_public);
   });
 
   it("should get m/0 ext. public key from m public key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).hdPublicKey.derive(0).xpubkey.should.equal(vector2_m0_public);
+    HDPrivateKey(vector2_m_private).hdPublicKey.deriveChild(0).xpubkey.should.equal(vector2_m0_public);
   });
 
   it("should get m/0/2147483647h ext. private key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'")
       .xprivkey.should.equal(vector2_m02147483647h_private);
   });
 
   it("should get m/0/2147483647h ext. public key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'")
       .xpubkey.should.equal(vector2_m02147483647h_public);
   });
 
   it("should get m/0/2147483647h/1 ext. private key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'/1")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'/1")
       .xprivkey.should.equal(vector2_m02147483647h1_private);
   });
 
   it("should get m/0/2147483647h/1 ext. public key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'/1")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'/1")
       .xpubkey.should.equal(vector2_m02147483647h1_public);
   });
 
   it("should get m/0/2147483647h/1 ext. public key from m/0/2147483647h public key from test vector 2", function() {
-    var derived = HDPrivateKey(vector2_m_private).derive("m/0/2147483647'").hdPublicKey;
-    derived.derive(1).xpubkey.should.equal(vector2_m02147483647h1_public);
+    var derived = HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'").hdPublicKey;
+    derived.deriveChild(1).xpubkey.should.equal(vector2_m02147483647h1_public);
   });
 
   it("should get m/0/2147483647h/1/2147483646h ext. private key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'/1/2147483646'")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'/1/2147483646'")
       .xprivkey.should.equal(vector2_m02147483647h12147483646h_private);
   });
 
   it("should get m/0/2147483647h/1/2147483646h ext. public key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'/1/2147483646'")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'/1/2147483646'")
       .xpubkey.should.equal(vector2_m02147483647h12147483646h_public);
   });
 
   it("should get m/0/2147483647h/1/2147483646h/2 ext. private key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'/1/2147483646'/2")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'/1/2147483646'/2")
       .xprivkey.should.equal(vector2_m02147483647h12147483646h2_private);
   });
 
   it("should get m/0/2147483647h/1/2147483646h/2 ext. public key from test vector 2", function() {
-    HDPrivateKey(vector2_m_private).derive("m/0/2147483647'/1/2147483646'/2")
+    HDPrivateKey(vector2_m_private).deriveChild("m/0/2147483647'/1/2147483646'/2")
       .xpubkey.should.equal(vector2_m02147483647h12147483646h2_public);
   });
 
   it("should get m/0/2147483647h/1/2147483646h/2 ext. public key from m/0/2147483647h/2147483646h public key from test vector 2", function() {
     var derivedPublic = HDPrivateKey(vector2_m_private)
-      .derive("m/0/2147483647'/1/2147483646'").hdPublicKey;
-    derivedPublic.derive("m/2")
+      .deriveChild("m/0/2147483647'/1/2147483646'").hdPublicKey;
+    derivedPublic.deriveChild("m/2")
       .xpubkey.should.equal(vector2_m02147483647h12147483646h2_public);
   });
 
@@ -234,7 +234,7 @@ describe('BIP32 compliance', function() {
       privateKey: privateKeyBuffer,
       chainCode: chainCodeBuffer
     });
-    var derived = key.derive("m/44'/0'/0'/0/0'");
+    var derived = key.deriveChild("m/44'/0'/0'/0/0'");
     derived.privateKey.toString().should.equal('3348069561d2a0fb925e74bf198762acc47dce7db27372257d2d959a9e6f8aeb');
   });
 
@@ -268,7 +268,7 @@ describe('BIP32 compliance', function() {
         privateKey: privateKeyBuffer,
         chainCode: chainCodeBuffer
       });
-      var derived = key.derive("m/44'");
+      var derived = key.deriveChild("m/44'");
       derived.privateKey.toString().should.equal('b15bce3608d607ee3a49069197732c656bca942ee59f3e29b4d56914c1de6825');
       bitcore.PrivateKey.isValid.callCount.should.equal(2);
     });
@@ -289,7 +289,7 @@ describe('BIP32 compliance', function() {
         throw new Error('Point cannot be equal to Infinity');
       };
       sandbox.spy(key, '_deriveWithNumber');
-      var derived = key.derive("m/44");
+      var derived = key.deriveChild("m/44");
       key._deriveWithNumber.callCount.should.equal(2);
       key.publicKey.toString().should.equal('029e58b241790284ef56502667b15157b3fc58c567f044ddc35653860f9455d099');
     });
@@ -313,28 +313,28 @@ describe('BIP32 compliance', function() {
 
 //test vectors: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
 var vector1_master = '000102030405060708090a0b0c0d0e0f';
-var vector1_m_public = 'dgub8kXBZ7ymNWy2S8Q3jNgVjFUm5ZJ3QLLaSTdAA89ukSv7Q6MSXwE14b7Nv6eDpE9JJXinTKc8LeLVu19uDPrm5uJuhpKNzV2kAgncwo6bNpP';
-var vector1_m_private = 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR';
-var vector1_m0h_public = 'dgub8nnbYqHETn61ajXkw8Z8cHasQNrPnQpb85448DY2ie7PmNecxAm6BjTnhNCvZY3qJk1MKZ9Z5HQasQ83ARb99nmduT7dunvxgcvBFVHuvrq';
-var vector1_m0h_private = 'dgpv53uaD9MLudRgHssbttwAVS3GwpUkxHnsqUGqy793vX4PDKXvYQDKYS4988T7QEnCzUt7CaGi21e6UKoZnKgXyjna7To1h1aqkcqJBDM65ur';
-var vector1_m0h1_public = 'dgub8pxikcq7rUy5RBaCfPT1D2UXTkqVnSYt4PitiVJqfGubzv9kfyBQ9JN27SfVyUmBGTdQ6ybfBsu4Thrrdkm2qSbaCexVPRwEKMSxYLP2A41';
-var vector1_m0h1_private = 'dgpv565hQvuEJLJk8Kv3d9q36Avw1CTrxKXAmnwgZNurs9rbSs34GCddVzxNYBeB1AZFSZdo1Ps96ibWcGKnufUWkuH1dEkjkmMhRR9fi7Po6B2';
-var vector1_m0h12h_public = 'dgub8sZzo9eyZMpVHMNHuyrNa2Wfgui23z8sPvxZxpbzq9H3QmLsUj1q3juwfTrLRMCVcyj8iMaGZpU2v319LrJZttkQnYvdUNzv33N6dcqeZ8X';
-var vector1_m0h12h_private = 'dgpv58gyTTj61DA9zVi8skEQTAy5EMLPDs7A7LBMoiD232E2riEB4xU4QSWJ6DrnyQ4jx2fBbrp4X8RQqU4YVgPhszifyrKHuhbe2gttLnRB4a6';
-var vector1_m0h12h2_public = 'dgub8uoPdamvjqVUMpr1cF4TTXfymizkgaT4qQqsDn8U9aqemryEYViCFKNsLnqiq9ME6HrJrN4DcZN9UTM9S9jmcVDfhLUpJZtk3jGwnGkhd8u';
-var vector1_m0h12h2_private = 'dgpv5AvNHtr3Bgq94yBra1SVLg8PKAd7rTRMYp4f4fjVMTneDorY8jARc1yDmYGFS4UB1pntDn3dRwsaJexzh6w45PJiP6QPTnRMBfN3rDUiyyH';
-var vector1_m0h12h21000000000_public = 'dgub8wXA7GPArxsftAdTindBmEfyZxa4W5G6dfERU4WcMfE9UzNd4uxrWRXvyckfgQRwZz8rMhz29m4k4skAY1EcTkNnZstu73UNrgts2MA5evC';
-var vector1_m0h12h21000000000_private = 'dgpv5Ce8maTHJpDLbJyJgZ1DeP8P7QCRfxEPM4TDJx7dZYB8vwFvf9R5s88HQQ3TLybFdEC9192aGzQhJpyNEAwnCLxFibAcahB4TzvQbJyp2im';
+var vector1_m_public = 'xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8';
+var vector1_m_private = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
+var vector1_m0h_public = 'xpub68Gmy5EdvgibQVfPdqkBBCHxA5htiqg55crXYuXoQRKfDBFA1WEjWgP6LHhwBZeNK1VTsfTFUHCdrfp1bgwQ9xv5ski8PX9rL2dZXvgGDnw';
+var vector1_m0h_private = 'xprv9uHRZZhk6KAJC1avXpDAp4MDc3sQKNxDiPvvkX8Br5ngLNv1TxvUxt4cV1rGL5hj6KCesnDYUhd7oWgT11eZG7XnxHrnYeSvkzY7d2bhkJ7';
+var vector1_m0h1_public = 'xpub6ASuArnXKPbfEwhqN6e3mwBcDTgzisQN1wXN9BJcM47sSikHjJf3UFHKkNAWbWMiGj7Wf5uMash7SyYq527Hqck2AxYysAA7xmALppuCkwQ';
+var vector1_m0h1_private = 'xprv9wTYmMFdV23N2TdNG573QoEsfRrWKQgWeibmLntzniatZvR9BmLnvSxqu53Kw1UmYPxLgboyZQaXwTCg8MSY3H2EU4pWcQDnRnrVA1xe8fs';
+var vector1_m0h12h_public = 'xpub6D4BDPcP2GT577Vvch3R8wDkScZWzQzMMUm3PWbmWvVJrZwQY4VUNgqFJPMM3No2dFDFGTsxxpG5uJh7n7epu4trkrX7x7DogT5Uv6fcLW5';
+var vector1_m0h12h_private = 'xprv9z4pot5VBttmtdRTWfWQmoH1taj2axGVzFqSb8C9xaxKymcFzXBDptWmT7FwuEzG3ryjH4ktypQSAewRiNMjANTtpgP4mLTj34bhnZX7UiM';
+var vector1_m0h12h2_public = 'xpub6FHa3pjLCk84BayeJxFW2SP4XRrFd1JYnxeLeU8EqN3vDfZmbqBqaGJAyiLjTAwm6ZLRQUMv1ZACTj37sR62cfN7fe5JnJ7dh8zL4fiyLHV';
+var vector1_m0h12h2_private = 'xprvA2JDeKCSNNZky6uBCviVfJSKyQ1mDYahRjijr5idH2WwLsEd4Hsb2Tyh8RfQMuPh7f7RtyzTtdrbdqqsunu5Mm3wDvUAKRHSC34sJ7in334';
+var vector1_m0h12h21000000000_public = 'xpub6H1LXWLaKsWFhvm6RVpEL9P4KfRZSW7abD2ttkWP3SSQvnyA8FSVqNTEcYFgJS2UaFcxupHiYkro49S8yGasTvXEYBVPamhGW6cFJodrTHy';
+var vector1_m0h12h21000000000_private = 'xprvA41z7zogVVwxVSgdKUHDy1SKmdb533PjDz7J6N6mV6uS3ze1ai8FHa8kmHScGpWmj4WggLyQjgPie1rFSruoUihUZREPSL39UNdE3BBDu76';
 var vector2_master = 'fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542';
-var vector2_m_public = 'dgub8kXBZ7ymNWy2RjuNqXknBTCXKkSU5xbQ83QtT4tjiq2yh5Ndi5zwVVGyGCjCXUWGD5xaMzGHjiqkcnt8LamvDpJrZkWqpyXQV4TjDhfyo9Q';
-var vector2_m_private = 'dgpv51eADS3spNJh8tFDoJ8p4bevsC4qFqZgqSdgHxVkvhyy92FwJKTArBsKgvsqB2xLXUjqaZQHukqQr6VxB9o3o32pW1C7bPngcrpg75LUw8V';
-var vector2_m0_public = 'dgub8onvpqfirXo6x1VfyK8fFFc3giBinw5ggDAFcsvBoEtwP3pcHMM1eKrDqfh6KZWhRQSkEDG38ogimxJpDjULZQy8qoFWjKfncYaPesrSURc';
-var vector2_m0_private = 'dgpv54uuV9jqJP8mf9qWw5Wh8Q4TE9p5xp3yPcP3TmXD17qvpzhusaoF12SaGS9dp6oAw8yfUZp2LvFYCc8mjSJ6jGCDWBcAysxRkGjEUK7pYvw';
-var vector2_m02147483647h_public = 'dgub8pwz5ShFERyD7shrPm8JibHc5TQdLRFNmNEnYGpxSyfKqM44uEmKrPdpT3wD5J7oCvNHt47eS27KSdB9zdxTHZRmNssa63voUvqzVgkMK7p';
-var vector2_m02147483647h_private = 'dgpv564xjkmMgHJsq23hMXWLbjk1cu2zWJDfUmTaPARyercKHHwNVUDZD6EAsndcYMXeqNJZFb1fPvkedqsYTouEJZdmvuqWkPggY44mEn4uizf';
-var vector2_m02147483647h1_public = 'dgub8skxVTgBQ5GQDVNzTRGsgYDqQzH8ScAe5ojePLVHks1mWAvECkJ2kJ2CHr8LsAp5o6pqihCt59R9XRSAuYPQYttfyA5RJbN1QhWwkCcvPdA';
-var vector2_m02147483647h1_private = 'dgpv58sw9mkHqvc4vdiqRBeuZggExRuVcV8voCxSEE6Jxjxkx7oXnykG6zcYiaqEa4jM9KfFzt63oURrxYehWhRcK3T54gNKbVf51rVViRSkahZ';
-var vector2_m02147483647h12147483646h_public = 'dgub8tvzQRcY1UE7WScbBu6R43v2KikVVao97WTXv4BhbdH1xXFAJRE3GpPHvWFr4YLXkYUUXCGb7kk1B4bZbRVvGFb8F4PurtTRGvbXH6bMPN3';
-var vector2_m02147483647h12147483646h_private = 'dgpv5A3y4jgeTKZnDaxS9fUSwCNRsANrfTmRpugKkwnioWE1QU8TtegGdWyeMHZdCV7dgtwxJhs3Br1Smfk52eL6zt8EtcudjhghMSW1nDNfmHP';
-var vector2_m02147483647h12147483646h2_public = 'dgub8vJ2Mrq3XeYMFhoUuyE72oHzinHbjuiDmg5RKqYCER8c2iajU49oTPLHzuL8C7hEGbgho7n11TkzfVf4RXBpaWShtEDzoFk9xDnhwhVSxT7';
-var vector2_m02147483647h12147483646h2_private = 'dgpv5BR12Au9yVt1xr9Ksjc8uwkQGDuxungWV5JDAj9DSJ5bUfU34Hc2p5veRhEdMWChjCogbTVrdwr8pDdakxhL3rrxhUR8o7pR3oqZrnPNxDt';
+var vector2_m_public = 'xpub661MyMwAqRbcFW31YEwpkMuc5THy2PSt5bDMsktWQcFF8syAmRUapSCGu8ED9W6oDMSgv6Zz8idoc4a6mr8BDzTJY47LJhkJ8UB7WEGuduB';
+var vector2_m_private = 'xprv9s21ZrQH143K31xYSDQpPDxsXRTUcvj2iNHm5NUtrGiGG5e2DtALGdso3pGz6ssrdK4PFmM8NSpSBHNqPqm55Qn3LqFtT2emdEXVYsCzC2U';
+var vector2_m0_public = 'xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH';
+var vector2_m0_private = 'xprv9vHkqa6EV4sPZHYqZznhT2NPtPCjKuDKGY38FBWLvgaDx45zo9WQRUT3dKYnjwih2yJD9mkrocEZXo1ex8G81dwSM1fwqWpWkeS3v86pgKt';
+var vector2_m02147483647h_public = 'xpub6ASAVgeehLbnwdqV6UKMHVzgqAG8Gr6riv3Fxxpj8ksbH9ebxaEyBLZ85ySDhKiLDBrQSARLq1uNRts8RuJiHjaDMBU4Zn9h8LZNnBC5y4a';
+var vector2_m02147483647h_private = 'xprv9wSp6B7kry3Vj9m1zSnLvN3xH8RdsPP1Mh7fAaR7aRLcQMKTR2vidYEeEg2mUCTAwCd6vnxVrcjfy2kRgVsFawNzmjuHc2YmYRmagcEPdU9';
+var vector2_m02147483647h1_public = 'xpub6DF8uhdarytz3FWdA8TvFSvvAh8dP3283MY7p2V4SeE2wyWmG5mg5EwVvmdMVCQcoNJxGoWaU9DCWh89LojfZ537wTfunKau47EL2dhHKon';
+var vector2_m02147483647h1_private = 'xprv9zFnWC6h2cLgpmSA46vutJzBcfJ8yaJGg8cX1e5StJh45BBciYTRXSd25UEPVuesF9yog62tGAQtHjXajPPdbRCHuWS6T8XA2ECKADdw4Ef';
+var vector2_m02147483647h12147483646h_public = 'xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL';
+var vector2_m02147483647h12147483646h_private = 'xprvA1RpRA33e1JQ7ifknakTFpgNXPmW2YvmhqLQYMmrj4xJXXWYpDPS3xz7iAxn8L39njGVyuoseXzU6rcxFLJ8HFsTjSyQbLYnMpCqE2VbFWc';
+var vector2_m02147483647h12147483646h2_public = 'xpub6FnCn6nSzZAw5Tw7cgR9bi15UV96gLZhjDstkXXxvCLsUXBGXPdSnLFbdpq8p9HmGsApME5hQTZ3emM2rnY5agb9rXpVGyy3bdW6EEgAtqt';
+var vector2_m02147483647h12147483646h2_private = 'xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j';

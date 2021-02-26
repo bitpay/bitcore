@@ -132,8 +132,8 @@ addNetwork({
   pubkeyhash: 0x1e,
   privatekey: 0x9e,
   scripthash: 0x16,
-  xpubkey: 0x02facafd,
-  xprivkey: 0x02fac398,
+  xpubkey: 0x0488b21e,
+  xprivkey: 0x0488ade4,
   networkMagic: 0xc0c0c0c0,
   port: 22556,
   dnsSeeds: [

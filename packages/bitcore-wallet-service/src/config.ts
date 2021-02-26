@@ -65,6 +65,14 @@ module.exports = {
         url: 'https://api-xrp.bitcore.io'
       }
     },
+    doge: {
+      livenet: {
+        url: 'https://api-doge.bitcore.io'
+      },
+      testnet: {
+        url: 'https://api-doge.bitcore.io'
+      }
+    },
     socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {

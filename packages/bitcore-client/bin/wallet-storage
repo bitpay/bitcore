@@ -13,7 +13,7 @@ program
   .version(require('../package.json').version)
   .option('--name [name]', 'REQUIRED - Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo or Level)')
+  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')
   .option('--export [export]', 'export an existing wallet into an encrypted json')
   .option('--import [import]', 'import an existing wallet from an encrypted json')
   .option('--lite [lite]', 'optional - do a lite import or export')
