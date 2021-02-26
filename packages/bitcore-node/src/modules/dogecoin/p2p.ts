@@ -10,7 +10,7 @@ import { SpentHeightIndicators } from '../../types/Coin';
 import { BitcoinBlockType, BitcoinHeaderObj, BitcoinTransaction } from '../../types/namespaces/Bitcoin';
 import { wait } from '../../utils/wait';
 
-export class DogecoinP2PWorker extends BaseP2PWorker<IBtcBlock>  {
+export class DogecoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected bitcoreLib: any;
   protected bitcoreP2p: any;
   protected chainConfig: any;
@@ -46,7 +46,10 @@ export class DogecoinP2PWorker extends BaseP2PWorker<IBtcBlock>  {
 
     this.messages = new this.bitcoreP2p.Messages({
       protocolVersion: 70003,
-      network: this.bitcoreLib.Networks.get(this.network)
+      network: this.bitcoreLib.Networks.get(this.network),
+      Block: this.bitcoreLib.Block,
+      Transaction: this.bitcoreLib.Transaction,
+      BlockHeader: this.bitcoreLib.BlockHeader
     });
 
     this.pool = new this.bitcoreP2p.Pool({

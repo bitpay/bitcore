@@ -11,9 +11,9 @@ var fs = require('fs');
 var should = chai.should();
 var Transaction = bitcore.Transaction;
 
-// https://test-insight.bitpay.com/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
-var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
-var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
+// https://blockexplorer.one/doge/testnet/blockHash/35ca96202d12b278e9154b1c807c1497ae0ec0a04502d0d4eb7d1de5f7b5818d
+var dataRawBlockBuffer = fs.readFileSync('test/data/blk3086559-testnet.dat');
+var dataRawBlockBinary = fs.readFileSync('test/data/blk3086559-testnet.dat', 'binary');
 var dataJson = fs.readFileSync('test/data/blk86756-testnet.json').toString();
 var data = require('../data/blk86756-testnet');
 var dataBlocks = require('../data/bitcoind/blocks');
@@ -21,8 +21,8 @@ var dataBlocks = require('../data/bitcoind/blocks');
 describe('Block', function() {
 
   var blockhex = data.blockhex;
-  var blockbuf = new Buffer(blockhex, 'hex');
-  var bh = BlockHeader.fromBuffer(new Buffer(data.blockheaderhex, 'hex'));
+  var blockbuf = Buffer.from(blockhex, 'hex');
+  var bh = BlockHeader.fromBuffer(Buffer.from(data.blockheaderhex, 'hex'));
   var txs = [];
   JSON.parse(dataJson).transactions.forEach(function(tx) {
     txs.push(new Transaction().fromObject(tx));

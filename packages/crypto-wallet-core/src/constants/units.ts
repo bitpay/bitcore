@@ -119,5 +119,16 @@ export let UNITS = {
       maxDecimals: 0,
       minDecimals: 0
     }
+  },
+  doge: {
+    toSatoshis: 100000000,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
   }
 };
