@@ -127,7 +127,7 @@ HDPrivateKey._getDerivationIndexes = function(path) {
   return _.some(indexes, isNaN) ? null : indexes;
 };
 /**
- * WARNING: This method is deprecated. Use deriveChild or deriveNonCompliantChild instead. This is not BIP32 compliant
+ * WARNING: This method will not be officially supported until v1.0.0.
  *
  *
  * Get a derived child based on a string or number.
@@ -141,45 +141,21 @@ HDPrivateKey._getDerivationIndexes = function(path) {
  * derived. If the second argument is truthy, the hardened version will be
  * derived. See the example usage for clarification.
  *
+ * WARNING: The `nonCompliant` option should NOT be used, except for older implementation
+ * that used a derivation strategy that used a non-zero padded private key.
+ *
  * @example
  * ```javascript
  * var parent = new HDPrivateKey('xprv...');
- * var child_0_1_2h = parent.derive(0).derive(1).derive(2, true);
- * var copy_of_child_0_1_2h = parent.derive("m/0/1/2'");
+ * var child_0_1_2h = parent.deriveChild(0).deriveChild(1).deriveChild(2, true);
+ * var copy_of_child_0_1_2h = parent.deriveChild("m/0/1/2'");
  * assert(child_0_1_2h.xprivkey === copy_of_child_0_1_2h);
  * ```
  *
  * @param {string|number} arg
  * @param {boolean?} hardened
  */
-HDPrivateKey.prototype.derive = function(arg, hardened) {
-  return this.deriveNonCompliantChild(arg, hardened);
-};
-
-/**
- * Get a derived child based on a string or number.
- *
- * If the first argument is a string, it's parsed as the full path of
- * derivation. Valid values for this argument include "m" (which returns the
- * same private key), "m/0/1/40/2'/1000", where the ' quote means a hardened
- * derivation.
- *
- * If the first argument is a number, the child with that index will be
- * derived. If the second argument is truthy, the hardened version will be
- * derived. See the example usage for clarification.
- *
- * @example
- * ```javascript
- * var parent = new HDPrivateKey('xprv...');
- * var child_0_1_2h = parent.derive(0).derive(1).derive(2, true);
- * var copy_of_child_0_1_2h = parent.derive("m/0/1/2'");
- * assert(child_0_1_2h.xprivkey === copy_of_child_0_1_2h);
- * ```
- *
- * @param {string|number} arg
- * @param {boolean?} hardened
- */
-HDPrivateKey.prototype.deriveNonCompliantChild = function(arg, hardened) {
+HDPrivateKey.prototype.deriveChild = function(arg, hardened) {
   if (_.isNumber(arg)) {
     return this._deriveWithNumber(arg, hardened);
   } else if (_.isString(arg)) {
