@@ -1391,6 +1391,7 @@ Transaction.prototype.enableRBF = function() {
   return this;
 };
 
+
 Transaction.prototype.setVersion = function(version) {
   $.checkArgument(
     JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION,
@@ -1402,3 +1403,4 @@ Transaction.prototype.setVersion = function(version) {
 
 
 module.exports = Transaction;
+

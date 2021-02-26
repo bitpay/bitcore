@@ -306,6 +306,28 @@ describe('Transaction', function() {
   var half = thousandDOGE / 2;
 
   var p2shPrivateKey1 = PrivateKey.fromWIF('cf2NrvygA68y6ZCAkW2ueCuQ1B8qzyWpjGY38qhjvQgZAFLhRWGB');
+
+  var simpleWitnessUtxoWith1BTC = {
+    address: witnessFromAddress,
+    txId: '7e6b603779c8af58284566cf1b655395fffbefaf1c0a080d9aff43f0af05d873',
+    outputIndex: 0,
+    script: Script.fromAddress(witnessFromAddress).toString(),
+    satoshis: 1e8
+  };
+
+  var simpleWrappedWitnessUtxoWith1BTC = {
+    address: wrappedWitnessFromAddress,
+    txId: '825153a4a5d0c7ffd1a89838113a7204e5e4fa79fbac28bab0ea56c575393ed7',
+    outputIndex: 0,
+    script: Script.fromAddress(wrappedWitnessFromAddress).toString(),
+    satoshis: 1e8
+  };
+
+  var tenth = 1e7;
+  var fourth = 25e6;
+  var half = 5e7;
+
+  var p2shPrivateKey1 = PrivateKey.fromWIF('cf2NrvygA68y6ZCAkW2ueCuQ1B8qzyWpjGY38qhjvQgZAFLhRWGB');
   var p2shPublicKey1 = p2shPrivateKey1.toPublicKey();
   var p2shPrivateKey2 = PrivateKey.fromWIF('ckoubjh1yr1Hyg8NPtGwDz4tx91b6qztxrJZgTtdR4Ed9CqAV5cn');
   var p2shPublicKey2 = p2shPrivateKey2.toPublicKey();
@@ -470,7 +492,7 @@ describe('Transaction', function() {
     it('adds no fee if no money is available', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith10DOGE)
-        .to(toAddress, 10e8)
+        .to(toAddress, 100000)
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);
