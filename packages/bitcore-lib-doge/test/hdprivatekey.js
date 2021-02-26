@@ -13,8 +13,8 @@ var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
 var Base58Check = bitcore.encoding.Base58Check;
 
-var xprivkey = 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR';
-var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","privateKey":"e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35","checksum":-1564833822,"xprivkey":"dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR"}';
+var xprivkey = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
+var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","privateKey":"e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35","checksum":-411132559,"xprivkey":"xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"}';
 describe('HDPrivate key interface', function() {
   /* jshint maxstatements: 50 */
   var expectFail = function(func, error) {
@@ -93,8 +93,8 @@ describe('HDPrivate key interface', function() {
   });
 
   describe('public key', function() {
-    var testnetKey = new HDPrivateKey('tprv8gbXMN21rnoHSFnYp9U1KDjxt6eQNXufff7Asxrr3Ti9FrMXK1i2YWNdEH85mdRigEKgMRk9KF2PJo3VU6pGJypc1UnyiBKxJ3ZwKynLgJp');
-    var livenetKey = new HDPrivateKey('dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR');
+    var testnetKey = new HDPrivateKey('tprv8ZgxMBicQKsPdEeU2KiGFnUgRGriMnQxrwrg6FWCBg4jeiidHRyCCdA357kfkZiGaXEapWZsGDKikeeEbvgXo3UmEdbEKNdQH9VXESmGuUK');
+    var livenetKey = new HDPrivateKey('xprv9s21ZrQH143K3e39bnn1vyS7YFa1EAJAFGDoeHaSBsgBxgAkTEXeSx7xLvhNQNJxJwhzziWcK3znUFKRPRwWBPkKZ8ijUBa5YYpYPQmeBDX');
 
     it('matches the network', function() {
       testnetKey.publicKey.network.should.equal(Networks.testnet);
@@ -140,7 +140,7 @@ describe('HDPrivate key interface', function() {
   });
 
   it('returns InvalidLength if data of invalid length is given to getSerializedError', function() {
-    var b58s = Base58Check.encode(new buffer.Buffer('onestring'));
+    var b58s = Base58Check.encode(Buffer.from('onestring'));
     expect(
       HDPrivateKey.getSerializedError(b58s) instanceof hdErrors.InvalidLength
     ).to.equal(true);
@@ -264,7 +264,7 @@ describe('HDPrivate key interface', function() {
   });
 
   describe('conversion to/from buffer', function() {
-    var str = 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR';
+    var str = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
     it('should roundtrip to/from a buffer', function() {
       var priv = new HDPrivateKey(str);
       var toBuffer = priv.toBuffer();
@@ -283,8 +283,9 @@ describe('HDPrivate key interface', function() {
       'childIndex': 0,
       'chainCode': '873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
       'privateKey': 'e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35',
-      'checksum': -1564833822,
-      'xprivkey': 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR'
+      'checksum': -411132559,
+      'xprivkey': 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvN' +
+        'KmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi'
     };
     it('toObject leaves no Buffer instances', function() {
       var privKey = new HDPrivateKey(xprivkey);
