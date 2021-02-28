@@ -4,6 +4,7 @@ import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
+import {sign} from "secp256k1";
 const { PrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
@@ -388,7 +389,7 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, passphrase } = params;
+    let { tx, keys, utxos, passphrase, signingKeys } = params;
     if (!utxos) {
       utxos = [];
       await new Promise((resolve, reject) => {
@@ -401,7 +402,7 @@ export class Wallet {
     }
     let addresses = [];
     let decryptedKeys;
-    if (!keys) {
+    if (!keys && !signingKeys) {
       for (let utxo of utxos) {
         addresses.push(utxo.address);
       }
@@ -411,7 +412,7 @@ export class Wallet {
         name: this.name,
         encryptionKey: this.unlocked.encryptionKey
       });
-    } else {
+    } else if (!signingKeys) {
       addresses.push(keys[0]);
       utxos.forEach(function(element) {
         let keyToDecrypt = keys.find(key => key.address === element.address);
@@ -424,8 +425,8 @@ export class Wallet {
       chain: this.chain,
       network: this.network,
       tx,
-      keys: decryptedKeys,
-      key: decryptedKeys[0],
+      keys: signingKeys || decryptedKeys,
+      key: signingKeys ? signingKeys[0] : decryptedKeys[0],
       utxos
     };
     return Transactions.sign({ ...payload });
