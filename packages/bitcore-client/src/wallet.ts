@@ -1,10 +1,10 @@
 import * as Bcrypt from 'bcrypt';
 import { Deriver, Transactions } from 'crypto-wallet-core';
+import { sign } from 'secp256k1';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
-import {sign} from "secp256k1";
 const { PrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
