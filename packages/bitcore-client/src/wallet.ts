@@ -1,6 +1,5 @@
 import * as Bcrypt from 'bcrypt';
 import { Deriver, Transactions } from 'crypto-wallet-core';
-import { sign } from 'secp256k1';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
