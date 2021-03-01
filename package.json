@@ -1,5 +1,5 @@
 {
-  "version": "8.23.1",
+  "version": "8.23.3",
   "prettier": {
     "singleQuote": true,
     "printWidth": 120
