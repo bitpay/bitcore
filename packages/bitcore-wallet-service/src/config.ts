@@ -67,10 +67,10 @@ module.exports = {
     },
     doge: {
       livenet: {
-        url: 'https://api-doge.bitcore.io'
+        url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api-doge.bitcore.io'
+        url: 'https://api.bitcore.io'
       }
     },
     socketApiKey: 'socketApiKey'
