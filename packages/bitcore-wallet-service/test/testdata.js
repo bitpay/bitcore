@@ -13,8 +13,6 @@ var copayers = [{
   xPubKey_45H: 'xpub68pKcb8jHWqWuTgPz2czjFSJJBJTsTNdd87Mgh5bVz4sNFBJBus5KyptGBWgA4V6LGCi12s4Mw4S1JC2GkqX4NJ4kfQ47XqRZLbyM2DY9Jd',
   xPrivKey_44H_0H_0H: 'xprv9zWRZ7CXrC4z9xA9RRBFXohmPKbyCajWaCNTHPtwNeJwTnysHG5QK7WMqpNLVtvqGxts7WNcNtqBLfdaFdCGknDPXjLKt2E2BUrPaFDqrLh',
   xPubKey_44H_0H_0H: 'xpub6DVmxcjRgZdHNSEcXSiFtweVwMSTc3TMwRJ45nJYvyqvLbK1poPerupqh87rSoz27wvckb1CKnGZoLmLXSZyNGZtVd7neqSvdwJL6fceQpe',
-  xPrivKey_44H_0H_0HDOGE: 'dgpv58SRuTHDzK9PMA5PgrZJU3DXKKXftJrMVQE1xhKDBuPMrstihw1faJNpi9hain3XCNPdnvNGLZkFYJ4k7FDso2edJH9sASXYhgEq84CW8yp',
-  xPubKey_44H_0H_0HDOGE: 'dgub8sKTF9D7YToie1jYj6BGatm7msuJiRt4n11E7oiBz2SNQw1R7hZSDbnUHQgcfYG9EF8YQnMfmHcnxvUs3G2RpPkobJ5hftmjKjWpo8TxSmd',
 
   xPrivKey_44H_0H_0Ht: 'tprv8ZgxMBicQKsPcxUEtgtQ2wKpkmuNKS6R2w3UmFTUHHURv4PKGE2aGkkbQEcQs9gGsoW4zPr7VM98xdbjQuWc3cZ6bkEyKy1sywhV9gLUcUi',
   xPubKey_44H_0H_0Ht: 'tpubD6NzVbkrYhZ4WRW2nLYzSLywKoRJUmHKcEeG3mVmhZGpkYe5tcrATFNTaQRAWM3dzL2QyXoctpjkaAXruDXyc6xkF4EDGu3eQdwZXFzoFSW',
@@ -157,7 +155,7 @@ var copayers = [{
 
 module.exports.keyPair = keyPair;
 module.exports.copayers = copayers;
-module.exports.historyETH = 
+module.exports.historyETH =
 [ { id: '5ddbf1894ff1918017104cf4',
     txid:
      '0x0a0705762b283daf5ec1f6576d57befd7ee12070ee6372553b926abfa85996c4',
