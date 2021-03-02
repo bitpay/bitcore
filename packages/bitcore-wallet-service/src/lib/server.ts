@@ -1813,6 +1813,21 @@ export class WalletService {
       if (values) return cb(null, values, true);
 
       const feeLevels = Defaults.FEE_LEVELS[opts.coin];
+
+      if (opts.coin === 'doge') {
+        const defaultDogeFeeLevels = feeLevels[0];
+        const result: {
+          feePerKb?: number;
+          nbBlocks?: number;
+          level: string;
+        } = {
+          level: defaultDogeFeeLevels.name,
+          nbBlocks: defaultDogeFeeLevels.nbBlocks,
+          feePerKb: defaultDogeFeeLevels.defaultValue
+        };
+        return cb(null, [result]);
+      }
+
       const samplePoints = () => {
         const definedPoints = _.uniq(_.map(feeLevels, 'nbBlocks'));
         return _.uniq(
