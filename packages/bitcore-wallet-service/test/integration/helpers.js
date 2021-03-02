@@ -259,12 +259,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     async.eachSeries(_.range(n), function(i, cb) {
       var copayerData = TestData.copayers[i + offset];
 
-      let pub;
-      if(opts.coin === 'doge') {
-        pub = copayerData.xPubKey_44H_0H_0HDOGE
-      } else {
-        pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
-      }
+      var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
 
       if (opts.network == 'testnet') {
         if (opts.coin == 'btc' || opts.coin == 'bch') {
@@ -531,7 +526,7 @@ helpers.stubCheckData = function(bc, server, isBCH, cb) {
 helpers.stubFeeLevels = function(levels, fill, coin) {
   coin = coin || 'btc';
   let div = 1;
-  if (coin == 'btc' || coin == 'bch') {
+  if (coin == 'btc' || coin == 'bch' || coin == 'doge') {
     div = 1e8;  // bitcoind returns values in BTC amounts
   }
 
