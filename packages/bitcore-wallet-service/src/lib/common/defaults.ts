@@ -211,7 +211,7 @@ module.exports = {
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
     xrp: 1000000000000,
-    doge: 10000 * 1000 // 10k sat/b
+    doge: 100000000 * 10
   },
 
   MIN_TX_FEE: {
@@ -227,7 +227,7 @@ module.exports = {
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
-    doge: 0.05 * 1e8
+    doge: 10 * 1e8
   },
 
   // ETH
