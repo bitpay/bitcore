@@ -28,8 +28,8 @@ var _ = require('lodash');
 var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode, satoshisBuffer) {
   /* jshint maxstatements: 50 */
 
-  var hashPrevouts;
-  var hashSequence;
+  var hashPrevouts = Buffer.alloc(32);
+  var hashSequence = Buffer.alloc(32);
   var hashOutputs;
 
   if (!(sighashType & Signature.SIGHASH_ANYONECANPAY)) {
