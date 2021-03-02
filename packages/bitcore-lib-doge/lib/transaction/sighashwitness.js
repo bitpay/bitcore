@@ -30,7 +30,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
 
   var hashPrevouts = Buffer.alloc(32);
   var hashSequence = Buffer.alloc(32);
-  var hashOutputs;
+  var hashOutputs = Buffer.alloc(32);
 
   if (!(sighashType & Signature.SIGHASH_ANYONECANPAY)) {
     var buffers = [];
