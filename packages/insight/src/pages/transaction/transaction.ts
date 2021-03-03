@@ -57,7 +57,8 @@ export class TransactionPage {
         let tx;
         if (
           this.chainNetwork.chain === 'BTC' ||
-          this.chainNetwork.chain === 'BCH'
+          this.chainNetwork.chain === 'BCH' ||
+          this.chainNetwork.chain === 'DOGE'
         ) {
           tx = this.txProvider.toUtxoCoinsAppTx(response);
         }

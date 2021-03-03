@@ -10,6 +10,7 @@
         <img *ngIf="chainNetwork.network === 'mainnet' && chainNetwork.chain==='ALL'" src="assets/img/search.png" class="logo" />
         <img *ngIf=" chainNetwork.network !=='mainnet' && chainNetwork.chain==='BTC'" src=" assets/img/btcicon-testnet.svg" class="logo" />
         <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
+        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" />
         <img [ngClass]="{'secondary': chainNetwork.network ==='testnet'}" *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
       </ion-avatar>
       <ion-label color="dark" *ngIf="chainNetwork.chain !== 'ALL'">
