@@ -26,6 +26,7 @@ var Output = require('./output');
 var Script = require('../script');
 var PrivateKey = require('../privatekey');
 var BN = require('../crypto/bn');
+var Interpreter = require('../script/interpreter');
 
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
@@ -1258,10 +1259,10 @@ Transaction.prototype.isValidSignature = function(signature, signingMethod) {
 Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, signingMethod) {
 
   if (_.isUndefined(sigversion)) {
-    sigversion = 0;
+    sigversion = Interpreter.SIGVERSION_BASE;
   }
 
-  if (sigversion === 1) {
+  if (sigversion === Interpreter.SIGVERSION_WITNESS_V0) {
     var subscriptBuffer = subscript.toBuffer();
     var scriptCodeWriter = new BufferWriter();
     scriptCodeWriter.writeVarintNum(subscriptBuffer.length);

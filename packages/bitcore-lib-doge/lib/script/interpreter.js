@@ -82,10 +82,17 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
   this.set({
     script: scriptPubKey,
     stack: stack,
-    sigversion: 1,
+    sigversion: Interpreter.SIGVERSION_WITNESS_V0,
     satoshis: satoshis,
     flags: flags,
   });
+
+  // Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
+  for (let s of stack) {
+    if (s.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+      return false;
+    }
+  }
 
   if (!this.evaluate()) {
     return false;
@@ -145,7 +152,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     script: scriptSig,
     tx: tx,
     nin: nin,
-    sigversion: 0,
+    sigversion: Interpreter.SIGVERSION_BASE,
     satoshis: 0,
     flags: flags
   });
@@ -302,7 +309,7 @@ Interpreter.prototype.initialize = function(obj) {
   this.altstack = [];
   this.pc = 0;
   this.satoshis = 0;
-  this.sigversion = 0;
+  this.sigversion = Interpreter.SIGVERSION_BASE;
   this.pbegincodehash = 0;
   this.nOpCount = 0;
   this.vfExec = [];
@@ -391,7 +398,12 @@ Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
 
 // CLTV See BIP65 for details.
 Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9);
-Interpreter.SCRIPT_VERIFY_WITNESS = (1 << 10);
+
+// https://github.com/dogecoin/dogecoin/blob/f80bfe9068ac1a0619d48dad0d268894d926941e/src/script/interpreter.h#L92
+// Support segregated witness
+//
+Interpreter.SCRIPT_VERIFY_WITNESS = (1 << 11);
+
 Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 11);
 
 // support CHECKSEQUENCEVERIFY opcode
@@ -449,6 +461,10 @@ Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22);
 Interpreter.SEQUENCE_LOCKTIME_MASK = 0x0000ffff;
 
 
+Interpreter.SIGVERSION_BASE = 0;
+Interpreter.SIGVERSION_WITNESS_V0 = 1;
+
+
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
     if (buf[i] !== 0) {
@@ -504,7 +520,7 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
   }
 
   // Only compressed keys are accepted in segwit
-  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == 1 && !PublicKey.fromBuffer(buf).compressed) {
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == Interpreter.SIGVERSION_WITNESS_V0 && !PublicKey.fromBuffer(buf).compressed) {
     this.errstr = 'SCRIPT_ERR_WITNESS_PUBKEYTYPE';
     return false;
   }
@@ -1457,8 +1473,10 @@ Interpreter.prototype.step = function() {
           });
 
           // Drop the signature, since there's no way for a signature to sign itself
-          var tmpScript = new Script().add(bufSig);
-          subscript.findAndDelete(tmpScript);
+          if (this.sigversion === Interpreter.SIGVERSION_BASE) {
+            var tmpScript = new Script().add(bufSig);
+            subscript.findAndDelete(tmpScript);
+          }
 
           try {
             sig = Signature.fromTxFormat(bufSig);
@@ -1546,9 +1564,11 @@ Interpreter.prototype.step = function() {
           });
 
           // Drop the signatures, since there's no way for a signature to sign itself
-          for (var k = 0; k < nSigsCount; k++) {
-            bufSig = this.stack[this.stack.length - isig - k];
-            subscript.findAndDelete(new Script().add(bufSig));
+          if (this.sigversion === Interpreter.SIGVERSION_BASE) {
+            for (var k = 0; k < nSigsCount; k++) {
+              bufSig = this.stack[this.stack.length - isig - k];
+              subscript.findAndDelete(new Script().add(bufSig));
+            }
           }
 
           fSuccess = true;
