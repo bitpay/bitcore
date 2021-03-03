@@ -87,6 +87,13 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
     flags: flags,
   });
 
+  // Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
+  for (let s of stack) {
+    if (s.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+      return false;
+    }
+  }
+
   if (!this.evaluate()) {
     return false;
   }
