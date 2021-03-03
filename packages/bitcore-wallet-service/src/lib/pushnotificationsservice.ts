@@ -156,7 +156,12 @@ export class PushNotificationsService {
     if (notification.type === 'NewIncomingTx') {
       notifType.filename = notification.data.network === 'testnet' ? notifType.filename[0] : notifType.filename[1];
     } else if (notification.type === 'TxConfirmation') {
-      notifType.filename = notification.isCreator ? notifType.filename[0] : notifType.filename[1];
+      if (notification.data && !notification.data.amount) {
+        // backward compatibility
+        notifType.filename = 'tx_confirmation';
+      } else {
+        notifType.filename = notification.isCreator ? notifType.filename[0] : notifType.filename[1];
+      }
     }
 
     logger.debug('Notification received: ' + notification.type);
