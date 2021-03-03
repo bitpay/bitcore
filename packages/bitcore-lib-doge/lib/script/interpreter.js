@@ -1557,9 +1557,11 @@ Interpreter.prototype.step = function() {
           });
 
           // Drop the signatures, since there's no way for a signature to sign itself
-          for (var k = 0; k < nSigsCount; k++) {
-            bufSig = this.stack[this.stack.length - isig - k];
-            subscript.findAndDelete(new Script().add(bufSig));
+          if (this.sigversion === Interpreter.SIGVERSION_BASE) {
+            for (var k = 0; k < nSigsCount; k++) {
+              bufSig = this.stack[this.stack.length - isig - k];
+              subscript.findAndDelete(new Script().add(bufSig));
+            }
           }
 
           fSuccess = true;
