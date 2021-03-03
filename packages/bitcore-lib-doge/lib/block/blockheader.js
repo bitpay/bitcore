@@ -356,7 +356,7 @@ BlockHeader.prototype._parseAuxPoW = function(br) {
         const componentCnt = br.readVarintNum();
         for (let j = 0; j < componentCnt; j++) {
           const componentLen = br.readVarintNum();
-          txWitnesses.push(br.read(componentLen))
+          txWitnesses.push(br.read(componentLen));
         }
       }
     }
