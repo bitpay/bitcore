@@ -36,7 +36,7 @@ export class Mongo {
   async init(params) {
     const { wallet, addresses } = params;
     try {
-      this.client = new MongoClient(this.path, { useNewUrlParser: true });
+      this.client = new MongoClient(this.path, { useNewUrlParser: true, useUnifiedTopology: true });
       await this.client.connect();
       this.db = this.client.db(this.databaseName);
       if (wallet) {

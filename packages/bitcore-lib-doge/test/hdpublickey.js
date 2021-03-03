@@ -15,11 +15,11 @@ var HDPublicKey = bitcore.HDPublicKey;
 var Base58Check = bitcore.encoding.Base58Check;
 var Networks = bitcore.Networks;
 
-var xprivkey = 'dgpv51eADS3spNJh9Gjth94XcPwAczvQaDJs9rqx11kvxKs6r3Ek8AgERHhjLs6mzXQFHRzQqGwqdeoDkZmr8jQMBfi43b7sT3sx3cCSk5fGeUR';
-var xpubkey = 'dgub8kXBZ7ymNWy2S8Q3jNgVjFUm5ZJ3QLLaSTdAA89ukSv7Q6MSXwE14b7Nv6eDpE9JJXinTKc8LeLVu19uDPrm5uJuhpKNzV2kAgncwo6bNpP';
-var xpubkeyTestnet = 'tpubDFJ62oZ3oPvH1rEFrnGt1osMBcihEkce85JaCoEj81ibMFnnqgRucHkfTFpHQPMLsHM2VNKbbR5ebZZLDWWdoD75QKeBs5BhVgcjbhEbTsH';
-var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","publicKey":"0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2","checksum":-1473549296,"xpubkey":"dgub8kXBZ7ymNWy2S8Q3jNgVjFUm5ZJ3QLLaSTdAA89ukSv7Q6MSXwE14b7Nv6eDpE9JJXinTKc8LeLVu19uDPrm5uJuhpKNzV2kAgncwo6bNpP"}';
-var derived_0_1_200000 = 'dgub8rMoNPHhPqYndixhqEXVZUuiNsz7xQydviS1CU8u5V1CLQiHeSZ2T1vk1RdL92AbTatNKEHYLJ8mamtekCesYe6W6bDY65suCBEfUyBY9DU';
+var xprivkey = 'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
+var xpubkey = 'xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8';
+var xpubkeyTestnet = 'tpubD6NzVbkrYhZ4WZaiWHz59q5EQ61bd6dUYfU4ggRWAtNAyyYRNWT6ktJ7UHJEXURvTfTfskFQmK7Ff4FRkiRN5wQH8nkGAb6aKB4Yyeqsw5m';
+var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","publicKey":"0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2","checksum":-1421395167,"xpubkey":"xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8"}';
+var derived_0_1_200000 = 'xpub6BqyndF6rkBNTV6LXwiY8Pco8aqctqq7tGEUdA8fmGDTnDJphn2fmxr3eM8Lm3m8TrNUsLbEjHvpa3adBU18YpEx4tp2Zp6nqax3mQkudhX';
 
 describe('HDPublicKey interface', function() {
 
@@ -78,7 +78,7 @@ describe('HDPublicKey interface', function() {
     describe('xpubkey string serialization errors', function() {
       it('fails on invalid length', function() {
         expectFailBuilding(
-          Base58Check.encode(new buffer.Buffer([1, 2, 3])),
+          Base58Check.encode(Buffer.from([1, 2, 3])),
           hdErrors.InvalidLength
         );
       });
@@ -94,7 +94,6 @@ describe('HDPublicKey interface', function() {
     });
 
     it('can be generated from a json', function() {
-      console.log(new HDPublicKey(xpubkey).toJSON());
       expect(new HDPublicKey(JSON.parse(json)).xpubkey).to.equal(xpubkey);
     });
 
@@ -174,8 +173,8 @@ describe('HDPublicKey interface', function() {
       'childIndex':0,
       'chainCode':'873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
       'publicKey':'0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2',
-      'checksum':-1473549296,
-      'xpubkey':'Ltub2SSUS19CirucWFod2ZsYA2J4v4U76YiCXHdcQttnoiy5aGanFHCPDBX7utfG6f95u1cUbZJNafmvzNCzZZJTw1EmyFoL8u1gJbGM8ipu491'
+      'checksum':-1421395167,
+      'xpubkey':'xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8'
     };
     it('roundtrips to JSON and to Object', function() {
       var pubkey = new HDPublicKey(xpubkey);

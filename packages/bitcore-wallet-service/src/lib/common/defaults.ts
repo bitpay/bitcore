@@ -89,6 +89,13 @@ module.exports = {
         nbBlocks: 1, // 3 seconds
         defaultValue: 12
       }
+    ],
+    doge: [
+      {
+        name: 'normal',
+        nbBlocks: 2,
+        defaultValue: 100000000
+      }
     ]
   },
 
@@ -194,6 +201,8 @@ module.exports = {
 
   MAX_TX_SIZE_IN_KB_BCH: 100,
 
+  MAX_TX_SIZE_IN_KB_DOGE: 100,
+
   // MAX_TX_SIZE_IN_KB_ETH: 500, // not used
   // MAX_TX_SIZE_IN_KB_XRP: 1000, // not used
 
@@ -201,21 +210,24 @@ module.exports = {
     btc: 10000 * 1000, // 10k sat/b
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
-    xrp: 1000000000000
+    xrp: 1000000000000,
+    doge: 100000000 * 10
   },
 
   MIN_TX_FEE: {
     btc: 0,
     bch: 0,
     eth: 0,
-    xrp: 0
+    xrp: 0,
+    doge: 0
   },
 
   MAX_TX_FEE: {
     btc: 0.05 * 1e8,
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
-    xrp: 1 * 1e6 // 1 xrp
+    xrp: 1 * 1e6, // 1 xrp
+    doge: 10 * 1e8
   },
 
   // ETH

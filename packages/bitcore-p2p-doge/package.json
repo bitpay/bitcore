@@ -1,0 +1,36 @@
+{
+  "name": "bitcore-p2p-doge",
+  "version": "8.25.3",
+  "description": "Interface to the bitcoin P2P network for bitcore",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp test",
+    "test:ci": "npm run test",
+    "coverage": "gulp coverage",
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
+  },
+  "keywords": [
+    "dogecoin",
+    "bitcore"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-p2p-doge"
+  },
+  "dependencies": {
+    "bitcore-lib-doge": "^8.25.3",
+    "bloom-filter": "^0.2.0",
+    "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
+    "socks5-client": "^0.3.6"
+  },
+  "devDependencies": {
+    "bitcore-build": "^8.25.3",
+    "brfs": "^1.2.0",
+    "chai": "~1.10.0",
+    "gulp": "^4.0.0",
+    "sinon": "^1.12.2"
+  },
+  "license": "MIT",
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+}

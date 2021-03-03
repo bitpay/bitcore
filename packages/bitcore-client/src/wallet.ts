@@ -89,7 +89,7 @@ export class Wallet {
     }
     // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
+    const hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network));
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -388,7 +388,7 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, passphrase } = params;
+    let { tx, keys, utxos, passphrase, signingKeys } = params;
     if (!utxos) {
       utxos = [];
       await new Promise((resolve, reject) => {
@@ -401,7 +401,7 @@ export class Wallet {
     }
     let addresses = [];
     let decryptedKeys;
-    if (!keys) {
+    if (!keys && !signingKeys) {
       for (let utxo of utxos) {
         addresses.push(utxo.address);
       }
@@ -411,7 +411,7 @@ export class Wallet {
         name: this.name,
         encryptionKey: this.unlocked.encryptionKey
       });
-    } else {
+    } else if (!signingKeys) {
       addresses.push(keys[0]);
       utxos.forEach(function(element) {
         let keyToDecrypt = keys.find(key => key.address === element.address);
@@ -424,8 +424,8 @@ export class Wallet {
       chain: this.chain,
       network: this.network,
       tx,
-      keys: decryptedKeys,
-      key: decryptedKeys[0],
+      keys: signingKeys || decryptedKeys,
+      key: signingKeys ? signingKeys[0] : decryptedKeys[0],
       utxos
     };
     return Transactions.sign({ ...payload });

@@ -11,6 +11,7 @@
                             <img *ngIf="availableNetwork.network === 'mainnet'" src="assets/img/currency_logos/{{ availableNetwork.chain.toLowerCase() }}.svg" class="logo" />
                             <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" />
                             <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
+                          <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" />
                             <img [ngClass]="{'secondary': availableNetwork.network ==='testnet'}" *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
                         </ion-avatar>
                         <ion-label color="dark" item-end>

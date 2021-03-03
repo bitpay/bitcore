@@ -3,9 +3,8 @@ const BitcoreDoge = require('bitcore-lib-doge');
 
 export class DogeValidation implements IValidation {
   validateAddress(network: string, address: string): boolean {
-    const AddressCash = BitcoreDoge.Address;
-    // Regular Address: try Bitcoin Cash
-    return AddressCash.isValid(address, network);
+    const Address = BitcoreDoge.Address;
+    return Address.isValid(address, network);
   }
 
   validateUri(addressUri: string): boolean {

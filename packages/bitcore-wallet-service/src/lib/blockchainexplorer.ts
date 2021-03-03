@@ -22,6 +22,10 @@ const PROVIDERS = {
     xrp: {
       livenet: 'https://api-xrp.bitcore.io',
       testnet: 'https://api-xrp.bitcore.io'
+    },
+    doge: {
+      livenet: 'https://api.bitpay.com',
+      testnet: 'https://api.bitpay.com'
     }
   }
 };

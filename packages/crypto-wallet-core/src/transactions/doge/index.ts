@@ -2,7 +2,7 @@ import { BTCTxProvider } from '../btc';
 
 export class DOGETxProvider extends BTCTxProvider {
   lib = require('bitcore-lib-doge');
-  create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
+  create({ recipients, utxos = [], change, wallet, feeRate, fee = 20000 }) {
     change = change || wallet.deriveAddress(wallet.addressIndex, true);
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
@@ -13,7 +13,13 @@ export class DOGETxProvider extends BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
+    let tx = new this.lib.Transaction().from(btcUtxos);
+    if (fee) {
+      tx.fee(fee);
+    }
+    if (feeRate) {
+      tx.feePerKb(Number(feeRate) * 1000); // feeRate is in feePerByte
+    }
     if (change) {
       tx.change(change);
     }

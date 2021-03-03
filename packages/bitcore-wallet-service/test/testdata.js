@@ -14,7 +14,6 @@ var copayers = [{
   xPrivKey_44H_0H_0H: 'xprv9zWRZ7CXrC4z9xA9RRBFXohmPKbyCajWaCNTHPtwNeJwTnysHG5QK7WMqpNLVtvqGxts7WNcNtqBLfdaFdCGknDPXjLKt2E2BUrPaFDqrLh',
   xPubKey_44H_0H_0H: 'xpub6DVmxcjRgZdHNSEcXSiFtweVwMSTc3TMwRJ45nJYvyqvLbK1poPerupqh87rSoz27wvckb1CKnGZoLmLXSZyNGZtVd7neqSvdwJL6fceQpe',
 
-
   xPrivKey_44H_0H_0Ht: 'tprv8ZgxMBicQKsPcxUEtgtQ2wKpkmuNKS6R2w3UmFTUHHURv4PKGE2aGkkbQEcQs9gGsoW4zPr7VM98xdbjQuWc3cZ6bkEyKy1sywhV9gLUcUi',
   xPubKey_44H_0H_0Ht: 'tpubD6NzVbkrYhZ4WRW2nLYzSLywKoRJUmHKcEeG3mVmhZGpkYe5tcrATFNTaQRAWM3dzL2QyXoctpjkaAXruDXyc6xkF4EDGu3eQdwZXFzoFSW',
   xPubKey_44H_0H_0HtSAME: 'tpubDDsQUrZ7PqajeERTydhM6rysGUY7bRxRV3tMSLMhGtbp5syiu2Ek1MVfwACdyJwFurTXNAX4rt6cVXFwvJRDFi2BZDs6LN7ADttjrf3JHrD',
@@ -156,7 +155,7 @@ var copayers = [{
 
 module.exports.keyPair = keyPair;
 module.exports.copayers = copayers;
-module.exports.historyETH = 
+module.exports.historyETH =
 [ { id: '5ddbf1894ff1918017104cf4',
     txid:
      '0x0a0705762b283daf5ec1f6576d57befd7ee12070ee6372553b926abfa85996c4',

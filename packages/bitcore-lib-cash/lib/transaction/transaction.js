@@ -938,7 +938,9 @@ Transaction.prototype._clearSignatures = function() {
 Transaction.prototype._estimateSize = function() {
   var result = Transaction.MAXIMUM_EXTRA_SIZE;
   _.each(this.inputs, function(input) {
-    result += input._estimateSize();
+    let scriptSigLen = input._estimateSize();
+    let varintLen = BufferWriter.varintBufNum(scriptSigLen).length;
+    result += 36 + varintLen + scriptSigLen;
   });
   _.each(this.outputs, function(output) {
     result += output.script.toBuffer().length + 9;
