@@ -9,6 +9,10 @@ To get started, first [start a `bitcore` node](../bitcore-node/readme.md), then 
 ```sh
 cd bitcore
 npm run insight
+
+//If you are making UI changes only:
+cd packages/insight
+npm run start:prod
 ```
 
 ## Network / Chain setting
