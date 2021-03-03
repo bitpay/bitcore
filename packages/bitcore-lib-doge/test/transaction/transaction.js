@@ -495,7 +495,7 @@ describe('Transaction', function() {
         .to(toAddress, 100000)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.outputs.length.should.equal(1);
+      transaction.outputs.length.should.equal(2);
     });
     it('fee can be set up manually', function() {
       var transaction = new Transaction()
@@ -1248,9 +1248,9 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(1);
       tx.to(toAddress, tenth);
       tx.outputs.length.should.equal(2);
-      tx.outputs[0].satoshis.should.equal(10000000000);
+      tx.outputs[0].satoshis.should.equal(10000000);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89973500000);
+      tx.outputs[1].satoshis.should.equal(99963500000);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 

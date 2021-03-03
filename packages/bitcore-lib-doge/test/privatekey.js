@@ -78,13 +78,13 @@ describe('PrivateKey', function() {
   });
 
   it('should create a private key from WIF string', function() {
-    var a = new PrivateKey('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+    var a = new PrivateKey('QPn542uVdzBgCfV6nEViShboFTpDd1at8mQpQugEQHgpuLbsgcZe');
     should.exist(a);
     should.exist(a.bn);
   });
 
   it('should create a private key from WIF buffer', function() {
-    var a = new PrivateKey(Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m'));
+    var a = new PrivateKey(Base58Check.decode('QPn542uVdzBgCfV6nEViShboFTpDd1at8mQpQugEQHgpuLbsgcZe'));
     should.exist(a);
     should.exist(a.bn);
   });
@@ -273,15 +273,15 @@ describe('PrivateKey', function() {
     });
 
     it('should output this known livenet witness address correctly', function() {
-      var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+      var privkey = PrivateKey.fromWIF('QPn542uVdzBgCfV6nEViShboFTpDd1at8mQpQugEQHgpuLbsgcZe');
       var address = privkey.toAddress(null, Address.PayToWitnessPublicKeyHash);
-      address.toString().should.equal('bc1qv0t45lutg37ghyg7lg22vgducs3d9hvuarwr89');
+      address.toString().should.equal('bc1q2k5vgj923rhhwysjx7rqtr3z6a7j8z80y60p4h');
     });
 
     it('should output this known testnet witness address correctly', function() {
-      var privkey = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
+      var privkey = PrivateKey.fromWIF('ckoubjh1yr1Hyg8NPtGwDz4tx91b6qztxrJZgTtdR4Ed9CqAV5cn');
       var address = privkey.toAddress(null, Address.PayToWitnessPublicKeyHash);
-      address.toString().should.equal('tb1q363x8lv54fdsywyc9494upd6sp4rg6glhsyzk0');
+      address.toString().should.equal('tb1q3lzl904ltjc3r2kurjecs4nkjc2t64t8va4nme');
     });
 
     it('creates network specific witness address', function() {
@@ -291,9 +291,9 @@ describe('PrivateKey', function() {
     });
 
     it('should output this known livenet wrapped witness address correctly', function() {
-      var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+      var privkey = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
       var address = privkey.toAddress(null, Address.PayToScriptHash);
-      address.toString().should.equal('39wREM7dxb7KNMNR1py1W8nUheUtkPPA5r');
+      address.toString().should.equal('2NDgQSsQGdLDGoYvh4NTmesQ2wWgx6RGu3m');
     });
 
     it('should output this known testnet wrapped witness address correctly', function() {

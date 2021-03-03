@@ -86,7 +86,7 @@ describe('Opcode', function() {
 
   describe('@map', function() {
     it('should have a map containing 117 elements', function() {
-      _.size(Opcode.map).should.equal(117);
+      _.size(Opcode.map).should.equal(118);
     });
   });
 
