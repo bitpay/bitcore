@@ -300,7 +300,7 @@ describe('Interpreter', function() {
     var test_txs = function(set, expected) {
       var c = 0;
       let label = '';
-      let runIdx = 1;
+      let runIdx = 1;  // Useful for debugging
       set.forEach(function(vector, vIndex) {
         if (vector.length === 1) {
           return;
@@ -311,10 +311,7 @@ describe('Interpreter', function() {
           label = set[vIndex - 1][0];
         }
         it('should pass tx_' + (expected ? '' : 'in') + 'valid vector ' + cc + ' -- ' + label, function() {
-          if (runIdx == 88) {
-            runIdx;
-          }
-          runIdx++
+          runIdx++;
           var inputs = vector[0];
           var txhex = vector[1];
           var flags = getFlags(vector[2]);
