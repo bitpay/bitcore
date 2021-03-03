@@ -90,6 +90,7 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
   // Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
   for (let s of stack) {
     if (s.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+      this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
       return false;
     }
   }
