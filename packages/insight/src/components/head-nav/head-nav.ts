@@ -63,31 +63,15 @@ export class HeadNavComponent implements OnInit {
   public search(): void {
     this.q = this.q.replace(/\s/g, '');
     this.searchProvider
-      .isInputValid(this.q, this.chainNetwork)
-      .subscribe(inputDetails => {
-        if (this.q !== '' && inputDetails.isValid) {
+      .determineInputType(this.q)
+      .subscribe(searchInputs => {
+        if (searchInputs.length) {
           this.showSearch = false;
           this.searchProvider
-            .search(this.q, inputDetails.type, this.chainNetwork)
+            .search(searchInputs)
             .subscribe(
               res => {
-                if (this.chainNetwork.chain !== 'ALL') {
-                  const nextView = this.processResponse(res);
-                  if (!_.includes(nextView, '')) {
-                    this.params[nextView.type] = nextView.params;
-                    this.redirTo = nextView.redirTo;
-                    this.navCtrl.setRoot('home', this.params, {
-                      animate: false
-                    });
-                    this.redirProvider.redir(this.redirTo, this.params);
-                  } else {
-                    const message = 'No matching records found!';
-                    this.wrongSearch(message);
-                    this.logger.info(message);
-                  }
-                } else {
-                  this.processAllResponse(res);
-                }
+                this.processAllResponse(res);
               },
               err => {
                 this.wrongSearch('Server error. Please try again');
@@ -95,7 +79,7 @@ export class HeadNavComponent implements OnInit {
               }
             );
         } else {
-          this.wrongSearch('No matching records found!');
+          this.wrongSearch('Invalid search, please search for an address, transaction, or block');
         }
       });
   }
