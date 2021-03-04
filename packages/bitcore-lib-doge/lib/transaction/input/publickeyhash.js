@@ -5,7 +5,6 @@ var inherits = require('inherits');
 var $ = require('../../util/preconditions');
 var BufferUtil = require('../../util/buffer');
 
-var Address = require('../../address');
 var Hash = require('../../crypto/hash');
 var Input = require('./input');
 var Output = require('../output');
@@ -81,21 +80,12 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
   }
 
   if (script && BufferUtil.equals(hashData, script.getPublicKeyHash())) {
-    var signature;
-    if (script.isWitnessPublicKeyHashOut()) {
-      var satoshisBuffer = this.getSatoshisBuffer();
-      var scriptCode = this.getScriptCode(privateKey.publicKey);
-      signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
-    } else {
-      signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script);
-    }
-
     return [new TransactionSignature({
       publicKey: privateKey.publicKey,
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: signature,
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script),
       sigtype: sigtype
     })];
   }
@@ -115,21 +105,12 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
 PublicKeyHashInput.prototype.addSignature = function(transaction, signature) {
   $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
 
-  if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
-    this.setWitnesses([
-      BufferUtil.concat([
-        signature.signature.toDER(),
-        BufferUtil.integerAsSingleByteBuffer(signature.sigtype)
-      ]),
-      signature.publicKey.toBuffer()
-    ]);
-  } else {
-    this.setScript(Script.buildPublicKeyHashIn(
-      signature.publicKey,
-      signature.signature.toDER(),
-      signature.sigtype
-    ));
-  }
+  this.setScript(Script.buildPublicKeyHashIn(
+    signature.publicKey,
+    signature.signature.toDER(),
+    signature.sigtype
+  ));
+
   return this;
 };
 
@@ -154,42 +135,20 @@ PublicKeyHashInput.prototype.isFullySigned = function() {
 PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature) {
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
-  if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
-    var scriptCode = this.getScriptCode();
-    var satoshisBuffer = this.getSatoshisBuffer();
-    return SighashWitness.verify(
-      transaction,
-      signature.signature,
-      signature.publicKey,
-      signature.inputIndex,
-      scriptCode,
-      satoshisBuffer
-    );
-  } else {
-    return Sighash.verify(
-      transaction,
-      signature.signature,
-      signature.publicKey,
-      signature.inputIndex,
-      this.output.script
-    );
-  }
+  return Sighash.verify(
+    transaction,
+    signature.signature,
+    signature.publicKey,
+    signature.inputIndex,
+    this.output.script
+  );
 };
 
 
 PublicKeyHashInput.SCRIPT_MAX_SIZE = 73 + 34; // sigsize (1 + 72) + pubkey (1 + 33)
-PublicKeyHashInput.REDEEM_SCRIPT_SIZE = 22; // OP_0 (1) pubkeyhash (1 + 20)
 
 PublicKeyHashInput.prototype._estimateSize = function() {
-  var WITNESS_DISCOUNT = 4;
-  const witnessSize = PublicKeyHashInput.SCRIPT_MAX_SIZE / WITNESS_DISCOUNT;
-  if (this.output.script.isWitnessPublicKeyHashOut()) {
-    return witnessSize;
-  } else if (this.output.script.isScriptHashOut()) {
-    return witnessSize + PublicKeyHashInput.REDEEM_SCRIPT_SIZE;
-  } else {
-    return PublicKeyHashInput.SCRIPT_MAX_SIZE;
-  }
+  return PublicKeyHashInput.SCRIPT_MAX_SIZE;
 };
 
 module.exports = PublicKeyHashInput;

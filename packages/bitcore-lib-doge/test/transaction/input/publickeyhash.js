@@ -18,8 +18,6 @@ describe('PublicKeyHashInput', function() {
   var privateKey = new PrivateKey('QTfg5tZJYhr9Hw1GVYuK74im5VsSN1dB6Xfuz3xYUWEBWWqNZfPx');
   var publicKey = privateKey.publicKey;
   var address = new Address(publicKey, Networks.livenet);
-  var witnessAddress = new Address(publicKey, Networks.livenet, Address.PayToWitnessPublicKeyHash);
-  var wrappedAddress = new Address(publicKey, Networks.livenet, Address.PayToScriptHash);
 
   var output = {
     address: 'DGYdw7jC17b9SappjsrAsaghhDTS8sV5Mx',
@@ -29,21 +27,6 @@ describe('PublicKeyHashInput', function() {
     satoshis: 1000000
   };
 
-  var witnessOutput = {
-    address: 'bc1q4fyv6yjgj6kjgv5ccnfhqcv0ydft2z6h9xf0xw',
-    txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
-    outputIndex: 0,
-    script: new Script(witnessAddress),
-    satoshis: 1000000
-  };
-
-  var wrappedOutput = {
-    address: 'DGYdw7jC17b9SappjsrAsaghhDTS8sV5Mx',
-    txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
-    outputIndex: 0,
-    script: new Script(wrappedAddress),
-    satoshis: 1000000
-  };
 
   it('can count missing signatures', function() {
     var transaction = new Transaction()
@@ -81,111 +64,4 @@ describe('PublicKeyHashInput', function() {
     signatures.length.should.equal(0);
   });
 
-  describe('P2WPKH', function () {
-    it('can count missing signatures', function() {
-      var transaction = new Transaction()
-        .from(witnessOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-
-      input.isFullySigned().should.equal(false);
-      transaction.sign(privateKey);
-      input.isFullySigned().should.equal(true);
-    });
-    it('it\'s size can be estimated', function() {
-      var transaction = new Transaction()
-        .from(witnessOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      input._estimateSize().should.equal(26.75);
-    });
-    it('it\'s signature can be removed', function() {
-      var transaction = new Transaction()
-        .from(witnessOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-
-      transaction.sign(privateKey);
-      input.clearSignatures();
-      input.isFullySigned().should.equal(false);
-    });
-    it('returns an empty array if private key mismatches', function() {
-      var transaction = new Transaction()
-        .from(witnessOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      var signatures = input.getSignatures(transaction, new PrivateKey(), 0);
-      signatures.length.should.equal(0);
-    });
-    it('will get the scriptCode', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      var scriptCode = input.getScriptCode(publicKey);
-      scriptCode.toString('hex').should.equal('1976a9140b2f0a0c31bfe0406b0ccc1381fdbe311946dadc88ac');
-    });
-    it('will get the satoshis buffer', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      var satoshisBuffer = input.getSatoshisBuffer();
-      satoshisBuffer.toString('hex').should.equal('40420f0000000000');
-    });
-  });
-
-  describe('P2SH-wrapped-P2WPKH', function () {
-    it('can count missing signatures', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-
-      input.isFullySigned().should.equal(false);
-      transaction.sign(privateKey);
-      input.isFullySigned().should.equal(true);
-    });
-    it('it\'s size can be estimated', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      input._estimateSize().should.equal(48.75);
-    });
-    it('it\'s signature can be removed', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-
-      transaction.sign(privateKey);
-      input.clearSignatures();
-      input.isFullySigned().should.equal(false);
-    });
-    it('returns an empty array if private key mismatches', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      var signatures = input.getSignatures(transaction, new PrivateKey(), 0);
-      signatures.length.should.equal(0);
-    });
-    it('will get the scriptCode', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      var scriptCode = input.getScriptCode(publicKey);
-      scriptCode.toString('hex').should.equal('1976a9140b2f0a0c31bfe0406b0ccc1381fdbe311946dadc88ac');
-    });
-    it('will get the satoshis buffer', function() {
-      var transaction = new Transaction()
-        .from(wrappedOutput)
-        .to(address, 1000000);
-      var input = transaction.inputs[0];
-      var satoshisBuffer = input.getSatoshisBuffer();
-      satoshisBuffer.toString('hex').should.equal('40420f0000000000');
-    });
-  });
 })

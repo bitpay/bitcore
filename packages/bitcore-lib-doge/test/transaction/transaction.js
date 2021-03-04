@@ -115,21 +115,6 @@ describe('Transaction', function() {
     txData.should.equal(tx2Data);
   });
 
-  it('toObject/fromObject with p2wsh signatures and custom fee', function() {
-    var tx = new Transaction()
-      .from(p2wshUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2)
-      .to([{address: toAddress, satoshis: 50000}])
-      .fee(15000)
-      .change(changeAddress)
-      .sign(p2shPrivateKey1)
-      .sign(p2shPrivateKey2);
-
-    var txData = JSON.stringify(tx);
-    var tx2 = new Transaction(JSON.parse(txData));
-    var tx2Data = JSON.stringify(tx2);
-    txData.should.equal(tx2Data);
-  });
-
   it('fromObject with pay-to-public-key previous outputs', function() {
     var tx = bitcore.Transaction({
       hash: '132856bf03d6415562a556437d22ac63c37a4595fd986c796eb8e02dc031aa25',
@@ -265,8 +250,6 @@ describe('Transaction', function() {
   var toAddress = 'DE1wEbm9D6JqEhqGtyD52BkHQmQ5N18J84';
   var changeAddress = 'DAPkqFzgrXVsUU7WkSf1GYMmFzEGvuK4SK';
   var changeAddressP2SH = 'A7HRQk3GFCW2QasvdZxXuYj8kkQK5QrYLs';
-  var changeAddressP2WPKH = 'tb1q3rvex84884sw4al9vu00cp2jhyffz8e2n2k4wp';
-  var changeAddressP2WSH = 'tb1qk0jhwmn65dqmlp755a7cff40fnvzsnhzq290kezrfs9d308an3tqlpjvad';
   var privateKey = 'dd7bdefb163b31eb706ec43589c24cd27fc7878216836468bf216845c7c4aa1c';
   var private1 = 'ba9bb7f48969e94301025313c298916b2913fb7eecefe98b9128ef4d87e40ea40';
   var private2 = '6403e70451390134f2bddbe5ecb33c5b264af292fcbf2cdd97deaac7e1e8f7ba0';
@@ -286,18 +269,18 @@ describe('Transaction', function() {
   var p2shPrivateKey1 = PrivateKey.fromWIF('cf2NrvygA68y6ZCAkW2ueCuQ1B8qzyWpjGY38qhjvQgZAFLhRWGB');
 
   var simpleWitnessUtxoWith1000DOGE = {
-    address: witnessFromAddress,
+    address: fromAddress,
     txId: '7e6b603779c8af58284566cf1b655395fffbefaf1c0a080d9aff43f0af05d873',
     outputIndex: 0,
-    script: Script.fromAddress(witnessFromAddress).toString(),
+    script: Script.fromAddress(fromAddress).toString(),
     satoshis: thousandDOGE
   };
 
   var simpleWrappedWitnessUtxoWith1000DOGE = {
-    address: wrappedWitnessFromAddress,
+    address: fromAddress,
     txId: '825153a4a5d0c7ffd1a89838113a7204e5e4fa79fbac28bab0ea56c575393ed7',
     outputIndex: 0,
-    script: Script.fromAddress(wrappedWitnessFromAddress).toString(),
+    script: Script.fromAddress(fromAddress).toString(),
     satoshis: thousandDOGE
   };
 
@@ -325,18 +308,6 @@ describe('Transaction', function() {
     satoshis: 100e8
   };
 
-  var p2wshAddress = Address.createMultisig([
-    p2shPublicKey1,
-    p2shPublicKey2,
-    p2shPublicKey3
-  ], 2, 'testnet', null, Address.PayToWitnessScriptHash);
-  var p2wshUtxoWith1BTC = {
-    address: p2wshAddress.toString(),
-    txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
-    outputIndex: 0,
-    script: Script(p2wshAddress).toString(),
-    satoshis: 1e8
-  };
 
   describe('adding inputs', function() {
 
@@ -351,22 +322,6 @@ describe('Transaction', function() {
       it('works for normal p2pkh', function() {
         var transaction = new Transaction()
           .from(simpleUtxoWith10DOGE)
-          .to([{address: toAddress, satoshis: 50000}])
-          .change(changeAddress)
-          .sign(privateKey);
-        transaction.isFullySigned().should.equal(true);
-      });
-      it('works for normal p2wpkh', function() {
-        var transaction = new Transaction()
-          .from(simpleWitnessUtxoWith1000DOGE)
-          .to([{address: toAddress, satoshis: 50000}])
-          .change(changeAddress)
-          .sign(privateKey);
-        transaction.isFullySigned().should.equal(true);
-      });
-      it('works for wrapped p2wpkh', function() {
-        var transaction = new Transaction()
-          .from(simpleWrappedWitnessUtxoWith1000DOGE)
           .to([{address: toAddress, satoshis: 50000}])
           .change(changeAddress)
           .sign(privateKey);
@@ -422,24 +377,6 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].script.isScriptHashOut().should.equal(true);
-    });
-    it('accepts a P2WPKH address for change', function() {
-      var transaction = new Transaction()
-        .from(simpleUtxoWith1000DOGE)
-        .to(toAddress, 500000)
-        .change(changeAddressP2WPKH)
-        .sign(privateKey);
-      transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].script.isWitnessPublicKeyHashOut().should.equal(true);
-    });
-    it('accepts a P2WSH address for change', function() {
-      var transaction = new Transaction()
-        .from(simpleUtxoWith1000DOGE)
-        .to(toAddress, 500000)
-        .change(changeAddressP2WSH)
-        .sign(privateKey);
-      transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].script.isWitnessScriptHashOut().should.equal(true);
     });
     it('can recalculate the change amount', function() {
       var transaction = new Transaction()
@@ -911,17 +848,6 @@ describe('Transaction', function() {
         .from(simpleWrappedWitnessUtxoWith1000DOGE);
       var deserialized = new Transaction(transaction.toObject());
       expect(deserialized.inputs[0] instanceof Transaction.Input.PublicKeyHash).to.equal(true);
-    });
-    it('can serialize and deserialize a P2WSH input', function() {
-      var transaction = new Transaction()
-        .from({
-          txId: '0000', // Not relevant
-          outputIndex: 0,
-          script: Script.buildWitnessMultisigOutFromScript(Script.buildMultisigOut([public1, public2], 2)),
-          satoshis: 1e8
-        }, [public1, public2], 2);
-      var deserialized = new Transaction(transaction.toObject());
-      expect(deserialized.inputs[0] instanceof Transaction.Input.MultiSigScriptHash).to.equal(true);
     });
   });
 
@@ -1440,35 +1366,35 @@ describe('Transaction', function() {
   describe('Segregated Witness', function() {
     it('identify as segwit transaction', function() {
       // https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
-      var version = new Buffer('01000000', 'hex');
-      var marker = new Buffer('00', 'hex'); //always zero
-      var flag = new Buffer('01', 'hex'); //non zero
-      var inputCount = new Buffer('01', 'hex');
-      var inputDummy = new Buffer('2052cda8bc0c2cb743f154881fc85cb675527dcf2f7a5938241020c33341b3f70000000000ffffffff', 'hex');
-      var outputCount = new Buffer('00', 'hex');
-      var witness = new Buffer('01', 'hex');
-      var witnessItems = new Buffer('00', 'hex');
-      var locktime = new Buffer('00000000', 'hex');
+      var version = Buffer.from('01000000', 'hex');
+      var marker = Buffer.from('00', 'hex'); //always zero
+      var flag = Buffer.from('01', 'hex'); //non zero
+      var inputCount = Buffer.from('01', 'hex');
+      var inputDummy = Buffer.from('2052cda8bc0c2cb743f154881fc85cb675527dcf2f7a5938241020c33341b3f70000000000ffffffff', 'hex');
+      var outputCount = Buffer.from('00', 'hex');
+      var witness = Buffer.from('01', 'hex');
+      var witnessItems = Buffer.from('00', 'hex');
+      var locktime = Buffer.from('00000000', 'hex');
       var txBuffer = Buffer.concat([version, marker, flag, inputCount, inputDummy, outputCount, witness,
                                     witnessItems, locktime]);
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx.hasWitnesses().should.equal(true);
     });
     it('correctly calculate hash for segwit transaction', function() {
-      var txBuffer = new Buffer('01000000000101b0e5caa7e37d4b8530c3e1071a36dd5e05d1065cf7224ddff42c69e3387689870000000000ffffffff017b911100000000001600144ff831574da8bef07f8bc97244a1666147b071570247304402203fcbcfddbd6ca3a90252610dd63f1be50b2d926b8d87c912da0a3e42bb03fba002202a90c8aad75da22b0549c72618b754114583e934c0b0d2ccd6c13fcd859ba4ed01210363f3f47f4555779de405eab8d0dc8c2a4f3e09f4171a3fa47c7a77715795319800000000', 'hex');
+      var txBuffer = Buffer.from('01000000000101b0e5caa7e37d4b8530c3e1071a36dd5e05d1065cf7224ddff42c69e3387689870000000000ffffffff017b911100000000001600144ff831574da8bef07f8bc97244a1666147b071570247304402203fcbcfddbd6ca3a90252610dd63f1be50b2d926b8d87c912da0a3e42bb03fba002202a90c8aad75da22b0549c72618b754114583e934c0b0d2ccd6c13fcd859ba4ed01210363f3f47f4555779de405eab8d0dc8c2a4f3e09f4171a3fa47c7a77715795319800000000', 'hex');
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx.hash.should.equal('7f1a2d46746f1bfbb22ab797d5aad1fd9723477b417fa34dff73d8a7dbb14570');
       tx.witnessHash.should.equal('3c26fc8b5cfe65f96d955cecfe4d11db2659d052171f9f31af043e9f5073e46b');
     });
     it('round trip nested witness p2sh', function() {
-      var txBuffer = new Buffer('010000000001010894bb2bbfd5249b1c55f7bc64352bb64894938bc6439f43f28a58bfa7c73205000000002322002077b16b966ee6a4b8a0901351221d279afd31d3f90df52a3fc53436ea9abde5b0ffffffff01010000000000000000030047304402200fa23efa9a8d6ae285cfc82f81e6c2196d14167553b10da1845abd2c9fe38dc502207a40a58ee5b739e902b275018dfa1bee0d608736ff4317b028fbc29391f4554f01475221037b8dc5861a0ef7b0a97b41d2d1e27186f019d4834dbc99f24952b6f5080f5cce21027152378182102b68b5fce42f9f365ec272c48afda6b0816e735c1dc4b96dd45a52ae00000000', 'hex');
+      var txBuffer = Buffer.from('010000000001010894bb2bbfd5249b1c55f7bc64352bb64894938bc6439f43f28a58bfa7c73205000000002322002077b16b966ee6a4b8a0901351221d279afd31d3f90df52a3fc53436ea9abde5b0ffffffff01010000000000000000030047304402200fa23efa9a8d6ae285cfc82f81e6c2196d14167553b10da1845abd2c9fe38dc502207a40a58ee5b739e902b275018dfa1bee0d608736ff4317b028fbc29391f4554f01475221037b8dc5861a0ef7b0a97b41d2d1e27186f019d4834dbc99f24952b6f5080f5cce21027152378182102b68b5fce42f9f365ec272c48afda6b0816e735c1dc4b96dd45a52ae00000000', 'hex');
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx.toBuffer().toString('hex').should.equal(txBuffer.toString('hex'));
     });
     describe('verifying', function() {
       it('will verify these signatures', function() {
-        var signedTxBuffer = new Buffer('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000400483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014830450221008c6f4a9ebdee89968ec00ecc12fda67442b589296e86bf3e9bde19f4ba923406022048c3409831a55bf61f2d5defffd3b91767643b6c5981cb32338dd7e9f02821b1014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
-        var unsignedBuffer = new Buffer('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000300483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
+        var signedTxBuffer = Buffer.from('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000400483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014830450221008c6f4a9ebdee89968ec00ecc12fda67442b589296e86bf3e9bde19f4ba923406022048c3409831a55bf61f2d5defffd3b91767643b6c5981cb32338dd7e9f02821b1014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
+        var unsignedBuffer = Buffer.from('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000300483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
         var signedTx = bitcore.Transaction().fromBuffer(signedTxBuffer);
 
         var signatures = [
@@ -1848,7 +1774,7 @@ describe('Transaction', function() {
       };
       var nestedAddress = Address.createMultisig([
         publicKey1
-      ], 1, 'testnet', true);
+      ], 1, 'testnet');
       var nestedUtxo = {
         address: nestedAddress.toString(),
         txId: '1d732950d99f821b8a8d11972ea56000b0666e4d31fa71861ffd80a83797dc61',
@@ -1875,65 +1801,8 @@ describe('Transaction', function() {
           .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
           .sign(privateKey1);
         var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
-        sighash.toString('hex').should.equal('01566d2407e91bbdcdc7fbede439826080b0e926c433098e26776f8e5265e620');
-        tx.toBuffer().toString('hex').should.equal('0100000000010161dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d010000002322002045a29839c28d5502e6595e4b726f6be89ea48c16676d14954ac46926ee3a725affffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac0300483045022100a892b883a475ed7bfb3d21021b5b64c799d833ef3a5db411dd800580eff9afb302200e28f400162fc70bcb80a30246203419734e72c618ac4a31b8c9b06ec68daa09012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51ae00000000');
-      });
-      it('will sign with p2wpkh witness program', function() {
-        var tx = new Transaction()
-          .from(simpleWitnessUtxoWith1000DOGE)
-          .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
-          .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey);
-        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
-        sighash.toString('hex').should.equal('bb813f1442eef050f972f0c092c781852353fa02ee936386017a0b9fca8a4c18');
-        tx.toBuffer().toString('hex').should.equal('0100000000010173d805aff043ff9a0d080a1cafeffbff9553651bcf66452858afc87937606b7e0000000000ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0da7348170000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac0247304402201f2619da51707a94ea50ddd7fbde3510e0219e8dfa17fa9050e5a8cec5d60e4a022040e9b29dca45a0d3aa7120df3b6397798139ac89bf4c29806d7b01ef63a9fcd60121025466b36661faa9a1a64d94dae93751d38175991fbe7729c4eaaa7bdf5a5f6e8b00000000');
-      });
-      it('will sign with p2sh-wrapped-p2wpkh witness program', function() {
-        var tx = new Transaction()
-          .from(simpleWrappedWitnessUtxoWith1000DOGE)
-          .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
-          .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey);
-        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
-        sighash.toString('hex').should.equal('957f4cfe33fe0519ec29f6ae7aa02cdb8e0db8a5ebeb6e63b3f329c1136dcefe');
-        tx.toBuffer().toString('hex').should.equal('01000000000101d73e3975c556eab0ba28acfb79fae4e504723a113898a8d1ffc7d0a5a45351820000000017160014ef0a4b12985940f42724c1c03c044884a88a1450ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0da7348170000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac02483045022100d1c9ecdc7f2e468adc0cea2c39dda3ba7ad255659896fa27b7e64b0a5d24e27c022003edf37b02c05f057770450e4fd866c794c4d216ed62d692945407093273e43b0121025466b36661faa9a1a64d94dae93751d38175991fbe7729c4eaaa7bdf5a5f6e8b00000000');
-      });
-      it('will sign with p2wsh witness program', function() {
-        var tx = new Transaction()
-          .from(witnessUtxo, [publicKey1], 1)
-          .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
-          .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey1);
-        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
-        sighash.toString('hex').should.equal('4dc4019245643f1bb19a4bee5b7574d39f9e652506aa4411ad4ce28938c5c61c');
-        tx.toBuffer().toString('hex').should.equal('01000000000101f6206355b2ef1154d06127352d3ba333ae1de1e2b88bce2cb9d2393e85d666370000000000ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac030048304502210090743e0f209b1c2af8eb3225bbed1ac111f8dde3f4919e1f50db2770b1110f42022032958b457805fd19ef48072ebbcb16c2e97e1fe851ad80ca0132f5f6c70a2511012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51ae00000000');
-      });
-      it('will sign with p2wsh, p2sh, and nested p2sh', function() {
-        var tx = new Transaction()
-          .from(witnessUtxo, [publicKey1], 1)
-          .from(utxo, [publicKey1], 1)
-          .from(nestedUtxo, [publicKey1], 1)
-          .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
-          .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey1);
-        tx.isFullySigned().should.equal(true);
-        tx.toBuffer().toString('hex').should.equal('01000000000103f6206355b2ef1154d06127352d3ba333ae1de1e2b88bce2cb9d2393e85d666370000000000ffffffffc74f39e74b2676adc1baa3f1ff5fb0ebc0c1582903dcf63863a4cc7ffbd0c2fb010000006f004730440220419e0123c1353ee47613ed4ebf556e3e53be75b4616cf29f21d7a1ed3d491c9002206cbd12d58758922da988f46cbcf57bfcc5ec5ac74aba04f04dec67ec5e3a71b5012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51aeffffffff61dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d010000002322002045a29839c28d5502e6595e4b726f6be89ea48c16676d14954ac46926ee3a725affffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc095de11000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac0300473044022026a851839abfe24af54950ad38236fd7222ea18bcb710c312d1cb4743acbdc17022054aed89eb1e221b02d22ae0e5798e604b4191cf585de1e6fdd7a16f1830c7ba7012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51ae000300483045022100fa1d24f707155daa6a5c148ecfc5927bf2d3b1a94c43a1594aa356aed19e1a970220221ad16bfd0fd9e2840f96c33ee0812e72f7660120e0d1d641596bcb17eb75f6012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51ae00000000');
-      });
-      it('will sign with p2pkh, p2wpkh, and wrapped p2wpkh', function() {
-        var tx = new Transaction()
-          .from(simpleUtxoWith10DOGE)
-          .from(simpleWitnessUtxoWith1000DOGE)
-          .from(simpleWrappedWitnessUtxoWith1000DOGE)
-          .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
-          .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey);
-        tx.isFullySigned().should.equal(true);
-        tx.toBuffer().toString('hex').should.equal('010000000001035884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006b483045022100b2e5a387610d624f5c8516c4160ccc64cf952fd15d8e4e2943d7e0a26156abe9022004a851f5b94fe4c09f8cbff375de26592bcb8356f070483eef0bd6cba67f691b0121025466b36661faa9a1a64d94dae93751d38175991fbe7729c4eaaa7bdf5a5f6e8bffffffff73d805aff043ff9a0d080a1cafeffbff9553651bcf66452858afc87937606b7e0000000000ffffffffd73e3975c556eab0ba28acfb79fae4e504723a113898a8d1ffc7d0a5a45351820000000017160014ef0a4b12985940f42724c1c03c044884a88a1450ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc08c85cc2e0000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac000247304402202b4d6640fb189db5728ebccc7a58ef3f9bd42cf27d264046f1899a4545daaf2302205d15488734a037a2585be804b52805563370ecd3e4d4f8da27d05eafd896b8ba0121025466b36661faa9a1a64d94dae93751d38175991fbe7729c4eaaa7bdf5a5f6e8b0247304402207e6a0e78cc27b82934be50b2f1ecd06075bf71b952724ad57021c280decce4ff022055aa0c483e4810dba47f3314d57d224a1cfe66e0b3dec9e8666ff49627ab18560121025466b36661faa9a1a64d94dae93751d38175991fbe7729c4eaaa7bdf5a5f6e8b00000000');
+        sighash.toString('hex').should.equal('e132a913b5c0e90d49c1b2017d934f78796a10c784d669cc11d51093a773c0c5');
+        tx.toBuffer().toString('hex').should.equal('010000000161dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d010000006f004730440220223d1cb249d063b743781607c2b3e59195d4b9a15a5e2df7a6c64818f0106e7a02202081733a14e8bcd99582a5a7893dd6e6cd1368e5c0e49a0cec627e9dbe0a9830012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51aeffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac00000000');
       });
     });
   });
