@@ -351,8 +351,6 @@ Script.prototype.getPublicKey = function() {
 Script.prototype.getPublicKeyHash = function() {
   if (this.isPublicKeyHashOut()) {
     return this.chunks[2].buf;
-  } else if (this.isWitnessPublicKeyHashOut()) {
-    return this.chunks[1].buf;
   } else {
     throw new Error('Can\'t retrieve PublicKeyHash from a non-PKH output');
   }
@@ -409,21 +407,6 @@ Script.prototype.isScriptHashOut = function() {
     buf[buf.length - 1] === Opcode.OP_EQUAL);
 };
 
-/**
- * @returns {boolean} if this is a p2wsh output script
- */
-Script.prototype.isWitnessScriptHashOut = function() {
-  var buf = this.toBuffer();
-  return (buf.length === 34 && buf[0] === 0 && buf[1] === 32);
-};
-
-/**
- * @returns {boolean} if this is a p2wpkh output script
- */
-Script.prototype.isWitnessPublicKeyHashOut = function() {
-  var buf = this.toBuffer();
-  return (buf.length === 22 && buf[0] === 0 && buf[1] === 20);
-};
 
 /**
  * @param {Object=} values - The return values
@@ -526,7 +509,7 @@ Script.prototype.isDataOut = function() {
  * @returns {Buffer}
  */
 Script.prototype.getData = function() {
-  if (this.isDataOut() || this.isScriptHashOut() || this.isWitnessScriptHashOut() || this.isWitnessPublicKeyHashOut()) {
+  if (this.isDataOut() || this.isScriptHashOut()) {
     if (_.isUndefined(this.chunks[1])) {
       return Buffer.alloc(0);
     } else {
@@ -888,7 +871,7 @@ Script.buildWitnessV0Out = function(to) {
   $.checkArgument(!_.isUndefined(to));
   $.checkArgument(to instanceof PublicKey || to instanceof Address || _.isString(to));
   if (to instanceof PublicKey) {
-    to = to.toAddress(null, Address.PayToWitnessPublicKeyHash);
+    to = to.toAddress();
   } else if (_.isString(to)) {
     to = new Address(to);
   }
@@ -1012,10 +995,6 @@ Script.fromAddress = function(address) {
     return Script.buildScriptHashOut(address);
   } else if (address.isPayToPublicKeyHash()) {
     return Script.buildPublicKeyHashOut(address);
-  } else if (address.isPayToWitnessPublicKeyHash()) {
-    return Script.buildWitnessV0Out(address);
-  } else if (address.isPayToWitnessScriptHash()) {
-    return Script.buildWitnessV0Out(address);
   }
   throw new errors.Script.UnrecognizedAddress(address);
 };
@@ -1051,12 +1030,6 @@ Script.prototype._getOutputAddressInfo = function() {
   } else if (this.isPublicKeyHashOut()) {
     info.hashBuffer = this.getData();
     info.type = Address.PayToPublicKeyHash;
-  } else if (this.isWitnessScriptHashOut()) {
-    info.hashBuffer = this.getData();
-    info.type = Address.PayToWitnessScriptHash;
-  } else if (this.isWitnessPublicKeyHashOut()) {
-    info.hashBuffer = this.getData();
-    info.type = Address.PayToWitnessPublicKeyHash;
   } else {
     return false;
   }

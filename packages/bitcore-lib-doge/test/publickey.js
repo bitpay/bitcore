@@ -346,36 +346,12 @@ describe('PublicKey', function() {
       address.toString().should.equal('nhCLkcA93f4NgGeWU8gSGiFoy2cL6ebzS9');
     });
 
-    it('should output this known mainnet witness address correctly', function() {
-      var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
-      var address = pk.toAddress('livenet', Address.PayToWitnessPublicKeyHash);
-      address.toString().should.equal('bc1qv0t45lutg37ghyg7lg22vgducs3d9hvuarwr89');
-    });
-
-    it('should output this known testnet witness address correctly', function() {
-      var pk = new PublicKey('0293126ccc927c111b88a0fe09baa0eca719e2a3e087e8a5d1059163f5c566feef');
-      var address = pk.toAddress('testnet', Address.PayToWitnessPublicKeyHash);
-      address.toString().should.equal('tb1q363x8lv54fdsywyc9494upd6sp4rg6glhsyzk0');
-    });
-
-    it('should output this known mainnet wrapped witness address correctly', function() {
-      var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
-      var address = pk.toAddress('livenet', Address.PayToScriptHash);
-      address.toString().should.equal('9zgfyCBY2ezDGijtRxdRkGQrQDrvvGqzaA');
-    });
-
-    it('should output this known testnet wrapped witness address correctly', function() {
-      var pk = new PublicKey('0293126ccc927c111b88a0fe09baa0eca719e2a3e087e8a5d1059163f5c566feef');
-      var address = pk.toAddress('testnet', Address.PayToScriptHash);
-      address.toString().should.equal('2NDgQSsQGdLDGoYvh4NTmesQ2wWgx6RGu3m');
-    });
-
   });
 
   describe('hashes', function() {
 
     // wif private key, address
-    // see: https://github.com/bitcoin/bitcoin/blob/master/src/test/key_tests.cpp#L20
+    // see: https://github.com/litecoin-project/litecoin/blob/master-0.10/src/test/key_tests.cpp#L20
     var data = [
       ['6J8csdv3eDrnJcpSEb4shfjMh2JTiG9MKzC1Yfge4Y4GyUsjdM6', 'DJRU7MLhcPwCTNRZ4e8gJzDebtG1H5M7pc'],
       ['6J8csdv3eDrnJcpSEb4shfjMh2JTiG9MKzC1Yfge4Y4GyVc1mxU', 'DQimpZgfZP6mZWBT6sVQDor99CBjw7xV5m'],

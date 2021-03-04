@@ -439,12 +439,12 @@ Transaction.prototype.fromObject = function fromObject(arg, opts) {
     }
     var script = new Script(input.output.script);
     var txin;
-    if ((script.isScriptHashOut() || script.isWitnessScriptHashOut()) && input.publicKeys && input.threshold) {
-      txin = new Input.MultiSigScriptHash(
-        input, input.publicKeys, input.threshold, input.signatures, opts
-      );
-    } else if (script.isPublicKeyHashOut() || script.isWitnessPublicKeyHashOut() || script.isScriptHashOut()) {
+    if (script.isPublicKeyHashOut()) {
       txin = new Input.PublicKeyHash(input);
+    } else if (script.isScriptHashOut() && input.publicKeys && input.threshold) {
+      txin = new Input.MultiSigScriptHash(
+        input, input.publicKeys, input.threshold, input.signatures
+      );
     } else if (script.isPublicKeyOut()) {
       txin = new Input.PublicKey(input);
     } else {
@@ -667,10 +667,10 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
   if(pubkeys && threshold) {
     if (utxo.script.isMultisigOut()) {
       clazz = MultiSigInput;
-    } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
+    } else if (utxo.script.isScriptHashOut()) {
       clazz = MultiSigScriptHashInput;
     }
-  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
+  } else if (utxo.script.isPublicKeyHashOut()) {
     clazz = PublicKeyHashInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
