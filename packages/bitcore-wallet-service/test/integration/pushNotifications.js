@@ -236,7 +236,7 @@ describe('Push notifications', function() {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
-         // Simulate txp accepted by creator
+        // Simulate txp accepted by creator
         server._notify('TxProposalFinallyAccepted', {
           txid: '123'
         }, {
@@ -306,6 +306,33 @@ describe('Push notifications', function() {
             should.exist(args[1].body.data);
             done();
           }, 100);
+        });
+      });
+
+      it('should use different template for new incoming tx if network is testnet', function(done) {
+        server.createAddress({}, (err, address) => {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 12300000,
+            network: 'testnet'
+          }, (err) => {
+            should.not.exist(err);
+
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(2);
+              var args = _.map(calls, function(c) {
+                return c.args[0];
+              });
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.body.should.contain('TESTNET');
+              done();
+            }, 100);
+          });
         });
       });
     });
@@ -1042,7 +1069,7 @@ describe('Push notifications', function() {
               done();
             }, 100);
           });
-        });
       });
+    });
   });
 });

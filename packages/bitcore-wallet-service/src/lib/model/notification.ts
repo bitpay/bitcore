@@ -31,6 +31,7 @@ export interface INotification {
   data: any;
   walletId: string;
   creatorId: string;
+  isCreator: boolean;
 }
 
 export class Notification {
@@ -41,6 +42,7 @@ export class Notification {
   data: any;
   walletId: string;
   creatorId: string;
+  isCreator: boolean;
 
   static create(opts) {
     opts = opts || {};
@@ -56,6 +58,7 @@ export class Notification {
     x.data = opts.data;
     x.walletId = opts.walletId;
     x.creatorId = opts.creatorId;
+    x.isCreator = opts.isCreator;
 
     return x;
   }
@@ -69,6 +72,7 @@ export class Notification {
     (x.type = obj.type), (x.data = obj.data);
     x.walletId = obj.walletId;
     x.creatorId = obj.creatorId;
+    x.isCreator = obj.isCreator;
 
     return x;
   }
