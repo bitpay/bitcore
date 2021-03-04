@@ -4,7 +4,9 @@ export interface ITxConfirmationSub {
   walletId: string;
   copayerId: string;
   txid: string;
+  amount: number;
   isActive: boolean;
+  isCreator: boolean;
 }
 export class TxConfirmationSub {
   version: number;
@@ -12,7 +14,9 @@ export class TxConfirmationSub {
   walletId: string;
   copayerId: string;
   txid: string;
+  amount: number;
   isActive: boolean;
+  isCreator: boolean;
 
   static create(opts) {
     opts = opts || {};
@@ -25,6 +29,8 @@ export class TxConfirmationSub {
     x.copayerId = opts.copayerId;
     x.txid = opts.txid;
     x.isActive = true;
+    x.amount = opts.amount;
+    x.isCreator = opts.isCreator;
     return x;
   }
 
@@ -36,7 +42,9 @@ export class TxConfirmationSub {
     x.walletId = obj.walletId;
     x.copayerId = obj.copayerId;
     x.txid = obj.txid;
+    x.amount = obj.amount;
     x.isActive = obj.isActive;
+    x.isCreator = obj.isCreator;
     return x;
   }
 }
