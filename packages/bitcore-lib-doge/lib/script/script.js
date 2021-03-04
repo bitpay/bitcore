@@ -1196,3 +1196,4 @@ Script.prototype.getSignatureOperationsCount = function(accurate) {
 };
 
 module.exports = Script;
+
