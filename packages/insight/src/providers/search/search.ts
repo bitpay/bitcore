@@ -140,8 +140,14 @@ export class SearchProvider {
     private httpClient: HttpClient
   ) {}
 
-  public search( searchInputs: CryptoSearchInput[]): Observable<any> {
+  public search( searchInputs: CryptoSearchInput[], chainNetwork): Observable<any> {
     const searchArray: Array<Observable<any>> = [];
+    if (chainNetwork.chain !== 'ALL') {
+      // If user has selected a specific network, we only search that network for results
+      searchInputs = searchInputs
+        .filter(input => input.chainNetwork.chain === chainNetwork.chain)
+        .filter(input => input.chainNetwork.network === chainNetwork.network)
+    }
     searchInputs.forEach(search => {
       this.apiURL = `${this.apiProvider.getUrl(search.chainNetwork)}`;
       if (search.type === 'block') {
