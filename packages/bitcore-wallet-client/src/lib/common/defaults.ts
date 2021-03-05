@@ -3,7 +3,7 @@ export const Defaults = {
   DEFAULT_FEE_PER_KB: 10000,
   MIN_FEE_PER_KB: 0,
   MAX_FEE_PER_KB: 1000000,
-  MAX_TX_FEE (coin) {
+  MAX_TX_FEE(coin) {
     switch (coin) {
       case 'btc':
         return 0.5e8;
