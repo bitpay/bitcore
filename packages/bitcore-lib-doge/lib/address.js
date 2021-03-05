@@ -40,10 +40,12 @@ var PublicKey = require('./publickey');
  * @param {*} data - The encoded data in various formats
  * @param {Network|String|number=} network - The network: 'livenet' or 'testnet'
  * @param {string=} type - The type of address: 'script' or 'pubkey'
+ * @param {boolean=} nestedWitness - if the address uses a nested p2sh witness
+ * @param {string} type - Only 'scripthash' ('witnessscripthash' not supported by DOGE). If nestedWitness is set, then this is ignored
  * @returns {Address} A new valid and frozen instance of an Address
  * @constructor
  */
-function Address(data, network, type) {
+function Address(data, network, type, multisigType) {
   /* jshint maxcomplexity: 12 */
   /* jshint maxstatements: 20 */
 
@@ -52,7 +54,7 @@ function Address(data, network, type) {
   }
 
   if (_.isArray(data) && _.isNumber(network)) {
-    return Address.createMultisig(data, network, type);
+    return Address.createMultisig(data, network, type, false, multisigType);
   }
 
   if (data instanceof Address) {
@@ -96,11 +98,11 @@ Address.prototype._classifyArguments = function(data, network, type) {
   /* jshint maxcomplexity: 10 */
   // transform and validate input data
   if ((data instanceof Buffer || data instanceof Uint8Array) && data.length === 20) {
-    return Address._transformHash(data);
-  } else if ((data instanceof Buffer || data instanceof Uint8Array) && data.length === 21) {
+    return Address._transformHash(data, network, type);
+  } else if ((data instanceof Buffer || data instanceof Uint8Array) && data.length >= 21) {
     return Address._transformBuffer(data, network, type);
   } else if (data instanceof PublicKey) {
-    return Address._transformPublicKey(data);
+    return Address._transformPublicKey(data, network, type);
   } else if (data instanceof Script) {
     return Address._transformScript(data, network);
   } else if (typeof(data) === 'string') {
@@ -219,13 +221,23 @@ Address._transformBuffer = function(buffer, network, type) {
  * @returns {Object} An object with keys: hashBuffer, type
  * @private
  */
-Address._transformPublicKey = function(pubkey) {
+Address._transformPublicKey = function(pubkey, network, type) {
   var info = {};
   if (!(pubkey instanceof PublicKey)) {
     throw new TypeError('Address must be an instance of PublicKey.');
   }
-  info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
-  info.type = Address.PayToPublicKeyHash;
+  if (type && type !== Address.PayToScriptHash && type !== Address.PayToPublicKeyHash) {
+    throw new TypeError('Type must be either pubkeyhash or scripthash to transform public key.');
+  }
+  if (!pubkey.compressed && type === Address.PayToScriptHash) {
+    throw new TypeError('Witness addresses must use compressed public keys.');
+  }
+  if (type === Address.PayToScriptHash) {
+    info.hashBuffer = Hash.sha256ripemd160(Script.buildWitnessV0Out(pubkey).toBuffer());
+  } else {
+    info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
+  }
+  info.type = type || Address.PayToPublicKeyHash;
   return info;
 };
 
@@ -255,11 +267,28 @@ Address._transformScript = function(script, network) {
  * @param {Array} publicKeys - a set of public keys to create an address
  * @param {number} threshold - the number of signatures needed to release the funds
  * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
+ * @param {boolean=} nestedWitness - if the address uses a nested p2sh witness
+ * @param {string} type - Only 'scripthash' ('witnessscripthash' not supported by DOGE). If nestedWitness is set, then this is ignored
  * @return {Address}
  */
-Address.createMultisig = function(publicKeys, threshold, network) {
+Address.createMultisig = function(publicKeys, threshold, network, nestedWitness, type) {
   network = network || publicKeys[0].network || Networks.defaultNetwork;
-  return Address.payingTo(Script.buildMultisigOut(publicKeys, threshold), network);
+  if (type && type !== Address.PayToScriptHash) {
+    throw new TypeError('Type must be either scripthash or witnessscripthash to create multisig.');
+  }
+  if (nestedWitness) {
+    publicKeys = _.map(publicKeys, PublicKey);
+    for (var i = 0; i < publicKeys.length; i++) {
+      if (!publicKeys[i].compressed) {
+        throw new TypeError('Witness addresses must use compressed public keys.');
+      }
+    }
+  }
+  var redeemScript = Script.buildMultisigOut(publicKeys, threshold);
+  if (nestedWitness) {
+    return Address.payingTo(Script.buildWitnessMultisigOutFromScript(redeemScript), network);
+  }
+  return Address.payingTo(redeemScript, network, type);
 };
 
 /**
@@ -288,8 +317,8 @@ Address._transformString = function(data, network, type) {
  * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
  * @returns {Address} A new valid and frozen instance of an Address
  */
-Address.fromPublicKey = function(data, network) {
-  var info = Address._transformPublicKey(data);
+Address.fromPublicKey = function(data, network, type) {
+  var info = Address._transformPublicKey(data, network, type);
   network = network || Networks.defaultNetwork;
   return new Address(info.hashBuffer, network, info.type);
 };
