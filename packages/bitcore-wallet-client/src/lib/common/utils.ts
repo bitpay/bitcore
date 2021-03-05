@@ -400,8 +400,8 @@ export class Utils {
         'Failed state: totalInputs - totalOutputs >= 0 at buildTx'
       );
       $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
-        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE at buildTx'
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin),
+        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin) at buildTx'
       );
 
       return t;
