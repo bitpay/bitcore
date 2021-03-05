@@ -92,7 +92,8 @@ export class SearchProvider {
     },
     // Doge Address
     {
-      regexes: [/^(dogecoin:)?D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{32}/],
+      regexes: [/^(dogecoin:)?(D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{32})/],
+      dataIndex: 2,
       type: 'address',
       chainNetworks: [
         { chain: 'DOGE', network: 'mainnet' }
@@ -128,9 +129,11 @@ export class SearchProvider {
         { chain: 'BTC', network: 'mainnet' },
         { chain: 'BCH', network: 'mainnet' },
         { chain: 'DOGE', network: 'mainnet' },
+        { chain: 'ETH', network: 'mainnet' },
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
-        { chain: 'DOGE', network: 'testnet' }
+        { chain: 'DOGE', network: 'testnet' },
+        { chain: 'ETH', network: 'testnet' }
       ],
     },
   ]
