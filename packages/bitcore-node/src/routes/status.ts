@@ -3,9 +3,11 @@ import config from '../config';
 import { PerformanceTracker } from '../decorators/Loggify';
 import { StateStorage } from '../models/state';
 import { ChainNetwork } from '../types/ChainNetwork';
+import { CacheTimes, SetCache } from './middleware';
 const router = express.Router({ mergeParams: true });
 
 router.get('/enabled-chains', function(_, res) {
+  SetCache(res, CacheTimes.Minute);
   const chainNetworks = new Array<ChainNetwork>();
   for (let chain of Object.keys(config.chains)) {
     for (let network of Object.keys(config.chains[chain])) {
