@@ -652,7 +652,6 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
 
-console.log('[helpers.js.655:txOpts:]',txOpts); // TODO
   server.createTx(txOpts, function(err, txp) {
     if (err) console.log(err);
     should.not.exist(err, "Error creating a TX");
