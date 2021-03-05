@@ -365,9 +365,9 @@ PublicKey.prototype._getID = function _getID() {
  * @param {String|Network=} network - Which network should the address be for
  * @returns {Address} An address generated from the public key
  */
-PublicKey.prototype.toAddress = function(network) {
+PublicKey.prototype.toAddress = function(network, type) {
   var Address = require('./address');
-  return Address.fromPublicKey(this, network || this.network);
+  return Address.fromPublicKey(this, network || this.network, type);
 };
 
 /**
