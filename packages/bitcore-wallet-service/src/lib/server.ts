@@ -1814,6 +1814,7 @@ export class WalletService {
 
       const feeLevels = Defaults.FEE_LEVELS[opts.coin];
 
+      /*
       if (opts.coin === 'doge') {
         const defaultDogeFeeLevels = feeLevels[0];
         const result: {
@@ -1827,6 +1828,7 @@ export class WalletService {
         };
         return cb(null, [result]);
       }
+      */
 
       const samplePoints = () => {
         const definedPoints = _.uniq(_.map(feeLevels, 'nbBlocks'));
