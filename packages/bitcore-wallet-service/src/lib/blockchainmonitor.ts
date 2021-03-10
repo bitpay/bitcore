@@ -7,7 +7,7 @@ import { ChainService } from './chain/index';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
-import { Notification } from './model';
+import { Notification, TxConfirmationSub } from './model';
 import { WalletService } from './server';
 import { Storage } from './storage';
 
@@ -248,7 +248,6 @@ export class BlockchainMonitor {
         }
 
         logger.debug('Incoming tx for wallet ' + walletId + ' [' + out.amount + 'amount -> ' + out.address + ']');
-
         const notification = Notification.create({
           type: 'NewIncomingTx',
           data: {
@@ -256,10 +255,32 @@ export class BlockchainMonitor {
             address: out.address,
             amount: out.amount,
             tokenAddress: out.tokenAddress,
-            multisigContractAddress: out.multisigContractAddress
+            multisigContractAddress: out.multisigContractAddress,
+            network
           },
           walletId
         });
+        if (network !== 'testnet') {
+          this.storage.fetchWallet(walletId, (err, wallet) => {
+            if (err) return;
+            async.each(
+              wallet.copayers,
+              (c, next) => {
+                const sub = TxConfirmationSub.create({
+                  copayerId: c.id,
+                  walletId,
+                  txid: data.txid,
+                  amount: out.amount,
+                  isCreator: false
+                });
+                this.storage.storeTxConfirmationSub(sub, next);
+              },
+              err => {
+                if (err) logger.error(err);
+              }
+            );
+          });
+        }
 
         this._storeAndBroadcastNotification(notification, () => {
           return;
@@ -287,28 +308,41 @@ export class BlockchainMonitor {
     if (!ChainService.notifyConfirmations(coin, network)) return;
 
     const processTriggeredSubs = (subs, cb) => {
-      async.each(subs, (sub: any) => {
-        logger.debug('New tx confirmation ' + sub.txid);
-        sub.isActive = false;
-        this.storage.storeTxConfirmationSub(sub, err => {
-          if (err) return cb(err);
-
-          const notification = Notification.create({
-            type: 'TxConfirmation',
-            walletId: sub.walletId,
-            creatorId: sub.copayerId,
-            data: {
-              txid: sub.txid,
-              coin,
-              network
-              // TODO: amount
-            }
-          });
-          this._storeAndBroadcastNotification(notification, cb);
-        });
-      });
+      async.mapSeries(
+        subs,
+        (sub: any, cb) => {
+          logger.debug('New tx confirmation ' + sub.txid);
+          sub.isActive = false;
+          async.waterfall(
+            [
+              next => {
+                this.storage.storeTxConfirmationSub(sub, err => {
+                  if (err) return cb(err);
+                  const notification = Notification.create({
+                    type: 'TxConfirmation',
+                    walletId: sub.walletId,
+                    creatorId: sub.copayerId,
+                    isCreator: sub.isCreator,
+                    data: {
+                      txid: sub.txid,
+                      coin,
+                      network,
+                      amount: sub.amount
+                    }
+                  });
+                  next(null, notification);
+                });
+              },
+              (notification, next) => {
+                this._storeAndBroadcastNotification(notification, next);
+              }
+            ],
+            cb
+          );
+        },
+        cb
+      );
     };
-
     const explorer = this.explorers[coin][network];
     if (!explorer) return;
 
@@ -321,12 +355,16 @@ export class BlockchainMonitor {
       this.storage.fetchActiveTxConfirmationSubs(null, (err, subs) => {
         if (err) return;
         if (_.isEmpty(subs)) return;
-        const indexedSubs = _.keyBy(subs, 'txid');
+        const indexedSubs = _.groupBy(subs, 'txid');
         const triggered = [];
         _.each(txids, txid => {
-          if (indexedSubs[txid]) triggered.push(indexedSubs[txid]);
+          if (indexedSubs[txid]) {
+            _.each(indexedSubs[txid], indexedSub => {
+              triggered.push(indexedSub);
+            });
+          }
         });
-        processTriggeredSubs(triggered, err => {
+        processTriggeredSubs(_.uniqBy(triggered, 'walletId'), err => {
           if (err) {
             logger.error('Could not process tx confirmations', err);
           }

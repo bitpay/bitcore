@@ -26,6 +26,8 @@ describe('PublicKeyHashInput', function() {
     script: new Script(address),
     satoshis: 1000000
   };
+
+
   it('can count missing signatures', function() {
     var transaction = new Transaction()
       .from(output)
@@ -61,4 +63,5 @@ describe('PublicKeyHashInput', function() {
     var signatures = input.getSignatures(transaction, new PrivateKey(), 0);
     signatures.length.should.equal(0);
   });
-});
+
+})

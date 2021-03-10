@@ -1,2 +1,2 @@
 {{subjectPrefix}}New payment received
-A payment of {{amount}} has been received into your wallet.
+You have received a payment of {{amount}}. The transaction is still unconfirmed.

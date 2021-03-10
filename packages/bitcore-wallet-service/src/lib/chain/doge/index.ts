@@ -23,7 +23,7 @@ export class DogeChain extends BtcChain implements IChain {
 
     // todo: check inputs are ours and have enough value
     if (txp.inputs && !_.isEmpty(txp.inputs)) {
-      if (!_.isNumber(txp.fee)) txp.fee = 1e8; // 1 doge;
+      if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
       return cb(this.checkTx(txp));
     }
 
@@ -292,7 +292,7 @@ export class DogeChain extends BtcChain implements IChain {
           if (selectionError || _.isEmpty(inputs)) return cb(selectionError || new Error('Could not select tx inputs'));
 
           txp.setInputs(_.shuffle(inputs));
-          txp.fee = 1e8; // 1 DOGE
+          txp.fee = fee;
 
           err = this.checkTx(txp);
           if (!err) {
@@ -380,13 +380,12 @@ export class DogeChain extends BtcChain implements IChain {
 
         if (_.isEmpty(txp.inputs)) return cb(null, info);
 
-        info.size = this.getEstimatedSize(txp, { conservativeEstimation: true });
-        const fee = 1e8; // 1 doge
+        const fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
         const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
-
-        if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
+        info.size = this.getEstimatedSize(txp, { conservativeEstimation: true });
         info.fee = fee;
         info.amount = amount;
+        if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
         if (opts.returnInputs) {
           info.inputs = _.shuffle(inputs);
