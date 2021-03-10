@@ -100,6 +100,7 @@
     "bitcore-lib-doge": "^8.25.7",
     "bitcore-p2p": "^8.25.7",
     "bitcore-p2p-cash": "^8.25.7",
+    "bitcore-p2p-doge": "^8.25.7",
     "bitcore-wallet-client": "^8.25.7",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
