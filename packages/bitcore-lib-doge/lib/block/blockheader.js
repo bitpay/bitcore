@@ -10,7 +10,8 @@ var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
 var Script = require('../script');
 
-var GENESIS_BITS = 0x1d00ffff;
+var GENESIS_BITS = 0x1e0ffff0;//0x1d00ffff;
+// Regtest: 0x207fffff
 
 /**
  * Instantiate a BlockHeader from a Buffer, JSON object, or Object with
@@ -32,6 +33,7 @@ var BlockHeader = function BlockHeader(arg) {
   this.timestamp = info.time;
   this.bits = info.bits;
   this.nonce = info.nonce;
+  this._auxpow = info.auxpow;
 
   if (info.hash) {
     $.checkState(
@@ -84,7 +86,8 @@ BlockHeader._fromObject = function _fromObject(data) {
     time: data.time,
     timestamp: data.time,
     bits: data.bits,
-    nonce: data.nonce
+    nonce: data.nonce,
+    auxpow: data.auxpow
   };
   return info;
 };
@@ -143,6 +146,7 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
   info.time = br.readUInt32LE();
   info.bits = br.readUInt32LE();
   info.nonce = br.readUInt32LE();
+  info.auxpow = new AuxPow(info, br);
   return info;
 };
 
@@ -152,9 +156,7 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
  */
 BlockHeader.fromBufferReader = function fromBufferReader(br) {
   var info = BlockHeader._fromBufferReader(br);
-  const header = new BlockHeader(info);
-  header._parseAuxPoW(br);
-  return header;
+  return new BlockHeader(info);
 };
 
 /**
@@ -200,6 +202,10 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
   bw.writeUInt32LE(this.time);
   bw.writeUInt32LE(this.bits);
   bw.writeUInt32LE(this.nonce);
+  if (this.isAuxPow()) {
+    this.auxpow.toBufferWriter(bw);
+  }
+  
   return bw;
 };
 
@@ -224,6 +230,27 @@ BlockHeader.prototype.getTargetDifficulty = function getTargetDifficulty(bits) {
  * @return {Number}
  */
 BlockHeader.prototype.getDifficulty = function getDifficulty() {
+
+  let nShift = (this.bits >> 24) & 0xff;
+
+  let dDiff = 0x0000ffff / (this.bits & 0x00ffffff);
+
+  while (nShift < 29)
+  {
+      dDiff *= 256.0;
+      nShift++;
+  }
+  while (nShift > 29)
+  {
+      dDiff /= 256.0;
+      nShift--;
+  }
+
+  return parseFloat(dDiff.toPrecision(16));
+  
+  
+  
+  
   var difficulty1TargetBN = this.getTargetDifficulty(GENESIS_BITS).mul(new BN(Math.pow(10, 8)));
   var currentTargetBN = this.getTargetDifficulty();
 
@@ -275,7 +302,13 @@ BlockHeader.prototype.validTimestamp = function validTimestamp() {
  */
 BlockHeader.prototype.validProofOfWork = function validProofOfWork() {
   // For Litecoin, we use the scrypt hash to calculate proof of work
-  var pow = new BN(Hash.scrypt(this.toBuffer()));
+  let hashBuf;
+  if (this.isAuxPow()) {
+    hashBuf = this.auxpow.parentBlock.toBuffer();
+  } else {
+    hashBuf = this.toBuffer()
+  }
+  var pow = new BN(Hash.scrypt(hashBuf));
   var target = this.getTargetDifficulty();
 
   if (pow.cmp(target) > 0) {
@@ -291,6 +324,29 @@ BlockHeader.prototype.inspect = function inspect() {
   return '<BlockHeader ' + this.id + '>';
 };
 
+
+/**
+ * @returns {Boolean} - Whether block is part of an Aux Proof-of-Work
+ */
+BlockHeader.prototype.isAuxPow = function() {
+  // Reference for AuxPoW bit:
+  // https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/primitives/pureheader.h#L131
+  return Boolean(this.version & (1 << 8));
+}
+
+Object.defineProperty(BlockHeader.prototype, 'auxpow', {
+  configurable: false,
+  enumerable: true,
+  /**
+   * @returns {AuxPow}
+   */
+  get: function() {
+    if (this.isAuxPow()) {
+      return this._auxpow;
+    }
+    return null;
+  }
+})
 
 /**
  * Parse the Aux Proof-of-Work block in the block header
@@ -409,9 +465,11 @@ BlockHeader.prototype._parseAuxPoW = function(br) {
 }
 
 BlockHeader.Constants = {
-  START_OF_HEADER: 8, // Start buffer position in raw block data
+  START_OF_HEADER: 0, // Start buffer position in raw block data
   MAX_TIME_OFFSET: 2 * 60 * 60, // The max a timestamp can be in the future
   LARGEST_HASH: new BN('10000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
 
 module.exports = BlockHeader;
+
+var AuxPow = require('./auxpow');
