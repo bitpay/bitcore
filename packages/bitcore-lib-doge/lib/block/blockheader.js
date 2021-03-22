@@ -175,10 +175,11 @@ BlockHeader.prototype.toObject = BlockHeader.prototype.toJSON = function toObjec
 };
 
 /**
+ * @param {Boolean} - Include AuxPow header (default: true)
  * @returns {Buffer} - A Buffer of the BlockHeader
  */
-BlockHeader.prototype.toBuffer = function toBuffer() {
-  return this.toBufferWriter().concat();
+BlockHeader.prototype.toBuffer = function toBuffer(includeAuxPow = true) {
+  return this.toBufferWriter(null, includeAuxPow).concat();
 };
 
 /**
@@ -190,9 +191,10 @@ BlockHeader.prototype.toString = function toString() {
 
 /**
  * @param {BufferWriter} - An existing instance BufferWriter
+ * @param {Boolean} - Include AuxPow header (default: true)
  * @returns {BufferWriter} - An instance of BufferWriter representation of the BlockHeader
  */
-BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
+BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw, includeAuxPow = true) {
   if (!bw) {
     bw = new BufferWriter();
   }
@@ -202,7 +204,7 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
   bw.writeUInt32LE(this.time);
   bw.writeUInt32LE(this.bits);
   bw.writeUInt32LE(this.nonce);
-  if (this.isAuxPow()) {
+  if (includeAuxPow && this.isAuxPow()) {
     this.auxpow.toBufferWriter(bw);
   }
   
@@ -230,27 +232,6 @@ BlockHeader.prototype.getTargetDifficulty = function getTargetDifficulty(bits) {
  * @return {Number}
  */
 BlockHeader.prototype.getDifficulty = function getDifficulty() {
-
-  let nShift = (this.bits >> 24) & 0xff;
-
-  let dDiff = 0x0000ffff / (this.bits & 0x00ffffff);
-
-  while (nShift < 29)
-  {
-      dDiff *= 256.0;
-      nShift++;
-  }
-  while (nShift > 29)
-  {
-      dDiff /= 256.0;
-      nShift--;
-  }
-
-  return parseFloat(dDiff.toPrecision(16));
-  
-  
-  
-  
   var difficulty1TargetBN = this.getTargetDifficulty(GENESIS_BITS).mul(new BN(Math.pow(10, 8)));
   var currentTargetBN = this.getTargetDifficulty();
 
@@ -265,7 +246,7 @@ BlockHeader.prototype.getDifficulty = function getDifficulty() {
  * @returns {Buffer} - The little endian hash buffer of the header
  */
 BlockHeader.prototype._getHash = function hash() {
-  var buf = this.toBuffer();
+  var buf = this.toBuffer(false);
   return Hash.sha256sha256(buf);
 };
 
