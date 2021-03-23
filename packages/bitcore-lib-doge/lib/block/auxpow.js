@@ -3,7 +3,6 @@
 const BufferReader = require('../encoding/bufferreader');
 const BufferWriter = require('../encoding/bufferwriter');
 const $ = require('../util/preconditions');
-const Script = require('../script/script');
 const BufferUtil = require('../util/buffer');
 const Transaction = require('../transaction/transaction');
 const BlockHeader = require('./blockheader');
@@ -89,12 +88,6 @@ AuxPow.prototype._from = function(data) {
 AuxPow.prototype._fromBufferReader = function(br) {
   $.checkArgument(br && br instanceof BufferReader, 'A bufferreader is required')
 
-  // const initPos = br.pos;
-  // let coinbaseTxn1 = new Transaction().fromBufferReader(br);
-  // br.pos = initPos;
-  // let coinbaseTxn2 = this._parseTransaction(br);
-  // br.pos = initPos;
-
   const info = {
     coinbaseTxn      : new Transaction().fromBufferReader(br),
     blockHashBuf     : br.read(32),
@@ -106,97 +99,10 @@ AuxPow.prototype._fromBufferReader = function(br) {
 };
 
 
-// AuxPow.prototype._parseTransaction = function(br) {
-//   const txn = {};
-//   txn.version = br.readInt32LE();
-
-//   // If flag is 1, then has witness(es)
-//   txn.flag = 0;
-//   if (br.buf.readUInt16BE(br.pos) === 1) {
-//     txn.flag = br.readUInt16BE();
-//   }
-
-//   txn.in        = this._getAllTxIn(br);
-//   txn.out       = this._getAllTxOut(br);
-//   txn.witnesses = this._getTxWitnesses(br, txn.flag, txn.in.length);
-
-//   txn.lockTime = br.readUInt32LE();
-
-//   return txn;
-// };
-
-
-// /**
-//  * @param {BufferReader} br 
-//  */
-// AuxPow.prototype._getAllTxIn = function(br) {
-//   const txInCount = br.readVarintNum();
-//   const txIn = [];
-
-//   for (let i = 0; i < txInCount; i++) { 
-//     const txn = this._getSingleTxIn(br);
-//     txIn.push(txn);
-//   }
-
-//   return txIn;
-// };
-
-// AuxPow.prototype._getSingleTxIn = function(br) {
-//   const prevOutput = {
-//     hash: br.read(32),
-//     index: br.read(4)
-//   };
-//   const scriptLen = br.readVarintNum();
-//   const script = br.read(scriptLen);
-//   const sequence = br.readUInt32LE();
-//   return {
-//     prevOutput,
-//     scriptLen,
-//     script,
-//     sequence
-//   };
-// };
-
-
-// AuxPow.prototype._getAllTxOut = function(br) {
-//   const txOutCount = br.readVarintNum();
-//   const txOut = [];
-
-//   for (let i = 0; i < txOutCount; i++) {
-//     const txn = this._getSingleTxOut(br);
-//     txOut.push(txn);
-//   }
-
-//   return txOut;
-// };
-
-
-// AuxPow.prototype._getSingleTxOut = function(br) {
-//   const value = br.read(8);
-//   const pkScriptLen = br.readVarintNum();
-//   const pkScript = br.read(pkScriptLen);
-//   return {
-//     value,
-//     scriptLen: pkScriptLen,
-//     script: new Script(pkScript)
-//   };
-// };
-
-
-// AuxPow.prototype._getTxWitnesses = function(br, flag, txInCount) {
-//   const txWitnesses = [];
-//   if (flag) {
-//     for (let i = 0; i < txInCount; i++) {
-//       const componentCnt = br.readVarintNum();
-//       for (let j = 0; j < componentCnt; j++) {
-//         const componentLen = br.readVarintNum();
-//         txWitnesses.push(br.read(componentLen));
-//       }
-//     }
-//   }
-//   return txWitnesses;
-// };
-
+/**
+ * @param {BufferReader} br
+ * @returns 
+ */
 AuxPow.prototype._getMerkleBranch = function(br) {
   const branchLen = br.readVarintNum();
   const branchHashes = [];
@@ -212,41 +118,24 @@ AuxPow.prototype._getMerkleBranch = function(br) {
 };
 
 
+/**
+ * @returns {Buffer} - A Buffer of the AuxPow header
+ */
 AuxPow.prototype.toBuffer = function() {
   const bw = this.toBufferWriter();
   return bw.concat();
 };
 
+
+/**
+ * @param {BufferWriter} - (optional) An existing instance BufferWriter
+ * @returns {BufferWriter} - An instance of BufferWriter representation of the BlockHeader
+ */
 AuxPow.prototype.toBufferWriter = function(bw) {
   if (!bw) {
     bw = new BufferWriter();
   }
   // Coinbase Transaction
-
-  // bw.writeInt32LE(this.coinbaseTxn.version);
-  // bw.writeUInt16BE(this.coinbaseTxn.flag);
-  // bw.writeVarintNum(this.coinbaseTxn.in.length);
-  // for (let txIn of this.coinbaseTxn.in) {
-  //   bw.write(txIn.prevOutput.hash);
-  //   bw.write(txIn.prevOutput.index);
-  //   bw.writeVarintNum(txIn.scriptLen);
-  //   bw.write(txIn.script);
-  //   bw.writeUInt32LE(txIn.sequence);
-  // }
-  // bw.writeVarintNum(this.coinbaseTxn.out.length);
-  // for (let txOut of this.coinbaseTxn.out) {
-  //   bw.write(txOut.value);
-  //   bw.writeVarintNum(txOut.scriptLen);
-  //   bw.write(txOut.script.toBuffer());
-  // }
-  // if (this.coinbaseTxn.flag) {
-  //   bw.writeVarintNum(this.coinbaseTxn.witnesses.length);
-  //   for (let witness of this.coinbaseTxn.witnesses) {
-  //     bw.writeVarintNum(witness.length);
-  //     bw.write(witness);
-  //   }
-  // }
-  // bw.writeUInt32LE(this.coinbaseTxn.lockTime);
   this.coinbaseTxn.toBufferWriter(bw);
   // Block Hash
   bw.write(this._blockHash);
@@ -267,5 +156,6 @@ AuxPow.prototype.toBufferWriter = function(bw) {
 
   return bw;
 };
+
 
 module.exports = AuxPow;
