@@ -258,7 +258,7 @@ describe('BlockHeader', function() {
 
   });
 
-  describe.skip('#getDifficulty', function() {
+  describe('#getDifficulty', function() {
     it('should get the correct difficulty for testnet block 160775', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
       x.bits.should.equal(0x1e0fffff);
@@ -269,21 +269,21 @@ describe('BlockHeader', function() {
       var x = new BlockHeader({
         bits: 0x1d702e1f
       });
-      x.getDifficulty().should.equal(0.9852471446524519);
+      x.getDifficulty().should.equal(0.008914096187362101);
     });
 
     it('should get the correct difficulty for livenet block 3637988', function() {
       var x = new BlockHeader({
         bits: 0x1a02ba1b
       });
-      x.getDifficulty().should.equal(1.1150780041274941);
+      x.getDifficulty().should.equal(6152224.774417369);
     });
 
     it('should get the correct difficulty for livenet block 831920', function() {
       var x = new BlockHeader({
         bits: 0x1b056760
       });
-      x.getDifficulty().should.equal(1.073379578551834);
+      x.getDifficulty().should.equal(12127.557603686635);
     });
 
     it('should use exponent notation if difficulty is larger than Javascript number', function() {

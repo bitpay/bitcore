@@ -6,12 +6,10 @@ var BufferUtil = require('../util/buffer');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
-var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
 var Script = require('../script');
 
-var GENESIS_BITS = 0x1e0ffff0;//0x1d00ffff;
-// Regtest: 0x207fffff
+var GENESIS_BITS = 0x1e0ffff0; // Regtest: 0x207fffff
 
 /**
  * Instantiate a BlockHeader from a Buffer, JSON object, or Object with
@@ -228,18 +226,29 @@ BlockHeader.prototype.getTargetDifficulty = function getTargetDifficulty(bits) {
 };
 
 /**
- * @link https://en.bitcoin.it/wiki/Difficulty
+ * @link https://github.com/dogecoin/dogecoin/blob/f80bfe9068ac1a0619d48dad0d268894d926941e/src/rpc/blockchain.cpp#L47
  * @return {Number}
  */
 BlockHeader.prototype.getDifficulty = function getDifficulty() {
-  var difficulty1TargetBN = this.getTargetDifficulty(GENESIS_BITS).mul(new BN(Math.pow(10, 8)));
-  var currentTargetBN = this.getTargetDifficulty();
+  // minimum difficulty = 1.0.
+  if (!this.bits) {
+    return 1.0;
+  }
 
-  var difficultyString = difficulty1TargetBN.div(currentTargetBN).toString(10);
-  var decimalPos = difficultyString.length - 8;
-  difficultyString = difficultyString.slice(0, decimalPos) + '.' + difficultyString.slice(decimalPos);
+  let decimalShift = (this.bits >> 24) & 0xff;
 
-  return parseFloat(difficultyString);
+  let difficulty = 0x0000ffff / (this.bits & 0x00ffffff);
+
+  while (decimalShift < 29) {
+    difficulty *= 256.0;
+    decimalShift++;
+  }
+  while (decimalShift > 29) {
+    difficulty /= 256.0;
+    decimalShift--;
+  }
+
+  return parseFloat(difficulty.toFixed(19));
 };
 
 /**
