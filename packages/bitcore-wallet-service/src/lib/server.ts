@@ -2105,6 +2105,20 @@ export class WalletService {
     });
   }
 
+  getNonce(opts) {
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getTransactionCount(opts.address, (err, nonce) => {
+        if (err) {
+          this.logw('Error estimating nonce', err);
+          return reject(err);
+        }
+        return resolve(nonce);
+      });
+    });
+  }
+
   estimateGas(opts) {
     const bc = this._getBlockchainExplorer(opts.coin, opts.network);
     return new Promise((resolve, reject) => {
@@ -2257,10 +2271,12 @@ export class WalletService {
                   next();
                 },
                 async next => {
-                  try {
-                    opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
-                  } catch (error) {
-                    return next(error);
+                  if (!opts.nonce) {
+                    try {
+                      opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
+                    } catch (error) {
+                      return next(error);
+                    }
                   }
                   return next();
                 },
@@ -3423,6 +3439,7 @@ export class WalletService {
       tx.proposalType = proposal.type;
       tx.creatorName = proposal.creatorName;
       tx.message = proposal.message;
+      tx.nonce = proposal.nonce;
       tx.actions = _.map(proposal.actions, action => {
         return _.pick(action, ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']);
       });
