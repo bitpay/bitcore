@@ -6,11 +6,10 @@ var BufferUtil = require('../util/buffer');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
-var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
 var Script = require('../script');
 
-var GENESIS_BITS = 0x1d00ffff;
+var GENESIS_BITS = 0x1e0ffff0; // Regtest: 0x207fffff
 
 /**
  * Instantiate a BlockHeader from a Buffer, JSON object, or Object with
@@ -32,6 +31,7 @@ var BlockHeader = function BlockHeader(arg) {
   this.timestamp = info.time;
   this.bits = info.bits;
   this.nonce = info.nonce;
+  this._auxpow = info.auxpow;
 
   if (info.hash) {
     $.checkState(
@@ -84,7 +84,8 @@ BlockHeader._fromObject = function _fromObject(data) {
     time: data.time,
     timestamp: data.time,
     bits: data.bits,
-    nonce: data.nonce
+    nonce: data.nonce,
+    auxpow: data.auxpow
   };
   return info;
 };
@@ -143,6 +144,7 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
   info.time = br.readUInt32LE();
   info.bits = br.readUInt32LE();
   info.nonce = br.readUInt32LE();
+  info.auxpow = new AuxPow(info, br);
   return info;
 };
 
@@ -152,9 +154,7 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
  */
 BlockHeader.fromBufferReader = function fromBufferReader(br) {
   var info = BlockHeader._fromBufferReader(br);
-  const header = new BlockHeader(info);
-  header._parseAuxPoW(br);
-  return header;
+  return new BlockHeader(info);
 };
 
 /**
@@ -173,10 +173,11 @@ BlockHeader.prototype.toObject = BlockHeader.prototype.toJSON = function toObjec
 };
 
 /**
+ * @param {Boolean} - Include AuxPow header (default: true)
  * @returns {Buffer} - A Buffer of the BlockHeader
  */
-BlockHeader.prototype.toBuffer = function toBuffer() {
-  return this.toBufferWriter().concat();
+BlockHeader.prototype.toBuffer = function toBuffer(includeAuxPow = true) {
+  return this.toBufferWriter(null, includeAuxPow).concat();
 };
 
 /**
@@ -188,9 +189,10 @@ BlockHeader.prototype.toString = function toString() {
 
 /**
  * @param {BufferWriter} - An existing instance BufferWriter
+ * @param {Boolean} - Include AuxPow header (default: true)
  * @returns {BufferWriter} - An instance of BufferWriter representation of the BlockHeader
  */
-BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
+BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw, includeAuxPow = true) {
   if (!bw) {
     bw = new BufferWriter();
   }
@@ -200,6 +202,10 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
   bw.writeUInt32LE(this.time);
   bw.writeUInt32LE(this.bits);
   bw.writeUInt32LE(this.nonce);
+  if (includeAuxPow && this.isAuxPow()) {
+    this.auxpow.toBufferWriter(bw);
+  }
+  
   return bw;
 };
 
@@ -220,25 +226,36 @@ BlockHeader.prototype.getTargetDifficulty = function getTargetDifficulty(bits) {
 };
 
 /**
- * @link https://en.bitcoin.it/wiki/Difficulty
+ * @link https://github.com/dogecoin/dogecoin/blob/f80bfe9068ac1a0619d48dad0d268894d926941e/src/rpc/blockchain.cpp#L47
  * @return {Number}
  */
 BlockHeader.prototype.getDifficulty = function getDifficulty() {
-  var difficulty1TargetBN = this.getTargetDifficulty(GENESIS_BITS).mul(new BN(Math.pow(10, 8)));
-  var currentTargetBN = this.getTargetDifficulty();
+  // minimum difficulty = 1.0.
+  if (!this.bits) {
+    return 1.0;
+  }
 
-  var difficultyString = difficulty1TargetBN.div(currentTargetBN).toString(10);
-  var decimalPos = difficultyString.length - 8;
-  difficultyString = difficultyString.slice(0, decimalPos) + '.' + difficultyString.slice(decimalPos);
+  let decimalShift = (this.bits >> 24) & 0xff;
 
-  return parseFloat(difficultyString);
+  let difficulty = 0x0000ffff / (this.bits & 0x00ffffff);
+
+  while (decimalShift < 29) {
+    difficulty *= 256.0;
+    decimalShift++;
+  }
+  while (decimalShift > 29) {
+    difficulty /= 256.0;
+    decimalShift--;
+  }
+
+  return parseFloat(difficulty.toFixed(19));
 };
 
 /**
  * @returns {Buffer} - The little endian hash buffer of the header
  */
 BlockHeader.prototype._getHash = function hash() {
-  var buf = this.toBuffer();
+  var buf = this.toBuffer(false);
   return Hash.sha256sha256(buf);
 };
 
@@ -275,7 +292,13 @@ BlockHeader.prototype.validTimestamp = function validTimestamp() {
  */
 BlockHeader.prototype.validProofOfWork = function validProofOfWork() {
   // For Litecoin, we use the scrypt hash to calculate proof of work
-  var pow = new BN(Hash.scrypt(this.toBuffer()));
+  let hashBuf;
+  if (this.isAuxPow()) {
+    hashBuf = this.auxpow.parentBlock.toBuffer();
+  } else {
+    hashBuf = this.toBuffer()
+  }
+  var pow = new BN(Hash.scrypt(hashBuf));
   var target = this.getTargetDifficulty();
 
   if (pow.cmp(target) > 0) {
@@ -293,125 +316,35 @@ BlockHeader.prototype.inspect = function inspect() {
 
 
 /**
- * Parse the Aux Proof-of-Work block in the block header
- * Ref: https://en.bitcoin.it/wiki/Merged_mining_specification#Aux_proof-of-work_block
- * @param {BufferReader} br - BufferReader containing the header
+ * @returns {Boolean} - Whether block is part of an Aux Proof-of-Work
  */
-BlockHeader.prototype._parseAuxPoW = function(br) {
+BlockHeader.prototype.isAuxPow = function() {
   // Reference for AuxPoW bit:
   // https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/primitives/pureheader.h#L131
-  if (!(this.version & 1 << 8)) {
-    return this;
-  }
-
-  // Coinbase Txn
-  const getTxn = () => {
-    const version = br.readInt32LE();
-    // If flag is 1, then has witness(es) (see below)
-    let flag = 0;
-    if (br.buf.readUInt16BE(br.pos) === 1) {
-      flag = br.readUInt16BE();
-    }
-    // Tx_ins
-    const getTxIn = () => {
-      const prevOutput = {
-        hash: br.read(32),
-        index: br.read(4)
-      };
-      const scriptLen = br.readVarintNum();
-      const script = br.read(scriptLen);
-      const sequence = br.readUInt32LE();
-      return {
-        prevOutput,
-        scriptLen,
-        script,
-        sequence
-      }
-    }
-    const txInCount = br.readVarintNum();
-    const txIn = [];
-    for (let i = 0; i < txInCount; i++) {
-      txIn.push(getTxIn());
-    }
-    // Tx_outs
-    const getTxOut = () => {
-      const value = br.read(8);
-      const pkScriptLen = br.readVarintNum();
-      const pkScript = br.read(pkScriptLen);
-      return {
-        value,
-        scriptLen: pkScriptLen,
-        script: new Script(pkScript)
-      }
-    }
-    const txOutCount = br.readVarintNum();
-    const txOut = [];
-    for (let i = 0; i < txOutCount; i++) {
-      txOut.push(getTxOut());
-    }
-    // Tx_witnesses
-    const txWitnesses = [];
-    if (flag) {
-      for (let i = 0; i < txInCount; i++) {
-        const componentCnt = br.readVarintNum();
-        for (let j = 0; j < componentCnt; j++) {
-          const componentLen = br.readVarintNum();
-          txWitnesses.push(br.read(componentLen));
-        }
-      }
-    }
-    // Locktime
-    const lockTime = br.readUInt32LE();
-    return {
-      version,
-      flag,
-      txInCount,
-      txIn,
-      txOutCount,
-      txOut,
-      txWitnesses,
-      lockTime
-    }
-  };
-  
-  // Could possibly use Transaction().fromBufferReader(br), but it's throwing due to bnNum instanceof BN === false ??
-  const coinbaseTxn = getTxn();
-  const blockHash = br.read(32);
-  
-  const merkleBranch = () => {
-    const branchLen = br.readVarintNum();
-    const branchHashes = [];
-    for (let j = 0; j < branchLen; j++) {
-      branchHashes.push(br.readReverse(32));
-    }
-    const branchSideMask = br.readInt32LE();
-    return {
-      branchLen,
-      branchHashes,
-      branchSideMask
-    }
-  };
-  
-  const coinbaseBranch = merkleBranch();
-  const blockchainBranch = merkleBranch();
-  let parentBlock = br.read(80);
-  parentBlock = new BlockHeader(parentBlock);
-
-  this.auxpow = {
-    coinbaseTxn,
-    blockHash,
-    coinbaseBranch,
-    blockchainBranch,
-    parentBlock
-  }
-  
-  return this;
+  return Boolean(this.version & (1 << 8));
 }
 
+Object.defineProperty(BlockHeader.prototype, 'auxpow', {
+  configurable: false,
+  enumerable: true,
+  /**
+   * @returns {AuxPow}
+   */
+  get: function() {
+    if (this.isAuxPow()) {
+      return this._auxpow;
+    }
+    return null;
+  }
+})
+
+
 BlockHeader.Constants = {
-  START_OF_HEADER: 8, // Start buffer position in raw block data
+  START_OF_HEADER: 0, // Start buffer position in raw block data
   MAX_TIME_OFFSET: 2 * 60 * 60, // The max a timestamp can be in the future
   LARGEST_HASH: new BN('10000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
 
 module.exports = BlockHeader;
+
+var AuxPow = require('./auxpow');
