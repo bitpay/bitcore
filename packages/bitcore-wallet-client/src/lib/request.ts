@@ -151,6 +151,7 @@ export class Request {
       if (Errors[body.code]) {
         ret = new Errors[body.code]();
         if (body.message) ret.message = body.message;
+        if (body.messageData) ret.messageData = body.messageData;
       } else {
         ret = new Error(
           body.code +

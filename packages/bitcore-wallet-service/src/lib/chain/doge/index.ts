@@ -85,7 +85,12 @@ export class DogeChain extends BtcChain implements IChain {
         return cb(
           new ClientError(
             Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-            Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err2'
+            `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${baseTxpFee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err2`,
+            {
+              coin: txp.coin,
+              feePerKb: txp.feePerKb,
+              requiredFee: baseTxpFee
+            }
           )
         );
       }
@@ -207,7 +212,12 @@ export class DogeChain extends BtcChain implements IChain {
           error ||
             new ClientError(
               Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-              Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err3'
+              `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${fee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err3`,
+              {
+                coin: txp.coin,
+                feePerKb: txp.feePerKb,
+                requiredFee: fee
+              }
             )
         );
       }

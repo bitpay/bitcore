@@ -5274,7 +5274,12 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
-                err.message.should.include('Insufficient funds for fee. Coin: btc feePerKb: 10000');
+                err.message.should.include('Insufficient funds for fee. RequiredFee: 4500 Coin: btc feePerKb: 10000');
+                err.messageData.should.deep.equal({
+                  requiredFee: 4500,
+                  coin: 'btc',
+                  feePerKb: 10000
+                });
                 done();
               });
             });
@@ -10252,7 +10257,7 @@ describe('Wallet service', function() {
       sandbox.restore();
     })
 
-    it('should fail with different error for ERC20 txs with insufficient ETH to cover miner fee', function(done) {
+   it('should fail with different error for ERC20 txs with insufficient ETH to cover miner fee', function(done) {
       const ts = TO_SAT['usdc'];
       server.createAddress({}, from => {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
@@ -10271,7 +10276,8 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('INSUFFICIENT_ETH_FEE');
-            err.message.should.equal('Your linked ETH wallet does not have enough ETH for fee');
+            err.message.should.equal('Your linked ETH wallet does not have enough ETH for fee. RequiredFee: 3999999999999990000');
+            err.messageData.should.deep.equal({ requiredFee: 3999999999999990000 });
             server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, tokenBalance) {
               should.not.exist(err);
               tokenBalance.totalAmount.should.equal(2 * ts);

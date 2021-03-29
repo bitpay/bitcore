@@ -3,6 +3,7 @@ import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
+import { ClientError } from '../../errors/clienterror';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
@@ -323,15 +324,39 @@ export class EthChain implements IChain {
               if (err) return cb(err);
               const { totalAmount, availableAmount } = ethBalance;
               if (totalAmount < txp.fee) {
-                return cb(Errors.INSUFFICIENT_ETH_FEE);
+                return cb(
+                  new ClientError(
+                    Errors.codes.INSUFFICIENT_ETH_FEE,
+                    `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
+                    {
+                      requiredFee: txp.fee
+                    }
+                  )
+                );
               } else if (availableAmount < txp.fee) {
-                return cb(Errors.LOCKED_ETH_FEE);
+                return cb(
+                  new ClientError(
+                    Errors.codes.LOCKED_ETH_FEE,
+                    `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
+                    {
+                      requiredFee: txp.fee
+                    }
+                  )
+                );
               } else {
                 return cb(this.checkTx(txp));
               }
             });
           } else if (availableAmount - txp.fee < txpTotalAmount) {
-            return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+            return cb(
+              new ClientError(
+                Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
+                `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${txp.fee}`,
+                {
+                  requiredFee: txp.fee
+                }
+              )
+            );
           } else {
             return cb(this.checkTx(txp));
           }

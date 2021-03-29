@@ -112,12 +112,14 @@ export class ExpressApp {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
 
+        const clientError: { code: string; message: string; messageData?: object } = {
+          code: err.code,
+          message: err.message
+        };
+        if (err.messageData) clientError.messageData = err.messageData;
         res
           .status(status)
-          .json({
-            code: err.code,
-            message: err.message
-          })
+          .json(clientError)
           .end();
       } else {
         let code = 500,
