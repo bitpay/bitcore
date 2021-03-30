@@ -1132,25 +1132,19 @@ export class ExpressApp {
     });
 
     router.get('/v1/nonce/:address', (req, res) => {
-      let server;
-      const opts = {
-        coin: req.query.coin || 'eth',
-        network: req.query.network || 'livenet',
-        address: req.params['address']
-      };
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server
-        .getNonce(opts)
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          if (err) return returnError(err, res, req);
-        });
+      getServerWithAuth(req, res, async server => {
+        const opts = {
+          coin: req.query.coin || 'eth',
+          network: req.query.network || 'livenet',
+          address: req.params['address']
+        };
+        try {
+          const nonce = await server.getNonce(opts);
+          res.json(nonce);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
     });
 
     router.post('/v1/clearcache/', (req, res) => {

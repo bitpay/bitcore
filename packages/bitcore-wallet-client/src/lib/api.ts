@@ -2499,6 +2499,25 @@ export class API extends EventEmitter {
   }
 
   // /**
+  // * Returns nonce.
+  // * @param {Object} opts - coin, network
+  // * @return {Callback} cb - Return error (if exists) and nonce
+  // */
+  getNonce(opts, cb) {
+    $.checkArgument(opts.coin == 'eth', 'Invalid coin: must be "eth"');
+
+    var qs = [];
+    qs.push(`coin=${opts.coin}`);
+    qs.push(`network=${opts.network}`);
+
+    const url = `/v1/nonce/${opts.address}?${qs.join('&')}`;
+    this.request.get(url, (err, nonce) => {
+      if (err) return cb(err);
+      return cb(null, nonce);
+    });
+  }
+
+  // /**
   // * Returns contract instantiation info. (All contract addresses instantiated by that sender with the current transaction hash and block number)
   // * @param {string} opts.sender - sender eth wallet address
   // * @param {string} opts.txId - instantiation transaction id
