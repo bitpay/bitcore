@@ -30,7 +30,7 @@ var Point = function Point(x, y, isRed) {
   return point;
 };
 
-Point.prototype = Object.getPrototypeOf(ec.curve.point());
+Point.prototype = Object.create(ec.curve.point());
 
 /**
  *
