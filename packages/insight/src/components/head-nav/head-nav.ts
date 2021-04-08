@@ -63,31 +63,15 @@ export class HeadNavComponent implements OnInit {
   public search(): void {
     this.q = this.q.replace(/\s/g, '');
     this.searchProvider
-      .isInputValid(this.q, this.chainNetwork)
-      .subscribe(inputDetails => {
-        if (this.q !== '' && inputDetails.isValid) {
+      .determineInputType(this.q)
+      .subscribe(searchInputs => {
+        if (searchInputs.length) {
           this.showSearch = false;
           this.searchProvider
-            .search(this.q, inputDetails.type, this.chainNetwork)
+            .search(searchInputs, this.chainNetwork)
             .subscribe(
               res => {
-                if (this.chainNetwork.chain !== 'ALL') {
-                  const nextView = this.processResponse(res);
-                  if (!_.includes(nextView, '')) {
-                    this.params[nextView.type] = nextView.params;
-                    this.redirTo = nextView.redirTo;
-                    this.navCtrl.setRoot('home', this.params, {
-                      animate: false
-                    });
-                    this.redirProvider.redir(this.redirTo, this.params);
-                  } else {
-                    const message = 'No matching records found!';
-                    this.wrongSearch(message);
-                    this.logger.info(message);
-                  }
-                } else {
-                  this.processAllResponse(res);
-                }
+                this.processAllResponse(res);
               },
               err => {
                 this.wrongSearch('Server error. Please try again');
@@ -95,7 +79,7 @@ export class HeadNavComponent implements OnInit {
               }
             );
         } else {
-          this.wrongSearch('No matching records found!');
+          this.wrongSearch('Invalid search, please search for an address, transaction, or block');
         }
       });
   }
@@ -167,13 +151,41 @@ export class HeadNavComponent implements OnInit {
         });
       }
 
+      // Skip results screen if there is only one result
+      const totalMatches = matches.addresses.length + matches.txs.length + matches.blocks.length;
+      if (totalMatches === 1) {
+        if (matches.addresses.length) {
+          return this.redirProvider.redir('address', {
+            addrStr: matches.addresses[0].address,
+            chain: matches.addresses[0].chain,
+            network: matches.addresses[0].network
+          });
+        } else if (matches.txs.length) {
+          return this.redirProvider.redir('transaction', {
+            txId: matches.txs[0].txid,
+            chain: matches.txs[0].chain,
+            network: matches.txs[0].network
+          });
+        } else {
+          return this.redirProvider.redir('block-detail', {
+            blockHash: matches.blocks[0].hash,
+            chain: matches.blocks[0].chain,
+            network: matches.blocks[0].network
+          });
+        }
+      }
+
       this.redirProvider.redir('search', {
         matches,
         chain: this.chainNetwork.chain,
         network: this.chainNetwork.network
       });
     } else {
-      const message = 'No matching records found!';
+      let message = 'No matching records found!';
+      if (this.chainNetwork.chain !== 'ALL') {
+        // Give the user currency specific error since search is limited to one chain/network
+        message = `No matching records found on the ${this.chainNetwork.chain} ${this.chainNetwork.network}. Select a different chain or try a different search`;
+      }
       this.wrongSearch(message);
       this.logger.info(message);
     }
@@ -190,8 +202,9 @@ export class HeadNavComponent implements OnInit {
   private presentToast(message): void {
     const toast: any = this.toastCtrl.create({
       message,
-      duration: 3000,
-      position: 'top'
+      duration: 5000,
+      position: 'top',
+      showCloseButton: true
     });
     toast.present();
   }

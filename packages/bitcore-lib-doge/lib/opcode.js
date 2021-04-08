@@ -51,7 +51,7 @@ Opcode.prototype.toHex = function() {
 };
 
 Opcode.prototype.toBuffer = function() {
-  return new Buffer(this.toHex(), 'hex');
+  return Buffer.from(this.toHex(), 'hex');
 };
 
 Opcode.prototype.toNumber = function() {
@@ -197,6 +197,7 @@ Opcode.map = {
   OP_CHECKMULTISIGVERIFY: 175,
 
   OP_CHECKLOCKTIMEVERIFY: 177,
+  OP_CHECKSEQUENCEVERIFY: 178,
 
   // expansion
   OP_NOP1: 176,

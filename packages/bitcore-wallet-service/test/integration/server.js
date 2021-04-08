@@ -5274,7 +5274,12 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
-                err.message.should.include('Insufficient funds for fee. Coin: btc feePerKb: 10000');
+                err.message.should.include('Insufficient funds for fee. RequiredFee: 4500 Coin: btc feePerKb: 10000');
+                err.messageData.should.deep.equal({
+                  requiredFee: 4500,
+                  coin: 'btc',
+                  feePerKb: 10000
+                });
                 done();
               });
             });
@@ -7435,6 +7440,152 @@ describe('Wallet service', function() {
       });
     });
   });
+
+
+  describe('Check requiredFeeRate  DOGE', function() {
+    var server, wallet;
+
+    beforeEach(function(done) {
+      helpers.stubFeeLevels({
+        1: 40002,
+        2: 1e8,
+        24: 0.5e8,
+      }, true);
+      done();
+    });
+
+    const cases = [
+      {
+        name: 'Legacy',
+        requiredFeeRate: 755000,
+        utxos: [100],
+        outputs:  [{
+          toAddress: 'DMHR9z3hVfEMkfsxfP7CbVtYdPh2f5ESqo',
+          amount: 2048378600, 
+        }],
+      },
+      {
+        n: 2,
+        name: 'Legacy, sendmax',
+        requiredFeeRate: 755000,
+        sendMax: true,
+        fromSegwit: false,
+        utxos: [100],
+        outputs:  [{
+          toAddress: 'DMHR9z3hVfEMkfsxfP7CbVtYdPh2f5ESqo',
+        }],
+      },
+    ];
+
+    function checkTx(txOpts, x, cb) {
+      function sign(copayerM, tx, cb) {
+        helpers.getAuthServer(wallet.copayers[copayerM].id, function(server) {
+          var signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: tx.id,
+            signatures: signatures,
+          }, function(err, txp) {
+            should.not.exist(err, err);
+
+            if (++copayerM == x.m) {
+              return cb(txp);
+            } else {
+              return sign(copayerM, tx, cb);
+            }
+          });
+        });
+      }
+
+
+      helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+        sign(0, tx, (txp) => {
+
+          should.exist(txp.raw);
+          // console.log('[server.js.7038]', txp.raw); // TODO
+          txp.status.should.equal('accepted');
+          //console.log('[server.js.6981:txp:]',txp); // TODO
+
+          var t = ChainService.getBitcoreTx(txp);
+          const vSize = x.vSize || t._estimateSize(); // use given vSize if available
+          // Check size and fee rate
+          const actualSize = txp.raw.length / 2;
+          const actualFeeRate = t.getFee() /  (x.fromSegwit ? vSize : actualSize) * 1000;
+          //console.log('[server.js.7001:log:]',txp.raw); // TODO
+          console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
+
+          // size should be above (or equal) the required FeeRate
+          actualFeeRate.should.not.be.below(x.requiredFeeRate);
+          actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+          return cb(actualFeeRate);
+        });
+      });
+    };
+    let i=0;
+    cases.forEach( x => {
+
+      x.i = i;
+      x.m = x.m || 1;
+      x.n = x.n || 1;
+      it(`case  ${i++} : ${x.name} (${x.m}-of-${x.n})`, function(done) {
+
+        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit, coin:'doge'}, function(s, w) {
+          server = s;
+          wallet = w;
+
+          helpers.stubUtxos(server, wallet, x.utxos, function() {
+            server.getSendMaxInfo({
+              feePerKb: x.requiredFeeRate,
+              returnInputs: true,
+            }, function(err, info) {
+              should.not.exist(err, err);
+              should.exist(info);
+
+              var txOpts = {
+                outputs: x.outputs,
+              };
+
+              if (x.sendMax) {
+                txOpts.fee =  info.fee;
+                txOpts.inputs = info.inputs;
+                txOpts.outputs[0].amount =  info.amount;
+              } else {
+                txOpts.feePerKb = x.requiredFeeRate;
+              }
+              txOpts.payProUrl = 'aaa.com';
+
+              // CASE 8
+              checkTx(txOpts, x, (fee1) => {
+                if (x.i == 8) {
+                  helpers.beforeEach(() => {
+                    // check with paypro fee is bigger.
+                    console.log(`## case  ${x.i} : Again with no paypro`);
+                    helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+                      server = s;
+                      wallet = w;
+
+                      helpers.stubUtxos(server, wallet, x.utxos, function() {
+
+                        txOpts.payProUrl = null;
+                        checkTx(txOpts, x, (fee2) => {
+                          console.log(`## Fee PayPro: ${fee1} vs ${fee2}`);
+                          fee1.should.be.above(fee2);
+                          done();
+                        });
+                      });
+                    });
+                  });
+                } else {
+                  done();
+                }
+
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+
 
   describe('#rejectTx', function() {
     var server, wallet, txid;
@@ -10106,7 +10257,7 @@ describe('Wallet service', function() {
       sandbox.restore();
     })
 
-    it('should fail with different error for ERC20 txs with insufficient ETH to cover miner fee', function(done) {
+   it('should fail with different error for ERC20 txs with insufficient ETH to cover miner fee', function(done) {
       const ts = TO_SAT['usdc'];
       server.createAddress({}, from => {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
@@ -10125,7 +10276,8 @@ describe('Wallet service', function() {
           server.createTx(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('INSUFFICIENT_ETH_FEE');
-            err.message.should.equal('Your linked ETH wallet does not have enough ETH for fee');
+            err.message.should.equal('Your linked ETH wallet does not have enough ETH for fee. RequiredFee: 3999999999999990000');
+            err.messageData.should.deep.equal({ requiredFee: 3999999999999990000 });
             server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, tokenBalance) {
               should.not.exist(err);
               tokenBalance.totalAmount.should.equal(2 * ts);

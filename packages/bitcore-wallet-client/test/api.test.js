@@ -956,6 +956,52 @@ describe('client API', function() {
           '0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080'
         ]);
       });
+      it('should protect from creating excessive fee DOGE', () => {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [
+          {
+            xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
+          }
+        ];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1, 2]);
+        var txp = {
+          coin: 'doge',
+          inputs: utxos,
+          toAddress: toAddress,
+          amount: 1.5e8,
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 3.2e8, /// 3 DOGE fee, WOW!
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH'
+        };
+
+        var x = Utils;
+
+        x.newBitcoreTransaction = () => {
+          return {
+            from: sinon.stub(),
+            to: sinon.stub(),
+            change: sinon.stub(),
+            outputs: [
+              {
+                satoshis: 1000
+              }
+            ],
+            fee: sinon.stub()
+          };
+        };
+
+        var t = x.buildTx(txp);
+        should.exist(t);
+        x.newBitcoreTransaction = x;
+      });
       it('should protect from creating excessive fee', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -976,7 +1022,7 @@ describe('client API', function() {
           },
           requiredSignatures: 1,
           outputOrder: [0, 1],
-          fee: 1.2e8,
+          fee: 0.7e8,
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
@@ -999,7 +1045,7 @@ describe('client API', function() {
 
         (() => {
           var t = x.buildTx(txp);
-        }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE at buildTx');
+        }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin) at buildTx');
 
         x.newBitcoreTransaction = x;
       });

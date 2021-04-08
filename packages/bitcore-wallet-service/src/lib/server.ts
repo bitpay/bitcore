@@ -1814,6 +1814,7 @@ export class WalletService {
 
       const feeLevels = Defaults.FEE_LEVELS[opts.coin];
 
+      /*
       if (opts.coin === 'doge') {
         const defaultDogeFeeLevels = feeLevels[0];
         const result: {
@@ -1827,6 +1828,7 @@ export class WalletService {
         };
         return cb(null, [result]);
       }
+      */
 
       const samplePoints = () => {
         const definedPoints = _.uniq(_.map(feeLevels, 'nbBlocks'));
@@ -2697,7 +2699,6 @@ export class WalletService {
   _processBroadcast(txp, opts, cb) {
     $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processBroadcast()>');
     opts = opts || {};
-
     txp.setBroadcasted();
     this.storage.storeTx(this.walletId, txp, err => {
       if (err) return cb(err);
@@ -2742,46 +2743,58 @@ export class WalletService {
           if (txp.status == 'broadcasted') return cb(Errors.TX_ALREADY_BROADCASTED);
           if (txp.status != 'accepted') return cb(Errors.TX_NOT_ACCEPTED);
 
-          let raw;
-          try {
-            raw = txp.getRawTx();
-          } catch (ex) {
-            return cb(ex);
-          }
-          this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
-            if (err || txid != txp.txid) {
-              if (!err || txp.txid != txid) {
-                logger.warn(`Broadcast failed for: ${raw}`);
+          const sub = TxConfirmationSub.create({
+            copayerId: txp.creatorId,
+            txid: txp.txid,
+            walletId: txp.walletId,
+            amount: txp.amount,
+            isActive: true,
+            isCreator: true
+          });
+          this.storage.storeTxConfirmationSub(sub, err => {
+            if (err) logger.error('Could not store Tx confirmation subscription: ', err);
+
+            let raw;
+            try {
+              raw = txp.getRawTx();
+            } catch (ex) {
+              return cb(ex);
+            }
+            this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
+              if (err || txid != txp.txid) {
+                if (!err || txp.txid != txid) {
+                  logger.warn(`Broadcast failed for: ${raw}`);
+                } else {
+                  logger.warn(`Broadcast failed: ${err}`);
+                }
+
+                const broadcastErr = err;
+                // Check if tx already in blockchain
+                this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
+                  if (err) return cb(err);
+                  if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
+
+                  this._processBroadcast(
+                    txp,
+                    {
+                      byThirdParty: true
+                    },
+                    cb
+                  );
+                });
               } else {
-                logger.warn(`Broadcast failed: ${err}`);
-              }
-
-              const broadcastErr = err;
-              // Check if tx already in blockchain
-              this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
-                if (err) return cb(err);
-                if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
-
                 this._processBroadcast(
                   txp,
                   {
-                    byThirdParty: true
+                    byThirdParty: false
                   },
-                  cb
+                  err => {
+                    if (err) return cb(err);
+                    return cb(null, txp);
+                  }
                 );
-              });
-            } else {
-              this._processBroadcast(
-                txp,
-                {
-                  byThirdParty: false
-                },
-                err => {
-                  if (err) return cb(err);
-                  return cb(null, txp);
-                }
-              );
-            }
+              }
+            });
           });
         }
       );
@@ -4262,7 +4275,9 @@ export class WalletService {
     const sub = TxConfirmationSub.create({
       copayerId: this.copayerId,
       walletId: this.walletId,
-      txid: opts.txid
+      txid: opts.txid,
+      amount: opts.amount,
+      isCreator: true
     });
 
     this.storage.storeTxConfirmationSub(sub, cb);

@@ -270,7 +270,6 @@ describe('PrivateKey', function() {
       pk.toAddress(Networks.livenet).network.name.should.equal(Networks.livenet.name);
       pk.toAddress(Networks.testnet).network.name.should.equal(Networks.testnet.name);
     });
-
   });
 
   describe('#inspect', function() {

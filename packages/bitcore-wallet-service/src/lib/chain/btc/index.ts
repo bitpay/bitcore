@@ -447,11 +447,17 @@ export class BtcChain implements IChain {
       return ex;
     }
 
-    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError)
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError) {
       return new ClientError(
         Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-        Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err1'
+        `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${txp.fee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err1`,
+        {
+          coin: txp.coin,
+          feePerKb: txp.feePerKb,
+          requiredFee: txp.fee
+        }
       );
+    }
     if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs) return Errors.DUST_AMOUNT;
     return bitcoreError;
   }
@@ -565,7 +571,12 @@ export class BtcChain implements IChain {
         return cb(
           new ClientError(
             Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-            Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err2'
+            `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${baseTxpFee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err2`,
+            {
+              coin: txp.coin,
+              feePerKb: txp.feePerKb,
+              requiredFee: baseTxpFee
+            }
           )
         );
       }
@@ -687,7 +698,12 @@ export class BtcChain implements IChain {
           error ||
             new ClientError(
               Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-              Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err3'
+              `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${fee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err3`,
+              {
+                coin: txp.coin,
+                feePerKb: txp.feePerKb,
+                requiredFee: fee
+              }
             )
         );
       }
