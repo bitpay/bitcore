@@ -74,6 +74,7 @@ function addNetwork(data) {
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
+    scripthash2: data.scripthash2,
     xpubkey: data.xpubkey,
     xprivkey: data.xprivkey
   });
@@ -129,11 +130,12 @@ function removeNetwork(network) {
 addNetwork({
   name: 'livenet',
   alias: 'mainnet',
-  pubkeyhash: 0x30,
-  privatekey: 0xb0,
-  scripthash: 0x32,
-  xpubkey: 0x019da462,
-  xprivkey: 0x019d9cfe,
+  pubkeyhash: 0x30, // 48
+  privatekey: 0xb0, // 176
+  scripthash: 0x05, // 5
+  scripthash2: 0x32, // 50
+  xpubkey: 0x0488b21e,
+  xprivkey: 0x0488ade4,
   networkMagic: 0xfbc0b6db,
   port: 9333,
   dnsSeeds: [
@@ -155,11 +157,12 @@ var livenet = get('livenet');
 addNetwork({
   name: 'testnet',
   alias: 'regtest',
-  pubkeyhash: 0x6f,
-  privatekey: 0xef,
-  scripthash: 0x3a,
-  xpubkey: 0x0436f6e1,
-  xprivkey: 0x0436ef7d
+  pubkeyhash: 0x6f, // 111
+  privatekey: 0xef, // 239
+  scripthash: 0x3a, // 58
+  scripthash2: 0xc4, // 196
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394
 });
 
 /**
