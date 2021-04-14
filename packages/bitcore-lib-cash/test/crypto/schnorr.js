@@ -33,6 +33,20 @@ describe("#Schnorr", function() {
         schnorr.verify().verified.should.equal(true);
     });
 
+    it("Sign Schnorr padding",  function() {
+        schnorr.hashbuf =  Hash.sha256((Buffer.from('Very deterministic messageg6', 'utf-8')));
+        schnorr.endianess = 'big';
+        schnorr.privkey = new Privkey(BN.fromBuffer('12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747','hex'), 'livenet');
+        schnorr.privkey2pubkey();
+        schnorr.sign();
+        schnorr.verify().verified.should.equal(true);
+        let x = new Signature();
+        x.isSchnorr = true;
+        x.set(schnorr.sig);
+        let str = x.toBuffer("schnorr").toString('hex');
+        str.should.equal("005e7ab0906a0164306975916350214a69fb80210cf7e37533f197c3d18b23d1b794262dc663d9e99605784b14ee1ecfca27b602e88dbc87af85f9907c214ea3");
+    });
+
     // Following Test Vectors used from
     // https://github.com/sipa/bips/blob/bip-schnorr/bip-schnorr/test-vectors.csv
 

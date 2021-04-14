@@ -214,13 +214,12 @@ Signature.prototype.toBuffer = Signature.prototype.toDER = function(signingMetho
 
   signingMethod = signingMethod || "ecdsa";
 
+  if(signingMethod === "schnorr") {
+    return Buffer.concat([this.r.toBuffer({size: 32}), this.s.toBuffer({size: 32})]);
+  }
 
   var rnbuf = this.r.toBuffer();
   var snbuf = this.s.toBuffer();
-
-  if(signingMethod === "schnorr") {
-    return Buffer.concat([rnbuf, snbuf]);
-  }
   
   var rneg = rnbuf[0] & 0x80 ? true : false;
   var sneg = snbuf[0] & 0x80 ? true : false;
