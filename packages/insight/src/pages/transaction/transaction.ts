@@ -51,7 +51,7 @@ export class TransactionPage {
     this.priceProvider.setCurrency();
   }
 
-  public ionViewDidEnter(): void {
+  public ionViewWillLoad(): void {
     this.txProvider.getTx(this.txId, this.chainNetwork).subscribe(
       response => {
         let tx;
