@@ -5654,6 +5654,25 @@ describe('Wallet service', function() {
             });
           });
         });
+        it('should ignore utxos not economically worth to send and fail if not enough utxos to cover fees', function(done) {
+          helpers.stubUtxos(server, wallet, [].concat(_.times(20, function() {
+            return '10bit';
+          })), function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 200e2,
+              }],
+              feePerKb: 90e2,
+            };
+            txOpts = Object.assign(txOpts, flags);
+            server.createTx(txOpts, function(err, txp) {
+              should.exist(err);
+              err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
+              done();
+            });
+          });
+        });
         it('should use small utxos if fee is low', function(done) {
           helpers.stubUtxos(server, wallet, [].concat(_.times(10, function() {
             return '30bit';
