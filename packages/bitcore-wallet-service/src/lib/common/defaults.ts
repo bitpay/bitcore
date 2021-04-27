@@ -231,7 +231,9 @@ module.exports = {
   },
 
   // ETH
-  DEFAULT_GAS_LIMIT: 200000,
+  DEFAULT_GAS_LIMIT: 60000,
+  DEFAULT_ERC20_GAS_LIMIT: 160000,
+
   MIN_GAS_LIMIT: 21000,
 
   // XRP has a non-refundable mininum activation fee / balance
