@@ -112,7 +112,7 @@ describe('Coin Model', function() {
           },
           {
             spentHeight: {
-              $in: [-1, -2, -3]
+              $lt: 0
             }
           }
         ],

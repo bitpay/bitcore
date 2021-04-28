@@ -121,11 +121,7 @@ export class CoinModel extends BaseModel<ICoin> {
       {
         $or: [
           { spentHeight: { $gt: blockHeight } },
-          {
-            spentHeight: {
-              $in: [SpentHeightIndicators.pending, SpentHeightIndicators.unspent, SpentHeightIndicators.conflicting]
-            }
-          }
+          { spentHeight: { $lt: SpentHeightIndicators.minimum } }
         ],
         mintHeight: { $lte: blockHeight }
       },
