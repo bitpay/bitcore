@@ -78,7 +78,7 @@ PublicKey.prototype._classifyArgs = function(data, extra) {
   } else if (data.x && data.y) {
     info = PublicKey._transformObject(data);
   } else if (typeof(data) === 'string') {
-    info = PublicKey._transformDER(new Buffer(data, 'hex'));
+    info = PublicKey._transformDER(Buffer.from(data, 'hex'));
   } else if (PublicKey._isBuffer(data)) {
     info = PublicKey._transformDER(data);
   } else if (PublicKey._isPrivateKey(data)) {
@@ -260,7 +260,7 @@ PublicKey.fromPoint = function(point, compressed) {
  * @returns {PublicKey} A new valid instance of PublicKey
  */
 PublicKey.fromString = function(str, encoding) {
-  var buf = new Buffer(str, encoding || 'hex');
+  var buf = Buffer.from(str, encoding || 'hex');
   var info = PublicKey._transformDER(buf);
   return new PublicKey(info.point, {
     compressed: info.compressed
@@ -337,14 +337,14 @@ PublicKey.prototype.toBuffer = PublicKey.prototype.toDER = function() {
 
   var prefix;
   if (!this.compressed) {
-    prefix = new Buffer([0x04]);
+    prefix = Buffer.from([0x04]);
     return Buffer.concat([prefix, xbuf, ybuf]);
   } else {
     var odd = ybuf[ybuf.length - 1] % 2;
     if (odd) {
-      prefix = new Buffer([0x03]);
+      prefix = Buffer.from([0x03]);
     } else {
-      prefix = new Buffer([0x02]);
+      prefix = Buffer.from([0x02]);
     }
     return Buffer.concat([prefix, xbuf]);
   }

@@ -17,7 +17,7 @@ var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
 describe('PrivateKey', function() {
   var hex = '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a';
   var hex2 = '8080808080808080808080808080808080808080808080808080808080808080';
-  var buf = new Buffer(hex, 'hex');
+  var buf = Buffer.from(hex, 'hex');
   var wifTestnet = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
   var wifTestnetUncompressed = '92jJzK4tbURm1C7udQXxeCBvXHoHJstDXRxAMouPG1k1XUaXdsu';
   var wifLivenet = 'T872No3VhULcqFF6Sv1PSCRXZKVBPYWG2UtG4ECFK7nzaUUU8Kuj';
@@ -127,7 +127,7 @@ describe('PrivateKey', function() {
     it('should not be able to instantiate private key WIF is too long', function() {
       expect(function() {
         var buf = Base58Check.decode('T9HHJkkinXnaU8TQEPvD1enejZszq13CWuuHzRjxbwUJkwuFo1wS');
-        var buf2 = Buffer.concat([buf, new Buffer(0x01)]);
+        var buf2 = Buffer.concat([buf, Buffer.from([0])]);
         return new PrivateKey(buf2);
       }).to.throw('Length of buffer must be 33 (uncompressed) or 34 (compressed');
     });
@@ -135,7 +135,7 @@ describe('PrivateKey', function() {
     it('should not be able to instantiate private key WIF because of unknown network byte', function() {
       expect(function() {
         var buf = Base58Check.decode('T9HHJkkinXnaU8TQEPvD1enejZszq13CWuuHzRjxbwUJkwuFo1wS');
-        var buf2 = Buffer.concat([new Buffer('ff', 'hex'), buf.slice(1, 33)]);
+        var buf2 = Buffer.concat([Buffer.from('ff', 'hex'), buf.slice(1, 33)]);
         return new PrivateKey(buf2);
       }).to.throw('Invalid network');
     });
@@ -334,7 +334,7 @@ describe('PrivateKey', function() {
     it('should return buffer with length equal 32', function() {
       var bn = BN.fromBuffer(buf.slice(0, 31));
       var privkey = new PrivateKey(bn, 'livenet');
-      var expected = Buffer.concat([ new Buffer([0]), buf.slice(0, 31) ]);
+      var expected = Buffer.concat([ Buffer.from([0]), buf.slice(0, 31) ]);
       privkey.toBuffer().toString('hex').should.equal(expected.toString('hex'));
     });
   });
@@ -400,7 +400,7 @@ describe('PrivateKey', function() {
     it('should convert this known PrivateKey to known PublicKey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
       var pubkey = privkey.toPublicKey();
       pubkey.toString().should.equal(pubhex);
     });
@@ -408,7 +408,7 @@ describe('PrivateKey', function() {
     it('should have a "publicKey" property', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
       privkey.publicKey.toString().should.equal(pubhex);
     });
 
