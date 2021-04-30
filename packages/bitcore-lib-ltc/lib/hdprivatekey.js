@@ -11,7 +11,6 @@ var Base58 = require('./encoding/base58');
 var Base58Check = require('./encoding/base58check');
 var Hash = require('./crypto/hash');
 var Network = require('./networks');
-var HDKeyCache = require('./hdkeycache');
 var Point = require('./crypto/point');
 var PrivateKey = require('./privatekey');
 var Random = require('./crypto/random');
@@ -204,11 +203,6 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened, nonComplian
     index += HDPrivateKey.Hardened;
   }
 
-  var cached = HDKeyCache.get(this.xprivkey, index, hardened);
-  if (cached) {
-    return cached;
-  }
-
   var indexBuffer = BufferUtil.integerAsBuffer(index);
   var data;
   if (hardened && nonCompliant) {
@@ -247,7 +241,6 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened, nonComplian
     chainCode: chainCode,
     privateKey: privateKey
   });
-  HDKeyCache.set(this.xprivkey, index, hardened, derived);
 
   return derived;
 };
