@@ -2,7 +2,6 @@
 
 var _ = require('lodash');
 var bs58 = require('bs58');
-var buffer = require('buffer');
 
 var ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.split('');
 
@@ -23,7 +22,7 @@ var Base58 = function Base58(obj) {
 };
 
 Base58.validCharacters = function validCharacters(chars) {
-  if (buffer.Buffer.isBuffer(chars)) {
+  if (Buffer.isBuffer(chars)) {
     chars = chars.toString();
   }
   return _.every(_.map(chars, function(char) { return (ALPHABET.includes(char)) }));
@@ -35,7 +34,7 @@ Base58.prototype.set = function(obj) {
 };
 
 Base58.encode = function(buf) {
-  if (!buffer.Buffer.isBuffer(buf)) {
+  if (!Buffer.isBuffer(buf)) {
     throw new Error('Input should be a buffer');
   }
   return bs58.encode(buf);

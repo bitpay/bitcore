@@ -11,7 +11,6 @@ var Networks = require('../networks');
 var $ = require('../util/preconditions');
 var _ = require('lodash');
 var errors = require('../errors');
-var buffer = require('buffer');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
 

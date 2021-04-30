@@ -1,7 +1,5 @@
 'use strict';
 
-var buffer = require('buffer');
-
 var Signature = require('../crypto/signature');
 var Script = require('../script');
 var Output = require('./output');

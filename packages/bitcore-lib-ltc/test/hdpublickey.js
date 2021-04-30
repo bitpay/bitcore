@@ -6,7 +6,6 @@ var assert = require('assert');
 var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
-var buffer = require('buffer');
 var errors = bitcore.errors;
 var hdErrors = bitcore.errors.HDPublicKey;
 var BufferUtil = bitcore.util.buffer;

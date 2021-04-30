@@ -2,7 +2,6 @@
 
 var _ = require('lodash');
 var Base58 = require('./base58');
-var buffer = require('buffer');
 var sha256sha256 = require('../crypto/hash').sha256sha256;
 
 var Base58Check = function Base58Check(obj) {
@@ -26,10 +25,10 @@ Base58Check.prototype.set = function(obj) {
 
 Base58Check.validChecksum = function validChecksum(data, checksum) {
   if (_.isString(data)) {
-    data = new buffer.Buffer(Base58.decode(data));
+    data = new Buffer.from(Base58.decode(data));
   }
   if (_.isString(checksum)) {
-    checksum = new buffer.Buffer(Base58.decode(checksum));
+    checksum = new Buffer.from(Base58.decode(checksum));
   }
   if (!checksum) {
     checksum = data.slice(-4);

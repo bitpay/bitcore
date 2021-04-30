@@ -2,7 +2,6 @@
 
 
 var assert = require('assert');
-var buffer = require('buffer');
 var _ = require('lodash');
 var $ = require('./util/preconditions');
 
@@ -413,13 +412,13 @@ HDPrivateKey.prototype._calcHDPublicKey = function() {
  * internal structure
  *
  * @param {Object} arg
- * @param {buffer.Buffer} arg.version
- * @param {buffer.Buffer} arg.depth
- * @param {buffer.Buffer} arg.parentFingerPrint
- * @param {buffer.Buffer} arg.childIndex
- * @param {buffer.Buffer} arg.chainCode
- * @param {buffer.Buffer} arg.privateKey
- * @param {buffer.Buffer} arg.checksum
+ * @param {Buffer} arg.version
+ * @param {Buffer} arg.depth
+ * @param {Buffer} arg.parentFingerPrint
+ * @param {Buffer} arg.childIndex
+ * @param {Buffer} arg.chainCode
+ * @param {Buffer} arg.privateKey
+ * @param {Buffer} arg.checksum
  * @param {string=} arg.xprivkey - if set, don't recalculate the base58
  *      representation
  * @return {HDPrivateKey} this
@@ -438,7 +437,7 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
     arg.version, arg.depth, arg.parentFingerPrint, arg.childIndex, arg.chainCode,
     BufferUtil.emptyBuffer(1), arg.privateKey
   ];
-  var concat = buffer.Buffer.concat(sequence);
+  var concat = Buffer.concat(sequence);
   if (!arg.checksum || !arg.checksum.length) {
     arg.checksum = Base58Check.checksum(concat);
   } else {
@@ -449,7 +448,7 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
 
   var network = Network.get(BufferUtil.integerFromBuffer(arg.version));
   var xprivkey;
-  xprivkey = Base58Check.encode(buffer.Buffer.concat(sequence));
+  xprivkey = Base58Check.encode(Buffer.concat(sequence));
   arg.xprivkey = Buffer.from(xprivkey);
 
   var privateKey = new PrivateKey(BN.fromBuffer(arg.privateKey), network);
