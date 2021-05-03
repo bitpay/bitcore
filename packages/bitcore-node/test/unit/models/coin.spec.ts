@@ -111,7 +111,7 @@ describe('Coin Model', function() {
             }
           },
           {
-            spentHeight: -2
+            spentHeight: { $in: [SpentHeightIndicators.pending, SpentHeightIndicators.unspent, SpentHeightIndicators.conflicting] }
           }
         ],
         mintHeight: {
