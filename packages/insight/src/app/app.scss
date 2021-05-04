@@ -184,12 +184,6 @@ a.disabled-link{
 
 }
 
-.h2{
-  font-size: 2.4rem;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
 @media (min-width: map-get($grid-breakpoints, lg)) {
  .page-content-grid {
    margin-top: 0px;

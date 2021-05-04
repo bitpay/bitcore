@@ -4,7 +4,7 @@
     <ion-grid class="page-content-grid">
         <ion-row *ngIf="matches?.blocks && matches.blocks.length > 0">
             <ion-col col-12>
-                <h1 class="content-container--heading h2">Blocks:</h1>
+                <h1 class="content-container--heading u-font-large">Blocks:</h1>
             </ion-col>
             <ion-col col-md-6 col-12 class="page-content" *ngFor="let block of matches.blocks" (click)="goToBlock(block)">
                 <div ion-item no-lines>
