@@ -2,11 +2,11 @@
   <ion-row>
     <ion-item (click)="changeExplorer(chainNetwork)" *ngFor="let chainNetwork of availableNetworks">
       <ion-avatar item-start>
-        <img *ngIf="chainNetwork.network === 'mainnet' && chainNetwork.chain !=='ALL'" src="assets/img/currency_logos/{{ chainNetwork.chain.toLowerCase() }}.svg" class="logo" />
-        <img *ngIf=" chainNetwork.network !=='mainnet' && chainNetwork.chain==='BTC'" src=" assets/img/btcicon-testnet.svg" class="logo" />
-        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
-        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" />
-        <img [ngClass]="{'secondary': chainNetwork.network ==='testnet'}" *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
+        <img *ngIf="chainNetwork.network === 'mainnet' && chainNetwork.chain !=='ALL'" src="assets/img/currency_logos/{{ chainNetwork.chain.toLowerCase() }}.svg" class="logo" alt="{{ chainNetwork.chain }}"/>
+        <img *ngIf=" chainNetwork.network !=='mainnet' && chainNetwork.chain==='BTC'" src=" assets/img/btcicon-testnet.svg" class="logo"  alt="{{ chainNetwork.chain }}"/>
+        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" alt="{{ chainNetwork.chain }}"/>
+        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="{{ chainNetwork.chain }}"/>
+        <img [ngClass]="{'secondary': chainNetwork.network ==='testnet'}" *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" alt="{{ chainNetwork.chain }}"/>
       </ion-avatar>
       <ion-label color="dark" *ngIf="chainNetwork.chain !== 'ALL'">
         {{ chainNetwork.chain }} <small class="pill"> {{ chainNetwork.network }}</small>
