@@ -3,7 +3,7 @@
     <ion-col col-7>
       <div class="ellipsis">
         <span>
-          <a (click)="goToTx(tx.txid)">{{ tx.txid }}</a>
+          <a (click)="goToTx(tx.txid)" role="button" tabindex="0">{{ tx.txid }}</a>
         </span>
       </div>
     </ion-col>
@@ -58,7 +58,7 @@
         <ion-item *ngIf="tx.from">
           <div class="ellipsis">
             <p>
-              <a (click)="goToAddress(tx.from)">{{ tx.from }}</a>
+              <a (click)="goToAddress(tx.from)" role="button" tabindex="0">{{ tx.from }}</a>
             </p>
           </div>
         </ion-item>
@@ -76,7 +76,7 @@
           <div>
             <div class="ellipsis">
               <p>
-                <a (click)="goToAddress(tx.to)">{{ tx.to }}</a>
+                <a (click)="goToAddress(tx.to)" role="button" tabindex="0">{{ tx.to }}</a>
               </p>
             </div>
           </div>

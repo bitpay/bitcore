@@ -3,7 +3,7 @@
     <ion-col col-7>
       <div class="ellipsis">
         <span *ngIf="coin.height >= -1">
-          <a (click)="goToTx(coin.mintTxid)">{{ coin.mintTxid }}</a>
+          <a (click)="goToTx(coin.mintTxid)" role="button" tabindex="0">{{ coin.mintTxid }}</a>
         </span>
         <span ion-text color="danger" *ngIf="coin.height === -3">
           Invalid
@@ -36,7 +36,7 @@
     <ion-note>
       <ion-col col-1>
         <span translate *ngIf="timeHidden"> 
-          <a (click)="revealTimeReceived(coin.mintTxid)"> Tx Details </a> 
+          <a (click)="revealTimeReceived(coin.mintTxid)" role="button" tabindex="0"> Tx Details </a> 
         </span>
         <span class="time" translate *ngIf="!timeHidden"> 
           Mined on <time>{{ coin.time * 1000 | date:'medium' }}</time>
@@ -49,7 +49,7 @@
     <ion-col col-7>
       <div class="ellipsis">
         <span *ngIf="coin.height >= -1">
-          <a (click)="goToTx(coin.spentTxid)">{{ coin.spentTxid }}</a>
+          <a (click)="goToTx(coin.spentTxid)" role="button" tabindex="0">{{ coin.spentTxid }}</a>
         </span>
         <span *ngIf="coin.height === -2">
           Unspent
@@ -88,7 +88,7 @@
     <ion-note>
       <ion-col col-1>
         <span translate *ngIf="timeHidden"> 
-          <a (click)="revealTimeReceived(coin.spentTxid)"> Tx Details </a> 
+          <a (click)="revealTimeReceived(coin.spentTxid)" role="button" tabindex="0"> Tx Details </a> 
         </span>
         <span class="time" translate *ngIf="!timeHidden"> 
           Mined on <time>{{ coin.time * 1000 | date:'medium' }}</time>
