@@ -1131,6 +1131,22 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/nonce/:address', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        const opts = {
+          coin: req.query.coin || 'eth',
+          network: req.query.network || 'livenet',
+          address: req.params['address']
+        };
+        try {
+          const nonce = await server.getNonce(opts);
+          res.json(nonce);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
     router.post('/v1/clearcache/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.clearWalletCache().then(val => {
