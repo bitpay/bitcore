@@ -122,14 +122,9 @@ export class FiatRateService {
     async.map(
       [].concat(ts),
       (ts, cb) => {
-        // Temporary rates for Wallet Beta. TODO: Remove this
         if (coin === 'wbtc') {
           logger.info('Using btc for wbtc rate.');
           coin = 'btc';
-        }
-        if (coin === 'dai') {
-          logger.info('Using usdc for dai rate.');
-          coin = 'usdc';
         }
         this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
           if (err) return cb(err);
@@ -173,7 +168,12 @@ export class FiatRateService {
         async.map(
           currencies,
           (currency, cb) => {
-            this.storage.fetchFiatRate(coin, currency.code, ts, (err, rate) => {
+            let c = coin;
+            if (coin === 'wbtc') {
+              logger.info('Using btc for wbtc rate.');
+              c = 'btc';
+            }
+            this.storage.fetchFiatRate(c, currency.code, ts, (err, rate) => {
               if (err) return cb(err);
               if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
               return cb(null, {
@@ -207,7 +207,7 @@ export class FiatRateService {
     const rates = [];
 
     const now = Date.now();
-    const coin = opts.coin;
+    let coin = opts.coin;
     const ts = opts.ts ? opts.ts : now;
     let fiatFiltered = [];
 
@@ -220,6 +220,10 @@ export class FiatRateService {
     async.map(
       currencies,
       (currency, cb) => {
+        if (coin === 'wbtc') {
+          logger.info('Using btc for wbtc rate.');
+          coin = 'btc';
+        }
         this.storage.fetchFiatRate(coin, currency.code, ts, (err, rate) => {
           if (err) return cb(err);
           if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
