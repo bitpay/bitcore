@@ -111,7 +111,9 @@ describe('Coin Model', function() {
             }
           },
           {
-            spentHeight: -2
+            spentHeight: {
+              $in: [-1 - 2 - 3]
+            }
           }
         ],
         mintHeight: {
