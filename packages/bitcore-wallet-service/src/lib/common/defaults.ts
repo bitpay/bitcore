@@ -227,7 +227,7 @@ module.exports = {
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
-    doge: 100 * 1e8
+    doge: 400 * 1e8
   },
 
   // ETH
