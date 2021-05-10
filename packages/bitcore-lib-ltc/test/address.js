@@ -17,9 +17,9 @@ var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
 
 describe('Address', function() {
 
-  var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
-  var buf = Buffer.concat([new Buffer([48]), pubkeyhash]);
-  var str = 'LQiX3WFFnc6JDULSRRG3Dsjza3VmhJ5pCP';
+  var pubkeyhash = Buffer.from('3d9234bc6ecfba9bc9f1fa8beb75f79b4ac0fc37', 'hex');
+  var buf = Buffer.concat([Buffer.from([48]), pubkeyhash]);
+  var str = 'LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH';
 
   it('can\'t build without data', function() {
     (function() {
@@ -36,7 +36,7 @@ describe('Address', function() {
   it('should throw an error because of bad type param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'livenet', 'pubkey');
-    }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
+    }).should.throw('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", or "witnessscripthash".');
   });
 
   describe('bitcoind compliance', function() {
@@ -45,13 +45,15 @@ describe('Address', function() {
         it('should describe address ' + d[0] + ' as valid', function() {
           var type;
           if (d[2].addrType === 'script') {
-            type = 'scripthash';
+            type = d[2].isWitness ? 'witnessscripthash' :  'scripthash';
           } else if (d[2].addrType === 'pubkey') {
-            type = 'pubkeyhash';
+            type = d[2].isWitness ? 'witnesspubkeyhash' : 'pubkeyhash';
           }
-          var network = 'livenet';
-          if (d[2].isTestnet) {
-            network = 'testnet';
+          var network = d[2].network;
+          if (network === 'regtest') {
+            Networks.enableRegtest();
+          } else if (network === 'testnet') {
+            Networks.disableRegtest();
           }
           return new Address(d[0], network, type);
         });
@@ -68,28 +70,33 @@ describe('Address', function() {
 
   // livenet valid
   var PKHLivenet = [
-    'LQ9hsXxwkqG7C8rwjUktmvRUvhat7Qh8BQ',
-    'LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK',
-    'LW3Z5seTcn3EgxNUHiCpxwRT4Dag3gy41e',
-    'LdCzEQjTA6h54qNe1PAPDtWAsr8KrrFuMy',
-    '    LdCzEQjTA6h54qNe1PAPDtWAsr8KrrFuMy   \t\n'
+    // '15vkcKf7gB23wLAnZLmbVuMiiVDc1Nm4a2',
+    // '1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT',
+    // '1BpbpfLdY7oBS9gK7aDXgvMgr1DPvNhEB2',
+    // '1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7',
+    // '    1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7   \t\n'
+    'Lcyaicjq2aFgcgRX5mDhhQkXN8RFvzWowa',
+    'Lc8DoV5XwNoucb9Y8qbgAyen2JMJpkRuBP',
+    'LNYX9mArP7rHywh3pjuefKkLf3xd9mp45A',
+    'LemWse51VZpctbqxoFq3E7bN1rDR7PhPjz',
+    '    LemWse51VZpctbqxoFq3E7bN1rDR7PhPjz   \t\n'
   ];
 
   // livenet p2sh
   var P2SHLivenet = [
-    'MAEpCKqAsN9619X9HnyQnar4AUpP4cDRLk',
-    'MA92SP8F2rjGoWM4NdVSRt1eJqxGzML8LA',
-    'MDexQKL1vBbvRX4J7BUReK5vwJspyKC14q',
-    'MWwgqasit2aZdtrRPLSrQjC8rQEKMrGPit',
-    '\t \nMWwgqasit2aZdtrRPLSrQjC8rQEKMrGPit \r'
+    '3GvtW35jysRugbWgdbf7UG9zaW1PTTrHLn',
+    '38Nm4LGcHKAsSYyTmqDPXY4L2S7Y1mFUjq',
+    '3AQRzjsQ7cvmGcnvAmgUzTnxef5iFiQUd8',
+    '3M2E7M7PNNZHnaThed6e8HSrW7PdvhVo3e',
+    '\t \n3M2E7M7PNNZHnaThed6e8HSrW7PdvhVo3e \r'
   ];
 
   // testnet p2sh
   var P2SHTestnet = [
-    'Qacg4vM9pZEwMSPtnfBM2tDKyjnnXXYc77',
-    'Qhrz7JPBZBcexJxT8hD8tbonVDeYUnGspZ',
-    'QS39xXsxUoZ8wkFnmRqGgvWnChGYCmqoPJ',
-    'QeTneucyqtDYVsSxLE5bKaq26NR9uWbqPL'
+    'Qc2auTnCPT7dztNx8zK6vW8nDFZncJeW28',
+    'QiTgbQBJxFDLgzswP42ab3BHHg9eNbVjpQ',
+    'QgNt5VZHphvA8NUhk6ibugEvTuTrBGGQ7S',
+    'QjQhEpoNkejS7qfoDxJfoThiMPTp4yagNV'
   ];
 
   //livenet bad checksums
@@ -110,26 +117,26 @@ describe('Address', function() {
 
   //testnet valid
   var PKHTestnet = [
-    'n28S35tqEMbt6vNad7A5K3mZ7vdn8dZ86X',
-    'n45x3R2w2jaSC62BMa9MeJCd3TXxgvDEmm',
-    'mursDVxqNQmmwWHACpM9VHwVVSfTddGsEM',
-    'mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS'
+    'n4kAh6kPVfDHQjiHbe9iyaVy8vs7E6meWM',
+    'mpVMLCqBKSEdz7igmEobXPh3D3mhwCRm2T',
+    'mw8PUJzs3BUgu8NK5Bq3vWBciHG4ki8Z7c',
+    'n2YnuDaT4k83f7GeKkS3UsaGjeYizYVvgh'
   ];
 
   describe('validation', function() {
 
     it('getValidationError detects network mismatchs', function() {
-      var error = Address.getValidationError('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'testnet');
+      var error = Address.getValidationError('LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH', 'testnet');
       should.exist(error);
     });
 
     it('isValid returns true on a valid address', function() {
-      var valid = Address.isValid('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'livenet');
+      var valid = Address.isValid('LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH', 'livenet');
       valid.should.equal(true);
     });
 
     it('isValid returns false on network mismatch', function() {
-      var valid = Address.isValid('MDPj1iqqCy23rLccUFvgC8HZq41fB8EH4y', 'testnet');
+      var valid = Address.isValid('LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH', 'testnet');
       valid.should.equal(false);
     });
 
@@ -214,10 +221,17 @@ describe('Address', function() {
     });
 
     it('addresses with whitespace are validated correctly', function() {
-      var ws = '  \r \t    \n LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK \t \n            \r';
+      var ws = '  \r \t    \n LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH \t \n            \r';
       var error = Address.getValidationError(ws);
       should.not.exist(error);
-      Address.fromString(ws).toString().should.equal('LUKs9ECLs954h36VXz4CAEknH9ysUnPFeK');
+      Address.fromString(ws).toString().should.equal('LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH');
+    });
+
+    it('testnet addresses are also valid regtest addresses', function() {
+      for (var i = 0; i < P2SHTestnet.length; i++) {
+        var error = Address.getValidationError(P2SHTestnet[i], 'regtest');
+        should.not.exist(error);
+      }
     });
   });
 
@@ -250,6 +264,12 @@ describe('Address', function() {
       Address.fromString(str, Networks.livenet).toString().should.equal(str);
     });
 
+    it('should throw with bad network param', function() {
+      (function(){
+        Address.fromString(str, 'somenet');
+      }).should.throw('Unknown network');
+    });
+
     it('should error because of unrecognized data format', function() {
       (function() {
         return new Address(new Error());
@@ -276,25 +296,25 @@ describe('Address', function() {
 
     it('should error because of incorrect length buffer for transform buffer', function() {
       (function() {
-        return Address._transformBuffer(new Buffer(20));
-      }).should.throw('Address buffers must be exactly 21 bytes.');
+        return Address._transformBuffer(Buffer.alloc(20));
+      }).should.throw('Address buffer is incorrect length.');
     });
 
     it('should error because of incorrect type for pubkey transform', function() {
       (function() {
-        return Address._transformPublicKey(new Buffer(20));
+        return Address._transformPublicKey(Buffer.alloc(20));
       }).should.throw('Address must be an instance of PublicKey.');
     });
 
     it('should error because of incorrect type for script transform', function() {
       (function() {
-        return Address._transformScript(new Buffer(20));
+        return Address._transformScript(Buffer.alloc(20));
       }).should.throw('Invalid Argument: script must be a Script instance');
     });
 
     it('should error because of incorrect type for string transform', function() {
       (function() {
-        return Address._transformString(new Buffer(20));
+        return Address._transformString(Buffer.alloc(20));
       }).should.throw('data parameter supplied is not a string.');
     });
 
@@ -326,28 +346,28 @@ describe('Address', function() {
     it('should throw an error for invalid length hashBuffer', function() {
       (function() {
         return Address.fromPublicKeyHash(buf);
-      }).should.throw('Address hashbuffers must be exactly 20 bytes.');
+      }).should.throw('Address hashbuffers must be either 20 or 32 bytes.');
     });
 
     it('should make this address from a compressed pubkey', function() {
-      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var pubkey = new PublicKey('02cdef48308944b532392bf39b73a6ace72ec30f21a6edad8a76ce896f31fdbeeb');
       var address = Address.fromPublicKey(pubkey, 'livenet');
-      address.toString().should.equal('LTuEM81fckTP7hSdGEPAqQYKrCpu5Wp7F2');
+      address.toString().should.equal('LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH');
     });
 
     it('should use the default network for pubkey', function() {
-      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var pubkey = new PublicKey('02cdef48308944b532392bf39b73a6ace72ec30f21a6edad8a76ce896f31fdbeeb');
       var address = Address.fromPublicKey(pubkey);
       address.network.should.equal(Networks.defaultNetwork);
     });
 
     it('should make this address from an uncompressed pubkey', function() {
-      var pubkey = new PublicKey('0485e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b00' +
-        '4833fef26c8be4c4823754869ff4e46755b85d851077771c220e2610496a29d98');
+      var pubkey = new PublicKey('04cdef48308944b532392bf39b73a6ace72ec30f21a6edad8a76ce896f31fdbeeb' +
+        '1d6319d75adb7a98a225759edf8d4eb0ecc5b250f8823c489f5d4bf1e362f822');
       var a = Address.fromPublicKey(pubkey, 'livenet');
-      a.toString().should.equal('LQXV3vGZP8x1vneE9EGN9Ggj4uFQwZkqgZ');
+      a.toString().should.equal('LN48GkSqMm7TDToej1vZH6qsvPL45bZAAb');
       var b = new Address(pubkey, 'livenet', 'pubkeyhash');
-      b.toString().should.equal('LQXV3vGZP8x1vneE9EGN9Ggj4uFQwZkqgZ');
+      b.toString().should.equal('LN48GkSqMm7TDToej1vZH6qsvPL45bZAAb');
     });
 
     it('should classify from a custom network', function() {
@@ -390,18 +410,18 @@ describe('Address', function() {
       it('should make this address from a p2sh input script', function() {
         var s = Script.fromString('OP_HASH160 20 0xa6ed4af315271e657ee307828f54a4365fa5d20f OP_EQUAL');
         var a = Address.fromScript(s, 'livenet');
-        a.toString().should.equal('MP7nffWprdM6CxdxdCAc4ESzb3XsQQPZMp');
+        a.toString().should.equal('3GueMn6ruWVfQTN4XKBGEbCbGLwRSUhfnS');
         var b = new Address(s, 'livenet');
-        b.toString().should.equal('MP7nffWprdM6CxdxdCAc4ESzb3XsQQPZMp');
+        b.toString().should.equal('3GueMn6ruWVfQTN4XKBGEbCbGLwRSUhfnS');
       });
 
       it('returns the same address if the script is a pay to public key hash out', function() {
-        var address = 'LQXV3vGZP8x1vneE9EGN9Ggj4uFQwZkqgZ';
+        var address = 'LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH';
         var script = Script.buildPublicKeyHashOut(new Address(address));
         Address(script, Networks.livenet).toString().should.equal(address);
       });
       it('returns the same address if the script is a pay to script hash out', function() {
-        var address = 'MHkuYq6Sz31ofGwL5eqMau2grNwBCLJo11';
+        var address = '3GvtW35jysRugbWgdbf7UG9zaW1PTTrHLn';
         var script = Script.buildScriptHashOut(new Address(address));
         Address(script, Networks.livenet).toString().should.equal(address);
       });
@@ -438,7 +458,7 @@ describe('Address', function() {
 
   describe('#toBuffer', function() {
 
-    it('3c3fa3d4adcaf8f52d5b1843975e122548269937 corresponds to hash LQiX3WFFnc6JDULSRRG3Dsjza3VmhJ5pCP', function() {
+    it('3c3fa3d4adcaf8f52d5b1843975e122548269937 corresponds to hash 16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r', function() {
       var address = new Address(str);
       address.toBuffer().slice(1).toString('hex').should.equal(pubkeyhash.toString('hex'));
     });
@@ -487,7 +507,7 @@ describe('Address', function() {
   describe('#inspect', function() {
     it('should output formatted output correctly', function() {
       var address = new Address(str);
-      var output = '<Address: LQiX3WFFnc6JDULSRRG3Dsjza3VmhJ5pCP, type: pubkeyhash, network: livenet>';
+      var output = '<Address: LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH, type: pubkeyhash, network: livenet>';
       address.inspect().should.equal(output);
     });
   });
@@ -528,21 +548,26 @@ describe('Address', function() {
 
   describe('creating a P2SH address from public keys', function() {
 
-    var public1 = '02da5798ed0c055e31339eb9b5cef0d3c0ccdec84a62e2e255eb5c006d4f3e7f5b';
-    var public2 = '0272073bf0287c4469a2a011567361d42529cd1a72ab0d86aa104ecc89342ffeb0';
-    var public3 = '02738a516a78355db138e8119e58934864ce222c553a5407cf92b9c1527e03c1a2';
+    var public1 = '0218ca2f4d5c554a57c060beace3cc8538f451f4e3c069ad22435566a604f1df1c';
+    var public2 = '02dbcb2cd9a11ba42670d0f321d9fd5c731cefec00cf74ae8571c089f164cb8075';
+    var public3 = '03c6dfe792a4f6a0bde2d112ecb238623ea0c63c9487b668a780fd28bbd8505ccb';
     var publics = [public1, public2, public3];
 
     it('can create an address from a set of public keys', function() {
       var address = Address.createMultisig(publics, 2, Networks.livenet);
-      address.toString().should.equal('MN6yhK8peWnHTd3PaKkKWcoUocPcWD9Cmx');
+      address.toString().should.equal('37mxxKZjYdELVSW4EUJ3K4QPp49jjZx1Tk');
       address = new Address(publics, 2, Networks.livenet);
-      address.toString().should.equal('MN6yhK8peWnHTd3PaKkKWcoUocPcWD9Cmx');
+      address.toString().should.equal('37mxxKZjYdELVSW4EUJ3K4QPp49jjZx1Tk');
     });
 
     it('works on testnet also', function() {
       var address = Address.createMultisig(publics, 2, Networks.testnet);
-      address.toString().should.equal('QaooaBX8KxVJ16A5mgQsPcymqeTAFqTmhh');
+      address.toString().should.equal('QSgw95N1BBnmqQteXhww1hq6AnojTE1BYa');
+    });
+
+    it('can create an address from a set of public keys with a nested witness program', function() {
+      var address = Address.createMultisig(publics, 2, Networks.livenet, true);
+      address.toString().should.equal('359GmMyLCpHJYoLC9Yk4RkwtagVj4Kea8t');
     });
 
     it('can also be created by Address.createMultisig', function() {

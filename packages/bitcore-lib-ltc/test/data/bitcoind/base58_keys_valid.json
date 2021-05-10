@@ -1,452 +1,322 @@
 [
   [
-    "LUVKqDPPVBQcjUwt1S21Pa5ybgPaDEZhXR",
-    "65a16059864a2fdbc7c99a4723a8395bc6f188eb",
+    "LbRY3MfWxhv1W88P3DcH94WLpDGZ3qV8aP",
+    "76a914b1b2c8ecd1a48ef911bd5e6385a8950d3255937588ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "MJZWZqmykQ32rvH8vUnW9jEPbyGg7agWQZ",
-    "74f209f6ea907e2ea48f74fae05782ae8a665257",
+    "MDpbgJxvdDJk7YH5BVzsUfsKse3N9YCE3o",
+    "a91440f3ea941f260592f9c9433f0250dfe7e5fb128e87",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "mo9ncXisMeAoXwqcV5EWuyncbmCcQN4rVs",
-    "53c0307d6851aa0ce7825ba883c6bd9ad242b486",
+    "mphsD9aLCQ9kpysu4ecCwAvHWYcsbt31u9",
+    "76a91464c97697289c7f654ceeab26066537489238d32788ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "QVeyDxTK7GiQD5RoyCRxiCDEh8UT4iUJnt",
-    "6349a418fc4578d10a372b54b45c280cc8c4382f",
-    {
-      "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": true
-    }
-  ],
-  [
-    "6vvmqK1hXuFaTNYdkmHJkYbMHS1QjigB22o98FVMHP9Fn5hp3eV",
-    "eddbdc1168f1daeadbd3e44c1e3f8f5a284c2029f78ad26af98583a499de5b19",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "T5vjkWhLbgjwfR3bcnzAP3BShM6gUDhVjjpCTZqGga3k6VVqHkzu",
-    "55c9bccb9ed68446d1b75273bbce89d7fe013a8acd1625514420fb2aca1a21c4",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "9213qJab2HNEpMpYNBa7wHGFKKbkDn24jpANDs2huN3yi4J11ko",
-    "36cb93b9ab1bdabf7fb9f2c04f1b9cc879933530ae7842398eef5a63a56800c2",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "cTpB4YiyKiBcPxnefsDpbnDxFDffjqJob8wGCEDXxgQ7zQoMXJdH",
-    "b9f4892c9e8282028fea1d2667c4dc5213564d41fc5783896a0d843fc15089f3",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "LVB1wnCRCLQn8q9t75e2qJceaahjDYoQgA",
-    "6d23156cbbdcc82a5a47eee4c2c7c583c18b6bf4",
+    "mphsD9aLCQ9kpysu4ecCwAvHWYcsbt31u9",
+    "76a91464c97697289c7f654ceeab26066537489238d32788ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "regtest",
+      "isWitness": false
     }
   ],
   [
-    "MWwgqasit2aZdtrRPLSrQjC8rQEKMrGPit",
-    "fcc5460dd6e2487c7d75b1963625da0e8f4c5975",
+    "Qg23fQdzYjbW3mo4MtJDMkZsWQgm3kVemM",
+    "a914d4f756e1a19ede4011f5839e309da0c43fbee4e887",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "n3ZddxzLvAY9o7184TB4c6FJasAybsw4HZ",
-    "f1d470f9b02370fdec2e6b708b08ac431bf7a5f7",
+    "Laq1dYLSYPifTjCeT9DCr1Puiy7k7Ewy5B",
+    "76a914ab2b41b4206db6c39f74c25453dfa5ff90074e2688ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "Qec8RUd8PgAMi6dKDKdHQ7zu71kyQNeU5m",
-    "c579342c2c4c9220205e2cdc285617040c924a0a",
+    "MGrt3HGGHwL5vZ3ecCzdMEbmnFKcE9EeJW",
+    "a914624ac89642e04d39ce36976e861a022742cc127a87",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "6vMsXf7UjHVTkMYBcqcUW1qxmBzqMq4gyQ12dcXsKjmSafByBxi",
-    "a326b95ebae30164217d7a7f57d72ab2b54e3be64928a19da0210b9568d4015e",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "T7G8JXpw1htUr3sEVXAkv6UoZK7FJJ3zhusas2H94pW5TpKfjUFp",
-    "7d998b45c219a1e38e99e7cbd312ef67f77a455a9b50c730c27f02c6f730dfb4",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "93DVKyFYwSN6wEo3E2fCrFPUp17FtrtNi2Lf7n4G3garFb16CRj",
-    "d6bca256b5abc5602ec2e1c121a08b0da2556587430bcf7e1898af2224885203",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "cTDVKtMGVYWTHCb1AFjmVbEbWjvKpKqKgMaR3QJxToMSQAhmCeTN",
-    "a81ca4e8f90181ec4b61b6a7eb998af17b2cb04de8a03b504b9e34c4c61db7d9",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "LWJYhwKYJvijhGJ9u7kZPDqmLSjh6pDPPF",
-    "7987ccaa53d02c8873487ef919677cd3db7a6912",
+    "mhoT6gsCtPmeY5m5S93FPv5y11Zft7mDAv",
+    "76a914190ef38c041b5ae687f2ef20a6131e755e12a12188ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "MGzXGU1WDvKPMDj8fpEacJ6t8LqyMCyzrK",
-    "63bcc565f9e68ee0189dd5cc67f1b0e5f02f45cb",
+    "QdieUEwPPkt5beUreupi9njiiqzpPqTKWP",
+    "a914bbbca803acbbe7a2153f0cac05491b624c72426b87",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "n3LnJXCqbPjghuVs8ph9CYsAe4Sh4j97wk",
-    "ef66444b5b17f14e8fae6e7e19b045a78c54fd79",
+    "LcCLxZSuwCMonMGeBcHqQ1SbsKyWKtVmBB",
+    "76a914ba2c4073e5355bfe37e06fdd9b42f644fb9ae76b88ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "QeTneucyqtDYVsSxLE5bKaq26NR9uWbqPL",
-    "c3e55fceceaa4391ed2a9677f4a4d34eacd021a0",
+    "MKuuxLCpf575SnN6ouhfUmnDYbvyDTQBet",
+    "a91483c601cee58d9324d8797e04c360971a7222a25387",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "6vsuyHTunvqa5RT5joAAVv7ZaxwkQXCTj7agegAQaGexFzjg9sc",
-    "e75d936d56377f432f404aabb406601f892fd49da90eb6ac558a733c93b47252",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "T7RESLkAPAM8vyQ4iLwpy5MhhWwCEcZ8skK3ZEx9uTJi33fbEEMP",
-    "8248bd0375f2f75d7e274ae544fb920f51784480866b102384190b1addfbaa5c",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "927CnUkUbasYtDwYwVn2j8GdTuACNnKkjZ1rpZd2yBB1CLcnXpo",
-    "44c4f6a096eac5238291a94cc24c01e3b19b8d8cef72874a079e00a242237a52",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "cUcfCMRjiQf85YMzzQEk9d1s5A4K7xL5SmBCLrezqXFuTVefyhY7",
-    "d1de707020a9059d6d3abaf85e17967c6555151143db13dbb06db78df0f15c69",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "Lb4hKgDwE3P4TQhbdYsmKt5GJEUPSMEzdW",
-    "adc1cc2081a27206fae25792f28bbc55b831549d",
+    "mgpyL2ueFkKYo8DigPfqi9mGaXhTpBfXFK",
+    "76a9140e6079f1d5522fc3643b684854d2caeb9f80b79388ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "MA92SP8F2rjGoWM4NdVSRt1eJqxGzML8LA",
-    "188f91a931947eddd7432d6e614387e32b244709",
+    "QaRx8KN1Rnh661srYaspaq1whQPdUpq4pF",
+    "a91497abf24db1094d659b319fafbdb5995ffc6e5ff487",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "mhaMcBxNh5cqXm4aTQ6EcVbKtfL6LGyK2H",
-    "1694f5bc1a7295b600f40018a618a6ea48eeb498",
+    "LbCdD5HhF8mtzqpAhAL44hRUpVXGthe3wv",
+    "76a914af41b0e60bddd25fd0986c061d2c38dc8d92f23d88ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "QS39xXsxUoZ8wkFnmRqGgvWnChGYCmqoPJ",
-    "3b9b3fd7a50d4f08d1a5b0f62f644fa7115ae2f3",
+    "MQrxASS6brp3bASypWeKFqTCFbvJLcwQPE",
+    "a914ba0f3b5ba0efb58cda3e55f13b18462c971e6df987",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "6uC1ZQB9qcm2Y4aMk9o8q8mM8wjbVCADUpqMKGiBRWqMkEURt21",
-    "091035445ef105fa1bb125eccfb1882f3fe69592265956ade751fd095033d8d0",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "T8nhzWepuB2ARagS1Ws2AqPuS2RAb3K2HmxsnwTJEZas87ryRK3Y",
-    "ab2b4bcdfc91d34dee0ae2a8c6b6668dadaeb3a88b9859743156f462325187af",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "92xFEve1Z9N8Z641KQQS7ByCSb8kGjsDzw6fAmjHN1LZGKQXyMq",
-    "b4204389cef18bbe2b353623cbf93e8678fbc92a475b664ae98ed594e6cf0856",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "cVM65tdYu1YK37tNoAyGoJTR13VBYFva1vg9FLuPAsJijGvG6NEA",
-    "e7b230133f1b5489843260236b06edca25f66adb1be455fbd38d4010d48faeef",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "LdAJmPoAyP5x8RHjbRa1Lqu41y4XKpQJUf",
-    "c4c1b72491ede1eedaca00618407ee0b772cad0d",
+    "n3cBcftzi5PyYRCaqjnHB9LS9C1r8AUKtT",
+    "76a914f24ff783c81d1bbeca87b10e3e63300952ce644088ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "MWR9EYk2WYnC6kzQc4VHnJsygt3aHCxaxg",
-    "f6fe69bcb548a829cce4c57bf6fff8af3a5981f9",
+    "QQo4rKLgyqkBLFsSEWFrgBwrH9eGhmcfbT",
+    "a9142df90970f496d9e6e165a69dacd1417f082c5cf587",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "mizXiucXRCsEriQCHUkCqef9ph9qtPbZZ6",
-    "261f83568a098a8638844bd7aeca039d5f2352c0",
+    "LXbHo4W9BDZYwv6v9x57kLZ2r9YNyqBgWA",
+    "76a91487aa8c8a26a6cc0c7a7d438e61bfa49a33e9cbab88ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "Qhrz7JPBZBcexJxT8hD8tbonVDeYUnGspZ",
-    "e930e1834a4d234702773951d627cce82fbb5d2e",
+    "MQS7zSkUt9PcbchboBEkg97g7ZojRxoXPW",
+    "a914b55d095bc6c28b86d87b313442aa3ee454e49cce87",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "6viVgzWtGe5bLqtHKsnCcYREYQzEWegXEh8FdSSV3GjzEFcftkY",
-    "d1fab7ab7385ad26872237f1eb9789aa25cc986bacc695e07ac571d6cdac8bc0",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "T8yXQrTNRfgKuvKZbBXtNpcvEYf5UXBBW2GypjPZgnytWVrg41tx",
-    "b0bbede33ef254e8376aceb1510253fc3550efd0fcf84dcd0c9998b288f166b3",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "91cTVUcgydqyZLgaANpf1fvL55FH53QMm4BsnCADVNYuWuqdVys",
-    "037f4192c630f399d9271e26c575269b1d15be553ea1a7217f0cb8513cef41cb",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "cQspfSzsgLeiJGB2u8vrAiWpCU4MxUT6JseWo2SjXy4Qbzn2fwDw",
-    "6251e205e8ad508bab5596bee086ef16cd4b239e0cc0c5d7c4e6035441e7d5de",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "LTrZrA79hDsUEqnEgxWodiarcQr6YmPt9o",
-    "5eadaf9bb7121f0f192561a5a62f5e5f54210292",
+    "moJfnqA4SviQhxStcqR4PFvCU2bjYEx873",
+    "76a914556e3cee7b8d470f5c3f507c4c54781cfc179ea688ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "MDexQKL1vBbvRX4J7BUReK5vwJspyKC14q",
-    "3f210e7277c899c3a155cc1c90f4106cbddeec6e",
+    "QV5Ti6jZKGQF7D7erT2dkpFXf3UgfKAw9h",
+    "a9145cf346cd43ff078ca1d8dc62e39207470e2a496b87",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "myoqcgYiehufrsnnkqdqbp69dddVDMopJu",
-    "c8a3c2a09a298592c3e180f02487cd91ba3400b5",
+    "LiRGLiaD9yaUNZbe9GKptX5PybiQZzioED",
+    "76a914fe6e8f1ff538103ede6451c57d5dcbeaf376821d88ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "Qacg4vM9pZEwMSPtnfBM2tDKyjnnXXYc77",
-    "99b31df7c9068d1481b596578ddbb4d3bd90baeb",
+    "M7wQbFTJZextk1bjbWc1c2WgNmAj41meXv",
+    "a914006cd1745e13749236c7064614d93d4650a79e4887",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": true
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
     }
   ],
   [
-    "6vdqTN7tnotQ2hgs7R9ntgzuhGa4WhreeMjCkvf5WzTX8AEMj5v",
-    "c7666842503db6dc6ea061f092cfb9c388448629a6fe868d068c42a488b478ae",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "T3KQkuy81KrfnmHS41pUdpBwozqdttksiDG8FbCs2DFvVykdodkZ",
-    "07f0803fc5399e773555ab1e8939907e9badacc17ca129e67a2f5f2ff84351dd",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": false
-    }
-  ],
-  [
-    "93N87D6uxSBzwXvpokpzg8FFmfQPmvX4xHoWQe3pLdYpbiwT5YV",
-    "ea577acfb5d1d14d3b7b195c321566f12f87d2b77ea3a53f68df7ebf8604a801",
-    {
-      "isCompressed": false,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "cMxXusSihaX58wpJ3tNuuUcZEQGt6DKJ1wEpxys88FFaQCYjku9h",
-    "0b3b34f0958d8a268193a9814da92c3e8b58b4a4378a542863e34ac289cd830c",
-    {
-      "isCompressed": true,
-      "isPrivkey": true,
-      "isTestnet": true
-    }
-  ],
-  [
-    "LN2xywemxT6gAnXme4Hq2r5vequ7o8Dxu7",
-    "1ed467017f043e91ed4c44b4e8dd674db211c4e6",
+    "mfkrC62Px74E6mpQS137ecE6c3A7LzFMV7",
+    "76a91402a0baa2a00912fa6b7db5ec66f64ad3dafe650988ac",
     {
       "addrType": "pubkey",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
     }
   ],
   [
-    "MGYSb2x728Ld57mTe3d9yga22VybNQZo9V",
-    "5ece0cadddc415b1980f001785947120acdb36fc",
+    "QeEUMazrWFAp7UTwHgxQ9aVtdER4e4E9aY",
+    "a914c160b11a8a042e801487f9f0c13be0246adff58687",
     {
       "addrType": "script",
-      "isPrivkey": false,
-      "isTestnet": false
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": false
+    }
+  ],
+  [
+    "LeZc1mA2SgaNTJ4WE8pKegNKbZekqovqvK",
+    "76a914d421ce551279f3fdfb6e4f7390b06516c3daaaa288ac",
+    {
+      "addrType": "pubkey",
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
+    }
+  ],
+  [
+    "M825mF1bLC3hPL6ZmaEVqZ2pouU5iRE72D",
+    "a914014f2e7072e9907c7f636d937759b8ceb1053feb87",
+    {
+      "addrType": "script",
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": false
+    }
+  ],
+  [
+    "ltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kgmn4n9",
+    "0014751e76e8199196d454941c45d1b3a323f1433bd6",
+    {
+      "addrType": "pubkey",
+      "isPrivKey": false,
+      "network": "mainnet",
+      "isWitness": true
+    }
+  ],
+  [
+    "rltc1qw508d6qejxtdg4y5r3zarvary0c5xw7k693xs3",
+    "0014751e76e8199196d454941c45d1b3a323f1433bd6",
+    {
+      "addrType": "pubkey",
+      "isPrivKey": false,
+      "network": "regtest",
+      "isWitness": true
+    }
+  ],
+  [
+    "tltc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qsnr4fp",
+    "00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262",
+    {
+      "addrType": "script",
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": true
+    }
+  ],
+  [
+    "tltc1qqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesu9tmgm",
+    "0020000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433",
+    {
+      "addrType": "script",
+      "isPrivKey": false,
+      "network": "testnet",
+      "isWitness": true
+    }
+  ],
+  [
+    "rltc1qqqqqp399et2xygdj5xreqhjjvcmzhxw4aywxecjdzew6hylgvsesxuhrdn",
+    "0020000000c4a5cad46221b2a187905e5266362b99d5e91c6ce24d165dab93e86433",
+    {
+      "addrType": "script",
+      "isPrivKey": false,
+      "network": "regtest",
+      "isWitness": true
     }
   ]
 ]

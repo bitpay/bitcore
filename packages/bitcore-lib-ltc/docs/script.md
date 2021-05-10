@@ -83,7 +83,7 @@ var script = Script()
   .add('OP_IF')                       // add an opcode by name
   .prepend(114)                       // add OP_2SWAP by code
   .add(Opcode.OP_NOT)                 // add an opcode object
-  .add(new Buffer('bacacafe', 'hex')) // add a data buffer (will append the size of the push operation first)
+  .add(Buffer.from('bacacafe', 'hex')) // add a data buffer (will append the size of the push operation first)
 
 assert(script.toString() === 'OP_2SWAP OP_IF OP_NOT 4 0xbacacafe');
 ```
@@ -92,7 +92,7 @@ assert(script.toString() === 'OP_2SWAP OP_IF OP_NOT 4 0xbacacafe');
 `Script` has an easy interface to parse raw scripts from the network or litecoind, and to extract useful information. An illustrative example (for more options check the API reference)
 
 ```javascript
-var raw_script = new Buffer('5221022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da2103e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e921021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc1853ae', 'hex');
+var raw_script = Buffer.from('5221022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da2103e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e921021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc1853ae', 'hex');
 var s = new Script(raw_script);
 console.log(s.toString());
 // 'OP_2 33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 33 0x03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 33 0x021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 OP_3 OP_CHECKMULTISIG'

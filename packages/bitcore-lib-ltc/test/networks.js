@@ -17,13 +17,13 @@ describe('Networks', function() {
 
   it('will enable/disable regtest Network', function() {
     networks.enableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fabfb5da', 'hex'));
+    networks.testnet.networkMagic.should.deep.equal(Buffer.from('fabfb5da', 'hex'));
     networks.testnet.port.should.equal(19444);
     networks.testnet.dnsSeeds.should.deep.equal([]);
     networks.testnet.regtestEnabled.should.equal(true);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fdd2c8f1', 'hex'));
+    networks.testnet.networkMagic.should.deep.equal(Buffer.from('fdd2c8f1', 'hex'));
     networks.testnet.port.should.equal(19335);
     networks.testnet.dnsSeeds.should.deep.equal([
       'testnet-seed.litecointools.com',
@@ -58,7 +58,7 @@ describe('Networks', function() {
       if (key !== 'networkMagic') {
         customnet[key].should.equal(custom[key]);
       } else {
-        var expected = new Buffer('e7beb4d4', 'hex');
+        var expected = Buffer.from('e7beb4d4', 'hex');
         customnet[key].should.deep.equal(expected);
       }
     }

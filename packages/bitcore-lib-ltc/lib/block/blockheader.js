@@ -8,8 +8,9 @@ var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
 var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
+const Network = require('../networks');
 
-var GENESIS_BITS = 0x1d00ffff;
+var GENESIS_BITS = 0x1e0ffff0; // Regtest: 0x207fffff
 
 /**
  * Instantiate a BlockHeader from a Buffer, JSON object, or Object with
@@ -98,17 +99,30 @@ BlockHeader.fromObject = function fromObject(obj) {
 };
 
 /**
+ * Method to decode blockheader read directly from the .dat block files
  * @param {Binary} - Raw block binary data or buffer
+ * @param {Boolean} - (optional. Default = false) Verify block decoding
  * @returns {BlockHeader} - An instance of block header
  */
-BlockHeader.fromRawBlock = function fromRawBlock(data) {
+BlockHeader.fromRawBlock = function fromRawBlock(data, verify = false) {
   if (!BufferUtil.isBuffer(data)) {
     data = Buffer.from(data, 'binary');
   }
-  var br = BufferReader(data);
-  br.pos = BlockHeader.Constants.START_OF_HEADER;
-  var info = BlockHeader._fromBufferReader(br);
-  return new BlockHeader(info);
+  const br = BufferReader(data);
+  let magic, size;
+
+  if (!verify) {
+    br.pos = BlockHeader.Constants.START_OF_HEADER;
+  } else {
+    magic = br.readUInt32BE();
+    size = br.readUInt32LE();
+
+    magic = new BN(magic).toString('hex');
+    $.checkState(Network.get(magic), 'Block network is invalid');
+  }
+
+  const info = BlockHeader._fromBufferReader(br);
+  return new BlockHeader(info); // Don't verify size b/c we didn't decode the whole block.
 };
 
 /**
@@ -217,19 +231,26 @@ BlockHeader.prototype.getTargetDifficulty = function getTargetDifficulty(bits) {
 };
 
 /**
- * @link https://en.bitcoin.it/wiki/Difficulty
+ * @link https://github.com/litecoin-project/litecoin/blob/81c4f2d80fbd33d127ff9b31bf588e4925599d79/src/rpc/blockchain.cpp#L60
  * @return {Number}
  */
 BlockHeader.prototype.getDifficulty = function getDifficulty() {
-  var difficulty1TargetBN = this.getTargetDifficulty(GENESIS_BITS).mul(new BN(Math.pow(10, 8)));
-  var currentTargetBN = this.getTargetDifficulty();
+  let nShift = (this.bits >> 24) & 0xff;
+  let dDiff = 0x0000ffff / (this.bits & 0x00ffffff);
 
-  var difficultyString = difficulty1TargetBN.div(currentTargetBN).toString(10);
-  var decimalPos = difficultyString.length - 8;
-  difficultyString = difficultyString.slice(0, decimalPos) + '.' + difficultyString.slice(decimalPos);
+  while (nShift < 29)
+  {
+      dDiff *= 256.0;
+      nShift++;
+  }
+  while (nShift > 29)
+  {
+      dDiff /= 256.0;
+      nShift--;
+  }
 
-  return parseFloat(difficultyString);
-};
+  return parseFloat(dDiff.toFixed(19));
+}
 
 /**
  * @returns {Buffer} - The little endian hash buffer of the header
@@ -289,7 +310,7 @@ BlockHeader.prototype.inspect = function inspect() {
 };
 
 BlockHeader.Constants = {
-  START_OF_HEADER: 8, // Start buffer position in raw block data
+  START_OF_HEADER: 8, // Start buffer position in raw block data. (network magic (4 bytes BE) + block size (4 bytes LE))
   MAX_TIME_OFFSET: 2 * 60 * 60, // The max a timestamp can be in the future
   LARGEST_HASH: new BN('10000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
