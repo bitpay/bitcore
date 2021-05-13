@@ -8,7 +8,7 @@ export const Defaults = {
       case 'btc':
         return 0.5e8;
       case 'doge':
-        return 10e8;
+        return 400e8;
       default:
         return 1e8;
     }

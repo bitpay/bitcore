@@ -31,6 +31,90 @@ var Interpreter = function Interpreter(obj) {
   }
 };
 
+Interpreter.prototype.verifyWitnessProgram = function(version, program, witness, satoshis, flags) {
+
+  var scriptPubKey = new Script();
+  var stack = [];
+
+  if (version === 0) {
+    if (program.length === 32) {
+      if (witness.length === 0) {
+        this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY';
+        return false;
+      }
+
+      var scriptPubKeyBuffer = witness[witness.length - 1];
+      scriptPubKey = new Script(scriptPubKeyBuffer);
+      var hash = Hash.sha256(scriptPubKeyBuffer);
+      if (hash.toString('hex') !== program.toString('hex')) {
+        this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH';
+        return false;
+      }
+
+      stack = witness.slice(0, -1);
+    } else if (program.length === 20) {
+      if (witness.length !== 2) {
+        this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH';
+        return false;
+      }
+
+      scriptPubKey.add(Opcode.OP_DUP);
+      scriptPubKey.add(Opcode.OP_HASH160);
+      scriptPubKey.add(program);
+      scriptPubKey.add(Opcode.OP_EQUALVERIFY);
+      scriptPubKey.add(Opcode.OP_CHECKSIG);
+
+      stack = witness;
+
+    } else {
+      this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_WRONG_LENGTH';
+      return false;
+    }
+  } else if ((flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)) {
+    this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM';
+    return false;
+  } else {
+    return true;
+  }
+
+  // Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
+  for (let i = 0; i < stack.length; i++) {
+    if (stack[i].length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+      this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+      return false;
+    }
+  }
+
+  this.initialize();
+
+  this.set({
+    script: scriptPubKey,
+    stack: stack,
+    sigversion: Interpreter.SIGVERSION_WITNESS_V0,
+    satoshis: satoshis,
+    flags: flags,
+  });
+
+  if (!this.evaluate()) {
+    return false;
+  }
+
+  if (this.stack.length !== 1) {
+    this.errstr = 'SCRIPT_ERR_EVAL_FALSE';
+    return false;
+  }
+
+  var buf = this.stack[this.stack.length - 1];
+  if (!Interpreter.castToBool(buf)) {
+    this.errstr = 'SCRIPT_ERR_EVAL_FALSE_IN_STACK';
+    return false;
+  }
+
+  return true;
+};
+
+
+
 /**
  * Verifies a Script by executing it and returns true if it is valid.
  * This function needs to be provided with the scriptSig and the scriptPubkey
@@ -41,10 +125,13 @@ var Interpreter = function Interpreter(obj) {
  *    to check signature validity for some opcodes like OP_CHECKSIG)
  * @param {number} nin - index of the transaction input containing the scriptSig verified.
  * @param {number} flags - evaluation flags. See Interpreter.SCRIPT_* constants
+ * @param {number} witness - array of witness data
+ * @param {number} satoshis - number of satoshis created by this output
  *
  * Translated from bitcoind's VerifyScript
  */
-Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags) {
+Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, witness, satoshis) {
+
   var Transaction = require('../transaction');
   if (_.isUndefined(tx)) {
     tx = new Transaction();
@@ -55,10 +142,19 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags)
   if (_.isUndefined(flags)) {
     flags = 0;
   }
+  if (_.isUndefined(witness)) {
+    witness = null;
+  }
+  if (_.isUndefined(satoshis)) {
+    satoshis = 0;
+  }
+
   this.set({
     script: scriptSig,
     tx: tx,
     nin: nin,
+    sigversion: Interpreter.SIGVERSION_BASE,
+    satoshis: 0,
     flags: flags
   });
   var stackCopy;
@@ -103,6 +199,20 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags)
     return false;
   }
 
+  var hadWitness = false;
+  if ((flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
+    var witnessValues = {};
+    if (scriptPubkey.isWitnessProgram(witnessValues)) {
+      hadWitness = true;
+      if (scriptSig.toBuffer().length !== 0) {
+        return false;
+      }
+      if (!this.verifyWitnessProgram(witnessValues.version, witnessValues.program, witness, satoshis, this.flags)) {
+        return false;
+      }
+    }
+  }
+
   // Additional validation for spend-to-script-hash transactions:
   if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) && scriptPubkey.isScriptHashOut()) {
     // scriptSig must be literals-only or validation fails
@@ -144,8 +254,49 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags)
     if (!Interpreter.castToBool(stackCopy[stackCopy.length - 1])) {
       this.errstr = 'SCRIPT_ERR_EVAL_FALSE_IN_P2SH_STACK';
       return false;
-    } else {
-      return true;
+    }
+    if ((flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
+      var p2shWitnessValues = {};
+      if (redeemScript.isWitnessProgram(p2shWitnessValues)) {
+        hadWitness = true;
+        var redeemScriptPush = new Script();
+        redeemScriptPush.add(redeemScript.toBuffer());
+        if (scriptSig.toHex() !== redeemScriptPush.toHex()) {
+          this.errstr = 'SCRIPT_ERR_WITNESS_MALLEATED_P2SH';
+          return false;
+        }
+
+        if (!this.verifyWitnessProgram(p2shWitnessValues.version, p2shWitnessValues.program, witness, satoshis, this.flags)) {
+          return false;
+        }
+        // Bypass the cleanstack check at the end. The actual stack is obviously not clean
+        // for witness programs.
+        stack = [stack[0]];
+      }
+    }
+  }
+
+  // The CLEANSTACK check is only performed after potential P2SH evaluation,
+  // as the non-P2SH evaluation of a P2SH script will obviously not result in
+  // a clean stack (the P2SH inputs remain). The same holds for witness
+  // evaluation.
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_CLEANSTACK) != 0) {
+      // Disallow CLEANSTACK without P2SH, as otherwise a switch
+      // CLEANSTACK->P2SH+CLEANSTACK would be possible, which is not a
+      // softfork (and P2SH should be one).
+      if ((this.flags & Interpreter.SCRIPT_VERIFY_P2SH) == 0)
+        throw 'flags & SCRIPT_VERIFY_P2SH';
+
+      if (stackCopy.length != 1) {
+        this.errstr = 'SCRIPT_ERR_CLEANSTACK';
+        return false;
+      }
+  }
+
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
+    if (!hadWitness && witness.length > 0) {
+      this.errstr = 'SCRIPT_ERR_WITNESS_UNEXPECTED';
+      return false;
     }
   }
 
@@ -158,6 +309,8 @@ Interpreter.prototype.initialize = function(obj) {
   this.stack = [];
   this.altstack = [];
   this.pc = 0;
+  this.satoshis = 0;
+  this.sigversion = Interpreter.SIGVERSION_BASE;
   this.pbegincodehash = 0;
   this.nOpCount = 0;
   this.vfExec = [];
@@ -173,14 +326,16 @@ Interpreter.prototype.set = function(obj) {
   this.altstack = obj.altack || this.altstack;
   this.pc = typeof obj.pc !== 'undefined' ? obj.pc : this.pc;
   this.pbegincodehash = typeof obj.pbegincodehash !== 'undefined' ? obj.pbegincodehash : this.pbegincodehash;
+  this.sigversion = typeof obj.sigversion !== 'undefined' ? obj.sigversion : this.sigversion;
+  this.satoshis = typeof obj.satoshis !== 'undefined' ? obj.satoshis : this.satoshis;
   this.nOpCount = typeof obj.nOpCount !== 'undefined' ? obj.nOpCount : this.nOpCount;
   this.vfExec = obj.vfExec || this.vfExec;
   this.errstr = obj.errstr || this.errstr;
   this.flags = typeof obj.flags !== 'undefined' ? obj.flags : this.flags;
 };
 
-Interpreter.true = new Buffer([1]);
-Interpreter.false = new Buffer([]);
+Interpreter.true = Buffer.from([1]);
+Interpreter.false = Buffer.from([]);
 
 Interpreter.MAX_SCRIPT_ELEMENT_SIZE = 520;
 
@@ -190,6 +345,9 @@ Interpreter.LOCKTIME_THRESHOLD_BN = new BN(Interpreter.LOCKTIME_THRESHOLD);
 // flags taken from bitcoind
 // bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
 Interpreter.SCRIPT_VERIFY_NONE = 0;
+
+// Making v1-v16 witness program non-standard
+Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM = (1 << 12);
 
 // Evaluate P2SH subscripts (softfork safe, BIP16).
 Interpreter.SCRIPT_VERIFY_P2SH = (1 << 0);
@@ -229,8 +387,93 @@ Interpreter.SCRIPT_VERIFY_MINIMALDATA = (1 << 6);
 // executed, e.g.  within an unexecuted IF ENDIF block, are *not* rejected.
 Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 
+
+// Require that only a single stack element remains after evaluation. This
+// changes the success criterion from "At least one stack element must
+// remain, and when interpreted as a boolean, it must be true" to "Exactly
+// one stack element must remain, and when interpreted as a boolean, it must
+// be true".
+// (softfork safe, BIP62 rule 6)
+// Note: CLEANSTACK should never be used without P2SH or WITNESS.
+Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
+
 // CLTV See BIP65 for details.
 Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9);
+Interpreter.SCRIPT_VERIFY_WITNESS = (1 << 11);
+
+// support CHECKSEQUENCEVERIFY opcode
+//
+// See BIP112 for details
+Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY = (1 << 10);
+
+//
+// Segwit script only: Require the argument of OP_IF/NOTIF to be exactly
+// 0x01 or empty vector
+//
+Interpreter.SCRIPT_VERIFY_MINIMALIF = (1 << 13);
+
+
+// Signature(s) must be empty vector if an CHECK(MULTI)SIG operation failed
+//
+Interpreter.SCRIPT_VERIFY_NULLFAIL = (1 << 14);
+
+// Public keys in scripts must be compressed
+//
+Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE = (1 << 15);
+
+// Making OP_CODESEPARATOR and FindAndDelete fail any non-segwit scripts
+//
+Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE = (1 << 16);
+
+
+
+// TODO: move to script.js ?
+Interpreter.MAX_OPS_PER_SCRIPT = 201;
+
+// Maximum number of public keys per multisig
+Interpreter.MAX_PUBKEYS_PER_MULTISIG = 20;
+
+// Maximum script length in bytes
+Interpreter.MAX_SCRIPT_SIZE = 10000;
+
+// Maximum number of values on script interpreter stack
+Interpreter.MAX_STACK_SIZE = 1000;
+
+// Threshold for nLockTime: below this value it is interpreted as block number,
+// otherwise as UNIX timestamp.
+Interpreter.LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
+
+// Maximum nLockTime. Since a lock time indicates the last invalid timestamp, a
+// transaction with this lock time will never be valid unless lock time
+// checking is disabled (by setting all input sequence numbers to
+// SEQUENCE_FINAL).
+Interpreter.LOCKTIME_MAX = 0xFFFFFFFF;
+
+
+
+/* Below flags apply in the context of BIP 68*/
+/**
+ * If this flag set, CTxIn::nSequence is NOT interpreted as a relative
+ * lock-time.
+ */
+Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG = 2147483648; // (1 << 31)
+
+/**
+ * If CTxIn::nSequence encodes a relative lock-time and this flag is set,
+ * the relative lock-time has units of 512 seconds, otherwise it specifies
+ * blocks with a granularity of 1.
+ */
+Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22);
+
+/**
+ * If CTxIn::nSequence encodes a relative lock-time, this mask is applied to
+ * extract that lock-time from the sequence field.
+ */
+Interpreter.SEQUENCE_LOCKTIME_MASK = 0x0000ffff;
+
+Interpreter.SIGVERSION_BASE = 0;
+Interpreter.SIGVERSION_WITNESS_V0 = 1;
+
 
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
@@ -250,6 +493,13 @@ Interpreter.castToBool = function(buf) {
  */
 Interpreter.prototype.checkSignatureEncoding = function(buf) {
   var sig;
+
+    // Empty signature. Not strictly DER encoded, but allowed to provide a
+    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
+    if (buf.length == 0) {
+        return true;
+    }
+
   if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isTxDER(buf)) {
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
     return false;
@@ -266,6 +516,7 @@ Interpreter.prototype.checkSignatureEncoding = function(buf) {
       return false;
     }
   }
+
   return true;
 };
 
@@ -277,6 +528,13 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
     this.errstr = 'SCRIPT_ERR_PUBKEYTYPE';
     return false;
   }
+
+  // Only compressed keys are accepted in segwit
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == Interpreter.SIGVERSION_WITNESS_V0 && !PublicKey.fromBuffer(buf).compressed) {
+    this.errstr = 'SCRIPT_ERR_WITNESS_PUBKEYTYPE';
+    return false;
+  }
+
   return true;
 };
 
@@ -364,12 +622,69 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
   return true;
 }
 
+
+/**
+ * Checks a sequence parameter with the transaction's sequence.
+ * @param {BN} nSequence the sequence read from the script
+ * @return {boolean} true if the transaction's sequence is less than or equal to
+ *                   the transaction's sequence 
+ */
+Interpreter.prototype.checkSequence = function(nSequence) {
+
+    // Relative lock times are supported by comparing the passed in operand to
+    // the sequence number of the input.
+    var txToSequence = this.tx.inputs[this.nin].sequenceNumber;
+
+    // Fail if the transaction's version number is not set high enough to
+    // trigger BIP 68 rules.
+    if (this.tx.version < 2) {
+        return false;
+    }
+
+    // Sequence numbers with their most significant bit set are not consensus
+    // constrained. Testing that the transaction's sequence number do not have
+    // this bit set prevents using this property to get around a
+    // CHECKSEQUENCEVERIFY check.
+    if (txToSequence & Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+        return false;
+    }
+
+    // Mask off any bits that do not have consensus-enforced meaning before
+    // doing the integer comparisons
+    var nLockTimeMask =
+        Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
+    var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
+    var nSequenceMasked = nSequence.and(new BN(nLockTimeMask));
+
+    // There are two kinds of nSequence: lock-by-blockheight and
+    // lock-by-blocktime, distinguished by whether nSequenceMasked <
+    // CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
+    //
+    // We want to compare apples to apples, so fail the script unless the type
+    // of nSequenceMasked being tested is the same as the nSequenceMasked in the
+    // transaction.
+    var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
+    
+    if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
+           nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
+          (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
+           nSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)))) {
+        return false;
+    }
+
+    // Now that we know we're comparing apples-to-apples, the comparison is a
+    // simple numeric one.
+    if (nSequenceMasked.gt(txToSequenceMasked)) {
+        return false;
+    }
+    return true;
+  }
+
 /** 
  * Based on the inner loop of bitcoind's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
 Interpreter.prototype.step = function() {
-
   var fRequireMinimal = (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALDATA) !== 0;
 
   //bool fExec = !count(vfExec.begin(), vfExec.end(), false);
@@ -414,6 +729,12 @@ Interpreter.prototype.step = function() {
     opcodenum === Opcode.OP_LSHIFT ||
     opcodenum === Opcode.OP_RSHIFT) {
     this.errstr = 'SCRIPT_ERR_DISABLED_OPCODE';
+    return false;
+  }
+
+  // With SCRIPT_VERIFY_CONST_SCRIPTCODE, OP_CODESEPARATOR in non-segwit script is rejected even in an unexecuted branch
+  if (opcodenum === Opcode.OP_CODESEPARATOR && this.sigversion === Interpreter.SIGVERSION_BASE && (this.flags & Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE)) {
+    this.errstr = 'SCRIPT_ERR_OP_CODESEPARATOR';
     return false;
   }
 
@@ -515,8 +836,57 @@ Interpreter.prototype.step = function() {
         }
         break;
 
-      case Opcode.OP_NOP1:
       case Opcode.OP_NOP3:
+      case Opcode.OP_CHECKSEQUENCEVERIFY:
+
+        if (!(this.flags & Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)) {
+          // not enabled; treat as a NOP3
+          if (this.flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
+            this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS';
+            return false;
+          }
+          break;
+        }
+
+        if (this.stack.length < 1) {
+          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+          return false;
+        }
+
+
+        // nSequence, like nLockTime, is a 32-bit unsigned
+        // integer field. See the comment in CHECKLOCKTIMEVERIFY
+        // regarding 5-byte numeric operands.
+
+        var nSequence = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
+
+
+        // In the rare event that the argument may be < 0 due to
+        // some arithmetic being done first, you can always use
+        // 0 MAX CHECKSEQUENCEVERIFY.
+        if (nSequence.lt(new BN(0))) {
+          this.errstr = 'SCRIPT_ERR_NEGATIVE_LOCKTIME';
+          return false;
+        }
+
+        // To provide for future soft-fork extensibility, if the
+        // operand has the disabled lock-time flag set,
+        // CHECKSEQUENCEVERIFY behaves as a NOP.
+        if ((nSequence &
+          Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) != 0) {
+          break;
+        }
+
+        // Actually compare the specified lock time with the transaction.
+        if (!this.checkSequence(nSequence)) {
+          this.errstr = 'SCRIPT_ERR_UNSATISFIED_LOCKTIME';
+          return false;
+        }
+        break;
+
+
+
+      case Opcode.OP_NOP1:
       case Opcode.OP_NOP4:
       case Opcode.OP_NOP5:
       case Opcode.OP_NOP6:
@@ -543,11 +913,25 @@ Interpreter.prototype.step = function() {
               this.errstr = 'SCRIPT_ERR_UNBALANCED_CONDITIONAL';
               return false;
             }
-            buf = this.stack.pop();
+
+            buf = this.stack[this.stack.length - 1];
+
+            if (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALIF) {
+              buf = this.stack[this.stack.length - 1];
+              if (buf.length > 1) {
+                this.errstr = 'SCRIPT_ERR_MINIMALIF';
+                return false;
+              }
+              if (buf.length == 1 && buf[0]!=1) {
+                this.errstr = 'SCRIPT_ERR_MINIMALIF';
+                return false;
+              }
+            }
             fValue = Interpreter.castToBool(buf);
             if (opcodenum === Opcode.OP_NOTIF) {
               fValue = !fValue;
             }
+            this.stack.pop();
           }
           this.vfExec.push(fValue);
         }
@@ -1100,10 +1484,21 @@ Interpreter.prototype.step = function() {
             chunks: this.script.chunks.slice(this.pbegincodehash)
           });
 
-          // Drop the signature, since there's no way for a signature to sign itself
-          var tmpScript = new Script().add(bufSig);
-          subscript.findAndDelete(tmpScript);
 
+          // Drop the signature in pre-segwit scripts but not segwit scripts
+          if (this.sigversion === Interpreter.SIGVERSION_BASE) {
+            // Drop the signature, since there's no way for a signature to sign itself
+            var tmpScript = new Script().add(bufSig);
+            var preDelCount = subscript.chunks.length;
+            subscript.findAndDelete(tmpScript);
+
+            var found = subscript.chunks.length < preDelCount;
+            if (found && (this.flags & Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE)) {
+              this.errstr = 'SCRIPT_ERR_SIG_FINDANDDELETE';
+              return false;
+            }
+          }
+        
           if (!this.checkSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
             return false;
           }
@@ -1111,14 +1506,21 @@ Interpreter.prototype.step = function() {
           try {
             sig = Signature.fromTxFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
-            fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript);
+            fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis);
           } catch (e) {
             //invalid sig or pubkey
             fSuccess = false;
           }
 
+          if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
+            bufSig.length) {
+            this.errstr = 'SCRIPT_ERR_NULLFAIL';
+            return false;
+          }
+
           this.stack.pop();
           this.stack.pop();
+
           // stack.push_back(fSuccess ? vchTrue : vchFalse);
           this.stack.push(fSuccess ? Interpreter.true : Interpreter.false);
           if (opcodenum === Opcode.OP_CHECKSIGVERIFY) {
@@ -1156,6 +1558,13 @@ Interpreter.prototype.step = function() {
           // int ikey = ++i;
           var ikey = ++i;
           i += nKeysCount;
+
+          // ikey2 is the position of last non-signature item in
+          // the stack. Top stack item = 1. With
+          // SCRIPT_VERIFY_NULLFAIL, this is used for cleanup if
+          // operation fails.
+          var ikey2 = nKeysCount + 2;
+
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
@@ -1179,10 +1588,19 @@ Interpreter.prototype.step = function() {
             chunks: this.script.chunks.slice(this.pbegincodehash)
           });
 
-          // Drop the signatures, since there's no way for a signature to sign itself
+          // Drop the signature in pre-segwit scripts but not segwit scripts
           for (var k = 0; k < nSigsCount; k++) {
             bufSig = this.stack[this.stack.length - isig - k];
-            subscript.findAndDelete(new Script().add(bufSig));
+            if (this.sigversion === Interpreter.SIGVERSION_BASE) {
+              let preDelCount = subscript.chunks.length;
+              subscript.findAndDelete(new Script().add(bufSig));
+
+              const found = subscript.chunks.length < preDelCount;
+              if (found && (this.flags & Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE)) {
+                this.errstr = 'SCRIPT_ERR_SIG_FINDANDDELETE';
+                return false;
+              }
+            }
           }
 
           fSuccess = true;
@@ -1200,7 +1618,7 @@ Interpreter.prototype.step = function() {
             try {
               sig = Signature.fromTxFormat(bufSig);
               pubkey = PublicKey.fromBuffer(bufPubkey, false);
-              fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript);
+              fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis);
             } catch (e) {
               //invalid sig or pubkey
               fOk = false;
@@ -1220,8 +1638,20 @@ Interpreter.prototype.step = function() {
             }
           }
 
+
           // Clean up stack of actual arguments
           while (i-- > 1) {
+            if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
+              !ikey2 && this.stack[this.stack.length - 1].length) {
+
+              this.errstr = 'SCRIPT_ERR_NULLFAIL';
+              return false;
+            }
+
+            if (ikey2 > 0) {
+              ikey2--;
+            }
+
             this.stack.pop();
           }
 

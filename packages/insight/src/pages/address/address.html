@@ -13,7 +13,7 @@
         <h1 class="content-container--heading">Address <small>{{ getConvertedNumber(address.balance, chainNetwork.chain) | number:'1.0-8' }}
             {{ currencyProvider.currencySymbol }}</small></h1>
         <p class="ellipsis">{{ address.addrStr }}
-          <button [copyToClipboard]="address.addrStr">
+          <button title="copy to clipboard" type="button" tabindex="0" [copyToClipboard]="address.addrStr">
             <ion-icon md="md-copy"></ion-icon>
           </button>
         </p>

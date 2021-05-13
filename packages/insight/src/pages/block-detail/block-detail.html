@@ -12,12 +12,12 @@
 
         <h1 class="content-container--heading">Block #{{ block.height }}</h1>
         <p class="item-hash">
-          <b>Block Hash</b> {{ block.hash }} <button [copyToClipboard]="block.hash">
+          <b>Block Hash</b> {{ block.hash }} <button [copyToClipboard]="block.hash" title="copy to clipboard" type="button" tabindex="0">
             <ion-icon md="md-copy"></ion-icon>
           </button>
         </p>
 
-        <h2>Summary</h2>
+        <h1 class="u-font-large">Summary</h1>
 
         <ion-list *ngIf="!loading" class="list--summary">
           <ion-grid>
@@ -54,7 +54,7 @@
           <!-- TODO      <ion-item>
                   Mined by
                   <ion-note item-end *ngIf="block.poolInfo">
-                    <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a>
+                    <a href="{{ block.poolInfo.url }}" role="button" tabindex="0">{{ block.poolInfo.poolName }}</a>
                   </ion-note>
                 </ion-item> -->
               </ion-col>
@@ -81,14 +81,14 @@
                   Previous Block
                   <ion-note item-end>
                     <a (click)="goToPreviousBlock()"
-                      [ngClass]="{'disabled-link': block.height - 1 === 0 }">{{ block.height - 1 }}</a>
+                      [ngClass]="{'disabled-link': block.height - 1 === 0 }" role="button" tabindex="0">{{ block.height - 1 }}</a>
                   </ion-note>
                 </ion-item>
                 <ion-item>
                   Next Block
                   <ion-note item-end>
                     <a (click)="goToNextBlock()"
-                      [ngClass]="{'disabled-link': !block.nextblockhash }">{{ block.height + 1 }}</a>
+                      [ngClass]="{'disabled-link': !block.nextblockhash }" role="button" tabindex="0">{{ block.height + 1 }}</a>
                   </ion-note>
                 </ion-item>
                 <ion-item>

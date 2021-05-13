@@ -2,7 +2,6 @@
 
 
 var assert = require('assert');
-var buffer = require('buffer');
 var _ = require('lodash');
 var $ = require('./util/preconditions');
 
@@ -11,7 +10,6 @@ var Base58 = require('./encoding/base58');
 var Base58Check = require('./encoding/base58check');
 var Hash = require('./crypto/hash');
 var Network = require('./networks');
-var HDKeyCache = require('./hdkeycache');
 var Point = require('./crypto/point');
 var PrivateKey = require('./privatekey');
 var Random = require('./crypto/random');
@@ -166,7 +164,33 @@ HDPrivateKey.prototype.deriveChild = function(arg, hardened) {
   }
 };
 
-HDPrivateKey.prototype._deriveWithNumber = function(index, hardened) {
+/**
+ * WARNING: This method will not be officially supported until v1.0.0
+ *
+ *
+ * WARNING: If this is a new implementation you should NOT use this method, you should be using
+ * `derive` instead.
+ *
+ * This method is explicitly for use and compatibility with an implementation that
+ * was not compliant with BIP32 regarding the derivation algorithm. The private key
+ * must be 32 bytes hashing, and this implementation will use the non-zero padded
+ * serialization of a private key, such that it's still possible to derive the privateKey
+ * to recover those funds.
+ *
+ * @param {string|number} arg
+ * @param {boolean?} hardened
+ */
+HDPrivateKey.prototype.deriveNonCompliantChild = function(arg, hardened) {
+  if (_.isNumber(arg)) {
+    return this._deriveWithNumber(arg, hardened, true);
+  } else if (_.isString(arg)) {
+    return this._deriveFromString(arg, true);
+  } else {
+    throw new hdErrors.InvalidDerivationArgument(arg);
+  }
+};
+
+HDPrivateKey.prototype._deriveWithNumber = function(index, hardened, nonCompliant) {
   /* jshint maxstatements: 20 */
   /* jshint maxcomplexity: 10 */
   if (!HDPrivateKey.isValidPath(index, hardened)) {
@@ -178,18 +202,18 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened) {
     index += HDPrivateKey.Hardened;
   }
 
-  var cached = HDKeyCache.get(this.xprivkey, index, hardened);
-  if (cached) {
-    return cached;
-  }
-
   var indexBuffer = BufferUtil.integerAsBuffer(index);
   var data;
-  if (hardened) {
+  if (hardened && nonCompliant) {
+    // The private key serialization in this case will not be exactly 32 bytes and can be
+    // any value less, and the value is not zero-padded.
+    var nonZeroPadded = this.privateKey.bn.toBuffer();
+    data = BufferUtil.concat([Buffer.from([0]), nonZeroPadded, indexBuffer]);
+  } else if (hardened) {
     // This will use a 32 byte zero padded serialization of the private key
     var privateKeyBuffer = this.privateKey.bn.toBuffer({size: 32});
     assert(privateKeyBuffer.length === 32, 'length of private key buffer is expected to be 32 bytes');
-    data = BufferUtil.concat([new buffer.Buffer([0]), privateKeyBuffer, indexBuffer]);
+    data = BufferUtil.concat([Buffer.from([0]), privateKeyBuffer, indexBuffer]);
   } else {
     data = BufferUtil.concat([this.publicKey.toBuffer(), indexBuffer]);
   }
@@ -199,13 +223,13 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened) {
   });
   var chainCode = hash.slice(32, 64);
 
-  var privateKey = leftPart.add(this.privateKey.toBigNumber()).mod(Point.getN()).toBuffer({
+  var privateKey = leftPart.add(this.privateKey.toBigNumber()).umod(Point.getN()).toBuffer({
     size: 32
   });
 
   if (!PrivateKey.isValid(privateKey)) {
-    // Index at this point is already hardened, we do not need to pass the hardened arg
-    return this._deriveWithNumber(index + 1);
+    // Index at this point is already hardened, we can pass null as the hardened arg
+    return this._deriveWithNumber(index + 1, null, nonCompliant);
   }
 
   var derived = new HDPrivateKey({
@@ -216,18 +240,18 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened) {
     chainCode: chainCode,
     privateKey: privateKey
   });
-  HDKeyCache.set(this.xprivkey, index, hardened, derived);
+
   return derived;
 };
 
-HDPrivateKey.prototype._deriveFromString = function(path) {
+HDPrivateKey.prototype._deriveFromString = function(path, nonCompliant) {
   if (!HDPrivateKey.isValidPath(path)) {
     throw new hdErrors.InvalidPath(path);
   }
 
   var indexes = HDPrivateKey._getDerivationIndexes(path);
   var derived = indexes.reduce(function(prev, index) {
-    return prev._deriveWithNumber(index);
+    return prev._deriveWithNumber(index, null, nonCompliant);
   }, this);
 
   return derived;
@@ -314,8 +338,8 @@ HDPrivateKey.prototype._buildFromObject = function(arg) {
     depth: _.isNumber(arg.depth) ? BufferUtil.integerAsSingleByteBuffer(arg.depth) : arg.depth,
     parentFingerPrint: _.isNumber(arg.parentFingerPrint) ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
     childIndex: _.isNumber(arg.childIndex) ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
-    chainCode: _.isString(arg.chainCode) ? BufferUtil.hexToBuffer(arg.chainCode) : arg.chainCode,
-    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexa(arg.privateKey)) ? BufferUtil.hexToBuffer(arg.privateKey) : arg.privateKey,
+    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode,'hex') : arg.chainCode,
+    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexa(arg.privateKey)) ? Buffer.from(arg.privateKey,'hex') : arg.privateKey,
     checksum: arg.checksum ? (arg.checksum.length ? arg.checksum : BufferUtil.integerAsBuffer(arg.checksum)) : undefined
   };
   return this._buildFromBuffers(buffers);
@@ -351,7 +375,7 @@ HDPrivateKey.prototype._generateRandomly = function(network) {
 HDPrivateKey.fromSeed = function(hexa, network) {
   /* jshint maxcomplexity: 8 */
   if (JSUtil.isHexaString(hexa)) {
-    hexa = BufferUtil.hexToBuffer(hexa);
+    hexa = Buffer.from(hexa, 'hex');
   }
   if (!Buffer.isBuffer(hexa)) {
     throw new hdErrors.InvalidEntropyArgument(hexa);
@@ -362,7 +386,7 @@ HDPrivateKey.fromSeed = function(hexa, network) {
   if (hexa.length > MAXIMUM_ENTROPY_BITS * BITS_TO_BYTES) {
     throw new hdErrors.InvalidEntropyArgument.TooMuchEntropy(hexa);
   }
-  var hash = Hash.sha512hmac(hexa, new buffer.Buffer('Bitcoin seed'));
+  var hash = Hash.sha512hmac(hexa, Buffer.from('Bitcoin seed'));
 
   return new HDPrivateKey({
     network: Network.get(network) || Network.defaultNetwork,
@@ -388,13 +412,13 @@ HDPrivateKey.prototype._calcHDPublicKey = function() {
  * internal structure
  *
  * @param {Object} arg
- * @param {buffer.Buffer} arg.version
- * @param {buffer.Buffer} arg.depth
- * @param {buffer.Buffer} arg.parentFingerPrint
- * @param {buffer.Buffer} arg.childIndex
- * @param {buffer.Buffer} arg.chainCode
- * @param {buffer.Buffer} arg.privateKey
- * @param {buffer.Buffer} arg.checksum
+ * @param {Buffer} arg.version
+ * @param {Buffer} arg.depth
+ * @param {Buffer} arg.parentFingerPrint
+ * @param {Buffer} arg.childIndex
+ * @param {Buffer} arg.chainCode
+ * @param {Buffer} arg.privateKey
+ * @param {Buffer} arg.checksum
  * @param {string=} arg.xprivkey - if set, don't recalculate the base58
  *      representation
  * @return {HDPrivateKey} this
@@ -413,7 +437,7 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
     arg.version, arg.depth, arg.parentFingerPrint, arg.childIndex, arg.chainCode,
     BufferUtil.emptyBuffer(1), arg.privateKey
   ];
-  var concat = buffer.Buffer.concat(sequence);
+  var concat = Buffer.concat(sequence);
   if (!arg.checksum || !arg.checksum.length) {
     arg.checksum = Base58Check.checksum(concat);
   } else {
@@ -424,8 +448,8 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
 
   var network = Network.get(BufferUtil.integerFromBuffer(arg.version));
   var xprivkey;
-  xprivkey = Base58Check.encode(buffer.Buffer.concat(sequence));
-  arg.xprivkey = new Buffer(xprivkey);
+  xprivkey = Base58Check.encode(Buffer.concat(sequence));
+  arg.xprivkey = Buffer.from(xprivkey);
 
   var privateKey = new PrivateKey(BN.fromBuffer(arg.privateKey), network);
   var publicKey = privateKey.toPublicKey();

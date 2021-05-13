@@ -153,12 +153,20 @@ export class EthChain implements IChain {
         for (let output of opts.outputs) {
           if (!output.gasLimit) {
             try {
+              const to = opts.payProUrl
+                ? output.toAddress
+                : opts.tokenAddress
+                ? opts.tokenAddress
+                : opts.multisigContractAddress
+                ? opts.multisigContractAddress
+                : output.toAddress;
+              const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               inGasLimit = await server.estimateGas({
                 coin,
                 network,
                 from,
-                to: output.toAddress,
-                value: output.amount,
+                to,
+                value,
                 data: output.data,
                 gasPrice
               });

@@ -18,7 +18,7 @@
         </h1>
 
         <p class="item-hash">
-          <b>Transaction Hash</b> {{ tx.txid }} <button [copyToClipboard]="tx.txid">
+          <b>Transaction Hash</b> {{ tx.txid }} <button [copyToClipboard]="tx.txid" title="copy to clipboard" type="button" tabindex="0">
             <ion-icon md="md-copy"></ion-icon>
           </button>
         </p>
@@ -41,7 +41,7 @@
           <ion-item>
             Included in Block
             <ion-note item-end>
-              <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
+              <a (click)="goToBlock(tx.blockhash)" role="button" tabindex="0">{{ tx.blockhash }}</a>
             </ion-note>
             <ion-note *ngIf="confirmations === -3" item-end>
               Invalid

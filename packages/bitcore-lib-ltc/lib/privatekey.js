@@ -103,7 +103,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
     info.network = Networks.get(data);
   } else if (typeof(data) === 'string'){
     if (JSUtil.isHexa(data)) {
-      info.bn = new BN(new Buffer(data, 'hex'));
+      info.bn = new BN(Buffer.from(data, 'hex'));
     } else {
       info = PrivateKey._transformWIF(data, network);
     }
@@ -310,11 +310,11 @@ PrivateKey.prototype.toWIF = function() {
 
   var buf;
   if (compressed) {
-    buf = Buffer.concat([new Buffer([network.privatekey]),
+    buf = Buffer.concat([Buffer.from([network.privatekey]),
                          this.bn.toBuffer({size: 32}),
-                         new Buffer([0x01])]);
+                         Buffer.from([0x01])]);
   } else {
-    buf = Buffer.concat([new Buffer([network.privatekey]),
+    buf = Buffer.concat([Buffer.from([network.privatekey]),
                          this.bn.toBuffer({size: 32})]);
   }
 
