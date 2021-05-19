@@ -215,7 +215,8 @@ export class BtcChain implements IChain {
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
-        return 147 + inputSafetyMargin;
+        // https://bitcoin.stackexchange.com/questions/48279/how-big-is-the-input-of-a-p2pkh-transaction
+        return 148 + inputSafetyMargin;
 
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 69 + inputSafetyMargin; // vsize
