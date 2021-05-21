@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.25.10",
+  "version": "8.25.11",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -102,7 +102,7 @@
     "bitcore-p2p": "^8.25.10",
     "bitcore-p2p-cash": "^8.25.10",
     "bitcore-p2p-doge": "^8.25.10",
-    "bitcore-wallet-client": "^8.25.10",
+    "bitcore-wallet-client": "^8.25.11",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
     "crypto-rpc": "^1.1.0",
