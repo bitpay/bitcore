@@ -69,7 +69,7 @@ describe('Messages', function() {
 
 
   describe('#fromBuffer/#toBuffer round trip for all commands', function() {
-    const skipped = ['xversion']; // TODO no fixtures for this yet
+    const skipped = ['xversion', 'sendaddrv2']; // TODO no fixtures for this yet
     var messages = new Messages();
     Object.keys(messages.builder.commandsMap).forEach(function(command) {
       if (skipped.includes(command)) return;

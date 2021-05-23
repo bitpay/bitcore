@@ -49,6 +49,7 @@ function builder(options) {
       notfound: 'NotFound',
       inv: 'Inventory',
       addr: 'Addresses',
+      sendaddrv2: 'SendAddrV2',
       alert: 'Alert',
       reject: 'Reject',
       merkleblock: 'MerkleBlock',

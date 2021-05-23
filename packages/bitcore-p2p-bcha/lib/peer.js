@@ -89,6 +89,9 @@ function Peer(options) {
     self.status = Peer.STATUS.READY;
     self.emit('ready');
   });
+  this.on('sendaddrv2', function() {
+    console.log('sendaddrv2');
+  })
 
   this.on('version', function(message) {
     self.version = message.version;
