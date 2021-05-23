@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events';
 import logger, { timestamp } from '../../logger';
+import { EventEmitter } from 'events';
 import { BitcoinBlock, BitcoinBlockStorage, IBtcBlock } from '../../models/block';
 import { StateStorage } from '../../models/state';
 import { TransactionStorage } from '../../models/transaction';
