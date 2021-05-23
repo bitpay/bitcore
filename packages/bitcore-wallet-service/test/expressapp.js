@@ -1,18 +1,18 @@
 'use strict';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var assert = require('assert');
-var request = require('request');
-var http = require('http');
-var should = chai.should();
-var proxyquire = require('proxyquire');
-var config = require('../ts_build/config.js');
-var log = require('npmlog');
+ chai = require('chai');
+ sinon = require('sinon');
+ assert = require('assert');
+ request = require('request');
+ http = require('http');
+ should = chai.should();
+ proxyquire = require('proxyquire');
+ config = require('../ts_build/config.js');
+ log = require('npmlog');
 
-var Common = require('../ts_build/lib/common');
-var Defaults = Common.Defaults;
-var { WalletService } = require('../ts_build/lib/server');
+ Common = require('../ts_build/lib/common');
+ Defaults = Common.Defaults;
+ { WalletService } = require('../ts_build/lib/server');
 
 
 
@@ -23,8 +23,8 @@ describe('ExpressApp', function() {
   });
   describe('#constructor', function() {
     it('will set an express app', function() {
-      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {});
-      var express = new TestExpressApp({
+       {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {});
+       express = new TestExpressApp({
       });
       should.exist(express.app);
       should.exist(express.app.use);
@@ -33,8 +33,8 @@ describe('ExpressApp', function() {
   });
   describe('#start', function() {
     it('will listen at the specified port', function(done) {
-      var initialize = sinon.stub().callsArg(1);
-      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+      initialize = sinon.stub().callsArg(1);
+      {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
         './server': {
           WalletService : {
             initialize: initialize,
@@ -42,8 +42,8 @@ describe('ExpressApp', function() {
           }
         }
       });
-      var app = new TestExpressApp();
-      var options = {};
+      app = new TestExpressApp();
+      options = {};
       app.start(config, function(err) {
         should.not.exist(err);
         initialize.callCount.should.equal(1);
@@ -52,12 +52,12 @@ describe('ExpressApp', function() {
     });
 
     describe('Routes', function() {
-      var testPort = 3239;
-      var testHost = 'http://127.0.0.1';
-      var httpServer;
+      testPort = 3239;
+      testHost = 'http://127.0.0.1';
+      httpServer;
 
       function start(ExpressApp, done) {
-        var app = new ExpressApp({
+        app = new ExpressApp({
         });
         httpServer = http.Server(app.app);
 
@@ -73,10 +73,10 @@ describe('ExpressApp', function() {
       });
 
       it('/v2/wallets', function(done) {
-        var server = {
+        server = {
           getStatus: sinon.stub().callsArgWith(1, null, {}),
         };
-        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+        {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             WalletService:  {
               initialize: sinon.stub().callsArg(1),
@@ -86,7 +86,7 @@ describe('ExpressApp', function() {
           }
         });
         start(TestExpressApp, function() {
-          var requestOptions = {
+          requestOptions = {
             url: testHost + ':' + testPort + config.basePath + '/v2/wallets',
             headers: {
               'x-identity': 'identity',
@@ -105,10 +105,11 @@ describe('ExpressApp', function() {
       });
 
       it('/v1/addresses', function(done) {
-        var server = {
+         server = {
           getMainAddresses: sinon.stub().callsArgWith(1, null, {}),
         };
-        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+        va
+ {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             WalletService: {
               initialize: sinon.stub().callsArg(1),
@@ -139,7 +140,7 @@ describe('ExpressApp', function() {
   
       it('latest-copay-version', function(done) {
 
-          var htmlString = {
+            htmlString = {
             "url": "https://api.github.com/repos/bitpay/wallet/releases/21158137",
             "assets_url": "https://api.github.com/repos/bitpay/wallet/releases/21158137/assets",
             "upload_url": "https://uploads.github.com/repos/bitpay/wallet/releases/21158137/assets{?name,label}",
@@ -182,14 +183,15 @@ describe('ExpressApp', function() {
           };
           
           
-          var server = {
+           server = {
             storage: {
               storeGlobalCache: sinon.stub().callsArgWith(2, null),
               checkAndUseGlobalCache: sinon.stub().callsArgWith(2, null, 'v8.2.2'),
             }
           };
           
-          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          v
+ {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
               WalletService: {
                 initialize: sinon.stub().callsArg(1),
@@ -225,7 +227,7 @@ describe('ExpressApp', function() {
             amount: 123
           }),
         };
-        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+         {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             WalletService : {
               initialize: sinon.stub().callsArg(1),
@@ -260,7 +262,7 @@ describe('ExpressApp', function() {
           var server = {
             getBalance: sinon.stub().callsArgWith(1, null, {}),
           };
-          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
               WalletService : {
                 initialize: sinon.stub().callsArg(1),
@@ -270,7 +272,7 @@ describe('ExpressApp', function() {
             }
           });
           start(TestExpressApp, function() {
-            var reqOpts = {
+             reqOpts = {
               url: testHost + ':' + testPort + config.basePath + '/v1/balance',
               headers: {
                 'x-identity': 'identity',
@@ -297,14 +299,14 @@ describe('ExpressApp', function() {
       });
 
       describe('/v1/notifications', function(done) {
-        var server, clock, TestExpressApp;
+        server, clock, TestExpressApp;
         beforeEach(function() {
           clock = sinon.useFakeTimers(2000000000, 'Date');
 
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
-          var {ExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          {ExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
               WalletService: {
                 initialize: sinon.stub().callsArg(1),
@@ -321,7 +323,7 @@ describe('ExpressApp', function() {
 
         it('should fetch notifications from a specified id', function(done) {
           start(TestExpressApp, function() {
-            var requestOptions = {
+            requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?notificationId=123',
               headers: {
                 'x-identity': 'identity',
@@ -342,7 +344,7 @@ describe('ExpressApp', function() {
         });
         it('should allow custom minTs within limits', function(done) {
           start(TestExpressApp, function() {
-            var requestOptions = {
+            requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=30',
               headers: {
                 'x-identity': 'identity',
@@ -362,8 +364,8 @@ describe('ExpressApp', function() {
         });
         it('should limit minTs to Defaults.MAX_NOTIFICATIONS_TIMESPAN', function(done) {
           start(TestExpressApp, function() {
-            var overLimit  = Defaults.MAX_NOTIFICATIONS_TIMESPAN * 2;
-            var requestOptions = {
+            overLimit  = Defaults.MAX_NOTIFICATIONS_TIMESPAN * 2;
+            requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=' + overLimit ,
               headers: {
                 'x-identity': 'identity',
@@ -385,7 +387,7 @@ describe('ExpressApp', function() {
         });
         it('v1/advertisements', function(done) {
           start(TestExpressApp, function() {
-            var requestOptions = {
+            requestOptions = {
               url: testHost + ':' + testPort + config.basePath + '/v1/advertisements',
               headers: {
                 'x-identity': 'identity',
@@ -396,10 +398,10 @@ describe('ExpressApp', function() {
           done();
         });
         it('Server under maintenance check, should return 503 status code', function(done) {
-          var server = {
+          server = {
             getStatus: sinon.stub().callsArgWith(1, null, {}),
           };
-          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
               WalletService:  {
                 initialize: sinon.stub().callsArg(1),
@@ -409,7 +411,7 @@ describe('ExpressApp', function() {
             }
           });
           start(TestExpressApp, function(err, data) {
-            var requestOptions = {
+             requestOptions = {
               //test link, for either a 503 or 200 code response
               url: testHost + ':' + testPort + config.basePath + "/v2/wallets",
               headers: {
