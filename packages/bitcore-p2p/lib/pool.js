@@ -50,11 +50,15 @@ function Pool(options) {
   this._connectedPeers = {};
   this._addrs = [];
 
+  if (typeof options.network === 'string' || options.network instanceof String) {
+    options.network = Networks.get(options.network);
+  }
+
   this.listenAddr = options.listenAddr !== false;
   this.dnsSeed = options.dnsSeed !== false;
   this.maxSize = options.maxSize || Pool.MaxConnectedPeers;
   this.messages = options.messages;
-  this.network = Networks.get(options.network) || Networks.defaultNetwork;
+  this.network = options.network || Networks.defaultNetwork;
   this.relay = options.relay === false ? false : true;
 
   if (options.addrs) {
