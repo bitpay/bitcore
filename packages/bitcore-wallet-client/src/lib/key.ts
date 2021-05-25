@@ -359,6 +359,8 @@ export class Key {
     return deriveFn(path);
   };
 
+  // **
+  // * NOT USED 2021-05-24
   _checkCoin = function (coin) {
     if (!_.includes(Constants.COINS, coin)) throw new Error('Invalid coin');
   };
@@ -380,25 +382,26 @@ export class Key {
 
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
     var coinCode = '0';
+    let chain = opts.chain || opts.coin;
 
     if (opts.network == 'testnet' && Constants.UTXO_COINS.includes(opts.coin)) {
       coinCode = '1';
-    } else if (opts.coin == 'bch') {
+    } else if (chain == 'bch') {
       if (this.use0forBCH) {
         coinCode = '0';
       } else {
         coinCode = '145';
       }
-    } else if (opts.coin == 'btc') {
+    } else if (chain == 'btc') {
       coinCode = '0';
-    } else if (opts.coin == 'eth') {
+    } else if (chain == 'eth') {
       coinCode = '60';
-    } else if (opts.coin == 'xrp') {
+    } else if (chain == 'xrp') {
       coinCode = '144';
-    } else if (opts.coin == 'doge') {
+    } else if (chain == 'doge') {
       coinCode = '3';
     } else {
-      throw new Error('unknown coin: ' + opts.coin);
+      throw new Error('unknown chain: ' + chain);
     }
 
     return 'm/' + purpose + "'/" + coinCode + "'/" + opts.account + "'";
@@ -416,7 +419,7 @@ export class Key {
 
     if (password) $.shouldBeString(password, 'provide password');
 
-    this._checkCoin(opts.coin);
+    // this._checkCoin(opts.coin);
     this._checkNetwork(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
@@ -444,6 +447,7 @@ export class Key {
 
     return Credentials.fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
+      chain: opts.chain,
       coin: opts.coin,
       network: opts.network,
       account: opts.account,

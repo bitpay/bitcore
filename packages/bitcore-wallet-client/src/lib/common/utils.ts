@@ -33,6 +33,7 @@ let SJCL = {};
 const MAX_DECIMAL_ANY_COIN = 18; // more that 14 gives rounding errors
 
 export class Utils {
+  /** Return uppercase chain. */
   static getChain(coin: string): string {
     let normalizedChain = coin.toUpperCase();
     if (Constants.ERC20.includes(coin)) {
@@ -309,9 +310,10 @@ export class Utils {
 
   static buildTx(txp) {
     var coin = txp.coin || 'btc';
+    let _chain = txp.chain || txp.coin ? this.getChain(coin).toLowerCase() : 'btc'; // Check if lowercase is valid
 
-    if (Constants.UTXO_COINS.includes(coin)) {
-      var bitcore = Bitcore_[coin];
+    if (Constants.UTXO_CHAINS.includes(_chain)) {
+      var bitcore = Bitcore_[_chain];
 
       var t = new bitcore.Transaction();
 
@@ -433,7 +435,8 @@ export class Utils {
         ? 'ETHMULTISIG'
         : isERC20
         ? 'ERC20'
-        : this.getChain(coin);
+        : _chain.toUpperCase();
+      
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,
