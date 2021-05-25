@@ -471,7 +471,7 @@ export class WalletService {
   createWallet(opts, cb) {
     let pubKey;
 
-    if (opts.coin === 'bch' && opts.n > 1) {
+    if ((opts.coin === 'bch' || opts.coin === 'bcha') && opts.n > 1) {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -582,7 +582,7 @@ export class WalletService {
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
       // cashAddress migration
-      if (wallet.coin != 'bch' || wallet.nativeCashAddr) return cb(null, wallet);
+      if ((wallet.coin != 'bch' && wallet.coin != 'bcha') || wallet.nativeCashAddr) return cb(null, wallet);
 
       // only for testing
       if (opts.doNotMigrate) return cb(null, wallet);
@@ -1033,7 +1033,7 @@ export class WalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if (opts.coin === 'bch' && wallet.n > 1) {
+        if ((opts.coin === 'bch' || opts.coin === 'bcha') && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -1318,7 +1318,7 @@ export class WalletService {
         (err, duplicate) => {
           if (err) return cb(err);
           if (duplicate) return cb(null, address);
-          if (wallet.coin == 'bch' && opts.noCashAddr) {
+          if ((wallet.coin == 'bch' || wallet.coin == 'bcha') && opts.noCashAddr) {
             address = _.cloneDeep(address);
             address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }
@@ -2034,7 +2034,7 @@ export class WalletService {
         },
         next => {
           // check outputs are on 'copay' format for BCH
-          if (wallet.coin != 'bch') return next();
+          if (wallet.coin != 'bch' && wallet.coin != 'bcha') return next();
           if (!opts.noCashAddr) return next();
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
