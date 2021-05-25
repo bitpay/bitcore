@@ -40,6 +40,7 @@ const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
+  bcha: require('bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge')

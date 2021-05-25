@@ -15,6 +15,10 @@ const PROVIDERS = {
       livenet: 'https://api.bitpay.com',
       testnet: 'https://api.bitpay.com'
     },
+    bcha: {
+      livenet: 'http://localhost:3000',
+      testnet: 'http://localhost:3000'
+    },
     eth: {
       livenet: 'https://api-eth.bitcore.io',
       testnet: 'https://api-eth.bitcore.io'

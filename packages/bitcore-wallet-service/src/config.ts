@@ -49,6 +49,14 @@ module.exports = {
         url: 'https://api.bitcore.io'
       }
     },
+    bcha: {
+      livenet: {
+        url: 'http://127.0.0.1:3000'
+      },
+      testnet: {
+        url: 'http://127.0.0.1:3000'
+      }
+    },
     eth: {
       livenet: {
         url: 'https://api-eth.bitcore.io'
