@@ -50,7 +50,7 @@ function Pool(options) {
   this._connectedPeers = {};
   this._addrs = [];
 
-  if (typeof options.network === 'string' || options.network instanceof String) {
+  if (options.network && options.network.constructor.name !== 'Network') {
     options.network = Networks.get(options.network);
   }
 

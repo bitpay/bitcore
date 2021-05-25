@@ -57,7 +57,7 @@ function Peer(options) {
     this.port = options.port;
   }
 
-  if (typeof options.network === 'string' || options.network instanceof String) {
+  if (options.network && options.network.constructor.name !== 'Network') {
     options.network = Networks.get(options.network);
   }
   this.network = options.network || Networks.defaultNetwork;
