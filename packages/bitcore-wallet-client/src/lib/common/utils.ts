@@ -310,7 +310,8 @@ export class Utils {
 
   static buildTx(txp) {
     var coin = txp.coin || 'btc';
-    let _chain = txp.chain || txp.coin ? this.getChain(coin).toLowerCase() : 'btc'; // Check if lowercase is valid
+    let _chain =
+      txp.chain || txp.coin ? this.getChain(coin).toLowerCase() : 'btc'; // Check if lowercase is valid
 
     if (Constants.UTXO_CHAINS.includes(_chain)) {
       var bitcore = Bitcore_[_chain];
@@ -436,7 +437,7 @@ export class Utils {
         : isERC20
         ? 'ERC20'
         : _chain.toUpperCase();
-      
+
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,

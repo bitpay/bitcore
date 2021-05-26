@@ -21,13 +21,7 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
-  CHAINS: [
-    'btc',
-    'bch',
-    'eth',
-    'xrp',
-    'doge'
-  ],
+  CHAINS: ['btc', 'bch', 'eth', 'xrp', 'doge'],
   COINS: [
     'btc',
     'bch',

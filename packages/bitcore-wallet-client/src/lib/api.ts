@@ -463,7 +463,7 @@ export class API extends EventEmitter {
       }
     );
   }
-  
+
   // /**
   // * buildTxFromPrivateKey()
   // *
@@ -612,7 +612,7 @@ export class API extends EventEmitter {
     }
     var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
-    coin = coin + '[' + (chain||Utils.getChain(coin).toLowerCase()) + ']'
+    coin = coin + '[' + (chain || Utils.getChain(coin).toLowerCase()) + ']';
     return (
       _.padEnd(widBase58, 22, '0') +
       walletPrivKey.toWIF() +
@@ -645,25 +645,26 @@ export class API extends EventEmitter {
       let networkChar = secretSplit[2];
       let coin = secretSplit[3] || 'btc';
       let chain;
-      if(coin.includes('[') && coin.includes(']')) {
+      if (coin.includes('[') && coin.includes(']')) {
         let chainSplitted = coin.split('[');
         coin = chainSplitted[0];
-        chain = chainSplitted[1].substr(0,chainSplitted[1].length-1);
+        chain = chainSplitted[1].substr(0, chainSplitted[1].length - 1);
       }
 
-      return chain ? 
-      {
-        walletId,
-        walletPrivKey,
-        coin,
-        network: networkChar == 'T' ? 'testnet' : 'livenet',
-        chain
-      } : {
-        walletId,
-        walletPrivKey,
-        coin,
-        network: networkChar == 'T' ? 'testnet' : 'livenet'
-      };
+      return chain
+        ? {
+            walletId,
+            walletPrivKey,
+            coin,
+            network: networkChar == 'T' ? 'testnet' : 'livenet',
+            chain
+          }
+        : {
+            walletId,
+            walletPrivKey,
+            coin,
+            network: networkChar == 'T' ? 'testnet' : 'livenet'
+          };
     } catch (ex) {
       throw new Error('Invalid secret');
     }
@@ -863,7 +864,8 @@ export class API extends EventEmitter {
       '/v2/feelevels/?chain=' +
         (chain || 'btc') +
         '&network=' +
-        (network || 'livenet') + '&coin=' +
+        (network || 'livenet') +
+        '&coin=' +
         chain || 'btc',
       (err, result) => {
         if (err) return cb(err);
@@ -920,7 +922,9 @@ export class API extends EventEmitter {
     if (opts) $.shouldBeObject(opts);
     opts = opts || {};
 
-    var chain = opts.chain || (opts.coin ? Utils.getChain(opts.coin).toLowerCase() : 'btc');
+    var chain =
+      opts.chain ||
+      (opts.coin ? Utils.getChain(opts.coin).toLowerCase() : 'btc');
     var coin = opts.coin || 'btc';
     if (!_.includes(Constants.CHAINS, chain))
       return cb(new Error('Invalid chain'));
@@ -988,7 +992,7 @@ export class API extends EventEmitter {
         copayerName,
         {
           coin,
-          chain,
+          chain
         },
         (err, wallet) => {
           if (err) return cb(err);
@@ -2551,12 +2555,13 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
   getNonce(opts, cb) {
-    if(opts.chain) $.checkArgument(opts.chain == 'eth', 'Invalid coin: must be "eth"');
+    if (opts.chain)
+      $.checkArgument(opts.chain == 'eth', 'Invalid coin: must be "eth"');
     else $.checkArgument(opts.coin == 'eth', 'Invalid coin: must be "eth"');
 
     var qs = [];
-    if(opts.chain) qs.push(`chain=${opts.chain}`);
-    else  qs.push(`coin=${opts.coin}`);
+    if (opts.chain) qs.push(`chain=${opts.chain}`);
+    else qs.push(`coin=${opts.coin}`);
     qs.push(`network=${opts.network}`);
 
     const url = `/v1/nonce/${opts.address}?${qs.join('&')}`;
@@ -2744,10 +2749,12 @@ export class API extends EventEmitter {
     }
     var c = new Credentials();
     _.each(Credentials.FIELDS, f => {
-        if(f!="version") c[f] = x[f]; // use new version
+      if (f != 'version') c[f] = x[f]; // use new version
     });
-    
-    c.chain = c.chain ? c.chain.toLowerCase() : Utils.getChain(c.coin).toLowerCase();
+
+    c.chain = c.chain
+      ? c.chain.toLowerCase()
+      : Utils.getChain(c.coin).toLowerCase();
     return { key: k, credentials: c };
   }
 
@@ -2775,12 +2782,14 @@ export class API extends EventEmitter {
         migrated = API.upgradeCredentialsV1(credential);
       }
 
-      if(credential.version == 2){
+      if (credential.version == 2) {
         log.info('About to migrate to V3 : ' + credential.walletId);
-        migrated = API.upgradeCredentialsV3(migrated && migrated.credentials ? migrated.credentials : credential);
+        migrated = API.upgradeCredentialsV3(
+          migrated && migrated.credentials ? migrated.credentials : credential
+        );
       }
 
-      if(migrated) {
+      if (migrated) {
         if (migrated.key) {
           log.info(`Wallet ${credential.walletId} key's extracted`);
           newKeys.push(migrated.key);
@@ -2789,7 +2798,7 @@ export class API extends EventEmitter {
         }
       }
 
-      if(migrated) newCrededentials.push(migrated.credentials);
+      if (migrated) newCrededentials.push(migrated.credentials);
     });
 
     if (newKeys.length > 0) {
@@ -2898,9 +2907,8 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token
-              );
+              const tokenCredentials =
+                client.credentials.getTokenCredentials(token);
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2913,14 +2921,13 @@ export class API extends EventEmitter {
               log.info(
                 `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
               );
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials(
-                {
+              const multisigEthCredentials =
+                client.credentials.getMultisigEthCredentials({
                   walletName: info.walletName,
                   multisigContractAddress: info.multisigContractAddress,
                   n: info.n,
                   m: info.m
-                }
-              );
+                });
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
@@ -2933,9 +2940,8 @@ export class API extends EventEmitter {
                     return;
                   }
                   log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(
-                    token
-                  );
+                  const tokenCredentials =
+                    multisigEthClient.credentials.getTokenCredentials(token);
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);
