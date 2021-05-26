@@ -22,7 +22,7 @@ describe('DefaultProvider', () => {
   });
 
   it('has defaults', () => {
-    expect(defaults.getDefault('%CHAIN%')).toBe('BTC');
+    expect(defaults.getDefault('%CHAIN%')).toBe('WCN');
     expect(defaults.getDefault('%API_PREFIX%')).toBe('/api');
     expect(defaults.getDefault('%NETWORK%')).toBe('regtest');
   });

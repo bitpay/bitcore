@@ -8,7 +8,7 @@ BUILDFOLDER=www/
 rm -fr $BUILDFOLDER
 
 # Prod build
-ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build --prod \
+ENV=prod CHAIN=WCN NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build --prod \
                         --wwwDir $BUILDFOLDER
 
 # remove unused css

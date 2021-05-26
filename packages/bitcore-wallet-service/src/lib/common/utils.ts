@@ -9,7 +9,8 @@ const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
-  doge: require('bitcore-lib-doge')
+  doge: require('bitcore-lib-doge'),
+  wcn: require('bitcore-lib-wcn')
 };
 
 export class Utils {
@@ -243,8 +244,13 @@ export class Utils {
         try {
           new Bitcore_['doge'].Address(address);
           return 'doge';
-        } catch (e) {
-          return;
+		} catch (e) {
+          try {
+            new Bitcore_['wcn'].Address(address);
+			return 'wcn';
+          } catch (e) {
+            return;
+		  }
         }
       }
     }

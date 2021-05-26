@@ -13,6 +13,7 @@
                         <img *ngIf="block.network !== 'mainnet' && block.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" alt="{{ block.chain }}"/>
                         <img *ngIf="block.network !== 'mainnet' && block.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" alt="{{ block.chain }}"/>
                         <img *ngIf="block.network !== 'mainnet' && block.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="{{ block.chain }}"/>
+                        <img *ngIf="block.network !== 'mainnet' && block.chain==='WCN'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="{{ block.chain }}"/>
                         <img [ngClass]="{'secondary': block.network ==='testnet'}" *ngIf="block.network !== 'mainnet' && block.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" alt="{{ block.chain }}"/>
                     </ion-avatar>
                     <ion-label color="dark" item-end>
@@ -40,6 +41,7 @@
                         <img *ngIf="tx.network !== 'mainnet' && tx.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
                         <img *ngIf="tx.network !== 'mainnet' && tx.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
                         <img *ngIf="tx.network !== 'mainnet' && tx.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
+                        <img *ngIf="tx.network !== 'mainnet' && tx.chain==='WCN'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
                         <img [ngClass]="{'secondary': tx.network ==='testnet'}" *ngIf="tx.network !== 'mainnet' && tx.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" alt="{{ tx.chain }}"/>
                     </ion-avatar>
                     <ion-label color="dark" item-end>
@@ -65,6 +67,7 @@
                         <img *ngIf="addr.network !== 'mainnet' && addr.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
                         <img *ngIf="addr.network !== 'mainnet' && addr.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
                         <img *ngIf="addr.network !== 'mainnet' && addr.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
+                        <img *ngIf="addr.network !== 'mainnet' && addr.chain==='WCN'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="{{ tx.chain }}"/>
                         <img [ngClass]="{'secondary': addr.network ==='testnet'}" *ngIf="addr.network !== 'mainnet' && addr.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" alt="{{ tx.chain }}"/>
                     </ion-avatar>
                     <ion-label color="dark" item-end>

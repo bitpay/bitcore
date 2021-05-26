@@ -1,6 +1,7 @@
 import { BchValidation } from './bch';
 import { BtcValidation } from './btc';
 import { DogeValidation } from './doge';
+import { WcnValidation } from './wcn';
 import { EthValidation } from './eth';
 import { XrpValidation } from './xrp';
 
@@ -11,6 +12,7 @@ export interface IValidation {
 
 const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),
+  WCN: new WcnValidation(),
   BCH: new BchValidation(),
   ETH: new EthValidation(),
   XRP: new XrpValidation(),

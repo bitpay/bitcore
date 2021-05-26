@@ -19,6 +19,7 @@
         <ion-icon class="currency-icon" name="logo-bitcoin" *ngIf="(chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH') && currencyProvider?.currencySymbol !== 'USD'"></ion-icon>
         <ion-icon class="currency-icon" name="logo-usd" *ngIf="currencyProvider?.currencySymbol === 'USD'"></ion-icon>
         <span><img src="assets/img/doge-icon.svg" *ngIf="chainNetwork.chain === 'DOGE' && currencyProvider?.currencySymbol !== 'USD'" width="9" alt="DOGE"></span>
+        <span><img src="assets/img/doge-icon.svg" *ngIf="chainNetwork.chain === 'WCN' && currencyProvider?.currencySymbol !== 'USD'" width="9" alt="WCN"></span>
         <span><img src="assets/img/ethicon.svg" *ngIf="chainNetwork.chain === 'ETH' && currencyProvider?.currencySymbol !== 'USD'" width="11" alt="ETH"></span>
         <span class="currency-symbol" *ngIf="chainNetwork?.chain !== 'ALL'">{{ currencyProvider?.currencySymbol }}</span>
         <span class="currency-symbol" *ngIf="chainNetwork?.chain === 'ALL'">Select blockchain</span>

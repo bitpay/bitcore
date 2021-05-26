@@ -30,6 +30,7 @@
     "bitcore-lib": "^8.25.10",
     "bitcore-lib-cash": "^8.25.10",
     "bitcore-lib-doge": "^8.25.10",
+    "bitcore-lib-wcn": "^8.25.10",
     "ethers": "^5.0.12",
     "info": "0.0.6-beta.0",
     "ripple-binary-codec": "0.2.6",

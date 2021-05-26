@@ -4580,6 +4580,11 @@ describe('Wallet service', function() {
                 expected = 1e8;
                 expectedNormal = 1e8;
                 break;
+              case 'wcn':
+                level = 'normal';
+                expected = 1e8;
+                expectedNormal = 1e8;
+                break;
               default:
                 level = 'economy';
                 expected = 180e2;

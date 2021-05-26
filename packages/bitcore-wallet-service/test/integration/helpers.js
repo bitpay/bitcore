@@ -18,7 +18,8 @@ var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
-  doge: require('bitcore-lib-doge')
+  doge: require('bitcore-lib-doge'),
+  wcn: require('bitcore-lib-wcn')
 };
 
 var { ChainService } = require('../../ts_build/lib/chain/index');
@@ -526,7 +527,7 @@ helpers.stubCheckData = function(bc, server, isBCH, cb) {
 helpers.stubFeeLevels = function(levels, fill, coin) {
   coin = coin || 'btc';
   let div = 1;
-  if (coin == 'btc' || coin == 'bch' || coin == 'doge') {
+  if (coin == 'btc' || coin == 'bch' || coin == 'doge' || coin == 'wcn') {
     div = 1e8;  // bitcoind returns values in BTC amounts
   }
 

@@ -23,7 +23,7 @@
           <ion-grid>
             <ion-row>
               <ion-col col-12 col-md class="allow-truncated-text">
-                <block-summary *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE'" [block]="block" [chainNetwork]="chainNetwork"></block-summary>
+                <block-summary *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE'  || chainNetwork.chain === 'WCN'" [block]="block" [chainNetwork]="chainNetwork"></block-summary>
                 <block-summary-eth *ngIf="chainNetwork.chain === 'ETH'" [block]="block" [chainNetwork]="chainNetwork"></block-summary-eth>
                 <ion-item>
                   Number of Transactions

@@ -1,6 +1,7 @@
 import { BchDeriver } from './bch';
 import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
+import { WcnDeriver } from './wcn';
 import { EthDeriver } from './eth';
 import { Paths } from './paths';
 import { XrpDeriver } from './xrp';
@@ -22,7 +23,8 @@ const derivers: { [chain: string]: IDeriver } = {
   BCH: new BchDeriver(),
   ETH: new EthDeriver(),
   XRP: new XrpDeriver(),
-  DOGE: new DogeDeriver()
+  DOGE: new DogeDeriver(),
+  WCN: new WcnDeriver()
 };
 
 export class DeriverProxy {

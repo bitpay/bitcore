@@ -8,7 +8,7 @@
     </div>
     <ion-row *ngFor="let tx of txs; let i = index">
       <ion-col col-12 *ngIf="i < limit && (tx.spentTxid !== '' || tx.mintTxid)">
-        <coin [blockTipHeight]="blockTipHeight" *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE'" [coin]="tx" [chainNetwork]="chainNetwork"></coin>
+        <coin [blockTipHeight]="blockTipHeight" *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE' || chainNetwork.chain === 'WCN'" [coin]="tx" [chainNetwork]="chainNetwork"></coin>
         <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details-eth>
       </ion-col>
     </ion-row>

@@ -32,6 +32,9 @@ export class PriceProvider {
         case 'DOGE':
           ratesAPI = this.api.ratesAPI.doge;
           break;
+        case 'WCN':
+          ratesAPI = this.api.ratesAPI.wcn;
+          break;
         case 'ETH':
           ratesAPI = this.api.ratesAPI.eth;
           break;

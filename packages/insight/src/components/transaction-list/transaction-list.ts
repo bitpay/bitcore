@@ -42,6 +42,7 @@ export class TransactionListComponent implements OnInit {
       if (this.queryType === 'blockHash') {
         if (
           this.chainNetwork.chain === 'BTC' ||
+          this.chainNetwork.chain === 'WCN' ||
           this.chainNetwork.chain === 'BCH' ||
           this.chainNetwork.chain === 'DOGE'
         ) {
@@ -61,6 +62,7 @@ export class TransactionListComponent implements OnInit {
 
         if (
           this.chainNetwork.chain === 'BTC' ||
+          this.chainNetwork.chain === 'WCN' ||
           this.chainNetwork.chain === 'BCH' ||
           this.chainNetwork.chain === 'DOGE'
         ) {
@@ -156,6 +158,7 @@ export class TransactionListComponent implements OnInit {
     if (
       (this.queryType === 'blockHash' && this.chainNetwork.chain === 'BTC') ||
       this.chainNetwork.chain === 'BCH' ||
+      this.chainNetwork.chain === 'WCN' ||
       this.chainNetwork.chain === 'DOGE'
     ) {
       this.fetchBlockTxCoinInfo(this.blockPageNum);

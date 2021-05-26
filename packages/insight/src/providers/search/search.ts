@@ -52,6 +52,24 @@ export class SearchProvider {
         { chain: 'BTC', network: 'mainnet' }
       ],
     },
+    // Standard WCN
+    {
+      regexes: [/^(widecoin:)?([WE][a-km-zA-HJ-NP-Z1-9]{25,34})/],
+      dataIndex: 2,
+      type: 'address',
+      chainNetworks: [
+        { chain: 'WCN', network: 'mainnet' }
+      ],
+    },
+    // bech32 WCN Address
+    {
+      regexes: [/^(widecoin:)?(wc1[ac-hj-np-zAC-HJ-NP-Z02-9]{11,71})/],
+      dataIndex: 2,
+      type: 'address',
+      chainNetworks: [
+        { chain: 'WCM', network: 'mainnet' }
+      ],
+    },
     // Standard BCH Address
     {
       regexes: [/^(bitcoincash:)?([qp][a-z0-9]{41})$/, /^(BITCOINCASH:)?([QP][A-Z0-9]{41})/],
@@ -63,13 +81,14 @@ export class SearchProvider {
     },
     // Testnet BTC / BCH / Doge Address
     {
-      regexes: [/^(bitcoin:|bchtest:|dogecoin:)?([2mn][1-9A-HJ-NP-Za-km-z]{26,35})/],
+      regexes: [/^(bitcoin:|bchtest:|dogecoin:|widecoin:)?([2mn][1-9A-HJ-NP-Za-km-z]{26,35})/],
       dataIndex: 2,
       type: 'address',
       chainNetworks: [
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
-        { chain: 'DOGE', network: 'testnet' }
+        { chain: 'DOGE', network: 'testnet' },
+        { chain: 'WCN', network: 'testnet' }
       ],
     },
     // Testnet BCH Address
@@ -107,9 +126,11 @@ export class SearchProvider {
         { chain: 'BTC', network: 'mainnet' },
         { chain: 'BCH', network: 'mainnet' },
         { chain: 'DOGE', network: 'mainnet' },
+        { chain: 'WCN', network: 'mainnet' },
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
-        { chain: 'DOGE', network: 'testnet' }
+        { chain: 'DOGE', network: 'testnet' },
+        { chain: 'WCN', network: 'testnet' }
       ],
     },
     // ETH block or tx
@@ -127,6 +148,7 @@ export class SearchProvider {
       type: 'block',
       chainNetworks: [
         { chain: 'BTC', network: 'mainnet' },
+        { chain: 'WCN', network: 'mainnet' },
         { chain: 'BCH', network: 'mainnet' },
         { chain: 'DOGE', network: 'mainnet' },
         { chain: 'ETH', network: 'mainnet' },
@@ -215,7 +237,7 @@ export class SearchProvider {
   }
   private extractAddress(address: string): string {
     const extractedAddress = address
-      .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
+      .replace(/^(bitcoincash:|bchtest:|bitcoin:|widecoin:)/i, '')
       .replace(/\?.*/, '');
     return extractedAddress || address;
   }

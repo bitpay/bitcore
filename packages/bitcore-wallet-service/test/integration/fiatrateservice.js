@@ -185,7 +185,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should get historical rates from ts to now', function(done) {
-      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge'];
+      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'wcn'];
       var clock = sinon.useFakeTimers({toFake: ['Date']});
       async.each([1.00, 2.00, 3.00, 4.00, 5.00], function(value, next) {
         clock.tick(100);
@@ -256,11 +256,12 @@ describe('Fiat rate service', function() {
         }, function(err, res) {
           should.not.exist(err);
           should.exist(res);
-          res['btc'].length.should.equal(4);
+          res['btc'].length.should.equal(5);
           should.not.exist(res['bch']);
           should.not.exist(res['eth']);
           should.not.exist(res['xrp']);
           should.not.exist(res['doge']);
+          should.not.exist(res['wcn']);
 
           res['btc'][3].ts.should.equal(100);
           res['btc'][3].rate.should.equal(1.00);
@@ -273,6 +274,9 @@ describe('Fiat rate service', function() {
 
           res['btc'][0].ts.should.equal(400);
           res['btc'][0].rate.should.equal(4.00);
+
+          res['btc'][0].ts.should.equal(500);
+          res['btc'][0].rate.should.equal(5.00);
           clock.restore();
           done();
         });
@@ -280,7 +284,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should return current rates if missing opts.ts when fetching historical rates', function(done) {
-      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge'];
+      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'wcn'];
       var clock = sinon.useFakeTimers({toFake: ['Date']});
       async.each([1.00, 2.00, 3.00, 4.00], function(value, next) {
         clock.tick(11 * 60 * 1000);
@@ -356,6 +360,13 @@ describe('Fiat rate service', function() {
         code: 'EUR',
         rate: 234.56,
       }];
+      var wcn = [{
+        code: 'USD',
+        rate: 123.45,
+      }, {
+        code: 'EUR',
+        rate: 234.56,
+      }];
       var bch = [{
         code: 'USD',
         rate: 120,
@@ -405,6 +416,10 @@ describe('Fiat rate service', function() {
         url: 'https://bitpay.com/api/rates/DOGE',
         json: true
       }).yields(null, null, doge);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/WCN',
+        json: true
+      }).yields(null, null, wcn);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -447,9 +462,17 @@ describe('Fiat rate service', function() {
                   }, function(err, res) {
                     should.not.exist(err);
                     res.fetchedOn.should.equal(100);
-                    res.rate.should.equal(234.56);
-                    clock.restore();
-                    done();
+                    res.rate.should.equal(0.222222);
+                    service.getRate({
+                      code: 'USD',
+                      coin: 'wcn',
+                    }, function(err, res) {
+                      should.not.exist(err);
+                      res.fetchedOn.should.equal(100);
+                      res.rate.should.equal(234.56);
+                      clock.restore();
+                      done();
+                    });
                   });
                 });
               });

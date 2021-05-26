@@ -42,6 +42,7 @@ export class ApiProvider {
     btc: 'https://bitpay.com/api/rates',
     bch: 'https://bitpay.com/api/rates/bch',
     doge: 'https://bitpay.com/api/rates/doge',
+    wcn: 'https://bitpay.com/api/rates/wcn',
     eth: 'https://bitpay.com/api/rates/eth'
   };
 

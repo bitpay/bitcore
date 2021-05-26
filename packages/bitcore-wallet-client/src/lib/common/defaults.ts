@@ -7,6 +7,8 @@ export const Defaults = {
     switch (coin) {
       case 'btc':
         return 0.5e8;
+      case 'wcn':
+        return 0.5e8;
       case 'doge':
         return 400e8;
       default:

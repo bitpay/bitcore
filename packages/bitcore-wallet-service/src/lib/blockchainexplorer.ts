@@ -26,6 +26,10 @@ const PROVIDERS = {
     doge: {
       livenet: 'https://api.bitpay.com',
       testnet: 'https://api.bitpay.com'
+    },
+    wcn: {
+      livenet: 'https://api.bitpay.com',
+      testnet: 'https://api.bitpay.com'
     }
   }
 };

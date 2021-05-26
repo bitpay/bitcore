@@ -3,6 +3,10 @@ export const Paths = {
     mainnet: "m/44'/0'/",
     livenet: "m/44'/0'/"
   },
+  WCN: {
+    mainnet: "m/44'/0'/",
+    livenet: "m/44'/0'/"
+  },
   BCH: {
     mainnet: "m/44'/145'/",
     livenet: "m/44'/145'/"

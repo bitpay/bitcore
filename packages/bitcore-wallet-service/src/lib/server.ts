@@ -42,7 +42,8 @@ const Bitcore_ = {
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge')
+  doge: require('bitcore-lib-doge'),
+  wcn: require('bitcore-lib-wcn')
 };
 
 const Common = require('./common');
