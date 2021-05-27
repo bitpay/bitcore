@@ -102,7 +102,7 @@
     "bitcore-p2p-cash": "^8.25.10",
     "bitcore-p2p-doge": "^8.25.10",
     "bitcore-p2p-bcha": "^8.25.10",
-    "bitcore-wallet-client": "^8.25.10",
+    "@abcpros/bitcore-wallet-client": "^8.25.10",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
     "crypto-rpc": "^1.1.0",
