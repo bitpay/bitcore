@@ -18,6 +18,7 @@ var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
+  bcha: require('bitcore-lib-cash'),
   doge: require('bitcore-lib-doge')
 };
 

@@ -12,7 +12,8 @@ log.debug = log.verbose;
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  bch: require('bitcore-lib-cash'),
+  bcha: require('bitcore-lib-cash')
 };
 
 var Common = require('../../ts_build/lib/common');
