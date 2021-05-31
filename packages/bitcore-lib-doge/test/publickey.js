@@ -28,7 +28,7 @@ describe('PublicKey', function() {
     it('errors if an invalid point is provided', function() {
       (function() {
         return new PublicKey(invalidPoint);
-      }).should.throw('Point does not lie on the curv');
+      }).should.throw('Point does not lie on the curve');
     });
 
     it('errors if a point not on the secp256k1 curve is provided', function() {
@@ -59,12 +59,14 @@ describe('PublicKey', function() {
       var knownKeys = [
         {
           wif: 'QP5rQxpaP8HHPEdCEqxTjiHGWRvsyPvzZJeJ9BCxpfT13FN9VesQ',
+          priv: '6d1229a6b24c2e775c062870ad26bc261051e0198c67203167273c7c62538846',
           pub: '021e4b9e64d05b0082a5319c829660267593364b8175e2f14ca2c2307c9b861790',
           pubx: '1e4b9e64d05b0082a5319c829660267593364b8175e2f14ca2c2307c9b861790',
           puby: 'b298391731718bc0f8ef642c59d52bd5380ae2c791cbcb07937f920d91129b44'
         },
         {
           wif: 'QVi86rdL3APa6TXXwPdRnKfqVfzGv6a993E5LeiHXaGGjE7cpah1',
+          priv: 'f2cc9d2b008927db94b89e04e2f6e70c180e547b3e5e564b06b8215d1c264b53',
           pub: '028544cb0f572885c9f0cdb9b94c28b4ad7ad2c6dc7aa981816a11399fda852c73',
           pubx: '8544cb0f572885c9f0cdb9b94c28b4ad7ad2c6dc7aa981816a11399fda852c73',
           puby: 'a64ff95d82a5ed91b77dab510990a5b976bd2257993e85c087ae75b21086e440'
@@ -356,13 +358,13 @@ describe('PublicKey', function() {
       ['6JdtEaLfUDBw2fgS4V3tTTDF92mr2XEhLQiM5JzBqXwSgzB5aRX', 'DHFtUFfCnRTY7RFckCs8ZD7BFwZEXFn8db'],
       ['6JkDNMrxn9GTEdDecdCSbMrkDwA41rG3gn3izN2o3fwRTFZ8wfP', 'DGtQAxWQaXLuuhNvLHAUQ44PmFRvy6C7gC']
     ];
-
+    
     data.forEach(function(d){
       var publicKey = PrivateKey.fromWIF(d[0]).toPublicKey();
       var address = Address.fromString(d[1]);
       address.hashBuffer.should.deep.equal(publicKey._getID());
     });
-
+    
   });
 
   describe('#toString', function() {

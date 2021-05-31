@@ -9,6 +9,9 @@ var Hash = require('../../crypto/hash');
 var Input = require('./input');
 var Output = require('../output');
 var Sighash = require('../sighash');
+var SighashWitness = require('../sighashwitness');
+var BufferWriter = require('../../encoding/bufferwriter');
+var BufferUtil = require('../../util/buffer');
 var Script = require('../../script');
 var Signature = require('../../crypto/signature');
 var TransactionSignature = require('../signature');
@@ -21,6 +24,39 @@ function PublicKeyHashInput() {
   Input.apply(this, arguments);
 }
 inherits(PublicKeyHashInput, Input);
+
+PublicKeyHashInput.prototype.getRedeemScript = function(publicKey) {
+  if (!this.redeemScript) {
+    var redeemScript = Script.buildWitnessV0Out(publicKey);
+    if (Script.buildScriptHashOut(redeemScript).equals(this.output.script)) {
+      var scriptSig = new Script();
+      scriptSig.add(redeemScript.toBuffer());
+      this.setScript(scriptSig);
+      this.redeemScript = redeemScript;
+    }
+  }
+  return this.redeemScript;
+};
+
+PublicKeyHashInput.prototype.getScriptCode = function(publicKey) {
+  var writer = new BufferWriter();
+  var script;
+  if (this.output.script.isScriptHashOut()) {
+    script = this.getRedeemScript(publicKey);
+  } else {
+    script = this.output.script;
+  }
+  var scriptBuffer = Script.buildPublicKeyHashOut(script.toAddress()).toBuffer();
+  writer.writeVarintNum(scriptBuffer.length);
+  writer.write(scriptBuffer);
+  return writer.toBuffer();
+};
+
+PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
+  var scriptCode = this.getScriptCode(privateKey);
+  var satoshisBuffer = this.getSatoshisBuffer();
+  return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+};
 
 /* jshint maxparams: 5 */
 /**
@@ -36,7 +72,14 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
 
-  if (BufferUtil.equals(hashData, this.output.script.getPublicKeyHash())) {
+  var script;
+  if (this.output.script.isScriptHashOut()) {
+    script = this.getRedeemScript(privateKey.publicKey);
+  } else {
+    script = this.output.script;
+  }
+
+  if (script && BufferUtil.equals(hashData, script.getPublicKeyHash())) {
     return [new TransactionSignature({
       publicKey: privateKey.publicKey,
       prevTxId: this.prevTxId,
@@ -61,11 +104,13 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
  */
 PublicKeyHashInput.prototype.addSignature = function(transaction, signature) {
   $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
+
   this.setScript(Script.buildPublicKeyHashIn(
     signature.publicKey,
     signature.signature.toDER(),
     signature.sigtype
   ));
+
   return this;
 };
 
@@ -75,6 +120,7 @@ PublicKeyHashInput.prototype.addSignature = function(transaction, signature) {
  */
 PublicKeyHashInput.prototype.clearSignatures = function() {
   this.setScript(Script.empty());
+  this.setWitnesses([]);
   return this;
 };
 
@@ -83,8 +129,21 @@ PublicKeyHashInput.prototype.clearSignatures = function() {
  * @return {boolean}
  */
 PublicKeyHashInput.prototype.isFullySigned = function() {
-  return this.script.isPublicKeyHashIn();
+  return this.script.isPublicKeyHashIn() || this.hasWitnesses();
 };
+
+PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature) {
+  // FIXME: Refactor signature so this is not necessary
+  signature.signature.nhashtype = signature.sigtype;
+  return Sighash.verify(
+    transaction,
+    signature.signature,
+    signature.publicKey,
+    signature.inputIndex,
+    this.output.script
+  );
+};
+
 
 PublicKeyHashInput.SCRIPT_MAX_SIZE = 73 + 34; // sigsize (1 + 72) + pubkey (1 + 33)
 

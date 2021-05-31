@@ -9,6 +9,7 @@ var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
 var Transaction = require('../transaction');
 var $ = require('../util/preconditions');
+const Networks = require('../networks');
 
 /**
  * Instantiate a Block from a Buffer, JSON object, or Object with
@@ -122,17 +123,32 @@ Block.fromString = function fromString(str) {
 };
 
 /**
+ * Method to decode blocks read directly from the .dat block files
  * @param {Binary} - Raw block binary data or buffer
+ * @param {Boolean} - (optional. Default = false) Verify block decoding
  * @returns {Block} - An instance of block
  */
-Block.fromRawBlock = function fromRawBlock(data) {
+Block.fromRawBlock = function fromRawBlock(data, verify = false) {
   if (!BufferUtil.isBuffer(data)) {
     data = Buffer.from(data, 'binary');
   }
-  var br = BufferReader(data);
-  br.pos = Block.Values.START_OF_BLOCK;
-  var info = Block._fromBufferReader(br);
-  return new Block(info);
+
+  const br = BufferReader(data);
+  let magic, size;
+
+  if (!verify) {
+    br.pos = Block.Values.START_OF_BLOCK;
+  } else {
+    magic = br.readUInt32BE();
+    size = br.readUInt32LE();
+    $.checkState(Networks.get(magic), 'Invalid network');
+  }
+
+  const info = Block._fromBufferReader(br);
+  const block = new Block(info);
+
+  $.checkState(!verify || block.toBuffer().length === size, 'Decoding of block failed. Expected block size of ' + size);
+  return block;
 };
 
 /**
@@ -274,7 +290,7 @@ Block.prototype.inspect = function inspect() {
 };
 
 Block.Values = {
-  START_OF_BLOCK: 8, // Start of block in raw block data
+  START_OF_BLOCK: 8, // Start buffer position in raw block data. (network magic (4 bytes BE) + block size (4 bytes LE))
   NULL_HASH: Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
 

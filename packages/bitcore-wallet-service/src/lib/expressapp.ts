@@ -112,12 +112,14 @@ export class ExpressApp {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
 
+        const clientError: { code: string; message: string; messageData?: object } = {
+          code: err.code,
+          message: err.message
+        };
+        if (err.messageData) clientError.messageData = err.messageData;
         res
           .status(status)
-          .json({
-            code: err.code,
-            message: err.message
-          })
+          .json(clientError)
           .end();
       } else {
         let code = 500,
@@ -1126,6 +1128,22 @@ export class ExpressApp {
           if (err) return returnError(err, res, req);
           res.json(notes);
         });
+      });
+    });
+
+    router.get('/v1/nonce/:address', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        const opts = {
+          coin: req.query.coin || 'eth',
+          network: req.query.network || 'livenet',
+          address: req.params['address']
+        };
+        try {
+          const nonce = await server.getNonce(opts);
+          res.json(nonce);
+        } catch (err) {
+          returnError(err, res, req);
+        }
       });
     });
 

@@ -2,7 +2,6 @@
 
 var _ = require('lodash');
 var BN = require('../crypto/bn');
-var buffer = require('buffer');
 var bufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
 var BufferWriter = require('../encoding/bufferwriter');
@@ -23,7 +22,7 @@ function Output(args) {
     } else {
       var script;
       if (_.isString(args.script) && JSUtil.isHexa(args.script)) {
-        script = new buffer.Buffer(args.script, 'hex');
+        script = Buffer.from(args.script, 'hex');
       } else {
         script = args.script;
       }
@@ -149,7 +148,7 @@ Output.fromBufferReader = function(br) {
   if (size !== 0) {
     obj.script = br.read(size);
   } else {
-    obj.script = new buffer.Buffer([]);
+    obj.script = Buffer.from([]);
   }
   return new Output(obj);
 };

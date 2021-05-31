@@ -6,7 +6,6 @@ var assert = require('assert');
 var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
-var buffer = require('buffer');
 var errors = bitcore.errors;
 var hdErrors = bitcore.errors.HDPublicKey;
 var BufferUtil = bitcore.util.buffer;
@@ -15,11 +14,11 @@ var HDPublicKey = bitcore.HDPublicKey;
 var Base58Check = bitcore.encoding.Base58Check;
 var Networks = bitcore.Networks;
 
-var xprivkey = 'Ltpv71G8qDifUiNetP6nmxPA5STrUVmv2J9YSmXajv8VsYBUyuPhvN9xCaQrfX2wo5xxJNtEazYCFRUu5FmokYMM79pcqz8pcdo4rNXAFPgyB4k';
-var xpubkey = 'Ltub2SSUS19CirucWFod2ZsYA2J4v4U76YiCXHdcQttnoiy5aGanFHCPDBX7utfG6f95u1cUbZJNafmvzNCzZZJTw1EmyFoL8u1gJbGM8ipu491';
-var xpubkeyTestnet = 'ttub4XNESS7BCg9c1drFYS3NSKAodkDNmUuTDq5cii78UkFjiaeCxVsQhQrkvrV76JEUsz61E3HtQf1w8oo81QQiUbPwcEeyqiToE4Q8GFnKgPE';
-var json = '{"network":"livenet","depth":0,"fingerPrint":876747070,"parentFingerPrint":0,"childIndex":0,"chainCode":"873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508","publicKey":"0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2","checksum":435229356,"xpubkey":"Ltub2SSUS19CirucWFod2ZsYA2J4v4U76YiCXHdcQttnoiy5aGanFHCPDBX7utfG6f95u1cUbZJNafmvzNCzZZJTw1EmyFoL8u1gJbGM8ipu491"}';
-var derived_0_1_200000 = 'Ltub2YH6FGT8kBVNhrNH8RiXzFj2DPABedMG1YSTTEsn8m4AWawdMnXQbcLV1DeNRTAP44n4TTynaKaCg8wk6N6aPk2NN2hVEVrqL5iPfyn8WrT';
+var xprivkey = 'xprv9s21ZrQH143K31tyHAnPm2G7KxguGH32b928eMrkWUPhCXDzVE1sFp51hsVwWBmn6QzHLbcq8NNpD1WH9NNHGR99CyV9rW3Xr6cj2GV4tPV';
+var xpubkey = 'xpub661MyMwAqRbcFVySPCKQ8ACqszXPfjksxMwjSkGN4ovg5KZ92mL7ocPVZArbpNm6x1gqZkqdthgdLg1EefyRHU1mQrp1k5NYFmd5hkkJgAw';
+var xpubkeyTestnet = 'tpubD6NzVbkrYhZ4XYPZvipwgH4KsgXUDy6YdUCkqjSHxZjWBJkMLxAeAWpsAPExUFSjPiTf6xAGK21hhwCPtTSdHrkkHLQuW8c2mP7tQHJ8zrG';
+var json = '{"network":"livenet","depth":0,"fingerPrint":-1457505106,"parentFingerPrint":0,"childIndex":0,"chainCode":"602e52a0b9a7730844e81a7faf6fb0e46514388b3dc7eddefc038165b4d430ad","publicKey":"0391822fb6dc1307a952e723d3deef6aeb38da447dae0eeb5aa272ef76e7f0b572","checksum":1280922356,"xpubkey":"xpub661MyMwAqRbcFVySPCKQ8ACqszXPfjksxMwjSkGN4ovg5KZ92mL7ocPVZArbpNm6x1gqZkqdthgdLg1EefyRHU1mQrp1k5NYFmd5hkkJgAw"}';
+var derived_0_1_200000 = 'xpub6DR2ndWe682c9rmUdb4kdvTvbjkMmra9m7HqCwS4254Bgn1UeGQPTVYt9jQh7mA5RyU1f82icedfmxwQLLJZaxGXPfbeAjrM2Y9CbyinXnd';
 
 describe('HDPublicKey interface', function() {
 
@@ -32,7 +31,7 @@ describe('HDPublicKey interface', function() {
   var expectDerivationFail = function(argument, error) {
     (function() {
       var pubkey = new HDPublicKey(xpubkey);
-      pubkey.derive(argument);
+      pubkey.deriveChild(argument);
     }).should.throw(error);
   };
 
@@ -78,7 +77,7 @@ describe('HDPublicKey interface', function() {
     describe('xpubkey string serialization errors', function() {
       it('fails on invalid length', function() {
         expectFailBuilding(
-          Base58Check.encode(new buffer.Buffer([1, 2, 3])),
+          Base58Check.encode(Buffer.from([1, 2, 3])),
           hdErrors.InvalidLength
         );
       });
@@ -166,16 +165,16 @@ describe('HDPublicKey interface', function() {
 
   describe('conversion to different formats', function() {
     var plainObject = {
-      'network':'livenet',
-      'depth':0,
-      'fingerPrint':876747070,
-      'parentFingerPrint':0,
-      'childIndex':0,
-      'chainCode':'873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508',
-      'publicKey':'0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2',
-      'checksum':435229356,
-      'xpubkey':'Ltub2SSUS19CirucWFod2ZsYA2J4v4U76YiCXHdcQttnoiy5aGanFHCPDBX7utfG6f95u1cUbZJNafmvzNCzZZJTw1EmyFoL8u1gJbGM8ipu491'
-    };
+      network: 'livenet',
+      depth: 0,
+      fingerPrint: 2837462190, //unsigned (-1457505106 >>> 0)
+      parentFingerPrint: 0,
+      childIndex: 0,
+      chainCode: '602e52a0b9a7730844e81a7faf6fb0e46514388b3dc7eddefc038165b4d430ad',
+      publicKey: '0391822fb6dc1307a952e723d3deef6aeb38da447dae0eeb5aa272ef76e7f0b572',
+      checksum: 1280922356,
+      xpubkey: 'xpub661MyMwAqRbcFVySPCKQ8ACqszXPfjksxMwjSkGN4ovg5KZ92mL7ocPVZArbpNm6x1gqZkqdthgdLg1EefyRHU1mQrp1k5NYFmd5hkkJgAw'
+    }
     it('roundtrips to JSON and to Object', function() {
       var pubkey = new HDPublicKey(xpubkey);
       expect(HDPublicKey.fromObject(pubkey.toJSON()).xpubkey).to.equal(xpubkey);
@@ -188,15 +187,15 @@ describe('HDPublicKey interface', function() {
   describe('derivation', function() {
     it('derivation is the same whether deriving with number or string', function() {
       var pubkey = new HDPublicKey(xpubkey);
-      var derived1 = pubkey.derive(0).derive(1).derive(200000);
-      var derived2 = pubkey.derive('m/0/1/200000');
+      var derived1 = pubkey.deriveChild(0).deriveChild(1).deriveChild(200000);
+      var derived2 = pubkey.deriveChild('m/0/1/200000');
       derived1.xpubkey.should.equal(derived_0_1_200000);
       derived2.xpubkey.should.equal(derived_0_1_200000);
     });
 
     it('allows special parameters m, M', function() {
       var expectDerivationSuccess = function(argument) {
-        new HDPublicKey(xpubkey).derive(argument).xpubkey.should.equal(xpubkey);
+        new HDPublicKey(xpubkey).deriveChild(argument).xpubkey.should.equal(xpubkey);
       };
       expectDerivationSuccess('m');
       expectDerivationSuccess('M');
@@ -204,13 +203,13 @@ describe('HDPublicKey interface', function() {
 
     it('doesn\'t allow object arguments for derivation', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).derive({});
+        return new HDPublicKey(xpubkey).deriveChild({});
       }, hdErrors.InvalidDerivationArgument);
     });
 
     it('needs first argument for derivation', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).derive('s');
+        return new HDPublicKey(xpubkey).deriveChild('s');
       }, hdErrors.InvalidPath);
     });
 
@@ -224,13 +223,13 @@ describe('HDPublicKey interface', function() {
 
     it('can\'t derive hardened keys', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).derive(HDPublicKey.Hardened);
+        return new HDPublicKey(xpubkey).deriveChild(HDPublicKey.Hardened);
       }, hdErrors.InvalidIndexCantDeriveHardened);
     });
 
     it('can\'t derive hardened keys via second argument', function() {
       expectFail(function() {
-        return new HDPublicKey(xpubkey).derive(5, true);
+        return new HDPublicKey(xpubkey).deriveChild(5, true);
       }, hdErrors.InvalidIndexCantDeriveHardened);
     });
 
@@ -270,13 +269,6 @@ describe('HDPublicKey interface', function() {
 
       valid = HDPublicKey.isValidPath(HDPublicKey.Hardened);
       valid.should.equal(false);
-    });
-
-    it('should use the cache', function() {
-      var pubkey = new HDPublicKey(xpubkey);
-      var derived1 = pubkey.derive(0);
-      var derived2 = pubkey.derive(0);
-      derived1.should.equal(derived2);
     });
   });
 });

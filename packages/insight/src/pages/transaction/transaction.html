@@ -18,7 +18,7 @@
         </h1>
 
         <p class="item-hash">
-          <b>Transaction Hash</b> {{ tx.txid }} <button [copyToClipboard]="tx.txid">
+          <b>Transaction Hash</b> {{ tx.txid }} <button [copyToClipboard]="tx.txid" title="copy to clipboard" type="button" tabindex="0">
             <ion-icon md="md-copy"></ion-icon>
           </button>
         </p>
@@ -29,7 +29,7 @@
 
         <ion-list class="list--summary">
 
-          <transaction-summary *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-summary>
+          <transaction-summary *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE'" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-summary>
           <transaction-summary-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-summary-eth>
 
           <ion-item>
@@ -41,7 +41,7 @@
           <ion-item>
             Included in Block
             <ion-note item-end>
-              <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
+              <a (click)="goToBlock(tx.blockhash)" role="button" tabindex="0">{{ tx.blockhash }}</a>
             </ion-note>
             <ion-note *ngIf="confirmations === -3" item-end>
               Invalid
@@ -54,7 +54,7 @@
 
         <h2>Details</h2>
 
-        <transaction-details *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details>
+        <transaction-details *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details>
         <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details-eth>
       </div>
 

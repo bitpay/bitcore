@@ -215,7 +215,8 @@ export class BtcChain implements IChain {
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
-        return 147 + inputSafetyMargin;
+        // https://bitcoin.stackexchange.com/questions/48279/how-big-is-the-input-of-a-p2pkh-transaction
+        return 148 + inputSafetyMargin;
 
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 69 + inputSafetyMargin; // vsize
@@ -447,11 +448,17 @@ export class BtcChain implements IChain {
       return ex;
     }
 
-    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError)
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError) {
       return new ClientError(
         Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-        Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err1'
+        `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${txp.fee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err1`,
+        {
+          coin: txp.coin,
+          feePerKb: txp.feePerKb,
+          requiredFee: txp.fee
+        }
       );
+    }
     if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs) return Errors.DUST_AMOUNT;
     return bitcoreError;
   }
@@ -532,7 +539,6 @@ export class BtcChain implements IChain {
 
       return _.filter(utxos, utxo => {
         if (utxo.locked) return false;
-        if (utxo.satoshis <= feePerInput) return false;
         if (txp.excludeUnconfirmedUtxos && !utxo.confirmations) return false;
         if (excludeIndex[utxo.txid + ':' + utxo.vout]) return false;
         return true;
@@ -540,9 +546,7 @@ export class BtcChain implements IChain {
     };
 
     const select = (utxos, coin, cb) => {
-      const totalValueInUtxos = _.sumBy(utxos, 'satoshis');
-      const netValueInUtxos = totalValueInUtxos - (baseTxpFee - utxos.length * feePerInput);
-
+      let totalValueInUtxos = _.sumBy(utxos, 'satoshis');
       if (totalValueInUtxos < txpAmount) {
         logger.debug(
           'Total value in all utxos (' +
@@ -553,6 +557,17 @@ export class BtcChain implements IChain {
         );
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
+
+      // remove utxos not economically worth to send
+      utxos = _.filter(utxos, utxo => {
+        if (utxo.satoshis <= feePerInput) return false;
+        return true;
+      });
+
+      totalValueInUtxos = _.sumBy(utxos, 'satoshis');
+
+      const netValueInUtxos = totalValueInUtxos - (baseTxpFee - utxos.length * feePerInput);
+
       if (netValueInUtxos < txpAmount) {
         logger.debug(
           'Value after fees in all utxos (' +
@@ -565,7 +580,12 @@ export class BtcChain implements IChain {
         return cb(
           new ClientError(
             Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-            Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err2'
+            `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${baseTxpFee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err2`,
+            {
+              coin: txp.coin,
+              feePerKb: txp.feePerKb,
+              requiredFee: baseTxpFee
+            }
           )
         );
       }
@@ -687,7 +707,12 @@ export class BtcChain implements IChain {
           error ||
             new ClientError(
               Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
-              Errors.INSUFFICIENT_FUNDS_FOR_FEE.message + '. Coin: ' + txp.coin + ' feePerKb: ' + txp.feePerKb + ' Err3'
+              `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${fee} Coin: ${txp.coin} feePerKb: ${txp.feePerKb} Err3`,
+              {
+                coin: txp.coin,
+                feePerKb: txp.feePerKb,
+                requiredFee: fee
+              }
             )
         );
       }

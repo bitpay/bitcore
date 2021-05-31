@@ -211,7 +211,7 @@ module.exports = {
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
     xrp: 1000000000000,
-    doge: 10000 * 1000 // 10k sat/b
+    doge: 100000000 * 100
   },
 
   MIN_TX_FEE: {
@@ -227,11 +227,13 @@ module.exports = {
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
-    doge: 0.05 * 1e8
+    doge: 400 * 1e8
   },
 
   // ETH
-  DEFAULT_GAS_LIMIT: 200000,
+  DEFAULT_GAS_LIMIT: 60000,
+  DEFAULT_ERC20_GAS_LIMIT: 160000,
+
   MIN_GAS_LIMIT: 21000,
 
   // XRP has a non-refundable mininum activation fee / balance

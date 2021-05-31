@@ -1,5 +1,5 @@
 {
-  "version": "8.23.1",
+  "version": "8.25.8",
   "prettier": {
     "singleQuote": true,
     "printWidth": 120
@@ -47,6 +47,8 @@
     "ci:bitcore-p2p": "./ci.sh 'npm run test:bitcore-p2p'",
     "test:bitcore-p2p-cash": "cd ./packages/bitcore-p2p-cash && npm run test",
     "ci:bitcore-p2p-cash": "./ci.sh 'npm run test:bitcore-p2p-cash'",
+    "test:bitcore-p2p-doge": "cd ./packages/bitcore-p2p-doge && npm run test",
+    "ci:bitcore-p2p-doge": "./ci.sh 'npm run test:bitcore-p2p-doge'",
     "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
     "ci:bitcore-mnemonic": "./ci.sh 'npm run test:bitcore-mnemonic'",
     "test:insight": "cd ./packages/insight && npm run test",

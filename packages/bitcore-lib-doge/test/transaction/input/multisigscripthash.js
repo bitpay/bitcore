@@ -30,6 +30,8 @@ describe('MultiSigScriptHashInput', function() {
     script: new Script(address),
     satoshis: 1000000
   };
+
+
   it('can count missing signatures', function() {
     var transaction = new Transaction()
       .from(output, [public1, public2, public3], 2)
@@ -111,4 +113,37 @@ describe('MultiSigScriptHashInput', function() {
     var roundtrip = new MultiSigScriptHashInput(input.toObject());
     roundtrip.toObject().should.deep.equal(input.toObject());
   });
+  it('will get the scriptCode for nested witness', function() {
+    var address = Address.createMultisig([public1, public2, public3], 2, 'testnet', true);
+    var utxo = {
+      address: address.toString(),
+      txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
+      outputIndex: 0,
+      script: new Script(address),
+      satoshis: 1000000
+    };
+    var transaction = new Transaction()
+      .from(utxo, [public1, public2, public3], 2, true)
+      .to(address, 1000000);
+    var input = transaction.inputs[0];
+    var scriptCode = input.getScriptCode();
+    scriptCode.toString('hex').should.equal('695221022f4e6d26550bdedb5a88de58e2a4d63e36e9e3ffdfa244b5491009e70f47901e2103305b98db06454adefa8e9eff42b4cbc7ce302b5255b0e01774800594eddadb7b2103f88a27019d8e80619076ada9bda728301337008d89563589660e1dc9c23b438153ae');
+  });
+  it('will get the satoshis buffer for nested witness', function() {
+    var address = Address.createMultisig([public1, public2, public3], 2, 'testnet', true);
+    var utxo = {
+      address: address.toString(),
+      txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
+      outputIndex: 0,
+      script: new Script(address),
+      satoshis: 1000000
+    };
+    var transaction = new Transaction()
+      .from(utxo, [public1, public2, public3], 2, true)
+      .to(address, 1000000);
+    var input = transaction.inputs[0];
+    var satoshisBuffer = input.getSatoshisBuffer();
+    satoshisBuffer.toString('hex').should.equal('40420f0000000000');
+  });
+
 });

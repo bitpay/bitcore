@@ -1,10 +1,10 @@
 <ion-footer>
   <ion-toolbar fixed color="dark">
     <div class="pages">
-      <a *ngIf="chainNetwork" (click)="openPage('broadcast-tx')">Broadcast Transaction</a>
+      <a *ngIf="chainNetwork" (click)="openPage('broadcast-tx')" role="button" tabindex="0">Broadcast Transaction</a>
     </div>
     <div class="about">
-      <a href="https://github.com/bitpay/bitcore/tree/master/packages/insight" target="_blank">
+      <a href="https://github.com/bitpay/bitcore/tree/master/packages/insight" role="button" rel="noopener noreferrer" tabindex="0">
         <span class="logo">insight</span>
         <span class="version">v8.9.0</span>
       </a>

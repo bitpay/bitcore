@@ -3,6 +3,7 @@ import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
+import { ClientError } from '../../errors/clienterror';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
@@ -147,31 +148,41 @@ export class EthChain implements IChain {
         const { coin, network } = wallet;
         let inGasLimit;
         let gasLimit;
+        let defaultGasLimit;
         let fee = 0;
         for (let output of opts.outputs) {
           if (!output.gasLimit) {
             try {
+              const to = opts.payProUrl
+                ? output.toAddress
+                : opts.tokenAddress
+                ? opts.tokenAddress
+                : opts.multisigContractAddress
+                ? opts.multisigContractAddress
+                : output.toAddress;
+              const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               inGasLimit = await server.estimateGas({
                 coin,
                 network,
                 from,
-                to: opts.multisigContractAddress || (opts.tokenAddress && !opts.payProUrl) || output.toAddress,
-                value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
+                to,
+                value,
                 data: output.data,
                 gasPrice
               });
-              output.gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+              defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
+              output.gasLimit = inGasLimit || defaultGasLimit;
             } catch (err) {
-              output.gasLimit = Defaults.DEFAULT_GAS_LIMIT;
+              output.gasLimit = defaultGasLimit;
             }
           } else {
             inGasLimit = output.gasLimit;
           }
           if (_.isNumber(opts.fee)) {
             // This is used for sendmax
-            gasPrice = feePerKb = Number((opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
+            gasPrice = feePerKb = Number((opts.fee / (inGasLimit || defaultGasLimit)).toFixed());
           }
-          gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+          gasLimit = inGasLimit || defaultGasLimit;
           fee += feePerKb * gasLimit;
         }
         return resolve({ feePerKb, gasPrice, gasLimit, fee });
@@ -323,15 +334,39 @@ export class EthChain implements IChain {
               if (err) return cb(err);
               const { totalAmount, availableAmount } = ethBalance;
               if (totalAmount < txp.fee) {
-                return cb(Errors.INSUFFICIENT_ETH_FEE);
+                return cb(
+                  new ClientError(
+                    Errors.codes.INSUFFICIENT_ETH_FEE,
+                    `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
+                    {
+                      requiredFee: txp.fee
+                    }
+                  )
+                );
               } else if (availableAmount < txp.fee) {
-                return cb(Errors.LOCKED_ETH_FEE);
+                return cb(
+                  new ClientError(
+                    Errors.codes.LOCKED_ETH_FEE,
+                    `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
+                    {
+                      requiredFee: txp.fee
+                    }
+                  )
+                );
               } else {
                 return cb(this.checkTx(txp));
               }
             });
           } else if (availableAmount - txp.fee < txpTotalAmount) {
-            return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+            return cb(
+              new ClientError(
+                Errors.codes.INSUFFICIENT_FUNDS_FOR_FEE,
+                `${Errors.INSUFFICIENT_FUNDS_FOR_FEE.message}. RequiredFee: ${txp.fee}`,
+                {
+                  requiredFee: txp.fee
+                }
+              )
+            );
           } else {
             return cb(this.checkTx(txp));
           }

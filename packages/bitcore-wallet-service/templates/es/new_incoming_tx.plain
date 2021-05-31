@@ -1,2 +1,2 @@
 {{subjectPrefix}}Nuevo pago recibido
-Un pago de {{amount}} fue recibido en su billetera.
+Recibió un pago de {{amount}}. La transacción aún no está confirmada.

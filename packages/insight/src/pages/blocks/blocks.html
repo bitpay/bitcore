@@ -5,7 +5,7 @@
     <loader *ngIf="loading" [type]="'title'"></loader>
 
     <div *ngIf="!loading" class="page-content">
-      <h2 class="content-container--heading">Blocks</h2>
+      <h1 class="content-container--heading u-font-large">Blocks</h1>
       <latest-blocks [numBlocks]="200" [showTimeAs]="'timestamp'" [isHomePage]="true" [chainNetwork]="chainNetwork"></latest-blocks>
     </div>
 
