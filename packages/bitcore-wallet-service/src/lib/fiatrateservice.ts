@@ -11,7 +11,7 @@ import logger from './logger';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
-  cryptoCompareApiKey: any;
+  cryptoCompareApiKey: string = '';
   providers: any[];
   storage: Storage;
   init(opts, cb) {
@@ -60,7 +60,7 @@ export class FiatRateService {
   _fetch(cb?) {
     cb = cb || function() {};
     const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge'];
-    const provider = this.providers.find(provider => provider.name == this.defaultProvider);
+    const provider = this.providers.find(provider => provider.name === this.defaultProvider);
 
     //    async.each(this.providers, (provider, next) => {
     async.each(
@@ -89,7 +89,7 @@ export class FiatRateService {
     let params = [];
     let appendString = '';
     let headers = provider.headers ?? '';
-    if (provider.params) {
+    if (provider.name === 'CryptoCompare') {
       params = provider.params;
       params['fsym'] = coin.toUpperCase();
     } else {
