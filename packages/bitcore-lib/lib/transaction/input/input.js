@@ -60,7 +60,7 @@ Input.fromObject = function(obj) {
 
 Input.prototype._fromObject = function(params) {
   var prevTxId;
-  if (_.isString(params.prevTxId) && JSUtil.isHexa(params.prevTxId)) {
+  if (_.isString(params.prevTxId) && JSUtil.isHexaOrEmpty(params.prevTxId)) {
     prevTxId = Buffer.from(params.prevTxId, 'hex');
   } else {
     prevTxId = params.prevTxId;
@@ -126,7 +126,7 @@ Input.prototype.setScript = function(script) {
     this._script = script;
     this._script._isInput = true;
     this._scriptBuffer = script.toBuffer();
-  } else if (JSUtil.isHexa(script)) {
+  } else if (JSUtil.isHexaOrEmpty(script)) {
     // hex string script
     this._scriptBuffer = Buffer.from(script, 'hex');
   } else if (_.isString(script)) {

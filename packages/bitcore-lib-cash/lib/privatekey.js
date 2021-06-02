@@ -102,7 +102,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
     info.bn = PrivateKey._getRandomBN();
     info.network = Networks.get(data);
   } else if (typeof(data) === 'string'){
-    if (JSUtil.isHexa(data)) {
+    if (JSUtil.isHexaOrEmpty(data)) {
       info.bn = new BN(Buffer.from(data, 'hex'));
     } else {
       info = PrivateKey._transformWIF(data, network);

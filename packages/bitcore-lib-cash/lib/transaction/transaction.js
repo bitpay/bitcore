@@ -44,7 +44,7 @@ function Transaction(serialized) {
   if (serialized) {
     if (serialized instanceof Transaction) {
       return Transaction.shallowCopy(serialized);
-    } else if (JSUtil.isHexa(serialized)) {
+    } else if (JSUtil.isHexaOrEmpty(serialized)) {
       this.fromString(serialized);
     } else if (BufferUtil.isBuffer(serialized)) {
       this.fromBuffer(serialized);

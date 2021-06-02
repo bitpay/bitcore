@@ -176,7 +176,7 @@ Script.fromHex = function(str) {
 };
 
 Script.fromString = function(str) {
-  if (JSUtil.isHexa(str) || str.length === 0) {
+  if (JSUtil.isHexaOrEmpty(str) || str.length === 0) {
     return new Script(Buffer.from(str, 'hex'));
   }
   var script = new Script();

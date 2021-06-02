@@ -5,15 +5,15 @@ var _ = require('lodash');
 /**
  * Determines whether a string contains only hexadecimal values
  *
- * @name JSUtil.isHexa
+ * @name JSUtil.isHexaOrEmpty
  * @param {string} value
- * @return {boolean} true if the string is the hexa representation of a number
+ * @return {boolean} true if the string is the hexa representation of a number or is empty
  */
-var isHexa = function isHexa(value) {
+var isHexaOrEmpty = function isHexaOrEmpty(value) {
   if (!_.isString(value)) {
     return false;
   }
-  return /^[0-9a-fA-F]+$/.test(value);
+  return /^[0-9a-fA-F]+$/.test(value) || ('' === value);
 };
 
 /**
@@ -42,8 +42,8 @@ module.exports = {
     }
     return false;
   },
-  isHexa: isHexa,
-  isHexaString: isHexa,
+  isHexaOrEmpty: isHexaOrEmpty,
+  isHexaOrEmptyString: isHexaOrEmpty,
 
   /**
    * Clone an array

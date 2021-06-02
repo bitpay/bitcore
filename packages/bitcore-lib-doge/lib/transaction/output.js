@@ -22,7 +22,7 @@ function Output(args) {
       this._scriptBuffer = args.script;
     } else {
       var script;
-      if (_.isString(args.script) && JSUtil.isHexa(args.script)) {
+      if (_.isString(args.script) && JSUtil.isHexaOrEmpty(args.script)) {
         script = new buffer.Buffer(args.script, 'hex');
       } else {
         script = args.script;

@@ -491,7 +491,7 @@ Address.fromString = function(str, network, type) {
  */
 Address.fromObject = function fromObject(obj) {
   $.checkState(
-    JSUtil.isHexa(obj.hash),
+    JSUtil.isHexaOrEmpty(obj.hash),
     'Unexpected hash property, "' + obj.hash + '", expected to be hex.'
   );
   var hashBuffer = Buffer.from(obj.hash, 'hex');

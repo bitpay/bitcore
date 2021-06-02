@@ -33,7 +33,7 @@ function UnspentOutput(data) {
   $.checkArgument(_.isObject(data), 'Must provide an object from where to extract data');
   var address = data.address ? new Address(data.address) : undefined;
   var txId = data.txid ? data.txid : data.txId;
-  if (!txId || !JSUtil.isHexaString(txId) || txId.length > 64) {
+  if (!txId || !JSUtil.isHexaOrEmptyString(txId) || txId.length > 64) {
     // TODO: Use the errors library
     throw new Error('Invalid TXID in object', data);
   }

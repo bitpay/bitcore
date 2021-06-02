@@ -255,7 +255,7 @@ describe('Signature', function() {
       var test_sigs = function(set, expected) {
         var i = 0;
         set.forEach(function(vector) {
-          if (!JSUtil.isHexa(vector)) {
+          if (!JSUtil.isHexaOrEmpty(vector)) {
             // non-hex strings are ignored
             return;
           }

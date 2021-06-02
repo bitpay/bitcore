@@ -314,7 +314,7 @@ HDPrivateKey.prototype._buildFromObject = function(arg) {
     parentFingerPrint: _.isNumber(arg.parentFingerPrint) ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
     childIndex: _.isNumber(arg.childIndex) ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
     chainCode: _.isString(arg.chainCode) ? BufferUtil.hexToBuffer(arg.chainCode) : arg.chainCode,
-    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexa(arg.privateKey)) ? BufferUtil.hexToBuffer(arg.privateKey) : arg.privateKey,
+    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexaOrEmpty(arg.privateKey)) ? BufferUtil.hexToBuffer(arg.privateKey) : arg.privateKey,
     checksum: arg.checksum ? (arg.checksum.length ? arg.checksum : BufferUtil.integerAsBuffer(arg.checksum)) : undefined
   };
   return this._buildFromBuffers(buffers);
@@ -349,7 +349,7 @@ HDPrivateKey.prototype._generateRandomly = function(network) {
  */
 HDPrivateKey.fromSeed = function(hexa, network) {
   /* jshint maxcomplexity: 8 */
-  if (JSUtil.isHexaString(hexa)) {
+  if (JSUtil.isHexaOrEmptyString(hexa)) {
     hexa = BufferUtil.hexToBuffer(hexa);
   }
   if (!Buffer.isBuffer(hexa)) {
