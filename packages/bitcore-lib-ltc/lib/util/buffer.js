@@ -163,7 +163,7 @@ module.exports = {
    * @return {Buffer}
    */
   hexToBuffer: function hexToBuffer(string) {
-    assert(js.isHexa(string));
+    assert(js.isHexa(string) || ('' === string));
     return Buffer.from(string, 'hex');
   }
 };
