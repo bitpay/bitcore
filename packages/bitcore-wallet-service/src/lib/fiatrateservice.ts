@@ -11,6 +11,7 @@ import logger from './logger';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
+  cryptoCompareApiKey: any;
   providers: any[];
   storage: Storage;
   init(opts, cb) {
@@ -18,6 +19,7 @@ export class FiatRateService {
 
     this.request = opts.request || request;
     this.defaultProvider = opts.defaultProvider || Defaults.FIAT_RATE_PROVIDER;
+    this.cryptoCompareApiKey = opts.cryptoCompareApiKey;
 
     async.parallel(
       [
@@ -58,7 +60,7 @@ export class FiatRateService {
   _fetch(cb?) {
     cb = cb || function() {};
     const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge'];
-    const provider = this.providers[0];
+    const provider = this.providers.find(provider => provider.name == this.defaultProvider);
 
     //    async.each(this.providers, (provider, next) => {
     async.each(
@@ -84,9 +86,21 @@ export class FiatRateService {
 
   _retrieve(provider, coin, cb) {
     logger.debug(`Fetching data for ${provider.name} / ${coin} `);
+    let params = [];
+    let appendString = '';
+    let headers = provider.headers ?? '';
+    if (provider.params) {
+      params = provider.params;
+      params['fsym'] = coin.toUpperCase();
+    } else {
+      appendString = coin.toUpperCase();
+    }
     this.request.get(
       {
-        url: provider.url + coin.toUpperCase(),
+        url: provider.url + appendString,
+        qs: params,
+        useQuerystring: true,
+        headers,
         json: true
       },
       (err, res, body) => {
