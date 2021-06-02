@@ -91,16 +91,16 @@ export class FiatRateService {
     let headers = provider.headers ?? '';
     if (provider.params) {
       params = provider.params;
-      params['fsym'] = coin.toUpperCase()
+      params['fsym'] = coin.toUpperCase();
     } else {
-      appendString = coin.toUpperCase()
+      appendString = coin.toUpperCase();
     }
     this.request.get(
       {
         url: provider.url + appendString,
         qs: params,
         useQuerystring: true,
-        headers: headers,
+        headers,
         json: true
       },
       (err, res, body) => {
