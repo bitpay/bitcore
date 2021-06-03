@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p-bcha",
-  "version": "8.25.10.1",
+  "version": "8.25.11",
   "description": "Interface to the bitcoin P2P network for bitcoin-abc",
   "author": "Viet <vince.tran8x@gmail.com>",
   "main": "index.js",
