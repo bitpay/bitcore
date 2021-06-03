@@ -7,4 +7,14 @@ import { Constants } from './constants';
 import Deriver from './derivation';
 import Transactions from './transactions';
 import Validation from './validation';
-export { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, Transactions, Validation, Web3, Constants };
+export {
+  BitcoreLib,
+  BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
+  Deriver,
+  Transactions,
+  Validation,
+  Web3,
+  Constants
+};
