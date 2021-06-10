@@ -130,10 +130,12 @@ function removeNetwork(network) {
   }
   for (var key in networkMaps) {
     const index = networkMaps[key].indexOf(network);
-    if (networkMaps[key].length == 1) {
-      delete networkMaps[key];
-    } else if (index >= 0) {
-      networkMaps[key].splice(index, 1);
+    if (index >= 0) {
+      if (networkMaps[key].length == 1) {
+        delete networkMaps[key];
+      } else {
+        networkMaps[key].splice(index, 1);
+      }
     }
   }
 }
