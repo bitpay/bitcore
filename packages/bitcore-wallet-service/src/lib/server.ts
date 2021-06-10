@@ -841,7 +841,9 @@ export class WalletService {
         txProposalId: txp.id,
         creatorId: txp.creatorId,
         amount: txp.getTotalAmount(),
-        message: txp.message
+        message: txp.message,
+        tokenAddress: txp.tokenAddress,
+        multisigContractAddress: txp.multisigContractAddress
       },
       extraArgs
     );
