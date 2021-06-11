@@ -826,7 +826,7 @@ export class API extends EventEmitter {
   // */
   getFeeLevels(coin, network, cb) {
     $.checkArgument(coin || _.includes(Constants.COINS, coin));
-    $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
+    $.checkArgument(network || _.includes(Constants.NETWORKS, network));
 
     const chain = Utils.getChain(coin).toLowerCase();
 
@@ -894,7 +894,7 @@ export class API extends EventEmitter {
       return cb(new Error('Invalid coin'));
 
     var network = opts.network || 'livenet';
-    if (!_.includes(['testnet', 'livenet'], network))
+    if (!_.includes(Constants.NETWORKS, network))
       return cb(new Error('Invalid network'));
 
     if (!this.credentials) {
@@ -907,7 +907,9 @@ export class API extends EventEmitter {
 
     if (network != this.credentials.network) {
       return cb(
-        new Error('Existing keys were created for a different network')
+        new Error(
+          `Existing keys were created for a different network. Expected: ${network} - Given: ${this.credentials.network}`
+        )
       );
     }
 
@@ -2820,9 +2822,8 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token
-              );
+              const tokenCredentials =
+                client.credentials.getTokenCredentials(token);
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2835,14 +2836,13 @@ export class API extends EventEmitter {
               log.info(
                 `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
               );
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials(
-                {
+              const multisigEthCredentials =
+                client.credentials.getMultisigEthCredentials({
                   walletName: info.walletName,
                   multisigContractAddress: info.multisigContractAddress,
                   n: info.n,
                   m: info.m
-                }
-              );
+                });
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
@@ -2855,9 +2855,8 @@ export class API extends EventEmitter {
                     return;
                   }
                   log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(
-                    token
-                  );
+                  const tokenCredentials =
+                    multisigEthClient.credentials.getTokenCredentials(token);
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);

@@ -34,6 +34,7 @@ export const Constants = {
     'dai',
     'wbtc'
   ],
+  NETWORKS: ['livenet', 'testnet', 'regtest'],
   ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc'],
   UTXO_COINS: ['btc', 'bch', 'doge'],
   TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
