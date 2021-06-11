@@ -3,10 +3,11 @@
 var program = require('commander');
 var utils = require('./cli-utils');
 var _ = require('lodash');
-var bwc = require('bitcore-wallet-client');
+var bwc = require('@abcpros/bitcore-wallet-client');
 var Bitcore_ = {
   bch: bwc.BitcoreCash,
   btc: bwc.Bitcore,
+  doge: bwc.BitcoreDoge,
 };  
 
 program = utils.configureCommander(program);
