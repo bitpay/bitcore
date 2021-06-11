@@ -102,43 +102,46 @@ The are plenty example creating and sending proposals in the `/test/integration`
 
 **bitcore.config.json**
 
-1.  Add regtest to bitcore.config.json.
+1.  Add regtest to bitcore.config.json inside of `bitcoreNode.chains`.
 
 ```
 "regtest": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 20020
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 20021,
-            "username": "bitpaytest",
-            "password": "local321"
-          }
-        }
+   "chainSource": "p2p",
+   "trustedPeers": [
+     {
+       "host": "127.0.0.1",
+       "port": 20020
+     }
+   ],
+   "rpc": {
+     "host": "127.0.0.1",
+     "port": 20021,
+     "username": "bitpaytest",
+     "password": "local321"
+   }
+}
 ```
 
 **bitcore-wallet-service/config.js**
 
-2. Point testnet to http://localhost:3000 in BWS/config.js and set regtestEnabled to true.
+2. Point regtest to http://localhost:3000 in bitcore-wallet-service/config.js.
 
 ```
 blockchainExplorerOpts: {
-    btc: {
-      livenet: {
-        url: 'https://api.bitcore.io'
-      },
-      testnet: {
-        // set url to http://localhost:3000 here
-        url: 'http://localhost:3000',
-        // set regtestEnabled to true here
-        regtestEnabled: true
-      }
+  btc: {
+    livenet: {
+      url: 'https://api.bitcore.io'
     },
+    testnet: {
+      url: 'http://localhost:3000',
+    }
+    regtest: {
+      // set url to http://localhost:3000 here
+      url: 'http://localhost:3000',
+    }
+  },
+  // ...
+}
 ...
 ```
 
@@ -153,6 +156,8 @@ blockchainExplorerOpts: {
 ```
 
 ## Creating a wallet on regtest network
+
+> Deprecated. Wallet UI cannot currently create Regtest wallets.
 
 ### Steps:
 
