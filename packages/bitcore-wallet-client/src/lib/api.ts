@@ -2680,6 +2680,27 @@ export class API extends EventEmitter {
     return { key: k, credentials: c };
   }
 
+  static upgradeCredentialsV3(x) {
+    $.shouldBeObject(x);
+
+    let k;
+    if (x.xPrivKey || x.xPrivKeyEncrypted) {
+      k = new Key({ seedData: x, seedType: 'objectV1' });
+    } else {
+      // RO credentials
+      k = false;
+    }
+    var c = new Credentials();
+    _.each(Credentials.FIELDS, f => {
+      if (f != 'version') c[f] = x[f]; // use new version
+    });
+
+    c.chain = c.chain
+      ? c.chain.toLowerCase()
+      : Utils.getChain(c.coin).toLowerCase();
+    return { key: k, credentials: c };
+  }
+
   // /**
   // * upgradeMultipleCredentialsV1
   // * upgrade multiple Credentials V1 and (opionally) keys to Key and Credentials V2 object
@@ -2695,23 +2716,32 @@ export class API extends EventEmitter {
   static upgradeMultipleCredentialsV1(oldCredentials) {
     let newKeys = [],
       newCrededentials = [];
-    // Try to migrate to Credentials 2.0
-    _.each(oldCredentials, credentials => {
+    // Try to migrate to new Credentials Version
+    _.each(oldCredentials, credential => {
       let migrated;
 
-      if (!credentials.version || credentials.version < 2) {
-        log.info('About to migrate : ' + credentials.walletId);
+      if (!credential.version || credential.version < 2) {
+        log.info('About to migrate : ' + credential.walletId);
+        migrated = API.upgradeCredentialsV1(credential);
+      }
 
-        migrated = API.upgradeCredentialsV1(credentials);
-        newCrededentials.push(migrated.credentials);
+      if (credential.version == 2) {
+        log.info('About to migrate to V3 : ' + credential.walletId);
+        migrated = API.upgradeCredentialsV3(
+          migrated && migrated.credentials ? migrated.credentials : credential
+        );
+      }
 
+      if (migrated) {
         if (migrated.key) {
-          log.info(`Wallet ${credentials.walletId} key's extracted`);
+          log.info(`Wallet ${credential.walletId} key's extracted`);
           newKeys.push(migrated.key);
         } else {
-          log.info(`READ-ONLY Wallet ${credentials.walletId} migrated`);
+          log.info(`READ-ONLY Wallet ${credential.walletId} migrated`);
         }
       }
+
+      if (migrated) newCrededentials.push(migrated.credentials);
     });
 
     if (newKeys.length > 0) {
@@ -2774,11 +2804,11 @@ export class API extends EventEmitter {
     var checkCredentials = (key, opts, icb) => {
       let c = key.createCredentials(null, {
         coin: opts.coin,
+        chain: opts.chain,
         network: opts.network,
         account: opts.account,
         n: opts.n
       });
-
       if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
         // console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
         return icb();
@@ -2820,9 +2850,8 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token
-              );
+              const tokenCredentials =
+                client.credentials.getTokenCredentials(token);
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2835,14 +2864,13 @@ export class API extends EventEmitter {
               log.info(
                 `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
               );
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials(
-                {
+              const multisigEthCredentials =
+                client.credentials.getMultisigEthCredentials({
                   walletName: info.walletName,
                   multisigContractAddress: info.multisigContractAddress,
                   n: info.n,
                   m: info.m
-                }
-              );
+                });
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
@@ -2855,9 +2883,8 @@ export class API extends EventEmitter {
                     return;
                   }
                   log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(
-                    token
-                  );
+                  const tokenCredentials =
+                    multisigEthClient.credentials.getTokenCredentials(token);
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);
