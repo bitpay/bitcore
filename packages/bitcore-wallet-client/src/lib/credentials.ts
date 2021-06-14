@@ -12,6 +12,7 @@ const sjcl = require('sjcl');
 export class Credentials {
   static FIELDS = [
     'coin',
+    'chain', // new -> start using chain when needed instead of coin
     'network',
     'xPrivKey', // obsolete
     'xPrivKeyEncrypted', // obsolte
@@ -62,6 +63,7 @@ export class Credentials {
   derivationStrategy: any;
   network: string;
   coin: string;
+  chain: string;
   use145forBCH: any;
 
   addressType: string;
@@ -71,7 +73,7 @@ export class Credentials {
   externalSource?: boolean; // deprecated property?
 
   constructor() {
-    this.version = 2;
+    this.version = 3;
     this.account = 0;
   }
 
@@ -92,6 +94,7 @@ export class Credentials {
 
     var x: any = new Credentials();
     x.coin = opts.coin;
+    x.chain = opts.chain || Utils.getChain(x.coin).toLowerCase();
     x.network = opts.network;
     x.account = opts.account;
     x.n = opts.n;
@@ -194,19 +197,19 @@ export class Credentials {
         Constants.UTXO_COINS.includes(this.coin)
       ) {
         coin = '1';
-      } else if (this.coin == 'bch') {
+      } else if (this.coin == 'bch' || this.chain == 'bch') {
         if (this.use145forBCH) {
           coin = '145';
         } else {
           coin = '0';
         }
-      } else if (this.coin == 'btc') {
+      } else if (this.coin == 'btc' || this.chain == 'btc') {
         coin = '0';
-      } else if (this.coin == 'eth') {
+      } else if (this.coin == 'eth' || this.chain == 'eth') {
         coin = '60';
-      } else if (this.coin == 'xrp') {
+      } else if (this.coin == 'xrp' || this.chain == 'xrp') {
         coin = '144';
-      } else if (this.coin == 'doge') {
+      } else if (this.coin == 'doge' || this.chain == 'doge') {
         coin = '3';
       } else {
         throw new Error('unknown coin: ' + this.coin);
@@ -240,6 +243,7 @@ export class Credentials {
     }
 
     x.coin = x.coin || 'btc';
+    x.chain = x.chain || Utils.getChain(x.coin).toLowerCase();
     x.addressType = x.addressType || Constants.SCRIPT_TYPES.P2SH;
     x.account = x.account || 0;
 
