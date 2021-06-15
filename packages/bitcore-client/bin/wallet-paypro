@@ -8,8 +8,9 @@ const cwc = require('crypto-wallet-core');
 const libs = {
   BTC: cwc.BitcoreLib,
   BCH: cwc.BitcoreLibCash,
-  DOGE: cwc.BitcoreLibDoge
-}
+  DOGE: cwc.BitcoreLibDoge,
+  LTC: cwc.BitcoreLibLtc
+};
 
 program
   .version(require('../package.json').version)
