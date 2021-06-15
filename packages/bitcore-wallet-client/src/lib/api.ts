@@ -2695,9 +2695,7 @@ export class API extends EventEmitter {
       if (f != 'version') c[f] = x[f]; // use new version
     });
 
-    c.chain = c.chain
-      ? c.chain.toLowerCase()
-      : Utils.getChain(c.coin).toLowerCase();
+    c.chain = Utils.getChain(c.coin).toLowerCase();
     return { key: k, credentials: c };
   }
 
