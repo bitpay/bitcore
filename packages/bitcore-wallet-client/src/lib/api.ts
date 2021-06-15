@@ -1594,8 +1594,6 @@ export class API extends EventEmitter {
 
     var args = [];
     if (opts.coin) {
-      if (!_.includes(Constants.COINS, opts.coin))
-        return cb(new Error('Invalid coin'));
       args.push('coin=' + opts.coin);
     }
     if (opts.tokenAddress) {
@@ -2539,6 +2537,20 @@ export class API extends EventEmitter {
   // */
   getMultisigContractInfo(opts, cb) {
     var url = '/v1/ethmultisig/info';
+    opts.network = this.credentials.network;
+    this.request.post(url, opts, (err, contractInfo) => {
+      if (err) return cb(err);
+      return cb(null, contractInfo);
+    });
+  }
+
+  // /**
+  // * Returns contract info. (name symbol precision)
+  // * @param {string} opts.tokenAddress - token contract address
+  // * @return {Callback} cb - Return error (if exists) instantiation info
+  // */
+  getTokenContractInfo(opts, cb) {
+    var url = '/v1/token/info';
     opts.network = this.credentials.network;
     this.request.post(url, opts, (err, contractInfo) => {
       if (err) return cb(err);
