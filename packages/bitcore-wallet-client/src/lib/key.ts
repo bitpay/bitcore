@@ -364,7 +364,7 @@ export class Key {
   };
 
   _checkNetwork = function (network) {
-    if (!_.includes(['livenet', 'testnet'], network))
+    if (!_.includes(Constants.NETWORKS, network))
       throw new Error('Invalid network');
   };
 
@@ -431,11 +431,11 @@ export class Key {
       Constants.PATHS.REQUEST_KEY
     ).privateKey.toString();
 
-    if (opts.network == 'testnet') {
+    if (opts.network == 'testnet' || opts.network === 'regtest') {
       // Hacky: BTC/BCH xPriv depends on network: This code is to
       // convert a livenet xPriv to a testnet xPriv
       let x = xPrivKey.toObject();
-      x.network = 'testnet';
+      x.network = opts.network;
       delete x.xprivkey;
       delete x.checksum;
       x.privateKey = _.padStart(x.privateKey, 64, '0');

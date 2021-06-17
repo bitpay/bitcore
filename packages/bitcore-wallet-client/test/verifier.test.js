@@ -27,13 +27,13 @@ describe('Verifier', function() {
     });
 
     it('should verify a BTC regtest address', () => {
-      let cred = aKey.createCredentials(null, { coin: 'btc', network: 'testnet', account: 0, n: 1 });
+      let cred = aKey.createCredentials(null, { coin: 'btc', network: 'regtest', account: 0, n: 1 });
       cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
 
       Verifier.checkAddress(cred, {
-        address: 'mkpZhYtJu2r87Js3pDiWJDmPte2NRZ8bJV',
+        address: 'n1M8ZVQtL7QoFvGMg24D6b2ojWvFXCGpoS',
         path: 'm/0/0',
-        publicKeys: ['02a7451395735369f2ecdfc829c0f774e88ef1303dfe5b2f04dbaab30a535dfdd6'],
+        publicKeys: ['03aaeb52dd7494c361049de67cc680e83ebcbbbdbeb13637d92cd845f70308af5e'],
         network: 'regtest',
       }).should.be.true;
     });

@@ -33,9 +33,7 @@ export class Verifier {
       credentials.publicKeyRing,
       address.path,
       credentials.m,
-      address.network && address.network.toLowerCase() === 'regtest'
-        ? address.network
-        : credentials.network,
+      credentials.network,
       credentials.coin
     );
     return (
