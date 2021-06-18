@@ -191,8 +191,8 @@ export class EthChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
-    const isERC20 = tokenAddress && !payProUrl;
+    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, isTokenSwap } = txp;
+    const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
     const recipients = outputs.map(output => {
