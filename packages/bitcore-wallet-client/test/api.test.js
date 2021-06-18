@@ -1697,11 +1697,23 @@ describe('client API', function() {
       }).should.throw('Invalid secret');
     });
 
-    it('should create secret and parse secret from string', () => {
+    it('should create secret and parse secret from string (testnet)', () => {
       var walletId = Uuid.v4();
       var walletPrivKey = new Bitcore.PrivateKey();
       var coin = 'btc';
       var network = 'testnet';
+      var secret = Client._buildSecret(walletId, walletPrivKey.toString(), coin, network);
+      var result = Client.parseSecret(secret);
+      result.walletId.should.equal(walletId);
+      result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
+      result.coin.should.equal(coin);
+      result.network.should.equal(network);
+    });
+    it('should create secret and parse secret from string (regtest)', () => {
+      var walletId = Uuid.v4();
+      var walletPrivKey = new Bitcore.PrivateKey();
+      var coin = 'btc';
+      var network = 'regtest';
       var secret = Client._buildSecret(walletId, walletPrivKey.toString(), coin, network);
       var result = Client.parseSecret(secret);
       result.walletId.should.equal(walletId);
@@ -2021,7 +2033,7 @@ describe('client API', function() {
       });
     });
 
-    it('should return wallet on successful join', done => {
+    it('should return wallet on successful join (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',

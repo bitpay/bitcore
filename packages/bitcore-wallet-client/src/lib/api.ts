@@ -600,7 +600,7 @@ export class API extends EventEmitter {
     return (
       _.padEnd(widBase58, 22, '0') +
       walletPrivKey.toWIF() +
-      (network == 'testnet' ? 'T' : 'L') +
+      (network == 'testnet' ? 'T' : network == 'regtest' ? 'R' : 'L') +
       coin
     );
   }
@@ -633,7 +633,12 @@ export class API extends EventEmitter {
         walletId,
         walletPrivKey,
         coin,
-        network: networkChar == 'T' ? 'testnet' : 'livenet'
+        network:
+          networkChar == 'T'
+            ? 'testnet'
+            : networkChar == 'R'
+            ? 'regtest'
+            : 'livenet'
       };
     } catch (ex) {
       throw new Error('Invalid secret');
@@ -1958,8 +1963,11 @@ export class API extends EventEmitter {
 
     // TODO TODO TODO
     if (key.slice(0, 4) === 'xprv' || key.slice(0, 4) === 'tprv') {
-      if (key.slice(0, 4) === 'xprv' && txp.network == 'testnet')
-        throw new Error('testnet HD keys must start with tprv');
+      if (
+        key.slice(0, 4) === 'xprv' &&
+        (txp.network == 'testnet' || txp.network === 'regtest')
+      )
+        throw new Error('testnet/regtest HD keys must start with tprv');
       if (key.slice(0, 4) === 'tprv' && txp.network == 'livenet')
         throw new Error('livenet HD keys must start with xprv');
       newClient.seedFromExtendedPrivateKey(key, {
