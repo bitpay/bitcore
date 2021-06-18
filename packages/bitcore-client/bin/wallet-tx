@@ -25,6 +25,8 @@ program
 const main = async () => {
   const { name, path, storageType } = program;
   let wallet;
+  let totalTransactionFee;
+  let walletNonce;
   try {
     const { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program;
     wallet = await Wallet.loadWallet({ name, path, storageType });
@@ -36,42 +38,31 @@ const main = async () => {
     }
 
     if (!parsedRecipients.length || !parsedUtxos.length) {
-        throw new Error('invalid arguments');
-      }
-
-      if (!fee) {
-        const utxoBytes = 148;
-        const outputBytes = 34;
-        const transactionHeader = 10;
-        const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
-        const transactionSize = (parsedUtxos.length * utxoBytes + parsedRecipients.length * outputBytes + transactionHeader + parsedUtxos.length);
-        fee = transactionSize * netWorkFeeSat;
-      }
-    } else {
-      if (!fee) {
-        fee = JSON.parse(calculatedNetworkFeeKb).feerate;
-      }
-
-      if (!nonce) {
-        nonce = await wallet.getNonce();
-      }
+      throw new Error('invalid arguments');
     }
 
-
+    if (!fee) {
+      const utxoBytes = 148;
+      const outputBytes = 34;
+      const transactionHeader = 10;
+      const calculatedNetworkFeeKb = await wallet.getNetworkFee({ target });
+      const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
+      const transactionSize = (parsedUtxos.length * utxoBytes + parsedRecipients.length * outputBytes + transactionHeader + parsedUtxos.length);
+      totalTransactionFee = transactionSize * netWorkFeeSat;
+    }
+    if (!nonce) {
+      walletNonce = await wallet.getNonce();
+    }
 
     let params = { recipients, utxos, change, fee, from, nonce, token };
     params.fee = Number(fee) || totalTransactionFee;
-    params.nonce = Number(nonce);
+    params.nonce = Number(nonce) || walletNonce;
     params.recipients = parsedRecipients;
     params.utxos = parsedUtxos;
     params.invoiceID = invoiceID;
     const tx = await wallet.newTx(params);
 
-    console.log(
-      JSON.stringify({
-        rawTx: tx
-      })
-    );
+    console.log(JSON.stringify({ rawTx: tx }));
   } catch (e) {
     console.error(e);
   }
