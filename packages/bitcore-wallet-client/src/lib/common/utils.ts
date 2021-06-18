@@ -413,7 +413,8 @@ export class Utils {
         outputs,
         payProUrl,
         tokenAddress,
-        multisigContractAddress
+        multisigContractAddress,
+        isTokenSwap
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -428,7 +429,7 @@ export class Utils {
         recipients[0].data = data;
       }
       const unsignedTxs = [];
-      const isERC20 = tokenAddress && !payProUrl;
+      const isERC20 = tokenAddress && !payProUrl  && !isTokenSwap;
       const isETHMULTISIG = multisigContractAddress;
       const chain = isETHMULTISIG
         ? 'ETHMULTISIG'
