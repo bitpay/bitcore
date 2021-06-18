@@ -204,7 +204,7 @@ addNetwork({
 
 /**
  * @instance
- * @member Networks#testnet
+ * @member Networks#regtest
  */
 var regtest = get('regtest');
 

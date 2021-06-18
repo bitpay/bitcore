@@ -328,7 +328,7 @@ describe('Key', function() {
         c.requestPrivKey.should.equal('559371263eb0b2fd9cd2aa773ca5fea69ed1f9d9bdb8a094db321f02e9d53cec');
       });
 
-      it('should accept non-compliant derivation as a parameter when importing', function() {
+      it('should accept non-compliant derivation as a parameter when importing (testnet)', function() {
         var xPriv =
           'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k';
         var k = new Key({ seedType: 'extendedPrivateKey', seedData:xPriv,   nonCompliantDerivation: true });
@@ -346,6 +346,27 @@ describe('Key', function() {
         k.compliantDerivation.should.be.false;
         c.xPubKey.should.equal(
           'tpubDD919WKKqmh2CqKnSsfUAJWB9bnLbcry6r61tBuY8YEaTBBpvXSpwdXXBGAB1n4JRFDC7ebo7if3psUAMpvQJUBe3LcjuMNA6Y4nP8U9SNg'
+        );
+      });
+
+      it('should accept non-compliant derivation as a parameter when importing (regtest)', function() {
+        var xPriv =
+          'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k';
+        var k = new Key({ seedType: 'extendedPrivateKey', seedData:xPriv,   nonCompliantDerivation: true });
+        var c = k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 1
+        });
+
+        k = k.toObj();
+        k.xPrivKey.should.equal(
+          'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k'
+        );
+        k.compliantDerivation.should.be.false;
+        c.xPubKey.should.equal(
+          'tpubDCD316a6BmBueAsP9Wp4D5JSpyuMFg7uMo7tQ5kmbVJdG4bdiCv45jhjQRt2LWQztLQQ81TUXrHYzTXk45jtqVk6HyRWGHdtYGxsqZejdRk'
         );
       });
     });
@@ -385,7 +406,7 @@ describe('Key', function() {
   });
 
   describe('#createCredentials', function() {
-    it('should create 1-1 credentials', function() {
+    it('should create 1-1 credentials (testnet)', function() {
       var c = new Key({ seedType: 'extendedPrivateKey', seedData: 'xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi' });
       var cred = c.createCredentials(null, {
         coin: 'btc',
@@ -396,6 +417,19 @@ describe('Key', function() {
       c.compliantDerivation.should.equal(true);
       cred.addressType.should.equal('P2PKH');
       cred.rootPath.should.equal("m/44'/1'/0'");
+    });
+
+    it('should create 1-1 credentials (regtest)', function() {
+      var c = new Key({ seedType: 'extendedPrivateKey', seedData: 'xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi' });
+      var cred = c.createCredentials(null, {
+        coin: 'btc',
+        network: 'regtest',
+        account: 0,
+        n: 1
+      });
+      c.compliantDerivation.should.equal(true);
+      cred.addressType.should.equal('P2PKH');
+      cred.rootPath.should.equal("m/44'/0'/0'");
     });
 
     it('should create 2-2 credentials', function() {
@@ -446,6 +480,28 @@ describe('Key', function() {
       });
       path.should.equal("m/44'/1'/1'");
     });
+
+    it('should return path for regtest account 2', function() {
+      var c = new Key({ seedType: 'extendedPrivateKey', seedData: 'xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi' });
+      var path = c.getBaseAddressDerivationPath({
+        account: 2,
+        coin: 'btc',
+        network: 'regtest',
+        n: 1
+      });
+      path.should.equal("m/44'/0'/2'");
+    });
+
+    it('should return path for regtest account 1', function() {
+      var c = new Key({ seedType: 'extendedPrivateKey', seedData: 'xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi' });
+      var path = c.getBaseAddressDerivationPath({
+        account: 1,
+        coin: 'btc',
+        network: 'regtest',
+        n: 1
+      });
+      path.should.equal("m/44'/0'/1'");
+    });
   });
 
   describe('#createCredentials 2', function() {
@@ -492,8 +548,15 @@ describe('Key', function() {
         network: 'testnet',
         n: 1
       });
-
       c2.copayerId.should.equal('51d883fcd4ec010a89503c4b64e0cf22fe706495a9cf086bec69194c1c8f8952');
+
+      var c3 = k.createCredentials(null, {
+        coin: 'btc',
+        account: 0,
+        network: 'regtest',
+        n: 1
+      });
+      c3.copayerId.should.equal('cb9d7e4cb545eeac0270b38faa2f6f21a8c6ccac35787bd66d87655a946fb38c');
     });
   });
 
