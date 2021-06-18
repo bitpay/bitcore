@@ -116,7 +116,7 @@ class ChainProxy {
   }
 
   getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
-    return this.get(txp.coin).getBitcoreTx(txp, { signed: opts.signed });
+    return this.get(txp.chain).getBitcoreTx(txp, { signed: opts.signed });
   }
 
   convertFeePerKb(coin, p, feePerKb) {
@@ -132,15 +132,15 @@ class ChainProxy {
   }
 
   checkTx(server, txp) {
-    return this.get(txp.coin).checkTx(server, txp);
+    return this.get(txp.chain).checkTx(server, txp);
   }
 
   checkTxUTXOs(server, txp, opts, cb) {
-    return this.get(txp.coin).checkTxUTXOs(server, txp, opts, cb);
+    return this.get(txp.chain).checkTxUTXOs(server, txp, opts, cb);
   }
 
   selectTxInputs(server, txp, wallet, opts, cb) {
-    return this.get(txp.coin).selectTxInputs(server, txp, wallet, opts, cb);
+    return this.get(txp.chain).selectTxInputs(server, txp, wallet, opts, cb);
   }
 
   checkUtxos(coin, opts) {
@@ -167,8 +167,8 @@ class ChainProxy {
     return this.get(coin).supportsMultisig();
   }
 
-  addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub, signingMethod) {
-    this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod);
+  addSignaturesToBitcoreTx(chain, tx, inputs, inputPaths, signatures, xpub, signingMethod) {
+    this.get(chain).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod);
   }
 
   validateAddress(wallet, inaddr, opts) {

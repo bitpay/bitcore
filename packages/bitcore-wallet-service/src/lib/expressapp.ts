@@ -822,6 +822,17 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/token/info', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const tokenContractInfo = await server.getTokenContractInfo(req.body);
+          res.json(tokenContractInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
     router.get('/v1/sendmaxinfo/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const q = req.query;
