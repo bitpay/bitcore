@@ -843,13 +843,10 @@ export class API extends EventEmitter {
   }
 
   getRemainingInfo(cb) {
-    this.request.get(
-      '/v2/remaining/',
-      (err, result) => {
-        if (err) return cb(err);
-        return cb(err, result);
-      }
-    );
+    this.request.get('/v2/remaining/', (err, result) => {
+      if (err) return cb(err);
+      return cb(err, result);
+    });
   }
 
   clearCache(cb) {
