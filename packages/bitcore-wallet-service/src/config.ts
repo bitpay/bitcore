@@ -49,6 +49,14 @@ module.exports = {
         url: 'https://api.bitcore.io'
       }
     },
+    bcha: {
+      livenet: {
+        url: 'http://127.0.0.1:3000'
+      },
+      testnet: {
+        url: 'http://127.0.0.1:3000'
+      }
+    },
     eth: {
       livenet: {
         url: 'https://api-eth.bitcore.io'
@@ -84,7 +92,8 @@ module.exports = {
     authorizationKey: 'You_have_to_put_something_here'
   },
   fiatRateServiceOpts: {
-    defaultProvider: 'BitPay',
+    defaultProvider: 'CryptoCompare',
+    cryptoCompareApiKey: 'Apikey a5f8e442e001cd9ba2c5a61d32794c7209a3940f493a03bb2193027b1982d376',
     fetchInterval: 5 // in minutes
   },
   maintenanceOpts: {

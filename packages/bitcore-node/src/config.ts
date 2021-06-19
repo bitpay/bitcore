@@ -62,7 +62,7 @@ const Config = function(): ConfigType {
     dbPass: process.env.DB_PASS || '',
     numWorkers: cpus().length,
     chains: {},
-    modules: ['./bitcoin', './bitcoin-cash', './ethereum'],
+    modules: ['./bitcoin', './bitcoin-cash', './ethereum', './bitcoin-abc'],
     services: {
       api: {
         rateLimiter: {
@@ -97,8 +97,8 @@ const Config = function(): ConfigType {
           rpc: {
             host: '127.0.0.1',
             port: 8332,
-            username: 'bitcoin',
-            password: 'bitcoin'
+            username: 'rpc',
+            password: 'rpc'
           }
         }
       }

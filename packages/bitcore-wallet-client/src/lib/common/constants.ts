@@ -24,6 +24,7 @@ export const Constants = {
   COINS: [
     'btc',
     'bch',
+    'bcha',
     'eth',
     'xrp',
     'doge',

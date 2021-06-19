@@ -40,6 +40,7 @@ export class Address {
   static Bitcore = {
     btc: require('bitcore-lib'),
     bch: require('bitcore-lib-cash'),
+    bcha: require('bitcore-lib-cash'),
     doge: require('bitcore-lib-doge')
   };
 

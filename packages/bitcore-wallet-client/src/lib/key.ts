@@ -389,6 +389,8 @@ export class Key {
       } else {
         coinCode = '145';
       }
+    } else if (opts.coin == 'bcha') {
+      coinCode = '899';
     } else if (opts.coin == 'btc') {
       coinCode = '0';
     } else if (opts.coin == 'eth') {
