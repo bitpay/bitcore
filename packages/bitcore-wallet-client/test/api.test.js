@@ -1681,7 +1681,7 @@ describe('client API', function() {
       while (i++ < 100) {
         var walletId = Uuid.v4();
         var walletPrivKey = new Bitcore.PrivateKey();
-        var network = i % 2 == 0 ? 'testnet' : 'livenet';
+        var network = i % 2 == 0 ? 'testnet'  : 'livenet';
         var coin = i % 3 == 0 ? 'bch' : 'btc';
         var secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
         var result = Client.parseSecret(secret);
@@ -2076,7 +2076,52 @@ describe('client API', function() {
       );
     });
 
-    it('should not allow to join wallet on bogus device', done => {
+    it('should return wallet on successful join (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 2
+        })
+      );
+
+      clients[0].createWallet(
+        'mywallet',
+        'creator',
+        2,
+        2,
+        {
+          network: 'regtest'
+        },
+        (err, secret) => {
+          should.not.exist(err);
+          let k2 = new Key({ seedType:'new'});
+          clients[1].fromString(
+            k2.createCredentials(null, {
+              coin: 'btc',
+              network: 'regtest',
+              account: 5,
+              n: 2
+            })
+          );
+          clients[0].credentials.rootPath.should.equal("m/48'/0'/0'");
+          clients[1].credentials.rootPath.should.equal("m/48'/0'/5'");
+
+          console.log(JSON.stringify(secret, null, 2));
+
+          clients[1].joinWallet(secret, 'guest', {}, (err, wallet) => {
+            should.not.exist(err);
+            wallet.name.should.equal('mywallet');
+            wallet.copayers[0].name.should.equal('creator');
+            wallet.copayers[1].name.should.equal('guest');
+            done();
+          });
+        }
+      );
+    });
+
+    it('should not allow to join wallet on bogus device (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2115,7 +2160,46 @@ describe('client API', function() {
       );
     });
 
-    it('should not allow to join a full wallet ', done => {
+    it('should not allow to join wallet on bogus device (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 2
+        })
+      );
+
+      clients[0].createWallet(
+        'mywallet',
+        'creator',
+        2,
+        2,
+        {
+          network: 'regtest'
+        },
+        (err, secret) => {
+          should.not.exist(err);
+          let k2 = new Key({ seedType:'new'});
+          clients[1].fromString(
+            k2.createCredentials(null, {
+              coin: 'btc',
+              network: 'regtest',
+              account: 5,
+              n: 2
+            })
+          );
+
+          clients[1].keyDerivationOk = false;
+          clients[1].joinWallet(secret, 'guest', {}, (err, wallet) => {
+            should.exist(err);
+            done();
+          });
+        }
+      );
+    });
+
+    it('should not allow to join a full wallet (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2144,7 +2228,36 @@ describe('client API', function() {
       });
     });
 
-    it('should fail with an invalid secret', done => {
+    it('should not allow to join a full wallet (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 2
+        })
+      );
+
+      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, w => {
+        should.exist(w.secret);
+
+        clients[4].fromString(
+          k.createCredentials(null, {
+            coin: 'btc',
+            network: 'regtest',
+            account: 0,
+            n: 2
+          })
+        );
+
+        clients[4].joinWallet(w.secret, 'copayer', {}, (err, result) => {
+          err.should.be.an.instanceOf(Errors.WALLET_FULL);
+          done();
+        });
+      });
+    });
+
+    it('should fail with an invalid secret (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2170,11 +2283,55 @@ describe('client API', function() {
       });
     });
 
-    it('should fail with an unknown secret', done => {
+    it('should fail with an invalid secret (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 2
+        })
+      );
+
+      // Invalid
+      clients[0].joinWallet('dummy', 'copayer', {}, (err, result) => {
+        err.message.should.contain('Invalid secret');
+        // Right length, invalid char for base 58
+        clients[0].joinWallet(
+          'DsZbqNQQ9LrTKU8EknR7gFKyCQMPg2UUHNPZ1BzM5EbJwjRZaUNBfNtdWLluuFc0f7f7sTCkh7T',
+          'copayer',
+          {},
+          (err, result) => {
+            err.message.should.contain('Invalid secret');
+            done();
+          }
+        );
+      });
+    });
+
+    it('should fail with an unknown secret (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
           network: 'testnet',
+          account: 0,
+          n: 2
+        })
+      );
+
+      // Unknown walletId
+      var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
+      clients[0].joinWallet(oldSecret, 'copayer', {}, (err, result) => {
+        err.should.be.an.instanceOf(Errors.WALLET_NOT_FOUND);
+        done();
+      });
+    });
+
+    it('should fail with an unknown secret (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
           account: 0,
           n: 2
         })
@@ -2305,7 +2462,7 @@ describe('client API', function() {
       });
     });
 
-    it('should return wallet status even if wallet is not yet complete', done => {
+    it('should return wallet status even if wallet is not yet complete (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2339,7 +2496,41 @@ describe('client API', function() {
       );
     });
 
-    it('should return status using v2 version', done => {
+    it('should return wallet status even if wallet is not yet complete (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 2
+        })
+      );
+
+      clients[0].createWallet(
+        'mywallet',
+        'creator',
+        1,
+        2,
+        {
+          network: 'regtest'
+        },
+        (err, secret) => {
+          should.not.exist(err);
+          should.exist(secret);
+
+          clients[0].getStatus({}, (err, status) => {
+            should.not.exist(err);
+            should.exist(status);
+            status.wallet.status.should.equal('pending');
+            should.exist(status.wallet.secret);
+            status.wallet.secret.should.equal(secret);
+            done();
+          });
+        }
+      );
+    });
+
+    it('should return status using v2 version (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2369,7 +2560,37 @@ describe('client API', function() {
       );
     });
 
-    it('should return extended status using v2 version', done => {
+    it('should return status using v2 version (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 1
+        })
+      );
+
+      clients[0].createWallet(
+        'mywallet',
+        'creator',
+        1,
+        1,
+        {
+          network: 'regtest'
+        },
+        (err, secret) => {
+          should.not.exist(err);
+          clients[0].getStatus({}, (err, status) => {
+            should.not.exist(err);
+            should.not.exist(status.wallet.publicKeyRing);
+            status.wallet.status.should.equal('complete');
+            done();
+          });
+        }
+      );
+    });
+
+    it('should return extended status using v2 version (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2404,7 +2625,42 @@ describe('client API', function() {
       );
     });
 
-    it('should store walletPrivKey', done => {
+    it('should return extended status using v2 version (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 1
+        })
+      );
+
+      clients[0].createWallet(
+        'mywallet',
+        'creator',
+        1,
+        1,
+        {
+          network: 'regtest'
+        },
+        (err, secret) => {
+          should.not.exist(err);
+          clients[0].getStatus(
+            {
+              includeExtendedInfo: true
+            },
+            (err, status) => {
+              should.not.exist(err);
+              status.wallet.publicKeyRing.length.should.equal(1);
+              status.wallet.status.should.equal('complete');
+              done();
+            }
+          );
+        }
+      );
+    });
+
+    it('should store walletPrivKey (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2443,7 +2699,46 @@ describe('client API', function() {
       );
     });
 
-    it('should set walletPrivKey from BWS', done => {
+    it('should store walletPrivKey (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 1
+        })
+      );
+
+      clients[0].createWallet(
+        'mywallet',
+        'creator',
+        1,
+        1,
+        {
+          network: 'regtest'
+        },
+        err => {
+          var key = clients[0].credentials.walletPrivKey;
+          should.not.exist(err);
+          clients[0].getStatus(
+            {
+              includeExtendedInfo: true
+            },
+            (err, status) => {
+              should.not.exist(err);
+              status.wallet.publicKeyRing.length.should.equal(1);
+              status.wallet.status.should.equal('complete');
+              var key2 = status.customData.walletPrivKey;
+
+              clients[0].credentials.walletPrivKey.should.be.equal(key2);
+              done();
+            }
+          );
+        }
+      );
+    });
+
+    it('should set walletPrivKey from BWS (testnet)', done => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -2460,6 +2755,45 @@ describe('client API', function() {
         1,
         {
           network: 'testnet'
+        },
+        err => {
+          var wkey = clients[0].credentials.walletPrivKey;
+          var skey = clients[0].credentials.sharedEncryptingKey;
+          delete clients[0].credentials.walletPrivKey;
+          delete clients[0].credentials.sharedEncryptingKey;
+          should.not.exist(err);
+          clients[0].getStatus(
+            {
+              includeExtendedInfo: true
+            },
+            (err, status) => {
+              should.not.exist(err);
+              clients[0].credentials.walletPrivKey.should.equal(wkey);
+              clients[0].credentials.sharedEncryptingKey.should.equal(skey);
+              done();
+            }
+          );
+        }
+      );
+    });
+
+    it('should set walletPrivKey from BWS (regtest)', done => {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'regtest',
+          account: 0,
+          n: 1
+        })
+      );
+
+      clients[0].createWallet(
+        'mywallet',
+        'creator',
+        1,
+        1,
+        {
+          network: 'regtest'
         },
         err => {
           var wkey = clients[0].credentials.walletPrivKey;
@@ -2662,6 +2996,25 @@ describe('client API', function() {
       );
     });
 
+    it('should create a P2WPKH regtest wallet and derive a valid Segwit regtest address', done => {
+      helpers.createAndJoinWallet(
+        clients,
+        keys,
+        1,
+        1,
+        { network: 'regtest', addressType: 'P2WPKH', useNativeSegwit: true },
+        w => {
+          clients[0].createAddress((err, client) => {
+            should.not.exist(err);
+            client.address.should.include('bcrt');
+            client.address.length.should.equal(44);
+            client.type.should.equal('P2WPKH');
+            done();
+          });
+        }
+      );
+    });
+
     it('should create a P2WSH wallet and derive a valid Segwit address', done => {
       helpers.createAndJoinWallet(
         clients,
@@ -2699,6 +3052,25 @@ describe('client API', function() {
         }
       );
     });
+  });
+
+  it('should create a P2WSH regtest wallet and derive a valid Segwit regtest address', done => {
+    helpers.createAndJoinWallet(
+      clients,
+      keys,
+      1,
+      2,
+      { network: 'regtest', addressType: 'P2WSH', useNativeSegwit: true },
+      w => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('bcrt');
+          client.address.length.should.equal(64);
+          client.type.should.equal('P2WSH');
+          done();
+        });
+      }
+    );
   });
 
   describe('#getMainAddresses', () => {
@@ -5653,10 +6025,25 @@ describe('client API', function() {
   });
 
   describe('Broadcast raw transaction', () => {
-    it('should broadcast raw tx', done => {
+    it('should broadcast raw tx (testnet)', done => {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, w => {
         var opts = {
           network: 'testnet',
+          rawTx:
+            '0100000001b1b1b1b0d9786e237ec6a4b80049df9e926563fee7bdbc1ac3c4efc3d0af9a1c010000006a47304402207c612d36d0132ed463526a4b2370de60b0aa08e76b6f370067e7915c2c74179b02206ae8e3c6c84cee0bca8521704eddb40afe4590f14fd5d6434da980787ba3d5110121031be732b984b0f1f404840f2479bcc81f90187298efecc67dd83e1f93d9b2860dfeffffff0200ab9041000000001976a91403383bd4cff200de3690db1ed17d0b1a228ea43f88ac25ad6ed6190000001976a9147ccbaf7bcc1e323548bd1d57d7db03f6e6daf76a88acaec70700'
+        };
+        clients[0].broadcastRawTx(opts, (err, txid) => {
+          should.not.exist(err);
+          txid.should.equal('d19871cf7c123d413ac71f9240ea234fac77bc95bcf41015d8bf5c03f221b92c');
+          done();
+        });
+      });
+    });
+
+    it('should broadcast raw tx (regtest)', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, w => {
+        var opts = {
+          network: 'regtest',
           rawTx:
             '0100000001b1b1b1b0d9786e237ec6a4b80049df9e926563fee7bdbc1ac3c4efc3d0af9a1c010000006a47304402207c612d36d0132ed463526a4b2370de60b0aa08e76b6f370067e7915c2c74179b02206ae8e3c6c84cee0bca8521704eddb40afe4590f14fd5d6434da980787ba3d5110121031be732b984b0f1f404840f2479bcc81f90187298efecc67dd83e1f93d9b2860dfeffffff0200ab9041000000001976a91403383bd4cff200de3690db1ed17d0b1a228ea43f88ac25ad6ed6190000001976a9147ccbaf7bcc1e323548bd1d57d7db03f6e6daf76a88acaec70700'
         };
@@ -6193,7 +6580,7 @@ describe('client API', function() {
           done();
         });
 
-        it('should export & import from Key +  BWS', done => {
+        it('should export & import from Key + BWS (testnet)', done => {
           var c = clients[0].credentials;
           var walletId = c.walletId;
           var walletName = c.walletName;
@@ -7107,7 +7494,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to recreate 1-of-1 wallet with account 2', done => {
+      it('should be able to recreate 1-of-1 wallet with account 2 (testnet)', done => {
         let k = new Key({
           seedData:
             'tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ',
@@ -7157,6 +7544,80 @@ describe('client API', function() {
                   recoveryClient.fromString(clients[0].toString());
                   recoveryClient.credentials.account.should.equal(2);
                   recoveryClient.credentials.rootPath.should.equal("m/44'/1'/2'");
+                  recoveryClient.getStatus({}, (err, status) => {
+                    should.exist(err);
+                    err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+                    recoveryClient.recreateWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient.getStatus({}, (err, status) => {
+                        should.not.exist(err);
+                        recoveryClient.createAddress((err, addr2) => {
+                          should.not.exist(err);
+                          should.exist(addr2);
+                          addr2.address.should.equal(addr.address);
+                          addr2.path.should.equal(addr.path);
+                          done();
+                        });
+                      });
+                    });
+                  });
+                }
+              );
+            });
+          }
+        );
+      });
+
+      it('should be able to recreate 1-of-1 wallet with account 2 (regtest)', done => {
+        let k = new Key({
+          seedData:
+            'tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ',
+          seedType: 'extendedPrivateKey'
+        });
+        clients[0].fromString(
+          k.createCredentials(null, {
+            coin: 'btc',
+            network: 'regtest',
+            account: 2,
+            n: 1
+          })
+        );
+
+        clients[0].createWallet(
+          'mywallet',
+          'creator',
+          1,
+          1,
+          {
+            network: 'regtest'
+          },
+          (err, secret) => {
+            should.not.exist(err);
+
+            clients[0].createAddress((err, addr) => {
+              should.not.exist(err);
+              should.exist(addr);
+
+              var storage = new Storage({
+                db: db2
+              });
+
+              var newApp;
+              var expressApp = new ExpressApp();
+              expressApp.start(
+                {
+                  storage: storage,
+                  blockchainExplorer: blockchainExplorerMock,
+                  disableLogs: true
+                },
+                () => {
+                  newApp = expressApp.app;
+
+                  var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
+                  var recoveryClient = helpers.newClient(newApp);
+                  recoveryClient.fromString(clients[0].toString());
+                  recoveryClient.credentials.account.should.equal(2);
+                  recoveryClient.credentials.rootPath.should.equal("m/44'/0'/2'");
                   recoveryClient.getStatus({}, (err, status) => {
                     should.exist(err);
                     err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
@@ -7255,7 +7716,7 @@ describe('client API', function() {
   });
 
   describe.skip('Air gapped related flows', () => {
-    it('should create wallet in proxy from airgapped', done => {
+    it('should create wallet in proxy from airgapped (testnet)', done => {
       var airgapped = new Client();
       airgapped.seedFromRandom({
         network: 'testnet'
