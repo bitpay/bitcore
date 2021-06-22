@@ -103,7 +103,26 @@ module.exports = {
     buyCrypto: { simplexPromotion202002: false }
   },
   suspendedChains: [],
-  staticRoot: '/tmp/static'
+  staticRoot: '/tmp/static',
+  donationRemaining: {
+    minMoneydonation: 0.01, // USD
+    toalAmount : 10000000000,
+    receiveAmountLotus: 100000000,
+    donationToAddresses : [
+     {
+       coin : 'bch',
+       address: 'qzhkfz09gxhunmcy65gnp6z6rtz3snvx3yfk4rgapp'
+     },
+     {
+      coin : 'doge',
+      address: 'nZJfUpe5TLxd849JKTMpL5wacBuDgbNYAu'
+    }
+    ],
+    donationCoin: 'doge'
+  },
+
+  donationWalletId : 'd3fc6e28-d644-4b9d-8169-2de69c683f6a'
+
   // simplex: {
   //   sandbox: {
   //     apiKey: 'simplex_sandbox_api_key_here',

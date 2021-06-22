@@ -127,6 +127,8 @@ export class TxProposal {
   destinationTag?: string;
   invoiceID?: string;
   lockUntilBlockHeight?: number;
+  isDonation?: boolean;
+  receiveLotusAddress?: string;
 
   static create(opts) {
     opts = opts || {};
@@ -140,6 +142,9 @@ export class TxProposal {
     if (opts.version) {
       $.checkArgument(opts.version >= 3);
     }
+
+    x.isDonation = opts.isDonation ;
+    x.receiveLotusAddress = opts.receiveLotusAddress ;
 
     // x.version = opts.version || 5; // DISABLED 2020-04-07
     x.version = opts.version || 3;
@@ -214,6 +219,8 @@ export class TxProposal {
 
     const x = new TxProposal();
 
+    x.isDonation = obj.isDonation;
+    x.receiveLotusAddress = obj.receiveLotusAddress;
     x.version = obj.version;
     x.createdOn = obj.createdOn;
     x.id = obj.id;

@@ -718,6 +718,24 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v2/remaining/', (req, res) => {
+      const opts: { coin?: string; network?: string } = {};
+      // if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.network) opts.network = req.query.network;
+
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.getRemainingInfo(opts, (err, balance) => {
+        if (err) return returnError(err, res, req);
+        res.json(balance);
+      });
+    });
+
     router.get('/v1/balance/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};

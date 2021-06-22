@@ -36,7 +36,8 @@ const collections = {
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
-  LOCKS: 'locks'
+  LOCKS: 'locks',
+  DONATION: 'donation'
 };
 
 const Common = require('./common');
@@ -68,6 +69,9 @@ export class Storage {
     }
     db.collection(collections.WALLETS).createIndex({
       id: 1
+    });
+    db.collection(collections.DONATION).createIndex({
+      txidDonation: 1
     });
     db.collection(collections.COPAYERS_LOOKUP).createIndex({
       copayerId: 1
@@ -231,6 +235,36 @@ export class Storage {
       wallet.toObject(),
       {
         w: 1,
+        upsert: true
+      },
+      cb
+    );
+  }
+  
+  storeDonation(donationInfor, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', donationInfor);
+      return;
+    }
+
+    this.db.collection(collections.DONATION).insertOne(
+      donationInfor,
+      {
+        w: 1
+      },
+      cb
+    );
+  }
+  
+  updateDonation(donationInfor, cb) {
+
+    this.db.collection(collections.DONATION).updateOne(
+      {
+        txidDonation: donationInfor.txidDonation
+      },
+      { $set: { txidGiveLotus: donationInfor.txidGiveLotus } },
+      {
         upsert: true
       },
       cb

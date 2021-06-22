@@ -53,6 +53,8 @@ const Defaults = Common.Defaults;
 
 const Errors = require('./errors/errordefinitions');
 
+const shell = require('shelljs');
+
 let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
@@ -591,6 +593,32 @@ export class WalletService {
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
       this.storage.migrateToCashAddr(this.walletId, e => {
+        if (e) return cb(e);
+        wallet.nativeCashAddr = true;
+        return this.storage.storeWallet(wallet, e => {
+          if (e) return cb(e);
+          return cb(e, wallet);
+        });
+      });
+    });
+  }
+
+  /**
+   * Retrieves a wallet from storage.
+   * @param {Object} opts
+   * @returns {Object} wallet
+   */
+   getWalletFromID(walletId, cb) {
+    this.storage.fetchWallet(walletId, (err, wallet) => {
+      if (err) return cb(err);
+      if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
+
+      // cashAddress migration
+      if ((wallet.coin != 'bch' && wallet.coin != 'bcha') || wallet.nativeCashAddr) return cb(null, wallet);
+
+      // remove someday...
+      logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
+      this.storage.migrateToCashAddr(walletId, e => {
         if (e) return cb(e);
         wallet.nativeCashAddr = true;
         return this.storage.storeWallet(wallet, e => {
@@ -1717,6 +1745,82 @@ export class WalletService {
     });
   }
 
+  getBalanceDonation(opts, cb) {
+    opts = opts || {};
+    if (opts.coin) {
+      return cb(new ClientError('coin is not longer supported in getBalance'));
+    }
+    let wallet = opts.wallet;
+    this.walletId = config.donationWalletId;
+    const setWallet = cb1 => {
+      const walletIdDonation = config.donationWalletId;
+      if (wallet) return cb1();
+      this.getWalletFromID(walletIdDonation, (err, ret) => {
+        if (err) return cb(err);
+        wallet = ret;
+        return cb1(null, wallet);
+      });
+    };
+
+    setWallet(() => {
+      if (!wallet.isComplete()) {
+        const emptyBalance = {
+          totalAmount: 0,
+          lockedAmount: 0,
+          totalConfirmedAmount: 0,
+          lockedConfirmedAmount: 0,
+          availableAmount: 0,
+          availableConfirmedAmount: 0
+        };
+        return cb(null, emptyBalance);
+      }
+
+      this.syncWallet(wallet, err => {
+        if (err) return cb(err);
+        return ChainService.getWalletBalance(this, wallet, opts, cb);
+      });
+    });
+  }
+
+  caculateReceiveAmountLotus(remaning: number) {
+    if (!_.isNil(remaning) && remaning < config.donationRemaining.receiveAmountLotus) {
+      return remaning;
+    } else {
+      return config.donationRemaining.receiveAmountLotus;
+    }
+  }
+
+  getRemainingInfo(opts, cb) {
+    const infor: {
+      remaining?: number,
+      minMoneydonation?: number,
+      toalAmount?: number,
+      receiveAmountLotus?: number,
+      donationToAddresses?: any[],
+      donationCoin?: string
+    } = {};
+    async.parallel(
+      [
+        next => {
+          this.getBalanceDonation(opts, (err, balance) => {
+            if (err) return next(err);
+            infor.remaining = balance.availableAmount;
+            infor.minMoneydonation = config.donationRemaining.minMoneydonation
+            infor.toalAmount = config.donationRemaining.toalAmount;
+            infor.receiveAmountLotus = this.caculateReceiveAmountLotus(balance.availableAmount);
+            infor.donationToAddresses = config.donationRemaining.donationToAddresses;
+            infor.donationCoin = config.donationRemaining.donationCoin;
+            next();
+          });
+        }
+      ],
+      err => {
+        if (err) return cb(err);
+        return cb(null, infor);
+      }
+    )
+  }
+
   /**
    * Return info needed to send all funds in the wallet
    * @param {Object} opts
@@ -2338,7 +2442,9 @@ export class WalletService {
                     multisigContractAddress: opts.multisigContractAddress,
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
-                    signingMethod: opts.signingMethod
+                    signingMethod: opts.signingMethod,
+                    isDonation: opts.isDonation,
+                    receiveLotusAddress: opts.receiveLotusAddress
                   };
                   txp = TxProposal.create(txOpts);
                   next();
@@ -2733,6 +2839,103 @@ export class WalletService {
     });
   }
 
+  checkIsDonation(txp): boolean {
+    const addressObjDonation = _.find(config.donationRemaining.donationToAddresses, item => item.coin == txp.coin);
+    if (_.isEmpty(addressObjDonation)) return false;
+    return txp.isDonation && txp.outputs[0].toAddress == addressObjDonation.address;
+  }
+
+  _sendLotusDotation(addressReceive, amountReceive, cb) {
+    // this parse may fail
+    var child = shell.exec(
+      `bash ~/bitcore/packages/bitcore-wallet-service/send-dotation.sh ${addressReceive} ${amountReceive}`,
+      { async: true }
+    );
+    child.stdout.on('data', function(data) {
+      const firstvariable = 'Transaction Broadcasted: TXID: ';
+      const secondvariable = '\\n';
+      var testRE = data.match('Transaction Broadcasted: TXID: (.*)\\n');
+      if (testRE != null && testRE[1] != null) {
+        // console.log('Program output:', testRE != null ? testRE[1] : null);
+        return cb(testRE[1]);
+      }
+    });
+
+    child.stderr.on('data', function(data) {
+      // console.log('Program output:', data);
+    });
+  };
+  
+
+  handleSendLostus(donationInfo, cb) {
+    this.getRemainingInfo({}, (err, remainingData) => {
+      if(err) return cb(err) ;
+      this._sendLotusDotation(donationInfo.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
+        console.log('done handleSendLostus ', data)
+        donationInfo.txidGiveLotus = data;
+        return cb(null, donationInfo);
+      });
+    })
+  }
+
+  confirmationAndBroadcastRawTx(wallet, txp, sub, cb) {
+    this.storage.storeTxConfirmationSub(sub, err => {
+      if (err) logger.error('Could not store Tx confirmation subscription: ', err);
+
+      let raw;
+      try {
+        raw = txp.getRawTx();
+      } catch (ex) {
+        return cb(ex);
+      }
+      this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
+        if (err || txid != txp.txid) {
+          if (!err || txp.txid != txid) {
+            logger.warn(`Broadcast failed for: ${raw}`);
+          } else {
+            logger.warn(`Broadcast failed: ${err}`);
+          }
+
+          const broadcastErr = err;
+          // Check if tx already in blockchain
+          this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
+            if (err) return cb(err);
+            if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
+
+            this._processBroadcast(
+              txp,
+              {
+                byThirdParty: true
+              },
+              cb
+            );
+          });
+        } else {
+          this._processBroadcast(
+            txp,
+            {
+              byThirdParty: false
+            },
+            err => {
+              if (err) return cb(err);
+              return cb(null, txp);
+            }
+          );
+        }
+      });
+    });
+  }
+
+  convertCoinToUSD(amount, coin, cp) {
+    this.getFiatRates({}, (err, rates) => {
+      const unitToSatoshi = 100000000; // bch , btc, bcha, doge
+      const rateCoin = _.find(rates[coin], item => item.code == "USD");
+      if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
+      const amountUSD = amount * (1 / unitToSatoshi) * rateCoin.rate;
+      return cp(null, amountUSD)
+    })
+  }
+
   /**
    * Broadcast a transaction proposal.
    * @param {Object} opts
@@ -2768,56 +2971,42 @@ export class WalletService {
             isActive: true,
             isCreator: true
           });
-          this.storage.storeTxConfirmationSub(sub, err => {
-            if (err) logger.error('Could not store Tx confirmation subscription: ', err);
+          if (this.checkIsDonation(txp)) {
 
-            let raw;
-            try {
-              raw = txp.getRawTx();
-            } catch (ex) {
-              return cb(ex);
-            }
-            this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
-              if (err || txid != txp.txid) {
-                if (!err || txp.txid != txid) {
-                  logger.warn(`Broadcast failed for: ${raw}`);
-                } else {
-                  logger.warn(`Broadcast failed: ${err}`);
-                }
-
-                const broadcastErr = err;
-                // Check if tx already in blockchain
-                this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
-                  if (err) return cb(err);
-                  if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
-
-                  this._processBroadcast(
-                    txp,
-                    {
-                      byThirdParty: true
-                    },
-                    cb
-                  );
-                });
-              } else {
-                this._processBroadcast(
-                  txp,
-                  {
-                    byThirdParty: false
-                  },
-                  err => {
-                    if (err) return cb(err);
-                    return cb(null, txp);
-                  }
-                );
+            this.confirmationAndBroadcastRawTx(wallet, txp, sub, (err, txp) => {
+              if (err) return cb(err);
+              const now = Date.now();
+              const donationInfor = {
+                txidDonation: txp.txid,
+                amount: txp.outputs[0].amount,
+                isGiven: false,
+                walletId: txp.walletId,
+                receiveLotusAddress: txp.receiveLotusAddress || undefined,
+                txidGiveLotus: txp.txidGiveLotus || undefined,
+                addressDonation: txp.from,
+                createdOn: Math.floor(now / 1000)
               }
+
+              this.storage.storeDonation(donationInfor, err => {
+                if (err) logger.error('Could not store donationInfor: ', err);
+                this.handleSendLostus(donationInfor, (err, donationInfor) => {
+                  if (err) return cb(err);
+                  this.storage.updateDonation(donationInfor, err => {
+                    if (err) logger.error('Could not store updateDonation: ', err);
+                    return cb(null, txp);
+                  })
+                })
+              });
             });
-          });
+
+            
+          } else {
+            this.confirmationAndBroadcastRawTx(wallet, txp , sub, cb);
+          }
         }
       );
     });
   }
-
   /**
    * Reject a transaction proposal.
    * @param {Object} opts
