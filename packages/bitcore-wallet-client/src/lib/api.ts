@@ -842,6 +842,13 @@ export class API extends EventEmitter {
     );
   }
 
+  getRemainingInfo(cb) {
+    this.request.get('/v2/remaining/', (err, result) => {
+      if (err) return cb(err);
+      return cb(err, result);
+    });
+  }
+
   clearCache(cb) {
     this.request.post('/v1/clearcache/', {}, (err, res) => {
       return cb(err, res);
