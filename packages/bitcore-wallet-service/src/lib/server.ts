@@ -2866,7 +2866,7 @@ export class WalletService {
   handleSendLostus(txp, cb) {
     if (this.checkIsDonation(txp)) {
       this.storage.fetchDonationByTxid(txp.txid, (err, donationInfo) => {
-        if (_.isEmpty(donationInfo) || err) return cb('no donation infor')
+        if (_.isEmpty(donationInfo) || err) return cb('no donation infor');
         if (!_.isEmpty(donationInfo.txidGiveLotus) || donationInfo.isGiven) return cb('this tx is received lotus');
         this.getRemainingInfo({}, (err, remainingData) => {
           if (err) return cb(err);
@@ -2879,7 +2879,7 @@ export class WalletService {
             });
           });
         });
-      })
+      });
     } else {
       return cb('this tx is not donation');
     }

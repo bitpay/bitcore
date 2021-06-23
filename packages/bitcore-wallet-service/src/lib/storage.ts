@@ -262,7 +262,7 @@ export class Storage {
 
     this.db.collection(collections.DONATION).findOne(
       {
-        txidDonation: txidDonation
+        txidDonation
       },
       (err, result) => {
         if (err) return cb(err);
