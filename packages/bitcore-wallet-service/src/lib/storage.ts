@@ -240,7 +240,7 @@ export class Storage {
       cb
     );
   }
-  
+
   storeDonation(donationInfor, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
@@ -256,9 +256,8 @@ export class Storage {
       cb
     );
   }
-  
-  updateDonation(donationInfor, cb) {
 
+  updateDonation(donationInfor, cb) {
     this.db.collection(collections.DONATION).updateOne(
       {
         txidDonation: donationInfor.txidDonation

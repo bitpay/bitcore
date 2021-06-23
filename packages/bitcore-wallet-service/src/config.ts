@@ -106,22 +106,22 @@ module.exports = {
   staticRoot: '/tmp/static',
   donationRemaining: {
     minMoneydonation: 0.01, // USD
-    toalAmount : 10000000000,
+    toalAmount: 10000000000,
     receiveAmountLotus: 100000000,
-    donationToAddresses : [
-     {
-       coin : 'bch',
-       address: 'qzhkfz09gxhunmcy65gnp6z6rtz3snvx3yfk4rgapp'
-     },
-     {
-      coin : 'doge',
-      address: 'ndimfHmpLLs9tUBsyaTmSdSsqiB9ny1XS8'
-    }
+    donationToAddresses: [
+      {
+        coin: 'bch',
+        address: 'qzhkfz09gxhunmcy65gnp6z6rtz3snvx3yfk4rgapp'
+      },
+      {
+        coin: 'doge',
+        address: 'ndimfHmpLLs9tUBsyaTmSdSsqiB9ny1XS8'
+      }
     ],
     donationCoin: 'doge'
   },
 
-  donationWalletId : '93ec81ff-0062-40d4-ac4c-1f6359b07ffb'
+  donationWalletId: '93ec81ff-0062-40d4-ac4c-1f6359b07ffb'
 
   // simplex: {
   //   sandbox: {

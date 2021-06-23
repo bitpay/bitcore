@@ -143,8 +143,8 @@ export class TxProposal {
       $.checkArgument(opts.version >= 3);
     }
 
-    x.isDonation = opts.isDonation ;
-    x.receiveLotusAddress = opts.receiveLotusAddress ;
+    x.isDonation = opts.isDonation;
+    x.receiveLotusAddress = opts.receiveLotusAddress;
 
     // x.version = opts.version || 5; // DISABLED 2020-04-07
     x.version = opts.version || 3;

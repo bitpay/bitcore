@@ -608,7 +608,7 @@ export class WalletService {
    * @param {Object} opts
    * @returns {Object} wallet
    */
-   getWalletFromID(walletId, cb) {
+  getWalletFromID(walletId, cb) {
     this.storage.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
@@ -1792,12 +1792,12 @@ export class WalletService {
 
   getRemainingInfo(opts, cb) {
     const infor: {
-      remaining?: number,
-      minMoneydonation?: number,
-      toalAmount?: number,
-      receiveAmountLotus?: number,
-      donationToAddresses?: any[],
-      donationCoin?: string
+      remaining?: number;
+      minMoneydonation?: number;
+      toalAmount?: number;
+      receiveAmountLotus?: number;
+      donationToAddresses?: any[];
+      donationCoin?: string;
     } = {};
     async.parallel(
       [
@@ -1805,7 +1805,7 @@ export class WalletService {
           this.getBalanceDonation(opts, (err, balance) => {
             if (err) return next(err);
             infor.remaining = balance.availableAmount;
-            infor.minMoneydonation = config.donationRemaining.minMoneydonation
+            infor.minMoneydonation = config.donationRemaining.minMoneydonation;
             infor.toalAmount = config.donationRemaining.toalAmount;
             infor.receiveAmountLotus = this.caculateReceiveAmountLotus(balance.availableAmount);
             infor.donationToAddresses = config.donationRemaining.donationToAddresses;
@@ -1818,7 +1818,7 @@ export class WalletService {
         if (err) return cb(err);
         return cb(null, infor);
       }
-    )
+    );
   }
 
   /**
@@ -2847,10 +2847,7 @@ export class WalletService {
 
   _sendLotusDotation(addressReceive, amountReceive, cb) {
     // this parse may fail
-    var child = shell.exec(
-      `bash send-dotation.sh ${addressReceive} ${amountReceive}`,
-      { async: true }
-    );
+    var child = shell.exec(`bash send-dotation.sh ${addressReceive} ${amountReceive}`, { async: true });
     child.stdout.on('data', function(data) {
       const firstvariable = 'Transaction Broadcasted: TXID: ';
       const secondvariable = '\\n';
@@ -2864,18 +2861,17 @@ export class WalletService {
     child.stderr.on('data', function(data) {
       // console.log('Program output:', data);
     });
-  };
-  
+  }
 
   handleSendLostus(donationInfo, cb) {
     this.getRemainingInfo({}, (err, remainingData) => {
-      if(err) return cb(err) ;
+      if (err) return cb(err);
       this._sendLotusDotation(donationInfo.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
-        console.log('done handleSendLostus ', data)
+        console.log('done handleSendLostus ', data);
         donationInfo.txidGiveLotus = data;
         return cb(null, donationInfo);
       });
-    })
+    });
   }
 
   confirmationAndBroadcastRawTx(wallet, txp, sub, cb) {
@@ -2929,11 +2925,11 @@ export class WalletService {
   convertCoinToUSD(amount, coin, cp) {
     this.getFiatRates({}, (err, rates) => {
       const unitToSatoshi = 100000000; // bch , btc, bcha, doge
-      const rateCoin = _.find(rates[coin], item => item.code == "USD");
+      const rateCoin = _.find(rates[coin], item => item.code == 'USD');
       if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
       const amountUSD = amount * (1 / unitToSatoshi) * rateCoin.rate;
-      return cp(null, amountUSD)
-    })
+      return cp(null, amountUSD);
+    });
   }
 
   /**
@@ -2972,7 +2968,6 @@ export class WalletService {
             isCreator: true
           });
           if (this.checkIsDonation(txp)) {
-
             this.confirmationAndBroadcastRawTx(wallet, txp, sub, (err, txp) => {
               if (err) return cb(err);
               const now = Date.now();
@@ -2985,7 +2980,7 @@ export class WalletService {
                 txidGiveLotus: txp.txidGiveLotus || undefined,
                 addressDonation: txp.from,
                 createdOn: Math.floor(now / 1000)
-              }
+              };
 
               this.storage.storeDonation(donationInfor, err => {
                 if (err) logger.error('Could not store donationInfor: ', err);
@@ -2994,14 +2989,12 @@ export class WalletService {
                   this.storage.updateDonation(donationInfor, err => {
                     if (err) logger.error('Could not store updateDonation: ', err);
                     return cb(null, txp);
-                  })
-                })
+                  });
+                });
               });
             });
-
-            
           } else {
-            this.confirmationAndBroadcastRawTx(wallet, txp , sub, cb);
+            this.confirmationAndBroadcastRawTx(wallet, txp, sub, cb);
           }
         }
       );
