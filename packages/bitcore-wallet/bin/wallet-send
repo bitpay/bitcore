@@ -66,7 +66,7 @@ function send(client, address, amount, fee, note, uri) {
       txp: txp
     }, function(err) {
       utils.die(err);
-      let shortId = utils.shortID(txp.id)
+      let shortId = utils.shortID(txp.id);
       console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
       shortId, txp.status, txp.requiredSignatures);
       fs.writeFile('txProposal.txt', shortId, { flag: 'w' }, function (err) {

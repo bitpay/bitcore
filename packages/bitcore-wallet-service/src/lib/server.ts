@@ -608,7 +608,7 @@ export class WalletService {
    * @param {Object} opts
    * @returns {Object} wallet
    */
-  getWalletFromID(walletId, cb) {
+  getWalletFromId(walletId, cb) {
     this.storage.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
@@ -1755,7 +1755,7 @@ export class WalletService {
     const setWallet = cb1 => {
       const walletIdDonation = config.donationWalletId;
       if (wallet) return cb1();
-      this.getWalletFromID(walletIdDonation, (err, ret) => {
+      this.getWalletFromId(walletIdDonation, (err, ret) => {
         if (err) return cb(err);
         wallet = ret;
         return cb1(null, wallet);
