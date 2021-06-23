@@ -115,13 +115,13 @@ module.exports = {
      },
      {
       coin : 'doge',
-      address: 'nZJfUpe5TLxd849JKTMpL5wacBuDgbNYAu'
+      address: 'ndimfHmpLLs9tUBsyaTmSdSsqiB9ny1XS8'
     }
     ],
     donationCoin: 'doge'
   },
 
-  donationWalletId : 'd3fc6e28-d644-4b9d-8169-2de69c683f6a'
+  donationWalletId : '93ec81ff-0062-40d4-ac4c-1f6359b07ffb'
 
   // simplex: {
   //   sandbox: {

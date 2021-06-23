@@ -2848,7 +2848,7 @@ export class WalletService {
   _sendLotusDotation(addressReceive, amountReceive, cb) {
     // this parse may fail
     var child = shell.exec(
-      `bash ~/bitcore/packages/bitcore-wallet-service/send-dotation.sh ${addressReceive} ${amountReceive}`,
+      `bash send-dotation.sh ${addressReceive} ${amountReceive}`,
       { async: true }
     );
     child.stdout.on('data', function(data) {
