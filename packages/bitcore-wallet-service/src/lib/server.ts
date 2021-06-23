@@ -2863,15 +2863,26 @@ export class WalletService {
     });
   }
 
-  handleSendLostus(donationInfo, cb) {
-    this.getRemainingInfo({}, (err, remainingData) => {
-      if (err) return cb(err);
-      this._sendLotusDotation(donationInfo.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
-        console.log('done handleSendLostus ', data);
-        donationInfo.txidGiveLotus = data;
-        return cb(null, donationInfo);
-      });
-    });
+  handleSendLostus(txp, cb) {
+    if (this.checkIsDonation(txp)) {
+      this.storage.fetchDonationByTxid(txp.txid, (err, donationInfo) => {
+        if (_.isEmpty(donationInfo) || err) return cb('no donation infor')
+        if (!_.isEmpty(donationInfo.txidGiveLotus) || donationInfo.isGiven) return cb('this tx is received lotus');
+        this.getRemainingInfo({}, (err, remainingData) => {
+          if (err) return cb(err);
+          this._sendLotusDotation(donationInfo.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
+            donationInfo.txidGiveLotus = data;
+            donationInfo.isGiven = true;
+            this.storage.updateDonation(donationInfo, err => {
+              if (err) logger.error('Could not store updateDonation: ', err);
+              return cb(null, txp);
+            });
+          });
+        });
+      })
+    } else {
+      return cb('this tx is not donation');
+    }
   }
 
   confirmationAndBroadcastRawTx(wallet, txp, sub, cb) {
@@ -2984,13 +2995,8 @@ export class WalletService {
 
               this.storage.storeDonation(donationInfor, err => {
                 if (err) logger.error('Could not store donationInfor: ', err);
-                this.handleSendLostus(donationInfor, (err, donationInfor) => {
-                  if (err) return cb(err);
-                  this.storage.updateDonation(donationInfor, err => {
-                    if (err) logger.error('Could not store updateDonation: ', err);
-                    return cb(null, txp);
-                  });
-                });
+                txp.isBroadCastDonation = true;
+                return cb(null, txp);
               });
             });
           } else {

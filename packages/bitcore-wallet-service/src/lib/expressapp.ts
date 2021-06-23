@@ -968,6 +968,12 @@ export class ExpressApp {
           if (err) return returnError(err, res, req);
           res.json(txp);
           res.end();
+          if(txp.isBroadCastDonation && txp.txid) {
+            server.handleSendLostus(txp, (err, donationInfor) => {
+              if(err) console.log(err)
+              console.log('done send lotus for this txp', donationInfor);
+            });
+          }
         });
       });
     });

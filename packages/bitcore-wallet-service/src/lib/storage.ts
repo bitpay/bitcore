@@ -257,12 +257,33 @@ export class Storage {
     );
   }
 
-  updateDonation(donationInfor, cb) {
+  fetchDonationByTxid(txidDonation, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.DONATION).findOne(
+      {
+        txidDonation: txidDonation
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateDonation(donationInfo, cb) {
     this.db.collection(collections.DONATION).updateOne(
       {
-        txidDonation: donationInfor.txidDonation
+        txidDonation: donationInfo.txidDonation
       },
-      { $set: { txidGiveLotus: donationInfor.txidGiveLotus } },
+      {
+        $set: {
+          txidGiveLotus: donationInfo.txidGiveLotus,
+          isGiven: donationInfo.isGiven
+        }
+      },
       {
         upsert: true
       },
