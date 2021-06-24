@@ -1782,19 +1782,10 @@ export class WalletService {
     });
   }
 
-  caculateReceiveAmountLotus(remaning: number) {
-    if (!_.isNil(remaning) && remaning < config.donationRemaining.receiveAmountLotus) {
-      return remaning;
-    } else {
-      return config.donationRemaining.receiveAmountLotus;
-    }
-  }
-
   getRemainingInfo(opts, cb) {
     const infor: {
       remaining?: number;
       minMoneydonation?: number;
-      toalAmount?: number;
       receiveAmountLotus?: number;
       donationToAddresses?: any[];
       donationCoin?: string;
@@ -1806,8 +1797,7 @@ export class WalletService {
             if (err) return next(err);
             infor.remaining = balance.availableAmount;
             infor.minMoneydonation = config.donationRemaining.minMoneydonation;
-            infor.toalAmount = config.donationRemaining.toalAmount;
-            infor.receiveAmountLotus = this.caculateReceiveAmountLotus(balance.availableAmount);
+            infor.receiveAmountLotus = config.donationRemaining.receiveAmountLotus;
             infor.donationToAddresses = config.donationRemaining.donationToAddresses;
             infor.donationCoin = config.donationRemaining.donationCoin;
             next();
@@ -2935,11 +2925,24 @@ export class WalletService {
 
   convertCoinToUSD(amount, coin, cp) {
     this.getFiatRates({}, (err, rates) => {
+      if(err) return (err);
       const unitToSatoshi = 100000000; // bch , btc, bcha, doge
       const rateCoin = _.find(rates[coin], item => item.code == 'USD');
       if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
       const amountUSD = amount * (1 / unitToSatoshi) * rateCoin.rate;
       return cp(null, amountUSD);
+    });
+  }
+
+  checkAmoutToSendLostus(txp, cb) {
+    this.convertCoinToUSD(txp.outputs[0].amount, txp.coin, (err, amountUsd) => {
+      if (err) return cb(err);
+      if (amountUsd + (amountUsd * 0.1) < config.donationRemaining.minMoneydonation) return cb('not enough money donation to receive lotus');
+      this.getRemainingInfo({}, (err, remainingData) => {
+        if (err) return cb(err);
+        if (remainingData.remaining < config.donationRemaining.receiveAmountLotus) return cb('not enough lotus to send for you')
+        return cb(null, true);
+      });
     });
   }
 
@@ -2979,26 +2982,29 @@ export class WalletService {
             isCreator: true
           });
           if (this.checkIsDonation(txp)) {
-            this.confirmationAndBroadcastRawTx(wallet, txp, sub, (err, txp) => {
+            this.checkAmoutToSendLostus(txp, (err, isSend) => {
               if (err) return cb(err);
-              const now = Date.now();
-              const donationInfor = {
-                txidDonation: txp.txid,
-                amount: txp.outputs[0].amount,
-                isGiven: false,
-                walletId: txp.walletId,
-                receiveLotusAddress: txp.receiveLotusAddress || undefined,
-                txidGiveLotus: txp.txidGiveLotus || undefined,
-                addressDonation: txp.from,
-                createdOn: Math.floor(now / 1000)
-              };
+              this.confirmationAndBroadcastRawTx(wallet, txp, sub, (err, txp) => {
+                if (err) return cb(err);
+                const now = Date.now();
+                const donationInfor = {
+                  txidDonation: txp.txid,
+                  amount: txp.outputs[0].amount,
+                  isGiven: false,
+                  walletId: txp.walletId,
+                  receiveLotusAddress: txp.receiveLotusAddress || undefined,
+                  txidGiveLotus: txp.txidGiveLotus || undefined,
+                  addressDonation: txp.from,
+                  createdOn: Math.floor(now / 1000)
+                };
 
-              this.storage.storeDonation(donationInfor, err => {
-                if (err) logger.error('Could not store donationInfor: ', err);
-                txp.isBroadCastDonation = true;
-                return cb(null, txp);
+                this.storage.storeDonation(donationInfor, err => {
+                  if (err) logger.error('Could not store donationInfor: ', err);
+                  txp.isBroadCastDonation = true;
+                  return cb(null, txp);
+                });
               });
-            });
+            })
           } else {
             this.confirmationAndBroadcastRawTx(wallet, txp, sub, cb);
           }

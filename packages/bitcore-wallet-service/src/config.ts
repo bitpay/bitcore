@@ -106,7 +106,6 @@ module.exports = {
   staticRoot: '/tmp/static',
   donationRemaining: {
     minMoneydonation: 0.01, // USD
-    toalAmount: 10000000000,
     receiveAmountLotus: 100000000,
     donationToAddresses: [
       {

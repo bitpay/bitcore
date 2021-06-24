@@ -967,15 +967,12 @@ export class ExpressApp {
         server.broadcastTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-
           if (txp.isBroadCastDonation && txp.txid) {
             server.handleSendLostus(txp, (err, donationInfor) => {
               if (err) console.log(err);
               console.log('done send lotus for this txp', donationInfor);
               res.end();
             });
-          } else {
-            res.end();
           }
         });
       });
