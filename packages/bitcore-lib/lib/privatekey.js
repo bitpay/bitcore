@@ -146,7 +146,7 @@ PrivateKey._transformBuffer = function(buf, network) {
     return PrivateKey._transformBNBuffer(buf, network);
   }
 
-  info.network = Networks.get(buf[0], 'privatekey');
+  info.network = network && network === 'regtest' ? Networks.get(network) : Networks.get(buf[0], 'privatekey');
 
   if (!info.network) {
     throw new Error('Invalid network');
