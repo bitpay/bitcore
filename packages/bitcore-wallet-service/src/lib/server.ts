@@ -1794,8 +1794,7 @@ export class WalletService {
       [
         next => {
           this.getBalanceDonation(opts, (err, balance) => {
-            if (err) return next(err);
-            infor.remaining = balance.availableAmount;
+            infor.remaining = err ? 0 : balance.availableAmount;
             infor.minMoneydonation = config.donationRemaining.minMoneydonation;
             infor.receiveAmountLotus = config.donationRemaining.receiveAmountLotus;
             infor.donationToAddresses = config.donationRemaining.donationToAddresses;
