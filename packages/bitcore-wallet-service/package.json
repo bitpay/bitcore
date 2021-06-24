@@ -47,6 +47,7 @@
     "request": "^2.53.0",
     "request-promise-native": "^1.0.5",
     "secp256k1": "^3.1.0",
+    "shelljs": "^0.8.4",
     "sjcl": "^1.0.2",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0",
@@ -82,6 +83,7 @@
   },
   "scripts": {
     "start": "npm run clean && npm run tsc && ./start.sh",
+    "start-debug": "npm run clean && npm run tsc && ./start.sh 1",
     "stop": "./stop.sh",
     "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "npm run compile && mocha --exit",
