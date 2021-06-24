@@ -2925,7 +2925,7 @@ export class WalletService {
 
   convertCoinToUSD(amount, coin, cp) {
     this.getFiatRates({}, (err, rates) => {
-      if(err) return (err);
+      if (err) return err;
       const unitToSatoshi = 100000000; // bch , btc, bcha, doge
       const rateCoin = _.find(rates[coin], item => item.code == 'USD');
       if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
@@ -2937,10 +2937,12 @@ export class WalletService {
   checkAmoutToSendLostus(txp, cb) {
     this.convertCoinToUSD(txp.outputs[0].amount, txp.coin, (err, amountUsd) => {
       if (err) return cb(err);
-      if (amountUsd + (amountUsd * 0.1) < config.donationRemaining.minMoneydonation) return cb('not enough money donation to receive lotus');
+      if (amountUsd + amountUsd * 0.1 < config.donationRemaining.minMoneydonation)
+        return cb('not enough money donation to receive lotus');
       this.getRemainingInfo({}, (err, remainingData) => {
         if (err) return cb(err);
-        if (remainingData.remaining < config.donationRemaining.receiveAmountLotus) return cb('not enough lotus to send for you')
+        if (remainingData.remaining < config.donationRemaining.receiveAmountLotus)
+          return cb('not enough lotus to send for you');
         return cb(null, true);
       });
     });
@@ -3004,7 +3006,7 @@ export class WalletService {
                   return cb(null, txp);
                 });
               });
-            })
+            });
           } else {
             this.confirmationAndBroadcastRawTx(wallet, txp, sub, cb);
           }
