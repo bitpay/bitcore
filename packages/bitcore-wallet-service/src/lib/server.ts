@@ -2169,6 +2169,20 @@ export class WalletService {
     });
   }
 
+  getTokenContractInfo(opts) {
+    const bc = this._getBlockchainExplorer('eth', opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getTokenContractInfo(opts, (err, contractInfo) => {
+        if (err) {
+          this.logw('Error getting contract info', err);
+          return reject(err);
+        }
+        return resolve(contractInfo);
+      });
+    });
+  }
+
   getMultisigTxpsInfo(opts) {
     const bc = this._getBlockchainExplorer('eth', opts.network);
     return new Promise((resolve, reject) => {
@@ -2319,6 +2333,7 @@ export class WalletService {
                     walletId: this.walletId,
                     creatorId: this.copayerId,
                     coin: opts.coin,
+                    chain: opts.chain ? opts.chain : opts.coin,
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,

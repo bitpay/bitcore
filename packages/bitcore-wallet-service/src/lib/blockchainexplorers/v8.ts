@@ -416,6 +416,20 @@ export class V8 {
       });
   }
 
+  getTokenContractInfo(opts, cb) {
+    const url = this.baseUrl + '/token/' + opts.tokenAddress;
+    console.log('[v8.js.378:url:] CHECKING CONTRACT INFO', url);
+    this.request
+      .get(url, {})
+      .then(contractInfo => {
+        contractInfo = JSON.parse(contractInfo);
+        return cb(null, contractInfo);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   getMultisigTxpsInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/txps/' + opts.multisigContractAddress;
     console.log('[v8.js.378:url:] CHECKING CONTRACT TXPS INFO', url);

@@ -86,6 +86,35 @@ HDPublicKey.isValidPath = function(arg) {
 };
 
 /**
+ * WARNING: This method is deprecated. Use deriveChild instead.
+ *
+ *
+ * Get a derivated child based on a string or number.
+ *
+ * If the first argument is a string, it's parsed as the full path of
+ * derivation. Valid values for this argument include "m" (which returns the
+ * same public key), "m/0/1/40/2/1000".
+ *
+ * Note that hardened keys can't be derived from a public extended key.
+ *
+ * If the first argument is a number, the child with that index will be
+ * derived. See the example usage for clarification.
+ *
+ * @example
+ * ```javascript
+ * var parent = new HDPublicKey('xpub...');
+ * var child_0_1_2 = parent.derive(0).derive(1).derive(2);
+ * var copy_of_child_0_1_2 = parent.derive("m/0/1/2");
+ * assert(child_0_1_2.xprivkey === copy_of_child_0_1_2);
+ * ```
+ *
+ * @param {string|number} arg
+ */
+HDPublicKey.prototype.derive = function(arg, hardened) {
+  return this.deriveChild(arg, hardened);
+};
+
+/**
  * Get a derivated child based on a string or number.
  *
  * If the first argument is a string, it's parsed as the full path of

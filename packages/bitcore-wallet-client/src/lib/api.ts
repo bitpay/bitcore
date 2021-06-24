@@ -1064,6 +1064,7 @@ export class API extends EventEmitter {
         var c = this.credentials;
         var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
         var walletId = c.walletId;
+        var useNativeSegwit = c.addressType === Constants.SCRIPT_TYPES.P2WPKH;
         var supportBIP44AndP2PKH =
           c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
         var encWalletName = Utils.encryptMessage(
@@ -1080,8 +1081,12 @@ export class API extends EventEmitter {
           coin: c.coin,
           network: c.network,
           id: walletId,
-          supportBIP44AndP2PKH
+          usePurpose48: c.n > 1,
+          useNativeSegwit
         };
+
+        if (!!supportBIP44AndP2PKH)
+          args['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
 
         this.request.post('/v2/wallets/', args, (err, body) => {
           if (err) {
@@ -1095,6 +1100,12 @@ export class API extends EventEmitter {
           }
 
           var i = 1;
+          var opts = {
+            coin: c.coin
+          };
+          if (!!supportBIP44AndP2PKH)
+            opts['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
+
           async.each(
             this.credentials.publicKeyRing,
             (item, next) => {
@@ -1105,10 +1116,7 @@ export class API extends EventEmitter {
                 item.xPubKey,
                 item.requestPubKey,
                 name,
-                {
-                  coin: c.coin,
-                  supportBIP44AndP2PKH
-                },
+                opts,
                 err => {
                   // Ignore error is copayer already in wallet
                   if (err && err instanceof Errors.COPAYER_IN_WALLET)
@@ -1601,8 +1609,6 @@ export class API extends EventEmitter {
 
     var args = [];
     if (opts.coin) {
-      if (!_.includes(Constants.COINS, opts.coin))
-        return cb(new Error('Invalid coin'));
       args.push('coin=' + opts.coin);
     }
     if (opts.tokenAddress) {
@@ -2549,6 +2555,20 @@ export class API extends EventEmitter {
   // */
   getMultisigContractInfo(opts, cb) {
     var url = '/v1/ethmultisig/info';
+    opts.network = this.credentials.network;
+    this.request.post(url, opts, (err, contractInfo) => {
+      if (err) return cb(err);
+      return cb(null, contractInfo);
+    });
+  }
+
+  // /**
+  // * Returns contract info. (name symbol precision)
+  // * @param {string} opts.tokenAddress - token contract address
+  // * @return {Callback} cb - Return error (if exists) instantiation info
+  // */
+  getTokenContractInfo(opts, cb) {
+    var url = '/v1/token/info';
     opts.network = this.credentials.network;
     this.request.post(url, opts, (err, contractInfo) => {
       if (err) return cb(err);
