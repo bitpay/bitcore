@@ -159,7 +159,7 @@ Peer.prototype.connect = function() {
     port: this.port,
     host: this.host,
     localAddress: '127.0.0.1',
-    localPort: 8334
+    localPort: 11604
   });
   // this.socket.connect(this.port, this.host);
   return this;

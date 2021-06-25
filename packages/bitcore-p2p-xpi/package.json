@@ -1,8 +1,7 @@
 {
-  "name": "bitcore-p2p-lotus",
+  "name": "bitcore-p2p-xpi",
   "version": "8.25.11",
   "description": "Interface to the bitcoin P2P network for lotus",
-  "author": "Viet <vince.tran8x@gmail.com>",
   "main": "index.js",
   "scripts": {
     "test": "gulp test",
@@ -53,7 +52,8 @@
   ],
   "keywords": [
     "bitcoin",
-    "bitcore"
+    "bitcore",
+    "lotus"
   ],
   "repository": {
     "type": "git",

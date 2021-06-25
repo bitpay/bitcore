@@ -14,8 +14,8 @@ var livenetPeer = new Peer({host: '5.9.85.34'});
 var testnetPeer = new Peer({host: '5.9.85.34', network: Networks.testnet});
 
 // custom port
-var livenetPeer = new Peer({host: '5.9.85.34', port: 8334});
-var testnetPeer = new Peer({host: '5.9.85.34', port: 18334, network: Networks.testnet});
+var livenetPeer = new Peer({host: '5.9.85.34', port: 11604});
+var testnetPeer = new Peer({host: '5.9.85.34', port: 11640, network: Networks.testnet});
 
 // use sock5 proxy (Tor)
 var peer = new Peer({host: '5.9.85.34'}).setProxy('localhost', 9050);
