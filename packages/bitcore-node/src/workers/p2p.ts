@@ -6,7 +6,6 @@ import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import '../utils/polyfills';
-require('heapdump');
 const services: Array<any> = [];
 
 export const P2pWorker = async () => {
