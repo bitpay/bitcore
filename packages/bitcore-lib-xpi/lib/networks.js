@@ -12,7 +12,7 @@ var networkMaps = {};
  * (a.k.a. "mainnet") and "testnet".
  * @constructor
  */
-function Network() {}
+function Network() { }
 
 Network.prototype.toString = function toString() {
   return this.name;
@@ -38,8 +38,8 @@ function get(arg, keys) {
       var network = networks[i];
       var filteredNet = _.pick(network, keys);
       var netValues = _.values(filteredNet);
-      if(~netValues.indexOf(arg)) {
-	return network;
+      if (~netValues.indexOf(arg)) {
+        return network;
       }
     }
     return undefined;
@@ -55,7 +55,7 @@ function get(arg, keys) {
  */
 function prefixToArray(prefix) {
   var result = [];
-  for (var i=0; i < prefix.length; i++) {
+  for (var i = 0; i < prefix.length; i++) {
     result.push(prefix.charCodeAt(i) & 31);
   }
   return result;
@@ -124,19 +124,19 @@ function addNetwork(data) {
 }
 
 function indexNetworkBy(network, keys) {
-  for(var i = 0; i <  keys.length; i++) {
+  for (var i = 0; i < keys.length; i++) {
     var key = keys[i];
     var networkValue = network[key];
-    if(!_.isUndefined(networkValue) && !_.isObject(networkValue)) {
+    if (!_.isUndefined(networkValue) && !_.isObject(networkValue)) {
       networkMaps[networkValue] = network;
     }
   }
 }
 
 function unindexNetworkBy(network, values) {
-  for(var index = 0; index < values.length; index++){
+  for (var index = 0; index < values.length; index++) {
     var value = values[index];
-    if(networkMaps[value] === network) {
+    if (networkMaps[value] === network) {
       delete networkMaps[value];
     }
   }
@@ -159,25 +159,21 @@ function removeNetwork(network) {
 
 // from https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/src/chainparams.cpp#L212
 var dnsSeeds = [
-  'seed.bitcoinabc.org',
-  'seed-abc.bitcoinforks.org',
-  'btccash-seeder.bitcoinunlimited.info',
-  'seeder.jasonbcox.com',
-  'seed.deadalnix.me',
-  'seed.bchd.cash'
+  'mainnet.seeds.cash',
+  'seed.be.cash'
 ];
 
 var liveNetwork = {
   name: 'livenet',
   alias: 'mainnet',
   prefix: 'bitcoincash',
-  pubkeyhash: 28,
+  pubkeyhash: 0,
   privatekey: 0x80,
-  scripthash: 40,
+  scripthash: 5,
   xpubkey: 0x0488b21e,
   xprivkey: 0x0488ade4,
-  networkMagic: 0xe3e1f3e8,
-  port: 8333,
+  networkMagic: 0xece7eff3,
+  port: 10605,
   dnsSeeds: dnsSeeds
 };
 
@@ -189,8 +185,8 @@ var testNetwork = {
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0xf4e5f3f4,
-  port: 18333,
+  networkMagic: 0xecf4f3f4,
+  port: 11605,
   dnsSeeds: dnsSeeds
 };
 
@@ -202,8 +198,8 @@ var regtestNetwork = {
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0xdab5bffa,
-  port: 18444,
+  networkMagic: 0xecf2e5e7,
+  port: 12605,
   dnsSeeds: [],
   indexBy: [
     'port',

@@ -10,5 +10,9 @@ module.exports = {
   BCHA: {
     lib: require('bitcore-lib-cash'),
     p2p: require('bitcore-p2p-bcha')
+  },
+  XPI: {
+    lib: require('bitcore-lib-cash'),
+    p2p: require('bitcore-p2p-xpi')
   }
 };
