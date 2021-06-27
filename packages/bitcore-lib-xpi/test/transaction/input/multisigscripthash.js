@@ -21,10 +21,10 @@ describe('MultiSigScriptHashInput', function() {
   var public1 = privateKey1.publicKey;
   var public2 = privateKey2.publicKey;
   var public3 = privateKey3.publicKey;
-  var address = new Address('H8piCq1XQrr3DbkPF5YFi5VdMV2mCQEnKW');
+  var address = new Address('33zbk2aSZYdNbRsMPPt6jgy6Kq1kQreqeb');
 
   var output = {
-    address: 'H8piCq1XQrr3DbkPF5YFi5VdMV2mCQEnKW',
+    address: '33zbk2aSZYdNbRsMPPt6jgy6Kq1kQreqeb',
     txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
     outputIndex: 0,
     script: new Script(address),
@@ -118,7 +118,7 @@ describe('MultiSigScriptHashInput', function() {
     var nonSortedRedeemScript = Script.buildMultisigOut(nonSortedPublicKeys, threshold, opts);
     var nonSortedAddress = Address.payingTo(nonSortedRedeemScript);
 
-    nonSortedAddress.toLegacyAddress().should.equal('HLEAcJ3iYF5sRGR4oSowZx5fuqigfD5Ah7');
+    nonSortedAddress.toLegacyAddress().should.equal('3FQ49VcdgvsCo6Y2wm9nbZZ8tBhfqtRt3P');
 
     var nonSortedOutput = Object.assign({}, output, {
       address: nonSortedAddress.toLegacyAddress(),
