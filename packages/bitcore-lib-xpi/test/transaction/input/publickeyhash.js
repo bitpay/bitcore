@@ -20,7 +20,7 @@ describe('PublicKeyHashInput', function() {
   var address = new Address(publicKey, Networks.livenet);
 
   var output = {
-    address: 'H8piCq1XQrr3DbkPF5YFi5VdMV2mCQEnKW',
+    address: '1GXP5vDX6QC5uSyH4oZuahpDC2eVxy6F3y',
     txId: '66e64ef8a3b384164b78453fa8c8194de9a473ba14f89485a0e433699daec140',
     outputIndex: 0,
     script: new Script(address),
