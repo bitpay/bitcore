@@ -5,7 +5,7 @@ var expect = require('chai').expect;
 var P2P = require('../../../');
 var Messages = P2P.Messages;
 var sinon = require('sinon');
-var bitcore = require('bitcore-lib-cash');
+var bitcore = require('bitcore-lib-xpi');
 
 describe('Command Messages', function() {
 

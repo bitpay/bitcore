@@ -10,7 +10,7 @@ var expect = chai.expect;
 var sinon = require('sinon');
 var fs = require('fs');
 
-var bitcore = require('bitcore-lib-cash');
+var bitcore = require('bitcore-lib-xpi');
 var _ = bitcore.deps._;
 var P2P = require('../');
 var Peer = P2P.Peer;
@@ -211,7 +211,7 @@ describe('Peer', function() {
       done();
     };
     peer.connect();
-    var buf = Buffer.from('e3e1f3e8756e6b6e6f776e0000000000000000005df6e0e2', 'hex');
+    var buf = Buffer.from('ece7eff3756e6b6e6f776e0000000000000000005df6e0e2', 'hex');
     peer.socket.emit('data', buf);
   });
 

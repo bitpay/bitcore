@@ -1,6 +1,6 @@
  'use strict';
 
-var bitcore = require('bitcore-lib-cash');
+var bitcore = require('bitcore-lib-xpi');
 var BufferUtil = bitcore.util.buffer;
 var Hash = bitcore.crypto.Hash;
 var $ = bitcore.util.preconditions;

@@ -4,7 +4,7 @@ var Buffers = require('./buffers');
 var EventEmitter = require('events').EventEmitter;
 var Net = require('net');
 var Socks5Client = require('socks5-client');
-var bitcore = require('bitcore-lib-cash');
+var bitcore = require('bitcore-lib-xpi');
 var Networks = bitcore.Networks;
 var Messages = require('./messages');
 var $ = bitcore.util.preconditions;
@@ -155,13 +155,13 @@ Peer.prototype.connect = function() {
   });
 
   this._addSocketEventHandlers();
-  this.socket.connect({
-    port: this.port,
-    host: this.host,
-    localAddress: '127.0.0.1',
-    localPort: 11604
-  });
-  // this.socket.connect(this.port, this.host);
+  // this.socket.connect({
+  //   port: this.port,
+  //   host: this.host,
+  //   localAddress: '127.0.0.1',
+  //   localPort: 11604
+  // });
+  this.socket.connect(this.port, this.host);
   return this;
 };
 
