@@ -450,36 +450,40 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async estimateGas(params): Promise<number> {
     return new Promise(async (resolve, reject) => {
-      let { network, value, from, data, gasPrice, to } = params;
-      const { web3 } = await this.getWeb3(network);
-      const dataDecoded = EthTransactionStorage.abiDecode(data);
+      try {
+        let { network, value, from, data, gasPrice, to } = params;
+        const { web3 } = await this.getWeb3(network);
+        const dataDecoded = EthTransactionStorage.abiDecode(data);
 
-      if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
-        value = dataDecoded.params[0].value;
-        gasPrice = dataDecoded.params[1].value;
+        if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
+          value = dataDecoded.params[0].value;
+          gasPrice = dataDecoded.params[1].value;
+        }
+
+        const opts = {
+          method: 'eth_estimateGas',
+          params: [
+            {
+              data,
+              to: to && to.toLowerCase(),
+              from: from && from.toLowerCase(),
+              gasPrice: web3.utils.toHex(gasPrice),
+              value: web3.utils.toHex(value)
+            }
+          ],
+          jsonrpc: '2.0',
+          id: 1
+        };
+
+        let provider = web3.currentProvider as any;
+        provider.send(opts, (err, data) => {
+          if (err) return reject(err);
+          if (!data.result) return reject(data.message);
+          return resolve(Number(data.result));
+        });
+      } catch (err) {
+        return reject(err);
       }
-
-      const opts = {
-        method: 'eth_estimateGas',
-        params: [
-          {
-            data,
-            to: to.toLowerCase(),
-            from: from.toLowerCase(),
-            gasPrice: web3.utils.toHex(gasPrice),
-            value: web3.utils.toHex(value)
-          }
-        ],
-        jsonrpc: '2.0',
-        id: 1
-      };
-
-      let provider = web3.currentProvider as any;
-      provider.send(opts, (err, data) => {
-        if (err) return reject(err);
-        if (!data.result) return reject(data.message);
-        return resolve(Number(data.result));
-      });
     });
   }
 
