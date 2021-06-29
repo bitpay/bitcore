@@ -69,7 +69,7 @@ function Address(data, network, type, multisigType) {
   $.checkArgument(data, 'First argument is required, please include address data.', 'guide/address.html');
 
   if (network && !Networks.get(network)) {
-    throw new TypeError('Second argument must be "livenet" or "testnet".');
+    throw new TypeError('Second argument must be "livenet", "regtest" or "testnet".');
   }
 
   if (type && (
@@ -83,7 +83,7 @@ function Address(data, network, type, multisigType) {
   var info = this._classifyArguments(data, network, type);
 
   // set defaults if not set
-  info.network = info.network || Networks.get(network) || Networks.defaultNetwork;
+  info.network = network ? Networks.get(network) : Networks.defaultNetwork;
   info.type = info.type || type || Address.PayToPublicKeyHash;
 
   JSUtil.defineImmutable(this, {
@@ -250,7 +250,7 @@ Address._transformBuffer = function(buffer, network, type) {
   } else {
     info.hashBuffer = buffer.slice(1);
   }
-  info.network = bufferVersion.network;
+  info.network = networkObj || bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
 };

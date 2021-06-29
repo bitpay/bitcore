@@ -882,7 +882,7 @@ export class BtcChain implements IChain {
       toString?: (cashAddr: boolean) => string;
     } = {};
     try {
-      addr = new A(inaddr);
+      addr = new A(inaddr, wallet.network);
     } catch (ex) {
       throw Errors.INVALID_ADDRESS;
     }

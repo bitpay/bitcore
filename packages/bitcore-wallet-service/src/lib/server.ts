@@ -1631,7 +1631,7 @@ export class WalletService {
         const A = Bitcore_[wallet.coin].Address;
         let addrObj: { network?: { name?: string } } = {};
         try {
-          addrObj = new A(address);
+          addrObj = new A(address, wallet.network);
         } catch (ex) {
           return cb(null, []);
         }

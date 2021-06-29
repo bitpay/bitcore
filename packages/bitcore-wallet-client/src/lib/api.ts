@@ -490,8 +490,10 @@ export class API extends EventEmitter {
             return next(new Error('No utxos found'));
 
           var fee = opts.fee || 10000;
-          var amount = _.sumBy(utxos, 'satoshis') - fee;
-          if (amount <= 0) return next(new Errors.INSUFFICIENT_FUNDS());
+          var amountBalance = _.sumBy(utxos, 'satoshis') - fee;
+          var amount = opts.amount || amountBalance;
+          if (amount <= 0 || amountBalance <= 0 || amountBalance < amount)
+            return next(new Errors.INSUFFICIENT_FUNDS());
 
           var tx;
           try {
