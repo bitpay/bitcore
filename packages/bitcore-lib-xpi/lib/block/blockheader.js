@@ -24,13 +24,19 @@ var BlockHeader = function BlockHeader(arg) {
     return new BlockHeader(arg);
   }
   var info = BlockHeader._from(arg);
-  this.version = info.version;
+
   this.prevHash = info.prevHash;
-  this.merkleRoot = info.merkleRoot;
+  this.bits = info.bits;
   this.time = info.time;
   this.timestamp = info.time;
-  this.bits = info.bits;
+  this.reserved = info.reserved;
   this.nonce = info.nonce;
+  this.version = info.version;
+  this.size = info.size;
+  this.height = info.height;
+  this.epochBlock = info.epochBlock;
+  this.merkleRoot = info.merkleRoot;
+  this.extendedMetadata = info.extendedMetadata;
 
   if (info.hash) {
     $.checkState(
@@ -69,22 +75,36 @@ BlockHeader._fromObject = function _fromObject(data) {
   $.checkArgument(data, 'data is required');
   var prevHash = data.prevHash;
   var merkleRoot = data.merkleRoot;
+  var epochBlock = data.epochBlock;
+  var extendedMetadata = data.extendedMetadata;
   if (_.isString(data.prevHash)) {
     prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
   }
   if (_.isString(data.merkleRoot)) {
     merkleRoot = BufferUtil.reverse(Buffer.from(data.merkleRoot, 'hex'));
   }
+  if (_.isString(data.epochBlock)) {
+    epochBlock = BufferUtil.reverse(Buffer.from(data.epochBlock, 'hex'));
+  }
+  if (_.isString(data.extendedMetadata)) {
+    extendedMetadata = BufferUtil.reverse(Buffer.from(data.extendedMetadata, 'hex'));
+  }
   var info = {
     hash: data.hash,
-    version: data.version,
     prevHash: prevHash,
-    merkleRoot: merkleRoot,
-    time: data.time,
-    timestamp: data.time,
     bits: data.bits,
-    nonce: data.nonce
+    timestamp: data.time,
+    reserved: data.reserved,
+    nonce: data.nonce,
+    version: data.version,
+    size: data.size,
+    height: data.height,
+    epochBlock: epochBlock,
+    merkleRoot: merkleRoot,
+    extendedMetadata: extendedMetadata,
+    time: data.time
   };
+
   return info;
 };
 
@@ -136,12 +156,18 @@ BlockHeader.fromString = function fromString(str) {
  */
 BlockHeader._fromBufferReader = function _fromBufferReader(br) {
   var info = {};
-  info.version = br.readInt32LE();
   info.prevHash = br.read(32);
-  info.merkleRoot = br.read(32);
-  info.time = br.readUInt32LE();
   info.bits = br.readUInt32LE();
-  info.nonce = br.readUInt32LE();
+  info.time = br.read(6);
+  info.reserved = br.readUInt32LE();
+  info.nonce = br.readUInt64LEBN();
+  info.version = br.readUInt8();
+  info.size = br.read(7);
+  info.height = br.readUInt32LE();
+  info.epochBlock = br.read(32);
+  info.merkleRoot = br.read(32);
+  info.extendedMetadata = br.read(32);
+  
   return info;
 };
 
@@ -160,12 +186,17 @@ BlockHeader.fromBufferReader = function fromBufferReader(br) {
 BlockHeader.prototype.toObject = BlockHeader.prototype.toJSON = function toObject() {
   return {
     hash: this.hash,
-    version: this.version,
     prevHash: BufferUtil.reverse(this.prevHash).toString('hex'),
-    merkleRoot: BufferUtil.reverse(this.merkleRoot).toString('hex'),
-    time: this.time,
     bits: this.bits,
-    nonce: this.nonce
+    time: this.time,
+    reserved: this.reserved,
+    nonce: this.nonce,
+    version: this.version,
+    size: this.size,
+    height: this.height,
+    epochBlock: BufferUtil.reverse(this.epochBlock).toString('hex'),
+    merkleRoot: BufferUtil.reverse(this.merkleRoot).toString('hex'),
+    extendedMetadata: BufferUtil.reverse(this.extendedMetadata).toString('hex')
   };
 };
 
@@ -191,12 +222,17 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
   if (!bw) {
     bw = new BufferWriter();
   }
-  bw.writeInt32LE(this.version);
   bw.write(this.prevHash);
-  bw.write(this.merkleRoot);
-  bw.writeUInt32LE(this.time);
   bw.writeUInt32LE(this.bits);
+  bw.write(Buffer.alloc(6).write(this.time));
+  bw.writeUInt32LE(this.reserved);
   bw.writeUInt32LE(this.nonce);
+  bw.writeInt32LE(this.version);
+  bw.write(Buffer.alloc(7).write(this.size))
+  bw.writeUInt32LE(this.height);
+  bw.write(this.epochBlock);
+  bw.write(this.merkleRoot);
+  bw.write(this.extendedMetadata);
   return bw;
 };
 
@@ -235,7 +271,48 @@ BlockHeader.prototype.getDifficulty = function getDifficulty() {
  * @returns {Buffer} - The little endian hash buffer of the header
  */
 BlockHeader.prototype._getHash = function hash() {
+  var bw = new BufferWriter();
+
+  var layer3Hash = this._getLayer3Hash();
+  var layer2Hash = this._getLayer2Hash(layer3Hash);
+
+  bw.write(this.prevHash);
+  bw.write(layer2Hash);
+
   var buf = this.toBuffer();
+  return Hash.sha256sha256(buf);
+};
+
+/**
+ * @returns {Buffer} - The little endian hash buffer of the layer3 of the header
+ */
+ BlockHeader.prototype._getLayer3Hash = function hash() {
+  var bw = new BufferWriter();
+
+  bw.writeInt32LE(this.version);
+  bw.writeUIntLE(this.size, 0, 7)
+  bw.writeUInt32LE(this.height);
+  bw.write(this.epochBlock);
+  bw.write(this.merkleRoot);
+  bw.write(this.extendedMetadata);
+
+  var buf = bw.concat().toBuffer();
+  return Hash.sha256sha256(buf);
+};
+
+/**
+ * @returns {Buffer} - The little endian hash buffer of the layer2 of the header
+ */
+ BlockHeader.prototype._getLayer2Hash = function hash(layer3Hash) {
+  var bw = new BufferWriter();
+
+  bw.writeUInt32LE(this.bits);
+  bw.writeUIntLE(this.time, 0, 6);
+  bw.writeUInt32LE(this.reserved);
+  bw.writeUInt32LE(this.nonce);
+  bw.write(layer3Hash);
+
+  var buf = bw.concat().toBuffer();
   return Hash.sha256sha256(buf);
 };
 
