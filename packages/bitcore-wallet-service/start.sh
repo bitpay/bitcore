@@ -2,7 +2,6 @@
 
 mkdir -p logs
 mkdir -p pids
-
 # run_program (nodefile, pidfile, logfile)
 run_program ()
 {
@@ -16,7 +15,7 @@ run_program ()
     return 0
   fi
 
-  nohup node $nodefile >> $logfile 2>&1 &
+  node $nodefile >> $logfile 2>&1 &
   PID=$!
   if [ $? -eq 0 ]
   then
@@ -34,5 +33,11 @@ run_program ./ts_build/bcmonitor/bcmonitor.js pids/bcmonitor.pid logs/bcmonitor.
 run_program ./ts_build/emailservice/emailservice.js pids/emailservice.pid logs/emailservice.log
 run_program ./ts_build/pushnotificationsservice/pushnotificationsservice.js pids/pushnotificationsservice.pid logs/pushnotificationsservice.log
 run_program ./ts_build/fiatrateservice/fiatrateservice.js pids/fiatrateservice.pid logs/fiatrateservice.log
-run_program ./ts_build/bws.js pids/bws.pid logs/bws.log
+if [ $1 -eq 1 ]
+then
+   run_program "--inspect ./ts_build/bws.js" pids/bws.pid logs/bws.log
+else
+   run_program ./ts_build/bws.js pids/bws.pid logs/bws.log
+fi
+
 
