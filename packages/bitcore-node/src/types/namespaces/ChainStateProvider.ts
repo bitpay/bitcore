@@ -151,7 +151,7 @@ export interface IChainStateService {
     params: GetBalanceForAddressParams
   ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
   getBlock(params: GetBlockParams): Promise<IBlock>;
-  getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock>;
+  getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null>;
   streamBlocks(params: StreamBlocksParams): any;
   getFee(params: GetEstimateSmartFeeParams): any;
   broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
