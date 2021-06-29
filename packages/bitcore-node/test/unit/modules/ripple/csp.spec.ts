@@ -45,6 +45,12 @@ describe('XRP Chain State Provider', () => {
       });
     });
 
+    it('should resolve on empty response', async () => {
+      requestStub.callsArgWith(1, null, null, null);
+      const res = await XRP.getBlockBeforeTime({ chain: 'XRP', network: 'testnet' });
+      expect(res).to.be.null;
+    });
+
     it('should throw on invalid time', async () => {
       try {
         await XRP.getBlockBeforeTime({ chain: 'XRP', network: 'testnet', time: 'not-a-time' });
