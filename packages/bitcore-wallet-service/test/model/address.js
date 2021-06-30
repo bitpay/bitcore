@@ -13,6 +13,7 @@ describe('Address', function() {
       var x = Address.create({
         address: '3KxttbKQQPWmpsnXZ3rB4mgJTuLnVR7frg',
         coin: 'btc',
+        network: 'livenet',
         walletId: '123',
         isChange: false,
         path: 'm/0/1',
@@ -25,6 +26,7 @@ describe('Address', function() {
       var x = Address.create({
         address: 'mp5xaa4uBj16DJt1fuA3D9fejHuCzeb7hj',
         coin: 'btc',
+        network: 'testnet',
         walletId: '123',
         isChange: false,
         path: 'm/0/1',

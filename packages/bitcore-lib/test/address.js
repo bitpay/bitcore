@@ -30,7 +30,7 @@ describe('Address', function() {
   it('should throw an error because of bad network param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'main', 'pubkeyhash');
-    }).should.throw('Second argument must be "livenet" or "testnet".');
+    }).should.throw('Second argument must be "livenet", "regtest" or "testnet".');
   });
 
   it('should throw an error because of bad type param', function() {

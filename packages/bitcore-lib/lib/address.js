@@ -83,7 +83,9 @@ function Address(data, network, type, multisigType) {
   var info = this._classifyArguments(data, network, type);
 
   // set defaults if not set
-  info.network = network ? Networks.get(network) : Networks.defaultNetwork;
+  info.network = info.network && info.network === 'testnet' && network === 'regtest'
+    ? Networks.get(network)
+    : info.network || Networks.get(network) || Networks.defaultNetwork;
   info.type = info.type || type || Address.PayToPublicKeyHash;
 
   JSUtil.defineImmutable(this, {
@@ -190,7 +192,7 @@ Address._classifyFromVersion = function(buffer) {
     } else if (info.data.length === 32) {
       version.type = Address.PayToWitnessScriptHash;
     } else {
-      throw new TypeError('Witness data must be either 20 or 32 bytes.')
+      throw new TypeError('Witness data must be either 20 or 32 bytes.');
     }
     version.network = Networks.get(info.prefix, 'bech32prefix');
   } else {
@@ -250,7 +252,7 @@ Address._transformBuffer = function(buffer, network, type) {
   } else {
     info.hashBuffer = buffer.slice(1);
   }
-  info.network = networkObj || bufferVersion.network;
+  info.network = bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
 };
