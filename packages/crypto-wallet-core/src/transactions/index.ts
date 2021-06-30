@@ -4,6 +4,7 @@ import { DOGETxProvider } from './doge';
 import { ERC20TxProvider } from './erc20';
 import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
+import { LTCTxProvider } from './ltc';
 import { XRPTxProvider } from './xrp';
 
 const providers = {
@@ -13,7 +14,8 @@ const providers = {
   ERC20: new ERC20TxProvider(),
   ETHMULTISIG: new ETHMULTISIGTxProvider(),
   XRP: new XRPTxProvider(),
-  DOGE: new DOGETxProvider()
+  DOGE: new DOGETxProvider(),
+  LTC: new LTCTxProvider()
 };
 
 export class TransactionsProxy {

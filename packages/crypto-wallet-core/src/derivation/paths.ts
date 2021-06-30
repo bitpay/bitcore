@@ -22,6 +22,11 @@ export const Paths = {
     livenet: "m/44'/3'/",
     testnet: "m/44'/3'/"
   },
+  LTC: {
+    mainnet: "m/44'/2'/",
+    livenet: "m/44'/2'/",
+    testnet: "m/44'/2'/"
+  },
   default: {
     testnet: "m/44'/1'/"
   }

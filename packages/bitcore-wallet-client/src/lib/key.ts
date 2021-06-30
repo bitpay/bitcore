@@ -520,7 +520,9 @@ export class Key {
     } else {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
-      const chain = Utils.getChain(txp.coin);
+      const chain = txp.chain
+        ? txp.chain.toUpperCase()
+        : Utils.getChain(txp.coin);
       const txArray = _.isArray(tx) ? tx : [tx];
       const isChange = false;
       const addressIndex = 0;

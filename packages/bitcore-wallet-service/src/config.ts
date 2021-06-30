@@ -139,15 +139,27 @@ module.exports = {
   //  defaultLanguage: 'en',
   //  defaultUnit: 'btc',
   //  publicTxUrlTemplate: {
-  //    btc: {
-  //      livenet: 'https://insight.bitcore.io/#/BTC/mainnet/tx/{{txid}}',
-  //      testnet: 'https://insight.bitcore.io/#/BTC/testnet/tx/{{txid}}',
-  //    },
-  //    bch: {
-  //      livenet: 'https://insight.bitcore.io/#/BCH/mainnet/tx/{{txid}}',
-  //      testnet: 'https://insight.bitcore.io/#/BCH/testnet/tx/{{txid}}',
-  //    }
-  //  },
+  //   btc: {
+  //     livenet: 'https://bitpay.com/insight/#/BTC/mainnet/tx/{{txid}}',
+  //     testnet: 'https://bitpay.com/insight/#/BTC/testnet/tx/{{txid}}',
+  //   },
+  //   bch: {
+  //     livenet: 'https://bitpay.com/insight/#/BCH/mainnet/tx/{{txid}}',
+  //     testnet: 'https://bitpay.com/insight/#/BCH/testnet/tx/{{txid}}',
+  //   },
+  //   eth: {
+  //     livenet: 'https://etherscan.io/tx/{{txid}}',
+  //     testnet: 'https://kovan.etherscan.io/tx/{{txid}}',
+  //   },
+  //   xrp: {
+  //     livenet: 'https://xrpscan.com/tx/{{txid}}',
+  //     testnet: 'https://test.bithomp.com/explorer//tx/{{txid}}',
+  //   },
+  //   doge: {
+  //     livenet: 'https://blockchair.com/dogecoin/transaction/{{txid}}',
+  //     testnet: 'https://sochain.com/tx/DOGETEST/{{txid}}',
+  //  }
+  // },
   // },
   // To use sendgrid:
   // const sgMail = require('@sendgrid/mail');
