@@ -83,9 +83,29 @@ BufferWriter.prototype.writeUInt32LE = function(n) {
   return this;
 };
 
+BufferWriter.prototype.writeUInt48LE = function(n) {
+  var buf = Buffer.alloc(6);
+  buf.writeUIntLE(n, 0, 6);
+  this.write(buf);
+  return this;
+};
+
+BufferWriter.prototype.writeUInt56LE = function(n) {
+  var buf = Buffer.alloc(7);
+  buf.writeUIntLE(n, 0, 7);
+  this.write(buf);
+  return this;
+};
+
 BufferWriter.prototype.writeUInt64BEBN = function(bn) {
   var buf = bn.toBuffer({size: 8});
   this.write(buf);
+  return this;
+};
+
+BufferWriter.prototype.writeUInt56LEBN = function(bn) {
+  var buf = bn.toBuffer({size: 7});
+  this.writeReverse(buf);
   return this;
 };
 

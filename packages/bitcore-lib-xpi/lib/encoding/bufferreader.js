@@ -87,6 +87,19 @@ BufferReader.prototype.readUInt32LE = function() {
   return val;
 };
 
+BufferReader.prototype.readUInt48LE = function() {
+  var val = this.buf.readUIntLE(this.pos, 6);
+  this.pos = this.pos + 6;
+  return val;
+};
+
+BufferReader.prototype.readUInt56LEBN = function() {
+  var buf = this.buf.slice(this.pos, this.pos + 7);
+  var bn = BN.fromBuffer(buf, { endian: 'little'});
+  this.pos = this.pos + 7;
+  return bn;
+};
+
 BufferReader.prototype.readInt32LE = function() {
   var val = this.buf.readInt32LE(this.pos);
   this.pos = this.pos + 4;

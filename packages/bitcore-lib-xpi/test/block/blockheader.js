@@ -10,18 +10,22 @@ var fs = require('fs');
 var should = require('chai').should();
 
 // https://test-insight.bitpay.com/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
-var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
-var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
-var dataRawId = '000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11';
-var data = require('../data/blk86756-testnet');
+var dataRawBlockBuffer = fs.readFileSync('test/data/blk15290-testnet.dat');
+var dataRawBlockBinary = fs.readFileSync('test/data/blk15290-testnet.dat', 'binary');
+var dataRawId = '0000000000388126659ce43a6933bf0a10e63847489df8be552ec77b8f229839';
+var data = require('../data/blk15290-testnet');
 
 describe('BlockHeader', function() {
   var version;
   var prevblockidbuf;
+  var epochblockbuf;
   var merklerootbuf;
+  var extendedMetadatabuf;
   var time;
   var bits;
   var nonce;
+  var size;
+  var height;
   var bh;
   var bhhex;
   var bhbuf;
@@ -30,16 +34,24 @@ describe('BlockHeader', function() {
     version = data.version;
     prevblockidbuf =  Buffer.from(data.prevblockidhex, 'hex');
     merklerootbuf = Buffer.from(data.merkleroothex, 'hex');
+    extendedMetadatabuf = Buffer.from(data.extendedMetadatahex, 'hex');
+    epochblockbuf = Buffer.from(data.epochblockhex, 'hex');
     time = data.time;
     bits = data.bits;
     nonce = data.nonce;
+    size = data.size;
+    height = data.height;
     bh = new BlockHeader({
-      version: version,
       prevHash: prevblockidbuf,
-      merkleRoot: merklerootbuf,
-      time: time,
       bits: bits,
-      nonce: nonce
+      time: time,
+      nonce: new BN.fromString(nonce),
+      version: version,
+      size: BN.fromNumber(size),
+      height: height,
+      epochBlock: epochblockbuf,
+      merkleRoot: merklerootbuf,
+      extendedMetadata: extendedMetadatabuf
     });
     bhhex = data.blockheaderhex;
     bhbuf = Buffer.from(bhhex, 'hex');
@@ -59,31 +71,42 @@ describe('BlockHeader', function() {
 
     it('should set all the variables', function() {
       var bh = new BlockHeader({
-        version: version,
         prevHash: prevblockidbuf,
-        merkleRoot: merklerootbuf,
-        time: time,
         bits: bits,
-        nonce: nonce
+        time: time,
+        nonce: new BN.fromString(nonce),
+        version: version,
+        size: new BN.fromNumber(size),
+        height: height,
+        epochBlock: epochblockbuf,
+        merkleRoot: merklerootbuf,
+        extendedMetadata: extendedMetadatabuf
       });
-      should.exist(bh.version);
       should.exist(bh.prevHash);
-      should.exist(bh.merkleRoot);
-      should.exist(bh.time);
       should.exist(bh.bits);
       should.exist(bh.nonce);
+      should.exist(bh.version);
+      should.exist(bh.size);
+      should.exist(bh.height);
+      should.exist(bh.epochBlock);
+      should.exist(bh.merkleRoot);
+      should.exist(bh.extendedMetadata);
     });
 
     it('will throw an error if the argument object hash property doesn\'t match', function() {
       (function() {
         var bh = new BlockHeader({
-          hash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
-          version: version,
+          hash: '0000000000388126659ce43a6933bf0a10e63847489df8be552ec77b8f229839',
           prevHash: prevblockidbuf,
-          merkleRoot: merklerootbuf,
-          time: time,
           bits: bits,
-          nonce: nonce
+          time: time,
+          nonce: new BN.fromString(nonce),
+          version: version,
+          size: new BN.fromNumber(size),
+          height: height,
+          epochBlock: epochblockbuf,
+          merkleRoot: merklerootbuf,
+          extendedMetadata: extendedMetadatabuf
         });
       }).should.throw('Argument object hash property does not match block hash.');
     });
@@ -91,11 +114,10 @@ describe('BlockHeader', function() {
   });
 
   describe('version', function() {
-    it('is interpreted as an int32le', function() {
-      var hex = 'ffffffff00000000000000000000000000000000000000000000000000000000000000004141414141414141414141414141414141414141414141414141414141414141010000000200000003000000';
+    it('is interpreted as an uint8', function() {
+      var hex = '4f0bfafc3e3ab70f3e8741c7b74d068298f0ed33c86d9b7dd0b039000000000020223e1b2218dc6000000000183422810c648bcb01a5030000000000ba3b000063a3214bb079b14a6a30e47febaa0ecbe4ee557aa8992980ee370100000000007bc0e12a069b62f53acc37c9b911dddfb0860cf8af11fe0aa7c859e1fd05d88f1406e05881e299367766d313e26c05564ec91bf721d31726bd6e46e60689539a';
       var header = BlockHeader.fromBuffer(Buffer.from(hex, 'hex'));
-      header.version.should.equal(-1);
-      header.timestamp.should.equal(1);
+      header.version.should.equal(1);
     });
   });
 
@@ -104,19 +126,26 @@ describe('BlockHeader', function() {
 
     it('should set all the variables', function() {
       var bh = BlockHeader.fromObject({
-        version: version,
-        prevHash: prevblockidbuf.toString('hex'),
-        merkleRoot: merklerootbuf.toString('hex'),
-        time: time,
-        bits: bits,
-        nonce: nonce
+        prevHash: prevblockidbuf,
+          bits: bits,
+          time: time,
+          nonce: BN.fromString(nonce),
+          version: version,
+          size: BN.fromNumber(size),
+          height: height,
+          epochBlock: epochblockbuf,
+          merkleRoot: merklerootbuf,
+          extendedMetadata: extendedMetadatabuf
       });
-      should.exist(bh.version);
       should.exist(bh.prevHash);
-      should.exist(bh.merkleRoot);
-      should.exist(bh.time);
       should.exist(bh.bits);
       should.exist(bh.nonce);
+      should.exist(bh.version);
+      should.exist(bh.size);
+      should.exist(bh.height);
+      should.exist(bh.epochBlock);
+      should.exist(bh.merkleRoot);
+      should.exist(bh.extendedMetadata);
     });
 
   });
@@ -125,12 +154,15 @@ describe('BlockHeader', function() {
 
     it('should set all the variables', function() {
       var json = bh.toJSON();
-      should.exist(json.version);
       should.exist(json.prevHash);
-      should.exist(json.merkleRoot);
-      should.exist(json.time);
       should.exist(json.bits);
       should.exist(json.nonce);
+      should.exist(json.version);
+      should.exist(json.size);
+      should.exist(json.height);
+      should.exist(json.epochBlock);
+      should.exist(json.merkleRoot);
+      should.exist(json.extendedMetadata);
     });
 
   });
@@ -219,16 +251,15 @@ describe('BlockHeader', function() {
 
     it('should instantiate from a raw block binary', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBinary);
-      x.version.should.equal(2);
-      new BN(x.bits).toString('hex').should.equal('1c3fffc0');
+      x.version.should.equal(1);
+      new BN(x.bits).toString('hex').should.equal('1b3e2220');
     });
 
     it('should instantiate from raw block buffer', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-      x.version.should.equal(2);
-      new BN(x.bits).toString('hex').should.equal('1c3fffc0');
+      x.version.should.equal(1);
+      new BN(x.bits).toString('hex').should.equal('1b3e2220');
     });
-
   });
 
   describe('#validTimestamp', function() {
@@ -261,7 +292,7 @@ describe('BlockHeader', function() {
     it('should validate proof of work as false because incorrect proof of work', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
       var nonce = x.nonce;
-      x.nonce = 0;
+      x.nonce = new BN.fromNumber(0);
       var valid = x.validProofOfWork(x);
       valid.should.equal(false);
       x.nonce = nonce;
@@ -270,10 +301,10 @@ describe('BlockHeader', function() {
   });
 
   describe('#getDifficulty', function() {
-    it('should get the correct difficulty for block 86756', function() {
+    it('should get the correct difficulty for block 15290', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-      x.bits.should.equal(0x1c3fffc0);
-      x.getDifficulty().should.equal(4);
+      x.bits.should.equal(0x1b3e2220);
+      x.getDifficulty().should.equal(1054.74840666);
     });
 
     it('should get the correct difficulty for testnet block 552065', function() {

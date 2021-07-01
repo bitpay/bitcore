@@ -29,7 +29,7 @@ var BlockHeader = function BlockHeader(arg) {
   this.bits = info.bits;
   this.time = info.time;
   this.timestamp = info.time;
-  this.reserved = info.reserved;
+  this.reserved = info.reserved || 0;
   this.nonce = info.nonce;
   this.version = info.version;
   this.size = info.size;
@@ -158,11 +158,11 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
   var info = {};
   info.prevHash = br.read(32);
   info.bits = br.readUInt32LE();
-  info.time = br.read(6);
-  info.reserved = br.readUInt32LE();
+  info.time = br.readUInt48LE();
+  info.reserved = br.readUInt16LE();
   info.nonce = br.readUInt64LEBN();
   info.version = br.readUInt8();
-  info.size = br.read(7);
+  info.size = br.readUInt56LEBN();
   info.height = br.readUInt32LE();
   info.epochBlock = br.read(32);
   info.merkleRoot = br.read(32);
@@ -190,9 +190,9 @@ BlockHeader.prototype.toObject = BlockHeader.prototype.toJSON = function toObjec
     bits: this.bits,
     time: this.time,
     reserved: this.reserved,
-    nonce: this.nonce,
+    nonce: this.nonce.toString(10),
     version: this.version,
-    size: this.size,
+    size: this.size.toNumber(10),
     height: this.height,
     epochBlock: BufferUtil.reverse(this.epochBlock).toString('hex'),
     merkleRoot: BufferUtil.reverse(this.merkleRoot).toString('hex'),
@@ -224,11 +224,11 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
   }
   bw.write(this.prevHash);
   bw.writeUInt32LE(this.bits);
-  bw.write(Buffer.alloc(6).write(this.time));
-  bw.writeUInt32LE(this.reserved);
-  bw.writeUInt32LE(this.nonce);
-  bw.writeInt32LE(this.version);
-  bw.write(Buffer.alloc(7).write(this.size))
+  bw.writeUInt48LE(this.time);
+  bw.writeUInt16LE(this.reserved);
+  bw.writeUInt64LEBN(this.nonce);
+  bw.writeUInt8(this.version);
+  bw.writeUInt56LEBN(this.size);
   bw.writeUInt32LE(this.height);
   bw.write(this.epochBlock);
   bw.write(this.merkleRoot);
@@ -279,8 +279,8 @@ BlockHeader.prototype._getHash = function hash() {
   bw.write(this.prevHash);
   bw.write(layer2Hash);
 
-  var buf = this.toBuffer();
-  return Hash.sha256sha256(buf);
+  var buf = bw.toBuffer();
+  return Hash.sha256(buf);
 };
 
 /**
@@ -289,15 +289,15 @@ BlockHeader.prototype._getHash = function hash() {
  BlockHeader.prototype._getLayer3Hash = function hash() {
   var bw = new BufferWriter();
 
-  bw.writeInt32LE(this.version);
-  bw.writeUIntLE(this.size, 0, 7)
+  bw.writeUInt8(this.version);
+  bw.writeUInt56LEBN(this.size)
   bw.writeUInt32LE(this.height);
   bw.write(this.epochBlock);
   bw.write(this.merkleRoot);
   bw.write(this.extendedMetadata);
 
-  var buf = bw.concat().toBuffer();
-  return Hash.sha256sha256(buf);
+  var buf = bw.toBuffer();
+  return Hash.sha256(buf);
 };
 
 /**
@@ -307,13 +307,13 @@ BlockHeader.prototype._getHash = function hash() {
   var bw = new BufferWriter();
 
   bw.writeUInt32LE(this.bits);
-  bw.writeUIntLE(this.time, 0, 6);
-  bw.writeUInt32LE(this.reserved);
-  bw.writeUInt32LE(this.nonce);
+  bw.writeUInt48LE(this.time);
+  bw.writeUInt16LE(this.reserved);
+  bw.writeUInt64LEBN(this.nonce);
   bw.write(layer3Hash);
 
-  var buf = bw.concat().toBuffer();
-  return Hash.sha256sha256(buf);
+  var buf = bw.toBuffer();
+  return Hash.sha256(buf);
 };
 
 var idProperty = {
@@ -365,7 +365,7 @@ BlockHeader.prototype.inspect = function inspect() {
 };
 
 BlockHeader.Constants = {
-  START_OF_HEADER: 8, // Start buffer position in raw block data
+  START_OF_HEADER: 0, // Start buffer position in raw block data
   MAX_TIME_OFFSET: 2 * 60 * 60, // The max a timestamp can be in the future
   LARGEST_HASH: new BN('10000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
