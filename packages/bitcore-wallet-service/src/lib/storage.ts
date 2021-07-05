@@ -16,6 +16,7 @@ import {
   TxProposal,
   Wallet
 } from './model';
+import { DonationStorage } from './model/donation';
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
@@ -241,15 +242,15 @@ export class Storage {
     );
   }
 
-  storeDonation(donationInfor, cb) {
+  storeDonation(donationStorage, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
-      logger.warn('Trying to store a notification with close DB', donationInfor);
+      logger.warn('Trying to store a notification with close DB', donationStorage);
       return;
     }
 
     this.db.collection(collections.DONATION).insertOne(
-      donationInfor,
+      donationStorage,
       {
         w: 1
       },
@@ -271,6 +272,21 @@ export class Storage {
         return cb(null, result);
       }
     );
+  }
+
+  fetchDonationInToday(cb) {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    this.db.collection(collections.DONATION).find(
+      { "createdOn": { $gte: start.getTime(), $lt: end.getTime() } }
+    ).
+      toArray((err, result: DonationStorage[]) => {
+        const donationInToday = _.filter(result, item => item.txidDonation);
+        return cb(null, donationInToday);
+      });
   }
 
   updateDonation(donationInfo, cb) {
