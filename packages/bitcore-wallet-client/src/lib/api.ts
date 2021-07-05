@@ -22,7 +22,8 @@ var Bitcore_ = {
   bch: CWC.BitcoreLibCash,
   eth: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
-  doge: CWC.BitcoreLibDoge
+  doge: CWC.BitcoreLibDoge,
+  ltc: CWC.BitcoreLibLtc
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -68,6 +69,7 @@ export class API extends EventEmitter {
   static Bitcore = CWC.BitcoreLib;
   static BitcoreCash = CWC.BitcoreLibCash;
   static BitcoreDoge = CWC.BitcoreLibDoge;
+  static BitcoreLtc = CWC.BitcoreLibLtc;
 
   constructor(opts?) {
     super();
@@ -2840,9 +2842,8 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token
-              );
+              const tokenCredentials =
+                client.credentials.getTokenCredentials(token);
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2855,14 +2856,13 @@ export class API extends EventEmitter {
               log.info(
                 `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
               );
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials(
-                {
+              const multisigEthCredentials =
+                client.credentials.getMultisigEthCredentials({
                   walletName: info.walletName,
                   multisigContractAddress: info.multisigContractAddress,
                   n: info.n,
                   m: info.m
-                }
-              );
+                });
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
@@ -2875,9 +2875,8 @@ export class API extends EventEmitter {
                     return;
                   }
                   log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(
-                    token
-                  );
+                  const tokenCredentials =
+                    multisigEthClient.credentials.getTokenCredentials(token);
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);
@@ -2909,6 +2908,8 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
+        ['ltc', 'testnet'],
+        ['ltc', 'livenet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true]
       ];

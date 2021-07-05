@@ -377,6 +377,7 @@ export class PushNotificationsService {
       eth: 'ETH',
       xrp: 'XRP',
       doge: 'DOGE',
+      ltc: 'LTC',
       usdc: 'USDC',
       pax: 'PAX',
       gusd: 'GUSD',
