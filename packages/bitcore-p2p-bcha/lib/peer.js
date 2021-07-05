@@ -155,13 +155,13 @@ Peer.prototype.connect = function() {
   });
 
   this._addSocketEventHandlers();
-  this.socket.connect({
-    port: this.port,
-    host: this.host,
-    localAddress: '127.0.0.1',
-    localPort: 8334
-  });
-  // this.socket.connect(this.port, this.host);
+  // this.socket.connect({
+  //   port: this.port,
+  //   host: this.host,
+  //   localAddress: '127.0.0.1',
+  //   localPort: 8334
+  // });
+  this.socket.connect(this.port, this.host);
   return this;
 };
 
