@@ -52,7 +52,8 @@ export class BlockchainMonitor {
             bch: {},
             eth: {},
             xrp: {},
-            doge: {}
+            doge: {},
+            ltc: {}
           };
 
           const coinNetworkPairs = [];

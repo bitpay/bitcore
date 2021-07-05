@@ -185,7 +185,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should get historical rates from ts to now', function(done) {
-      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge'];
+      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc'];
       var clock = sinon.useFakeTimers({toFake: ['Date']});
       async.each([1.00, 2.00, 3.00, 4.00, 5.00], function(value, next) {
         clock.tick(100);
@@ -261,6 +261,7 @@ describe('Fiat rate service', function() {
           should.not.exist(res['eth']);
           should.not.exist(res['xrp']);
           should.not.exist(res['doge']);
+          should.not.exist(res['ltc']);
 
           res['btc'][3].ts.should.equal(100);
           res['btc'][3].rate.should.equal(1.00);
@@ -280,7 +281,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should return current rates if missing opts.ts when fetching historical rates', function(done) {
-      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge'];
+      const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc'];
       var clock = sinon.useFakeTimers({toFake: ['Date']});
       async.each([1.00, 2.00, 3.00, 4.00], function(value, next) {
         clock.tick(11 * 60 * 1000);
@@ -384,6 +385,13 @@ describe('Fiat rate service', function() {
         code: 'EUR',
         rate: 0.04,
       }];
+      var ltc = [{
+        code: 'USD',
+        rate: 150,
+      }, {
+        code: 'EUR',
+        rate: 170,
+      }];
 
       request.get.withArgs({
         url: 'https://bitpay.com/api/rates/BTC',
@@ -405,6 +413,10 @@ describe('Fiat rate service', function() {
         url: 'https://bitpay.com/api/rates/DOGE',
         json: true
       }).yields(null, null, doge);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/LTC',
+        json: true
+      }).yields(null, null, ltc);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -443,13 +455,21 @@ describe('Fiat rate service', function() {
                   res.fetchedOn.should.equal(100);
                   res.rate.should.equal(0.05);
                   service.getRate({
-                    code: 'EUR'
+                    code: 'USD',
+                    coin: 'ltc',
                   }, function(err, res) {
                     should.not.exist(err);
                     res.fetchedOn.should.equal(100);
-                    res.rate.should.equal(234.56);
-                    clock.restore();
-                    done();
+                    res.rate.should.equal(150);
+                    service.getRate({
+                      code: 'EUR'
+                    }, function(err, res) {
+                      should.not.exist(err);
+                      res.fetchedOn.should.equal(100);
+                      res.rate.should.equal(234.56);
+                      clock.restore();
+                      done();
+                    });
                   });
                 });
               });
