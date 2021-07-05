@@ -280,10 +280,10 @@ export class Storage {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    this.db.collection(collections.DONATION).find(
-      { "createdOn": { $gte: start.getTime(), $lt: end.getTime() } }
-    ).
-      toArray((err, result: DonationStorage[]) => {
+    this.db
+      .collection(collections.DONATION)
+      .find({ createdOn: { $gte: start.getTime(), $lt: end.getTime() } })
+      .toArray((err, result: DonationStorage[]) => {
         const donationInToday = _.filter(result, item => item.txidDonation);
         return cb(null, donationInToday);
       });

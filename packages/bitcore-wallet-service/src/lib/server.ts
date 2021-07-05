@@ -1784,10 +1784,12 @@ export class WalletService {
   }
 
   getRemainingAmount(cb) {
-    this.storage.fetchDonationInToday((err, donationInToday : DonationStorage) => {
+    this.storage.fetchDonationInToday((err, donationInToday: DonationStorage) => {
       if (err) return 0;
       if (_.isEmpty(donationInToday)) return cb(config.donationRemaining.totalAmountLotusInDay);
-      const remaningAmount = config.donationRemaining.totalAmountLotusInDay - _.size(donationInToday) * config.donationRemaining.receiveAmountLotus;
+      const remaningAmount =
+        config.donationRemaining.totalAmountLotusInDay -
+        _.size(donationInToday) * config.donationRemaining.receiveAmountLotus;
       return cb(remaningAmount);
     });
   }
@@ -2981,7 +2983,7 @@ export class WalletService {
               if (err) return cb(err);
               this.confirmationAndBroadcastRawTx(wallet, txp, sub, (err, txp) => {
                 if (err) return cb(err);
-                const donationStorage : DonationStorage = {
+                const donationStorage: DonationStorage = {
                   txidDonation: txp.txid,
                   amount: txp.outputs[0].amount,
                   isGiven: false,
