@@ -1,6 +1,6 @@
 import express from 'express';
-import { formatTimestamp, logger } from './logger';
 import _ from 'lodash';
+import { formatTimestamp, logger } from './logger';
 
 type TimedRequest = {
   startTime?: Date;
