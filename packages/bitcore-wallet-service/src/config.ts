@@ -107,6 +107,7 @@ module.exports = {
   donationRemaining: {
     minMoneydonation: 0.01, // USD
     receiveAmountLotus: 100000000,
+    totalAmountLotusInDay: 10000000000,
     donationToAddresses: [
       {
         coin: 'bch',

@@ -36,6 +36,7 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
 import { Validation } from 'crypto-wallet-core';
+import { DonationInfo, DonationStorage } from './model/donation';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -1782,32 +1783,27 @@ export class WalletService {
     });
   }
 
+  getRemainingAmount(cb) {
+    this.storage.fetchDonationInToday((err, donationInToday: DonationStorage) => {
+      if (err) return 0;
+      if (_.isEmpty(donationInToday)) return cb(config.donationRemaining.totalAmountLotusInDay);
+      const remaningAmount =
+        config.donationRemaining.totalAmountLotusInDay -
+        _.size(donationInToday) * config.donationRemaining.receiveAmountLotus;
+      return cb(remaningAmount);
+    });
+  }
+
   getRemainingInfo(opts, cb) {
-    const infor: {
-      remaining?: number;
-      minMoneydonation?: number;
-      receiveAmountLotus?: number;
-      donationToAddresses?: any[];
-      donationCoin?: string;
-    } = {};
-    async.parallel(
-      [
-        next => {
-          this.getBalanceDonation(opts, (err, balance) => {
-            infor.remaining = err ? 0 : balance.availableAmount;
-            infor.minMoneydonation = config.donationRemaining.minMoneydonation;
-            infor.receiveAmountLotus = config.donationRemaining.receiveAmountLotus;
-            infor.donationToAddresses = config.donationRemaining.donationToAddresses;
-            infor.donationCoin = config.donationRemaining.donationCoin;
-            next();
-          });
-        }
-      ],
-      err => {
-        if (err) return cb(err);
-        return cb(null, infor);
-      }
-    );
+    const infor: DonationInfo = {};
+    this.getRemainingAmount(remaningAmount => {
+      infor.remaining = remaningAmount;
+      infor.minMoneydonation = config.donationRemaining.minMoneydonation;
+      infor.receiveAmountLotus = config.donationRemaining.receiveAmountLotus;
+      infor.donationToAddresses = config.donationRemaining.donationToAddresses;
+      infor.donationCoin = config.donationRemaining.donationCoin;
+      return cb(null, infor);
+    });
   }
 
   /**
@@ -2834,9 +2830,9 @@ export class WalletService {
     return txp.isDonation && txp.outputs[0].toAddress == addressObjDonation.address;
   }
 
-  _sendLotusDotation(addressReceive, amountReceive, cb) {
+  _sendLotusDonation(addressReceive, amountReceive, cb) {
     // this parse may fail
-    var child = shell.exec(`bash send-dotation.sh ${addressReceive} ${amountReceive}`, { async: true });
+    var child = shell.exec(`bash send-donation.sh ${addressReceive} ${amountReceive}`, { async: true });
     child.stdout.on('data', function(data) {
       const firstvariable = 'Transaction Broadcasted: TXID: ';
       const secondvariable = '\\n';
@@ -2857,9 +2853,9 @@ export class WalletService {
       this.storage.fetchDonationByTxid(txp.txid, (err, donationInfo) => {
         if (_.isEmpty(donationInfo) || err) return cb('no donation infor');
         if (!_.isEmpty(donationInfo.txidGiveLotus) || donationInfo.isGiven) return cb('this tx is received lotus');
-        this.getRemainingInfo({}, (err, remainingData) => {
+        this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
           if (err) return cb(err);
-          this._sendLotusDotation(donationInfo.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
+          this._sendLotusDonation(donationInfo.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
             donationInfo.txidGiveLotus = data;
             donationInfo.isGiven = true;
             this.storage.updateDonation(donationInfo, err => {
@@ -2938,7 +2934,7 @@ export class WalletService {
       if (err) return cb(err);
       if (amountUsd + amountUsd * 0.1 < config.donationRemaining.minMoneydonation)
         return cb('not enough money donation to receive lotus');
-      this.getRemainingInfo({}, (err, remainingData) => {
+      this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
         if (err) return cb(err);
         if (remainingData.remaining < config.donationRemaining.receiveAmountLotus)
           return cb('not enough lotus to send for you');
@@ -2987,8 +2983,7 @@ export class WalletService {
               if (err) return cb(err);
               this.confirmationAndBroadcastRawTx(wallet, txp, sub, (err, txp) => {
                 if (err) return cb(err);
-                const now = Date.now();
-                const donationInfor = {
+                const donationStorage: DonationStorage = {
                   txidDonation: txp.txid,
                   amount: txp.outputs[0].amount,
                   isGiven: false,
@@ -2996,10 +2991,10 @@ export class WalletService {
                   receiveLotusAddress: txp.receiveLotusAddress || undefined,
                   txidGiveLotus: txp.txidGiveLotus || undefined,
                   addressDonation: txp.from,
-                  createdOn: Math.floor(now / 1000)
+                  createdOn: Date.now()
                 };
 
-                this.storage.storeDonation(donationInfor, err => {
+                this.storage.storeDonation(donationStorage, err => {
                   if (err) logger.error('Could not store donationInfor: ', err);
                   txp.isBroadCastDonation = true;
                   return cb(null, txp);
