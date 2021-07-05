@@ -63,6 +63,7 @@ Block._fromObject = function _fromObject(data) {
   });
   var info = {
     header: BlockHeader.fromObject(data.header),
+    metadata: data.metadata || 0x00,
     transactions: transactions
   };
   return info;
@@ -86,6 +87,7 @@ Block._fromBufferReader = function _fromBufferReader(br) {
   var info = {};
   $.checkState(!br.finished(), 'No block data received');
   info.header = BlockHeader.fromBufferReader(br);
+  info.metadata = br.readUInt8();
   var transactions = br.readVarintNum();
   info.transactions = [];
   for (var i = 0; i < transactions; i++) {
@@ -145,6 +147,7 @@ Block.prototype.toObject = Block.prototype.toJSON = function toObject() {
   });
   return {
     header: this.header.toObject(),
+    metadata: this.metadata,
     transactions: transactions
   };
 };
@@ -172,6 +175,7 @@ Block.prototype.toBufferWriter = function toBufferWriter(bw) {
     bw = new BufferWriter();
   }
   bw.write(this.header.toBuffer());
+  bw.writeUInt8(this.metadata);
   bw.writeVarintNum(this.transactions.length);
   for (var i = 0; i < this.transactions.length; i++) {
     this.transactions[i].toBufferWriter(bw);
@@ -274,7 +278,7 @@ Block.prototype.inspect = function inspect() {
 };
 
 Block.Values = {
-  START_OF_BLOCK: 8, // Start of block in raw block data
+  START_OF_BLOCK: 0, // Start of block in raw block data
   NULL_HASH: Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
 

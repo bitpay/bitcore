@@ -77,6 +77,8 @@ BlockHeader._fromObject = function _fromObject(data) {
   var merkleRoot = data.merkleRoot;
   var epochBlock = data.epochBlock;
   var extendedMetadata = data.extendedMetadata;
+  var nonce = data.nonce;
+  var size = data.size;
   if (_.isString(data.prevHash)) {
     prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
   }
@@ -89,15 +91,22 @@ BlockHeader._fromObject = function _fromObject(data) {
   if (_.isString(data.extendedMetadata)) {
     extendedMetadata = BufferUtil.reverse(Buffer.from(data.extendedMetadata, 'hex'));
   }
+  if (_.isString(data.nonce)) {
+    nonce = BN.fromString(data.nonce);
+  }
+  if (_.isNumber(data.size)) {
+    size = BN.fromNumber(data.size);
+  }
+
   var info = {
     hash: data.hash,
     prevHash: prevHash,
     bits: data.bits,
     timestamp: data.time,
     reserved: data.reserved,
-    nonce: data.nonce,
+    nonce: nonce,
     version: data.version,
-    size: data.size,
+    size: size,
     height: data.height,
     epochBlock: epochBlock,
     merkleRoot: merkleRoot,

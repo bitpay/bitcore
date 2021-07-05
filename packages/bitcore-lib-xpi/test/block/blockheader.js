@@ -45,7 +45,7 @@ describe('BlockHeader', function() {
       prevHash: prevblockidbuf,
       bits: bits,
       time: time,
-      nonce: new BN.fromString(nonce),
+      nonce: BN.fromString(nonce),
       version: version,
       size: BN.fromNumber(size),
       height: height,
@@ -74,9 +74,9 @@ describe('BlockHeader', function() {
         prevHash: prevblockidbuf,
         bits: bits,
         time: time,
-        nonce: new BN.fromString(nonce),
+        nonce: BN.fromString(nonce),
         version: version,
-        size: new BN.fromNumber(size),
+        size: BN.fromNumber(size),
         height: height,
         epochBlock: epochblockbuf,
         merkleRoot: merklerootbuf,
@@ -100,7 +100,7 @@ describe('BlockHeader', function() {
           prevHash: prevblockidbuf,
           bits: bits,
           time: time,
-          nonce: new BN.fromString(nonce),
+          nonce: BN.fromString(nonce),
           version: version,
           size: new BN.fromNumber(size),
           height: height,
@@ -172,21 +172,28 @@ describe('BlockHeader', function() {
     it('should parse this known json string', function() {
 
       var jsonString = JSON.stringify({
-        version: version,
         prevHash: prevblockidbuf,
-        merkleRoot: merklerootbuf,
-        time: time,
         bits: bits,
-        nonce: nonce
+        time: time,
+        nonce: nonce,
+        version: version,
+        size: size,
+        height: height,
+        epochBlock: epochblockbuf,
+        merkleRoot: merklerootbuf,
+        extendedMetadata: extendedMetadatabuf
       });
 
       var json = new BlockHeader(JSON.parse(jsonString));
-      should.exist(json.version);
       should.exist(json.prevHash);
-      should.exist(json.merkleRoot);
-      should.exist(json.time);
       should.exist(json.bits);
       should.exist(json.nonce);
+      should.exist(json.version);
+      should.exist(json.size);
+      should.exist(json.height);
+      should.exist(json.epochBlock);
+      should.exist(json.merkleRoot);
+      should.exist(json.extendedMetadata);
     });
 
   });
@@ -307,25 +314,25 @@ describe('BlockHeader', function() {
       x.getDifficulty().should.equal(1054.74840666);
     });
 
-    it('should get the correct difficulty for testnet block 552065', function() {
+    it('should get the correct difficulty for testnet block 5520', function() {
       var x = new BlockHeader({
-        bits: 0x1b00c2a8
+        bits: 0x1c02e9ac
       });
-      x.getDifficulty().should.equal(86187.62562209);
+      x.getDifficulty().should.equal(87.88718228);
     });
 
-    it('should get the correct difficulty for livenet block 373043', function() {
+    it('should get the correct difficulty for livenet block 3730', function() {
       var x = new BlockHeader({
-        bits: 0x18134dc1
+        bits: 0x1c04bb64
       });
-      x.getDifficulty().should.equal(56957648455.01001);
+      x.getDifficulty().should.equal(54.09898231);
     });
 
-    it('should get the correct difficulty for livenet block 340000', function() {
+    it('should get the correct difficulty for livenet block 18000', function() {
       var x = new BlockHeader({
-        bits: 0x1819012f
+        bits: 0x1b2acda0
       });
-      x.getDifficulty().should.equal(43971662056.08958);
+      x.getDifficulty().should.equal(1531.07630531);
     });
 
     it('should use exponent notation if difficulty is larger than Javascript number', function() {
