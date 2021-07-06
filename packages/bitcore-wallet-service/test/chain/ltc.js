@@ -1,17 +1,17 @@
 'use strict';
 
-const  _ = require('lodash');
+const _ = require('lodash');
 const chai = require('chai');
 const should = chai.should();
-const { BitcoreLibDoge } = require ('crypto-wallet-core');
+const { BitcoreLibLtc } = require('crypto-wallet-core');
 const { ChainService } = require('../../ts_build/lib/chain');
-const { DogeChain } = require('../../ts_build/lib/chain/doge');
+const { LtcChain } = require('../../ts_build/lib/chain/ltc');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
 const Common = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
-describe('Chain DOGE', () => {
+describe('Chain LTC', () => {
   describe('#getBitcoreTx', () => {
     it('should create a valid bitcore TX', () => {
       const txp = TxProposal.fromObj(aTXP());
@@ -54,23 +54,23 @@ describe('Chain DOGE', () => {
   });
 
   describe('#getEstimatedSize', () => {
-    let doge, fromAddress, simpleUtxo, changeAddress, toAddress, privateKey;
+    let ltc, fromAddress, simpleUtxoWith1LTC, changeAddress, toAddress, privateKey;
 
-    before(() => {
-      doge = new DogeChain();
-      fromAddress = 'D9w9sRrMYictva4me78h3EsivKdsYUffY3';
-      toAddress = 'DCcS6pGDLUfXZSxQEMKJgmBjYNRcW4wuo4';
-      changeAddress = 'D7J3Mqji3bfPKMXoSmaCQtk7nhLULaNmUM';
-      privateKey = 'QWL2M3x4s8LVroDNZu3jFnWmTSVDL8RtgKvc7Uj1VasHdPeisD1o';
-      simpleUtxo = {
+    before(() =>  {
+      ltc = new LtcChain();
+      fromAddress = 'LcA1gPGGxYEGL2FS1eErMnWKSCkPUJonxH';
+      toAddress = 'LYNk38CXCPavnf3wmhkymkC9HVrXj6zMQn';
+      changeAddress = 'LLMoDN22Jhyuy3C5VrwuRfmmQEAxyFhsyd';
+      privateKey = 'T4EAFWF8i3vFtgXW8nwRQWgSo2E3VEp5D3vbv27umAjUCQQrsqFQ';
+      simpleUtxoWith1LTC = {
         address: fromAddress,
         txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
         outputIndex: 0,
-        script: BitcoreLibDoge.Script.buildPublicKeyHashOut(fromAddress).toString(),
-        satoshis: 1e9,
+        script: BitcoreLibLtc.Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 1e8,
       };
 
-      const privKey = new BitcoreLibDoge.PrivateKey();
+      const privKey = new BitcoreLibLtc.PrivateKey();
     });
 
     it('1 input p2pkh,1 output p2pkh: Margin should be 10%', () => {
@@ -78,48 +78,48 @@ describe('Chain DOGE', () => {
       delete x.changeAddress;
       x.outputs.pop();
       x.addressType = Constants.SCRIPT_TYPES.P2PKH;
-      const estimatedLength = doge.getEstimatedSize(x);
+      const estimatedLength = ltc.getEstimatedSize(x);
 
       // Create a similar TX.
-      let tx = new BitcoreLibDoge.Transaction();
-      tx.from(simpleUtxo)
-        .to([{ address: toAddress, satoshis: 1e9 - 1e8 }])
+      let tx = new BitcoreLibLtc.Transaction();
+      tx.from(simpleUtxoWith1LTC)
+        .to([{ address: toAddress, satoshis: 1e8 - 7000 }])
         .sign(privateKey);
 
-      const actualLength = tx.serialize().length/2;
+      const actualLength = tx.serialize().length / 2;
 
       // Check margin is ~0.0
       ((Math.abs(actualLength-estimatedLength))/actualLength).should.not.be.above(0.05);
     });
 
-    const p2shPrivateKey1 = BitcoreLibDoge.PrivateKey.fromWIF('QQu6YLUqhPdHSGDyPWk1nB3225NTpMg9HE6eecFmE4169dTjtxjX');
+    const p2shPrivateKey1 = BitcoreLibLtc.PrivateKey.fromWIF('T4EAFWF8i3vFtgXW8nwRQWgSo2E3VEp5D3vbv27umAjUCQQrsqFQ');
     const p2shPublicKey1 = p2shPrivateKey1.toPublicKey();
-    const p2shPrivateKey2 = BitcoreLibDoge.PrivateKey.fromWIF('QQrWAEuSPk8TZF9rakoHGNiKmmhzshSEYkRp2J59TrhCXTkraP65');
+    const p2shPrivateKey2 = BitcoreLibLtc.PrivateKey.fromWIF('T4PcE9qqC9UNhB5Xb694epiXXEYW6xp6aA8QHT4UB83UfcDVicew');
     const p2shPublicKey2 = p2shPrivateKey2.toPublicKey();
 
-    const p2shAddress = BitcoreLibDoge.Address.createMultisig([
+    const p2shAddress = BitcoreLibLtc.Address.createMultisig([
       p2shPublicKey1,
       p2shPublicKey2,
     ], 2, 'testnet');
-    const p2shUtxoWithDOGE = {
+    const p2shUtxoWith1BTC = {
       address: p2shAddress.toString(),
       txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
       outputIndex: 0,
-      script: BitcoreLibDoge.Script(p2shAddress).toString(),
-      satoshis: 3e9
+      script: BitcoreLibLtc.Script(p2shAddress).toString(),
+      satoshis: 1e8
     };
 
     it('1 input p2sh, 2 P2PKH outputs: ', () => {
       let x = TxProposal.fromObj(aTXP());
 
       // Create a similar TX.
-      let tx = new BitcoreLibDoge.Transaction();
-      tx.from(p2shUtxoWithDOGE, [p2shPublicKey1, p2shPublicKey2], 2)
-        .to([{ address: toAddress, satoshis: 1e9 }, { address: toAddress, satoshis: 2e8 }])
+      let tx = new BitcoreLibLtc.Transaction();
+      tx.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2], 2)
+        .to([{ address: toAddress, satoshis: 1e7 }, { address: toAddress, satoshis: 1e6 }])
         .change(changeAddress)
         .sign(p2shPrivateKey1)
         .sign(p2shPrivateKey2);
-      const estimatedLength = doge.getEstimatedSize(x);
+      const estimatedLength = ltc.getEstimatedSize(x);
 
       const actualLength = tx.serialize().length / 2;
       ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
@@ -131,10 +131,10 @@ describe('Chain DOGE', () => {
       // just to force the desired calculation
       x.addressType = Constants.SCRIPT_TYPES.P2WPKH;
 
-      x.outputs[0].toAddress = 'DGMBDFnEDepajnZZNS8F6WC3BjTLMyaLCo';
+      x.outputs[0].toAddress = 'LU8DsGPyFtgq3nZGHR3twfGsVUZ8nWAbSq';
       x.outputs.pop();
       delete x.changeAddress;
-      const estimatedLength = doge.getEstimatedSize(x);
+      const estimatedLength = ltc.getEstimatedSize(x);
 
       // https://bitcoin.stackexchange.com/questions/84004/how-do-virtual-size-stripped-size-and-raw-size-compare-between-legacy-address-f
       const actualLength = 437 / 4; // this is the vsize
@@ -147,7 +147,7 @@ describe('Chain DOGE', () => {
       x.outputs[0].toAddress = toAddress;
       delete x.changeAddress;
       x.outputs.pop();
-      const estimatedLength = doge.getEstimatedSize(x);
+      const estimatedLength = ltc.getEstimatedSize(x);
 
       // from https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
       const actualLength = (346 + 2 * 108) / 4; // this is the vsize
@@ -163,7 +163,7 @@ const aTXP = () => {
     'id': '75c34f49-1ed6-255f-e9fd-0c71ae75ed1e',
     'walletId': '1',
     'creatorId': '1',
-    'coin': 'doge',
+    'coin': 'ltc',
     'network': 'livenet',
     'amount': 30000000,
     'message': 'some message',
@@ -171,7 +171,7 @@ const aTXP = () => {
     'changeAddress': {
       'version': '1.0.0',
       'createdOn': 1424372337,
-      'address': 'D7J3Mqji3bfPKMXoSmaCQtk7nhLULaNmUM',
+      'address': 'LLMoDN22Jhyuy3C5VrwuRfmmQEAxyFhsyd',
       'path': 'm/2147483647/1/0',
       'publicKeys': [
         '030562cb099e6043dc499eb359dd97c9d500a3586498e4bcf0228a178cc20e6f16',
@@ -182,9 +182,9 @@ const aTXP = () => {
     'inputs': [{
       'txid': '6ee699846d2d6605f96d20c7cc8230382e5da43342adb11b499bbe73709f06ab',
       'vout': 8,
-      'satoshis': 4e9,
+      'satoshis': 100000000,
       'scriptPubKey': 'a914a8a9648754fbda1b6c208ac9d4e252075447f36887',
-      'address': 'D9w9sRrMYictva4me78h3EsivKdsYUffY3',
+      'address': 'LcA1gPGGxYEGL2FS1eErMnWKSCkPUJonxH',
       'path': 'm/2147483647/0/1',
       'publicKeys': ['0319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f', '03b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d101301']
     }],
@@ -197,12 +197,12 @@ const aTXP = () => {
     'actions': [],
     'fee': 10000,
     'outputs': [{
-      'toAddress': 'DCcS6pGDLUfXZSxQEMKJgmBjYNRcW4wuo4',
-      'amount': 1e9,
+      'toAddress': 'LYNk38CXCPavnf3wmhkymkC9HVrXj6zMQn',
+      'amount': 10000000,
       'message': 'first message'
     }, {
-      'toAddress': 'DGr5fz15Qi41P3ftyhdkrKqLCQpjFuCvHC',
-      'amount': 2e9,
+      'toAddress': 'LU8DsGPyFtgq3nZGHR3twfGsVUZ8nWAbSq',
+      'amount': 20000000,
       'message': 'second message'
     }, ],
     'outputOrder': [0, 1, 2]
