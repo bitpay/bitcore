@@ -185,7 +185,7 @@ Block.prototype.toBufferWriter = function toBufferWriter(bw) {
 
 /**
  * Will iterate through each transaction and return an array of hashes
- * @returns {Array} - An array with transaction hashes
+ * @returns {Array} - An array with transaction hashes (with txid component)
  */
 Block.prototype.getTransactionHashes = function getTransactionHashes() {
   var hashes = [];
@@ -193,7 +193,11 @@ Block.prototype.getTransactionHashes = function getTransactionHashes() {
     return [Block.Values.NULL_HASH];
   }
   for (var t = 0; t < this.transactions.length; t++) {
-    hashes.push(this.transactions[t]._getHash());
+    var txid = this.transactions[t]._getTxid();
+    var hash = this.transactions[t]._getHash();
+    var buf = Buffer.concat(hash, txid);
+    var resultHash = Hash.sha256sha256(buf);
+    hashes.push(resultHash);
   }
   return hashes;
 };

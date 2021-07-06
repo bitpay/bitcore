@@ -85,6 +85,9 @@ Transaction.FEE_PER_KB = 100000;
 Transaction.CHANGE_OUTPUT_MAX_SIZE = 20 + 4 + 34 + 4;
 Transaction.MAXIMUM_EXTRA_SIZE = 4 + 9 + 9 + 4;
 
+Transaction.NULL_HASH = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
+
+
 /* Constructors and Serialization */
 
 /**
@@ -110,6 +113,16 @@ var hashProperty = {
 Object.defineProperty(Transaction.prototype, 'hash', hashProperty);
 Object.defineProperty(Transaction.prototype, 'id', hashProperty);
 
+var txidProperty = {
+  configurable: false,
+  enumerable: true,
+  get: function() {
+    this._txid = new BufferReader(this._getTxid()).readReverse().toString('hex');
+    return this._txid;
+  }
+};
+Object.defineProperty(Transaction.prototype, 'txid', txidProperty);
+
 var ioProperty = {
   configurable: false,
   enumerable: true,
@@ -130,6 +143,104 @@ Object.defineProperty(Transaction.prototype, 'outputAmount', ioProperty);
 Transaction.prototype._getHash = function() {
   return Hash.sha256sha256(this.toBuffer());
 };
+
+Transaction.prototype._getTxid = function() {
+  var writer = new BufferWriter();
+  writer.writeInt32LE(this.version);
+
+  var inputHashes = this._getTxInputHashes();
+  var outputHashes = this._getTxOutputHashes();
+  var inputMerkleRootAndHeight = this._computeMerkleRoot(inputHashes);
+  var outputMerkleRootAndHeight = this._computeMerkleRoot(outputHashes);
+
+  writer.write(inputMerkleRootAndHeight.root);
+  writer.writeUInt8(inputMerkleRootAndHeight.height);
+
+  writer.write(outputMerkleRootAndHeight.root);
+  writer.writeUInt8(outputMerkleRootAndHeight.height);
+
+  writer.writeUInt32LE(this.nLockTime);
+
+  return Hash.sha256sha256(writer.toBuffer());
+}
+
+/**
+ * Interate through each input in the transaction and return an array of hashes
+ * @returns {Array} - An array with input hash hashes
+ */
+Transaction.prototype._getTxInputHashes = function() {
+  var hashes = [];
+
+  for (var i = 0; i < this.inputs.length; i++) {
+    var input = this.inputs[i];
+    var writer = new BufferWriter();
+
+    // The input hash is calculated by hashing together prevTxId buffer and the sequence number
+    writer.write(input.prevTxId);
+    writer.writeUInt32LE(input.sequenceNumber);
+
+    var hash = Hash.sha256sha256(writer.toBuffer());
+
+    hashes.push(hash);
+  }
+
+  return hashes;
+}
+
+/**
+ * Interate through each input in the transaction and return an array of hashes
+ * @returns {Array} - An array with input hash hashes
+ */
+ Transaction.prototype._getTxOutputHashes = function() {
+  var hashes = [];
+
+  for (var i = 0; i < this.outputs.length; i++) {
+    var output = this.outputs[i];
+    // The output hash is calculated by hashing the output data
+    var writer = output.toBufferWriter();
+    var hash = Hash.sha256sha256(writer.toBuffer());
+
+    hashes.push(hash);
+  }
+
+  return hashes;
+}
+
+/**
+ * Compute the merkle root and return the merkle root and the height of the merkle tree
+ * @param {*} hashes The hash array
+ * @returns { root: string, height: number} - The merkle root and the height
+ */
+Transaction.prototype._computeMerkleRoot = function(hashes) {
+  if (hashes.length === 0) {
+    return {
+      root: [Transaction.NULL_HASH],
+      height: 0
+    };
+  }
+
+  var j = 0;
+  var height = 1;
+
+  if (hashes.length %2 === 1) {
+    hashes.push(Transaction.NULL_HASH);
+  }
+
+  for (var size = hashes.length; size > 1; size = Math.floor((size + 1) / 2)) {
+    height += 1;
+    for (var i = 0; i < size; i += 2) {
+      var i2 = Math.min(i + 1, size - 1);
+      var buf = Buffer.concat([hashes[j + i], hashes[j + i2]]);
+      hashes.push(Hash.sha256sha256(buf));
+    }
+    j += size;
+  }
+
+  return {
+    root: hashes[hashes.length - 1],
+    height: height
+  };
+}
 
 /**
  * Retrieve a hexa string that can be used with bitcoind's CLI interface
@@ -325,6 +436,7 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
     outputs.push(output.toObject());
   });
   var obj = {
+    txid: this.txid,
     hash: this.hash,
     version: this.version,
     inputs: inputs,
@@ -450,7 +562,6 @@ Transaction.prototype.lockUntilBlockHeight = function(height) {
       this.inputs[i].sequenceNumber = Input.DEFAULT_LOCKTIME_SEQNUMBER;
     }
   }
-
 
   this.nLockTime = height;
   return this;

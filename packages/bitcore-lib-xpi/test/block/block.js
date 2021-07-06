@@ -205,6 +205,7 @@ describe('Block', function () {
         metadata: 0,
         transactions: [
           {
+            "txid": "324ae664aeb1a060a99a6700f64b6a08204d7c4937dad5864f32c6e89c9f8e32",
             "hash": "b2864e420421a1d221924218b598e0afcf12488fa9873f9815c92b960a7008d5",
             "version": 2,
             "nLockTime": 0,
