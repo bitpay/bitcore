@@ -15,7 +15,7 @@ module.exports = {
     BUSD: 'busd',
     DAI: 'dai',
     WBTC: 'wbtc',
-    LTS: 'lts'
+    XPI: 'xpi'
   },
 
   ERC20: {
@@ -32,7 +32,7 @@ module.exports = {
     BCH: 'bch',
     BCHA: 'bcha',
     DOGE: 'doge',
-    LTS: 'lts'
+    XPI: 'xpi'
   },
 
   NETWORKS: {

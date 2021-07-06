@@ -64,7 +64,7 @@ export class FiatRateService {
 
   _fetch(cb?) {
     cb = cb || function() {};
-    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge', 'lts'];
+    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge', 'xpi'];
     const provider = this.providers.find(provider => provider.name === this.defaultProvider);
 
     //    async.each(this.providers, (provider, next) => {
@@ -91,7 +91,7 @@ export class FiatRateService {
 
   _retrieve(provider, coin, cb) {
     logger.debug(`Fetching data for ${provider.name} / ${coin} `);
-    if (coin === 'lts') {
+    if (coin === 'xpi') {
       return this._retrieveLotus(cb);
     }
     let params = [];
@@ -131,9 +131,8 @@ export class FiatRateService {
     );
   }
 
-  
   _retrieveLotus(cb) {
-    logger.debug(`Fetching data for lotus`);
+    logger.debug('Fetching data for lotus');
     let lotusPrice = 0;
     this.request.get(
       {
@@ -143,7 +142,7 @@ export class FiatRateService {
         if (err || !body) {
           return cb(err);
         }
-        const currentDiff: number  = +(body as string).replace(/["]+/g, '');
+        const currentDiff: number = +(body as string).replace(/["]+/g, '');
         this.request.get(
           {
             url: 'https://explorer.givelotus.org/api/getnetworkhashps'
@@ -152,11 +151,11 @@ export class FiatRateService {
             if (err || !body) {
               return cb(err);
             }
-            const hashRate: number  = (+(body as string).replace(/['"]+/g, ''))/1000000;
-            const currentMinerReward = Math.round((Math.log2(currentDiff/16)+1)*130*1000000)/1000000;
-            const dailyElectricityCost = (hashRate/MINING_EFFICIENCY*24/1000) * ELECTRICITY_RATE;
-            lotusPrice = dailyElectricityCost * (1 + MINER_MARGIN) / currentMinerReward /30/24;
-            return cb(null, [{code: 'USD', value: Math.round(lotusPrice*1000000)/1000000}]);
+            const hashRate: number = +(body as string).replace(/['"]+/g, '') / 1000000;
+            const currentMinerReward = Math.round((Math.log2(currentDiff / 16) + 1) * 130 * 1000000) / 1000000;
+            const dailyElectricityCost = (((hashRate / MINING_EFFICIENCY) * 24) / 1000) * ELECTRICITY_RATE;
+            lotusPrice = (dailyElectricityCost * (1 + MINER_MARGIN)) / currentMinerReward / 30 / 24;
+            return cb(null, [{ code: 'USD', value: Math.round(lotusPrice * 1000000) / 1000000 }]);
           }
         );
       }
@@ -308,7 +307,7 @@ export class FiatRateService {
     // Oldest date in timestamp range in epoch number ex. 24 hours ago
     const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
     const ts = _.isNumber(opts.ts) ? opts.ts : now;
-    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge', 'lts'];
+    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge', 'xpi'];
 
     async.map(
       coins,
