@@ -1403,6 +1403,7 @@ export class API extends EventEmitter {
       API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) ||
       null;
     args.payProUrl = opts.payProUrl || null;
+    args.isTokenSwap = opts.isTokenSwap || null;
     _.each(args.outputs, o => {
       o.message =
         API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) ||
@@ -1434,6 +1435,7 @@ export class API extends EventEmitter {
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
   // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
+  // * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
   // * @returns {Callback} cb - Return error or the transaction proposal
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
@@ -3176,6 +3178,19 @@ export class API extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.request.post(
         '/v1/service/changelly/createFixTransaction',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  oneInchGetSwap(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/oneInch/getSwap',
         data,
         (err, data) => {
           if (err) return reject(err);
