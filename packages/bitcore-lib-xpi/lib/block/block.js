@@ -195,7 +195,7 @@ Block.prototype.getTransactionHashes = function getTransactionHashes() {
   for (var t = 0; t < this.transactions.length; t++) {
     var txid = this.transactions[t]._getTxid();
     var hash = this.transactions[t]._getHash();
-    var buf = Buffer.concat(hash, txid);
+    var buf = Buffer.concat([hash, txid]);
     var resultHash = Hash.sha256sha256(buf);
     hashes.push(resultHash);
   }
@@ -213,10 +213,13 @@ Block.prototype.getMerkleTree = function getMerkleTree() {
   var tree = this.getTransactionHashes();
 
   var j = 0;
-  for (var size = this.transactions.length; size > 1; size = Math.floor((size + 1) / 2)) {
+  for (var size = tree.length; size > 1; size = Math.floor((size) / 2)) {
+    if (size %2 === 1) {
+      tree.push(Block.Values.NULL_HASH)
+      size += 1;
+    }
     for (var i = 0; i < size; i += 2) {
-      var i2 = Math.min(i + 1, size - 1);
-      var buf = Buffer.concat([tree[j + i], tree[j + i2]]);
+      var buf = Buffer.concat([tree[j + i], tree[j + i + 1]]);
       tree.push(Hash.sha256sha256(buf));
     }
     j += size;

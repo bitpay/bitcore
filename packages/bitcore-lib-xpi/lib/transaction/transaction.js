@@ -171,12 +171,17 @@ Transaction.prototype._getTxid = function() {
 Transaction.prototype._getTxInputHashes = function() {
   var hashes = [];
 
+  if (this.inputs.length === 0) {
+    return [Transaction.NULL_HASH]
+  }
+
   for (var i = 0; i < this.inputs.length; i++) {
     var input = this.inputs[i];
     var writer = new BufferWriter();
 
     // The input hash is calculated by hashing together prevTxId buffer and the sequence number
-    writer.write(input.prevTxId);
+    writer.writeReverse(input.prevTxId);
+    writer.writeUInt32LE(input.outputIndex);
     writer.writeUInt32LE(input.sequenceNumber);
 
     var hash = Hash.sha256sha256(writer.toBuffer());
@@ -193,6 +198,10 @@ Transaction.prototype._getTxInputHashes = function() {
  */
  Transaction.prototype._getTxOutputHashes = function() {
   var hashes = [];
+
+  if (this.outputs.length === 0) {
+    return [Transaction.NULL_HASH]
+  }
 
   for (var i = 0; i < this.outputs.length; i++) {
     var output = this.outputs[i];
@@ -212,9 +221,10 @@ Transaction.prototype._getTxInputHashes = function() {
  * @returns { root: string, height: number} - The merkle root and the height
  */
 Transaction.prototype._computeMerkleRoot = function(hashes) {
+
   if (hashes.length === 0) {
     return {
-      root: [Transaction.NULL_HASH],
+      root: Transaction.NULL_HASH,
       height: 0
     };
   }
@@ -222,15 +232,14 @@ Transaction.prototype._computeMerkleRoot = function(hashes) {
   var j = 0;
   var height = 1;
 
-  if (hashes.length %2 === 1) {
-    hashes.push(Transaction.NULL_HASH);
-  }
-
-  for (var size = hashes.length; size > 1; size = Math.floor((size + 1) / 2)) {
+  for (var size = hashes.length; size > 1; size = Math.floor((size) / 2)) {
     height += 1;
+    if (size %2 === 1) {
+      hashes.push(Transaction.NULL_HASH)
+      size += 1;
+    }
     for (var i = 0; i < size; i += 2) {
-      var i2 = Math.min(i + 1, size - 1);
-      var buf = Buffer.concat([hashes[j + i], hashes[j + i2]]);
+      var buf = Buffer.concat([hashes[j + i], hashes[j + i + 1]]);
       hashes.push(Hash.sha256sha256(buf));
     }
     j += size;
