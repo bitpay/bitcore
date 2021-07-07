@@ -8,10 +8,6 @@ const Common = require('./common');
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 
-const ELECTRICITY_RATE = 0.1;
-const MINER_MARGIN = 1;
-const MINING_EFFICIENCY = 3.4;
-
 import logger from './logger';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
@@ -66,12 +62,13 @@ export class FiatRateService {
     cb = cb || function() {};
     const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge', 'xpi'];
     const provider = this.providers.find(provider => provider.name === this.defaultProvider);
+    const xpiProvider = this.providers.find(provider => provider.name === 'LotusExplorer');
 
     //    async.each(this.providers, (provider, next) => {
     async.each(
       coins,
       (coin, next2) => {
-        this._retrieve(provider, coin, (err, res) => {
+        this._retrieve(coin === 'xpi' ? xpiProvider : provider, coin, (err, res) => {
           if (err) {
             logger.warn('Error retrieving data for ' + provider.name + coin, err);
             return next2();
@@ -91,15 +88,14 @@ export class FiatRateService {
 
   _retrieve(provider, coin, cb) {
     logger.debug(`Fetching data for ${provider.name} / ${coin} `);
-    if (coin === 'xpi') {
-      return this._retrieveLotus(cb);
-    }
     let params = [];
     let appendString = '';
     let headers = provider.headers ?? '';
     if (provider.name === 'CryptoCompare') {
       params = provider.params;
       params['fsym'] = coin.toUpperCase();
+    } else if (provider.name === 'LotusExplorer') {
+      appendString = '';
     } else {
       appendString = coin.toUpperCase();
     }
@@ -129,38 +125,6 @@ export class FiatRateService {
         }
       }
     );
-  }
-
-  _retrieveLotus(cb) {
-    logger.debug('Fetching data for lotus');
-    let lotusPrice = 0;
-    this.request.get(
-      {
-        url: 'https://explorer.givelotus.org/api/getdifficulty'
-      },
-      (err, res, body) => {
-        if (err || !body) {
-          return cb(err);
-        }
-        const currentDiff: number = +(body as string).replace(/["]+/g, '');
-        this.request.get(
-          {
-            url: 'https://explorer.givelotus.org/api/getnetworkhashps'
-          },
-          (err, res, body) => {
-            if (err || !body) {
-              return cb(err);
-            }
-            const hashRate: number = +(body as string).replace(/['"]+/g, '') / 1000000;
-            const currentMinerReward = Math.round((Math.log2(currentDiff / 16) + 1) * 130 * 1000000) / 1000000;
-            const dailyElectricityCost = (((hashRate / MINING_EFFICIENCY) * 24) / 1000) * ELECTRICITY_RATE;
-            lotusPrice = (dailyElectricityCost * (1 + MINER_MARGIN)) / currentMinerReward / 30 / 24;
-            return cb(null, [{ code: 'USD', value: Math.round(lotusPrice * 1000000) / 1000000 }]);
-          }
-        );
-      }
-    );
-    return lotusPrice;
   }
 
   getRate(opts, cb) {
