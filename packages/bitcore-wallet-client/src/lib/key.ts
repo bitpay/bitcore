@@ -397,6 +397,8 @@ export class Key {
       coinCode = '144';
     } else if (opts.coin == 'doge') {
       coinCode = '3';
+    } else if (opts.coin == 'ltc') {
+      coinCode = '2';
     } else {
       throw new Error('unknown coin: ' + opts.coin);
     }

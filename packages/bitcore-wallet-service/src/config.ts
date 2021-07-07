@@ -73,6 +73,14 @@ module.exports = {
         url: 'https://api.bitcore.io'
       }
     },
+    ltc: {
+      livenet: {
+        url: 'https://api.bitcore.io'
+      },
+      testnet: {
+        url: 'https://api.bitcore.io'
+      }
+    },
     socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {
@@ -163,6 +171,10 @@ module.exports = {
   //   doge: {
   //     livenet: 'https://blockchair.com/dogecoin/transaction/{{txid}}',
   //     testnet: 'https://sochain.com/tx/DOGETEST/{{txid}}',
+  //  },
+  //   ltc: {
+  //     livenet: 'https://bitpay.com/insight/#/LTC/mainnet/tx/{{txid}}',
+  //     testnet: 'https://bitpay.com/insight/#/LTC/testnet/tx/{{txid}}',
   //  }
   // },
   // },
