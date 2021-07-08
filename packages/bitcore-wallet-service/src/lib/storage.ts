@@ -1,5 +1,6 @@
 import * as async from 'async';
 import _ from 'lodash';
+import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import logger from './logger';
@@ -275,14 +276,17 @@ export class Storage {
   }
 
   fetchDonationInToday(cb) {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-
+    const start = moment()
+      .utc()
+      .startOf('day')
+      .valueOf();
+    const end = moment()
+      .utc()
+      .endOf('day')
+      .valueOf();
     this.db
       .collection(collections.DONATION)
-      .find({ createdOn: { $gte: start.getTime(), $lt: end.getTime() } })
+      .find({ createdOn: { $gte: start, $lt: end } })
       .toArray((err, result: DonationStorage[]) => {
         const donationInToday = _.filter(result, item => item.txidDonation);
         return cb(null, donationInToday);
