@@ -4,6 +4,7 @@ import {
   BitcoreLib,
   BitcoreLibCash,
   BitcoreLibDoge,
+  BitcoreLibLtc,
   Deriver,
   Transactions
 } from 'crypto-wallet-core';
@@ -22,7 +23,8 @@ const Bitcore_ = {
   bch: BitcoreLibCash,
   eth: Bitcore,
   xrp: Bitcore,
-  doge: BitcoreLibDoge
+  doge: BitcoreLibDoge,
+  ltc: BitcoreLibLtc
 };
 const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;
@@ -413,7 +415,8 @@ export class Utils {
         outputs,
         payProUrl,
         tokenAddress,
-        multisigContractAddress
+        multisigContractAddress,
+        isTokenSwap
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -428,7 +431,7 @@ export class Utils {
         recipients[0].data = data;
       }
       const unsignedTxs = [];
-      const isERC20 = tokenAddress && !payProUrl;
+      const isERC20 = tokenAddress && !payProUrl  && !isTokenSwap;
       const isETHMULTISIG = multisigContractAddress;
       const chain = isETHMULTISIG
         ? 'ETHMULTISIG'

@@ -73,6 +73,14 @@ module.exports = {
         url: 'https://api.bitcore.io'
       }
     },
+    ltc: {
+      livenet: {
+        url: 'https://api.bitcore.io'
+      },
+      testnet: {
+        url: 'https://api.bitcore.io'
+      }
+    },
     socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {
@@ -128,6 +136,11 @@ module.exports = {
   //   secret: 'changelly_secret',
   //   api: 'https://api.changelly.com'
   // },
+  // oneInch: {
+  //   api: 'https://api.1inch.exchange',
+  //   referrerAddress: 'one_inch_referrer_address', // ETH
+  //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
+  // },
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',
@@ -158,6 +171,10 @@ module.exports = {
   //   doge: {
   //     livenet: 'https://blockchair.com/dogecoin/transaction/{{txid}}',
   //     testnet: 'https://sochain.com/tx/DOGETEST/{{txid}}',
+  //  },
+  //   ltc: {
+  //     livenet: 'https://bitpay.com/insight/#/LTC/mainnet/tx/{{txid}}',
+  //     testnet: 'https://bitpay.com/insight/#/LTC/testnet/tx/{{txid}}',
   //  }
   // },
   // },

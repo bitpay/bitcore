@@ -201,9 +201,9 @@ Promise.all(keyRequests)
                 }
                 signatureCount++;
                 console.log(
-                  `Good signature from ${
-                    signature.identifier
-                  } (${pgpKey.get_userids()[0].get_username()})`
+                  `Good signature from ${signature.identifier} (${pgpKey
+                    .get_userids()[0]
+                    .get_username()})`
                 );
                 return Promise.resolve();
               }

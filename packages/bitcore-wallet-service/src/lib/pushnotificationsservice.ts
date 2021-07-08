@@ -204,7 +204,10 @@ export class PushNotificationsService {
                     tokenAddress,
                     multisigContractAddress,
                     copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId)),
-                    notification_type: notification.type
+                    notification_type: notification.type,
+                    // coin and network are needed for NewBlock notifications
+                    coin: notification?.data?.coin,
+                    network: notification?.data?.network
                   }
                 };
 
@@ -377,6 +380,7 @@ export class PushNotificationsService {
       eth: 'ETH',
       xrp: 'XRP',
       doge: 'DOGE',
+      ltc: 'LTC',
       usdc: 'USDC',
       pax: 'PAX',
       gusd: 'GUSD',

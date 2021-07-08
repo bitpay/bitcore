@@ -42,7 +42,8 @@ const Bitcore_ = {
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge')
+  doge: require('bitcore-lib-doge'),
+  ltc: require('bitcore-lib-ltc')
 };
 
 const Common = require('./common');
@@ -462,7 +463,7 @@ export class WalletService {
    * @param {number} opts.n - Total copayers.
    * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
-   * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge).
+   * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
    * @param {string} opts.account[=0] - BIP44 account number
    * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
@@ -1001,7 +1002,7 @@ export class WalletService {
    * Joins a wallet in creation.
    * @param {Object} opts
    * @param {string} opts.walletId - The wallet id.
-   * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge).
+   * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.name - The copayer name.
    * @param {string} opts.xPubKey - Extended Public Key for this copayer.
    * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
@@ -1774,7 +1775,7 @@ export class WalletService {
           const feePerKb = _.isObject(result) && result[p] && _.isNumber(result[p]) ? +result[p] : -1;
           if (feePerKb < 0) failed.push(p);
 
-          // NOTE: ONLY BTC/BCH/DOGE expect feePerKb to be Bitcoin amounts
+          // NOTE: ONLY BTC/BCH/DOGE/LTC expect feePerKb to be Bitcoin amounts
           // others... expect wei.
 
           return ChainService.convertFeePerKb(coin, p, feePerKb);
@@ -2215,6 +2216,7 @@ export class WalletService {
    * @param {Boolean} opts.signingMethod[=ecdsa] - do not use cashaddress for bch
    * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
    * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
+   * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2352,7 +2354,8 @@ export class WalletService {
                     multisigContractAddress: opts.multisigContractAddress,
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
-                    signingMethod: opts.signingMethod
+                    signingMethod: opts.signingMethod,
+                    isTokenSwap: opts.isTokenSwap
                   };
                   txp = TxProposal.create(txOpts);
                   next();
@@ -4231,7 +4234,7 @@ export class WalletService {
   /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
    * @param {Object} opts
-   * @param {String} opts.coin - The coin requested (btc, bch, eth, xrp, doge).
+   * @param {String} opts.coin - The coin requested (btc, bch, eth, xrp, , ltc).
    * @param {String} [opts.code] - Currency ISO code (e.g: USD, EUR, ARS).
    * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
    * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
@@ -4849,6 +4852,70 @@ export class WalletService {
         {
           headers,
           body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  oneInchGetCredentials() {
+    if (!config.oneInch) throw new Error('1Inch missing credentials');
+
+    const credentials = {
+      API: config.oneInch.api,
+      referrerAddress: config.oneInch.referrerAddress,
+      referrerFee: config.oneInch.referrerFee
+    };
+
+    return credentials;
+  }
+
+  oneInchGetReferrerFee(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const credentials = this.oneInchGetCredentials();
+
+      const referrerFee: number = credentials.referrerFee;
+
+      resolve({ referrerFee });
+    });
+  }
+
+  oneInchGetSwap(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const credentials = this.oneInchGetCredentials();
+
+      if (!checkRequired(req.body, ['fromTokenAddress', 'toTokenAddress', 'amount', 'fromAddress', 'slippage', 'destReceiver'])) {
+        return reject(new ClientError('oneInchGetSwap request missing arguments'));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      let qs = [];
+      qs.push('fromTokenAddress=' + req.body.fromTokenAddress);
+      qs.push('toTokenAddress=' + req.body.toTokenAddress);
+      qs.push('amount=' + req.body.amount);
+      qs.push('fromAddress=' + req.body.fromAddress);
+      qs.push('slippage=' + req.body.slippage);
+      qs.push('destReceiver=' + req.body.destReceiver);
+
+      if(credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
+      if(credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
+
+      const URL: string = credentials.API + '/v3.0/1/swap/?' + qs.join('&');
+
+      this.request.get(
+        URL,
+        {
+          headers,
           json: true
         },
         (err, data) => {
