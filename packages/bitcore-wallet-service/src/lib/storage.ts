@@ -1,9 +1,9 @@
 import * as async from 'async';
 import _ from 'lodash';
+import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import logger from './logger';
-import moment from 'moment';
 import {
   Address,
   Advertisement,
@@ -276,8 +276,14 @@ export class Storage {
   }
 
   fetchDonationInToday(cb) {
-    const start = moment().utc().startOf('day').valueOf();
-    const end = moment().utc().endOf('day').valueOf();
+    const start = moment()
+      .utc()
+      .startOf('day')
+      .valueOf();
+    const end = moment()
+      .utc()
+      .endOf('day')
+      .valueOf();
     this.db
       .collection(collections.DONATION)
       .find({ createdOn: { $gte: start, $lt: end } })
