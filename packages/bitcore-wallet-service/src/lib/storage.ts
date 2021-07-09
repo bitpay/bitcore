@@ -1,5 +1,6 @@
 import * as async from 'async';
 import _ from 'lodash';
+import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import logger from './logger';
@@ -16,6 +17,7 @@ import {
   TxProposal,
   Wallet
 } from './model';
+import { DonationStorage } from './model/donation';
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
@@ -36,7 +38,8 @@ const collections = {
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
-  LOCKS: 'locks'
+  LOCKS: 'locks',
+  DONATION: 'donation'
 };
 
 const Common = require('./common');
@@ -68,6 +71,9 @@ export class Storage {
     }
     db.collection(collections.WALLETS).createIndex({
       id: 1
+    });
+    db.collection(collections.DONATION).createIndex({
+      txidDonation: 1
     });
     db.collection(collections.COPAYERS_LOOKUP).createIndex({
       copayerId: 1
@@ -231,6 +237,74 @@ export class Storage {
       wallet.toObject(),
       {
         w: 1,
+        upsert: true
+      },
+      cb
+    );
+  }
+
+  storeDonation(donationStorage, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', donationStorage);
+      return;
+    }
+
+    this.db.collection(collections.DONATION).insertOne(
+      donationStorage,
+      {
+        w: 1
+      },
+      cb
+    );
+  }
+
+  fetchDonationByTxid(txidDonation, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.DONATION).findOne(
+      {
+        txidDonation
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchDonationInToday(cb) {
+    const start = moment()
+      .utc()
+      .startOf('day')
+      .valueOf();
+    const end = moment()
+      .utc()
+      .endOf('day')
+      .valueOf();
+    this.db
+      .collection(collections.DONATION)
+      .find({ createdOn: { $gte: start, $lt: end } })
+      .toArray((err, result: DonationStorage[]) => {
+        const donationInToday = _.filter(result, item => item.txidDonation);
+        return cb(null, donationInToday);
+      });
+  }
+
+  updateDonation(donationInfo, cb) {
+    this.db.collection(collections.DONATION).updateOne(
+      {
+        txidDonation: donationInfo.txidDonation
+      },
+      {
+        $set: {
+          txidGiveLotus: donationInfo.txidGiveLotus,
+          isGiven: donationInfo.isGiven
+        }
+      },
+      {
         upsert: true
       },
       cb

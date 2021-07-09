@@ -7,6 +7,7 @@ const $ = require('preconditions').singleton();
 const Common = require('./common');
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
+
 import logger from './logger';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
@@ -59,14 +60,15 @@ export class FiatRateService {
 
   _fetch(cb?) {
     cb = cb || function() {};
-    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge'];
+    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge', 'xpi'];
     const provider = this.providers.find(provider => provider.name === this.defaultProvider);
+    const xpiProvider = this.providers.find(provider => provider.name === 'LotusExplorer');
 
     //    async.each(this.providers, (provider, next) => {
     async.each(
       coins,
       (coin, next2) => {
-        this._retrieve(provider, coin, (err, res) => {
+        this._retrieve(coin === 'xpi' ? xpiProvider : provider, coin, (err, res) => {
           if (err) {
             logger.warn('Error retrieving data for ' + provider.name + coin, err);
             return next2();
@@ -92,6 +94,8 @@ export class FiatRateService {
     if (provider.name === 'CryptoCompare') {
       params = provider.params;
       params['fsym'] = coin.toUpperCase();
+    } else if (provider.name === 'LotusExplorer') {
+      appendString = '';
     } else {
       appendString = coin.toUpperCase();
     }
@@ -267,7 +271,7 @@ export class FiatRateService {
     // Oldest date in timestamp range in epoch number ex. 24 hours ago
     const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
     const ts = _.isNumber(opts.ts) ? opts.ts : now;
-    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge'];
+    const coins = ['btc', 'bch', 'bcha', 'eth', 'xrp', 'doge', 'xpi'];
 
     async.map(
       coins,

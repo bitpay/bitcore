@@ -113,7 +113,7 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.json';
-  var host = args.host || 'https://bws.bitpay.com/';
+  var host = args.host || 'http://localhost:3232';
 
   var storage = new FileStorage({
     filename: filename,
@@ -304,8 +304,8 @@ Utils.COIN = {
     maxDecimals: 2,
     minDecimals: 2,
   },
-  bch: {
-    name: 'bch',
+  doge: {
+    name: 'doge',
     toSatoshis: 100000000,
     maxDecimals: 8,
     minDecimals: 8,
@@ -316,8 +316,6 @@ Utils.COIN = {
     maxDecimals: 8,
     minDecimals: 8,
   },
- 
- 
 };
 
 Utils.renderAmount = function(satoshis, coin, opts) {
