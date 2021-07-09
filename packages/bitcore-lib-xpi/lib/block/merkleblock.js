@@ -11,6 +11,8 @@ var Transaction = require('../transaction');
 var errors = require('../errors');
 var $ = require('../util/preconditions');
 
+MerkleBlock.NULL_HASH = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
+
 /**
  * Instantiate a MerkleBlock from a Buffer, JSON object, or Object with
  * the properties of the Block
@@ -43,7 +45,7 @@ function MerkleBlock(arg) {
        */
       header: header,
       /**
-       * @name MerkleBlock#numTransactions
+       * @name MerkleBlock#numTransactions (count both txhash and txid)
        * @type {Number}
        */
       numTransactions: arg.numTransactions,
@@ -208,12 +210,13 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
   var checkForTxs = checkForTxs || false;
 
   if(opts.flagBitsUsed > this.flags.length * 8) {
-    return null;
+    return MerkleBlock.NULL_HASH;
   }
+  // opts.flagBitsUsed >> 3 = opts.flagBitsUsed / 8
   var isParentOfMatch = (this.flags[opts.flagBitsUsed >> 3] >>> (opts.flagBitsUsed++ & 7)) & 1;
   if(depth === 0 || !isParentOfMatch) {
     if(opts.hashesUsed >= this.hashes.length) {
-      return null;
+      return MerkleBlock.NULL_HASH;
     }
     var hash = this.hashes[opts.hashesUsed++];
     if(depth === 0 && isParentOfMatch) {
@@ -225,6 +228,8 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
     var right = left;
     if(pos*2+1 < this._calcTreeWidth(depth-1)) {
       right = this._traverseMerkleTree(depth-1, pos*2+1, opts);
+    } else {
+      right = MerkleBlock.NULL_HASH;
     }
     if (checkForTxs){
       return opts.txs;
@@ -258,7 +263,7 @@ MerkleBlock.prototype._calcTreeHeight = function calcTreeHeight() {
 };
 
 /**
- * @param {Transaction|String} - Transaction or Transaction ID Hash
+ * @param {Transaction|String} - Transaction or Transaction ID / Hash
  * @returns {Boolean} - return true/false if this MerkleBlock has the TX or not
  * @private
  */
@@ -268,15 +273,18 @@ MerkleBlock.prototype.hasTransaction = function hasTransaction(tx) {
       'Invalid tx given, tx must be a "string" or "Transaction"');
 
   var hash = tx;
+  var txid = tx;
   if(tx instanceof Transaction) {
-    // We need to reverse the id hash for the lookup
-    hash = BufferUtil.reverse(Buffer.from(tx.id, 'hex')).toString('hex');
+    // We need to reverse the txid hash for the lookup
+    txid = BufferUtil.reverse(Buffer.from(tx.txid, 'hex')).toString('hex');
+    hash = BufferUtil.reverse(Buffer.from(tx.hash, 'hex')).toString('hex');
   }
 
   var txs = [];
   var height = this._calcTreeHeight();
   this._traverseMerkleTree(height, 0, { txs: txs });
-  return txs.indexOf(hash) !== -1;
+  return txs.indexOf(txid) !== -1 ? true :
+    txs.indexOf(hash) !== -1;
 };
 
 /**

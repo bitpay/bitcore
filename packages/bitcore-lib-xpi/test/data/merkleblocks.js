@@ -20,12 +20,13 @@ module.exports = {
     "63a3214bb079b14a6a30e47febaa0ecbe4ee557aa8992980ee37010000000000" +        // EpochBlock
     "7bc0e12a069b62f53acc37c9b911dddfb0860cf8af11fe0aa7c859e1fd05d88f" +        // MerkleRoot
     "1406e05881e299367766d313e26c05564ec91bf721d31726bd6e46e60689539a" +        // ExtendedMetadata
-    "02000000" +                                                                // Transaction Count
-      "02" +                                                                    // Hash Count
-      "f39d518b333e48d8fc3db55fc6cefd1151b7adb98faee1be3295e506787655b1" +      // Hash Transaction 1
-      "0af93697e7449e78e758eec225c7c9301b2e9fbe7ba2c83335a21bb5852f17a4" +      // Hash Transaction 2
+    "04000000" +                                                                // Transaction Count
+      "03" +                                                                    // Hash Count
+      "b155767806e59532bee1ae8fb9adb75111fdcec65fb53dfcd8483e338b519df3" +      // Hash Transaction 1
+      "677eeabc444b75903ec8660097e4b17d3020a9ac6c9915192a565da41f102f0d" +      // Hash Transaction 2
+      "9d45b8c1e16f2afad449ce0ad3bbf36c04e0eec9ecfb8d9d788fcc5f8c95ac8e" +      // Hash Transaction 3
       "01" +                                                                    // Num Flag Bytes
-      "1d"                                                                      // Flags
+      "0b"                                                                      // Flags
   ],
   JSON: [
     { // Mainnet Block 15290
@@ -43,12 +44,37 @@ module.exports = {
         merkleRoot: "8fd805fde159c8a70afe11aff80c86b0dfdd11b9c937cc3af5629b062ae1c07b",
         extendedMetadata: "9a538906e6466ebd2617d321f71bc94e56056ce213d366773699e28158e00614"
       },
-      numTransactions: 2,
+      numTransactions: 4,
       hashes: [
-        "0d2f101fa45d562a1915996caca920307db1e4970066c83e90754b44bcea7e67",
-        "4d84a5b8d62c7321b8495194ac58e3112181b75c82dee599f1a9293db31e11e7"
+        "b155767806e59532bee1ae8fb9adb75111fdcec65fb53dfcd8483e338b519df3",
+        "677eeabc444b75903ec8660097e4b17d3020a9ac6c9915192a565da41f102f0d",
+        "9d45b8c1e16f2afad449ce0ad3bbf36c04e0eec9ecfb8d9d788fcc5f8c95ac8e"
       ],
-      flags: [ 0 ]
+      flags: [ 11 ]
+    },
+    { // Mainnet Block 22003
+      header: {
+        hash: "000000000019072db2834f8ed26ef6f0f2f3a4d9288f63176c5e82d9477ca397",
+        prevHash: "0000000000030882116ee6f5963b9ed7c028845e55ec992c2a49abac0e1a52a0",
+        bits: 456014208,
+        time: 1625768825,
+        reserved: 0,
+        nonce: "12045594477943128845",
+        version: 1,
+        size: 2152,
+        height: 22003,
+        epochBlock: "000000000002b926066e364c16302ffe83b1b55040853ec76f45b7a4f2eca54a",
+        merkleRoot: "3f2c344f3ec5d3e434c4772d36ee01971b575f513542cc723929105b458d7de6",
+        extendedMetadata: "9a538906e6466ebd2617d321f71bc94e56056ce213d366773699e28158e00614"
+      },
+      numTransactions: 6,
+      hashes: [
+        "ebe885d1d9003636a0d1dbaca45f595a7e9eb36c10ff1c0aa0cff9f698a93a43",
+        "8b5c233843e7074fd8d7df86eabc719594c23774e5693874edaee0e9fb9e78c9",
+        "95116d3eb89c26f16399414b9aad492d868d1255eddb05d77fdcbe2f6ec3bfb4",
+        "85d80c3a2a27e2f42940c71386f76f1c757e01fe7a7199ffb3b29a192e1f22f0"
+      ],
+      flags: [ 23 ]
     }
   ]
 };

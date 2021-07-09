@@ -162,8 +162,8 @@ describe('MerkleBlock', function() {
   describe('#filterdTxsHash', function() {
 
     it('should validate good merkleblocks', function() {
-      var hashOfFilteredTx = '6f64fd5aa9dd01f74c03656d376625cf80328d83d9afebe60cc68b8f0e245bd9'
-      var b = MerkleBlock(data.JSON[3]);
+      var hashOfFilteredTx = '8b5c233843e7074fd8d7df86eabc719594c23774e5693874edaee0e9fb9e78c9'
+      var b = MerkleBlock(data.JSON[1]);
       b.filterdTxsHash()[0].should.equal(hashOfFilteredTx);
     });
 
@@ -220,7 +220,7 @@ describe('MerkleBlock', function() {
 
       var hashData = [
         ['3612262624047ee87660be1a707519a443b1c1ce3d248cbfc6c15870f6c5daa2', false],
-        ['019f5b01d4195ecbc9398fbf3c3b1fa9bb3183301d7a1fb3bd174fcfa40a2b65', true],
+        ['677eeabc444b75903ec8660097e4b17d3020a9ac6c9915192a565da41f102f0d', true],
         ['41ed70551dd7e841883ab8f0b16bf04176b7d1480e4f0af9f3d4c3595768d068', false],
         ['20d2a7bc994987302e5b1ac80fc425fe25f8b63169ea78e68fbaaefa59379bbf', false]
       ];
