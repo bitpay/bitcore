@@ -5,4 +5,4 @@ var spec = {
   message: 'Internal Error on bitcore-p2p Module {0}'
 };
 
-module.exports = require('bitcore-lib-xpi').errors.extend(spec);
+module.exports = require('@abcpros/bitcore-lib-xpi').errors.extend(spec);

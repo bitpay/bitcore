@@ -1,6 +1,6 @@
 'use strict';
 
-var bitcore = require('bitcore-lib-xpi');
+var bitcore = require('@abcpros/bitcore-lib-xpi');
 var Inventory = require('../inventory');
 
 function builder(options) {
@@ -37,6 +37,9 @@ function builder(options) {
       'inv',
       'notfound'
     ],
+    // commandsMap: {
+    //     block: 'Block'
+    // },
     commandsMap: {
       version: 'Version',
       verack: 'VerAck',
