@@ -100,7 +100,7 @@
     "bitcore-lib-cash": "^8.25.10",
     "bitcore-lib-doge": "^8.25.10",
     "bitcore-lib-ltc": "^8.25.10",
-    "bitcore-lib-xpi": "^8.25.10",
+    "@abcpros/bitcore-lib-xpi": "^8.25.10",
     "bitcore-p2p": "^8.25.10",
     "bitcore-p2p-bcha": "^8.25.11",
     "bitcore-p2p-xpi": "^8.25.11",

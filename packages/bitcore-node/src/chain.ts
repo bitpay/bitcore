@@ -12,7 +12,7 @@ module.exports = {
     p2p: require('bitcore-p2p-bcha')
   },
   XPI: {
-    lib: require('bitcore-lib-xpi'),
+    lib: require('@abcpros/bitcore-lib-xpi'),
     p2p: require('bitcore-p2p-xpi')
   }
 };

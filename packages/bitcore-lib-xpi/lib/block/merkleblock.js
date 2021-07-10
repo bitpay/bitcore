@@ -213,6 +213,7 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
     return MerkleBlock.NULL_HASH;
   }
   // opts.flagBitsUsed >> 3 = opts.flagBitsUsed / 8
+  // opts.flagBitsUsed & 7 = opts.flagBitsUsed % 8
   var isParentOfMatch = (this.flags[opts.flagBitsUsed >> 3] >>> (opts.flagBitsUsed++ & 7)) & 1;
   if(depth === 0 || !isParentOfMatch) {
     if(opts.hashesUsed >= this.hashes.length) {
