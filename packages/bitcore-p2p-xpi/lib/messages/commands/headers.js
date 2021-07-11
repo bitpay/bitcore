@@ -40,8 +40,10 @@ HeadersMessage.prototype.setPayload = function(payload) {
   for (var i = 0; i < count; i++) {
     var header = this.BlockHeader.fromBufferReader(parser);
     this.headers.push(header);
-    var txn_count = parser.readUInt8();
-    $.checkState(txn_count === 0, 'txn_count should always be 0');
+    // In lotus, there's no tnx_count (transaction count)
+    // In bitcoin cash, the tnx_count is alway 0
+    // var txn_count = parser.readUInt8();
+    // $.checkState(txn_count === 0, 'txn_count should always be 0');
   }
   utils.checkFinished(parser);
 };
@@ -52,7 +54,7 @@ HeadersMessage.prototype.getPayload = function() {
   for (var i = 0; i < this.headers.length; i++) {
     var buffer = this.headers[i].toBuffer();
     bw.write(buffer);
-    bw.writeUInt8(0);
+    // bw.writeUInt8(0);
   }
   return bw.concat();
 };
