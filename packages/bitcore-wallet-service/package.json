@@ -40,6 +40,7 @@
     "lodash": "^4.17.19",
     "moment": "^2.10.3",
     "mongodb": "^3.5.9",
+    "mongodb-queue": "^4.0.0",
     "mustache": "^2.1.0",
     "nodemailer": "^5.1.1",
     "preconditions": "^2.2.3",
