@@ -208,6 +208,8 @@ export class Credentials {
         coin = '144';
       } else if (this.coin == 'doge') {
         coin = '3';
+      } else if (this.coin == 'xpi') {
+        coin = '10605';
       } else {
         throw new Error('unknown coin: ' + this.coin);
       }
