@@ -81,6 +81,14 @@ module.exports = {
         url: 'https://api.bitcore.io'
       }
     },
+    xpi: {
+      livenet: {
+        url: 'http://127.0.0.1:3000'
+      },
+      testnet: {
+        url: 'http://127.0.0.1:3000'
+      }
+    },
     socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {

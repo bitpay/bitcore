@@ -6,6 +6,7 @@ import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
 import { XrpChain } from './xrp';
+import { XpiChain } from './xpi';
 
 const Common = require('../common');
 const Constants = Common.Constants;
@@ -72,7 +73,8 @@ const chain: { [chain: string]: IChain } = {
   BCHA: new BchaChain(),
   ETH: new EthChain(),
   XRP: new XrpChain(),
-  DOGE: new DogeChain()
+  DOGE: new DogeChain(),
+  XPI: new XpiChain()
 };
 
 class ChainProxy {
