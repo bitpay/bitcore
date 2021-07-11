@@ -13,6 +13,6 @@ module.exports = {
   },
   XPI: {
     lib: require('@abcpros/bitcore-lib-xpi'),
-    p2p: require('bitcore-p2p-xpi')
+    p2p: require('@abcpros/bitcore-p2p-xpi')
   }
 };

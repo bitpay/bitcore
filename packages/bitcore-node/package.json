@@ -103,7 +103,7 @@
     "@abcpros/bitcore-lib-xpi": "^8.25.10",
     "bitcore-p2p": "^8.25.10",
     "bitcore-p2p-bcha": "^8.25.11",
-    "bitcore-p2p-xpi": "^8.25.11",
+    "@abcpros/bitcore-p2p-xpi": "^8.25.10",
     "bitcore-p2p-cash": "^8.25.10",
     "bitcore-p2p-doge": "^8.25.10",
     "body-parser": "1.18.3",
