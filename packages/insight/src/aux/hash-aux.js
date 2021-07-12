@@ -17,16 +17,13 @@ const hashFiles = (directory) => {
       const hashedFileName = `${name}.${hash}.${extension}`;
 
       const oldHashedFile = fs.readdirSync(directory).find(file => file.startsWith(name));
-      console.log(oldHashedFile);
       if (oldHashedFile) {
         fs.unlinkSync(directory + '/' + oldHashedFile);
         console.log(`${oldHashedFile} successfully deleted!`);
       }
-
-      fs.writeFileSync(directory + hashedFileName, file);
+      fs.writeFileSync(directory + '/' + hashedFileName, file);
       console.log(`${fileName} rehashed!`);
     } else if(fs.statSync(directory + '/' + fileName).isDirectory()) {
-      console.log('this is the directory', fileName);
       hashFiles(directory + '/' + fileName);
     }
 
