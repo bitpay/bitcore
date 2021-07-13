@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { NavParams, ViewController } from 'ionic-angular';
 import _ from 'lodash';
+import * as currencyLogoFiles from '../../assets/img/currency_logos/file-helper.json';
+import * as imgFiles from '../../assets/img/file-helper.json';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 @Component({
   selector: 'denomination',
@@ -11,6 +13,8 @@ export class DenominationComponent {
   public availableNetworks;
   public currencySymbol;
   public showUnits = false;
+  public currencyLogos = JSON.parse(currencyLogoFiles);
+  public imgFiles = JSON.parse(imgFiles);
 
   constructor(
     public viewCtrl: ViewController,

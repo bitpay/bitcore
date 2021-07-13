@@ -1,6 +1,8 @@
 import { Component, Injectable, ViewChild } from '@angular/core';
 import { Events, IonicPage, Nav, NavParams } from 'ionic-angular';
 import * as _ from 'lodash';
+import * as currencyLogoFiles from '../../assets/img/currency_logos/file-helper.json'
+import * as imgFiles from '../../assets/img/file-helper.json'
 import { LatestBlocksComponent } from '../../components/latest-blocks/latest-blocks';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -22,6 +24,8 @@ export class HomePage {
   public chainNetwork: ChainNetwork;
   public network: string;
   public availableNetworks;
+  public currencyLogos = currencyLogoFiles;
+  public imgFiles = imgFiles;
 
   constructor(
     public nav: Nav,

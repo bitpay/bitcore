@@ -8,11 +8,11 @@
                 <ion-col col-md-6 col-12 class="page-content" *ngFor="let availableNetwork of availableNetworks">
                     <ion-item class="chain" no-lines>
                         <ion-avatar item-start>
-                            <img *ngIf="availableNetwork.network === 'mainnet'" src="assets/img/currency_logos/{{ availableNetwork.chain.toLowerCase() }}.svg" class="logo" alt="{{ availableNetwork.chain }}"/>
-                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" alt="BTC"/>
-                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" alt="BCH"/>
-                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="DOGE"/>
-                            <img [ngClass]="{'secondary': availableNetwork.network ==='testnet'}" *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" alt="ETH"/>
+                            <img *ngIf="availableNetwork.network === 'mainnet'" src="assets/img/currency_logos/{{ currencyLogos[availableNetwork.chain.toLowerCase()] }}" class="logo" alt="{{ availableNetwork.chain }}"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BTC'" src="assets/img/{{imgFiles['btcicon-testnet']}}" class="logo" alt="BTC"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BCH'" src="assets/img/{{imgFiles['bchicon-testnet']}}" class="logo" alt="BCH"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='DOGE'" src="assets/img/{{imgFiles['doge-logo-testnet']}}" class="logo" alt="DOGE"/>
+                            <img [ngClass]="{'secondary': availableNetwork.network ==='testnet'}" *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='ETH'" src="assets/img/currency_logos/{{currencyLogos.eth}}" class="logo" alt="ETH"/>
                         </ion-avatar>
                         <ion-label color="dark" item-end>
                             {{ availableNetwork.chain }} <small class="pill"> {{ availableNetwork.network }}</small>

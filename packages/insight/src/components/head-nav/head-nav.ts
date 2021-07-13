@@ -8,6 +8,7 @@ import {
   ToastController
 } from 'ionic-angular';
 import * as _ from 'lodash';
+import * as imgFiles from '../../assets/img/file-helper.json'
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
@@ -31,6 +32,7 @@ export class HeadNavComponent implements OnInit {
   public q: string;
   public redirTo: any;
   public params: any;
+  public imgFiles = imgFiles;
 
   constructor(
     public app: App,
