@@ -13,8 +13,8 @@ export class DenominationComponent {
   public availableNetworks;
   public currencySymbol;
   public showUnits = false;
-  public currencyLogos = JSON.parse(currencyLogoFiles);
-  public imgFiles = JSON.parse(imgFiles);
+  public currencyLogos = currencyLogoFiles;
+  public imgFiles = imgFiles;
 
   constructor(
     public viewCtrl: ViewController,
