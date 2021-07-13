@@ -177,4 +177,85 @@ describe('ETH Chain State Provider', function() {
     expect(found[0].height).to.eq(mockBlock.height);
     sandbox.restore();
   });
+
+  describe('estimateGas', () => {
+    const sandbox = sinon.createSandbox();
+    const network = 'testnet';
+    const web3Stub: any = {
+      utils: {
+        toHex: (val) => val && Buffer.from(val.toString()).toString('hex')
+      },
+      eth: {
+        getBlockNumber: sandbox.stub().resolves(1)
+      },
+      currentProvider: {
+        send: sandbox.stub()
+      }
+    };
+
+    beforeEach(() => {
+      sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('it should return gas', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
+      const gas = await ETH.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
+      expect(gas).to.equal(12345);
+    });
+
+    it('should return gas for optional params', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '1234' });
+      
+      const gas = await ETH.estimateGas({ network: 'testnet' });
+      expect(gas).to.equal(1234);
+    });
+
+    it('should reject an error response', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, 'Unavailable server', null); // body is null
+  
+      try {
+        await ETH.estimateGas({ network: 'testnet' });
+        throw new Error('should have thrown');
+      } catch (err) {
+        expect(err).to.equal('Unavailable server');
+      }
+    });
+
+    it('should reject if response body is missing result', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, null, { message: 'need some param' });
+  
+      try {
+        await ETH.estimateGas({ network: 'testnet' });
+        throw new Error('should have thrown');
+      } catch (err) {
+        expect(err).to.equal('need some param');
+      }
+    });
+
+    it('should reject on unexpected error', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
+  
+      try {
+        await ETH.estimateGas({ network: 'unexpected' });
+        throw new Error('should have thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Cannot read property \'provider\' of undefined');
+      }
+    });
+
+    it('should reject on unexpected error in callback', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, null, null); // body is null
+  
+      try {
+        await ETH.estimateGas({ network: 'testnet' });
+        throw new Error('should have thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Cannot read property \'result\' of null');
+      }
+    });
+  });
 });

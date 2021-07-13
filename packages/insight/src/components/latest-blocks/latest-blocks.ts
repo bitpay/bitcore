@@ -64,9 +64,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
             const blocks = response.map(
               (block: ApiEthBlock & ApiUtxoCoinBlock) => {
                 if (
-                  this.chainNetwork.chain === 'BTC' ||
-                  this.chainNetwork.chain === 'BCH' ||
-                  this.chainNetwork.chain === 'DOGE'
+                  ['BTC', 'BCH', 'DOGE', 'LTC'].includes(this.chainNetwork.chain)
                 ) {
                   return this.blocksProvider.toUtxoCoinAppBlock(block);
                 }

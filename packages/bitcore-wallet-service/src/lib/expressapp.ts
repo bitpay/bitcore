@@ -822,6 +822,17 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/token/info', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const tokenContractInfo = await server.getTokenContractInfo(req.body);
+          res.json(tokenContractInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
     router.get('/v1/sendmaxinfo/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const q = req.query;
@@ -1131,6 +1142,22 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/nonce/:address', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        const opts = {
+          coin: req.query.coin || 'eth',
+          network: req.query.network || 'livenet',
+          address: req.params['address']
+        };
+        try {
+          const nonce = await server.getNonce(opts);
+          res.json(nonce);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
     router.post('/v1/clearcache/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.clearWalletCache().then(val => {
@@ -1425,6 +1452,36 @@ export class ExpressApp {
         .catch(err => {
           if (err) return returnError(err, res, req);
         });
+    });
+
+    router.get('/v1/service/oneInch/getReferrerFee', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .oneInchGetReferrerFee(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
+    router.post('/v1/service/oneInch/getSwap', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .oneInchGetSwap(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
     });
 
     router.get('/v1/service/payId/:payId', (req, res) => {

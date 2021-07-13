@@ -73,9 +73,8 @@ Point.getN = function getN() {
   return new BN(ec.curve.n.toArray());
 };
 
-if(!Point.prototype._getX) {
-  Point.prototype._getX = Point.prototype.getX;
-}
+if (!Point.prototype._getX)
+Point.prototype._getX = Point.prototype.getX;
 
 /**
  *
@@ -87,9 +86,8 @@ Point.prototype.getX = function getX() {
   return new BN(this._getX().toArray());
 };
 
-if(!Point.prototype._getY) {
-  Point.prototype._getY = Point.prototype.getY;
-}
+if (!Point.prototype._getY)
+Point.prototype._getY = Point.prototype.getY;
 
 /**
  *

@@ -208,6 +208,8 @@ export class Credentials {
         coin = '144';
       } else if (this.coin == 'doge') {
         coin = '3';
+      } else if (this.coin == 'ltc') {
+        coin = '2';
       } else {
         throw new Error('unknown coin: ' + this.coin);
       }
@@ -309,7 +311,10 @@ export class Credentials {
   isComplete() {
     if (!this.m || !this.n) return false;
     if (
-      (this.coin === 'btc' || this.coin === 'bch') &&
+      (this.coin === 'btc' ||
+        this.coin === 'bch' ||
+        this.coin === 'doge' ||
+        this.coin === 'ltc') &&
       (!this.publicKeyRing || this.publicKeyRing.length != this.n)
     )
       return false;

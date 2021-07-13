@@ -1,6 +1,5 @@
 'use strict';
 
-var buffer = require('buffer');
 var assert = require('assert');
 
 var js = require('./js');
@@ -57,7 +56,7 @@ module.exports = {
    * @return {boolean}
    */
   isBuffer: function isBuffer(arg) {
-    return buffer.Buffer.isBuffer(arg) || arg instanceof Uint8Array;
+    return Buffer.isBuffer(arg) || arg instanceof Uint8Array;
   },
 
   /**
@@ -80,7 +79,7 @@ module.exports = {
    *
    * Shortcut for <tt>buffer.Buffer.concat</tt>
    */
-  concat: buffer.Buffer.concat,
+  concat: Buffer.concat,
 
   equals: equals,
   equal: equals,
@@ -165,7 +164,7 @@ module.exports = {
    */
   hexToBuffer: function hexToBuffer(string) {
     assert(js.isHexa(string));
-    return new buffer.Buffer(string, 'hex');
+    return Buffer.from(string, 'hex');
   }
 };
 

@@ -6,6 +6,7 @@
         <img *ngIf=" chainNetwork.network !=='mainnet' && chainNetwork.chain==='BTC'" src=" assets/img/{{imgFiles['btcicon-testnet']}}" class="logo"  alt="{{ chainNetwork.chain }}"/>
         <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BCH'" src="assets/img/{{imgFiles['bchicon-testnet']}}" class="logo" alt="{{ chainNetwork.chain }}"/>
         <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='DOGE'" src="assets/img/{{imgFiles['doge-logo-testnet']}}" class="logo" alt="{{ chainNetwork.chain }}"/>
+        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='LTC'" src="assets/img/{{imgFiles['ltc-testnet']}}" class="logo" alt="{{ chainNetwork.chain }}"/>
         <img [ngClass]="{'secondary': chainNetwork.network ==='testnet'}" *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='ETH'" src="assets/img/currency_logos/{{currencyLogos.eth}}" class="logo" alt="{{ chainNetwork.chain }}"/>
       </ion-avatar>
       <ion-label color="dark" *ngIf="chainNetwork.chain !== 'ALL'">

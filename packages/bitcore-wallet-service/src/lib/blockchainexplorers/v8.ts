@@ -14,7 +14,8 @@ const Bitcore_ = {
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge')
+  doge: require('bitcore-lib-doge'),
+  ltc: require('bitcore-lib-ltc')
 };
 const config = require('../../config');
 const Constants = Common.Constants,
@@ -407,6 +408,20 @@ export class V8 {
 
   getMultisigContractInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/info/' + opts.multisigContractAddress;
+    console.log('[v8.js.378:url:] CHECKING CONTRACT INFO', url);
+    this.request
+      .get(url, {})
+      .then(contractInfo => {
+        contractInfo = JSON.parse(contractInfo);
+        return cb(null, contractInfo);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  getTokenContractInfo(opts, cb) {
+    const url = this.baseUrl + '/token/' + opts.tokenAddress;
     console.log('[v8.js.378:url:] CHECKING CONTRACT INFO', url);
     this.request
       .get(url, {})

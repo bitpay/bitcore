@@ -22,7 +22,8 @@ var Bitcore_ = {
   bch: CWC.BitcoreLibCash,
   eth: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
-  doge: CWC.BitcoreLibDoge
+  doge: CWC.BitcoreLibDoge,
+  ltc: CWC.BitcoreLibLtc
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -68,6 +69,7 @@ export class API extends EventEmitter {
   static Bitcore = CWC.BitcoreLib;
   static BitcoreCash = CWC.BitcoreLibCash;
   static BitcoreDoge = CWC.BitcoreLibDoge;
+  static BitcoreLtc = CWC.BitcoreLibLtc;
 
   constructor(opts?) {
     super();
@@ -1057,6 +1059,7 @@ export class API extends EventEmitter {
         var c = this.credentials;
         var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
         var walletId = c.walletId;
+        var useNativeSegwit = c.addressType === Constants.SCRIPT_TYPES.P2WPKH;
         var supportBIP44AndP2PKH =
           c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
         var encWalletName = Utils.encryptMessage(
@@ -1073,8 +1076,12 @@ export class API extends EventEmitter {
           coin: c.coin,
           network: c.network,
           id: walletId,
-          supportBIP44AndP2PKH
+          usePurpose48: c.n > 1,
+          useNativeSegwit
         };
+
+        if (!!supportBIP44AndP2PKH)
+          args['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
 
         this.request.post('/v2/wallets/', args, (err, body) => {
           if (err) {
@@ -1088,6 +1095,12 @@ export class API extends EventEmitter {
           }
 
           var i = 1;
+          var opts = {
+            coin: c.coin
+          };
+          if (!!supportBIP44AndP2PKH)
+            opts['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
+
           async.each(
             this.credentials.publicKeyRing,
             (item, next) => {
@@ -1098,10 +1111,7 @@ export class API extends EventEmitter {
                 item.xPubKey,
                 item.requestPubKey,
                 name,
-                {
-                  coin: c.coin,
-                  supportBIP44AndP2PKH
-                },
+                opts,
                 err => {
                   // Ignore error is copayer already in wallet
                   if (err && err instanceof Errors.COPAYER_IN_WALLET)
@@ -1395,6 +1405,7 @@ export class API extends EventEmitter {
       API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) ||
       null;
     args.payProUrl = opts.payProUrl || null;
+    args.isTokenSwap = opts.isTokenSwap || null;
     _.each(args.outputs, o => {
       o.message =
         API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) ||
@@ -1426,6 +1437,7 @@ export class API extends EventEmitter {
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
   // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
+  // * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
   // * @returns {Callback} cb - Return error or the transaction proposal
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
@@ -1594,8 +1606,6 @@ export class API extends EventEmitter {
 
     var args = [];
     if (opts.coin) {
-      if (!_.includes(Constants.COINS, opts.coin))
-        return cb(new Error('Invalid coin'));
       args.push('coin=' + opts.coin);
     }
     if (opts.tokenAddress) {
@@ -2499,6 +2509,25 @@ export class API extends EventEmitter {
   }
 
   // /**
+  // * Returns nonce.
+  // * @param {Object} opts - coin, network
+  // * @return {Callback} cb - Return error (if exists) and nonce
+  // */
+  getNonce(opts, cb) {
+    $.checkArgument(opts.coin == 'eth', 'Invalid coin: must be "eth"');
+
+    var qs = [];
+    qs.push(`coin=${opts.coin}`);
+    qs.push(`network=${opts.network}`);
+
+    const url = `/v1/nonce/${opts.address}?${qs.join('&')}`;
+    this.request.get(url, (err, nonce) => {
+      if (err) return cb(err);
+      return cb(null, nonce);
+    });
+  }
+
+  // /**
   // * Returns contract instantiation info. (All contract addresses instantiated by that sender with the current transaction hash and block number)
   // * @param {string} opts.sender - sender eth wallet address
   // * @param {string} opts.txId - instantiation transaction id
@@ -2520,6 +2549,20 @@ export class API extends EventEmitter {
   // */
   getMultisigContractInfo(opts, cb) {
     var url = '/v1/ethmultisig/info';
+    opts.network = this.credentials.network;
+    this.request.post(url, opts, (err, contractInfo) => {
+      if (err) return cb(err);
+      return cb(null, contractInfo);
+    });
+  }
+
+  // /**
+  // * Returns contract info. (name symbol precision)
+  // * @param {string} opts.tokenAddress - token contract address
+  // * @return {Callback} cb - Return error (if exists) instantiation info
+  // */
+  getTokenContractInfo(opts, cb) {
+    var url = '/v1/token/info';
     opts.network = this.credentials.network;
     this.request.post(url, opts, (err, contractInfo) => {
       if (err) return cb(err);
@@ -2801,9 +2844,8 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token
-              );
+              const tokenCredentials =
+                client.credentials.getTokenCredentials(token);
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2816,14 +2858,13 @@ export class API extends EventEmitter {
               log.info(
                 `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
               );
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials(
-                {
+              const multisigEthCredentials =
+                client.credentials.getMultisigEthCredentials({
                   walletName: info.walletName,
                   multisigContractAddress: info.multisigContractAddress,
                   n: info.n,
                   m: info.m
-                }
-              );
+                });
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
@@ -2836,9 +2877,8 @@ export class API extends EventEmitter {
                     return;
                   }
                   log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(
-                    token
-                  );
+                  const tokenCredentials =
+                    multisigEthClient.credentials.getTokenCredentials(token);
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);
@@ -2870,6 +2910,8 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
+        ['ltc', 'testnet'],
+        ['ltc', 'livenet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true]
       ];
@@ -3137,6 +3179,19 @@ export class API extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.request.post(
         '/v1/service/changelly/createFixTransaction',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  oneInchGetSwap(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/oneInch/getSwap',
         data,
         (err, data) => {
           if (err) return reject(err);

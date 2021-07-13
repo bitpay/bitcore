@@ -8,7 +8,6 @@ var Base58 = require('./encoding/base58');
 var Base58Check = require('./encoding/base58check');
 var Hash = require('./crypto/hash');
 var HDPrivateKey = require('./hdprivatekey');
-var HDKeyCache = require('./hdkeycache');
 var Network = require('./networks');
 var Point = require('./crypto/point');
 var PublicKey = require('./publickey');
@@ -87,6 +86,9 @@ HDPublicKey.isValidPath = function(arg) {
 };
 
 /**
+ * WARNING: This method is deprecated. Use deriveChild instead.
+ *
+ *
  * Get a derivated child based on a string or number.
  *
  * If the first argument is a string, it's parsed as the full path of
@@ -109,6 +111,32 @@ HDPublicKey.isValidPath = function(arg) {
  * @param {string|number} arg
  */
 HDPublicKey.prototype.derive = function(arg, hardened) {
+  return this.deriveChild(arg, hardened);
+};
+
+/**
+ * Get a derivated child based on a string or number.
+ *
+ * If the first argument is a string, it's parsed as the full path of
+ * derivation. Valid values for this argument include "m" (which returns the
+ * same public key), "m/0/1/40/2/1000".
+ *
+ * Note that hardened keys can't be derived from a public extended key.
+ *
+ * If the first argument is a number, the child with that index will be
+ * derived. See the example usage for clarification.
+ *
+ * @example
+ * ```javascript
+ * var parent = new HDPublicKey('xpub...');
+ * var child_0_1_2 = parent.deriveChild(0).deriveChild(1).deriveChild(2);
+ * var copy_of_child_0_1_2 = parent.deriveChild("m/0/1/2");
+ * assert(child_0_1_2.xprivkey === copy_of_child_0_1_2);
+ * ```
+ *
+ * @param {string|number} arg
+ */
+HDPublicKey.prototype.deriveChild = function(arg, hardened) {
   if (_.isNumber(arg)) {
     return this._deriveWithNumber(arg, hardened);
   } else if (_.isString(arg)) {
@@ -124,10 +152,6 @@ HDPublicKey.prototype._deriveWithNumber = function(index, hardened) {
   }
   if (index < 0) {
     throw new hdErrors.InvalidPath(index);
-  }
-  var cached = HDKeyCache.get(this.xpubkey, index, false);
-  if (cached) {
-    return cached;
   }
 
   var indexBuffer = BufferUtil.integerAsBuffer(index);
@@ -151,13 +175,13 @@ HDPublicKey.prototype._deriveWithNumber = function(index, hardened) {
     chainCode: chainCode,
     publicKey: publicKey
   });
-  HDKeyCache.set(this.xpubkey, index, false, derived);
+
   return derived;
 };
 
 HDPublicKey.prototype._deriveFromString = function(path) {
   /* jshint maxcomplexity: 8 */
-  if (path.includes("'")) {
+  if (_.includes(path, "'")) {
     throw new hdErrors.InvalidIndexCantDeriveHardened();
   } else if (!HDPublicKey.isValidPath(path)) {
     throw new hdErrors.InvalidPath(path);
@@ -254,8 +278,8 @@ HDPublicKey.prototype._buildFromObject = function(arg) {
     depth: _.isNumber(arg.depth) ? BufferUtil.integerAsSingleByteBuffer(arg.depth) : arg.depth,
     parentFingerPrint: _.isNumber(arg.parentFingerPrint) ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
     childIndex: _.isNumber(arg.childIndex) ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
-    chainCode: _.isString(arg.chainCode) ? BufferUtil.hexToBuffer(arg.chainCode) : arg.chainCode,
-    publicKey: _.isString(arg.publicKey) ? BufferUtil.hexToBuffer(arg.publicKey) :
+    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode,'hex') : arg.chainCode,
+    publicKey: _.isString(arg.publicKey) ? Buffer.from(arg.publicKey,'hex') :
       BufferUtil.isBuffer(arg.publicKey) ? arg.publicKey : arg.publicKey.toBuffer(),
     checksum: _.isNumber(arg.checksum) ? BufferUtil.integerAsBuffer(arg.checksum) : arg.checksum
   };
@@ -321,7 +345,7 @@ HDPublicKey.prototype._buildFromBuffers = function(arg) {
 
   var xpubkey;
   xpubkey = Base58Check.encode(BufferUtil.concat(sequence));
-  arg.xpubkey = new Buffer(xpubkey);
+  arg.xpubkey = Buffer.from(xpubkey);
 
   var publicKey = new PublicKey(arg.publicKey, {network: network});
   var size = HDPublicKey.ParentFingerPrintSize;
@@ -391,7 +415,7 @@ HDPublicKey.prototype.inspect = function() {
  *  <li> network: 'livenet' or 'testnet'
  *  <li> depth: a number from 0 to 255, the depth to the master extended key
  *  <li> fingerPrint: a number of 32 bits taken from the hash of the public key
- *  <li> fingerPrint: a number of 32 bits taken from the hash of this key's
+ *  <li> parentFingerPrint: a number of 32 bits taken from the hash of this key's
  *  <li>     parent's public key
  *  <li> childIndex: index with which this key was derived
  *  <li> chainCode: string in hexa encoding used for derivation

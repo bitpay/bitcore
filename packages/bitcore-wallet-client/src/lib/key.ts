@@ -397,6 +397,8 @@ export class Key {
       coinCode = '144';
     } else if (opts.coin == 'doge') {
       coinCode = '3';
+    } else if (opts.coin == 'ltc') {
+      coinCode = '2';
     } else {
       throw new Error('unknown coin: ' + opts.coin);
     }
@@ -416,7 +418,6 @@ export class Key {
 
     if (password) $.shouldBeString(password, 'provide password');
 
-    this._checkCoin(opts.coin);
     this._checkNetwork(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
@@ -519,7 +520,9 @@ export class Key {
     } else {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
-      const chain = Utils.getChain(txp.coin);
+      const chain = txp.chain
+        ? txp.chain.toUpperCase()
+        : Utils.getChain(txp.coin);
       const txArray = _.isArray(tx) ? tx : [tx];
       const isChange = false;
       const addressIndex = 0;

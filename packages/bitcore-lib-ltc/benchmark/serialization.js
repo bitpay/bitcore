@@ -28,7 +28,7 @@ async.series([
       buffers.push(br.toBuffer());
 
       // hashes
-      var data = litecore.crypto.Hash.sha256sha256(new Buffer(32));
+      var data = litecore.crypto.Hash.sha256sha256(Buffer.alloc(32));
       hashBuffers.push(data);
     }
 
