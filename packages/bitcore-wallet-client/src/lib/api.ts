@@ -2711,7 +2711,7 @@ export class API extends EventEmitter {
   static upgradeCredentialsV2(x) {
     $.shouldBeObject(x);
     // Check if credential is v2, if not upgrade first to v2.
-    if(x.version && x.version == 2) {
+    if(!x.version || x.version < 2) {
       const credentialV2 = this.upgradeCredentialsV1(x);
       if(credentialV2 && credentialV2.credentials) {
         x = credentialV2.credentials;
@@ -2832,7 +2832,7 @@ export class API extends EventEmitter {
         migrated = API.upgradeCredentialsV1(credential);
       }
 
-      if (credential.version == 2) {
+      if (credential.version == 2 || migrated.credentials.version == 2) {
         log.info('About to migrate to V3 : ' + credential.walletId);
         migrated = API.upgradeCredentialsV2(
           migrated && migrated.credentials ? migrated.credentials : credential
