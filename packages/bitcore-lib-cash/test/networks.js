@@ -37,7 +37,7 @@ describe('Networks', function() {
       if (key !== 'networkMagic') {
         customnet[key].should.equal(custom[key]);
       } else {
-        var expected = new Buffer('e7beb4d4', 'hex');
+        var expected = Buffer.from('e7beb4d4', 'hex');
         customnet[key].should.deep.equal(expected);
       }
     }
@@ -118,10 +118,10 @@ describe('Networks', function() {
     expect(networks.get('regtest').prefix).to.equal('bchreg');
   });
 
-  it('should have bchreg prefix after enableRegtest is called', function() {
+  it('#DEPRECATED should not have bchreg prefix after enableRegtest is called', function() {
     var network = networks.get('testnet');
     networks.enableRegtest();
-    expect(network.prefix).to.equal('bchreg');
+    expect(network.prefix).to.equal('bchtest');
   });
 
   it('should have bchtest prefix after disableRegtest is called', function() {

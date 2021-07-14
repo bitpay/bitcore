@@ -1,68 +1,100 @@
-import { CoinModel } from './coin';
-import { TransactionModel } from './transaction';
-import { TransformOptions } from '../types/TransformOptions';
-import { ChainNetwork } from '../types/ChainNetwork';
 import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel } from './base';
 import logger from '../logger';
+import { StorageService } from '../services/storage';
+import { SpentHeightIndicators } from '../types/Coin';
+import { BitcoinBlockType, BitcoinHeaderObj } from '../types/namespaces/Bitcoin';
+import { TransformOptions } from '../types/TransformOptions';
+import { MongoBound } from './base';
+import { BaseBlock, IBlock } from './baseBlock';
+import { CoinStorage } from './coin';
+import { EventStorage } from './events';
+import { TransactionStorage } from './transaction';
 
-export type IBlock = {
-  chain: string;
-  network: string;
-  height: number;
-  hash: string;
+export type IBtcBlock = IBlock & {
   version: number;
   merkleRoot: string;
-  time: Date;
-  timeNormalized: Date;
-  nonce: number;
-  previousBlockHash: string;
-  nextBlockHash: string;
-  transactionCount: number;
-  size: number;
   bits: number;
-  reward: number;
-  processed: boolean;
+  nonce: number;
 };
 
 @LoggifyClass
-export class Block extends BaseModel<IBlock> {
-  constructor() {
-    super('blocks');
-  }
-
-  allowedPaging = [
-    {
-      key: 'height' as 'height',
-      type: 'number' as 'number'
-    }
-  ];
-
-  async onConnect() {
-    this.collection.createIndex({ hash: 1 });
-    this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 });
-    this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 });
-    this.collection.createIndex({ previousBlockHash: 1 });
+export class BitcoinBlock extends BaseBlock<IBtcBlock> {
+  constructor(storage?: StorageService) {
+    super(storage);
   }
 
   async addBlock(params: {
-    block: Bitcoin.Block;
+    block: BitcoinBlockType;
     parentChain?: string;
     forkHeight?: number;
+    initialSyncComplete: boolean;
     chain: string;
     network: string;
   }) {
-    const { block, chain, network, parentChain, forkHeight } = params;
+    const { block, chain, network } = params;
+    const header = block.header.toObject();
+
+    const reorg = await this.handleReorg({ header, chain, network });
+
+    if (reorg) {
+      return Promise.reject('reorg');
+    }
+    return this.processBlock(params);
+  }
+
+  async processBlock(params: {
+    block: BitcoinBlockType;
+    parentChain?: string;
+    forkHeight?: number;
+    initialSyncComplete: boolean;
+    chain: string;
+    network: string;
+  }) {
+    const { chain, network, block, parentChain, forkHeight, initialSyncComplete } = params;
+    const blockOp = await this.getBlockOp(params);
+    const convertedBlock = blockOp.updateOne.update.$set;
+    const { height, timeNormalized, time } = convertedBlock;
+
+    const previousBlock = await this.collection.findOne({ hash: convertedBlock.previousBlockHash, chain, network });
+
+    await this.collection.bulkWrite([blockOp]);
+    if (previousBlock) {
+      await this.collection.updateOne(
+        { chain, network, hash: previousBlock.hash },
+        { $set: { nextBlockHash: convertedBlock.hash } }
+      );
+      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+    }
+
+    await TransactionStorage.batchImport({
+      txs: block.transactions,
+      blockHash: convertedBlock.hash,
+      blockTime: new Date(time),
+      blockTimeNormalized: new Date(timeNormalized),
+      height,
+      chain,
+      network,
+      parentChain,
+      forkHeight,
+      initialSyncComplete
+    });
+
+    if (initialSyncComplete) {
+      EventStorage.signalBlock(convertedBlock);
+    }
+
+    await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
+  }
+
+  async getBlockOp(params: { block: BitcoinBlockType; chain: string; network: string }) {
+    const { block, chain, network } = params;
     const header = block.header.toObject();
     const blockTime = header.time * 1000;
-
-    await this.handleReorg({ header, chain, network });
 
     const previousBlock = await this.collection.findOne({ hash: header.prevHash, chain, network });
 
     const blockTimeNormalized = (() => {
-      const prevTime = previousBlock ? previousBlock.timeNormalized : null;
+      const prevTime = previousBlock ? new Date(previousBlock.timeNormalized) : null;
       if (prevTime && blockTime <= prevTime.getTime()) {
         return prevTime.getTime() + 1;
       } else {
@@ -71,108 +103,78 @@ export class Block extends BaseModel<IBlock> {
     })();
 
     const height = (previousBlock && previousBlock.height + 1) || 1;
-    logger.debug('Setting blockheight', height);
+    logger.debug('Setting blockheight: ' + height);
 
-    await this.collection.update(
-      { hash: header.hash, chain, network },
-      {
-        $set: {
-          chain,
-          network,
-          hash: block.hash,
-          height,
-          version: header.version,
-          previousBlockHash: header.prevHash,
-          merkleRoot: header.merkleRoot,
-          time: new Date(blockTime),
-          timeNormalized: new Date(blockTimeNormalized),
-          bits: header.bits,
-          nonce: header.nonce,
-          transactionCount: block.transactions.length,
-          size: block.toBuffer().length,
-          reward: block.transactions[0].outputAmount
-        }
-      },
-      { upsert: true }
-    );
-
-    if (previousBlock) {
-      await this.collection.updateOne(
-        { chain, network, hash: previousBlock.hash },
-        { $set: { nextBlockHash: header.hash } }
-      );
-      logger.debug('Updating previous block.nextBlockHash ', header.hash);
-    }
-
-    await TransactionModel.batchImport({
-      txs: block.transactions,
-      blockHash: header.hash,
-      blockTime: new Date(blockTime),
-      blockTimeNormalized: new Date(blockTimeNormalized),
-      height: height,
+    const convertedBlock: IBtcBlock = {
       chain,
       network,
-      parentChain,
-      forkHeight
-    });
-
-    return this.collection.update({ hash: header.hash, chain, network }, { $set: { processed: true } });
+      hash: block.hash,
+      height,
+      version: header.version,
+      nextBlockHash: '',
+      previousBlockHash: header.prevHash,
+      merkleRoot: header.merkleRoot,
+      time: new Date(blockTime),
+      timeNormalized: new Date(blockTimeNormalized),
+      bits: header.bits,
+      nonce: header.nonce,
+      transactionCount: block.transactions.length,
+      size: block.toBuffer().length,
+      reward: block.transactions[0].outputAmount,
+      processed: false
+    };
+    return {
+      updateOne: {
+        filter: {
+          hash: header.hash,
+          chain,
+          network
+        },
+        update: {
+          $set: convertedBlock
+        },
+        upsert: true
+      }
+    };
   }
 
-  getPoolInfo(coinbase: string) {
-    //TODO need to make this actually parse the coinbase input and map to miner strings
-    // also should go somewhere else
-    return coinbase;
-  }
-
-  async getLocalTip(params: ChainNetwork) {
-    const { chain, network } = params;
-    const [bestBlock] = await this.collection
-      .find({ processed: true, chain, network })
-      .sort({ height: -1 })
-      .limit(1)
-      .toArray();
-    return bestBlock || { height: 0 };
-  }
-
-  async getLocatorHashes(params: ChainNetwork) {
-    const { chain, network } = params;
-    const locatorBlocks = await this.collection
-      .find({ processed: true, chain, network })
-      .sort({ height: -1 })
-      .limit(30)
-      .toArray();
-
-    if (locatorBlocks.length < 2) {
-      return [Array(65).join('0')];
-    }
-    return locatorBlocks.map(block => block.hash);
-  }
-
-  async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }) {
+  async handleReorg(params: { header?: BitcoinHeaderObj; chain: string; network: string }): Promise<boolean> {
     const { header, chain, network } = params;
-    const localTip = await BlockModel.getLocalTip(params);
-    if (header && localTip.hash === header.prevHash) {
-      return;
+    let localTip = await this.getLocalTip(params);
+    if (header && localTip && localTip.hash === header.prevHash) {
+      return false;
     }
-    if (localTip.height === 0) {
-      return;
+    if (!localTip || localTip.height === 0) {
+      return false;
     }
-    logger.info(`Resetting tip to ${localTip.previousBlockHash}`, { chain, network });
-    await this.collection.remove({ chain, network, height: { $gte: localTip.height } });
-    await TransactionModel.collection.remove({ chain, network, blockHeight: { $gte: localTip.height } });
-    await CoinModel.collection.remove({ chain, network, mintHeight: { $gte: localTip.height } });
-    await CoinModel.collection.update(
+    if (header) {
+      const prevBlock = await this.collection.findOne({ chain, network, hash: header.prevHash });
+      if (prevBlock) {
+        localTip = prevBlock;
+      } else {
+        logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
+      }
+      logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
+    }
+    const reorgOps = [
+      this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
+      TransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } }),
+      CoinStorage.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } })
+    ];
+    await Promise.all(reorgOps);
+
+    await CoinStorage.collection.updateMany(
       { chain, network, spentHeight: { $gte: localTip.height } },
-      { $set: { spentTxid: null, spentHeight: -1 } },
-      { multi: true }
+      { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.unspent } }
     );
 
     logger.debug('Removed data from above blockHeight: ', localTip.height);
+    return true;
   }
 
-  _apiTransform(block: IBlock, options: TransformOptions): any {
+  _apiTransform(block: Partial<MongoBound<IBtcBlock>>, options?: TransformOptions): any {
     const transform = {
+      _id: block._id,
       chain: block.chain,
       network: block.network,
       hash: block.hash,
@@ -208,4 +210,4 @@ export class Block extends BaseModel<IBlock> {
   }
 }
 
-export let BlockModel = new Block();
+export let BitcoinBlockStorage = new BitcoinBlock();

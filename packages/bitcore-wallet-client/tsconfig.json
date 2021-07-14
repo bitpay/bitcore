@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6",
+      "es2017"
+    ],
+    "noImplicitAny": false,
+    "removeComments": true,
+    "declaration": true,
+    "declarationMap": true,
+    "module": "commonjs",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "target": "es2015",
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "*": [
+        "*",
+        "./src/*"
+      ]
+    },
+    "outDir": "ts_build",
+    "sourceMap": true
+  },
+  "include": [
+    "./scripts/**/*.ts",
+    "./src/**/*.ts",
+    "./tests/**/*.ts",
+    "./test/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

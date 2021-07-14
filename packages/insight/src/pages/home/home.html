@@ -1,0 +1,43 @@
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
+
+<ion-content class="content-container">
+    <div *ngIf="chainNetwork.chain === 'ALL'">
+        <h1 class="content-container--heading all-coins u-font-large">Latest Blocks</h1>
+        <ion-grid class="page-content-grid">
+            <ion-row>
+                <ion-col col-md-6 col-12 class="page-content" *ngFor="let availableNetwork of availableNetworks">
+                    <ion-item class="chain" no-lines>
+                        <ion-avatar item-start>
+                            <img *ngIf="availableNetwork.network === 'mainnet'" src="assets/img/currency_logos/{{ availableNetwork.chain.toLowerCase() }}.svg" class="logo" alt="{{ availableNetwork.chain }}"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" alt="BTC"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" alt="BCH"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="DOGE"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='LTC'" src="assets/img/ltc-testnet.svg" class="logo" alt="LTC"/>
+                          <img [ngClass]="{'secondary': availableNetwork.network ==='testnet'}" *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" alt="ETH"/>
+                        </ion-avatar>
+                        <ion-label color="dark" item-end>
+                            {{ availableNetwork.chain }} <small class="pill"> {{ availableNetwork.network }}</small>
+                        </ion-label>
+                    </ion-item>
+                    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="availableNetwork" [numBlocks]="'5'" #latestBlocks>
+                    </latest-blocks>
+                </ion-col>
+            </ion-row>
+        </ion-grid>
+
+
+    </div>
+
+    <div *ngIf="chainNetwork.chain !== 'ALL'">
+        <ion-grid class="page-content-grid">
+            <ion-row>
+                <ion-col col-12 class="page-content">
+                    <h1 class="content-container--heading u-font-large">Latest Blocks</h1>
+                    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
+                    </latest-blocks>
+                </ion-col>
+            </ion-row>
+        </ion-grid>
+    </div>
+</ion-content>
+<footer [chainNetwork]="chainNetwork"></footer>

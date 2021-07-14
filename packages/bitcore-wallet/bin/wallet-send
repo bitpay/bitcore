@@ -12,7 +12,7 @@ var Bitcore_ = {
 program = utils.configureCommander(program);
 
 program
-  .option('--fee <fee-per-kb>', 'Fee per kB to use. Default 100bits.')
+  .option('--fee <fee-policy>', 'Fee policy to use (default "normal") [urgent, priority/normal/economy/superEconomy] ')
   .usage('[options] <address> <amount> [note]')
   .description('Create a proposal for sending bitcoins to a destination address.\n  The amount can be specified in bit, btc or sat (the default).');
 
@@ -47,21 +47,16 @@ function confirmDiag(amountStr, note, cb) {
 
 
 function send(client, address, amount, fee, note, uri) { 
-  var amount, feePerKb;
-  try {
-    feePerKb = !_.isUndefined(fee) ? utils.parseAmount(fee) : 100e2;
-  } catch (ex) {
-    utils.die(ex);
-  }
+  var amount;
 
-
+  fee = fee || 'normal';
   client.createTxProposal({
     outputs: [{
       toAddress: address,
       amount: amount,
     }],
     message: note,
-    feePerKb: feePerKb,
+    feeLevel: fee,
     payProUrl: uri,
   }, function(err, txp) {
     utils.die(err);
@@ -87,7 +82,6 @@ utils.getClient(program, {
   var coin = client.credentials.coin;
   var bitcore = Bitcore_[coin];
 
-
   var uri, addr, amount, note;
 
   // no backwards compat uri
@@ -101,8 +95,8 @@ utils.getClient(program, {
 
     // BIP21
     try { 
-      var parsed = new bitcore.URI(arg1);
 
+      var parsed = new bitcore.URI(arg1);
       if (!parsed.r) {
 
         addr = parsed.address ? parsed.address.toString() : '';
@@ -113,7 +107,7 @@ utils.getClient(program, {
         uri = parsed.r;
       }
     } catch (e) {
-      utils.die(e);
+      uri = null;
     }
   }
 
@@ -125,7 +119,7 @@ utils.getClient(program, {
       payProUrl: uri,
     }, function(err, paypro) {
       if (err) {
-        utils.die(' Failed to fetch payment: ' + err);
+        utils.die(' Failed to fetch payment: ' + (_.isObject(err)? JSON.stringify(err) : err));
       } else if (!paypro.verified) {
         utils.die('Failed to verify payment protocol signatures');
       }

@@ -172,19 +172,47 @@ describe('Peer', function() {
   });
 
   it('disconnect with max buffer length', function(done) {
-    var peer = new Peer({host: 'localhost'});
+    var peer = new Peer({ host: 'localhost' });
     var socket = new EventEmitter();
     socket.connect = sinon.spy();
     peer._getSocket = function() {
       return socket;
     };
+    var error;
+    peer.on('error', function(err) {
+      error = err;
+    });
     peer.disconnect = function() {
+      error.should.include({
+        message: 'Data buffer exceeded MAX_RECEIVE_BUFFER, disconnecting.'
+      });
       done();
     };
     peer.connect();
-    var buffer = new Buffer(Array(Peer.MAX_RECEIVE_BUFFER + 1));
+    var buffer = Buffer.allocUnsafe(Peer.MAX_RECEIVE_BUFFER + 1);
     peer.socket.emit('data', buffer);
+  });
 
+  it('emits an error on unknown messages', function(done) {
+    var peer = new Peer({ host: 'localhost' });
+    var socket = new EventEmitter();
+    socket.connect = sinon.spy();
+    peer._getSocket = function() {
+      return socket;
+    };
+    var error;
+    peer.on('error', function(err) {
+      error = err;
+    });
+    peer.disconnect = function() {
+      error.should.include({
+        message: 'Unsupported message command: unknown'
+      });
+      done();
+    };
+    peer.connect();
+    var buf = Buffer.from('e3e1f3e8756e6b6e6f776e0000000000000000005df6e0e2', 'hex');
+    peer.socket.emit('data', buf);
   });
 
   it('should send version on version if not already sent', function(done) {
@@ -240,4 +268,43 @@ describe('Peer', function() {
     });
   });
 
+  it('version/subversion set properly', function() {
+    var peer = new Peer({ host: 'localhost' });
+    should.not.exist(peer.ownSubversion);
+    should.not.exist(peer.ownVersion);
+    var peer2 = new Peer({
+      host: 'localhost',
+      subversion: '/useragent:0.0.0/'
+    });
+    peer2.ownSubversion.should.equal('/useragent:0.0.0/');
+    should.not.exist(peer.ownVersion);
+    var peer3 = new Peer({ host: 'localhost', version: 70012 });
+    should.not.exist(peer.ownSubversion);
+    peer3.ownVersion.should.equal(70012);
+    var peer4 = new Peer({
+      host: 'localhost',
+      subversion: '/useragent:0.0.0/',
+      version: 70012
+    });
+    peer4.ownSubversion.should.equal('/useragent:0.0.0/');
+    peer4.ownVersion.should.equal(70012);
+  });
+
+  it('version/subversion settings respected', function(done) {
+  var socket = new EventEmitter();
+    var peer = new Peer({
+      socket: socket,
+      subversion: '/useragent:0.0.0/',
+      version: 70012
+    });
+    peer.sendMessage = function(message) {
+      message.version.should.equal(70012);
+      message.subversion.should.equal('/useragent:0.0.0/');
+      peer.disconnect();
+    };
+    peer.on('disconnect', () => {
+      done();
+    });
+    peer.connect();
+  });
 });

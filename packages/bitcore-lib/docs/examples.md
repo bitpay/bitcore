@@ -1,6 +1,7 @@
 # Bitcore examples
 
 ## Generate a random address
+
 ```javascript
 var privateKey = new bitcore.PrivateKey();
 
@@ -8,8 +9,9 @@ var address = privateKey.toAddress();
 ```
 
 ## Generate a address from a SHA256 hash
+
 ```javascript
-var value = new Buffer('correct horse battery staple');
+var value = Buffer.from('correct horse battery staple');
 var hash = bitcore.crypto.Hash.sha256(value);
 var bn = bitcore.crypto.BN.fromBuffer(hash);
 
@@ -17,6 +19,7 @@ var address = new bitcore.PrivateKey(bn).toAddress();
 ```
 
 ## Import an address via WIF
+
 ```javascript
 var wif = 'Kxr9tQED9H44gCmp6HAdmemAzU3n84H3dGkuWTKvE23JgHMW8gct';
 
@@ -24,6 +27,7 @@ var address = new bitcore.PrivateKey(wif).toAddress();
 ```
 
 ## Create a Transaction
+
 ```javascript
 var privateKey = new bitcore.PrivateKey('L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy');
 var utxo = {
@@ -41,6 +45,7 @@ var transaction = new bitcore.Transaction()
 ```
 
 ## Sign a Bitcoin message
+
 ```javascript
 var Message = require('bitcore-message');
 
@@ -51,6 +56,7 @@ var signature = message.sign(privateKey);
 ```
 
 ## Verify a Bitcoin message
+
 ```javascript
 var Message = require('bitcore-message');
 
@@ -61,6 +67,7 @@ var verified = new Message('This is an example of a signed message.').verify(add
  ```
 
 ## Create an OP RETURN transaction
+
 ```javascript
 var privateKey = new bitcore.PrivateKey('L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy');
 var utxo = {
@@ -78,6 +85,7 @@ var transaction = new bitcore.Transaction()
 ```
 
 ## Create a 2-of-3 multisig P2SH address
+
 ```javascript
 var publicKeys = [
   '026477115981fe981a6918a6297d9803c4dc04f328f22041bedff886bbc2962e01',
@@ -90,6 +98,7 @@ var address = new bitcore.Address(publicKeys, requiredSignatures);
 ```
 
 ## Spend from a 2-of-2 multisig P2SH address
+
 ```javascript
 var privateKeys = [
   new bitcore.PrivateKey('91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbgwmaKkrx'),

@@ -1,9 +1,10 @@
-import { WalletAddressModel } from '../models/walletAddress';
-import { BaseModel } from './base';
-import { TransformOptions } from '../types/TransformOptions';
 import { ObjectID } from 'mongodb';
+import { WalletAddressStorage } from '../models/walletAddress';
+import { StorageService } from '../services/storage';
+import { TransformOptions } from '../types/TransformOptions';
+import { BaseModel } from './base';
 
-export type IWallet = {
+export interface IWallet {
   _id?: ObjectID;
   chain: string;
   network: string;
@@ -11,19 +12,19 @@ export type IWallet = {
   singleAddress: boolean;
   pubKey: string;
   path: string;
-};
+}
 
-export class Wallet extends BaseModel<IWallet> {
-  constructor() {
-    super('wallets');
+export class WalletModel extends BaseModel<IWallet> {
+  constructor(storage?: StorageService) {
+    super('wallets', storage);
   }
   allowedPaging = [];
 
   onConnect() {
-    this.collection.createIndex({ pubKey: 1 });
+    this.collection.createIndex({ pubKey: 1 }, { background: true });
   }
 
-  _apiTransform(wallet: IWallet, options: TransformOptions) {
+  _apiTransform(wallet: IWallet, options?: TransformOptions) {
     let transform = { name: wallet.name, pubKey: wallet.pubKey };
     if (options && options.object) {
       return transform;
@@ -32,10 +33,13 @@ export class Wallet extends BaseModel<IWallet> {
   }
 
   async updateCoins(wallet: IWallet) {
-    let addressModels = await WalletAddressModel.collection.find({ wallet: wallet._id }).toArray();
+    let addressModels = await WalletAddressStorage.collection
+      .find({ wallet: wallet._id })
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
     let addresses = addressModels.map(model => model.address);
-    return WalletAddressModel.updateCoins({ wallet, addresses });
+    return WalletAddressStorage.updateCoins({ wallet, addresses });
   }
 }
 
-export let WalletModel = new Wallet();
+export let WalletStorage = new WalletModel();

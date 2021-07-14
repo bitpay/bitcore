@@ -1,0 +1,28 @@
+page-home {
+  .chain {
+     margin-bottom: -18px;
+     border-bottom: 1px solid rgb(246, 246, 246) !important;
+     color: rgb(0, 0, 0);
+     padding-top: 1rem;
+     padding-bottom: 1rem;
+     border-radius: 9px 9px 0 0;
+
+     :hover {
+        cursor: default !important;
+     }
+
+     ion-label {
+        font-weight: 600;
+        font-size: 18px;
+     }
+  }
+
+  ion-item.item-md:hover {
+     cursor: default;
+     transform: none;
+     background-color: #fff;
+     box-shadow: none;
+  }
+}
+
+

@@ -1,5 +1,3 @@
-'use strict';
-
 var Address = require('../address');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');
@@ -146,21 +144,23 @@ Script.fromASM = function(str) {
 
     if (_.isUndefined(opcodenum)) {
       var buf = Buffer.from(tokens[i], 'hex');
+      var opcodenum;
+      var len = buf.length;
+      if (len >= 0 && len < Opcode.OP_PUSHDATA1) {
+        opcodenum = len;
+      } else if (len < Math.pow(2, 8)) {
+        opcodenum = Opcode.OP_PUSHDATA1;
+      } else if (len < Math.pow(2, 16)) {
+        opcodenum = Opcode.OP_PUSHDATA2;
+      } else if (len < Math.pow(2, 32)) {
+        opcodenum = Opcode.OP_PUSHDATA4;
+      }
       script.chunks.push({
         buf: buf,
         len: buf.length,
-        opcodenum: buf.length
-      });
-      i = i + 1;
-    } else if (opcodenum === Opcode.OP_PUSHDATA1 ||
-      opcodenum === Opcode.OP_PUSHDATA2 ||
-      opcodenum === Opcode.OP_PUSHDATA4) {
-      script.chunks.push({
-        buf: Buffer.from(tokens[i + 2], 'hex'),
-        len: parseInt(tokens[i + 1]),
         opcodenum: opcodenum
       });
-      i = i + 3;
+      i = i + 1;
     } else {
       script.chunks.push({
         opcodenum: opcodenum
@@ -172,12 +172,12 @@ Script.fromASM = function(str) {
 };
 
 Script.fromHex = function(str) {
-  return new Script(new buffer.Buffer(str, 'hex'));
+  return new Script(Buffer.from(str, 'hex'));
 };
 
 Script.fromString = function(str) {
   if (JSUtil.isHexa(str) || str.length === 0) {
-    return new Script(new buffer.Buffer(str, 'hex'));
+    return new Script(Buffer.from(str, 'hex'));
   }
   var script = new Script();
   script.chunks = [];
@@ -258,9 +258,9 @@ Script.prototype._chunkToString = function(chunk, type) {
     }
   } else {
     // data chunk
-    if (!asm && opcodenum === Opcode.OP_PUSHDATA1 ||
+    if (!asm && (opcodenum === Opcode.OP_PUSHDATA1 ||
       opcodenum === Opcode.OP_PUSHDATA2 ||
-      opcodenum === Opcode.OP_PUSHDATA4) {
+      opcodenum === Opcode.OP_PUSHDATA4)) {
       str = str + ' ' + Opcode(opcodenum).toString();
     }
     if (chunk.len > 0) {
@@ -326,7 +326,6 @@ Script.prototype.isPublicKeyHashIn = function() {
     var pubkeyBuf = this.chunks[1].buf;
     if (signatureBuf &&
         signatureBuf.length &&
-        signatureBuf[0] === 0x30 &&
         pubkeyBuf &&
         pubkeyBuf.length
        ) {
@@ -462,13 +461,13 @@ Script.prototype.isMultisigIn = function() {
  * @returns {boolean} true if this is a valid standard OP_RETURN output
  */
 Script.prototype.isDataOut = function() {
-  return this.chunks.length >= 1 &&
+  var step1 = this.chunks.length >= 1 &&
     this.chunks[0].opcodenum === Opcode.OP_RETURN &&
-    (this.chunks.length === 1 ||
-      (this.chunks.length === 2 &&
-        this.chunks[1].buf &&
-        this.chunks[1].buf.length <= Script.OP_RETURN_STANDARD_SIZE &&
-        this.chunks[1].length === this.chunks.len));
+    this.toBuffer().length <= 223; // 223 instead of 220 because (+1 for OP_RETURN, +2 for the pushdata opcodes)
+  if (!step1) return false;
+  var chunks = this.chunks.slice(1);
+  var script2 = new Script({chunks: chunks});
+  return script2.isPushOnly();
 };
 
 /**
@@ -497,7 +496,10 @@ Script.prototype.getData = function() {
  */
 Script.prototype.isPushOnly = function() {
   return _.every(this.chunks, function(chunk) {
-    return chunk.opcodenum <= Opcode.OP_16;
+    return chunk.opcodenum <= Opcode.OP_16 ||
+      chunk.opcodenum === Opcode.OP_PUSHDATA1 ||
+      chunk.opcodenum === Opcode.OP_PUSHDATA2 ||
+      chunk.opcodenum === Opcode.OP_PUSHDATA4;
   });
 };
 
@@ -752,7 +754,42 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
   $.checkArgument(_.isArray(signatures));
   opts = opts || {};
   var s = new Script();
-  s.add(Opcode.OP_0);
+
+  if (opts.signingMethod === "schnorr" && opts.checkBits) {
+
+    // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
+    let checkBitsString = Buffer.from(opts.checkBits).reverse().join('');
+    let checkBitsDecimal = parseInt(checkBitsString, 2);
+    let checkBitsHex = parseInt(checkBitsDecimal.toString(16), 16);
+    let N = pubkeys.length;
+      // N should only be 1-20
+        if (N >= 1 && N <= 4) {
+          s.add(Opcode(checkBitsHex));
+        }
+        else if (N >= 5 && N <= 8) {
+        if(checkBitsHex === 0x81) {
+            s.add(Opcode("OP_1NEGATE")) // OP_1NEGATE
+          } else if(checkBitsHex > 0x10) {
+            s.add(0x01);
+            s.add(checkBitsHex);
+          } else {
+            s.add(Opcode(checkBitsHex));
+          }
+          
+        }
+        else if (N >= 9 && N <= 16) {
+          s.add(0x02);
+          s.add(checkBitsHex);
+        } 
+        else if (N >= 17 && N <= 20) {
+          s.add(0x03);
+          s.add(checkBitsHex);
+        }
+    } else {
+      s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
+    }
+  
+  
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -770,6 +807,8 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
  * @param {Object=} opts
  * @param {boolean=} opts.noSorting don't sort the given public keys before creating the script (false by default)
  * @param {Script=} opts.cachedMultisig don't recalculate the redeemScript
+ * @param {Uint8Array} opts.checkBits bitfield map 1 or 0 to check which signatures to map against public keys for verification in schnorr multisig mode
+ * @param {String} opts.signingMethod method with which input will be signed "ecdsa" or "schnorr"
  *
  * @returns {Script}
  */
@@ -779,7 +818,40 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
   $.checkArgument(_.isArray(signatures));
   opts = opts || {};
   var s = new Script();
-  s.add(Opcode.OP_0);
+  
+  if (opts.signingMethod === "schnorr" && opts.checkBits) {
+
+    // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
+    let checkBitsString = Buffer.from(opts.checkBits).reverse().join('');
+    let checkBitsDecimal = parseInt(checkBitsString, 2);
+    let checkBitsHex = parseInt(checkBitsDecimal.toString(16), 16);
+    let N = pubkeys.length;
+    // N should only be 1-20
+      if (N >= 1 && N <= 4) {
+        s.add(Opcode.smallInt(checkBitsDecimal));
+      }
+      else if (N >= 5 && N <= 8) {
+       if(checkBitsHex === 0x81) {
+          s.add(Opcode("OP_1NEGATE")) // OP_1NEGATE
+        } else if(checkBitsHex > 0x10) {
+          s.add(0x01);
+          s.add(checkBitsHex);
+        } else {
+          s.add(Opcode.smallInt(checkBitsDecimal));
+        }
+      }
+      else if (N >= 9 && N <= 16) {
+        s.add(0x02);
+        s.add(checkBitsHex);
+      } 
+      else if (N >= 17 && N <= 20) {
+        s.add(0x03);
+        s.add(checkBitsHex);
+      }
+  } else {
+    s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
+  }
+  
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -1029,7 +1101,7 @@ Script.prototype.findAndDelete = function(script) {
  * @returns {boolean} if the chunk {i} is the smallest way to push that particular data.
  */
 Script.prototype.checkMinimalPush = function(i) {
-  var chunk = this.chunks[i];
+  var chunk = this.   chunks[i];
   var buf = chunk.buf;
   var opcodenum = chunk.opcodenum;
   if (!buf) {
@@ -1040,10 +1112,11 @@ Script.prototype.checkMinimalPush = function(i) {
     return opcodenum === Opcode.OP_0;
   } else if (buf.length === 1 && buf[0] >= 1 && buf[0] <= 16) {
     // Could have used OP_1 .. OP_16.
-    return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    // return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    return false;
   } else if (buf.length === 1 && buf[0] === 0x81) {
     // Could have used OP_1NEGATE
-    return opcodenum === Opcode.OP_1NEGATE;
+    return false;
   } else if (buf.length <= 75) {
     // Could have used a direct push (opcode indicating number of bytes pushed + those bytes).
     return opcodenum === buf.length;

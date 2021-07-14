@@ -1,0 +1,30 @@
+ion-item.item-md {
+  &:hover {
+    cursor: pointer;
+    background-color: #f6f7fa;
+    box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.09);
+  }
+  ion-avatar {
+    cursor: pointer;
+    min-width: 0;
+    min-height: 0;
+
+    .logo {
+      width: 25px;
+      height: 25px;
+    }
+  }
+}
+
+.secondary {
+  filter: grayscale(100%);
+}
+
+ion-item {
+  ion-label {
+  cursor: pointer;
+}
+}
+
+
+

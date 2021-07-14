@@ -1,4 +1,5 @@
 # Transaction
+
 Bitcore provides a very simple API for creating transactions. We expect this API to be accessible for developers without knowing the working internals of bitcoin in deep detail. What follows is a small introduction to transactions with some basic knowledge required to use this API.
 
 A Transaction contains a set of inputs and a set of outputs. Each input contains a reference to another transaction's output, and a signature that allows the value referenced in that output to be used in this transaction.
@@ -21,7 +22,7 @@ You can obtain the input and output total amounts of the transaction in satoshis
 
 Now, this could just be serialized to hexadecimal ASCII values (`transaction.serialize()`) and sent over to the bitcoind reference client.
 
-```bash
+```sh
 bitcoin-cli sendrawtransaction <serialized transaction>
 ```
 
@@ -33,6 +34,7 @@ var transaction = new Transaction().fee(1e8);  // Generous fee of 1 BTC
 ```
 
 ## Multisig Transactions
+
 To send a transaction to a multisig address, the API is the same as in the above example. To spend outputs that require multiple signatures, the process needs extra information: the public keys of the signers that can unlock that output.
 
 ```javascript
@@ -75,11 +77,13 @@ transaction.applySignature(receivedSig);
 ```
 
 ## Adding inputs
+
 Transaction inputs are instances of either [Input](https://github.com/bitpay/bitcore/tree/master/lib/transaction/input) or its subclasses. `Input` has some abstract methods, as there is no actual concept of a "signed input" in the bitcoin scripting system (just valid signatures for <tt>OP_CHECKSIG</tt> and similar opcodes). They are stored in the `input` property of `Transaction` instances.
 
 Bitcore contains two implementations of `Input`, one for spending _Pay to Public Key Hash_ outputs (called `PublicKeyHashInput`) and another to spend _Pay to Script Hash_ outputs for which the redeem script is a Multisig script (called `MultisigScriptHashInput`).
 
 All inputs have the following five properties:
+
 - `prevTxId`: a `Buffer` with the id of the transaction with the output this input is spending
 - `outputIndex`: a `number` the index of the output in the previous transaction
 - `sequenceNumber`: a `number`, the sequence number, see [bitcoin's developer guide on nLockTime and the sequence number](https://bitcoin.org/en/developer-guide#locktime-and-sequence-number).
@@ -89,6 +93,7 @@ All inputs have the following five properties:
 Both `PublicKeyHashInput` and `MultisigScriptHashInput` cache the information about signatures, even though this information could somehow be encoded in the script. Both need to have the `output` property set in order to calculate the `sighash` so signatures can be created.
 
 Some methods related to adding inputs are:
+
 - `from`: A high level interface to add an input from a UTXO. It has a series of variants:
   - `from(utxo)`: add an input from an [Unspent Transaction Output](http://bitcore.io/guide/unspentoutput.html). Currently, only P2PKH outputs are supported.
   - `from(utxos)`: same as above, but passing in an array of Unspent Outputs.
@@ -98,13 +103,17 @@ Some methods related to adding inputs are:
 - `uncheckedAddInput`: adds an input to the end of the `input` vector and updates the `inputAmount` without performing any checks.
 
 ### PublicKeyHashInput
+
 This input uses the `script` property to mark the input as unsigned if the script is empty.
 
 ### MultisigScriptHashInput
+
 This input contains a set of signatures in a `signatures` property, and each time a signature is added, a potentially partial and/or invalid script is created. The `isFullySigned` method will only return true if all needed signatures are already added and valid. If `addSignature` is added after all need signatures are already set, an exception will be thrown.
 
 ## Signing a Transaction
+
 The following methods are used to manage signatures for a transaction:
+
 - `getSignatures`: takes an array of `PrivateKey` or strings from which a `PrivateKey` can be instantiated; the transaction to be signed; the kind of [signature hash to use](https://bitcoin.org/en/developer-guide#signature-hash-types). Returns an array of objects with the following properties:
   - `signature`: an instance of [Signature](https://github.com/bitpay/bitcore/blob/master/lib/crypto/signature.js)
   - `prevTxId`: this input's `prevTxId`,
@@ -118,7 +127,9 @@ The following methods are used to manage signatures for a transaction:
 - `isFullySigned`: returns true if the input is fully signed
 
 ## Handling Outputs
+
 Outputs can be added by:
+
 - The `addOutput(output)` method, which pushes an `Output` to the end of the `outputs` property and updates the `outputAmount` field. It also clears signatures (as the hash of the transaction may have changed) and updates the change output.
 - The `to(address, amount)` method, that adds an output with the script that corresponds to the given address. Builds an output and calls the `addOutput` method.
 - Specifying a [change address](#Fee_calculation)
@@ -126,7 +137,9 @@ Outputs can be added by:
 To remove all outputs, you can use `clearOutputs()`, which preserves change output configuration.
 
 ## Serialization
+
 There are a series of methods used for serialization:
+
 - `toObject`: Returns a plain JavaScript object with no methods and enough information to fully restore the state of this transaction. Using other serialization methods (except for `toJSON`) will cause a some information to be lost.
 - `toJSON`: Will be called when using `JSON.stringify` to return JSON-encoded string using the output from `toObject`.
 - `toString` or `uncheckedSerialize`: Returns an hexadecimal serialization of the transaction, in the [serialization format for bitcoin](https://bitcoin.org/en/developer-reference#raw-transaction-format).
@@ -136,7 +149,9 @@ There are a series of methods used for serialization:
 - `toBufferWriter`: Uses an already existing BufferWriter to copy over the serialized transaction
 
 ## Serialization Checks
+
 When serializing, the bitcore library performs a series of checks. These can be disabled by providing an object to the `serialize` method with the checks that you'll like to skip.
+
 - `disableLargeFees` avoids checking that the fee is no more than `Transaction.FEE_PER_KB * Transaction.FEE_SECURITY_MARGIN * size_in_kb`.
 - `disableSmallFees` avoids checking that the fee is less than `Transaction.FEE_PER_KB * size_in_kb / Transaction.FEE_SECURITY_MARGIN`.
 - `disableIsFullySigned` does not check if all inputs are fully signed
@@ -144,14 +159,17 @@ When serializing, the bitcore library performs a series of checks. These can be 
 - `disableMoreOutputThanInput` avoids checking that the sum of the output amounts is less than or equal to the sum of the amounts for the outputs being spent in the transaction
 
 These are the current default values in the bitcore library involved on these checks:
+
 - `Transaction.FEE_PER_KB`: `10000` (satoshis per kilobyte)
 - `Transaction.FEE_SECURITY_MARGIN`: `15`
 - `Transaction.DUST_AMOUNT`: `546` (satoshis)
 
 ## Fee calculation
+
 When outputs' value don't sum up to the same amount that inputs, the difference in bitcoins goes to the miner of the block that includes this transaction. The concept of a "change address" usually is associated with this: an output with an address that can be spent by the creator of the transaction.
 
 For this reason, some methods in the Transaction class are provided:
+
 - `change(address)`: Set up the change address. This will set an internal `_changeScript` property that will store the change script associated with that address.
 - `fee(amount)`: Sets up the exact amount of fee to pay. If no change address is provided, this will raise an exception.
 - `getFee()`: returns the estimated fee amount to be paid, based on the size of the transaction, but disregarding the priority of the outputs.
@@ -159,6 +177,7 @@ For this reason, some methods in the Transaction class are provided:
 Internally, a `_changeIndex` property stores the index of the change output (so it can get updated when a new input or output is added).
 
 ## Time-Locking transaction
+
 All bitcoin transactions contain a locktime field. The locktime indicates the earliest time a transaction can be added to the blockchain. Locktime allows signers to create time-locked transactions which will only become valid in the future, giving the signers a chance to change their minds. Locktime can be set in the form of a bitcoin block height (the transaction can only be included in a block with a higher height than specified) or a linux timestamp (transaction can only be confirmed after that time). For more information see [bitcoin's development guide section on locktime](https://bitcoin.org/en/developer-guide#locktime-and-sequence-number).
 
 In bitcore, you can set a `Transaction`'s locktime by using the methods `Transaction#lockUntilDate` and `Transaction#lockUntilBlockHeight`. You can also get a friendly version of the locktime field via `Transaction#getLockTime`;
@@ -174,4 +193,5 @@ console.log(transaction.getLockTime());
 ```
 
 ## Upcoming changes
+
 We're debating an API for Merge Avoidance, CoinJoin, Smart contracts, CoinSwap, and Stealth Addresses. We're expecting to have all of them by some time in 2015. Payment channel creation is available in the [bitcore-channel](https://github.com/bitpay/bitcore-channel) module.

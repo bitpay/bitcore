@@ -57,8 +57,10 @@ function builder(options) {
       filterclear: 'FilterClear',
       getblocks: 'GetBlocks',
       getheaders: 'GetHeaders',
+      sendheaders: 'SendHeaders',
       mempool: 'MemPool',
-      getaddr: 'GetAddr'
+      getaddr: 'GetAddr',
+      xversion: 'Xversion'
     },
     commands: {}
   };

@@ -1,17 +1,24 @@
 # Insight
 
-**A bitcoin blockchain explorer and API.**
-
-## Requirements
-
-Insight requires [Node.js](https://nodejs.org) 8.2 and [MongoDB](https://www.mongodb.com/). Consider using [n](https://github.com/tj/n) and [m](https://github.com/aheckmann/m) to install the latest versions.
+**A blockchain explorer for Bitcore.**
 
 ## Quick Start
 
-To get started, clone this repository, then – with `mongod` running – install and run insight:
+To get started, first [start a `bitcore` node](../bitcore-node/readme.md), then run insight:
 
-```bash
-git clone -b next https://github.com/bitpay/insight.git && cd insight/server
-npm install
-npm start
+```sh
+cd bitcore
+npm run insight
+
+//If you are making UI changes only:
+cd packages/insight
+npm run start:prod
+```
+
+## Network / Chain setting
+
+To use a specific network / chain set the `NETWORK` and `CHAIN` environment variable, e.g.:
+
+```sh
+NETWORK=testnet CHAIN=BCH npm start
 ```

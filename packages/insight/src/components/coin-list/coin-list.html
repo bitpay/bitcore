@@ -1,0 +1,26 @@
+<loader *ngIf="loading" [type]="'tx-list'"></loader>
+
+<div *ngIf="!loading">
+  <ion-grid>
+    <div> Sort by:
+      <span [ngClass]="mostRecentOrderSelected ? 'orderSelected' : 'orderUnselected'" (click)="sortBy('Most Recent')"> Most Recent </span>
+      | <span [ngClass]="mostRecentOrderSelected ? 'orderUnselected' : 'orderSelected'" (click)="sortBy('Oldest')"> Oldest </span>
+    </div>
+    <ion-row *ngFor="let tx of txs; let i = index">
+      <ion-col col-12 *ngIf="i < limit && (tx.spentTxid !== '' || tx.mintTxid)">
+        <coin [blockTipHeight]="blockTipHeight" *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE'" [coin]="tx" [chainNetwork]="chainNetwork"></coin>
+        <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details-eth>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="limit < txs.length">
+      <ion-infinite-scroll (ionInfinite)="loadMore($event)">
+        <loader [type]="'tx-list'"></loader>
+      </ion-infinite-scroll>
+    </ion-row>
+    <ion-row *ngIf="txs.length === 0" class="no-txs">
+      <ion-col col-12>
+        There are no transactions involving this address.
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</div>

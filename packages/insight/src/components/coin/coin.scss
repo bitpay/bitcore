@@ -1,0 +1,37 @@
+coin {
+  .grid{
+    padding: 0;
+  }
+  ion-grid {
+    background-color: #f7f7f7;
+    border: 1px solid #f3f3f3;
+    border-radius: 3px;
+    
+    ion-row {
+      align-items: center;
+
+      &.small {
+        font-size: 1.1rem;
+      }
+
+      ion-icon {
+        color: rgba(0, 0, 0, 0.25);
+      }
+
+    }
+  }
+
+  .time {
+    color: #888;
+  }
+
+  .chip {
+    padding-left: 1em;
+    padding-right: 1em;
+    border-radius: 3px;
+    -webkit-font-smoothing: subpixel-antialiased;
+    &.size-fixed{
+      width: 150px;
+    }
+  }
+}

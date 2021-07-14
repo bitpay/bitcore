@@ -1,0 +1,38 @@
+<ion-header no-border>
+  <ion-navbar color="bp-blue" class="nav-container" hideBackButton>
+    <ion-title (click)="goHome()" class="logo-header"> 
+      <a href="https://bitpay.com/insight/#/ALL/mainnet/home" role="button" tabindex="0"> insight </a>
+    </ion-title>
+    <!--search bar -->
+    <form class="search" (ngSubmit)="search()">
+      <div class="input-container">
+        <div class="search-image-container">
+          <img class="search-image" src="assets/img/search-icon.svg" alt="search icon" >
+        </div>
+        <input dir="auto" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+    </form>
+
+    <!--network selector -->
+    <ion-buttons>
+      <button ion-button (click)="changeCurrency($event)" class="cn-button hover-lite" type="button" tabindex="0">
+        <ion-icon class="currency-icon" name="logo-bitcoin" *ngIf="(chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH') && currencyProvider?.currencySymbol !== 'USD'"></ion-icon>
+        <ion-icon class="currency-icon" name="logo-usd" *ngIf="currencyProvider?.currencySymbol === 'USD'"></ion-icon>
+        <span><img src="assets/img/doge-icon.svg" *ngIf="chainNetwork.chain === 'DOGE' && currencyProvider?.currencySymbol !== 'USD'" width="9" alt="DOGE"></span>
+        <span><img src="assets/img/ethicon.svg" *ngIf="chainNetwork.chain === 'ETH' && currencyProvider?.currencySymbol !== 'USD'" width="11" alt="ETH"></span>
+        <span class="currency-symbol" *ngIf="chainNetwork?.chain !== 'ALL'">{{ currencyProvider?.currencySymbol }}</span>
+        <span class="currency-symbol" *ngIf="chainNetwork?.chain === 'ALL'">Select blockchain</span>
+        <small class="pill" *ngIf="currencyProvider?.currencySymbol === 'USD' && chainNetwork?.network === 'testnet';else networkOnly">{{ chainNetwork?.chain }} - {{ (chainNetwork?.network) }} </small>
+        <ng-template #networkOnly><small class="pill" *ngIf="chainNetwork?.network === 'testnet'">{{ (chainNetwork?.network) }} </small></ng-template>
+        &nbsp;
+        <ion-icon name="md-arrow-dropdown"></ion-icon>
+      </button>
+    </ion-buttons>
+  </ion-navbar>
+
+  <ion-toolbar class="mobile-searchbar" fixed>
+    <form (ngSubmit)="search()">
+      <ion-searchbar #searchbar placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search"></ion-searchbar>
+    </form>
+  </ion-toolbar>
+</ion-header>

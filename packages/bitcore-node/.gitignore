@@ -24,4 +24,5 @@ build/
 build-test/
 config.json
 *bitcore.config.*
-.bcoin
+.nyc_output
+coverage

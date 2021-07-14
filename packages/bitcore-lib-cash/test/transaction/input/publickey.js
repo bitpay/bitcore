@@ -1,5 +1,8 @@
 'use strict';
 
+var should = require('chai').should();
+var expect = require('chai').expect;
+
 var bitcore = require('../../..');
 var Transaction = bitcore.Transaction;
 var PrivateKey = bitcore.PrivateKey;

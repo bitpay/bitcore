@@ -1,0 +1,22 @@
+.page-content {
+  margin-bottom: 36px;
+}
+
+.page-content-menu {
+  margin-top: 56px;
+  margin-bottom: 36px;
+}
+
+@media (min-width: map-get($grid-breakpoints, lg)) {
+  .page-content-grid {
+    padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+    padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+  }
+}
+
+@media (max-width: map-get($grid-breakpoints, md)) {
+  .page-content-grid-desktop {
+    padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+    padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+  }
+}

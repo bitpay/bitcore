@@ -1,30 +1,34 @@
-import { CoinModel } from './coin';
+import { ObjectID } from 'mongodb';
+import { Readable, Transform, Writable } from 'stream';
+import { StorageService } from '../services/storage';
 import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
-import { ObjectID } from 'mongodb';
 import { BaseModel } from './base';
+import { CoinStorage, ICoin } from './coin';
+import { TransactionStorage } from './transaction';
 import { IWallet } from './wallet';
-import { TransactionModel } from './transaction';
 
-export type IWalletAddress = {
+export interface IWalletAddress {
   wallet: ObjectID;
   address: string;
   chain: string;
   network: string;
-};
+  processed: boolean;
+}
 
-export class WalletAddress extends BaseModel<IWalletAddress> {
-  constructor() {
-    super('walletaddresses');
+export class WalletAddressModel extends BaseModel<IWalletAddress> {
+  constructor(storage?: StorageService) {
+    super('walletaddresses', storage);
   }
 
   allowedPaging = [];
 
   onConnect() {
-    this.collection.createIndex({ address: 1, wallet: 1 });
+    this.collection.createIndex({ chain: 1, network: 1, address: 1, wallet: 1 }, { background: true, unique: true });
+    this.collection.createIndex({ chain: 1, network: 1, wallet: 1, address: 1 }, { background: true, unique: true });
   }
 
-  _apiTransform(walletAddress: { address: string }, options: TransformOptions) {
+  _apiTransform(walletAddress: { address: string }, options?: TransformOptions) {
     let transform = { address: walletAddress.address };
     if (options && options.object) {
       return transform;
@@ -32,80 +36,235 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     return JSON.stringify(transform);
   }
 
-  getUpdateCoinsObj(params: { wallet: IWallet; addresses: string[] }) {
+  async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
     const { wallet, addresses } = params;
     const { chain, network } = wallet;
 
-    let walletUpdates = addresses.map((address: string) => {
-      return {
-        updateOne: {
-          filter: { wallet: wallet._id, address: address },
-          update: { wallet: wallet._id, address: address, chain, network },
-          upsert: true
-        }
-      };
-    });
-
-    let coinUpdates = addresses.map((address: string) => {
-      return {
-        updateMany: {
-          filter: { chain, network, address },
-          update: {
-            $addToSet: { wallets: wallet._id }
-          }
-        }
-      };
-    });
-
-    return {
-      walletUpdates,
-      coinUpdates
-    };
-  }
-
-  async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
-    const { wallet } = params;
-    const updates = WalletAddressModel.getUpdateCoinsObj(params);
-    const { walletUpdates, coinUpdates } = updates;
-    const { chain, network } = wallet;
-
-    let walletUpdateBatches = partition(walletUpdates, 500);
-    let coinUpdateBatches = partition(coinUpdates, 500);
-
-    return new Promise(async resolve => {
-      await Promise.all(
-        walletUpdateBatches.map(walletUpdateBatch => {
-          return WalletAddressModel.collection.bulkWrite(walletUpdateBatch, { ordered: false });
-        })
-      );
-
-      await Promise.all(
-        coinUpdateBatches.map(coinUpdateBatch => {
-          return CoinModel.collection.bulkWrite(coinUpdateBatch, { ordered: false });
-        })
-      );
-      let coins = await CoinModel.collection.find({ wallets: wallet._id }, { batchSize: 100 }).project({ spentTxid: 1, mintTxid: 1 }).toArray();
-      let txids = {};
-      for (let coin of coins) {
-        txids[coin.mintTxid] = true;
-        txids[coin.spentTxid] = true;
+    class AddressInputStream extends Readable {
+      addressBatches: string[][];
+      index: number;
+      constructor() {
+        super({ objectMode: true });
+        this.addressBatches = partition(addresses, 1000);
+        this.index = 0;
       }
-      let txUpdates = Object.keys(txids).map(txid => {
-        return {
-          updateOne: {
-            filter: { chain, network, txid },
-            update: { $addToSet: { wallets: wallet._id } }
+      _read() {
+        if (this.index < this.addressBatches.length) {
+          this.push(this.addressBatches[this.index]);
+          this.index++;
+        } else {
+          this.push(null);
+        }
+      }
+    }
+
+    class FilterExistingAddressesStream extends Transform {
+      constructor() {
+        super({ objectMode: true });
+      }
+      async _transform(addressBatch, _, callback) {
+        try {
+          let exists = (
+            await WalletAddressStorage.collection
+              .find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } })
+              .project({ address: 1, processed: 1 })
+              .toArray()
+          )
+            .filter(walletAddress => walletAddress.processed)
+            .map(walletAddress => walletAddress.address);
+          this.push(
+            addressBatch.filter(address => {
+              return !exists.includes(address);
+            })
+          );
+          callback();
+        } catch (err) {
+          callback(err);
+        }
+      }
+    }
+
+    class AddNewAddressesStream extends Transform {
+      constructor() {
+        super({ objectMode: true });
+      }
+      async _transform(addressBatch, _, callback) {
+        if (!addressBatch.length) {
+          return callback();
+        }
+        try {
+          await WalletAddressStorage.collection.bulkWrite(
+            addressBatch.map(address => {
+              return {
+                insertOne: {
+                  document: { chain, network, wallet: wallet._id, address, processed: false }
+                }
+              };
+            })
+          ),
+            { ordered: false };
+        } catch (err) {
+          // Ignore duplicate keys, they may be half processed
+          if (err.code !== 11000) {
+            return callback(err);
           }
         }
+        this.push(addressBatch);
+        callback();
+      }
+    }
+
+    class UpdateCoinsStream extends Transform {
+      constructor() {
+        super({ objectMode: true });
+      }
+      async _transform(addressBatch, _, callback) {
+        if (!addressBatch.length) {
+          return callback();
+        }
+        try {
+          await CoinStorage.collection.bulkWrite(
+            addressBatch.map(address => {
+              return {
+                updateMany: {
+                  filter: { chain, network, address },
+                  update: { $addToSet: { wallets: wallet._id } }
+                }
+              };
+            }),
+            { ordered: false }
+          );
+          this.push(addressBatch);
+          callback();
+        } catch (err) {
+          callback(err);
+        }
+      }
+    }
+
+    class UpdatedTxidsStream extends Transform {
+      txids: { [key: string]: boolean };
+      constructor() {
+        super({ objectMode: true });
+        this.txids = {};
+      }
+      async _transform(addressBatch, _, callback) {
+        if (!addressBatch.length) {
+          return callback();
+        }
+        const coinStream = CoinStorage.collection
+          .find({ chain, network, address: { $in: addressBatch } })
+          .project({ mintTxid: 1, spentTxid: 1 });
+        coinStream.on('data', (coin: ICoin) => {
+          if (!this.txids[coin.mintTxid]) {
+            this.txids[coin.mintTxid] = true;
+            this.push({ txid: coin.mintTxid });
+          }
+          if (!this.txids[coin.spentTxid]) {
+            this.txids[coin.spentTxid] = true;
+            this.push({ txid: coin.spentTxid });
+          }
+        });
+        let errored = false;
+        coinStream.on('error', err => {
+          errored = true;
+          coinStream.destroy(err);
+          callback(err);
+        });
+        coinStream.on('end', () => {
+          if (errored) {
+            return;
+          }
+          this.push({ addressBatch });
+          callback();
+        });
+      }
+    }
+
+    class TxUpdaterStream extends Transform {
+      constructor() {
+        super({ objectMode: true });
+      }
+      async _transform(data, _, callback) {
+        const { txid, addressBatch } = data;
+        if (addressBatch) {
+          this.push(addressBatch);
+          return callback();
+        }
+        try {
+          await TransactionStorage.collection.updateMany(
+            { chain, network, txid },
+            { $addToSet: { wallets: wallet._id } }
+          );
+          callback();
+        } catch (err) {
+          callback(err);
+        }
+      }
+    }
+
+    class MarkProcessedStream extends Writable {
+      constructor() {
+        super({ objectMode: true });
+      }
+      async _write(addressBatch, _, callback) {
+        if (!addressBatch.length) {
+          return callback();
+        }
+        try {
+          await WalletAddressStorage.collection.bulkWrite(
+            addressBatch.map(address => {
+              return {
+                updateOne: {
+                  filter: { chain, network, address, wallet: wallet._id },
+                  update: { $set: { processed: true } }
+                }
+              };
+            }),
+            { ordered: false }
+          );
+          callback();
+        } catch (err) {
+          callback(err);
+        }
+      }
+    }
+
+    const addressInputStream = new AddressInputStream();
+    const filterExistingAddressesStream = new FilterExistingAddressesStream();
+    const addNewAddressesStream = new AddNewAddressesStream();
+    const updateCoinsStream = new UpdateCoinsStream();
+    const updatedTxidsStream = new UpdatedTxidsStream();
+    const txUpdaterStream = new TxUpdaterStream();
+    const markProcessedStream = new MarkProcessedStream();
+
+    const handleStreamError = (stream: Transform | Writable, reject) => {
+      stream.on('error', err => {
+        stream.destroy();
+        return reject(err);
       });
-      await Promise.all(
-        partition(txUpdates, 500).map(txUpdate => {
-          return TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
-        })
-      )
-      resolve();
+    };
+    return new Promise((resolve, reject) => {
+      markProcessedStream.on('unpipe', () => {
+        return resolve();
+      });
+
+      handleStreamError(filterExistingAddressesStream, reject);
+      handleStreamError(addNewAddressesStream, reject);
+      handleStreamError(updateCoinsStream, reject);
+      handleStreamError(updatedTxidsStream, reject);
+      handleStreamError(txUpdaterStream, reject);
+      handleStreamError(markProcessedStream, reject);
+
+      addressInputStream
+        .pipe(filterExistingAddressesStream)
+        .pipe(addNewAddressesStream)
+        .pipe(updateCoinsStream)
+        .pipe(updatedTxidsStream)
+        .pipe(txUpdaterStream)
+        .pipe(markProcessedStream);
     });
   }
 }
 
-export let WalletAddressModel = new WalletAddress();
+export let WalletAddressStorage = new WalletAddressModel();

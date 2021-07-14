@@ -1,0 +1,113 @@
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
+<ion-content>
+  <ion-grid fixed>
+
+    <div class="page-content">
+
+      <loader *ngIf="loading" [type]="'title'"></loader>
+
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage"></error>
+
+      <div *ngIf="!loading && !errorMessage">
+
+        <h1 class="content-container--heading">Block #{{ block.height }}</h1>
+        <p class="item-hash">
+          <b>Block Hash</b> {{ block.hash }} <button [copyToClipboard]="block.hash" title="copy to clipboard" type="button" tabindex="0">
+            <ion-icon md="md-copy"></ion-icon>
+          </button>
+        </p>
+
+        <h1 class="u-font-large">Summary</h1>
+
+        <ion-list *ngIf="!loading" class="list--summary">
+          <ion-grid>
+            <ion-row>
+              <ion-col col-12 col-md class="allow-truncated-text">
+                <block-summary *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH' || chainNetwork.chain === 'DOGE'" [block]="block" [chainNetwork]="chainNetwork"></block-summary>
+                <block-summary-eth *ngIf="chainNetwork.chain === 'ETH'" [block]="block" [chainNetwork]="chainNetwork"></block-summary-eth>
+                <ion-item>
+                  Number of Transactions
+                  <ion-note item-end>
+                    {{ block.tx.length }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Height
+                  <ion-note item-end>
+                    {{ block.height }}
+                    <span [hidden]="!block.isMainChain">(Mainchain)</span>
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Block Reward
+                  <ion-note item-end>
+                    {{ currencyProvider.getConvertedNumber(block.reward, chainNetwork.chain) | number }}
+                    {{ currencyProvider.currencySymbol }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Timestamp
+                  <ion-note item-end>
+                    {{ block.time * 1000 | date:'long' }}
+                  </ion-note>
+                </ion-item>
+          <!-- TODO      <ion-item>
+                  Mined by
+                  <ion-note item-end *ngIf="block.poolInfo">
+                    <a href="{{ block.poolInfo.url }}" role="button" tabindex="0">{{ block.poolInfo.poolName }}</a>
+                  </ion-note>
+                </ion-item> -->
+              </ion-col>
+              <ion-col col-12 col-md class="allow-truncated-text">
+                <ion-item>
+                  Difficulty
+                  <ion-note item-end>
+                    {{ block.difficulty }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Size (bytes)
+                  <ion-note item-end>
+                    {{ block.size }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Nonce
+                  <ion-note item-end>
+                    {{ block.nonce }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Previous Block
+                  <ion-note item-end>
+                    <a (click)="goToPreviousBlock()"
+                      [ngClass]="{'disabled-link': block.height - 1 === 0 }" role="button" tabindex="0">{{ block.height - 1 }}</a>
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Next Block
+                  <ion-note item-end>
+                    <a (click)="goToNextBlock()"
+                      [ngClass]="{'disabled-link': !block.nextblockhash }" role="button" tabindex="0">{{ block.height + 1 }}</a>
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Confirmations
+                  <ion-note item-end>
+                    {{ confirmations }}
+                  </ion-note>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-list>
+
+        <h2>Transactions</h2>
+        <transaction-list [blocktime]="block.time" [queryType]="'blockHash'" [queryValue]="block.hash" [chainNetwork]="chainNetwork">
+        </transaction-list>
+      </div>
+
+    </div>
+  </ion-grid>
+</ion-content>
+<footer [chainNetwork]="chainNetwork"></footer>

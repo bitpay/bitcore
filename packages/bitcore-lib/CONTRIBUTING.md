@@ -1,5 +1,4 @@
-Contributing to Bitcore
-=======
+# Contributing to Bitcore
 
 We're working hard to make *bitcore* the most powerful JavaScript library for working with bitcoin. Our goal is to have *bitcore* be a library that can be used by anyone interested in bitcoin, and to level expertise differences with great design and documentation.
 
@@ -7,16 +6,16 @@ We're working hard to make *bitcore* the most powerful JavaScript library for wo
 
 If there are any questions, etc., please feel to ask in one of the community channels:
 
-- https://labs.bitpay.com/c/bitcore (Support Forum)
-- https://gitter.im/bitpay/bitcore (Development Chat)
+- [Support Forum](https://labs.bitpay.com/c/bitcore)
+- [Development Chat](https://gitter.im/bitpay/bitcore)
 
 ## Quick Checklist
 
 Ideally, please make sure to run:
 
-* `gulp test` passes all the tests (We run tests against Node.js v0.10, v0.12, io.js, and modern browsers)
-* `gulp coverage` covers 100% of the branches of your code (See `coverage/lcov-report/index.html` for details)
-* `gulp lint` doesn't complain about your changes
+- `gulp test` passes all the tests (We run tests against Node.js v0.10, v0.12, io.js, and modern browsers)
+- `gulp coverage` covers 100% of the branches of your code (See `coverage/lcov-report/index.html` for details)
+- `gulp lint` doesn't complain about your changes
 
 ## Design Guidelines
 
@@ -81,10 +80,13 @@ Write a `.inspect()` method so an instance can be easily debugged in the console
 Name them in UpperCamelCase, as they are namespaces.
 
 DO:
+
 ```javascript
 var BufferUtil = require('./util/buffer');
 ```
+
 DON'T:
+
 ```javascript
 var bufferUtil = require('./util/buffer');
 ```
@@ -92,14 +94,16 @@ var bufferUtil = require('./util/buffer');
 #### G7 - Standard Methods
 
 When possible, bitcore objects should have standard methods on an instance prototype:
-* `toObject/toJSON` - A plain JavaScript object that `JSON.stringify` can call
-* `toString` - A string representation of the instance
-* `toBuffer` - A hex Buffer
+
+- `toObject/toJSON` - A plain JavaScript object that `JSON.stringify` can call
+- `toString` - A string representation of the instance
+- `toBuffer` - A hex Buffer
 
 These should have a matching static method that can be used for instantiation:
-* `fromObject` - Should be able to instantiate with the output from `toObject/toJSON`
-* `fromString` - Should be able to instantiate with output from `toString`
-* `fromBuffer` - Should likewise be able to instantiate from output from `toBuffer`
+
+- `fromObject` - Should be able to instantiate with the output from `toObject/toJSON`
+- `fromString` - Should be able to instantiate with output from `toString`
+- `fromBuffer` - Should likewise be able to instantiate from output from `toBuffer`
 
 `JSON.stringify` and `JSON.parse` are expected to be handled outside of the scope of Bitcore methods. For example, calling `JSON.stringify` on an Bitcore object will behave as expected and call `transaction.toJSON()` and then stringify it:
 
@@ -121,10 +125,11 @@ var tx = new Transaction(data);
 We've designed a structure for Errors to follow and are slowly migrating to it.
 
 Usage:
-* Errors are generated in the file `lib/errors/index.js` by invoking `gulp errors`.
-* The specification for errors is written in the `lib/errors/spec.js` file.
-* Whenever a new class is created, add a generic error for that class in `lib/errors/spec.js`.
-* Specific errors for that class should subclass that error. Take a look at the structure in `lib/errors/spec.js`, it should be clear how subclasses are generated from that file.
+
+- Errors are generated in the file `lib/errors/index.js` by invoking `gulp errors`.
+- The specification for errors is written in the `lib/errors/spec.js` file.
+- Whenever a new class is created, add a generic error for that class in `lib/errors/spec.js`.
+- Specific errors for that class should subclass that error. Take a look at the structure in `lib/errors/spec.js`, it should be clear how subclasses are generated from that file.
 
 #### E2 - Provide a `getValidationError` Static Method for Classes
 
@@ -162,10 +167,12 @@ var transaction = new Transaction()
 #### I4 - Copy Constructors
 
 Constructors, when provided an instance of the same class, should:
-* Return the same object, if the instances of this class are immutable
-* Return a deep copy of the object, if the instances are mutable
+
+- Return the same object, if the instances of this class are immutable
+- Return a deep copy of the object, if the instances are mutable
 
 Examples:
+
 ```javascript
 function MyMutableClass(arg) {
   if (arg instanceof MyMutableClass) {
@@ -211,11 +218,14 @@ Inputs for tests should not be generated randomly. Also, the type and structure 
 This helps to make tests more useful as examples, and more independent of where they are placed. This also helps prevent forgetting to include all submodules in the bitcore object.
 
 DO:
+
 ```javascript
 var bitcore = require('../');
 var PublicKey = bitcore.PublicKey;
 ```
+
 DON'T:
+
 ```javascript
 var PublicKey = require('../lib/publickey');
 ```
@@ -237,6 +247,7 @@ Please proofread documentation to avoid unintentional spelling and grammatical m
 ## Pull Request Workflow
 
 Our workflow is based on GitHub's pull requests. We use feature branches, prepended with: `test`, `feature`, `fix`, `refactor`, or `remove` according to the change the branch introduces. Some examples for such branches are:
+
 ```sh
 git checkout -b test/some-module
 git checkout -b feature/some-new-stuff
@@ -245,6 +256,7 @@ git checkout -b remove/some-file
 ```
 
 We expect pull requests to be rebased to the master branch before merging:
+
 ```sh
 git remote add bitpay git@github.com:bitpay/bitcore.git
 git pull --rebase bitpay master
@@ -253,11 +265,13 @@ git pull --rebase bitpay master
 Note that we require rebasing your branch instead of merging it, for commit readability reasons.
 
 After that, you can push the changes to your fork, by doing:
+
 ```sh
 git push origin your_branch_name
 git push origin feature/some-new-stuff
 git push origin fix/some-bug
 ```
+
 Finally go to [github.com/bitpay/bitcore](https://github.com/bitpay/bitcore) in your web browser and issue a new pull request.
 
 Main contributors will review your code and possibly ask for changes before your code is pulled in to the main repository.  We'll check that all tests pass, review the coding style, and check for general code correctness. If everything is OK, we'll merge your pull request and your code will be part of bitcore.
