@@ -18,6 +18,7 @@ import {
   Wallet
 } from './model';
 import { DonationStorage } from './model/donation';
+const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
@@ -55,6 +56,7 @@ export class Storage {
   static BCHEIGHT_KEY = 'bcheight';
   static collections = collections;
   db: Db;
+  queue: any;
   client: any;
 
   constructor(opts: { db?: Db } = {}) {
@@ -193,7 +195,7 @@ export class Storage {
       }
       this.db = client.db(config.dbname);
       this.client = client;
-
+      this.queue = mongoDbQueue(this.db, 'donation_queue');
       logger.info(`Connection established to db: ${config.uri}`);
 
       Storage.createIndexes(this.db);

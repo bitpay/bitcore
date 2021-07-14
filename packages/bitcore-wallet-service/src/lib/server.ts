@@ -2849,6 +2849,31 @@ export class WalletService {
     });
   }
 
+  checkQueueHandleSendLotus() {
+    setInterval(() => {
+      this.storage.queue.get((err, data) => {
+        if (data) {
+          const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
+          const donationStorage: DonationStorage = data.payload;
+          this.storage.storeDonation(donationStorage, err => {
+            if (err) return ackQueue;
+            this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
+              if (err || remainingData.remaining < 0) return ackQueue;
+              this._sendLotusDonation(donationStorage.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
+                donationStorage.txidGiveLotus = data;
+                donationStorage.isGiven = true;
+                this.storage.updateDonation(donationStorage, err => {
+                  return ackQueue;
+                });
+              });
+            });
+          });
+        }
+      });
+      this.storage.queue.clean(err => {});
+    }, 1000);
+  }
+
   handleSendLostus(txp, cb) {
     if (this.checkIsDonation(txp)) {
       this.storage.fetchDonationByTxid(txp.txid, (err, donationInfo) => {
@@ -2994,10 +3019,8 @@ export class WalletService {
                   addressDonation: txp.from,
                   createdOn: Date.now()
                 };
-
-                this.storage.storeDonation(donationStorage, err => {
-                  if (err) logger.error('Could not store donationInfor: ', err);
-                  txp.isBroadCastDonation = true;
+                this.storage.queue.add(donationStorage, (err, id) => {
+                  if (err) return cb(err);
                   return cb(null, txp);
                 });
               });
