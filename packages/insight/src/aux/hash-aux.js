@@ -1,9 +1,8 @@
 const fs = require('fs');
 const crypto = require('crypto');
 
-//let files = fs.readdirSync('../assets/img');
-
-const hashFiles = (directory) => {
+// function that hashes all assets (excluding .png and .json) in a directory
+const hashAssets = (directory) => {
   let files = fs.readdirSync(directory);
   const filesObj = {};
   files.forEach((fileName) => {
@@ -26,12 +25,14 @@ const hashFiles = (directory) => {
         filesObj[name] = hashedFileName;
       }
     } else if(fs.statSync(directory + '/' + fileName).isDirectory()) {
-      hashFiles(directory + '/' + fileName);
+      hashAssets(directory + '/' + fileName);
     }
+    // creating a json file that can be used to reference updated files in components
     fs.unlinkSync(directory + '/file-helper.json');
     fs.writeFileSync(directory + '/file-helper.json', JSON.stringify(filesObj));
   });
 };
 
-hashFiles('../assets/img');
+// calling hash assets on the img directory
+hashAssets('../assets/img');
 
