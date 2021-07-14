@@ -2700,8 +2700,27 @@ export class API extends EventEmitter {
     return { key: k, credentials: c };
   }
 
-  static upgradeCredentialsV3(x) {
+  // /**
+  // * upgradeCredentialsV2
+  // * upgrade Credentials V2 to Credentials V3 object
+  // *
+  // * @param {Object} x - Credentials V2 Object
+
+  // * @returns {Callback} cb - Returns { err, {key, credentials} }
+  // */
+  static upgradeCredentialsV2(x) {
     $.shouldBeObject(x);
+    // Check if credential is v2, if not upgrade first to v2.
+    if(x.version && x.version == 2) {
+      const credentialV2 = this.upgradeCredentialsV1(x);
+      if(credentialV2 && credentialV2.credentials) {
+        x = credentialV2.credentials;
+      }else{
+        const _errMsg = 'An error has ocurred when upgrading credentials to V2';
+        log.error(_errMsg);
+        throw new Error(_errMsg);
+      }
+    }
 
     let k;
     if (x.xPrivKey || x.xPrivKeyEncrypted) {
@@ -2734,6 +2753,76 @@ export class API extends EventEmitter {
   static upgradeMultipleCredentialsV1(oldCredentials) {
     let newKeys = [],
       newCrededentials = [];
+    // Try to migrate to Credentials 2.0
+    _.each(oldCredentials, credential => {
+      let migrated;
+
+      if (!credential.version || credential.version < 2) {
+        log.info('About to migrate : ' + credential.walletId);
+        migrated = API.upgradeCredentialsV1(credential);
+        newCrededentials.push(migrated.credentials);    
+
+        if (migrated.key) {
+          log.info(`Wallet ${credential.walletId} key's extracted`);
+          newKeys.push(migrated.key);
+        } else {
+          log.info(`READ-ONLY Wallet ${credential.walletId} migrated`);
+        }
+      }
+    });
+
+    if (newKeys.length > 0) {
+      // Find and merge dup keys.
+      let credGroups = _.groupBy(newCrededentials, x => {
+        $.checkState(x.xPubKey, 'Failed state: no xPubKey at credentials!');
+        let xpub = new Bitcore.HDPublicKey(x.xPubKey);
+        let fingerPrint = xpub.fingerPrint.toString('hex');
+        return fingerPrint;
+      });
+
+      if (_.keys(credGroups).length < newCrededentials.length) {
+        log.info('Found some wallets using the SAME key. Merging...');
+
+        let uniqIds = {};
+
+        _.each(_.values(credGroups), credList => {
+          let toKeep = credList.shift();
+          if (!toKeep.keyId) return;
+          uniqIds[toKeep.keyId] = true;
+
+          if (!credList.length) return;
+          log.info(`Merging ${credList.length} keys to ${toKeep.keyId}`);
+          _.each(credList, x => {
+            log.info(`\t${x.keyId} is now ${toKeep.keyId}`);
+            x.keyId = toKeep.keyId;
+          });
+        });
+
+        newKeys = _.filter(newKeys, x => uniqIds[x.id]);
+      }
+    }
+
+    return {
+      keys: newKeys,
+      credentials: newCrededentials
+    };
+  }
+
+  // /**
+  // * upgradeMultipleCredentialsToLatestVersion
+  // * upgrade multiple Old Credentials to latest credential version
+  // * Duplicate keys will be identified and merged.
+  // *
+  // * @param {Object} credentials - Credentials Old Version
+  // * @param {Object} keys - Key object
+  // *
+
+  // * @returns {Callback} cb - Returns { err, {keys, credentials} }
+  // */
+
+  static upgradeMultipleCredentialsToLatestVersion(oldCredentials) {
+    let newKeys = [],
+      newCrededentials = [];
     // Try to migrate to new Credentials Version
     _.each(oldCredentials, credential => {
       let migrated;
@@ -2745,7 +2834,7 @@ export class API extends EventEmitter {
 
       if (credential.version == 2) {
         log.info('About to migrate to V3 : ' + credential.walletId);
-        migrated = API.upgradeCredentialsV3(
+        migrated = API.upgradeCredentialsV2(
           migrated && migrated.credentials ? migrated.credentials : credential
         );
       }
