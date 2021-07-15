@@ -5,8 +5,8 @@ import { BchaChain } from './bcha';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
-import { XrpChain } from './xrp';
 import { XpiChain } from './xpi';
+import { XrpChain } from './xrp';
 
 const Common = require('../common');
 const Constants = Common.Constants;
