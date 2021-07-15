@@ -46,6 +46,7 @@ bitcore.errors = require('./lib/errors');
 
 // main bitcoin library
 bitcore.Address = require('./lib/address');
+bitcore.XAddress = require('./lib/xaddress');
 bitcore.Block = require('./lib/block');
 bitcore.MerkleBlock = require('./lib/block/merkleblock');
 bitcore.BlockHeader = require('./lib/block/blockheader');
