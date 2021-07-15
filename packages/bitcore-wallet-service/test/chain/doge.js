@@ -36,7 +36,7 @@ describe('Chain DOGE', () => {
       should.exist(t);
 
       // should serialized
-      t.serialize().should.equal('0100000001c05c50d820b4cbb4432af783a0a0b81f50cbf7c890939e713a9f03fb01eb7f4e050000006b483045022100ace0efb22eaf21b77d5e4a31a491ad06fbcfe700ace5abe8453ec0328c714cba02205090a44975d4b65b5e2f4473da038e83875826b369fc79558a741268ed574bb04121024d27ca79a3ed27a143cb9d1dff01e4e6445294679a700ca404ca449211d08aa7ffffffff0282233101000000001976a9149edd2399faccf4e57df08bef78962fa0228741cf88ac00b4c404000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac00000000');
+      t.serialize().should.equal('0100000001b8a1d4773add3d5ca38652537310e9bd64d812d771e16f62b4a6e33e79f85453000000006b483045022100a9bee101f13eeb8f6bdf1b6421974a17b2aeb0bcf080526df20e93483a67bbca022071ba69e707430136fb65488b1e5413eb54279770b74b7e15fe15aeac16770ceb012102f4526941f57f37b8f1cd4970091ebcd1701980a82d26a781b2e44b384609eb22ffffffff026c81c9f6160900001976a914aeb332ea003a7efb5dab0dcc56d19fed84e26afb88acf4cb5156010000001976a914afbf96bfb28815cad8205c8f2f5a86819136664c88ac00000000');
       t.isFullySigned().should.equal(true);
     });
 
@@ -48,7 +48,7 @@ describe('Chain DOGE', () => {
       // should serialized
       (() => { return t.serialize(); }).should.throw('not been fully signed');
 
-      t.uncheckedSerialize().should.equal('0100000001c05c50d820b4cbb4432af783a0a0b81f50cbf7c890939e713a9f03fb01eb7f4e0500000000ffffffff0282233101000000001976a9149edd2399faccf4e57df08bef78962fa0228741cf88ac00b4c404000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac00000000');
+      t.uncheckedSerialize().should.equal('0100000001b8a1d4773add3d5ca38652537310e9bd64d812d771e16f62b4a6e33e79f854530000000000ffffffff026c81c9f6160900001976a914aeb332ea003a7efb5dab0dcc56d19fed84e26afb88acf4cb5156010000001976a914afbf96bfb28815cad8205c8f2f5a86819136664c88ac00000000');
       t.isFullySigned().should.equal(false);
     });
   });
@@ -64,7 +64,7 @@ describe('Chain DOGE', () => {
       privateKey = 'QWL2M3x4s8LVroDNZu3jFnWmTSVDL8RtgKvc7Uj1VasHdPeisD1o';
       simpleUtxo = {
         address: fromAddress,
-        txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        txId: '0820f0d4aafe9f142d18c6400ed3d58af5f0834b4b05ae41b3adbef61d6b7e1b',
         outputIndex: 0,
         script: BitcoreLibDoge.Script.buildPublicKeyHashOut(fromAddress).toString(),
         satoshis: 1e9,
@@ -103,7 +103,7 @@ describe('Chain DOGE', () => {
     ], 2, 'testnet');
     const p2shUtxoWithDOGE = {
       address: p2shAddress.toString(),
-      txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      txId: '0820f0d4aafe9f142d18c6400ed3d58af5f0834b4b05ae41b3adbef61d6b7e1b',
       outputIndex: 0,
       script: BitcoreLibDoge.Script(p2shAddress).toString(),
       satoshis: 3e9
@@ -165,9 +165,9 @@ const aTXP = () => {
     'creatorId': '1',
     'coin': 'doge',
     'network': 'livenet',
-    'amount': 30000000,
+    'amount': 1.2550574e14,
     'message': 'some message',
-    'proposalSignature': '7035022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9',
+    'proposalSignature': '304402207e8ba2f9e88c1e7a76979f7e9df4d1cf43784d196b4b92f7f605386d0562216c022025356aae37397771a5fcb7520e97096fed197598a0e68883f6b30f3ccddd636c',
     'changeAddress': {
       'version': '1.0.0',
       'createdOn': 1424372337,
@@ -179,15 +179,20 @@ const aTXP = () => {
         '0315ae1e8aa866794ae603389fb2b8549153ebf04e7cdf74501dadde5c75ddad11'
       ]
     },
-    'inputs': [{
-      'txid': '6ee699846d2d6605f96d20c7cc8230382e5da43342adb11b499bbe73709f06ab',
-      'vout': 8,
-      'satoshis': 4e9,
-      'scriptPubKey': 'a914a8a9648754fbda1b6c208ac9d4e252075447f36887',
-      'address': 'D9w9sRrMYictva4me78h3EsivKdsYUffY3',
-      'path': 'm/2147483647/0/1',
-      'publicKeys': ['0319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f', '03b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d101301']
-    }],
+    'inputs': [
+      {
+        'txid': '0820f0d4aafe9f142d18c6400ed3d58af5f0834b4b05ae41b3adbef61d6b7e1b',
+        'vout': 8,
+        'satoshis': 1.2550574e14,
+        'scriptPubKey': 'a914a8a9648754fbda1b6c208ac9d4e252075447f36887',
+        'address': 'D9w9sRrMYictva4me78h3EsivKdsYUffY3',
+        'path': 'm/2147483647/0/1',
+        'publicKeys': [
+          '0319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f',
+          '03b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d101301'
+        ]
+      }
+    ],
     'inputPaths': ['m/2147483647/0/1'],
     'requiredSignatures': 2,
     'requiredRejections': 1,
@@ -195,16 +200,18 @@ const aTXP = () => {
     'addressType': 'P2SH',
     'status': 'pending',
     'actions': [],
-    'fee': 10000,
-    'outputs': [{
-      'toAddress': 'DCcS6pGDLUfXZSxQEMKJgmBjYNRcW4wuo4',
-      'amount': 1e9,
-      'message': 'first message'
-    }, {
-      'toAddress': 'DGr5fz15Qi41P3ftyhdkrKqLCQpjFuCvHC',
-      'amount': 2e9,
-      'message': 'second message'
-    }, ],
+    'fee': 665600000,
+    'outputs': [
+      {
+        'toAddress': 'DKdkvdJfQwQmnT9Hvq1CdB9kzsy76f1Qsd',
+        'amount': 77700000000000,
+        'message': 'first message'
+      }, {
+        'toAddress': 'DL2EGukahtib57Sg7FtHsvf8HgwMJtbBA3',
+        'amount': 47805070468192,
+        'message': 'second message'
+      },
+    ],
     'outputOrder': [0, 1, 2]
   };
 
@@ -215,84 +222,87 @@ const signedTxp = {
   'actions': [
     {
       'version': '1.0.0',
-      'createdOn': 1588099987,
-      'copayerId': '671fee02a6c1c4de2e2609f9f9a6180dc03acfff6b759fe0b13a616ed4880065',
+      'createdOn': 1621538686,
+      'copayerId': '5a49148ea402f06943b511912f31bc9114153e6055c38642fe789f7b2c7bf9f8',
       'type': 'accept',
       'signatures': [
-        '3045022100ace0efb22eaf21b77d5e4a31a491ad06fbcfe700ace5abe8453ec0328c714cba02205090a44975d4b65b5e2f4473da038e83875826b369fc79558a741268ed574bb0'
+        '3045022100a9bee101f13eeb8f6bdf1b6421974a17b2aeb0bcf080526df20e93483a67bbca022071ba69e707430136fb65488b1e5413eb54279770b74b7e15fe15aeac16770ceb'
       ],
-      'xpub': 'xpub6DVmxcjRgZdHNSEcXSiFtweVwMSTc3TMwRJ45nJYvyqvLbK1poPerupqh87rSoz27wvckb1CKnGZoLmLXSZyNGZtVd7neqSvdwJL6fceQpe',
-      'comment': null
+      'xpub': 'tpubDDtorxcvdjDwsYDCkSUTigtBGh1N5EjrDCqWwkCEz69cBHCh2mZoHxdfQzaZBd7tN5vsUxSchDxxGYxEQrbkyeUr4iWQJ89tTKgZpgivS8P',
+      'comment': null,
+      'copayerName': 'copayer 1'
     }
   ],
   'version': 3,
-  'createdOn': 1588099987,
-  'id': '7cea0d95-3308-48e7-a4be-3f16d66e1f5a',
-  'walletId': '7eaf4d32-c2fd-4262-864a-4c42fc9236f8',
-  'creatorId': '671fee02a6c1c4de2e2609f9f9a6180dc03acfff6b759fe0b13a616ed4880065',
-  'coin': 'bch',
-  'network': 'livenet',
+  'createdOn': 1621538640,
+  'id': 'B8Frw4L4mTZumUx5D1heVg',
+  'walletId': 'd98853c7-5a4b-48de-9f6c-8fb36aa271f1',
+  'creatorId': '5a49148ea402f06943b511912f31bc9114153e6055c38642fe789f7b2c7bf9f8',
+  'coin': 'doge',
+  'network': 'testnet',
   'outputs': [
     {
-      'amount': 80000000,
-      'toAddress': 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X'
+      'amount': 5743168500,
+      'toAddress': 'mwYE4TAQQF4F8aRZCVG8YXQDpuFRfjh3Mg',
+      'message': null
     }
   ],
-  'amount': 80000000,
+  'amount': 5743168500,
   'message': 'some message',
   'payProUrl': null,
   'changeAddress': {
     'version': '1.0.0',
-    'createdOn': 1588099987,
-    'address': 'CWwtFMy3GMr5qMEtvEdUDjePfShzkJXCnh',
-    'walletId': '7eaf4d32-c2fd-4262-864a-4c42fc9236f8',
+    'createdOn': 1621538640,
+    'address': 'mwSgYPXVExR1BCL72SCmh2nSDrsGX2bssj',
+    'walletId': 'd98853c7-5a4b-48de-9f6c-8fb36aa271f1',
     'isChange': true,
     'path': 'm/1/0',
     'publicKeys': [
-      '02129acdcc600694b3ce55a2d05244186e806174eb0bafde20e5a6395ded647857'
+      '0392e5436961b4301a54fedab9b28ff70e9d90620304d93b07a1631be0d5e75084'
     ],
-    'coin': 'bch',
-    'network': 'livenet',
+    'coin': 'doge',
+    'network': 'regtest',
     'type': 'P2PKH',
     'hasActivity': null,
     'beRegistered': null
   },
   'inputs': [
     {
-      'txid': '4e7feb01fb039f3a719e9390c8f7cb501fb8a0a083f72a43b4cbb420d8505cc0',
-      'vout': 5,
-      'satoshis': 100000000,
-      'scriptPubKey': '76a914d391e62337ed194a1e428f32d14838e5d848180a88ac',
-      'address': 'qrfere3rxlk3jjs7g28n952g8rjasjqcpgx3axq70t',
-      'confirmations': 44,
+      'address': 'n1Y8s9bFx693pnf8A5v2YR5QbbR4N6e89Q',
+      'satoshis': 10000000000000,
+      'amount': 100000,
+      'scriptPubKey': '76a914db9bc16a822e747bdf681bb732bda92fd8fac4bf88ac',
+      'txid': '5354f8793ee3a6b4626fe171d712d864bde91073535286a35c3ddd3a77d4a1b8',
+      'vout': 0,
+      'locked': false,
+      'confirmations': 11,
+      'path': 'm/0/8',
       'publicKeys': [
-        '024d27ca79a3ed27a143cb9d1dff01e4e6445294679a700ca404ca449211d08aa7'
-      ],
-      'wallet': '7eaf4d32-c2fd-4262-864a-4c42fc9236f8',
-      'path': 'm/0/1'
+        '02f4526941f57f37b8f1cd4970091ebcd1701980a82d26a781b2e44b384609eb22'
+      ]
     }
   ],
   'walletM': 1,
   'walletN': 1,
   'requiredSignatures': 1,
   'requiredRejections': 1,
-  'status': 'accepted',
-  'txid': '8541ed35ac43e07e362a00ebab9448eefa63840c75ca38edff6785c223503a29',
-  'broadcastedOn': null,
+  'status': 'broadcasted',
+  'txid': '5b0e1d4eaa939bb219e7f054c24dda8e1a0bca392c108ed3017f84c82f13ae97',
+  'broadcastedOn': 1621538687,
   'inputPaths': [
-    'm/0/1'
+    'm/0/8'
   ],
   'outputOrder': [
     1,
     0
   ],
-  'fee': 2430,
-  'feeLevel': null,
-  'feePerKb': 10000,
-  'excludeUnconfirmedUtxos': false,
+  'fee': 22500000,
+  'feeLevel': 'normal',
+  'feePerKb': 100000000,
+  'excludeUnconfirmedUtxos': true,
   'addressType': 'P2PKH',
   'customData': null,
-  'proposalSignature': '3045022100e8a1ac6eef882fb3e7311c725093317df99e5ed46f52fdee9064560bb757d1c902200b09f806a17d4c7950097b8714293725ce741c6de25914f81a8ca0ca1107fc4c',
+  'proposalSignature': '3044022025f2b5b1da1c45c4103a21448be4e1095acd908629acc89dc3398fa0d4621a2302206b809ffff1a896c367a9ba35fb2c100f187ab73c4ee590ba4aff778a91ee9ee3',
   'signingMethod': 'ecdsa',
   'proposalSignaturePubKey': null,
   'proposalSignaturePubKeySig': null,
@@ -303,10 +313,13 @@ const signedTxp = {
   'gasLimit': null,
   'data': null,
   'tokenAddress': null,
+  'multisigContractAddress': null,
+  'multisigTxId': null,
   'destinationTag': null,
   'invoiceID': null,
   'derivationStrategy': 'BIP44',
   'creatorName': 'copayer 1',
-  'raw': '0100000001c05c50d820b4cbb4432af783a0a0b81f50cbf7c890939e713a9f03fb01eb7f4e050000006b483045022100ace0efb22eaf21b77d5e4a31a491ad06fbcfe700ace5abe8453ec0328c714cba02205090a44975d4b65b5e2f4473da038e83875826b369fc79558a741268ed574bb04121024d27ca79a3ed27a143cb9d1dff01e4e6445294679a700ca404ca449211d08aa7ffffffff0282233101000000001976a9149edd2399faccf4e57df08bef78962fa0228741cf88ac00b4c404000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac00000000',
-  'isPending': true
+  'raw': '0100000001b8a1d4773add3d5ca38652537310e9bd64d812d771e16f62b4a6e33e79f85453000000006b483045022100a9bee101f13eeb8f6bdf1b6421974a17b2aeb0bcf080526df20e93483a67bbca022071ba69e707430136fb65488b1e5413eb54279770b74b7e15fe15aeac16770ceb012102f4526941f57f37b8f1cd4970091ebcd1701980a82d26a781b2e44b384609eb22ffffffff026c81c9f6160900001976a914aeb332ea003a7efb5dab0dcc56d19fed84e26afb88acf4cb5156010000001976a914afbf96bfb28815cad8205c8f2f5a86819136664c88ac00000000',
+  'note': null,
+  'isPending': false
 };
