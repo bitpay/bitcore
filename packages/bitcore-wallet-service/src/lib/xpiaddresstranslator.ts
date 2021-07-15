@@ -23,7 +23,6 @@ export class XPIAddressTranslator {
         } catch (e) {
           return;
         }
-        
       }
     }
   }
@@ -42,30 +41,32 @@ export class XPIAddressTranslator {
     if (from == to) {
       ret = addresses;
     } else {
-      ret = _.filter(_.map(addresses, x => {
-        let bitcore;
-        if (from == 'xaddr') {
-          bitcore = Bitcore_['xpi'];
-        } else {
-          bitcore = Bitcore_[from == 'legacy' ? 'btc' : 'bch'];
-        }
-        let orig;
-        try {
-          orig = new bitcore.Address(x).toObject();
-        } catch (e) {
-          return null;
-        }
+      ret = _.filter(
+        _.map(addresses, x => {
+          let bitcore;
+          if (from == 'xaddr') {
+            bitcore = Bitcore_['xpi'];
+          } else {
+            bitcore = Bitcore_[from == 'legacy' ? 'btc' : 'bch'];
+          }
+          let orig;
+          try {
+            orig = new bitcore.Address(x).toObject();
+          } catch (e) {
+            return null;
+          }
 
-        if (to == 'cashaddr') {
-          return Bitcore_['bch'].Address.fromObject(orig).toCashAddress(true);
-        } else if (to == 'copay') {
-          return Bitcore_['bch'].Address.fromObject(orig).toLegacyAddress();
-        } else if (to == 'legacy') {
-          return Bitcore_['btc'].Address.fromObject(orig).toString();
-        } else if (to == 'xaddr') {
-          return Bitcore_['xpi'].Address.fromObject(orig).toXAddress();
-        }
-      }));
+          if (to == 'cashaddr') {
+            return Bitcore_['bch'].Address.fromObject(orig).toCashAddress(true);
+          } else if (to == 'copay') {
+            return Bitcore_['bch'].Address.fromObject(orig).toLegacyAddress();
+          } else if (to == 'legacy') {
+            return Bitcore_['btc'].Address.fromObject(orig).toString();
+          } else if (to == 'xaddr') {
+            return Bitcore_['xpi'].Address.fromObject(orig).toXAddress();
+          }
+        })
+      );
     }
     if (wasArray) return ret;
     else return ret[0];
