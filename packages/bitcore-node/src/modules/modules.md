@@ -1,6 +1,20 @@
 # Modules
 Modules are loaded before services are started. This allows code to hook into services and register classes, event handlers, etc that alter the behaviors of services.
 
+## Known Modules
+The modules in this table will automatically register with `bitcore-node` if your `bitcore.config.json` contains a valid configuration for their respective chains.
+
+| Chain          | Module         | Module Path (Relative to ModuleManager) |
+| -------------- | -------------- | -------------- |
+| BTC            | bitcoin        | ./bitcoin      |
+| ETH            | ethereum       | ./ethereum     |
+| BCH            | bitcoin-cash   | ./bitcoin-cash |
+| LTC            | litecoin       | ./litecoin     |
+| DOGE           | dogecoin       | ./dogecoin     |
+| XRP            | ripple         | ./ripple       |
+
+If there is a custom or third-party module you'd like to use, follow the example below.
+
 ## Example - Syncing BCH
 Let's say we have a node_module, named `bitcore-node-bch` with the following code
 
