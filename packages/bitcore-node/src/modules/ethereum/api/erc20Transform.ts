@@ -24,6 +24,38 @@ export class Erc20RelatedFilterTransform extends Transform {
       tx.abiType.params[8].value.toLowerCase() === this.tokenAddress.toLowerCase()
     ) {
       tx.value = tx.abiType!.params[0].value as any;
+    } else if (tx.internal && tx.internal.length > 0) {
+      try {
+        const tokenRelatedIncomingInternalTxs = tx.internal.filter(
+          (internalTx: any) =>
+            internalTx.action.to && this.tokenAddress.toLowerCase() === internalTx.action.to.toLowerCase()
+        );
+        let foundRelated = false;
+        for (const internalTx of tokenRelatedIncomingInternalTxs) {
+          if (
+            internalTx.abiType &&
+            (internalTx.abiType.name === 'transfer' || internalTx.abiType.name === 'transferFrom')
+          ) {
+            const _tx = Object.assign({}, tx);
+            for (const element of internalTx.abiType.params) {
+              if (element.name === '_value') _tx.value = element.value as any;
+              if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);
+              if (element.name === '_from') _tx.from = this.web3.utils.toChecksumAddress(element.value);
+              else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
+                _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
+              }
+            }
+            foundRelated = true;
+            this.push(_tx);
+          }
+        }
+        if (tokenRelatedIncomingInternalTxs.length && foundRelated) {
+          return done();
+        }
+      } catch (err) {
+        console.error(err);
+        return done();
+      }
     } else {
       return done();
     }
