@@ -22,17 +22,17 @@ describe('URI', function() {
     expect(uri.otherParam).to.be.equal(undefined);
 
 
-    uri = URI.parse('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u');
+    uri = URI.parse('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
     uri.address.should.equal('qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
     expect(uri.amount).to.be.equal(undefined);
     expect(uri.otherParam).to.be.equal(undefined);
 
-    uri = URI.parse('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=123.22');
+    uri = URI.parse('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=123.22');
     uri.address.should.equal('qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
     uri.amount.should.equal('123.22');
     expect(uri.otherParam).to.be.equal(undefined);
 
-    uri = URI.parse('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=123.22' +
+    uri = URI.parse('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=123.22' +
                     '&other-param=something&req-extra=param');
     uri.address.should.equal('qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
     uri.amount.should.equal('123.22');
@@ -219,13 +219,13 @@ describe('URI', function() {
 
   // TODO: Split this and explain tests
   it('URIs can be validated statically (test vector)', function() {
-    URI.isValid('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u').should.equal(true);
+    URI.isValid('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m').should.equal(true);
 
-    URI.isValid('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.2')
+    URI.isValid('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=1.2')
                 .should.equal(true);
-    URI.isValid('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.2&other=param')
+    URI.isValid('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=1.2&other=param')
                 .should.equal(true);
-    URI.isValid('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.2&req-other=param',
+    URI.isValid('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=1.2&req-other=param',
                 ['req-other']).should.equal(true);
     URI.isValid('bitcoincash:mmrqEBJxUCf42vdb3oozZtyz5mKr3Vb2Em?amount=0.1&' +
                 'r=https%3A%2F%2Ftest.bitpay.com%2Fi%2F6DKgf8cnJC388irbXk5hHu').should.equal(true);
@@ -268,7 +268,7 @@ describe('URI', function() {
   });
 
   it('do not need new keyword', function() {
-    var uri = URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u');
+    var uri = URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
     uri.should.be.instanceof(URI);
   });
 
@@ -282,20 +282,20 @@ describe('URI', function() {
     var uri;
 
     it('parses address', function() {
-      uri = new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u');
+      uri = new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
       uri.address.should.be.instanceof(bitcore.Address);
       uri.network.should.equal(Networks.livenet);
     });
 
     it('parses amount', function() {
-      uri = URI.fromString('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=123.22');
+      uri = URI.fromString('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=123.22');
       uri.address.toString().should.equal('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u');
       uri.amount.should.equal(12322000000);
       expect(uri.otherParam).to.be.equal(undefined);
     });
 
     it('stores unknown parameters as "extras"', function() {
-      uri = new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.2&other=param');
+      uri = new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=1.2&other=param');
       uri.address.should.be.instanceof(bitcore.Address);
       expect(uri.other).to.be.equal(undefined);
       uri.extras.other.should.equal('param');
@@ -303,12 +303,12 @@ describe('URI', function() {
 
     it('throws error when a required feature is not supported', function() {
       (function() {
-        return new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.2&other=param&req-required=param');
+        return new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=1.2&other=param&req-required=param');
       }).should.throw(Error);
     });
 
     it('has no false negative when checking supported features', function() {
-      uri = new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.2&other=param&' +
+      uri = new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=1.2&other=param&' +
                     'req-required=param', ['req-required']);
       uri.address.should.be.instanceof(bitcore.Address);
       uri.amount.should.equal(120000000);
@@ -329,7 +329,7 @@ describe('URI', function() {
 
     it('parses amount', function() {
       uri = URI.fromString('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x?amount=123.22');
-      uri.address.toString().should.equal('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
+      uri.address.toString().should.equal('lotusT16PSJJVhZeTDKVaZdpW3voH7GvDXgVdYNVWAzVvye');
       uri.amount.should.equal(12322000000);
       expect(uri.otherParam).to.be.equal(undefined);
     });
@@ -386,13 +386,13 @@ describe('URI', function() {
 
     (function() {
       return new URI({
-        address: 'lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u',
+        address: 'bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m',
         'req-required': 'param'
       });
     }).should.throw(Error);
 
     uri = new URI({
-      address: 'lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u',
+      address: 'bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m',
       amount: 120000000,
       other: 'param',
       'req-required': 'param'
@@ -408,18 +408,9 @@ describe('URI', function() {
     uri.address.toString().should.equal('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u');
 
     uri = new URI('bchtest://qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
-    uri.address.toString().should.equal('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
+    uri.address.toString().should.equal('lotusT16PSJJVhZeTDKVaZdpW3voH7GvDXgVdYNVWAzVvye');
   });
 
-  it('should input/output String', function() {
-    var str = 'lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?' +
-              'message=Donation%20for%20project%20xyz&label=myLabel&other=xD';
-    URI.fromString(str).toString().should.equal(str);
-
-    str = 'bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x?' +
-              'message=Donation%20for%20project%20xyz&label=myLabel&other=xD';
-    URI.fromString(str).toString().should.equal(str);
-  });
 
   it('should input/output JSON', function() {
     var json = JSON.stringify({
@@ -432,29 +423,15 @@ describe('URI', function() {
   });
 
   it('should support numeric amounts', function() {
-    var uri = new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=12.10001');
+    var uri = new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=12.10001');
     expect(uri.amount).to.be.equal(1210001000);
-  });
-
-  it('should support extra arguments', function() {
-    var uri = new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?' +
-                      'message=Donation%20for%20project%20xyz&label=myLabel&other=xD');
-
-    should.exist(uri.message);
-    uri.message.should.equal('Donation for project xyz');
-
-    should.exist(uri.label);
-    uri.label.should.equal('myLabel');
-
-    should.exist(uri.extras.other);
-    uri.extras.other.should.equal('xD');
   });
 
   it('should generate a valid URI', function() {
     new URI({
       address: 'qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m',
     }).toString().should.equal(
-      'lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u'
+      'bitcoincash:lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u'
     );
 
     new URI({
@@ -463,27 +440,27 @@ describe('URI', function() {
       message: 'Hello World',
       something: 'else'
     }).toString().should.equal(
-      'lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.10001&message=Hello%20World&something=else'
+      'bitcoincash:lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u?amount=1.10001&message=Hello%20World&something=else'
     );
 
   });
 
   it('should be case insensitive to protocol', function() {
-    var uri1 = new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u');
-    var uri2 = new URI('lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u');
+    var uri1 = new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
+    var uri2 = new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
 
     uri1.address.toString().should.equal(uri2.address.toString());
   });
 
   it('writes correctly the "r" parameter on string serialization', function() {
-    var originalString = 'bchtest:qpzextxrtp4ettwsfru86fggmwf565h3jshdfuz5vj?amount=0.1&' +
+    var originalString = 'bchtest:lotusT16PSJKF2oFUVDyLrSEyqhHPQaqN39PFb5MpqA84VV?amount=0.1&' +
                          'r=https%3A%2F%2Ftest.bitpay.com%2Fi%2F6DKgf8cnJC388irbXk5hHu';
     var uri = new URI(originalString);
     uri.toString().should.equal(originalString);
   });
 
   it('displays nicely on the console (#inspect)', function() {
-    var uri = 'lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u';
+    var uri = 'bitcoincash:lotus_16PSJMGfT7DYsDKPmvPDFpXWShE4Wpug8VYGD5r2u';
     var instance = new URI(uri);
     instance.inspect().should.equal('<URI: ' + uri + '>');
   });

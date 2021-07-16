@@ -171,7 +171,7 @@ describe('Address', function() {
 
   // testnet p2sh
   var P2SHTestnet = [
-    'validbase58',
+    'lotusT1PrREBxs9HxXaVXvMWzEfAUrVgHpbj3F3uPwBt',
     '2NEWDzHWwY5ZZp8CQWbB7ouNMLqCia6YRda',
     '2MxgPqX1iThW3oZVk9KoFcE5M4JpiETssVN',
     '2NB72XtkjpnATMggui83aEtPawyyKvnbX2o'
@@ -661,7 +661,7 @@ describe('Address', function() {
 
     it('works on testnet also', function() {
       var address = Address.createMultisig(publics, 2, Networks.testnet);
-      address.toString().should.equal('lotusT1PrRF35zJFywM6u4YC2iLcAr2STxtAQpNxgtQ');
+      address.toString().should.equal('lotusT1PrRF35zJFywM6u4YC2iLcAr2STxtAQpNxgtQX');
     });
 
     it('can also be created by Address.createMultisig', function() {

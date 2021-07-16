@@ -219,7 +219,7 @@ describe('Transaction', function() {
   var anyoneCanSpendUTXO = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
   anyoneCanSpendUTXO.script = new Script().add('OP_TRUE');
   var toAddress = 'lotusT16PSJLnpcwmPjJT6o5yGbCoEVYy5SJoXHzpvH29fq';
-  var changeAddress = 'bchtest:qqrnkl4w9q37lg6fuwu32ku2wd2jv336pul3f7qz0a';
+  var changeAddress = 'lotusT16PSJHLJxToogyGEKhvArC19QWwCufi7hphEkbFej';
   var changeAddressP2SH = 'bchtest:pzdumagr7ru8w46s8alws4lzruv2c75vsucd9e2rz0';
   var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
   var private1 = '6ce7e97e317d2af16c33db0b9270ec047a91bff3eff8558afb5014afb2bb5976';
