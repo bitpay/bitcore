@@ -261,7 +261,7 @@ const signedTxp = {
       '0392e5436961b4301a54fedab9b28ff70e9d90620304d93b07a1631be0d5e75084'
     ],
     'coin': 'doge',
-    'network': 'regtest',
+    'network': 'testnet',
     'type': 'P2PKH',
     'hasActivity': null,
     'beRegistered': null
