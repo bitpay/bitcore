@@ -7,7 +7,7 @@ import {
   BitcoreLibXpi,
   Deriver,
   Transactions
-} from 'crypto-wallet-core';
+} from '@abcpros/crypto-wallet-core';
 
 import * as _ from 'lodash';
 import { Constants } from './constants';
