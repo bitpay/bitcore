@@ -19,7 +19,8 @@
     "API"
   ],
   "config": {
-    "ionic_sass": "./sass.js"
+    "ionic_sass": "./sass.js",
+    "ionic_webpack": "./config/webpack.config.js"
   },
   "prettier": {
     "singleQuote": true
