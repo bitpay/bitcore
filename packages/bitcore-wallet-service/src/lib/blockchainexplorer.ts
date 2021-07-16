@@ -15,7 +15,7 @@ const PROVIDERS = {
       livenet: 'https://api.bitpay.com',
       testnet: 'https://api.bitpay.com'
     },
-    bcha: {
+    xec: {
       livenet: 'http://localhost:3000',
       testnet: 'http://localhost:3000'
     },
@@ -30,6 +30,10 @@ const PROVIDERS = {
     doge: {
       livenet: 'https://api.bitpay.com',
       testnet: 'https://api.bitpay.com'
+    },
+    xpi: {
+      livenet: 'http://localhost:3000',
+      testnet: 'http://localhost:3000'
     }
   }
 };
@@ -51,7 +55,8 @@ export function BlockChainExplorer(opts) {
 
   const url = opts.url || PROVIDERS[provider][coin][network];
 
-  if (coin != 'bch' && opts.addressFormat) throw new Error('addressFormat only supported for bch');
+  if (coin != 'bch' && coin != 'xec' && opts.addressFormat)
+    throw new Error('addressFormat only supported for bch and xec');
 
   if (coin == 'bch' && !opts.addressFormat) opts.addressFormat = 'cashaddr';
 

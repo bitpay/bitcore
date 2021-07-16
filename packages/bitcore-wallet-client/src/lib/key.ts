@@ -6,7 +6,7 @@ import {
   BitcoreLibCash,
   Deriver,
   Transactions
-} from 'crypto-wallet-core';
+} from '@abcpros/crypto-wallet-core';
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import { Constants, Utils } from './common';

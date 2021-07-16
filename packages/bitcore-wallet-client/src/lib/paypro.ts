@@ -1,4 +1,4 @@
-import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash } from '@abcpros/crypto-wallet-core';
 
 var $ = require('preconditions').singleton();
 const URL = require('url');

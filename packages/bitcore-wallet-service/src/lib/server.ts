@@ -35,7 +35,7 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
+import { Validation } from '@abcpros/crypto-wallet-core';
 import { DonationInfo, DonationStorage } from './model/donation';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
@@ -1349,7 +1349,7 @@ export class WalletService {
         (err, duplicate) => {
           if (err) return cb(err);
           if (duplicate) return cb(null, address);
-          if ((wallet.coin == 'bch' || wallet.coin == 'bcha') && opts.noCashAddr) {
+          if ((wallet.coin == 'bch' || wallet.coin == 'xec') && opts.noCashAddr) {
             address = _.cloneDeep(address);
             address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }

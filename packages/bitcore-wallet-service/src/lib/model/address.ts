@@ -1,4 +1,4 @@
-import { Deriver } from 'crypto-wallet-core';
+import { Deriver } from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 import { AddressManager } from './addressmanager';
 
@@ -132,7 +132,9 @@ export class Address {
     }
 
     let addrStr = bitcoreAddress.toString(true);
-    if (noNativeCashAddr && coin == 'bch') {
+    if (coin == 'xpi') {
+      addrStr = bitcoreAddress.toXAddress();
+    } else if (noNativeCashAddr && (coin == 'bch' || coin == 'xec')) {
       addrStr = bitcoreAddress.toLegacyAddress();
     }
 

@@ -1,4 +1,4 @@
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 
 const $ = require('preconditions').singleton();
@@ -10,7 +10,8 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
   bca: require('bitcore-lib-cash'),
-  doge: require('bitcore-lib-doge')
+  doge: require('bitcore-lib-doge'),
+  xpi: require('@abcpros/bitcore-lib-xpi')
 };
 
 export class Utils {
