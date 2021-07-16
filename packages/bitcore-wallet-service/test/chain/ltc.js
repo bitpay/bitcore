@@ -36,7 +36,7 @@ describe('Chain LTC', () => {
       should.exist(t);
 
       // should serialized
-      t.serialize().should.equal('0100000001c05c50d820b4cbb4432af783a0a0b81f50cbf7c890939e713a9f03fb01eb7f4e050000006b483045022100ace0efb22eaf21b77d5e4a31a491ad06fbcfe700ace5abe8453ec0328c714cba02205090a44975d4b65b5e2f4473da038e83875826b369fc79558a741268ed574bb04121024d27ca79a3ed27a143cb9d1dff01e4e6445294679a700ca404ca449211d08aa7ffffffff0282233101000000001976a9149edd2399faccf4e57df08bef78962fa0228741cf88ac00b4c404000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac00000000');
+      t.serialize().should.equal('0100000001c8b99fd72001d477bf86fdc43b0288d42f148d15256848ad781b97ede6bfc33a010000006a47304402203af47006767a8a1d6febb705532bf7df28fc2322a0e2a7dfb63f2ea4b521adc002204ca0cf1eb33110de23d419411a3ea25a32aed2d16c3ea7ad4fff8abf8f409c32012103085a76aa44f4df633be85f914cdbd9cbf9c15c2428d89fa3229be321b08c7421ffffffff02b2180200000000001976a9143fe51182dc2c1871ae2ddce6d8620fcc54d976f388ac10270000000000001976a914942b7b6270ee1604818c3d828fb9144dfe3663be88ac00000000');
       t.isFullySigned().should.equal(true);
     });
 
@@ -48,7 +48,7 @@ describe('Chain LTC', () => {
       // should serialized
       (() => { return t.serialize(); }).should.throw('not been fully signed');
 
-      t.uncheckedSerialize().should.equal('0100000001c05c50d820b4cbb4432af783a0a0b81f50cbf7c890939e713a9f03fb01eb7f4e0500000000ffffffff0282233101000000001976a9149edd2399faccf4e57df08bef78962fa0228741cf88ac00b4c404000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac00000000');
+      t.uncheckedSerialize().should.equal('0100000001c8b99fd72001d477bf86fdc43b0288d42f148d15256848ad781b97ede6bfc33a0100000000ffffffff02b2180200000000001976a9143fe51182dc2c1871ae2ddce6d8620fcc54d976f388ac10270000000000001976a914942b7b6270ee1604818c3d828fb9144dfe3663be88ac00000000');
       t.isFullySigned().should.equal(false);
     });
   });
@@ -212,101 +212,95 @@ const aTXP = () => {
 };
 
 const signedTxp = {
-  'actions': [
+  actions: [
     {
       'version': '1.0.0',
-      'createdOn': 1588099987,
-      'copayerId': '671fee02a6c1c4de2e2609f9f9a6180dc03acfff6b759fe0b13a616ed4880065',
+      'createdOn': 1626385821,
+      'copayerId': '16f48373387600f00741e74488da2f82409e82105f515e6c7a856368cc95fc78',
       'type': 'accept',
       'signatures': [
-        '3045022100ace0efb22eaf21b77d5e4a31a491ad06fbcfe700ace5abe8453ec0328c714cba02205090a44975d4b65b5e2f4473da038e83875826b369fc79558a741268ed574bb0'
+        '304402203af47006767a8a1d6febb705532bf7df28fc2322a0e2a7dfb63f2ea4b521adc002204ca0cf1eb33110de23d419411a3ea25a32aed2d16c3ea7ad4fff8abf8f409c32'
       ],
-      'xpub': 'xpub6DVmxcjRgZdHNSEcXSiFtweVwMSTc3TMwRJ45nJYvyqvLbK1poPerupqh87rSoz27wvckb1CKnGZoLmLXSZyNGZtVd7neqSvdwJL6fceQpe',
-      'comment': null
+      'xpub': 'tpubDDgwMabfeMxmyFfiNUykhtdsCSHakHT7mc5EN3xEf3pMroYLzBhZ5U4tPH3nU38CXXSYbwzVjgmVoivieefpQ6P37hhjpM37hgZTu4ujv6N',
+      'comment': null,
+      'copayerName': 'Ben'
     }
   ],
-  'version': 3,
-  'createdOn': 1588099987,
-  'id': '7cea0d95-3308-48e7-a4be-3f16d66e1f5a',
-  'walletId': '7eaf4d32-c2fd-4262-864a-4c42fc9236f8',
-  'creatorId': '671fee02a6c1c4de2e2609f9f9a6180dc03acfff6b759fe0b13a616ed4880065',
-  'coin': 'bch',
-  'network': 'livenet',
-  'outputs': [
+  version: 3,
+  createdOn: 1626385821,
+  id: 'b89d4f4b-0c36-4054-8e09-0d3867f1fc89',
+  walletId: '10f76944-ac95-494a-ba32-1eba9a581332',
+  creatorId: '16f48373387600f00741e74488da2f82409e82105f515e6c7a856368cc95fc78',
+  coin: 'ltc',
+  chain: 'ltc',
+  network: 'testnet',
+  outputs: [
     {
-      'amount': 80000000,
-      'toAddress': 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X'
+      amount: 10000,
+      toAddress: 'mu2QPdDVzsuAJAcMKbhqWqZYfeWcAonGEf',
+      message: null,
+      encryptedMessage: null
     }
   ],
-  'amount': 80000000,
-  'message': 'some message',
-  'payProUrl': null,
-  'changeAddress': {
-    'version': '1.0.0',
-    'createdOn': 1588099987,
-    'address': 'CWwtFMy3GMr5qMEtvEdUDjePfShzkJXCnh',
-    'walletId': '7eaf4d32-c2fd-4262-864a-4c42fc9236f8',
-    'isChange': true,
-    'path': 'm/1/0',
-    'publicKeys': [
-      '02129acdcc600694b3ce55a2d05244186e806174eb0bafde20e5a6395ded647857'
-    ],
-    'coin': 'bch',
-    'network': 'livenet',
-    'type': 'P2PKH',
-    'hasActivity': null,
-    'beRegistered': null
+  amount: 10000,
+  message: 'test',
+  payProUrl: null,
+  changeAddress: {
+    version: '1.0.0',
+    createdOn: 1626385821,
+    address: 'mmLoH6EPi24GVPngf1iFhVdQ7p2D37dxRM',
+    walletId: '10f76944-ac95-494a-ba32-1eba9a581332',
+    isChange: true,
+    path: 'm/1/3',
+    publicKeys:
+      [ '03c27ea129d08ada3eb68235f9422230d8d0234511599ba1b9b91b2d1d82cc8e22' ],
+    coin: 'ltc',
+    network: 'testnet',
+    type: 'P2PKH',
+    beRegistered: null
   },
-  'inputs': [
+  inputs: [
     {
-      'txid': '4e7feb01fb039f3a719e9390c8f7cb501fb8a0a083f72a43b4cbb420d8505cc0',
-      'vout': 5,
-      'satoshis': 100000000,
-      'scriptPubKey': '76a914d391e62337ed194a1e428f32d14838e5d848180a88ac',
-      'address': 'qrfere3rxlk3jjs7g28n952g8rjasjqcpgx3axq70t',
-      'confirmations': 44,
-      'publicKeys': [
-        '024d27ca79a3ed27a143cb9d1dff01e4e6445294679a700ca404ca449211d08aa7'
-      ],
-      'wallet': '7eaf4d32-c2fd-4262-864a-4c42fc9236f8',
-      'path': 'm/0/1'
+      address: 'my9tKKW7Fxwad2UcCibV3pagJcxq2BJ4Bz',
+      satoshis: 150000,
+      amount: 0.0015,
+      scriptPubKey: '76a914c1763545cd6afa8e8e33fafc2039167d47d07a8188ac',
+      txid: '3ac3bfe6ed971b78ad486825158d142fd488023bc4fd86bf77d40120d79fb9c8',
+      vout: 1,
+      locked: false,
+      confirmations: 1
     }
   ],
-  'walletM': 1,
-  'walletN': 1,
-  'requiredSignatures': 1,
-  'requiredRejections': 1,
-  'status': 'accepted',
-  'txid': '8541ed35ac43e07e362a00ebab9448eefa63840c75ca38edff6785c223503a29',
-  'broadcastedOn': null,
-  'inputPaths': [
-    'm/0/1'
-  ],
-  'outputOrder': [
-    1,
-    0
-  ],
-  'fee': 2430,
-  'feeLevel': null,
-  'feePerKb': 10000,
-  'excludeUnconfirmedUtxos': false,
-  'addressType': 'P2PKH',
-  'customData': null,
-  'proposalSignature': '3045022100e8a1ac6eef882fb3e7311c725093317df99e5ed46f52fdee9064560bb757d1c902200b09f806a17d4c7950097b8714293725ce741c6de25914f81a8ca0ca1107fc4c',
-  'signingMethod': 'ecdsa',
-  'proposalSignaturePubKey': null,
-  'proposalSignaturePubKeySig': null,
-  'lockUntilBlockHeight': null,
-  'gasPrice': null,
-  'from': null,
-  'nonce': null,
-  'gasLimit': null,
-  'data': null,
-  'tokenAddress': null,
-  'destinationTag': null,
-  'invoiceID': null,
-  'derivationStrategy': 'BIP44',
-  'creatorName': 'copayer 1',
-  'raw': '0100000001c05c50d820b4cbb4432af783a0a0b81f50cbf7c890939e713a9f03fb01eb7f4e050000006b483045022100ace0efb22eaf21b77d5e4a31a491ad06fbcfe700ace5abe8453ec0328c714cba02205090a44975d4b65b5e2f4473da038e83875826b369fc79558a741268ed574bb04121024d27ca79a3ed27a143cb9d1dff01e4e6445294679a700ca404ca449211d08aa7ffffffff0282233101000000001976a9149edd2399faccf4e57df08bef78962fa0228741cf88ac00b4c404000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac00000000',
-  'isPending': true
+  walletM: 1,
+  walletN: 1,
+  requiredSignatures: 1,
+  requiredRejections: 1,
+  status: 'temporary',
+  txid: undefined,
+  broadcastedOn: undefined,
+  inputPaths: [ 'm/0/0' ],
+  outputOrder: [ 1, 0 ],
+  fee: 2606,
+  feeLevel: 'normal',
+  feePerKb: 11378,
+  excludeUnconfirmedUtxos: false,
+  addressType: 'P2PKH',
+  customData: undefined,
+  proposalSignature: undefined,
+  signingMethod: 'ecdsa',
+  proposalSignaturePubKey: undefined,
+  proposalSignaturePubKeySig: undefined,
+  lockUntilBlockHeight: undefined,
+  gasPrice: undefined,
+  from: undefined,
+  nonce: null,
+  gasLimit: undefined,
+  data: undefined,
+  tokenAddress: undefined,
+  isTokenSwap: null,
+  multisigContractAddress: undefined,
+  multisigTxId: undefined,
+  destinationTag: undefined,
+  invoiceID: undefined,
+  isPending: false
 };
