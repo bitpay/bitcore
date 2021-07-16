@@ -735,7 +735,7 @@ Address.prototype.toXAddress = function () {
  *
  * @returns {string} address
  */
-Address.prototype.toString = Address.prototype.toCashAddress;
+Address.prototype.toString = Address.prototype.toXAddress;
 
 /***
  * Retrieves the the length in bits of the encoded hash from its bit

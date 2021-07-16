@@ -86,7 +86,7 @@ describe('XAddress', function () {
 // livenet valid
 var PKHLivenet = [
   'lotus_16PSJLU8JZYUeX4zXKZaqgiNydLS7gnMjFqxpSvgh',
-  'bitcoincash:qp3awknl3dz8ezu3rmapff3phnzz95kansf0r3rs4x',
+  'lotus_16PSJLAnW8mGTjVPD77XqyFerQnfmsnppwRUFLmKi',
   'lotus_16PSJLVL2rbKjpbKxeWbJwCDE5fLq2bQPYsvyMMxM',
   'lotus_16PSJLRch2sEyPjCTnGAhPoBqFSJm33ojztCprQyD',
   '    	lotus_16PSJKhyjfZzUQf1X9N5uA9LWTXW7KNRLwDAku8W1   \t\n'
@@ -94,7 +94,7 @@ var PKHLivenet = [
 
 // livenet p2sh
 var P2SHLivenet = [
-  'bitcoincash:pqv60krfqv3k3lglrcnwtee6ftgwgaykpccr8hujjz',
+  'lotus_1PrQLfg4ML5C4xiVgiXfNmx8VoqCzjjPTYN2Px',
   '33vt8ViH5jsr115AGkW6cEmEz9MpvJSwDk',
   '37Sp6Rv3y4kVd1nQ1JV5pfqXccHNyZm1x3',
   '3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy',
@@ -103,7 +103,7 @@ var P2SHLivenet = [
 
 // testnet p2sh
 var P2SHTestnet = [
-  'bchtest:pzvmx80heyrg69ypkkt90rwmknfmmy96av8f02lrrf',
+  'validbase58',
   '2NEWDzHWwY5ZZp8CQWbB7ouNMLqCia6YRda',
   '2MxgPqX1iThW3oZVk9KoFcE5M4JpiETssVN',
   '2NB72XtkjpnATMggui83aEtPawyyKvnbX2o'

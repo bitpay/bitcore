@@ -52,7 +52,7 @@ describe('Transaction', function() {
       'script': testScript,
       'satoshis': testAmount
     })
-    .to('bchtest:qpuzrs9rw692n5dr0ctv7asq9th4xul34qes9nf4x6', testAmount - 10000);
+    .to('lotusT16PSJLnpcwmPjJT6o5yGbCoEVYy5SJoXHzpvH29fq', testAmount - 10000);
 
   it('can serialize to a plain javascript object', function() {
     var object = testTransaction.toObject();
@@ -65,7 +65,7 @@ describe('Transaction', function() {
 
   it('will not accept NaN as an amount', function() {
     (function() {
-      var stringTx = new Transaction().to('bchtest:qpuzrs9rw692n5dr0ctv7asq9th4xul34qes9nf4x6', NaN);
+      var stringTx = new Transaction().to('lotusT16PSJLnpcwmPjJT6o5yGbCoEVYy5SJoXHzpvH29fq', NaN);
     }).should.throw('Amount is expected to be a positive integer');
   });
 
@@ -218,7 +218,7 @@ describe('Transaction', function() {
   };
   var anyoneCanSpendUTXO = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
   anyoneCanSpendUTXO.script = new Script().add('OP_TRUE');
-  var toAddress = 'bchtest:qpuzrs9rw692n5dr0ctv7asq9th4xul34qes9nf4x6';
+  var toAddress = 'lotusT16PSJLnpcwmPjJT6o5yGbCoEVYy5SJoXHzpvH29fq';
   var changeAddress = 'bchtest:qqrnkl4w9q37lg6fuwu32ku2wd2jv336pul3f7qz0a';
   var changeAddressP2SH = 'bchtest:pzdumagr7ru8w46s8alws4lzruv2c75vsucd9e2rz0';
   var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
@@ -677,7 +677,7 @@ describe('Transaction', function() {
           'script': testScript,
           'satoshis': testAmount
         })
-        .to('bchtest:qpuzrs9rw692n5dr0ctv7asq9th4xul34qes9nf4x6', testAmount - 10000);
+        .to('lotusT16PSJLnpcwmPjJT6o5yGbCoEVYy5SJoXHzpvH29fq', testAmount - 10000);
 
       tx.outputs[0]._satoshis = 100;
       tx.outputs[0]._satoshisBN = new BN('fffffffffffffff', 16);
@@ -693,7 +693,7 @@ describe('Transaction', function() {
           'script': testScript,
           'satoshis': testAmount
         })
-        .to('bchtest:qpuzrs9rw692n5dr0ctv7asq9th4xul34qes9nf4x6', testAmount - 10000);
+        .to('lotusT16PSJLnpcwmPjJT6o5yGbCoEVYy5SJoXHzpvH29fq', testAmount - 10000);
 
       tx.outputs[0]._satoshis = -100;
       tx.outputs[0]._satoshisBN = new BN(-100, 10);
@@ -710,7 +710,7 @@ describe('Transaction', function() {
           'script': testScript,
           'satoshis': testAmount
         })
-        .to('bchtest:qpuzrs9rw692n5dr0ctv7asq9th4xul34qes9nf4x6', testAmount - 10000);
+        .to('lotusT16PSJLnpcwmPjJT6o5yGbCoEVYy5SJoXHzpvH29fq', testAmount - 10000);
 
       tx.toBuffer = sinon.stub().returns({
         length: 10000000
