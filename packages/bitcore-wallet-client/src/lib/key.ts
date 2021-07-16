@@ -418,6 +418,7 @@ export class Key {
 
     if (password) $.shouldBeString(password, 'provide password');
 
+    // this._checkCoin(opts.coin);
     this._checkNetwork(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
@@ -445,6 +446,7 @@ export class Key {
 
     return Credentials.fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
+      chain: opts.chain,
       coin: opts.coin,
       network: opts.network,
       account: opts.account,
