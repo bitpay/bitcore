@@ -31,6 +31,7 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     BCHA: 'bcha',
+    XEC: 'xec',
     DOGE: 'doge',
     XPI: 'xpi'
   },

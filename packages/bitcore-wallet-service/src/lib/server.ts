@@ -35,7 +35,7 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from '@abcpros/crypto-wallet-core';
+import { Validation } from 'crypto-wallet-core';
 import { DonationInfo, DonationStorage } from './model/donation';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
