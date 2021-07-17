@@ -2851,7 +2851,7 @@ export class WalletService {
 
   checkQueueHandleSendLotus() {
     setInterval(() => {
-      if(this.storage && this.storage.queue) {
+      if (this.storage && this.storage.queue) {
         this.storage.queue.get((err, data) => {
           if (data) {
             const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
