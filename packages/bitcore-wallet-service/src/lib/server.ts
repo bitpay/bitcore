@@ -2851,26 +2851,28 @@ export class WalletService {
 
   checkQueueHandleSendLotus() {
     setInterval(() => {
-      this.storage.queue.get((err, data) => {
-        if (data) {
-          const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
-          const donationStorage: DonationStorage = data.payload;
-          this.storage.storeDonation(donationStorage, err => {
-            if (err) return ackQueue;
-            this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
-              if (err || remainingData.remaining < 0) return ackQueue;
-              this._sendLotusDonation(donationStorage.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
-                donationStorage.txidGiveLotus = data;
-                donationStorage.isGiven = true;
-                this.storage.updateDonation(donationStorage, err => {
-                  return ackQueue;
+      if (this.storage && this.storage.queue) {
+        this.storage.queue.get((err, data) => {
+          if (data) {
+            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
+            const donationStorage: DonationStorage = data.payload;
+            this.storage.storeDonation(donationStorage, err => {
+              if (err) return ackQueue;
+              this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
+                if (err || remainingData.remaining < 0) return ackQueue;
+                this._sendLotusDonation(donationStorage.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
+                  donationStorage.txidGiveLotus = data;
+                  donationStorage.isGiven = true;
+                  this.storage.updateDonation(donationStorage, err => {
+                    return ackQueue;
+                  });
                 });
               });
             });
-          });
-        }
-      });
-      this.storage.queue.clean(err => {});
+          }
+        });
+        this.storage.queue.clean(err => {});
+      }
     }, 1000);
   }
 
