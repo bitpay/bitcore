@@ -4,8 +4,8 @@ import { DOGETxProvider } from './doge';
 import { ERC20TxProvider } from './erc20';
 import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
-import { XRPTxProvider } from './xrp';
 import { XPITxProvider } from './xpi';
+import { XRPTxProvider } from './xrp';
 
 const providers = {
   BTC: new BTCTxProvider(),

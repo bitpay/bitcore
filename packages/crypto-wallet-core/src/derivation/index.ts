@@ -3,8 +3,8 @@ import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
 import { Paths } from './paths';
-import { XrpDeriver } from './xrp';
 import { XpiDeriver } from './xpi';
+import { XrpDeriver } from './xrp';
 
 export interface Key {
   address: string;
