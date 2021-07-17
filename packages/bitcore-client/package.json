@@ -29,7 +29,7 @@
     "bcrypt": "3.0.8",
     "bitcore-mnemonic": "^8.25.10",
     "commander": "2.15.1",
-    "@abcpros/crypto-wallet-core": "^8.25.11",
+    "@abcpros/crypto-wallet-core": "^8.25.13",
     "elliptic": "^6.5.3",
     "level-js": "4.0.2",
     "leveldown": "5.4.1",

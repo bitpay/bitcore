@@ -4,6 +4,7 @@ import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
 import { Paths } from './paths';
 import { XrpDeriver } from './xrp';
+import { XpiDeriver } from './xpi';
 
 export interface Key {
   address: string;
@@ -22,7 +23,8 @@ const derivers: { [chain: string]: IDeriver } = {
   BCH: new BchDeriver(),
   ETH: new EthDeriver(),
   XRP: new XrpDeriver(),
-  DOGE: new DogeDeriver()
+  DOGE: new DogeDeriver(),
+  XPI: new XpiDeriver()
 };
 
 export class DeriverProxy {

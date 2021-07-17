@@ -18,6 +18,9 @@ describe('Address Validation', () => {
   // XRP
   const xrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
 
+  // XPI
+  const xpiAddress = 'lotus_16PSJPUXqERYw1izoVXJhpJ4bRcrsm9mJGUgVk2Y6';
+
   // Uri
   const btcUri = 'bitcoin:1NuKwkDtCymgA1FNLUBaUWLD8s4kdKWvgn';
   const bchUri = 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g';
@@ -65,6 +68,11 @@ describe('Address Validation', () => {
 
   it('should be able to validate an XRP address', async () => {
     const isValidAddress = await Validation.validateAddress('XRP', 'mainnet', xrpAddress);
+    expect(isValidAddress).to.equal(true);
+  });
+
+  it('should be able to validate an XPI address', async () => {
+    const isValidAddress = await Validation.validateAddress('XPI', 'mainnet', xpiAddress);
     expect(isValidAddress).to.equal(true);
   });
 

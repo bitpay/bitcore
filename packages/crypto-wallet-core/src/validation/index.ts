@@ -3,6 +3,7 @@ import { BtcValidation } from './btc';
 import { DogeValidation } from './doge';
 import { EthValidation } from './eth';
 import { XrpValidation } from './xrp';
+import { XpiValidation } from './xpi';
 
 export interface IValidation {
   validateAddress(network: string, address: string): boolean;
@@ -14,7 +15,8 @@ const validation: { [chain: string]: IValidation } = {
   BCH: new BchValidation(),
   ETH: new EthValidation(),
   XRP: new XrpValidation(),
-  DOGE: new DogeValidation()
+  DOGE: new DogeValidation(),
+  XPI: new XpiValidation()
 };
 
 export class ValidationProxy {

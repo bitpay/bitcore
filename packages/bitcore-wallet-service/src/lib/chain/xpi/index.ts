@@ -1,4 +1,4 @@
-import { BitcoreLib, BitcoreLibXpi } from '@abcpros/crypto-wallet-core';
+import { BitcoreLibXpi } from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';

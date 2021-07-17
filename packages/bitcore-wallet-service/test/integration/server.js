@@ -5,7 +5,7 @@ const async = require('async');
 
 const chai = require('chai');
 const sinon = require('sinon');
-const  CWC = require('crypto-wallet-core');
+const  CWC = require('@abcpros/crypto-wallet-core');
 
 const LOG_LEVEL = 'info';
 //const LOG_LEVEL = 'debug';
