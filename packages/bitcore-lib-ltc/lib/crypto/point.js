@@ -73,7 +73,7 @@ Point.getN = function getN() {
   return new BN(ec.curve.n.toArray());
 };
 
-Point.prototype._getX = Point.prototype.getX;
+Point._getX = Point.prototype.getX;
 
 /**
  *
@@ -81,11 +81,11 @@ Point.prototype._getX = Point.prototype.getX;
  *
  * @returns {BN} A BN instance of the X coordinate
  */
-Point.prototype.getX = function getX() {
+Point.getX = function getX() {
   return new BN(this._getX().toArray());
 };
 
-Point.prototype._getY = Point.prototype.getY;
+Point._getY = Point.prototype.getY;
 
 /**
  *
@@ -93,7 +93,7 @@ Point.prototype._getY = Point.prototype.getY;
  *
  * @returns {BN} A BN instance of the Y coordinate
  */
-Point.prototype.getY = function getY() {
+Point.getY = function getY() {
   return new BN(this._getY().toArray());
 };
 
