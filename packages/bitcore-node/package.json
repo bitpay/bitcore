@@ -75,7 +75,7 @@
     "@types/socket.io": "1.4.39",
     "@types/socket.io-client": "1.4.32",
     "@types/through2": "2.0.33",
-    "@types/web3": "1.0.19",
+    "@types/web3": "1.2.2",
     "@types/winston": "2.4.4",
     "chai": "4.1.2",
     "eslint": "4.19.1",
@@ -124,7 +124,7 @@
     "source-map-support": "^0.5.13",
     "through2": "2.0.3",
     "underscore": "1.8.3",
-    "web3": "1.2.4",
+    "web3": "1.4.0",
     "winston": "3.2.0"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"

@@ -36,13 +36,13 @@
     "ripple-binary-codec": "0.2.6",
     "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#8d3a4643a8ddfce8222786e1e5a3e85a89a5b7f5",
     "ripple-lib": "^1.8.0",
-    "web3": "1.2.11"
+    "web3": "1.4.0"
   },
   "devDependencies": {
     "@types/chai": "4.1.7",
     "@types/mocha": "5.2.6",
     "@types/node": "^14.10.0",
-    "@types/web3": "^1.0.19",
+    "@types/web3": "^1.2.2",
     "chai": "4.2.0",
     "mocha": "6.1.4",
     "ts-node": "8.1.0",
