@@ -35,16 +35,16 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
+import { Validation } from '@abcpros/crypto-wallet-core';
 import { DonationInfo, DonationStorage } from './model/donation';
-const Bitcore = require('bitcore-lib');
+const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
+  bch: require('@abcpros/bitcore-lib-cash'),
+  bcha: require('@abcpros/bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge'),
+  doge: require('@abcpros/bitcore-lib-doge'),
   xpi: require('@abcpros/bitcore-lib-xpi')
 };
 

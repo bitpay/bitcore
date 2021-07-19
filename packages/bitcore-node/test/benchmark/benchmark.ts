@@ -1,4 +1,4 @@
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLib = require('@abcpros/bitcore-lib');
 const { Transaction, PrivateKey } = bitcoreLib;
 const UnspentOutput = Transaction.UnspentOutput;
 

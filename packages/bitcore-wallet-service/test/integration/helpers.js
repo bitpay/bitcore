@@ -14,12 +14,12 @@ var config = require('../test-config');
 //   memStore: true
 // });
 
-var Bitcore = require('bitcore-lib');
+var Bitcore = require('@abcpros/bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
-  doge: require('bitcore-lib-doge')
+  bch: require('@abcpros/bitcore-lib-cash'),
+  bcha: require('@abcpros/bitcore-lib-cash'),
+  doge: require('@abcpros/bitcore-lib-doge')
 };
 
 var { ChainService } = require('../../ts_build/lib/chain/index');

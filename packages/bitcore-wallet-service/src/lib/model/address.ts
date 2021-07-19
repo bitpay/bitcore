@@ -38,10 +38,10 @@ export class Address {
   beRegistered: boolean;
 
   static Bitcore = {
-    btc: require('bitcore-lib'),
-    bch: require('bitcore-lib-cash'),
-    bcha: require('bitcore-lib-cash'),
-    doge: require('bitcore-lib-doge'),
+    btc: require('@abcpros/bitcore-lib'),
+    bch: require('@abcpros/bitcore-lib-cash'),
+    bcha: require('@abcpros/bitcore-lib-cash'),
+    doge: require('@abcpros/bitcore-lib-doge'),
     xpi: require('@abcpros/bitcore-lib-xpi')
   };
 

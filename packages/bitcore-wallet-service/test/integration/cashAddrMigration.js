@@ -9,11 +9,11 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var Bitcore = require('bitcore-lib');
+var Bitcore = require('@abcpros/bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash')
+  bch: require('@abcpros/bitcore-lib-cash'),
+  bcha: require('@abcpros/bitcore-lib-cash')
 };
 
 

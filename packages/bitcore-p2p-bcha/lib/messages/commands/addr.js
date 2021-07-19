@@ -2,7 +2,7 @@
 
 var Message = require('../message');
 var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-cash');
+var bitcore = require('@abcpros/bitcore-lib-cash'lib-cash');
 var utils = require('../utils');
 var $ = bitcore.util.preconditions;
 var _ = bitcore.deps._;

@@ -22525,13 +22525,13 @@ var spec = {
   }]
 };
 
-module.exports = require('bitcore-lib').errors.extend(spec);
+module.exports = require('@abcpros/bitcore-lib').errors.extend(spec);
 
-},{"bitcore-lib":"bitcore-lib"}],157:[function(require,module,exports){
+},{"@abcpros/bitcore-lib":"@abcpros/bitcore-lib"}],157:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
-const bitcore = require('bitcore-lib');
+const bitcore = require('@abcpros/bitcore-lib');
 const BN = bitcore.crypto.BN;
 const unorm = require('unorm');
 const _ = bitcore.deps._;
@@ -22832,7 +22832,7 @@ Mnemonic.bitcore = bitcore;
 module.exports = Mnemonic;
 
 }).call(this,require("buffer").Buffer)
-},{"./errors":156,"./pbkdf2":158,"./words":162,"bitcore-lib":"bitcore-lib","buffer":47,"unorm":167}],158:[function(require,module,exports){
+},{"./errors":156,"./pbkdf2":158,"./words":162,"@abcpros/bitcore-lib":"@abcpros/bitcore-lib","buffer":47,"unorm":167}],158:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 

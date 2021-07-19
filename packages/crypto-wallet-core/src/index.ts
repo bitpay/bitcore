@@ -1,7 +1,7 @@
 import * as BitcoreLibXpi from '@abcpros/bitcore-lib-xpi';
-import * as BitcoreLib from 'bitcore-lib';
-import * as BitcoreLibCash from 'bitcore-lib-cash';
-import * as BitcoreLibDoge from 'bitcore-lib-doge';
+import * as BitcoreLib from '@abcpros/bitcore-lib';
+import * as BitcoreLibCash from '@abcpros/bitcore-lib-cash';
+import * as BitcoreLibDoge from '@abcpros/bitcore-lib-doge';
 import Web3 from 'web3';
 import { Constants } from './constants';
 import Deriver from './derivation';

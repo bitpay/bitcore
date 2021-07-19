@@ -3,7 +3,7 @@
 var should = require('chai').should();
 var P2P = require('../../');
 var Message = P2P.Messages.Message;
-var Networks = require('bitcore-lib-cash').Networks;
+var Networks = require('@abcpros/bitcore-lib-cash').Networks;
 
 describe('Message', function() {
 
