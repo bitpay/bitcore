@@ -42,7 +42,6 @@
     "@types/chai": "4.1.7",
     "@types/mocha": "5.2.6",
     "@types/node": "^14.10.0",
-    "@types/web3": "^1.2.2",
     "chai": "4.2.0",
     "mocha": "6.1.4",
     "ts-node": "8.1.0",

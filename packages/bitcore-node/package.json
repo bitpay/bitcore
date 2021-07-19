@@ -75,7 +75,6 @@
     "@types/socket.io": "1.4.39",
     "@types/socket.io-client": "1.4.32",
     "@types/through2": "2.0.33",
-    "@types/web3": "1.2.2",
     "@types/winston": "2.4.4",
     "chai": "4.1.2",
     "eslint": "4.19.1",
