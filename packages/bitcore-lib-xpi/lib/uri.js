@@ -33,7 +33,7 @@ var Unit = require('./unit');
  * @returns {URI} A new valid and frozen instance of URI
  * @constructor
  */
-var URI = function(data, knownParams) {
+var URI = function (data, knownParams) {
   if (!(this instanceof URI)) {
     return new URI(data, knownParams);
   }
@@ -42,13 +42,13 @@ var URI = function(data, knownParams) {
   this.knownParams = knownParams || [];
   this.address = this.network = this.amount = this.message = null;
 
-  if (typeof(data) === 'string') {
+  if (typeof (data) === 'string') {
     var params = URI.parse(data);
     if (params.amount) {
       params.amount = this._parseAmount(params.amount);
     }
     this._fromObject(params);
-  } else if (typeof(data) === 'object') {
+  } else if (typeof (data) === 'object') {
     this._fromObject(data);
   } else {
     throw new TypeError('Unrecognized data format.');
@@ -62,7 +62,7 @@ var URI = function(data, knownParams) {
  * @returns {URI} A new instance of a URI
  */
 URI.fromString = function fromString(str) {
-  if (typeof(str) !== 'string') {
+  if (typeof (str) !== 'string') {
     throw new TypeError('Expected a string');
   }
   return new URI(str);
@@ -92,7 +92,7 @@ URI.fromObject = function fromObject(json) {
  * @param {Array.<string>=} knownParams - Required non-standard params
  * @returns {boolean} Result of uri validation
  */
-URI.isValid = function(arg, knownParams) {
+URI.isValid = function (arg, knownParams) {
   try {
     new URI(arg, knownParams);
   } catch (err) {
@@ -108,18 +108,35 @@ URI.isValid = function(arg, knownParams) {
  * @throws {TypeError} Invalid bitcoin URI
  * @returns {Object} An object with the parsed params
  */
-URI.parse = function(uri) {
-  var info = URL.parse(uri, true);
-  if (Networks.get( info.protocol.replace(':', '') ,'prefix')) {
-    // workaround to host insensitiveness
-    var group = /[^:]*:\/?\/?([^?]*)/.exec(uri);
-    info.query.address = group && group[1] || undefined;
+URI.parse = function (uri) {
+  try {
+    var info = URL.parse(uri, true);
+    var protocol = info.protocol;
+    var host = info.host;
 
-    return info.query;
-} else {
-  throw new TypeError('Invalid bitcoin URI');
+    // Get the address
+    var address = uri.replace(protocol, '');
+
+    if (address === '') {
+      return info.query;
+    }
+
+    var match = /[A-Z]|_/.exec(address);
+    var splitLocation = match ? match.index : 0;
+    var networkChar = address.substring(splitLocation, splitLocation + 1);
+
+    if (Networks.get(networkChar, 'networkbyte')) {
+      var group = /([^?]*)/.exec(address);
+      info.query.address = group && group[1] || undefined;
+      return info.query;
+    } else {
+      throw new TypeError('Invalid bitcoin URI');
+    }
+  } catch (err) {
+    throw new TypeError('Invalid bitcoin URI');
   }
 };
+
 
 URI.Members = ['address', 'amount', 'message', 'label', 'r'];
 
@@ -131,7 +148,7 @@ URI.Members = ['address', 'amount', 'message', 'label', 'r'];
  * @throws {TypeError} Invalid amount
  * @throws {Error} Unknown required argument
  */
-URI.prototype._fromObject = function(obj) {
+URI.prototype._fromObject = function (obj) {
   /* jshint maxcomplexity: 10 */
 
   if (!Address.isValid(obj.address)) {
@@ -163,7 +180,7 @@ URI.prototype._fromObject = function(obj) {
  * @throws {TypeError} Invalid amount
  * @returns {Object} Amount represented in satoshis
  */
-URI.prototype._parseAmount = function(amount) {
+URI.prototype._parseAmount = function (amount) {
   amount = Number(amount);
   if (isNaN(amount)) {
     throw new TypeError('Invalid amount');
@@ -175,7 +192,7 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
   var json = {};
   for (var i = 0; i < URI.Members.length; i++) {
     var m = URI.Members[i];
-    if (this.hasOwnProperty(m) && typeof(this[m]) !== 'undefined') {
+    if (this.hasOwnProperty(m) && typeof (this[m]) !== 'undefined') {
       json[m] = this[m].toString();
     }
   }
@@ -188,7 +205,7 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
  *
  * @returns {string} Bitcoin URI string
  */
-URI.prototype.toString = function() {
+URI.prototype.toString = function () {
   var query = {};
   if (this.amount) {
     query.amount = Unit.fromSatoshis(this.amount).toBTC();
@@ -205,7 +222,7 @@ URI.prototype.toString = function() {
   _.extend(query, this.extras);
 
   return URL.format({
-    protocol: Networks.get(this.network ,'name').prefix + ':',
+    protocol: 'payto:',
     host: this.address.toString(true),
     query: query
   });
@@ -216,7 +233,7 @@ URI.prototype.toString = function() {
  *
  * @returns {string} Bitcoin URI
  */
-URI.prototype.inspect = function() {
+URI.prototype.inspect = function () {
   return '<URI: ' + this.toString() + '>';
 };
 

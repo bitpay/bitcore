@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-mnemonic",
+  "name": "@abcpros/bitcore-mnemonic",
   "version": "8.25.10",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
