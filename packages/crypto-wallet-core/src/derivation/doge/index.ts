@@ -1,4 +1,4 @@
-const BitcoreLibDoge = require('bitcore-lib-doge');
+const BitcoreLibDoge = require('@abcpros/bitcore-lib-doge');
 import { AbstractBitcoreLibDeriver } from '../btc';
 export class DogeDeriver extends AbstractBitcoreLibDeriver {
   bitcoreLib = BitcoreLibDoge;

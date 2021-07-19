@@ -3,7 +3,7 @@ import * as request from 'request-promise-native';
 import { URL } from 'url';
 import logger from '../../logger';
 
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLib = require('@abcpros/bitcore-lib');
 const secp256k1 = require('secp256k1');
 export class Client {
   authKey: { bn: { toBuffer: (arg) => Buffer } };

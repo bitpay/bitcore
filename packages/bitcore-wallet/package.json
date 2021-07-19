@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "async": "^2.5.0",
-    "bitcore-lib": "^8.25.10",
-    "@abcpros/bitcore-wallet-client": "^8.25.20",
+    "@abcpros/bitcore-lib": "^8.25.10",
+    "@abcpros/bitcore-wallet-client": "^8.25.27",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",

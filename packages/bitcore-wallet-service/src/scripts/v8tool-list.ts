@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 const request = require('request');
-const Bitcore = require('bitcore-lib');
+const Bitcore = require('@abcpros/bitcore-lib');
 const requestStream = require('request');
 import { Client } from '../lib//blockchainexplorers/v8/client';
 

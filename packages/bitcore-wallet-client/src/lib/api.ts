@@ -25,7 +25,7 @@ var Bitcore_ = {
   doge: CWC.BitcoreLibDoge,
   xpi: CWC.BitcoreLibXpi
 };
-var Mnemonic = require('bitcore-mnemonic');
+var Mnemonic = require('@abcpros/bitcore-mnemonic');
 var url = require('url');
 var querystring = require('querystring');
 
@@ -2895,6 +2895,8 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
+        ['xpi', 'livenet'],
+        ['xpi', 'testnet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true]
       ];

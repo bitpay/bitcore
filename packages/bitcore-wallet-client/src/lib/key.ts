@@ -13,7 +13,7 @@ import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
 var Bitcore = BitcoreLib;
-var Mnemonic = require('bitcore-mnemonic');
+var Mnemonic = require('@abcpros/bitcore-mnemonic');
 var sjcl = require('sjcl');
 var log = require('./log');
 const async = require('async');

@@ -2,15 +2,15 @@ import * as CWC from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 
 const $ = require('preconditions').singleton();
-const bitcore = require('bitcore-lib');
+const bitcore = require('@abcpros/bitcore-lib');
 const crypto = bitcore.crypto;
 const secp256k1 = require('secp256k1');
-const Bitcore = require('bitcore-lib');
+const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bca: require('bitcore-lib-cash'),
-  doge: require('bitcore-lib-doge'),
+  bch: require('@abcpros/bitcore-lib-cash'),
+  bca: require('@abcpros/bitcore-lib-cash'),
+  doge: require('@abcpros/bitcore-lib-doge'),
   xpi: require('@abcpros/bitcore-lib-xpi')
 };
 

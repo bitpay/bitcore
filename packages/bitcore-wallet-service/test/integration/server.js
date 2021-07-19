@@ -15,14 +15,14 @@ const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
 var config = require('../../ts_build/config.js');
-const Bitcore = require('bitcore-lib');
+const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
+  bch: require('@abcpros/bitcore-lib-cash'),
+  bcha: require('@abcpros/bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge')
+  doge: require('@abcpros/bitcore-lib-doge')
 };
 
 const { WalletService } = require('../../ts_build/lib/server');

@@ -7,7 +7,7 @@ import { AsyncRPC } from '../../src/rpc';
 import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
 import { resetDatabase } from '../helpers';
-const { PrivateKey } = require('bitcore-lib');
+const { PrivateKey } = require('@abcpros/bitcore-lib');
 
 const chain = 'BTC';
 const network = 'regtest';

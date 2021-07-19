@@ -1,5 +1,5 @@
 import { IValidation } from '..';
-const BitcoreCash = require('bitcore-lib-cash');
+const BitcoreCash = require('@abcpros/bitcore-lib-cash');
 
 export class BchValidation implements IValidation {
   validateAddress(network: string, address: string): boolean {

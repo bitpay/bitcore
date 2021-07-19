@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-mnemonic",
+  "name": "@abcpros/bitcore-mnemonic",
   "version": "8.25.10",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
@@ -43,11 +43,11 @@
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "bitcore-lib": "^8.25.10",
+    "@abcpros/bitcore-lib": "^8.25.10",
     "unorm": "^1.4.1"
   },
   "peerDependencies": {
-    "bitcore-lib": "^8.20.1"
+    "@abcpros/bitcore-lib": "^8.25.10"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

@@ -8,14 +8,14 @@ import { Client } from './v8/client';
 
 const $ = require('preconditions').singleton();
 const Common = require('../common');
-const Bitcore = require('bitcore-lib');
+const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
+  bch: require('@abcpros/bitcore-lib-cash'),
+  bcha: require('@abcpros/bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge'),
+  doge: require('@abcpros/bitcore-lib-doge'),
   xpi: require('@abcpros/bitcore-lib-xpi')
 };
 const config = require('../../config');
