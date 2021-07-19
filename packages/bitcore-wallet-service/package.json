@@ -31,7 +31,7 @@
     "@abcpros/bitcore-lib-xpi": "8.25.13",
     "body-parser": "^1.11.0",
     "compression": "^1.6.2",
-    "@abcpros/crypto-wallet-core": "8.25.13",
+    "@abcpros/crypto-wallet-core": "8.25.15",
     "email-validator": "^1.0.1",
     "express": "^4.10.0",
     "express-rate-limit": "^2.6.0",

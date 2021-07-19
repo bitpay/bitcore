@@ -109,7 +109,7 @@
     "body-parser": "1.18.3",
     "cors": "2.8.4",
     "crypto-rpc": "^1.1.0",
-    "@abcpros/crypto-wallet-core": "^8.25.13",
+    "@abcpros/crypto-wallet-core": "^8.25.15",
     "heapdump": "0.3.12",
     "http": "0.0.0",
     "lodash": "4.17.11",
