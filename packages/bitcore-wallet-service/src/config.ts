@@ -49,7 +49,7 @@ module.exports = {
         url: 'https://api.bitcore.io'
       }
     },
-    bcha: {
+    xec: {
       livenet: {
         url: 'http://127.0.0.1:3000'
       },

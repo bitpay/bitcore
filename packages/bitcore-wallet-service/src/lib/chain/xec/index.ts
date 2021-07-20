@@ -6,7 +6,7 @@ const config = require('../../../config');
 
 const Errors = require('../../errors/errordefinitions');
 
-export class BchaChain extends BtcChain implements IChain {
+export class XecChain extends BtcChain implements IChain {
   constructor() {
     super(BitcoreLibCash);
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;

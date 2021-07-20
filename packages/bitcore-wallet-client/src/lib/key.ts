@@ -389,7 +389,7 @@ export class Key {
       } else {
         coinCode = '145';
       }
-    } else if (opts.coin == 'bcha') {
+    } else if (opts.coin == 'xec') {
       coinCode = '899';
     } else if (opts.coin == 'btc') {
       coinCode = '0';

@@ -1,7 +1,7 @@
 {
-  "name": "@abcpros/bitcore-p2p-bcha",
+  "name": "@abcpros/bitcore-p2p-xec",
   "version": "8.25.11",
-  "description": "Interface to the bitcoin P2P network for bitcoin-abc",
+  "description": "Interface to the bitcoin P2P network for ecash",
   "author": "Viet <vince.tran8x@gmail.com>",
   "main": "index.js",
   "scripts": {
