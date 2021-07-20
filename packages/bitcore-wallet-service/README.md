@@ -29,7 +29,7 @@ More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
 This will launch the BWS service (with default settings) at `http://localhost:3232/bws/api`.
 
-BWS needs mongoDB. You can configure the connection at `config.js`
+BWS needs mongoDB. You can configure the connection at `bws.config.js`
 
 BWS supports SSL and Clustering. For a detailed guide on installing BWS with extra features see [Installing BWS](https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/installation.md).
 
@@ -55,7 +55,7 @@ BWS can be used with PM2 with the provided `app.js` script:
 
 ## Using SSL
 
-You can add your certificates at the config.js using:
+You can add your certificates at the bws.config.js using:
 
 ```json
   https: true,
@@ -122,9 +122,9 @@ The are plenty example creating and sending proposals in the `/test/integration`
         }
 ```
 
-**bitcore-wallet-service/config.js**
+**bitcore-wallet-service/bws.config.js**
 
-2. Point testnet to http://localhost:3000 in BWS/config.js and set regtestEnabled to true.
+2. Point testnet to http://localhost:3000 in BWS/bws.config.js and set regtestEnabled to true.
 
 ```
 blockchainExplorerOpts: {
