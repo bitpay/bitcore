@@ -19,7 +19,7 @@ var validCashAddr = require('./data/cashaddr.json')
 describe('Address', function() {
 
   var pubkeyhash = Buffer.from('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
-  var buf = Buffer.concat([Buffer.from([28]), pubkeyhash]);
+  var buf = Buffer.concat([Buffer.from([0]), pubkeyhash]);
   var str = 'bitcoincash:qq7rlg754h903afdtvvy8967zgj5sf5exueg36nyc7';
 
   it('can\'t build without data', function() {
@@ -73,12 +73,12 @@ describe('Address', function() {
     //
     //
     var t = [
-      ['CTH8H8Zj6DSnXFBKQeDG28ogAS92iS16Bp', 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'],
-      ['Cazk5ZxnJGY1iYqqTefvo7ZtwLYx3YzjgY', 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'],
-      ['CGZpaFRaJYHqohPJ8BKYvKmxffV2dcmmN9', 'bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r'],
-      ['HHLN6S9BcP1JLSrMhgD5qe57iVEMFMLCBT', 'bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq'],
-      ['HR3ytsYEpS6XXkWskgfkccqLVPeGdXQ1S8', 'bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e'],
-      ['H6d4PZ12phrMcu4LRDKNjq3QDiaMDz3fUd', 'bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
+      ['1BpEi6DfDAUFd7GtittLSdBeYJvcoaVggu', 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'],
+      ['1KXrWXciRDZUpQwQmuM1DbwsKDLYAYsVLR', 'bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy'],
+      ['16w1D5WRVKJuZUsSRzdLp9w3YGcgoxDXb', 'bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r'],
+      ['3CWFddi6m4ndiGyKqzYvsFYagqDLPVMTzC', 'bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq'],
+      ['3LDsS579y7sruadqu11beEJoTjdFiFCdX4', 'bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e'],
+      ['31nwvkZwyPdgzjBJZXfDmSWsC4ZLKpYyUw', 'bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
     ];
     var i;
 
@@ -153,20 +153,20 @@ describe('Address', function() {
 
   // livenet valid
   var PKHLivenet = [
-    'CMPeBN1BZDzaqU5DF66X5QykLcS1voucT9',
+    '15vkcKf7gB23wLAnZLmbVuMiiVDc1Nm4a2',
     'bitcoincash:qp3awknl3dz8ezu3rmapff3phnzz95kansf0r3rs4x',
-    'CTHVPhghRAmiLHajoKYTGRyiU8RomQmAfZ',
-    'CaSvYEmgxVRYiAauWzW1XP4SHkyTiS78yy',
-    '    CaSvYEmgxVRYiAauWzW1XP4SHkyTiS78yy   \t\n'
+    '1BpbpfLdY7oBS9gK7aDXgvMgr1DPvNhEB2',
+    '1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7',
+    '    1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7   \t\n'
   ];
 
   // livenet p2sh
   var P2SHLivenet = [
     'bitcoincash:pqv60krfqv3k3lglrcnwtee6ftgwgaykpccr8hujjz',
-    'H8kzbJ9Mw46WdAxC8SAFadHn1oNqp6jEsu',
-    'HCGvZEM8pNyAFBfRrz9Eo4N4eGJPuFahd9',
-    'HVZezVtqnDwoTZTZ997fZUUGZMetDFUDLf',
-    '\tHVZezVtqnDwoTZTZ997fZUUGZMetDFUDLf \n \r'
+    '33vt8ViH5jsr115AGkW6cEmEz9MpvJSwDk',
+    '37Sp6Rv3y4kVd1nQ1JV5pfqXccHNyZm1x3',
+    '3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy',
+    '\t3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy \n \r'
   ];
 
   // testnet p2sh
@@ -204,17 +204,17 @@ describe('Address', function() {
   describe('validation', function() {
 
     it('getValidationError detects network mismatchs', function() {
-      var error = Address.getValidationError('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'testnet');
+      var error = Address.getValidationError('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'testnet');
       should.exist(error);
     });
 
     it('isValid returns true on a valid livenet address', function() {
-      Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'livenet').should.equal(true);
+      Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'livenet').should.equal(true);
     });
 
     it('isValid returns false on network mismatch', function() {
-      Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'testnet').should.equal(false);
-      Address.isValid('HC1hAdrx7APHg1DkE4bVLsZhY1SE5Dik1r', 'regtest').should.equal(false);
+      Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'testnet').should.equal(false);
+      Address.isValid('37BahqRsFrAd3qLiNNwLNV3AWMRD7itxTo', 'regtest').should.equal(false);
     });
 
     it('isValid returns true on network match on cashaddr', function() {

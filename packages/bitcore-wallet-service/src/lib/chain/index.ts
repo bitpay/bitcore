@@ -1,10 +1,10 @@
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
-import { XecChain } from './xec';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
+import { XecChain } from './xec';
 import { XpiChain } from './xpi';
 import { XrpChain } from './xrp';
 
