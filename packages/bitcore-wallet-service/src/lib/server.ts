@@ -1901,7 +1901,7 @@ export class WalletService {
 
     this.storage.checkAndUseGlobalCache(cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values, oldvalues) => {
       if (err) return cb(err);
-      if (values) return cb(null, values, true);
+      if (!_.isEmpty(values)) return cb(null, values, true);
 
       const feeLevels = Defaults.FEE_LEVELS[opts.coin];
 
