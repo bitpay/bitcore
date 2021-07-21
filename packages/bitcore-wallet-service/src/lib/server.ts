@@ -1868,6 +1868,7 @@ export class WalletService {
           // NOTE: ONLY BTC/BCH/DOGE expect feePerKb to be Bitcoin amounts
           // others... expect wei.
 
+          console.log(ChainService.convertFeePerKb(coin, p, feePerKb));
           return ChainService.convertFeePerKb(coin, p, feePerKb);
         })
       );
@@ -1901,7 +1902,7 @@ export class WalletService {
 
     this.storage.checkAndUseGlobalCache(cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values, oldvalues) => {
       if (err) return cb(err);
-      if (values) return cb(null, values, true);
+      if (!_.isEmpty(values)) return cb(null, values, true);
 
       const feeLevels = Defaults.FEE_LEVELS[opts.coin];
 
@@ -2851,7 +2852,7 @@ export class WalletService {
 
   checkQueueHandleSendLotus() {
     setInterval(() => {
-      if (this.storage && this.storage.queue) {
+      if(this.storage && this.storage.queue) {
         this.storage.queue.get((err, data) => {
           if (data) {
             const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
