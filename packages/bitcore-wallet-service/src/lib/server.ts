@@ -2329,7 +2329,7 @@ export class WalletService {
                     walletId: this.walletId,
                     creatorId: this.copayerId,
                     coin: opts.coin,
-                    chain: opts.chain ? opts.chain : opts.coin,
+                    chain: opts.chain ? opts.chain : ChainService.getChain(opts.coin),
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
