@@ -2,7 +2,7 @@ import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
 import { Readable } from 'stream';
 import Web3 from 'web3';
-import { Transaction } from 'web3-core';
+import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import Config from '../../../config';
 import logger from '../../../logger';

@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { Transaction } from 'web3-core';
+import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import { Config } from '../../../services/config';
 import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
