@@ -103,7 +103,7 @@ module.exports = {
         nbBlocks: 2,
         defaultValue: 1000000
       }
-    ],
+    ]
   },
 
   // How many levels to fallback to if the value returned by the network for a given nbBlocks is -1
@@ -228,7 +228,7 @@ module.exports = {
     eth: 0,
     xrp: 0,
     doge: 0,
-    xpi: 0,
+    xpi: 0
   },
 
   MAX_TX_FEE: {
@@ -237,7 +237,7 @@ module.exports = {
     eth: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
-    xpi: 1 * 1e6, // 1 xpi
+    xpi: 1 * 1e6 // 1 xpi
   },
 
   // ETH

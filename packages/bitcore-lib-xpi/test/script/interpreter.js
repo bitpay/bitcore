@@ -252,7 +252,7 @@ describe('Interpreter', function() {
       script: scriptPubkey,
       satoshis: inputAmount, 
     }));
-    var idbuf = credtx.id;
+    var idbuf = credtx.hash;
 
     var spendtx = new Transaction();
     spendtx.setVersion(1);

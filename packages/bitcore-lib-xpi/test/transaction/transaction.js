@@ -163,7 +163,7 @@ describe('Transaction', function() {
 
   it('standard hash of transaction should be decoded correctly', function() {
     var transaction = new Transaction(tx_1_hex);
-    transaction.id.should.equal(tx_1_id);
+    transaction.hash.should.equal(tx_1_id);
   });
 
   it('serializes an empty transaction', function() {
