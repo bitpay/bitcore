@@ -43,6 +43,8 @@
     "ci:bitcore-lib-ltc": "./ci.sh 'npm run test:bitcore-lib-ltc'",
     "test:bitcore-lib-doge": "cd ./packages/bitcore-lib-doge && npm run test",
     "ci:bitcore-lib-doge": "./ci.sh 'npm run test:bitcore-lib-doge'",
+    "test:bitcore-lib-xec": "cd ./packages/bitcore-lib-xec && npm run test",
+    "ci:bitcore-lib-xec": "./ci.sh 'npm run test:bitcore-lib-xec'",
     "test:bitcore-lib-xpi": "cd ./packages/bitcore-lib-xpi && npm run test",
     "ci:bitcore-lib-xpi": "./ci.sh 'npm run test:bitcore-lib-xpi'",
     "test:bitcore-p2p": "cd ./packages/bitcore-p2p && npm run test",

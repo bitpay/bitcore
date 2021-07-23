@@ -9,7 +9,7 @@ module.exports = {
   },
   XEC: {
     lib: require('@abcpros/bitcore-lib-xec'),
-    p2p: require('bitcore-p2p-xec')
+    p2p: require('@abcpros/bitcore-p2p-xec')
   },
   XPI: {
     lib: require('@abcpros/bitcore-lib-xpi'),

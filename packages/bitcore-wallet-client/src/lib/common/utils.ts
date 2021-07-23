@@ -4,6 +4,7 @@ import {
   BitcoreLib,
   BitcoreLibCash,
   BitcoreLibDoge,
+  BitcoreLibXec,
   BitcoreLibXpi,
   Deriver,
   Transactions
@@ -24,6 +25,7 @@ const Bitcore_ = {
   eth: Bitcore,
   xrp: Bitcore,
   doge: BitcoreLibDoge,
+  xec: BitcoreLibXec,
   xpi: BitcoreLibXpi
 };
 const PrivateKey = Bitcore.PrivateKey;

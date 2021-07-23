@@ -12,7 +12,7 @@ const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('@abcpros/bitcore-lib-cash'),
-  bcha: require('@abcpros/bitcore-lib-cash'),
+  xec: require('@abcpros/bitcore-lib-xec'),
   eth: Bitcore,
   xrp: Bitcore,
   doge: require('@abcpros/bitcore-lib-doge'),

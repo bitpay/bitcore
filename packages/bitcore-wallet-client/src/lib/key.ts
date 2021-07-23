@@ -390,7 +390,7 @@ export class Key {
         coinCode = '145';
       }
     } else if (opts.coin == 'xec') {
-      coinCode = '899';
+      coinCode = '1899';
     } else if (opts.coin == 'btc') {
       coinCode = '0';
     } else if (opts.coin == 'eth') {

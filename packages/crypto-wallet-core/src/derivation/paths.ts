@@ -22,6 +22,11 @@ export const Paths = {
     livenet: "m/44'/3'/",
     testnet: "m/44'/3'/"
   },
+  XEC: {
+    mainnet: "m/44'/1899'/",
+    livenet: "m/44'/1899'/",
+    testnet: "m/44'/1899'/"
+  },
   XPI: {
     mainnet: "m/44'/10605'/",
     livenet: "m/44'/10605'/",
