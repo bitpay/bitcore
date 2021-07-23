@@ -22,6 +22,8 @@ export interface BitcoinOutput {
 }
 export interface BitcoinTransactionType {
   outputAmount: number;
+  txid?: string;
+  _txid?: undefined | string;
   hash: string;
   _hash: undefined | string;
   isCoinbase: () => boolean;

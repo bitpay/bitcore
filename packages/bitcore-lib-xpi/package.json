@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-lib-xpi",
-  "version": "8.25.14",
+  "version": "8.25.15",
   "description": "A pure and powerful JavaScript Lotus library.",
   "main": "index.js",
   "scripts": {

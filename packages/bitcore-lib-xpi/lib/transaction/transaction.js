@@ -121,7 +121,7 @@ var txidProperty = {
 };
 
 Object.defineProperty(Transaction.prototype, 'hash', hashProperty);
-Object.defineProperty(Transaction.prototype, 'id', hashProperty);
+Object.defineProperty(Transaction.prototype, 'id', txidProperty);
 Object.defineProperty(Transaction.prototype, 'txid', txidProperty);
 
 var ioProperty = {

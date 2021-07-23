@@ -3,7 +3,8 @@ import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 const config = require('../../../config');
-
+const Common = require('../../common');
+const Utils = Common.Utils;
 const Errors = require('../../errors/errordefinitions');
 
 export class XpiChain extends BtcChain implements IChain {
@@ -14,6 +15,10 @@ export class XpiChain extends BtcChain implements IChain {
   }
   getSizeSafetyMargin(opts: any): number {
     return 0;
+  }
+
+  convertFeePerKb(p, feePerKb) {
+    return [p, Utils.strip(feePerKb * 1e6)];
   }
 
   getInputSizeSafetyMargin(opts: any): number {

@@ -96,6 +96,13 @@ module.exports = {
         nbBlocks: 2,
         defaultValue: 100000000
       }
+    ],
+    xpi: [
+      {
+        name: 'normal',
+        nbBlocks: 2,
+        defaultValue: 1000000
+      }
     ]
   },
 
@@ -211,6 +218,7 @@ module.exports = {
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
     xrp: 1000000000000,
+    xpi: 1000000000000,
     doge: 100000000 * 100
   },
 
@@ -219,7 +227,8 @@ module.exports = {
     bch: 0,
     eth: 0,
     xrp: 0,
-    doge: 0
+    doge: 0,
+    xpi: 0
   },
 
   MAX_TX_FEE: {
@@ -227,7 +236,8 @@ module.exports = {
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
-    doge: 400 * 1e8
+    doge: 400 * 1e8,
+    xpi: 1 * 1e6 // 1 xpi
   },
 
   // ETH
