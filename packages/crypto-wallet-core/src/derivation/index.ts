@@ -3,6 +3,7 @@ import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
 import { Paths } from './paths';
+import { XecDeriver } from './xec';
 import { XpiDeriver } from './xpi';
 import { XrpDeriver } from './xrp';
 
@@ -24,6 +25,7 @@ const derivers: { [chain: string]: IDeriver } = {
   ETH: new EthDeriver(),
   XRP: new XrpDeriver(),
   DOGE: new DogeDeriver(),
+  XEC: new XecDeriver(),
   XPI: new XpiDeriver()
 };
 

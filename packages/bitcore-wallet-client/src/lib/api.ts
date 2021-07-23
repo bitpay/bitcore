@@ -2897,6 +2897,8 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
+        ['xec', 'livenet'],
+        ['xec', 'testnet'],
         ['xpi', 'livenet'],
         ['xpi', 'testnet'],
         ['btc', 'livenet', true],

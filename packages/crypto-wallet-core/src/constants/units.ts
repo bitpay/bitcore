@@ -22,14 +22,14 @@ export let UNITS = {
     }
   },
   xec: {
-    toSatoshis: 100000000,
+    toSatoshis: 1000,
     full: {
-      maxDecimals: 8,
-      minDecimals: 8
+      maxDecimals: 4,
+      minDecimals: 4
     },
     short: {
-      maxDecimals: 6,
-      minDecimals: 2
+      maxDecimals: 4,
+      minDecimals: 4
     }
   },
   eth: {

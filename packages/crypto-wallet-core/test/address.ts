@@ -67,8 +67,19 @@ describe('Address Derivation', () => {
     const path = Deriver.pathFor('XPI', 'mainnet');
     expect(path).to.equal("m/44'/10605'/0'");
 
-    const address = Deriver.deriveAddress('ETH', 'mainnet', xPub, 0, false);
-    const expectedAddress = '0x9dbfE221A6EEa27a0e2f52961B339e95426931F9';
+    const address = Deriver.deriveAddress('XPI', 'mainnet', xPub, 0, false);
+    const expectedAddress = 'lotus_16PSJKPkEQBaJvbbViTqyfwiM4C1y7QMM4jj4VDgP';
+    expect(address).to.equal(expectedAddress);
+  });
+
+  it('should be able to generate a valid XEC address', () => {
+    const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
+
+    const path = Deriver.pathFor('XEC', 'mainnet');
+    expect(path).to.equal("m/44'/899'/0'");
+
+    const address = Deriver.deriveAddress('XEC', 'mainnet', xPub, 0, false);
+    const expectedAddress = 'qp98kjdc22329k0a8hvvtexaqtuhygm94saq45dkx4';
     expect(address).to.equal(expectedAddress);
   });
 });

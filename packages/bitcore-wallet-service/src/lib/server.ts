@@ -2949,7 +2949,12 @@ export class WalletService {
   convertCoinToUSD(amount, coin, cp) {
     this.getFiatRates({}, (err, rates) => {
       if (err) return err;
-      const unitToSatoshi = coin === 'xpi' ? 1000000 : 100000000; // bch , btc, bcha, doge
+      let unitToSatoshi = 100000000;
+      if (coin === 'xpi') {
+        unitToSatoshi = 1000000;
+      } else if (coin === 'xec') {
+        unitToSatoshi = 1000;
+      }
       const rateCoin = _.find(rates[coin], item => item.code == 'USD');
       if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
       const amountUSD = amount * (1 / unitToSatoshi) * rateCoin.rate;

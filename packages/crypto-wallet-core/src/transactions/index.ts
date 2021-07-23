@@ -5,6 +5,7 @@ import { ERC20TxProvider } from './erc20';
 import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { XPITxProvider } from './xpi';
+import { XECTxProvider } from './xec';
 import { XRPTxProvider } from './xrp';
 
 const providers = {
@@ -15,6 +16,7 @@ const providers = {
   ETHMULTISIG: new ETHMULTISIGTxProvider(),
   XRP: new XRPTxProvider(),
   DOGE: new DOGETxProvider(),
+  XEC: new XECTxProvider(),
   XPI: new XPITxProvider()
 };
 

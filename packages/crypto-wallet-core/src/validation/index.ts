@@ -2,6 +2,7 @@ import { BchValidation } from './bch';
 import { BtcValidation } from './btc';
 import { DogeValidation } from './doge';
 import { EthValidation } from './eth';
+import { XecValidation } from './xec';
 import { XpiValidation } from './xpi';
 import { XrpValidation } from './xrp';
 
@@ -16,6 +17,7 @@ const validation: { [chain: string]: IValidation } = {
   ETH: new EthValidation(),
   XRP: new XrpValidation(),
   DOGE: new DogeValidation(),
+  XEC: new XecValidation(),
   XPI: new XpiValidation()
 };
 

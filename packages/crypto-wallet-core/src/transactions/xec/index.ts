@@ -1,13 +1,13 @@
 import { BTCTxProvider } from '../btc';
 
-export class XPITxProvider extends BTCTxProvider {
-  lib = require('@abcpros/bitcore-lib-xpi');
+export class XECTxProvider extends BTCTxProvider {
+  lib = require('@abcpros/bitcore-lib-xec');
   create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
     change = change || wallet.deriveAddress(wallet.addressIndex, true);
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / 1e6,
+        amount: utxo.value / 1e3,
         txid: utxo.mintTxid,
         outputIndex: utxo.mintIndex
       });
