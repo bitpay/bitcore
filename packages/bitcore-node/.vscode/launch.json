@@ -37,6 +37,20 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Debug Resync",
+      "program": "${workspaceFolder}/build/test/verification/resync.js",
+      "protocol": "auto",
+      "preLaunchTask": "npm: tsc",
+      "env": {
+        "CHAIN": "XPI",
+        "NETWORK": "mainnet",
+        "START": "0",
+        "END": "31108"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Debug Integration Tests",
       "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
       "args": [

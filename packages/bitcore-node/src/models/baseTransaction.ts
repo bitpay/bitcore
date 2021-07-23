@@ -6,6 +6,7 @@ import { BaseModel, MongoBound } from './base';
 
 export interface ITransaction {
   txid: string;
+  hash?: string;
   chain: string;
   network: string;
   blockHeight?: number;

@@ -85,6 +85,7 @@ export interface TxOp {
     filter: { txid: string; chain: string; network: string };
     update: {
       $set: {
+        hash: string;
         chain: string;
         network: string;
         blockHeight: number;
@@ -292,6 +293,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
               filter: { txid: parentTx.txid, chain, network },
               update: {
                 $set: {
+                  hash: parentTx.hash,
                   chain,
                   network,
                   blockHeight: height,
@@ -320,7 +322,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       if (height > 0) {
         spentQuery = { spentHeight: height, chain, network };
       } else {
-        spentQuery = { spentTxid: { $in: params.txs.map(tx => tx._hash) }, chain, network };
+        spentQuery = { spentTxid: { $in: params.txs.map(tx => (tx._txid || tx._hash)) }, chain, network };
       }
       const spent = await CoinStorage.collection
         .find(spentQuery)
@@ -344,7 +346,8 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
       let txBatch = new Array<TxOp>();
       for (let tx of params.txs) {
-        const txid = tx._hash!;
+        const txid = tx._txid ? tx._txid! : tx._hash!;
+        const hash = tx._hash!;
         const spent = groupedSpends[txid] || {};
         const mintedWallets = tx.wallets || [];
         const spentWallets = spent.wallets || [];
@@ -364,6 +367,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
             filter: { txid, chain, network },
             update: {
               $set: {
+                hash,
                 chain,
                 network,
                 blockHeight: height,
@@ -443,7 +447,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         }
 
         for (let tx of params.txs as Array<TaggedBitcoinTx>) {
-          const coinsForTx = mintBatch.filter(mint => mint.updateOne.filter.mintTxid === tx._hash!);
+          const coinsForTx = mintBatch.filter(mint => mint.updateOne.filter.mintTxid === (tx._txid! || tx._hash!));
           tx.wallets = coinsForTx.reduce((wallets, c) => {
             wallets = wallets.concat(c.updateOne.update.$set.wallets!);
             return wallets;
@@ -482,13 +486,14 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     let mintBatch = new Array<MintOp>();
     for (let tx of params.txs) {
       tx._hash = tx.hash;
+      tx._txid = tx.txid;
       let isCoinbase = tx.isCoinbase();
       for (let [index, output] of tx.outputs.entries()) {
         if (
           parentChain &&
           forkHeight &&
           height < forkHeight &&
-          (!parentChainCoinsMap.size || !parentChainCoinsMap.get(`${tx._hash}:${index}`))
+          (!parentChainCoinsMap.size || !parentChainCoinsMap.get(`${tx._txid ? tx._txid : tx._hash}:${index}`))
         ) {
           continue;
         }
@@ -505,7 +510,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         mintBatch.push({
           updateOne: {
             filter: {
-              mintTxid: tx._hash,
+              mintTxid: tx._txid ? tx._txid : tx._hash,
               mintIndex: index,
               chain,
               network
@@ -575,7 +580,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
               network
             },
             update: {
-              $set: { spentTxid: tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber }
+              $set: { spentTxid: tx._txid || tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber }
             }
           }
         };
@@ -692,6 +697,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     const transaction: TransactionJSON = {
       _id: tx._id ? tx._id.toString() : '',
       txid: tx.txid || '',
+      hash: tx.hash || '',
       network: tx.network || '',
       chain: tx.chain || '',
       blockHeight: tx.blockHeight || -1,
