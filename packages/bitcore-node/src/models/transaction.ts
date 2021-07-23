@@ -322,7 +322,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       if (height > 0) {
         spentQuery = { spentHeight: height, chain, network };
       } else {
-        spentQuery = { spentTxid: { $in: params.txs.map(tx => (tx._txid || tx._hash)) }, chain, network };
+        spentQuery = { spentTxid: { $in: params.txs.map(tx => tx._txid || tx._hash) }, chain, network };
       }
       const spent = await CoinStorage.collection
         .find(spentQuery)
@@ -580,7 +580,11 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
               network
             },
             update: {
-              $set: { spentTxid: tx._txid || tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber }
+              $set: {
+                spentTxid: tx._txid || tx._hash || tx.hash,
+                spentHeight: height,
+                sequenceNumber: inputObj.sequenceNumber
+              }
             }
           }
         };
