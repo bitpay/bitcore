@@ -5,6 +5,7 @@ var $ = require('preconditions').singleton();
 import {
   BitcoreLib,
   BitcoreLibCash,
+  BitcoreLibXec,
   BitcoreLibXpi
 } from '@abcpros/crypto-wallet-core';
 

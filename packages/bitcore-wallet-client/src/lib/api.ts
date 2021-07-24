@@ -23,6 +23,7 @@ var Bitcore_ = {
   eth: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
+  xec: CWC.BitcoreLibXec,
   xpi: CWC.BitcoreLibXpi
 };
 var Mnemonic = require('@abcpros/bitcore-mnemonic');
@@ -70,6 +71,7 @@ export class API extends EventEmitter {
   static BitcoreCash = CWC.BitcoreLibCash;
   static BitcoreDoge = CWC.BitcoreLibDoge;
   static BitcoreXpi = CWC.BitcoreLibXpi;
+  static BitcoreXec = CWC.BitcoreLibXec;
 
   constructor(opts?) {
     super();
@@ -2895,6 +2897,8 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
+        ['xec', 'livenet'],
+        ['xec', 'testnet'],
         ['xpi', 'livenet'],
         ['xpi', 'testnet'],
         ['btc', 'livenet', true],

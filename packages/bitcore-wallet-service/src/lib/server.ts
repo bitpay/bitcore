@@ -41,7 +41,7 @@ const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('@abcpros/bitcore-lib-cash'),
-  bcha: require('@abcpros/bitcore-lib-cash'),
+  xec: require('@abcpros/bitcore-lib-xec'),
   eth: Bitcore,
   xrp: Bitcore,
   doge: require('@abcpros/bitcore-lib-doge'),
@@ -476,7 +476,7 @@ export class WalletService {
   createWallet(opts, cb) {
     let pubKey;
 
-    if ((opts.coin === 'bch' || opts.coin === 'bcha') && opts.n > 1) {
+    if ((opts.coin === 'bch' || opts.coin === 'xec') && opts.n > 1) {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -587,7 +587,7 @@ export class WalletService {
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
       // cashAddress migration
-      if ((wallet.coin != 'bch' && wallet.coin != 'bcha') || wallet.nativeCashAddr) return cb(null, wallet);
+      if ((wallet.coin != 'bch' && wallet.coin != 'xec') || wallet.nativeCashAddr) return cb(null, wallet);
 
       // only for testing
       if (opts.doNotMigrate) return cb(null, wallet);
@@ -616,7 +616,7 @@ export class WalletService {
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
       // cashAddress migration
-      if ((wallet.coin != 'bch' && wallet.coin != 'bcha') || wallet.nativeCashAddr) return cb(null, wallet);
+      if ((wallet.coin != 'bch' && wallet.coin != 'xec') || wallet.nativeCashAddr) return cb(null, wallet);
 
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
@@ -1064,7 +1064,7 @@ export class WalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if ((opts.coin === 'bch' || opts.coin === 'bcha') && wallet.n > 1) {
+        if ((opts.coin === 'bch' || opts.coin === 'xec') && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -2125,7 +2125,7 @@ export class WalletService {
         },
         next => {
           // check outputs are on 'copay' format for BCH
-          if (wallet.coin != 'bch' && wallet.coin != 'bcha') return next();
+          if (wallet.coin != 'bch' && wallet.coin != 'xec') return next();
           if (!opts.noCashAddr) return next();
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
@@ -2949,7 +2949,12 @@ export class WalletService {
   convertCoinToUSD(amount, coin, cp) {
     this.getFiatRates({}, (err, rates) => {
       if (err) return err;
-      const unitToSatoshi = 100000000; // bch , btc, bcha, doge
+      let unitToSatoshi = 100000000;
+      if (coin === 'xpi') {
+        unitToSatoshi = 1000000;
+      } else if (coin === 'xec') {
+        unitToSatoshi = 1000;
+      }
       const rateCoin = _.find(rates[coin], item => item.code == 'USD');
       if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
       const amountUSD = amount * (1 / unitToSatoshi) * rateCoin.rate;

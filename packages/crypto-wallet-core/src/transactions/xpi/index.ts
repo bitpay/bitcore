@@ -7,7 +7,7 @@ export class XPITxProvider extends BTCTxProvider {
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / 1e8,
+        amount: utxo.value / 1e6,
         txid: utxo.mintTxid,
         outputIndex: utxo.mintIndex
       });

@@ -43,6 +43,15 @@ export class SearchProvider {
         { chain: 'BCH', network: 'mainnet' }
       ],
     },
+    // Standard Ecash / XEC address
+    {
+      regexes: [/^(ecash:)?([13][a-km-zA-HJ-NP-Z1-9]{25,34})/],
+      dataIndex: 2,
+      type: 'address',
+      chainNetworks: [
+        { chain: 'XEC', network: 'mainnet' }
+      ],
+    },
     // bech32 BTC Address
     {
       regexes: [/^(bitcoin:)?(bc1[ac-hj-np-zAC-HJ-NP-Z02-9]{11,71})/],
@@ -59,6 +68,24 @@ export class SearchProvider {
       type: 'address',
       chainNetworks: [
         { chain: 'BCH', network: 'mainnet' }
+      ],
+    },
+    // Standard Lotus / Xaddress XPI address
+    {
+      regexes: [/^(lotus_)([a-km-zA-HJ-NP-Z1-9]{0,})/],
+      dataIndex: 2,
+      type: 'address',
+      chainNetworks: [
+        { chain: 'XPI', network: 'mainnet' }
+      ],
+    },
+    // Standard Lotus / Xaddress XPI address
+    {
+      regexes: [/^(lotusT)([a-km-zA-HJ-NP-Z1-9]{0,})/],
+      dataIndex: 2,
+      type: 'address',
+      chainNetworks: [
+        { chain: 'XPI', network: 'testnet' }
       ],
     },
     // Testnet BTC / BCH / Doge Address
@@ -79,6 +106,15 @@ export class SearchProvider {
       type: 'address',
       chainNetworks: [
         { chain: 'BCH', network: 'testnet' }
+      ],
+    },
+    // Testnet XEC Address
+    {
+      regexes: [/^(ectest:)?([qp][a-z0-9]{41})$/, /^(ECTEST:)?([QP][A-Z0-9]{41})/],
+      dataIndex: 2,
+      type: 'address',
+      chainNetworks: [
+        { chain: 'XEC', network: 'testnet' }
       ],
     },
     // ETH Address
@@ -121,7 +157,7 @@ export class SearchProvider {
         { chain: 'ETH', network: 'testnet' }
       ],
     },
-    // BTC / BCH / DOGE / ETH block height
+    // BTC / BCH / DOGE / XEC / XPI / ETH block height
     {
       regexes: [/^[0-9]{1,9}$/],
       type: 'block',
@@ -129,10 +165,14 @@ export class SearchProvider {
         { chain: 'BTC', network: 'mainnet' },
         { chain: 'BCH', network: 'mainnet' },
         { chain: 'DOGE', network: 'mainnet' },
+        { chain: 'XEC', network: 'mainnet' },
+        { chain: 'XPI', network: 'mainnet' },
         { chain: 'ETH', network: 'mainnet' },
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
         { chain: 'DOGE', network: 'testnet' },
+        { chain: 'XEC', network: 'testnet' },
+        { chain: 'XPI', network: 'testnet' },
         { chain: 'ETH', network: 'testnet' }
       ],
     },
