@@ -1,5 +1,6 @@
 {
   "version": "8.25.8",
+  "name": "abcpros-bitcore",
   "prettier": {
     "singleQuote": true,
     "printWidth": 120

@@ -6,16 +6,16 @@ import { map } from 'rxjs/operators';
 import { ApiProvider, ChainNetwork } from '../api/api';
 
 interface CryptoSearchInput {
-  input: string,
-  chainNetwork: ChainNetwork,
-  type: string
+  input: string;
+  chainNetwork: ChainNetwork;
+  type: string;
 }
 
 interface InputType {
-  regexes: RegExp[],
-  dataIndex?: number,
-  type: string
-  chainNetworks: ChainNetwork[],
+  regexes: RegExp[];
+  dataIndex?: number;
+  type: string;
+  chainNetworks: ChainNetwork[];
 }
 
 @Injectable()
@@ -30,92 +30,85 @@ export class SearchProvider {
       regexes: [/^(bitcoin:)?([13][a-km-zA-HJ-NP-Z1-9]{25,34})/],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'BTC', network: 'mainnet' }
-      ],
+      chainNetworks: [{ chain: 'BTC', network: 'mainnet' }]
     },
     // Standard BTC / Legacy BCH address
     {
       regexes: [/^(bitcoincash:)?([13][a-km-zA-HJ-NP-Z1-9]{25,34})/],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'BCH', network: 'mainnet' }
-      ],
+      chainNetworks: [{ chain: 'BCH', network: 'mainnet' }]
     },
     // Standard Ecash / XEC address
     {
       regexes: [/^(ecash:)?([13][a-km-zA-HJ-NP-Z1-9]{25,34})/],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'XEC', network: 'mainnet' }
-      ],
+      chainNetworks: [{ chain: 'XEC', network: 'mainnet' }]
     },
     // bech32 BTC Address
     {
       regexes: [/^(bitcoin:)?(bc1[ac-hj-np-zAC-HJ-NP-Z02-9]{11,71})/],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'BTC', network: 'mainnet' }
-      ],
+      chainNetworks: [{ chain: 'BTC', network: 'mainnet' }]
     },
     // Standard BCH Address
     {
-      regexes: [/^(bitcoincash:)?([qp][a-z0-9]{41})$/, /^(BITCOINCASH:)?([QP][A-Z0-9]{41})/],
+      regexes: [
+        /^(bitcoincash:)?([qp][a-z0-9]{41})$/,
+        /^(BITCOINCASH:)?([QP][A-Z0-9]{41})/
+      ],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'BCH', network: 'mainnet' }
-      ],
+      chainNetworks: [{ chain: 'BCH', network: 'mainnet' }]
     },
     // Standard Lotus / Xaddress XPI address
     {
       regexes: [/^(lotus_)([a-km-zA-HJ-NP-Z1-9]{0,})/],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'XPI', network: 'mainnet' }
-      ],
+      chainNetworks: [{ chain: 'XPI', network: 'mainnet' }]
     },
     // Standard Lotus / Xaddress XPI address
     {
       regexes: [/^(lotusT)([a-km-zA-HJ-NP-Z1-9]{0,})/],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'XPI', network: 'testnet' }
-      ],
+      chainNetworks: [{ chain: 'XPI', network: 'testnet' }]
     },
     // Testnet BTC / BCH / Doge Address
     {
-      regexes: [/^(bitcoin:|bchtest:|dogecoin:)?([2mn][1-9A-HJ-NP-Za-km-z]{26,35})/],
+      regexes: [
+        /^(bitcoin:|bchtest:|dogecoin:)?([2mn][1-9A-HJ-NP-Za-km-z]{26,35})/
+      ],
       dataIndex: 2,
       type: 'address',
       chainNetworks: [
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
         { chain: 'DOGE', network: 'testnet' }
-      ],
+      ]
     },
     // Testnet BCH Address
     {
-      regexes: [/^(bchtest:)?([qp][a-z0-9]{41})$/, /^(BCHTEST:)?([QP][A-Z0-9]{41})/],
+      regexes: [
+        /^(bchtest:)?([qp][a-z0-9]{41})$/,
+        /^(BCHTEST:)?([QP][A-Z0-9]{41})/
+      ],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'BCH', network: 'testnet' }
-      ],
+      chainNetworks: [{ chain: 'BCH', network: 'testnet' }]
     },
     // Testnet XEC Address
     {
-      regexes: [/^(ectest:)?([qp][a-z0-9]{41})$/, /^(ECTEST:)?([QP][A-Z0-9]{41})/],
+      regexes: [
+        /^(ectest:)?([qp][a-z0-9]{41})$/,
+        /^(ECTEST:)?([QP][A-Z0-9]{41})/
+      ],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'XEC', network: 'testnet' }
-      ],
+      chainNetworks: [{ chain: 'XEC', network: 'testnet' }]
     },
     // ETH Address
     {
@@ -124,16 +117,14 @@ export class SearchProvider {
       chainNetworks: [
         { chain: 'ETH', network: 'mainnet' },
         { chain: 'ETH', network: 'testnet' }
-      ],
+      ]
     },
     // Doge Address
     {
       regexes: [/^(dogecoin:)?(D[5-9A-HJ-NP-U][1-9A-HJ-NP-Za-km-z]{32})/],
       dataIndex: 2,
       type: 'address',
-      chainNetworks: [
-        { chain: 'DOGE', network: 'mainnet' }
-      ],
+      chainNetworks: [{ chain: 'DOGE', network: 'mainnet' }]
     },
     // BTC / BCH / DOGE block or tx
     {
@@ -146,7 +137,7 @@ export class SearchProvider {
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
         { chain: 'DOGE', network: 'testnet' }
-      ],
+      ]
     },
     // ETH block or tx
     {
@@ -155,7 +146,7 @@ export class SearchProvider {
       chainNetworks: [
         { chain: 'ETH', network: 'mainnet' },
         { chain: 'ETH', network: 'testnet' }
-      ],
+      ]
     },
     // BTC / BCH / DOGE / XEC / XPI / ETH block height
     {
@@ -174,22 +165,25 @@ export class SearchProvider {
         { chain: 'XEC', network: 'testnet' },
         { chain: 'XPI', network: 'testnet' },
         { chain: 'ETH', network: 'testnet' }
-      ],
-    },
-  ]
+      ]
+    }
+  ];
 
   constructor(
     private apiProvider: ApiProvider,
     private httpClient: HttpClient
   ) {}
 
-  public search( searchInputs: CryptoSearchInput[], chainNetwork): Observable<any> {
+  public search(
+    searchInputs: CryptoSearchInput[],
+    chainNetwork
+  ): Observable<any> {
     const searchArray: Array<Observable<any>> = [];
     if (chainNetwork.chain !== 'ALL') {
       // If user has selected a specific network, we only search that network for results
       searchInputs = searchInputs
         .filter(input => input.chainNetwork.chain === chainNetwork.chain)
-        .filter(input => input.chainNetwork.network === chainNetwork.network)
+        .filter(input => input.chainNetwork.network === chainNetwork.network);
     }
     searchInputs.forEach(search => {
       this.apiURL = `${this.apiProvider.getUrl(search.chainNetwork)}`;
@@ -213,8 +207,8 @@ export class SearchProvider {
     return Observable.forkJoin(searchArray);
   }
 
-  public determineInputType(input:string): Observable<CryptoSearchInput[]> {
-    const searchInputs:CryptoSearchInput[] = [];
+  public determineInputType(input: string): Observable<CryptoSearchInput[]> {
+    const searchInputs: CryptoSearchInput[] = [];
     for (const { regexes, chainNetworks, type, dataIndex } of this.inputTypes) {
       const index = regexes.findIndex(regex => regex.test(input));
       if (index > -1) {

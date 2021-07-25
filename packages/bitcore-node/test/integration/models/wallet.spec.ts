@@ -1,4 +1,4 @@
-import { Wallet } from 'bitcore-client';
+import { Wallet } from '@abcpros/bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
 import { WalletStorage } from '../../../src/models/wallet';

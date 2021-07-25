@@ -14,7 +14,7 @@ const network = 'regtest';
 const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-import { Client } from 'bitcore-client';
+import { Client } from '@abcpros/bitcore-client';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Socket } from '../../src/services/socket';

@@ -1,4 +1,4 @@
-import * as BitcoreClient from 'bitcore-client';
+import * as BitcoreClient from '@abcpros/bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';

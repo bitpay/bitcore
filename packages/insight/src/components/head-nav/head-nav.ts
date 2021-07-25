@@ -62,26 +62,24 @@ export class HeadNavComponent implements OnInit {
 
   public search(): void {
     this.q = this.q.replace(/\s/g, '');
-    this.searchProvider
-      .determineInputType(this.q)
-      .subscribe(searchInputs => {
-        if (searchInputs.length) {
-          this.showSearch = false;
-          this.searchProvider
-            .search(searchInputs, this.chainNetwork)
-            .subscribe(
-              res => {
-                this.processAllResponse(res);
-              },
-              err => {
-                this.wrongSearch('Server error. Please try again');
-                this.logger.error(err);
-              }
-            );
-        } else {
-          this.wrongSearch('Invalid search, please search for an address, transaction, or block');
-        }
-      });
+    this.searchProvider.determineInputType(this.q).subscribe(searchInputs => {
+      if (searchInputs.length) {
+        this.showSearch = false;
+        this.searchProvider.search(searchInputs, this.chainNetwork).subscribe(
+          res => {
+            this.processAllResponse(res);
+          },
+          err => {
+            this.wrongSearch('Server error. Please try again');
+            this.logger.error(err);
+          }
+        );
+      } else {
+        this.wrongSearch(
+          'Invalid search, please search for an address, transaction, or block'
+        );
+      }
+    });
   }
 
   private processResponse(response) {
@@ -152,7 +150,8 @@ export class HeadNavComponent implements OnInit {
       }
 
       // Skip results screen if there is only one result
-      const totalMatches = matches.addresses.length + matches.txs.length + matches.blocks.length;
+      const totalMatches =
+        matches.addresses.length + matches.txs.length + matches.blocks.length;
       if (totalMatches === 1) {
         if (matches.addresses.length) {
           return this.redirProvider.redir('address', {
