@@ -102,7 +102,12 @@ module.exports = {
   fiatRateServiceOpts: {
     defaultProvider: 'CryptoCompare',
     cryptoCompareApiKey: 'Apikey a5f8e442e001cd9ba2c5a61d32794c7209a3940f493a03bb2193027b1982d376',
-    fetchInterval: 5 // in minutes
+    fetchInterval: 5, // in minutes
+    lotusProvider: {
+      electricityRate: 0.1,
+      minerMargin: 0.5,
+      miningEfficiency: 3.4
+    }
   },
   maintenanceOpts: {
     maintenanceMode: false
