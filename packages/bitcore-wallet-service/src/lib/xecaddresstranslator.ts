@@ -1,7 +1,7 @@
 import _ from 'lodash';
 const Bitcore_ = {
   btc: require('@abcpros/bitcore-lib'),
-  xec: require('@abcpros/bitcore-lib-xec'),
+  xec: require('@abcpros/bitcore-lib-xec')
 };
 
 export class XECAddressTranslator {
@@ -14,7 +14,7 @@ export class XECAddressTranslator {
         const a = new Bitcore_['xec'].Address(address);
         return 'cashaddr';
       } catch (e) {
-          return;
+        return;
       }
     }
   }
