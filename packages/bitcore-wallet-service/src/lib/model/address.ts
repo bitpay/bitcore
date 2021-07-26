@@ -1,4 +1,4 @@
-import { Deriver } from 'crypto-wallet-core';
+import { Deriver } from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 import { AddressManager } from './addressmanager';
 
@@ -38,10 +38,10 @@ export class Address {
   beRegistered: boolean;
 
   static Bitcore = {
-    btc: require('bitcore-lib'),
-    bch: require('bitcore-lib-cash'),
-    bcha: require('bitcore-lib-cash'),
-    doge: require('bitcore-lib-doge'),
+    btc: require('@abcpros/bitcore-lib'),
+    bch: require('@abcpros/bitcore-lib-cash'),
+    xec: require('@abcpros/bitcore-lib-xec'),
+    doge: require('@abcpros/bitcore-lib-doge'),
     xpi: require('@abcpros/bitcore-lib-xpi')
   };
 
@@ -132,7 +132,9 @@ export class Address {
     }
 
     let addrStr = bitcoreAddress.toString(true);
-    if (noNativeCashAddr && coin == 'bch') {
+    if (coin == 'xpi') {
+      addrStr = bitcoreAddress.toXAddress();
+    } else if (noNativeCashAddr && coin == 'bch') {
       addrStr = bitcoreAddress.toLegacyAddress();
     }
 

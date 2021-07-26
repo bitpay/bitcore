@@ -1,6 +1,6 @@
 'use strict';
 
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@abcpros/crypto-wallet-core';
 
 import { Constants, Utils } from './common';
 const $ = require('preconditions').singleton();
@@ -208,6 +208,8 @@ export class Credentials {
         coin = '144';
       } else if (this.coin == 'doge') {
         coin = '3';
+      } else if (this.coin == 'xec') {
+        coin = '899';
       } else if (this.coin == 'xpi') {
         coin = '10605';
       } else {
@@ -311,7 +313,10 @@ export class Credentials {
   isComplete() {
     if (!this.m || !this.n) return false;
     if (
-      (this.coin === 'btc' || this.coin === 'bch' || this.coin === 'doge') &&
+      (this.coin === 'btc' ||
+        this.coin === 'bch' ||
+        this.coin === 'xec' ||
+        this.coin === 'doge') &&
       (!this.publicKeyRing || this.publicKeyRing.length != this.n)
     )
       return false;

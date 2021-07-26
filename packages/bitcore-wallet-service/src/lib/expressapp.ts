@@ -967,13 +967,7 @@ export class ExpressApp {
         server.broadcastTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
-          if (txp.isBroadCastDonation && txp.txid) {
-            server.handleSendLostus(txp, (err, donationInfor) => {
-              if (err) console.log(err);
-              console.log('done send lotus for this txp', donationInfor);
-              res.end();
-            });
-          }
+          res.end();
         });
       });
     });
@@ -1502,6 +1496,10 @@ export class ExpressApp {
       this.app.use('/static', express.static(config.staticRoot));
     }
 
-    WalletService.initialize(opts, cb);
+    WalletService.initialize(opts, data => {
+      const server = WalletService.getInstance(opts);
+      server.checkQueueHandleSendLotus();
+      return cb();
+    });
   }
 }

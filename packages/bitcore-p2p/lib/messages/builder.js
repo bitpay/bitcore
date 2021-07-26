@@ -1,6 +1,6 @@
 'use strict';
 
-var bitcore = require('bitcore-lib');
+var bitcore = require('@abcpros/bitcore-lib');
 var Inventory = require('../inventory');
 
 function builder(options) {

@@ -101,6 +101,12 @@ function addNetwork(data) {
     });
   }
 
+  if (data.networkbyte) {
+    _.extend(network, {
+      networkbyte: data.networkbyte
+    });
+  }
+
   if (data.networkMagic) {
     _.extend(network, {
       networkMagic: BufferUtil.integerAsBuffer(data.networkMagic)
@@ -167,6 +173,7 @@ var liveNetwork = {
   name: 'livenet',
   alias: 'mainnet',
   prefix: 'bitcoincash',
+  networkbyte: '_',
   pubkeyhash: 0,
   privatekey: 0x80,
   scripthash: 5,
@@ -180,6 +187,7 @@ var liveNetwork = {
 var testNetwork = {
   name: 'testnet',
   prefix: 'bchtest',
+  networkbyte: 'T',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
@@ -193,6 +201,7 @@ var testNetwork = {
 var regtestNetwork = {
   name: 'regtest',
   prefix: 'bchreg',
+  networkbyte: 'R',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,

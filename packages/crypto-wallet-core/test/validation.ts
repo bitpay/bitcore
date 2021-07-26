@@ -18,6 +18,12 @@ describe('Address Validation', () => {
   // XRP
   const xrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
 
+  // XPI
+  const xpiAddress = 'lotus_16PSJPUXqERYw1izoVXJhpJ4bRcrsm9mJGUgVk2Y6';
+
+  // XEC
+  const xecAddress = 'ecash:qrs7r23u6el66fthxvlljd23ch7xhsrjaqsvpvdawc';
+
   // Uri
   const btcUri = 'bitcoin:1NuKwkDtCymgA1FNLUBaUWLD8s4kdKWvgn';
   const bchUri = 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g';
@@ -26,6 +32,8 @@ describe('Address Validation', () => {
   const ethUriSingleParam = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123';
   const btcTestUri = 'bitcoin:mkUNMewkQsHKRcUvv5HLKbqmepCqNH8goc';
   const bchTestUri = 'bchtest:qq083kgf3wjg7ya8nun36e8nf24g9xgvachahfnyle';
+  const xecUri = 'ecash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsvkjlyqnhl';
+  const xecTestUri = 'ectest:qq083kgf3wjg7ya8nun36e8nf24g9xgvacvfe9dyar';
   const xrpUri = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF';
   const xrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456&dt=123456';
   const xrpUriSingleParam = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456';
@@ -68,6 +76,16 @@ describe('Address Validation', () => {
     expect(isValidAddress).to.equal(true);
   });
 
+  it('should be able to validate an XPI address', async () => {
+    const isValidAddress = await Validation.validateAddress('XPI', 'mainnet', xpiAddress);
+    expect(isValidAddress).to.equal(true);
+  });
+
+  it('should be able to validate an XEC address', async () => {
+    const isValidAddress = await Validation.validateAddress('XEC', 'mainnet', xecAddress);
+    expect(isValidAddress).to.equal(true);
+  });
+
   it('should be able to validate an BTC Uri', async () => {
     const isValidUri = await Validation.validateUri('BTC', btcUri);
     const isValidTestUri = await Validation.validateUri('BTC', btcTestUri);
@@ -78,6 +96,13 @@ describe('Address Validation', () => {
   it('should be able to validate an BCH Uri', async () => {
     const isValidUri = await Validation.validateUri('BCH', bchUri);
     const isValidTestUri = await Validation.validateUri('BCH', bchTestUri);
+    expect(isValidUri).to.equal(true);
+    expect(isValidTestUri).to.equal(true);
+  });
+
+  it('should be able to validate an XEC Uri', async () => {
+    const isValidUri = await Validation.validateUri('XEC', xecUri);
+    const isValidTestUri = await Validation.validateUri('XEC', xecTestUri);
     expect(isValidUri).to.equal(true);
     expect(isValidTestUri).to.equal(true);
   });

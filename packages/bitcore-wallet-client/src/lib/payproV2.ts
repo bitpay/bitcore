@@ -6,21 +6,27 @@ const query = require('querystring');
 const url = require('url');
 const Errors = require('./errors');
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
-const Bitcore = require('crypto-wallet-core').BitcoreLib;
+const Bitcore = require('@abcpros/crypto-wallet-core').BitcoreLib;
+const BitcoreLibCash = require('@abcpros/crypto-wallet-core').BitcoreLibCash;
+const BitcoreLibXpi = require('@abcpros/crypto-wallet-core').BitcoreLibXpi;
+const BitcoreLibXec = require('@abcpros/crypto-wallet-core').BitcoreLibXec;
 const _ = require('lodash');
 const sha256 = Bitcore.crypto.Hash.sha256;
 const BN = Bitcore.crypto.BN;
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('crypto-wallet-core').BitcoreLibCash,
-  bcha: require('crypto-wallet-core').BitcoreLibCash
+  bch: BitcoreLibCash,
+  xec: BitcoreLibXec,
+  xpi: BitcoreLibXpi
 };
 var MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b
   eth: 1000000000000, // 1000 Gwei
   xrp: 1000000000000,
-  doge: 10000 * 1000 // 10k sat/b
+  doge: 10000 * 1000, // 10k sat/b
+  xec: 10000 * 1000, // 10k sat/b
+  xpi: 10000 * 1000 // 10k sat/b
 };
 
 // PayPro Network Map

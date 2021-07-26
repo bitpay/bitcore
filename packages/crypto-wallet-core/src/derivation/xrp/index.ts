@@ -1,7 +1,7 @@
 import rippleKeypairs from 'ripple-keypairs';
 import { IDeriver } from '..';
 
-import BitcoreLib from 'bitcore-lib';
+import BitcoreLib from '@abcpros/bitcore-lib';
 
 export class XrpDeriver implements IDeriver {
   deriveAddress(network, xpubkey, addressIndex, isChange) {

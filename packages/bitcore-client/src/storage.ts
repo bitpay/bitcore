@@ -6,7 +6,7 @@ import { Mongo } from './storage/mongo';
 import { TextFile } from './storage/textFile';
 import { KeyImport } from './wallet';
 
-const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
+const bitcoreLib = require('@abcpros/crypto-wallet-core').BitcoreLib;
 
 export class Storage {
   path: string;

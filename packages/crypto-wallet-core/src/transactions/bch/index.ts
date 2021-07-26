@@ -1,7 +1,7 @@
 import { BTCTxProvider } from '../btc';
 
 export class BCHTxProvider extends BTCTxProvider {
-  lib = require('bitcore-lib-cash');
+  lib = require('@abcpros/bitcore-lib-cash');
   create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
     change = change || wallet.deriveAddress(wallet.addressIndex, true);
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);

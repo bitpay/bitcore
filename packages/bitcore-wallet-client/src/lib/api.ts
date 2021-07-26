@@ -1,6 +1,6 @@
 'use strict';
 
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@abcpros/crypto-wallet-core';
 import { EventEmitter } from 'events';
 import _ from 'lodash';
 import sjcl from 'sjcl';
@@ -22,9 +22,11 @@ var Bitcore_ = {
   bch: CWC.BitcoreLibCash,
   eth: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
-  doge: CWC.BitcoreLibDoge
+  doge: CWC.BitcoreLibDoge,
+  xec: CWC.BitcoreLibXec,
+  xpi: CWC.BitcoreLibXpi
 };
-var Mnemonic = require('bitcore-mnemonic');
+var Mnemonic = require('@abcpros/bitcore-mnemonic');
 var url = require('url');
 var querystring = require('querystring');
 
@@ -68,6 +70,8 @@ export class API extends EventEmitter {
   static Bitcore = CWC.BitcoreLib;
   static BitcoreCash = CWC.BitcoreLibCash;
   static BitcoreDoge = CWC.BitcoreLibDoge;
+  static BitcoreXpi = CWC.BitcoreLibXpi;
+  static BitcoreXec = CWC.BitcoreLibXec;
 
   constructor(opts?) {
     super();
@@ -2893,6 +2897,10 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
+        ['xec', 'livenet'],
+        ['xec', 'testnet'],
+        ['xpi', 'livenet'],
+        ['xpi', 'testnet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true]
       ];

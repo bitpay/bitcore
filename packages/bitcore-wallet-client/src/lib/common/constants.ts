@@ -1,5 +1,5 @@
 'use strict';
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@abcpros/crypto-wallet-core';
 
 export const Constants = {
   SCRIPT_TYPES: {
@@ -24,7 +24,7 @@ export const Constants = {
   COINS: [
     'btc',
     'bch',
-    'bcha',
+    'xec',
     'eth',
     'xrp',
     'doge',
@@ -37,7 +37,7 @@ export const Constants = {
     'xpi'
   ],
   ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc'],
-  UTXO_COINS: ['btc', 'bch', 'doge'],
+  UTXO_COINS: ['btc', 'bch', 'xec', 'doge', 'xpi'],
   TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS
 };

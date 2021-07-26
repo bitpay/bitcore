@@ -4,9 +4,11 @@ import {
   BitcoreLib,
   BitcoreLibCash,
   BitcoreLibDoge,
+  BitcoreLibXec,
+  BitcoreLibXpi,
   Deriver,
   Transactions
-} from 'crypto-wallet-core';
+} from '@abcpros/crypto-wallet-core';
 
 import * as _ from 'lodash';
 import { Constants } from './constants';
@@ -22,7 +24,9 @@ const Bitcore_ = {
   bch: BitcoreLibCash,
   eth: Bitcore,
   xrp: Bitcore,
-  doge: BitcoreLibDoge
+  doge: BitcoreLibDoge,
+  xec: BitcoreLibXec,
+  xpi: BitcoreLibXpi
 };
 const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;

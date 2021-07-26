@@ -35,16 +35,16 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
+import { Validation } from '@abcpros/crypto-wallet-core';
 import { DonationInfo, DonationStorage } from './model/donation';
-const Bitcore = require('bitcore-lib');
+const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
+  bch: require('@abcpros/bitcore-lib-cash'),
+  xec: require('@abcpros/bitcore-lib-xec'),
   eth: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge'),
+  doge: require('@abcpros/bitcore-lib-doge'),
   xpi: require('@abcpros/bitcore-lib-xpi')
 };
 
@@ -476,7 +476,7 @@ export class WalletService {
   createWallet(opts, cb) {
     let pubKey;
 
-    if ((opts.coin === 'bch' || opts.coin === 'bcha') && opts.n > 1) {
+    if (opts.coin === 'bch' && opts.n > 1) {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -587,7 +587,7 @@ export class WalletService {
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
       // cashAddress migration
-      if ((wallet.coin != 'bch' && wallet.coin != 'bcha') || wallet.nativeCashAddr) return cb(null, wallet);
+      if (wallet.coin != 'bch' || wallet.nativeCashAddr) return cb(null, wallet);
 
       // only for testing
       if (opts.doNotMigrate) return cb(null, wallet);
@@ -616,7 +616,7 @@ export class WalletService {
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
       // cashAddress migration
-      if ((wallet.coin != 'bch' && wallet.coin != 'bcha') || wallet.nativeCashAddr) return cb(null, wallet);
+      if (wallet.coin != 'bch' || wallet.nativeCashAddr) return cb(null, wallet);
 
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
@@ -1064,7 +1064,7 @@ export class WalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if ((opts.coin === 'bch' || opts.coin === 'bcha') && wallet.n > 1) {
+        if (opts.coin === 'bch' && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -1349,7 +1349,7 @@ export class WalletService {
         (err, duplicate) => {
           if (err) return cb(err);
           if (duplicate) return cb(null, address);
-          if ((wallet.coin == 'bch' || wallet.coin == 'bcha') && opts.noCashAddr) {
+          if (wallet.coin == 'bch' && opts.noCashAddr) {
             address = _.cloneDeep(address);
             address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }
@@ -1901,7 +1901,7 @@ export class WalletService {
 
     this.storage.checkAndUseGlobalCache(cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values, oldvalues) => {
       if (err) return cb(err);
-      if (values) return cb(null, values, true);
+      if (!_.isEmpty(values)) return cb(null, values, true);
 
       const feeLevels = Defaults.FEE_LEVELS[opts.coin];
 
@@ -2125,7 +2125,7 @@ export class WalletService {
         },
         next => {
           // check outputs are on 'copay' format for BCH
-          if (wallet.coin != 'bch' && wallet.coin != 'bcha') return next();
+          if (wallet.coin != 'bch') return next();
           if (!opts.noCashAddr) return next();
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
@@ -2849,6 +2849,33 @@ export class WalletService {
     });
   }
 
+  checkQueueHandleSendLotus() {
+    setInterval(() => {
+      if (this.storage && this.storage.queue) {
+        this.storage.queue.get((err, data) => {
+          if (data) {
+            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
+            const donationStorage: DonationStorage = data.payload;
+            this.storage.storeDonation(donationStorage, err => {
+              if (err) return ackQueue;
+              this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
+                if (err || remainingData.remaining < 0) return ackQueue;
+                this._sendLotusDonation(donationStorage.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
+                  donationStorage.txidGiveLotus = data;
+                  donationStorage.isGiven = true;
+                  this.storage.updateDonation(donationStorage, err => {
+                    return ackQueue;
+                  });
+                });
+              });
+            });
+          }
+        });
+        this.storage.queue.clean(err => {});
+      }
+    }, 1000);
+  }
+
   handleSendLostus(txp, cb) {
     if (this.checkIsDonation(txp)) {
       this.storage.fetchDonationByTxid(txp.txid, (err, donationInfo) => {
@@ -2922,7 +2949,12 @@ export class WalletService {
   convertCoinToUSD(amount, coin, cp) {
     this.getFiatRates({}, (err, rates) => {
       if (err) return err;
-      const unitToSatoshi = 100000000; // bch , btc, bcha, doge
+      let unitToSatoshi = 100000000;
+      if (coin === 'xpi') {
+        unitToSatoshi = 1000000;
+      } else if (coin === 'xec') {
+        unitToSatoshi = 1000;
+      }
       const rateCoin = _.find(rates[coin], item => item.code == 'USD');
       if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
       const amountUSD = amount * (1 / unitToSatoshi) * rateCoin.rate;
@@ -2994,10 +3026,8 @@ export class WalletService {
                   addressDonation: txp.from,
                   createdOn: Date.now()
                 };
-
-                this.storage.storeDonation(donationStorage, err => {
-                  if (err) logger.error('Could not store donationInfor: ', err);
-                  txp.isBroadCastDonation = true;
+                this.storage.queue.add(donationStorage, (err, id) => {
+                  if (err) return cb(err);
                   return cb(null, txp);
                 });
               });

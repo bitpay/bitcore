@@ -1,8 +1,8 @@
 import _ from 'lodash';
 const Bitcore_ = {
-  btc: require('bitcore-lib'),
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
+  btc: require('@abcpros/bitcore-lib'),
+  bch: require('@abcpros/bitcore-lib-cash'),
+  xec: require('@abcpros/bitcore-lib-xec'),
   xpi: require('@abcpros/bitcore-lib-xpi')
 };
 

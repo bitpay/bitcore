@@ -1,14 +1,15 @@
-import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLibXpi } from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 const config = require('../../../config');
-
+const Common = require('../../common');
+const Utils = Common.Utils;
 const Errors = require('../../errors/errordefinitions');
 
 export class XpiChain extends BtcChain implements IChain {
   constructor() {
-    super(BitcoreLibCash);
+    super(BitcoreLibXpi);
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
   }
@@ -16,12 +17,16 @@ export class XpiChain extends BtcChain implements IChain {
     return 0;
   }
 
+  convertFeePerKb(p, feePerKb) {
+    return [p, Utils.strip(feePerKb * 1e6)];
+  }
+
   getInputSizeSafetyMargin(opts: any): number {
     return 0;
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const A = BitcoreLibCash.Address;
+    const A = BitcoreLibXpi.Address;
     let addr: {
       network?: string;
       toString?: (cashAddr: boolean) => string;

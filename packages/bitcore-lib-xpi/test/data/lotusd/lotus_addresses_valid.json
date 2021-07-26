@@ -1,0 +1,47 @@
+[
+  [
+    "lotus_16PSJMStv9sve3DfhDpiwUCa7RtqkyNBoS8RjFZSt",
+    "76a9148d91da546b8689c0b366e05b96fd1acb9c4f5b7688ac",
+    {
+      "addrType": "pubkey",
+      "isPrivkey": false,
+      "isTestnet": false
+    }
+  ],
+  [
+    "lotus_16PSJMStv9sve3DfhDpiwUCa7RtqkyNBoS8RjFZSt",
+    "76a9148d91da546b8689c0b366e05b96fd1acb9c4f5b7688ac",
+    {
+      "addrType": "pubkey",
+      "isPrivkey": false,
+      "isTestnet": false
+    }
+  ],
+  [
+    "lotus_1PrRRtdU3rs7VzEB5Q15ka3n8AQ1wuYfRytipC",
+    "a914b6c79031b71d86ab0d617e1e1e706ec4ee34b07f87",
+    {
+      "addrType": "script",
+      "isPrivkey": false,
+      "isTestnet": false
+    }
+  ],
+  [
+    "lotus_16PSJNmTgBKxN9B7mFr1gAvvfVWtouwpHG74RaaU9",
+    "76a914b8ae1c47effb58f72f7bca819fe7fc252f9e852e88ac",
+    {
+      "addrType": "pubkey",
+      "isPrivkey": false,
+      "isTestnet": false
+    }
+  ],
+  [
+    "lotus_16PSJNf1EDEfGvaYzaXJCJZrXH4pgiTo7kyW61iGi",
+    "76a914b50b86a893d80c9e2ee72b199612374b7b4c1cd888ac",
+    {
+      "addrType": "pubkey",
+      "isPrivkey": false,
+      "isTestnet": false
+    }
+  ]
+]

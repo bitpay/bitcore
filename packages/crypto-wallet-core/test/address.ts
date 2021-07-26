@@ -59,4 +59,27 @@ describe('Address Derivation', () => {
     expect(result.privKey).to.equal(expectedResult.privKey.toUpperCase());
     expect(result.pubKey).to.equal(expectedResult.pubKey.toUpperCase());
   });
+
+  it('should be able to generate a valid XPI address', () => {
+    const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
+    // 'select scout crash enforce riot rival spring whale hollow radar rule sentence';
+
+    const path = Deriver.pathFor('XPI', 'mainnet');
+    expect(path).to.equal("m/44'/10605'/0'");
+
+    const address = Deriver.deriveAddress('XPI', 'mainnet', xPub, 0, false);
+    const expectedAddress = 'lotus_16PSJKPkEQBaJvbbViTqyfwiM4C1y7QMM4jj4VDgP';
+    expect(address).to.equal(expectedAddress);
+  });
+
+  it('should be able to generate a valid XEC address', () => {
+    const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
+
+    const path = Deriver.pathFor('XEC', 'mainnet');
+    expect(path).to.equal("m/44'/899'/0'");
+
+    const address = Deriver.deriveAddress('XEC', 'mainnet', xPub, 0, false);
+    const expectedAddress = 'qp98kjdc22329k0a8hvvtexaqtuhygm94saq45dkx4';
+    expect(address).to.equal(expectedAddress);
+  });
 });

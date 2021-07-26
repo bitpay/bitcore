@@ -8,7 +8,7 @@ import { Config } from '../services/config';
 import { ChainNetwork } from '../types/ChainNetwork';
 
 const secp256k1 = require('secp256k1');
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLib = require('@abcpros/bitcore-lib');
 
 export interface VerificationPayload {
   message: string;

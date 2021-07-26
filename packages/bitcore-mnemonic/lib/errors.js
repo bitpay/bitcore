@@ -15,4 +15,4 @@ var spec = {
   }]
 };
 
-module.exports = require('bitcore-lib').errors.extend(spec);
+module.exports = require('@abcpros/bitcore-lib').errors.extend(spec);

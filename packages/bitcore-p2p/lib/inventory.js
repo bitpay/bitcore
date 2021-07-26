@@ -1,6 +1,6 @@
 'use strict';
 
-var bitcore = require('bitcore-lib');
+var bitcore = require('@abcpros/bitcore-lib');
 var $ = bitcore.util.preconditions;
 var BufferUtil = bitcore.util.buffer;
 var BufferReader = bitcore.encoding.BufferReader;

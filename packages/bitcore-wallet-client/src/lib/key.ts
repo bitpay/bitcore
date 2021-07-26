@@ -6,14 +6,14 @@ import {
   BitcoreLibCash,
   Deriver,
   Transactions
-} from 'crypto-wallet-core';
+} from '@abcpros/crypto-wallet-core';
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
 var Bitcore = BitcoreLib;
-var Mnemonic = require('bitcore-mnemonic');
+var Mnemonic = require('@abcpros/bitcore-mnemonic');
 var sjcl = require('sjcl');
 var log = require('./log');
 const async = require('async');
@@ -389,7 +389,7 @@ export class Key {
       } else {
         coinCode = '145';
       }
-    } else if (opts.coin == 'bcha') {
+    } else if (opts.coin == 'xec') {
       coinCode = '899';
     } else if (opts.coin == 'btc') {
       coinCode = '0';

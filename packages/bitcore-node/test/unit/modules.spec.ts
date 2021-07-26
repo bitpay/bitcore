@@ -23,7 +23,7 @@ describe('Modules', function() {
   });
 
   it('should have libaries registered', () => {
-    const chains = ['BTC', 'BCH'];
+    const chains = ['XPI', 'XEC'];
     for (const chain of chains) {
       const service = Libs.get(chain);
       expect(service).to.exist;
@@ -31,7 +31,7 @@ describe('Modules', function() {
   });
 
   it('should have p2p services registered', () => {
-    const chains = ['BTC', 'BCH'];
+    const chains = ['XPI', 'XEC'];
     for (const chain of chains) {
       const service = P2P.get(chain);
       expect(service).to.exist;
@@ -39,7 +39,7 @@ describe('Modules', function() {
   });
 
   it('should have verification services registered', () => {
-    const chains = ['BTC', 'BCH'];
+    const chains = ['XPI', 'XEC'];
     for (const chain of chains) {
       const service = Verification.get(chain);
       expect(service).to.exist;

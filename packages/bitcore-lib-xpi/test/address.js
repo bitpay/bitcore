@@ -20,7 +20,7 @@ describe('Address', function() {
 
   var pubkeyhash = Buffer.from('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
   var buf = Buffer.concat([Buffer.from([0]), pubkeyhash]);
-  var str = 'bitcoincash:qq7rlg754h903afdtvvy8967zgj5sf5exueg36nyc7';
+  var str = 'lotus_16PSJJxU6zeN6bW9NX9BpMZ9uUH1sPyKqGjvPTfkm';
 
   it('can\'t build without data', function() {
     (function() {
@@ -154,7 +154,7 @@ describe('Address', function() {
   // livenet valid
   var PKHLivenet = [
     '15vkcKf7gB23wLAnZLmbVuMiiVDc1Nm4a2',
-    'bitcoincash:qp3awknl3dz8ezu3rmapff3phnzz95kansf0r3rs4x',
+    'lotus_16PSJLAnW8mGTjVPD77XqyFerQnfmsnppwRUFLmKi',
     '1BpbpfLdY7oBS9gK7aDXgvMgr1DPvNhEB2',
     '1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7',
     '    1Jz2yCRd5ST1p2gUqFB5wsSQfdm3jaFfg7   \t\n'
@@ -162,7 +162,7 @@ describe('Address', function() {
 
   // livenet p2sh
   var P2SHLivenet = [
-    'bitcoincash:pqv60krfqv3k3lglrcnwtee6ftgwgaykpccr8hujjz',
+    'lotus_1PrQLfg4ML5C4xiVgiXfNmx8VoqCzjjPTYN2Px',
     '33vt8ViH5jsr115AGkW6cEmEz9MpvJSwDk',
     '37Sp6Rv3y4kVd1nQ1JV5pfqXccHNyZm1x3',
     '3QjYXhTkvuj8qPaXHTTWb5wjXhdsLAAWVy',
@@ -171,7 +171,7 @@ describe('Address', function() {
 
   // testnet p2sh
   var P2SHTestnet = [
-    'bchtest:pzvmx80heyrg69ypkkt90rwmknfmmy96av8f02lrrf',
+    'lotusT1PrREBxs9HxXaVXvMWzEfAUrVgHpbj3F3uPwBt',
     '2NEWDzHWwY5ZZp8CQWbB7ouNMLqCia6YRda',
     '2MxgPqX1iThW3oZVk9KoFcE5M4JpiETssVN',
     '2NB72XtkjpnATMggui83aEtPawyyKvnbX2o'
@@ -195,10 +195,10 @@ describe('Address', function() {
 
   //testnet valid
   var PKHTestnet = [
-    'bchtest:qr3pswmv0t332gwaedmuhqcp59gswsu2ysdn664dvs',
+    'lotusT16PSJQ31kLwjac662yWXL2B4dskEMu4opp5YQiWtt',
     'n45x3R2w2jaSC62BMa9MeJCd3TXxgvDEmm',
     'mursDVxqNQmmwWHACpM9VHwVVSfTddGsEM',
-    'bchtest:qz82yclajj49kq3cnqk5khs9h2qx5drfruglvwmnac'
+    'lotusT16PSJMUnadpxwv6uBS2CdK1QeXQk5QapxAxNjzPXg'
   ];
 
   describe('validation', function() {
@@ -328,10 +328,10 @@ describe('Address', function() {
     });
 
     it('addresses with whitespace are validated correctly', function() {
-      var ws = '  \r \t    \n bitcoincash:qp3awknl3dz8ezu3rmapff3phnzz95kansf0r3rs4x \t \n            \r';
+      var ws = '  \r \t    \n lotus_16PSJLAnW8mGTjVPD77XqyFerQnfmsnppwRUFLmKi \t \n            \r';
       var error = Address.getValidationError(ws);
       should.not.exist(error);
-      Address.fromString(ws).toString().should.equal('bitcoincash:qp3awknl3dz8ezu3rmapff3phnzz95kansf0r3rs4x');
+      Address.fromString(ws).toString().should.equal('lotus_16PSJLAnW8mGTjVPD77XqyFerQnfmsnppwRUFLmKi');
     });
   });
 
@@ -452,7 +452,7 @@ describe('Address', function() {
     it('should make this address from a compressed pubkey', function() {
       var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
       var address = Address.fromPublicKey(pubkey, 'livenet');
-      address.toString().should.equal('bitcoincash:qp0jaf7jwcf0zlxguv7kcaj05hsxz2lcquxxcxmxtv');
+      address.toString().should.equal('lotus_16PSJL2Way1xsoqmaYJwT9osbHzcRoVyqo3zp9XQF');
     });
 
     it('should use the default network for pubkey', function() {
@@ -465,9 +465,9 @@ describe('Address', function() {
       var pubkey = new PublicKey('0485e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b00' +
         '4833fef26c8be4c4823754869ff4e46755b85d851077771c220e2610496a29d98');
       var a = Address.fromPublicKey(pubkey, 'livenet');
-      a.toString().should.equal('bitcoincash:qqazje5ucx2l672lc8cundsa5q9lwdm3rcknh40sxg');
+      a.toString().should.equal('lotus_16PSJJtm8vrMqK4wumD17tz525GLdbGeeeLEE3sg3');
       var b = new Address(pubkey, 'livenet', 'pubkeyhash');
-      b.toString().should.equal('bitcoincash:qqazje5ucx2l672lc8cundsa5q9lwdm3rcknh40sxg');
+      b.toString().should.equal('lotus_16PSJJtm8vrMqK4wumD17tz525GLdbGeeeLEE3sg3');
     });
 
     it('should classify from a custom network', function() {
@@ -501,26 +501,26 @@ describe('Address', function() {
         var s = new Script('OP_DUP OP_HASH160 20 ' +
           '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
         var a = Address.fromScript(s, 'livenet');
-        a.toString().should.equal('bitcoincash:qrywzxcwkrf265mzmz20qjyssdql5cdkuyz47850l7');
+        a.toString().should.equal('lotus_16PSJPGELhFxuyHeqcKWhELAqznML9xtQ1zX16U2F');
         var b = new Address(s, 'livenet');
-        b.toString().should.equal('bitcoincash:qrywzxcwkrf265mzmz20qjyssdql5cdkuyz47850l7');
+        b.toString().should.equal('lotus_16PSJPGELhFxuyHeqcKWhELAqznML9xtQ1zX16U2F');
       });
 
       it('should make this address from a p2sh input script', function() {
         var s = Script.fromString('OP_HASH160 20 0xa6ed4af315271e657ee307828f54a4365fa5d20f OP_EQUAL');
         var a = Address.fromScript(s, 'livenet');
-        a.toString().should.equal('bitcoincash:pznw6jhnz5n3uet7uvrc9r655sm9lfwjpu4ufgvysw');
+        a.toString().should.equal('lotus_1PrRKWfK2D6rp5hPpgcb19MsZn3RR8rQFsMX1M');
         var b = new Address(s, 'livenet');
-        b.toString().should.equal('bitcoincash:pznw6jhnz5n3uet7uvrc9r655sm9lfwjpu4ufgvysw');
+        b.toString().should.equal('lotus_1PrRKWfK2D6rp5hPpgcb19MsZn3RR8rQFsMX1M');
       });
 
       it('returns the same address if the script is a pay to public key hash out', function() {
-        var address = 'bitcoincash:qqazje5ucx2l672lc8cundsa5q9lwdm3rcknh40sxg';
+        var address = 'lotus_16PSJJtm8vrMqK4wumD17tz525GLdbGeeeLEE3sg3';
         var script = Script.buildPublicKeyHashOut(new Address(address));
         Address(script, Networks.livenet).toString().should.equal(address);
       });
       it('returns the same address if the script is a pay to script hash out', function() {
-        var address = 'bitcoincash:ppkzrtrs0jeheyreg222ekspzpsw7r7qzykvzs4uxh';
+        var address = 'lotus_1PrQurVgrVWKWYaMyTHHnrPzv4m96mipiv53q1';
         var script = Script.buildScriptHashOut(new Address(address));
         Address(script, Networks.livenet).toString().should.equal(address);
       });
@@ -606,7 +606,7 @@ describe('Address', function() {
   describe('#inspect', function() {
     it('should output formatted output correctly', function() {
       var address = new Address(str);
-      var output = '<Address: bitcoincash:qq7rlg754h903afdtvvy8967zgj5sf5exueg36nyc7, type: pubkeyhash, network: livenet>';
+      var output = '<Address: lotus_16PSJJxU6zeN6bW9NX9BpMZ9uUH1sPyKqGjvPTfkm, type: pubkeyhash, network: livenet>';
       address.inspect().should.equal(output);
     });
   });
@@ -654,14 +654,14 @@ describe('Address', function() {
 
     it('can create an address from a set of public keys', function() {
       var address = Address.createMultisig(publics, 2, Networks.livenet);
-      address.toString().should.equal('bitcoincash:pzdumagr7ru8w46s8alws4lzruv2c75vsuulp7g59n');
+      address.toString().should.equal('lotus_1PrRF35zJFywM6u4YC2iLcAr2STxtAQpNTgnvq');
       address = new Address(publics, 2, Networks.livenet);
-      address.toString().should.equal('bitcoincash:pzdumagr7ru8w46s8alws4lzruv2c75vsuulp7g59n');
+      address.toString().should.equal('lotus_1PrRF35zJFywM6u4YC2iLcAr2STxtAQpNTgnvq');
     });
 
     it('works on testnet also', function() {
       var address = Address.createMultisig(publics, 2, Networks.testnet);
-      address.toString().should.equal('bchtest:pzdumagr7ru8w46s8alws4lzruv2c75vsucd9e2rz0');
+      address.toString().should.equal('lotusT1PrRF35zJFywM6u4YC2iLcAr2STxtAQpNxgtQX');
     });
 
     it('can also be created by Address.createMultisig', function() {

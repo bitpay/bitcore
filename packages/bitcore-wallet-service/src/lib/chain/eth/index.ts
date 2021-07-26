@@ -1,5 +1,5 @@
-import { Transactions, Validation } from 'crypto-wallet-core';
-import { Web3 } from 'crypto-wallet-core';
+import { Transactions, Validation } from '@abcpros/crypto-wallet-core';
+import { Web3 } from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';

@@ -1,11 +1,11 @@
 'use strict';
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@abcpros/crypto-wallet-core';
 
 module.exports = {
   COINS: {
     BTC: 'btc',
     BCH: 'bch',
-    BCHA: 'bcha',
+    XEC: 'xec',
     ETH: 'eth',
     XRP: 'xrp',
     DOGE: 'doge',
@@ -30,7 +30,7 @@ module.exports = {
   UTXO_COINS: {
     BTC: 'btc',
     BCH: 'bch',
-    BCHA: 'bcha',
+    XEC: 'xec',
     DOGE: 'doge',
     XPI: 'xpi'
   },

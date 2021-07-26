@@ -1,5 +1,6 @@
 export interface TransactionJSON {
   _id: string;
+  hash: string;
   txid: string;
   chain: string;
   network: string;

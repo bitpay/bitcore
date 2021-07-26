@@ -14,12 +14,12 @@ var config = require('../test-config');
 //   memStore: true
 // });
 
-var Bitcore = require('bitcore-lib');
+var Bitcore = require('@abcpros/bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
-  doge: require('bitcore-lib-doge')
+  bch: require('@abcpros/bitcore-lib-cash'),
+  bcha: require('@abcpros/bitcore-lib-cash'),
+  doge: require('@abcpros/bitcore-lib-doge')
 };
 
 var { ChainService } = require('../../ts_build/lib/chain/index');
@@ -37,7 +37,7 @@ var storage, blockchainExplorer;
 
 // tinodb not longer supported
 var useMongoDb =  true; // !!process.env.USE_MONGO_DB;
-const CWC =  require('crypto-wallet-core');
+const CWC =  require('@abcpros/crypto-wallet-core');
 
 var helpers = {};
 

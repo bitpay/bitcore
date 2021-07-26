@@ -3,6 +3,8 @@ import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
 import { Paths } from './paths';
+import { XecDeriver } from './xec';
+import { XpiDeriver } from './xpi';
 import { XrpDeriver } from './xrp';
 
 export interface Key {
@@ -22,7 +24,9 @@ const derivers: { [chain: string]: IDeriver } = {
   BCH: new BchDeriver(),
   ETH: new EthDeriver(),
   XRP: new XrpDeriver(),
-  DOGE: new DogeDeriver()
+  DOGE: new DogeDeriver(),
+  XEC: new XecDeriver(),
+  XPI: new XpiDeriver()
 };
 
 export class DeriverProxy {

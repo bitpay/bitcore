@@ -13,12 +13,12 @@ const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 const Bitcore = {
-  btc: require('bitcore-lib'),
-  bch: require('bitcore-lib-cash'),
-  bcha: require('bitcore-lib-cash'),
-  eth: require('bitcore-lib'),
-  xrp: require('bitcore-lib'),
-  doge: require('bitcore-lib-doge'),
+  btc: require('@abcpros/bitcore-lib'),
+  bch: require('@abcpros/bitcore-lib-cash'),
+  xec: require('@abcpros/bitcore-lib-xec'),
+  eth: require('@abcpros/bitcore-lib'),
+  xrp: require('@abcpros/bitcore-lib'),
+  doge: require('@abcpros/bitcore-lib-doge'),
   xpi: require('@abcpros/bitcore-lib-xpi')
 };
 

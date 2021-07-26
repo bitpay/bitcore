@@ -6,7 +6,7 @@ import { VerificationPeer } from '../bitcoin/VerificationPeer';
 export default class BCHModule extends BaseModule {
   constructor(services) {
     super(services);
-    services.Libs.register('BCH', 'bitcore-lib-cash', 'bitcore-p2p-cash');
+    services.Libs.register('BCH', '@abcpros/bitcore-lib-cash', 'bitcore-p2p-cash');
     services.P2P.register('BCH', BitcoinP2PWorker);
     services.CSP.registerService('BCH', new BCHStateProvider());
     services.Verification.register('BCH', VerificationPeer);

@@ -21,6 +21,17 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  xec: {
+    toSatoshis: 1000,
+    full: {
+      maxDecimals: 4,
+      minDecimals: 4
+    },
+    short: {
+      maxDecimals: 4,
+      minDecimals: 4
+    }
+  },
   eth: {
     toSatoshis: 1e18,
     full: {
@@ -122,6 +133,17 @@ export let UNITS = {
   },
   doge: {
     toSatoshis: 100000000,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  xpi: {
+    toSatoshis: 1000000,
     full: {
       maxDecimals: 8,
       minDecimals: 8
