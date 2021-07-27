@@ -17,13 +17,13 @@ module.exports = {
     const hashRate: number = +raw.data[0].hashrate;
     const currentMinerReward = Math.round((Math.log2(currentDiff / 16) + 1) * 130 * 1000000) / 1000000;
     const dailyElectricityCost = (((hashRate / MINING_EFFICIENCY) * 24) / 1000) * ELECTRICITY_RATE;
-    
-    const lotusCost = dailyElectricityCost * (1 + MINER_MARGIN) / currentMinerReward /30/24; // Changes to the variable name only
+
+    const lotusCost = (dailyElectricityCost * (1 + MINER_MARGIN)) / currentMinerReward / 30 / 24; // Changes to the variable name only
 
     const stabilizationFactor = ELECTRICITY_RATE / 100 / lotusCost; // for price stablization of 10 lotus = 1 kWh cost of electricity.
 
-    const lotusPrice = lotusCost * ((1 + MINER_MARGIN) + stabilizationFactor);
-    
+    const lotusPrice = lotusCost * (1 + MINER_MARGIN + stabilizationFactor);
+
     return [{ code: 'USD', value: Math.round(lotusPrice * 1000000) / 1000000 }];
   }
 };

@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-wallet",
+  "name": "@abcpros/bitcore-wallet",
   "description": "A CLI Mutisig HD Bitcoin Wallet, demo for Bitcore Wallet Service",
   "author": "BitPay Inc",
   "version": "8.25.11",

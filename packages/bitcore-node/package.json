@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-node",
+  "name": "@abcpros/bitcore-node",
   "description": "A blockchain indexing node with extended capabilities using bitcore",
   "engines": {
     "node": ">=8.0.0"

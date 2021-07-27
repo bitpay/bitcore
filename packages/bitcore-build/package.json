@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-build",
+  "name": "@abcpros/bitcore-build",
   "version": "8.25.10",
   "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",

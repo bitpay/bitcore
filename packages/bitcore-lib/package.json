@@ -44,7 +44,7 @@
     "lodash": "^4.17.20"
   },
   "devDependencies": {
-    "bitcore-build": "^8.25.10",
+    "@abcpros/bitcore-build": "^8.25.10",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
