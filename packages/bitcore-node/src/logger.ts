@@ -7,7 +7,11 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       level: logLevel
     })
-  ]
+  ],
+  exceptionHandlers: [
+    new winston.transports.File({ filename: 'exceptions.log', dirname: './' })
+  ],
+  exitOnError: false
 });
 
 const timezone = new Date()
