@@ -31,6 +31,9 @@
     "gulp": "^4.0.0",
     "sinon": "^1.12.2"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

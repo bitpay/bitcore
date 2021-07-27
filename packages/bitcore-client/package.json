@@ -59,5 +59,8 @@
     "sinon": "4.4.8",
     "typescript": "3.3.4000"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

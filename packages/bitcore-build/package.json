@@ -58,5 +58,8 @@
     "lodash": "^4.17.15",
     "mocha": "^6.2.0"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

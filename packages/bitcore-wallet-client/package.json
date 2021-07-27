@@ -85,5 +85,8 @@
     "trailingComma": "none",
     "arrowParens": "avoid"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

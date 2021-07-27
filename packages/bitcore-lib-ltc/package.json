@@ -102,5 +102,8 @@
     "gulp": "^4.0.0",
     "sinon": "^7.1.1"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT"
 }
