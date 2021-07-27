@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-lib-ltc",
-  "version": "8.25.10",
+  "version": "8.25.29",
   "description": "A pure and powerful JavaScript Litecoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -96,11 +96,14 @@
     "scryptsy": "2.1.0"
   },
   "devDependencies": {
-    "bitcore-build": "^8.25.10",
+    "@abcpros/bitcore-build": "^8.25.29",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
     "sinon": "^7.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT"
 }

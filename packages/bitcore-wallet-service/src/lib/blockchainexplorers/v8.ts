@@ -58,6 +58,13 @@ export class V8 {
     this.network = opts.network || 'livenet';
     this.v8network = v8network(this.network);
 
+    // Special temporary fix for xec chain
+    // Please change this based on your bitcore.config.json file
+    // in you use mainnet instead of livenet in bitcore.config.json then remove below code
+    if (this.chain === 'XEC' && this.coin === 'xec' && this.network === 'livenet') {
+      this.v8network = 'livenet';
+    }
+
     // v8 is always cashaddr
     this.addressFormat = this.coin == 'bch' ? 'cashaddr' : null;
     this.apiPrefix += `/${this.chain}/${this.v8network}`;

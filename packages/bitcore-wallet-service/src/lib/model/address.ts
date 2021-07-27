@@ -134,7 +134,7 @@ export class Address {
     let addrStr = bitcoreAddress.toString(true);
     if (coin == 'xpi') {
       addrStr = bitcoreAddress.toXAddress();
-    } else if (noNativeCashAddr && (coin == 'bch' || coin == 'xec')) {
+    } else if (noNativeCashAddr && coin == 'bch') {
       addrStr = bitcoreAddress.toLegacyAddress();
     }
 

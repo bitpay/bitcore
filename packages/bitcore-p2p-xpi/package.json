@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-p2p-xpi",
-  "version": "8.25.14",
+  "version": "8.25.29",
   "description": "Interface to the bitcoin P2P network for lotus",
   "main": "index.js",
   "scripts": {
@@ -60,18 +60,21 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "@abcpros/bitcore-lib": "^8.25.10",
-    "@abcpros/bitcore-lib-xpi": "^8.25.15",
+    "@abcpros/bitcore-lib": "^8.25.29",
+    "@abcpros/bitcore-lib-xpi": "^8.25.29",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "^8.25.10",
+    "@abcpros/bitcore-build": "^8.25.29",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",
     "sinon": "^1.12.2"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT",
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
