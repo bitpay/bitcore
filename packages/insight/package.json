@@ -1,5 +1,5 @@
 {
-  "name": "@bitpay/insight-previous",
+  "name": "@abcpros/insight-previous",
   "description": "A blockchain explorer for Bitcore",
   "version": "8.25.10",
   "repository": "git://github.com/bitpay/bitcore.git",
