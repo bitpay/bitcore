@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-mnemonic",
-  "version": "8.25.10",
+  "version": "8.25.29",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -35,15 +35,15 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@abcpros/bitcore-build": "^8.25.29",
     "assert": "^1.4.1",
-    "@abcpros/bitcore-build": "^8.25.10",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "@abcpros/bitcore-lib": "^8.25.10",
+    "@abcpros/bitcore-lib": "^8.25.29",
     "unorm": "^1.4.1"
   },
   "peerDependencies": {
