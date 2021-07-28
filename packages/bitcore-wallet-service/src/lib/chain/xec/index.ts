@@ -16,7 +16,7 @@ export class XecChain extends BtcChain implements IChain {
   }
 
   convertFeePerKb(p, feePerKb) {
-    return [p, Utils.strip(feePerKb * 1e3)];
+    return [p, Utils.strip(feePerKb * 1e2)];
   }
 
   getSizeSafetyMargin(opts: any): number {

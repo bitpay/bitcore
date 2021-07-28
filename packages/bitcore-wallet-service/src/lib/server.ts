@@ -2953,7 +2953,7 @@ export class WalletService {
       if (coin === 'xpi') {
         unitToSatoshi = 1000000;
       } else if (coin === 'xec') {
-        unitToSatoshi = 1000;
+        unitToSatoshi = 100;
       }
       const rateCoin = _.find(rates[coin], item => item.code == 'USD');
       if (_.isEmpty(rateCoin || rateCoin.rate)) return cp('no rate');
