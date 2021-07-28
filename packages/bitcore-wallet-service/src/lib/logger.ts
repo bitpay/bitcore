@@ -1,12 +1,18 @@
 import * as winston from 'winston';
-// const logLevel = args.DEBUG ? 'debug' : 'info';
-//
-export const transport = new winston.transports.Console({
+import 'winston-daily-rotate-file';
+export const transport = new winston.transports.DailyRotateFile({
+  filename: 'bws-%DATE%.log',
+  handleExceptions: true,
+  maxSize: '40m',
+  maxFiles: '14d',
+  dirname: './logs',
   level: 'debug' // TODO
 });
 
 export const logger = winston.createLogger({
-  transports: [transport]
+  transports: [transport],
+  exceptionHandlers: [new winston.transports.File({ filename: 'exceptions.log', dirname: './logs' })],
+  exitOnError: false
 });
 
 const timezone = new Date()

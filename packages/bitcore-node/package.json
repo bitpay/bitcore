@@ -129,7 +129,8 @@
     "through2": "2.0.3",
     "underscore": "1.8.3",
     "web3": "1.2.4",
-    "winston": "3.2.0"
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "4.5.5"
   },
   "publishConfig": {
     "access": "public"

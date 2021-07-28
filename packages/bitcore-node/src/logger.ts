@@ -1,16 +1,20 @@
 import * as winston from 'winston';
+import 'winston-daily-rotate-file';
 import parseArgv from './utils/parseArgv';
 let args = parseArgv([], ['DEBUG']);
 const logLevel = args.DEBUG ? 'debug' : 'info';
 const logger = winston.createLogger({
   transports: [
-    new winston.transports.Console({
-      level: logLevel
+    new winston.transports.DailyRotateFile({
+      filename: 'bitcore-node-%DATE%.log',
+      handleExceptions: true,
+      level: logLevel,
+      maxSize: '40m',
+      maxFiles: '14d',
+      dirname: './logs'
     })
   ],
-  exceptionHandlers: [
-    new winston.transports.File({ filename: 'exceptions.log', dirname: './' })
-  ],
+  exceptionHandlers: [new winston.transports.File({ filename: 'exceptions.log', dirname: './logs' })],
   exitOnError: false
 });
 
