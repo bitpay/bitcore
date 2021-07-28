@@ -56074,7 +56074,7 @@ arguments[4][136][0].apply(exports,arguments)
 },{"buffer":52,"dup":136}],256:[function(require,module,exports){
 module.exports={
   "name": "@abcpros/bitcore-lib",
-  "version": "8.25.10",
+  "version": "8.25.29",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -56118,11 +56118,14 @@ module.exports={
     "lodash": "^4.17.20"
   },
   "devDependencies": {
-    "bitcore-build": "^8.25.10",
+    "@abcpros/bitcore-build": "^8.25.29",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
     "sinon": "^7.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT",
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
