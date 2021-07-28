@@ -94,6 +94,9 @@ export class FiatRateService {
     if (provider.name === 'CryptoCompare') {
       params = provider.params;
       params['fsym'] = coin.toUpperCase();
+    } else if (provider.name === 'Coingecko') {
+      params = provider.params;
+      params['ids'] = provider.coinMapping[coin];
     } else if (provider.name === 'LotusExplorer') {
       appendString = '';
     } else {
@@ -272,7 +275,6 @@ export class FiatRateService {
     const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
     const ts = _.isNumber(opts.ts) ? opts.ts : now;
     const coins = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi'];
-
     async.map(
       coins,
       (coin: string, cb) => {
