@@ -227,7 +227,7 @@ module.exports = {
     xrp: 1000000000000,
     xpi: 1000000000000,
     doge: 100000000 * 100,
-    xec: 100000
+    xec: 100 * 100,
   },
 
   MIN_TX_FEE: {
@@ -237,7 +237,7 @@ module.exports = {
     xrp: 0,
     doge: 0,
     xpi: 0,
-    xec: 0
+    xec:0
   },
 
   MAX_TX_FEE: {
@@ -247,7 +247,7 @@ module.exports = {
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
     xpi: 1 * 1e6, // 1 xpi
-    xec: 1 * 1e8
+    xec: 400 * 1e2 // 1 xpi
   },
 
   // ETH
