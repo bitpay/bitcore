@@ -8,7 +8,6 @@ const Errors = require('../../errors/errordefinitions');
 const Common = require('../../common');
 const Utils = Common.Utils;
 
-
 export class XecChain extends BtcChain implements IChain {
   constructor() {
     super(BitcoreLibXec);
