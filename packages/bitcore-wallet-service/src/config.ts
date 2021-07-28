@@ -1,4 +1,5 @@
-const { logger } = require('./lib/logger');
+import _ from 'lodash';
+import { logger } from './lib/logger';
 
 const Config = () => {
   let defaultConfig = {
@@ -193,9 +194,9 @@ const Config = () => {
   // Override default values with bws.config.js' values, if present
   try {
     const bwsConfig = require('../bws.config');
-    defaultConfig = Object.assign({}, defaultConfig, bwsConfig);
+    defaultConfig = _.merge(defaultConfig, bwsConfig);
   } catch {
-    logger.warn('bws.config.js not found, using default configuration values');
+    logger.info('bws.config.js not found, using default configuration values');
   }
   return defaultConfig;
 };
