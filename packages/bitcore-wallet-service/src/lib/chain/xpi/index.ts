@@ -39,9 +39,6 @@ export class XpiChain extends BtcChain implements IChain {
     if (addr.network.toString() != wallet.network) {
       throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
-    if (!opts.noCashAddr) {
-      if (addr.toString(true) != inaddr) throw Errors.ONLY_CASHADDR;
-    }
     return;
   }
 }
