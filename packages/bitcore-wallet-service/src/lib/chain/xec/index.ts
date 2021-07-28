@@ -5,6 +5,8 @@ import { BtcChain } from '../btc';
 const config = require('../../../config');
 
 const Errors = require('../../errors/errordefinitions');
+const Common = require('../../common');
+const Utils = Common.Utils;
 
 export class XecChain extends BtcChain implements IChain {
   constructor() {
@@ -12,6 +14,11 @@ export class XecChain extends BtcChain implements IChain {
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
   }
+
+  convertFeePerKb(p, feePerKb) {
+    return [p, Utils.strip(feePerKb * 1e3)];
+  }
+
   getSizeSafetyMargin(opts: any): number {
     return 0;
   }
