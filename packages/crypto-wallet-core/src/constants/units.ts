@@ -22,7 +22,7 @@ export let UNITS = {
     }
   },
   xec: {
-    toSatoshis: 1000,
+    toSatoshis: 100,
     full: {
       maxDecimals: 4,
       minDecimals: 4
