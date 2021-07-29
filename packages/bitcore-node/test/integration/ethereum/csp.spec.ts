@@ -1,11 +1,16 @@
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
+import _ from 'lodash';
 import * as sinon from 'sinon';
 import { Transform } from 'stream';
+import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
+import { IWallet } from '../../../src/models/wallet';
 import { ETH } from '../../../src/modules/ethereum/api/csp';
 import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
 import { IEthTransaction } from '../../../src/modules/ethereum/types';
+import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Ethereum API', function() {
@@ -172,28 +177,20 @@ describe('Ethereum API', function() {
     await EthTransactionStorage.collection.insertMany(txs);
 
     const res = (new Transform({
-      transform: (data, _, cb) => {
-        cb(null, data);
-      }
+      transform: (data, _, cb) => cb(null, data)
     }) as unknown) as Response;
     res.type = () => res;
 
     const req = (new Transform({
-      transform: (_data, _, cb) => {
-        cb(null);
-      }
+      transform: (_data, _, cb) => cb(null)
     }) as unknown) as Request;
 
     await ETH.streamAddressTransactions({ chain, network, address, res, req, args: {} });
     let counter = 0;
     await new Promise(r => {
       res
-        .on('data', () => {
-          counter++;
-        })
-        .on('end', () => {
-          r();
-        });
+        .on('data', () => counter++)
+        .on('end', r);
     });
 
     const commaCount = txCount - 1;
@@ -201,6 +198,14 @@ describe('Ethereum API', function() {
     const expected = txCount + commaCount + bracketCount;
     expect(counter).to.eq(expected);
   });
+
+  it('should stream wallet\'s valid ETH transactions', async () =>
+    await streamWalletTransactionsTest(chain, network)
+  );
+
+  it('should stream wallet\'s valid & invalid ETH transactions', async () =>
+    await streamWalletTransactionsTest(chain, network, true)
+  );
 
   it('should stream ETH transactions for block', async () => {
     const txCount = 100;
@@ -292,3 +297,72 @@ describe('Ethereum API', function() {
     expect(counter).to.eq(expected);
   });
 });
+
+const streamWalletTransactionsTest = async (chain: string, network: string, includeInvalidTxs: boolean = false) => {
+  const sandbox = sinon.createSandbox();
+
+  // Constants
+  const address = '0x7F17aF79AABC4A297A58D389ab5905fEd4Ec9502';
+  const objectId = ObjectId.createFromHexString('60f9abed0e32086bf9903bb5');
+  const wallet = {
+    _id: objectId,
+    chain,
+    network,
+    name: 'Ganache',
+    pubKey: '0x029ec2ebdebe6966259cf3c6f35c4f126b82fe072bf9d0e81dad375f1d6d2d9054',
+    path: 'm/44\'/60\'/0\'/0/0',
+    singleAddress: true
+  } as MongoBound<IWallet>;
+  const txCount = 100;
+
+  // Valid Transactions
+  const txs = new Array(txCount).fill({}).map(() => {
+    return {
+      chain,
+      network,
+      blockHeight: 1,
+      gasPrice: 10 * 1e9,
+      data: Buffer.from(''),
+      from: address
+    } as IEthTransaction;
+  });
+  // Invalid Transactions
+  _.times(txCount, () => txs.push({
+    ...txs[0],
+    blockHeight: -3
+  }))
+  // Add wallet object ID to transactions
+  txs.forEach(tx => tx.wallets = [objectId]);
+
+  // Stubs
+  sandbox.stub(ETH, 'getWalletAddresses').resolves([address]);
+
+  // Test
+  await EthTransactionStorage.collection.deleteMany({});
+  await EthTransactionStorage.collection.insertMany(txs);
+
+  const res = (new Transform({
+    transform: (data, _, cb) => cb(null, data)
+  }) as unknown) as Response;
+  res.type = () => res;
+
+  await ETH.streamWalletTransactions({
+    chain,
+    network,
+    wallet,
+    res,
+    args: {
+      includeInvalidTxs
+    }
+  } as StreamWalletTransactionsParams)
+
+  let counter = 0;
+  await new Promise(r => {
+    res
+      .on('data', () => counter++)
+      .on('end', r);
+  });
+
+  expect(counter).to.eq(includeInvalidTxs ? txCount * 2 : txCount);
+  sandbox.restore();
+};
