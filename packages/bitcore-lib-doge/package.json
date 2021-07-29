@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-lib-doge",
-  "version": "8.25.30",
+  "version": "8.25.31",
   "description": "A pure and powerful JavaScript Dogecoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
