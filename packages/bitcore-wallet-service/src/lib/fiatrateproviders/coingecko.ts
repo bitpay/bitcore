@@ -10,12 +10,12 @@ module.exports = {
     vs_currencies: Defaults.FIAT_CURRENCIES.map(currency => currency.code).join(',')
   },
   coinMapping: {
-    'btc': 'bitcoin',
-    'bch': 'binance-peg-bitcoin-cash',
-    'xec': 'ecash',
-    'eth': 'ethereum',
-    'xrp': 'ripple',
-    'doge': 'binance-peg-dogecoin'
+    btc: 'bitcoin',
+    bch: 'binance-peg-bitcoin-cash',
+    xec: 'ecash',
+    eth: 'ethereum',
+    xrp: 'ripple',
+    doge: 'binance-peg-dogecoin'
   },
   parseFn(raw) {
     const valueObject = Object.values(raw)[0];
