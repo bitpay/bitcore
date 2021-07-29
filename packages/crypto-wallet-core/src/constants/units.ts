@@ -24,12 +24,12 @@ export let UNITS = {
   xec: {
     toSatoshis: 100,
     full: {
-      maxDecimals: 4,
-      minDecimals: 4
+      maxDecimals: 2,
+      minDecimals: 2
     },
     short: {
-      maxDecimals: 4,
-      minDecimals: 4
+      maxDecimals: 2,
+      minDecimals: 2
     }
   },
   eth: {
@@ -145,8 +145,8 @@ export let UNITS = {
   xpi: {
     toSatoshis: 1000000,
     full: {
-      maxDecimals: 8,
-      minDecimals: 8
+      maxDecimals: 6,
+      minDecimals: 6
     },
     short: {
       maxDecimals: 6,
