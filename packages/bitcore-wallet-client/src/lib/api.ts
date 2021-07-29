@@ -2096,14 +2096,14 @@ export class API extends EventEmitter {
 
           const weightedSize = [];
 
-          let isBtcSegwit =
-            txp.coin == 'btc' &&
+          let isSegwit =
+            (txp.coin == 'btc' || txp.coin == 'ltc') &&
             (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
 
           let i = 0;
           for (const unsigned of unserializedTxs) {
             let size;
-            if (isBtcSegwit) {
+            if (isSegwit) {
               // we dont have a fast way to calculate weigthedSize`
               size = Math.floor((txp.fee / txp.feePerKb) * 1000) - 10;
             } else {
