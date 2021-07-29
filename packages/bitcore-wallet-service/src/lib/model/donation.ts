@@ -20,4 +20,5 @@ export interface DonationInfo {
 export interface CoinDonationToAddress {
   coin: string;
   address: string;
+  network: string;
 }

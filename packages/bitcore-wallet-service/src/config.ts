@@ -127,19 +127,26 @@ module.exports = {
   staticRoot: '/tmp/static',
   donationRemaining: {
     minMoneydonation: 0.01, // USD
-    receiveAmountLotus: 100000000,
-    totalAmountLotusInDay: 10000000000,
+    receiveAmountLotus: 1000000,
+    totalAmountLotusInDay: 10000000,
     donationToAddresses: [
       {
         coin: 'bch',
-        address: 'qzhkfz09gxhunmcy65gnp6z6rtz3snvx3yfk4rgapp'
+        address: 'qzhkfz09gxhunmcy65gnp6z6rtz3snvx3yfk4rgapp',
+        network: 'testnet'
       },
       {
         coin: 'doge',
-        address: 'ndimfHmpLLs9tUBsyaTmSdSsqiB9ny1XS8'
+        address: 'ndimfHmpLLs9tUBsyaTmSdSsqiB9ny1XS8',
+        network: 'testnet'
+      },
+      {
+        coin: 'xec',
+        address: 'ecash:qpjfxfahz8h5eug3d3kut4h52gm3umu3pyzrntu35n',
+        network: 'livenet'
       }
     ],
-    donationCoin: 'doge'
+    donationCoin: 'xpi'
   },
 
   donationWalletId: '93ec81ff-0062-40d4-ac4c-1f6359b07ffb'
