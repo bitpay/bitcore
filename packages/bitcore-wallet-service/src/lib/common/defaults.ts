@@ -123,7 +123,7 @@ module.exports = {
   // How many levels to fallback to if the value returned by the network for a given nbBlocks is -1
   FEE_LEVELS_FALLBACK: 2,
 
-  FIAT_RATE_PROVIDER: 'CryptoCompare',
+  FIAT_RATE_PROVIDER: 'Coingecko',
   FIAT_RATE_FETCH_INTERVAL: 10, // In minutes
   FIAT_RATE_MAX_LOOK_BACK_TIME: 120, // In minutes
 

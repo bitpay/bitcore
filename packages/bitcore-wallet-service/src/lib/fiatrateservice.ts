@@ -94,6 +94,9 @@ export class FiatRateService {
     if (provider.name === 'CryptoCompare') {
       params = provider.params;
       params['fsym'] = coin.toUpperCase();
+    } else if (provider.name === 'Coingecko') {
+      params = provider.params;
+      params['ids'] = provider.coinMapping[coin];
     } else if (provider.name === 'LotusExplorer') {
       appendString = '';
     } else {

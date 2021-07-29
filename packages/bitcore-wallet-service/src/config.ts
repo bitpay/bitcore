@@ -108,7 +108,7 @@ module.exports = {
     authorizationKey: 'You_have_to_put_something_here'
   },
   fiatRateServiceOpts: {
-    defaultProvider: 'CryptoCompare',
+    defaultProvider: 'Coingecko',
     cryptoCompareApiKey: 'Apikey a5f8e442e001cd9ba2c5a61d32794c7209a3940f493a03bb2193027b1982d376',
     fetchInterval: 5, // in minutes
     lotusProvider: {
