@@ -2846,7 +2846,10 @@ export class WalletService {
   }
 
   checkIsDonation(txp): boolean {
-    const addressObjDonation = _.find(config.donationRemaining.donationToAddresses, (item: CoinDonationToAddress) => item.coin == txp.coin && item.network == txp.network);
+    const addressObjDonation = _.find(
+      config.donationRemaining.donationToAddresses,
+      (item: CoinDonationToAddress) => item.coin == txp.coin && item.network == txp.network
+    );
     if (_.isEmpty(addressObjDonation)) return false;
     return txp.isDonation && txp.outputs[0].toAddress == addressObjDonation.address;
   }
