@@ -6,6 +6,7 @@ import {
   BitcoreLibDoge,
   BitcoreLibXec,
   BitcoreLibXpi,
+  BitcoreLibLtc,
   Deriver,
   Transactions
 } from '@abcpros/crypto-wallet-core';
@@ -26,7 +27,8 @@ const Bitcore_ = {
   xrp: Bitcore,
   doge: BitcoreLibDoge,
   xec: BitcoreLibXec,
-  xpi: BitcoreLibXpi
+  xpi: BitcoreLibXpi,
+  ltc: BitcoreLibLtc
 };
 const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;
@@ -265,7 +267,6 @@ export class Utils {
 
   static formatAmount(satoshis, unit, opts?) {
     $.shouldBeNumber(satoshis);
-    $.checkArgument(_.includes(_.keys(Constants.UNITS), unit));
 
     var clipDecimals = (number, decimals) => {
       let str = number.toString();
@@ -299,15 +300,17 @@ export class Utils {
 
     var u = Constants.UNITS[unit];
     var precision = opts.fullPrecision ? 'full' : 'short';
+    var decimals = opts.decimals ? opts.decimals[precision] : u[precision];
+    var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
     var amount = clipDecimals(
-      satoshis / u.toSatoshis,
-      u[precision].maxDecimals
-    ).toFixed(u[precision].maxDecimals);
+      satoshis / toSatoshis,
+      decimals.maxDecimals
+    ).toFixed(decimals.maxDecimals);
     return addSeparators(
       amount,
       opts.thousandsSeparator || ',',
       opts.decimalSeparator || '.',
-      u[precision].minDecimals
+      decimals.minDecimals
     );
   }
 
@@ -416,7 +419,8 @@ export class Utils {
         outputs,
         payProUrl,
         tokenAddress,
-        multisigContractAddress
+        multisigContractAddress,
+        isTokenSwap
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -431,7 +435,7 @@ export class Utils {
         recipients[0].data = data;
       }
       const unsignedTxs = [];
-      const isERC20 = tokenAddress && !payProUrl;
+      const isERC20 = tokenAddress && !payProUrl  && !isTokenSwap;
       const isETHMULTISIG = multisigContractAddress;
       const chain = isETHMULTISIG
         ? 'ETHMULTISIG'

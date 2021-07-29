@@ -26,7 +26,8 @@ var MAX_FEE_PER_KB = {
   xrp: 1000000000000,
   doge: 10000 * 1000, // 10k sat/b
   xec: 10000 * 1000, // 10k sat/b
-  xpi: 10000 * 1000 // 10k sat/b
+  xpi: 10000 * 1000, // 10k sat/b
+  ltc: 10000 * 1000 // 10k sat/b
 };
 
 // PayPro Network Map

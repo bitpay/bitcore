@@ -42,7 +42,8 @@ export class Address {
     bch: require('@abcpros/bitcore-lib-cash'),
     xec: require('@abcpros/bitcore-lib-xec'),
     doge: require('@abcpros/bitcore-lib-doge'),
-    xpi: require('@abcpros/bitcore-lib-xpi')
+    xpi: require('@abcpros/bitcore-lib-xpi'),
+    ltc: require('@abcpros/bitcore-lib-ltc')
   };
 
   static create(opts) {
@@ -113,7 +114,7 @@ export class Address {
         bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(publicKeys, m, network);
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
-        bitcoreAddress = Address.Bitcore.btc.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
+        bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(

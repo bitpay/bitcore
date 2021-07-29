@@ -11,6 +11,14 @@ describe('Address Validation', () => {
   const bchAddress = 'qr8uujscckc56ancdkmqnyyl2rx6pnp24gmdfrf8qd';
   const bchTestLegacyAddress = 'mms6yCDGo3fDdapguTSMtCyF9XGfWJpD6H';
 
+  // DOGE
+  const dogeAddress = 'DQnSpKaUdXYZz8Q4WUBCdaGBSthiAJbWBr';
+  const dogeTestAddress = 'nY525SPsHXVopmUMm1JyReDEop45MSWc3D';
+
+  // LTC
+  const ltcAddress = 'LYgDcZ3oW3aZBhZUyiC84fb99hyUPVxLwB';
+  const ltcTestAddress = 'QhpBFbYvLG2bgCZ3D1ztGEUVqmcgY5vjVF';
+
   // ETH
   const ethAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
   const prefixEthAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
@@ -27,6 +35,8 @@ describe('Address Validation', () => {
   // Uri
   const btcUri = 'bitcoin:1NuKwkDtCymgA1FNLUBaUWLD8s4kdKWvgn';
   const bchUri = 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g';
+  const dogeUri = 'dogecoin:DQnSpKaUdXYZz8Q4WUBCdaGBSthiAJbWBr';
+  const ltcUri = 'litecoin:LYgDcZ3oW3aZBhZUyiC84fb99hyUPVxLwB';
   const ethUri = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
   const ethUriParams = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123&gasPrice=123&gas=123&gasLimit=123';
   const ethUriSingleParam = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123';
@@ -34,6 +44,8 @@ describe('Address Validation', () => {
   const bchTestUri = 'bchtest:qq083kgf3wjg7ya8nun36e8nf24g9xgvachahfnyle';
   const xecUri = 'ecash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsvkjlyqnhl';
   const xecTestUri = 'ectest:qq083kgf3wjg7ya8nun36e8nf24g9xgvacvfe9dyar';
+  const dogeTestUri = 'dogecoin:mpz836YMHb7Ubjx4G2YnutwQRd1yz5ssNv';
+  const ltcTestUri = 'litecoin:QhpBFbYvLG2bgCZ3D1ztGEUVqmcgY5vjVF';
   const xrpUri = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF';
   const xrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456&dt=123456';
   const xrpUriSingleParam = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456';
@@ -41,6 +53,8 @@ describe('Address Validation', () => {
   // Invalid Address
   const invalidBtcAddress = '1NuKwkDtCymgA1FNLUBaUWLD8s4kKWvgn';
   const invalidBchAddress = 'r8uujscckc56ancdkmqnyyl2rx6pnp24gmdfrf8qd';
+  const invalidDogeAddress = 'DQnSpKaUdXYZz8Q4WUBCdaGBSthiAJbWB';
+  const invalidLtcAddress = 'LYgDcZ3oW3aZBhZUyiC84fb99hyUPVxLw';
   const invalidEthAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08';
   const invalidXrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTH';
 
@@ -62,6 +76,20 @@ describe('Address Validation', () => {
     const isValidTestLegacyAddress = await Validation.validateAddress('BCH', 'testnet', bchTestLegacyAddress);
     expect(isValidAddress).to.equal(true);
     expect(isValidTestLegacyAddress).to.equal(true);
+  });
+
+  it('should be able to validate an DOGE address', async () => {
+    const isValidAddress = await Validation.validateAddress('DOGE', 'mainnet', dogeAddress);
+    const isValidTestAddress = await Validation.validateAddress('DOGE', 'testnet', dogeTestAddress);
+    expect(isValidAddress).to.equal(true);
+    expect(isValidTestAddress).to.equal(true);
+  });
+
+  it('should be able to validate an LTC address', async () => {
+    const isValidAddress = await Validation.validateAddress('LTC', 'mainnet', ltcAddress);
+    const isValidTestAddress = await Validation.validateAddress('LTC', 'testnet', ltcTestAddress);
+    expect(isValidAddress).to.equal(true);
+    expect(isValidTestAddress).to.equal(true);
   });
 
   it('should be able to validate an ETH address', async () => {
@@ -107,6 +135,20 @@ describe('Address Validation', () => {
     expect(isValidTestUri).to.equal(true);
   });
 
+  it('should be able to validate an DOGE Uri', async () => {
+    const isValidUri = await Validation.validateUri('DOGE', dogeUri);
+    const isValidTestUri = await Validation.validateUri('DOGE', dogeTestUri);
+    expect(isValidUri).to.equal(true);
+    expect(isValidTestUri).to.equal(true);
+  });
+
+  it('should be able to validate an LTC Uri', async () => {
+    const isValidUri = await Validation.validateUri('LTC', ltcUri);
+    const isValidTestUri = await Validation.validateUri('LTC', ltcTestUri);
+    expect(isValidUri).to.equal(true);
+    expect(isValidTestUri).to.equal(true);
+  });
+
   it('should be able to validate an ETH Uri', async () => {
     const isValidUri = await Validation.validateUri('ETH', ethUri);
     const isValidUriParams = await Validation.validateUri('ETH', ethUriParams);
@@ -132,6 +174,16 @@ describe('Address Validation', () => {
 
   it('should be able to invalidate an incorrect BCH address', async () => {
     const inValidAddress = await Validation.validateAddress('BCH', 'mainnet', invalidBchAddress);
+    expect(inValidAddress).to.equal(false);
+  });
+
+  it('should be able to invalidate an incorrect DOGE address', async () => {
+    const inValidAddress = await Validation.validateAddress('DOGE', 'mainnet', invalidDogeAddress);
+    expect(inValidAddress).to.equal(false);
+  });
+
+  it('should be able to invalidate an incorrect LTC address', async () => {
+    const inValidAddress = await Validation.validateAddress('LTC', 'mainnet', invalidLtcAddress);
     expect(inValidAddress).to.equal(false);
   });
 

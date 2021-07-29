@@ -212,6 +212,8 @@ export class Credentials {
         coin = '899';
       } else if (this.coin == 'xpi') {
         coin = '10605';
+      } else if (this.coin == 'ltc') {
+        coin = '2';
       } else {
         throw new Error('unknown coin: ' + this.coin);
       }
@@ -316,7 +318,9 @@ export class Credentials {
       (this.coin === 'btc' ||
         this.coin === 'bch' ||
         this.coin === 'xec' ||
-        this.coin === 'doge') &&
+        this.coin === 'xpi' ||
+        this.coin === 'doge' ||
+        this.coin === 'ltc') &&
       (!this.publicKeyRing || this.publicKeyRing.length != this.n)
     )
       return false;

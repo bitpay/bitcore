@@ -11,7 +11,8 @@ const Bitcore_ = {
   bch: require('@abcpros/bitcore-lib-cash'),
   xec: require('@abcpros/bitcore-lib-xec'),
   doge: require('@abcpros/bitcore-lib-doge'),
-  xpi: require('@abcpros/bitcore-lib-xpi')
+  xpi: require('@abcpros/bitcore-lib-xpi'),
+  ltc: require('@abcpros/bitcore-lib-ltc')
 };
 
 export class Utils {
@@ -246,7 +247,12 @@ export class Utils {
           new Bitcore_['doge'].Address(address);
           return 'doge';
         } catch (e) {
-          return;
+          try {
+            new Bitcore_['ltc'].Address(address);
+            return 'ltc';
+          } catch (e) {
+            return;
+          }
         }
       }
     }

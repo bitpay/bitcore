@@ -34,6 +34,10 @@ const PROVIDERS = {
     xpi: {
       livenet: 'http://localhost:3000',
       testnet: 'http://localhost:3000'
+    },
+    ltc: {
+      livenet: 'https://api.bitpay.com',
+      testnet: 'https://api.bitpay.com'
     }
   }
 };

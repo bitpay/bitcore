@@ -9,6 +9,7 @@ module.exports = {
     ETH: 'eth',
     XRP: 'xrp',
     DOGE: 'doge',
+    LTC: 'ltc',
     USDC: 'usdc',
     PAX: 'pax',
     GUSD: 'gusd',
@@ -30,9 +31,14 @@ module.exports = {
   UTXO_COINS: {
     BTC: 'btc',
     BCH: 'bch',
+<<<<<<< HEAD
     XEC: 'xec',
     DOGE: 'doge',
     XPI: 'xpi'
+=======
+    DOGE: 'doge',
+    LTC: 'ltc'
+>>>>>>> merge-bitpay
   },
 
   NETWORKS: {

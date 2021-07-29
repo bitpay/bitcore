@@ -112,22 +112,32 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const { network, time } = params;
     const date = new Date(time || Date.now()).toISOString();
     const ledger = await new Promise((resolve, reject) => {
-      const url = this.config[network].provider.dataHost + '/v2/ledgers/' + date;
-      request.get({ url, json: true }, (err, _, body) => {
-        if (err) {
-          return reject(err);
-        } else {
-          return resolve({
-            ...body.ledger,
-            chain: this.chain,
-            network,
-            hash: body.ledger.ledger_hash,
-            height: body.ledger.ledger_index,
-            previousBlockHash: body.ledger.parent_hash,
-            timeNormalized: new Date(body.ledger.close_time * 1000)
-          });
-        }
-      });
+      try {
+        const url = this.config[network].provider.dataHost + '/v2/ledgers/' + date;
+        request.get({ url, json: true }, (err, _, body) => {
+          try {
+            if (err) {
+              return reject(err);
+            } else if (body == null) {
+              return resolve(body);
+            } else {
+              return resolve({
+                ...body.ledger,
+                chain: this.chain,
+                network,
+                hash: body.ledger.ledger_hash,
+                height: body.ledger.ledger_index,
+                previousBlockHash: body.ledger.parent_hash,
+                timeNormalized: new Date(body.ledger.close_time * 1000)
+              });
+            }
+          } catch (e) {
+            return reject(e);
+          }
+        });
+      } catch (err) {
+        return reject(err);
+      }
     });
     return ledger as IBlock;
   }

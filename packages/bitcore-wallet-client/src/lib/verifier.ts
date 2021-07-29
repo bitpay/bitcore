@@ -167,7 +167,10 @@ export class Verifier {
 
     var creatorKeys = _.find(credentials.publicKeyRing, item => {
       if (
-        Utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId
+        Utils.xPubToCopayerId(
+          txp.chain ? txp.chain : txp.coin ? txp.coin : 'btc',
+          item.xPubKey
+        ) === txp.creatorId
       )
         return true;
     });

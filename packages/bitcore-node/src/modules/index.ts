@@ -1,3 +1,6 @@
+import _ from 'lodash';
+
+import Logger from '../logger';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';
 import { Api } from '../services/api';
@@ -42,10 +45,44 @@ export class BaseModule implements IService {
 
 class ModuleManager extends BaseModule {
   internalServices = new Array<IService>();
+
+  // Chain names -> module paths map
+  KNOWN_MODULE_PATHS = {
+    'BTC': './bitcoin',
+    'ETH': './ethereum',
+    'BCH': './bitcoin-cash',
+    'DOGE': './dogecoin',
+    'LTC': './litecoin',
+    'XRP': './ripple'
+  };
+
   loadConfigured() {
-    for (const modulePath of Config.get().modules) {
+    let { modules, chains } = Config.get();
+    modules = modules || [];
+
+    const registerModuleClass = (modulePath) => {
       const moduleClass = require(modulePath).default || (require(modulePath) as Class<BaseModule>);
       this.internalServices.push(new moduleClass(this.bitcoreServices));
+    };
+
+    // Register all configured modules (in case users want to add custom modules)
+    if (modules.length > 0)
+      for (const modulePath of modules)
+        registerModuleClass(modulePath);
+
+    // Auto register known modules from config.chains
+    for (const chain in chains) {
+      const modulePath = this.KNOWN_MODULE_PATHS[chain];
+      if (!modulePath) {
+        Logger.warn(
+          `Auto module registration failed for chain '${chain}'. ` +
+          'Is the chain name / module path inside of KNOWN_MODULE_PATHS?'
+        );
+        continue;
+      }
+
+      // Do not register detected modulePath if it is in config.modules as well
+      if (!_.includes(modules, modulePath)) registerModuleClass(modulePath);
     }
   }
 }

@@ -1004,13 +1004,13 @@ describe('Script', function() {
       // taken from tx bf1fa6f30f6e62813f81fc5abb46591c52c83b8f6eabc3286f7d4843895941cd
       var script = new Script('OP_HASH160 20 0x1e2373a3a73f167952c5dfd4b25f1998503970dd OP_EQUAL');
       script.isScriptHashOut().should.be.true;
-      script.toAddress().toString().should.equal('34SNfXXKSTd124bcNPJgbfaMFioAMWGZTL');
+      script.toAddress().toString().should.equal('MAeWyQwHPaURpZsWUGJ2RJpkaRPcSWd78i');
     });
     it('works for p2sh input', function() {
       // taken from tx fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
       var script = new Script('OP_FALSE 72 0x3045022100e824fbe979fac5834d0062dd5a4e82a898e00ac454bd254cd708ad28530816f202206251ff0fa4dd70c0524c690d4e4deb2bd167297e7bbdf6743b4a8050d681555001 37 0x512102ff3ae0aaa4679ea156d5581dbe6695cc0c311df0aa42af76670d0debbd8f672951ae');
       script.isScriptHashIn().should.be.true;
-      script.toAddress().toString().should.equal('3GYicPxCvsKvbJmZNBBeWkC3cLuGFhtrQi');
+      script.toAddress().toString().should.equal('MNkrvHNAszBMPp3TU4AzLPSSw3ViHHZLZe');
     });
 
     // no address scripts

@@ -38,6 +38,22 @@ describe('Pool', function() {
     pool.network.should.equal(Networks.testnet);
   });
 
+  it('create instance setting a network from string', function() {
+    var pool = new Pool({network: 'testnet'});
+    pool.network.should.equal(Networks.testnet);
+  });
+
+  it('create instance setting a network from xpubkey', function() {
+    var pool = new Pool({network: 0x043587cf});
+    pool.network.should.equal(Networks.testnet);
+  });
+
+  it('create instance setting a custom network', function() {
+    const customNetwork = new class Network{ constructor(port, networkMagic) { this.port = port; this.networkMagic = networkMagic } }(1234, 0x1234567);
+    var pool = new Pool({network: customNetwork});
+    pool.network.should.equal(customNetwork);
+  });
+
   it('discover peers via dns', function() {
     var stub = sinon.stub(dns, 'resolve', function(seed, callback) {
       callback(null, ['10.10.10.1', '10.10.10.2', '10.10.10.3']);

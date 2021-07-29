@@ -19,7 +19,10 @@ var Bitcore_ = {
   btc: Bitcore,
   bch: require('@abcpros/bitcore-lib-cash'),
   bcha: require('@abcpros/bitcore-lib-cash'),
-  doge: require('@abcpros/bitcore-lib-doge')
+  xec: require('@abcpros/bitcore-lib-xec'),
+  doge: require('@abcpros/bitcore-lib-doge'),
+  xpi: require('@abcpros/bitcore-lib-xpi'),
+  ltc: require('@abcpros/bitcore-lib-ltc')
 };
 
 var { ChainService } = require('../../ts_build/lib/chain/index');
@@ -527,7 +530,7 @@ helpers.stubCheckData = function(bc, server, isBCH, cb) {
 helpers.stubFeeLevels = function(levels, fill, coin) {
   coin = coin || 'btc';
   let div = 1;
-  if (coin == 'btc' || coin == 'bch' || coin == 'doge') {
+  if (coin == 'btc' || coin == 'bch' || coin == 'doge' || coin == 'ltc') {
     div = 1e8;  // bitcoind returns values in BTC amounts
   }
 

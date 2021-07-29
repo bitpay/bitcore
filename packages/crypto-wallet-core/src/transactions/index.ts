@@ -6,6 +6,7 @@ import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { XECTxProvider } from './xec';
 import { XPITxProvider } from './xpi';
+import { LTCTxProvider } from './ltc';
 import { XRPTxProvider } from './xrp';
 
 const providers = {
@@ -17,7 +18,8 @@ const providers = {
   XRP: new XRPTxProvider(),
   DOGE: new DOGETxProvider(),
   XEC: new XECTxProvider(),
-  XPI: new XPITxProvider()
+  XPI: new XPITxProvider(),
+  LTC: new LTCTxProvider()
 };
 
 export class TransactionsProxy {

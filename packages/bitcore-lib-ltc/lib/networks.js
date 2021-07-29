@@ -141,8 +141,8 @@ addNetwork({
   alias: 'mainnet',
   pubkeyhash: 0x30, // 48
   privatekey: 0xb0, // 176
-  scripthash: 0x05, // 5
-  scripthash2: 0x32, // 50
+  scripthash: 0x32, // 50
+  scripthash2: 0x05, // 5
   bech32prefix: 'ltc',
   xpubkey: 0x0488b21e,
   xprivkey: 0x0488ade4,

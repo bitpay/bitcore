@@ -43,7 +43,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.136",
     "@types/node": "^10.0.2",
-    "bitcore-wallet-service": "^8.25.30",
+    "@abcpros/bitcore-wallet-service": "^8.25.30",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^3.0.2",

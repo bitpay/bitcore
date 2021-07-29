@@ -38,7 +38,7 @@ const main = async () => {
     const feerate = await wallet.getNetworkFee();
     const feeRate = JSON.parse(feerate).feerate || 20 * scale;
     let nonce;
-    if (!['BTC', 'BCH'].includes(chain)) {
+    if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
       nonce = await wallet.getNonce();
     }
     const utxos = await wallet.getUtxosArray();

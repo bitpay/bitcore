@@ -89,6 +89,14 @@ module.exports = {
         url: 'http://127.0.0.1:3000'
       }
     },
+    ltc: {
+      livenet: {
+        url: 'https://api.bitcore.io'
+      },
+      testnet: {
+        url: 'https://api.bitcore.io'
+      }
+    },
     socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {
@@ -169,6 +177,11 @@ module.exports = {
   //   secret: 'changelly_secret',
   //   api: 'https://api.changelly.com'
   // },
+  // oneInch: {
+  //   api: 'https://api.1inch.exchange',
+  //   referrerAddress: 'one_inch_referrer_address', // ETH
+  //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
+  // },
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',
@@ -180,15 +193,31 @@ module.exports = {
   //  defaultLanguage: 'en',
   //  defaultUnit: 'btc',
   //  publicTxUrlTemplate: {
-  //    btc: {
-  //      livenet: 'https://insight.bitcore.io/#/BTC/mainnet/tx/{{txid}}',
-  //      testnet: 'https://insight.bitcore.io/#/BTC/testnet/tx/{{txid}}',
-  //    },
-  //    bch: {
-  //      livenet: 'https://insight.bitcore.io/#/BCH/mainnet/tx/{{txid}}',
-  //      testnet: 'https://insight.bitcore.io/#/BCH/testnet/tx/{{txid}}',
-  //    }
+  //   btc: {
+  //     livenet: 'https://bitpay.com/insight/#/BTC/mainnet/tx/{{txid}}',
+  //     testnet: 'https://bitpay.com/insight/#/BTC/testnet/tx/{{txid}}',
+  //   },
+  //   bch: {
+  //     livenet: 'https://bitpay.com/insight/#/BCH/mainnet/tx/{{txid}}',
+  //     testnet: 'https://bitpay.com/insight/#/BCH/testnet/tx/{{txid}}',
+  //   },
+  //   eth: {
+  //     livenet: 'https://etherscan.io/tx/{{txid}}',
+  //     testnet: 'https://kovan.etherscan.io/tx/{{txid}}',
+  //   },
+  //   xrp: {
+  //     livenet: 'https://xrpscan.com/tx/{{txid}}',
+  //     testnet: 'https://test.bithomp.com/explorer//tx/{{txid}}',
+  //   },
+  //   doge: {
+  //     livenet: 'https://blockchair.com/dogecoin/transaction/{{txid}}',
+  //     testnet: 'https://sochain.com/tx/DOGETEST/{{txid}}',
   //  },
+  //   ltc: {
+  //     livenet: 'https://bitpay.com/insight/#/LTC/mainnet/tx/{{txid}}',
+  //     testnet: 'https://bitpay.com/insight/#/LTC/testnet/tx/{{txid}}',
+  //  }
+  // },
   // },
   // To use sendgrid:
   // const sgMail = require('@sendgrid/mail');

@@ -22,6 +22,7 @@ export interface ITxProposal {
   walletId: string;
   creatorId: string;
   coin: string;
+  chain: string;
   network: string;
   message: string;
   payProUrl: string;
@@ -68,6 +69,7 @@ export interface ITxProposal {
   destinationTag?: string;
   invoiceID?: string;
   lockUntilBlockHeight?: number;
+  isTokenSwap?: boolean;
 }
 
 export class TxProposal {
@@ -79,6 +81,7 @@ export class TxProposal {
   walletId: string;
   creatorId: string;
   coin: string;
+  chain: string;
   network: string;
   message: string;
   payProUrl: string;
@@ -129,11 +132,11 @@ export class TxProposal {
   lockUntilBlockHeight?: number;
   isDonation?: boolean;
   receiveLotusAddress?: string;
+  isTokenSwap?: boolean;
 
   static create(opts) {
     opts = opts || {};
 
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
     $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
 
     const x = new TxProposal();
@@ -156,6 +159,7 @@ export class TxProposal {
     x.walletId = opts.walletId;
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
+    x.chain = opts.chain;
     x.network = opts.network;
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
@@ -203,6 +207,7 @@ export class TxProposal {
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
+    x.isTokenSwap = opts.isTokenSwap;
     x.multisigContractAddress = opts.multisigContractAddress;
 
     // XRP
@@ -227,6 +232,7 @@ export class TxProposal {
     x.walletId = obj.walletId;
     x.creatorId = obj.creatorId;
     x.coin = obj.coin || Defaults.COIN;
+    x.chain = obj.chain ? obj.chain : ChainService.getChain(x.coin);
     x.network = obj.network;
     x.outputs = obj.outputs;
     x.amount = obj.amount;
@@ -267,6 +273,7 @@ export class TxProposal {
     x.gasLimit = obj.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
+    x.isTokenSwap = obj.isTokenSwap;
     x.multisigContractAddress = obj.multisigContractAddress;
     x.multisigTxId = obj.multisigTxId;
 
@@ -381,7 +388,7 @@ export class TxProposal {
       // Tests signatures are OK
       const tx = ChainService.getBitcoreTx(this);
       ChainService.addSignaturesToBitcoreTx(
-        this.coin,
+        this.chain,
         tx,
         this.inputs,
         this.inputPaths,

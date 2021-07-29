@@ -1,5 +1,6 @@
 import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { UTXO_CHAINS } from '../../constants';
 import { ChainNetwork } from '../../providers/api/api';
 import {
   ApiEthBlock,
@@ -10,7 +11,6 @@ import {
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
 import { RedirProvider } from '../../providers/redir/redir';
-
 @Component({
   selector: 'latest-blocks',
   templateUrl: 'latest-blocks.html'
@@ -63,11 +63,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
           response => {
             const blocks = response.map(
               (block: ApiEthBlock & ApiUtxoCoinBlock) => {
-                if (
-                  this.chainNetwork.chain === 'BTC' ||
-                  this.chainNetwork.chain === 'BCH' ||
-                  this.chainNetwork.chain === 'DOGE'
-                ) {
+                if (UTXO_CHAINS.includes(this.chainNetwork.chain)) {
                   return this.blocksProvider.toUtxoCoinAppBlock(block);
                 }
                 if (this.chainNetwork.chain === 'ETH') {
