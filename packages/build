@@ -1,8 +1,6 @@
 #!/bin/sh
 
-MODULES='bitcore-build bitcore-lib bitcore-lib-cash bitcore-mnemonic crypto-wallet-core bitcore-wallet-service 
-  bitcore-wallet-client bitcore-client bitcore-lib-ltc bitcore-lib-doge bitcore-lib-xpi bitcore-lib-xec 
-  bitcore-p2p bitcore-p2p-cash bitcore-p2p-xec bitcore-p2p-xpi bitcore-p2p-doge'
+MODULES=' crypto-wallet-core bitcore-wallet-service bitcore-wallet-client bitcore-node bitcore-client'
 
 for i in $MODULES; 
 do

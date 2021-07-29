@@ -27,6 +27,7 @@
     "@abcpros/bitcore-lib-doge": "^8.25.31",
     "@abcpros/bitcore-lib-xec": "^8.25.31",
     "@abcpros/bitcore-lib-xpi": "^8.25.31",
+    "@abcpros/bitcore-lib-ltc": "^8.25.31",
     "@abcpros/crypto-wallet-core": "^8.25.31",
     "@sendgrid/mail": "^6.3.1",
     "abi-decoder": "2.0.1",
