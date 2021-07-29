@@ -2,9 +2,9 @@ import { BchValidation } from './bch';
 import { BtcValidation } from './btc';
 import { DogeValidation } from './doge';
 import { EthValidation } from './eth';
+import { LtcValidation } from './ltc';
 import { XecValidation } from './xec';
 import { XpiValidation } from './xpi';
-import { LtcValidation } from './ltc';
 import { XrpValidation } from './xrp';
 
 export interface IValidation {

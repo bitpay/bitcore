@@ -4,9 +4,9 @@ import { DOGETxProvider } from './doge';
 import { ERC20TxProvider } from './erc20';
 import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
+import { LTCTxProvider } from './ltc';
 import { XECTxProvider } from './xec';
 import { XPITxProvider } from './xpi';
-import { LTCTxProvider } from './ltc';
 import { XRPTxProvider } from './xrp';
 
 const providers = {

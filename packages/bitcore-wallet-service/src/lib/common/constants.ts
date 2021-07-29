@@ -31,14 +31,10 @@ module.exports = {
   UTXO_COINS: {
     BTC: 'btc',
     BCH: 'bch',
-<<<<<<< HEAD
     XEC: 'xec',
     DOGE: 'doge',
-    XPI: 'xpi'
-=======
-    DOGE: 'doge',
+    XPI: 'xpi',
     LTC: 'ltc'
->>>>>>> merge-bitpay
   },
 
   NETWORKS: {

@@ -5115,7 +5115,16 @@ export class WalletService {
     return new Promise((resolve, reject) => {
       const credentials = this.oneInchGetCredentials();
 
-      if (!checkRequired(req.body, ['fromTokenAddress', 'toTokenAddress', 'amount', 'fromAddress', 'slippage', 'destReceiver'])) {
+      if (
+        !checkRequired(req.body, [
+          'fromTokenAddress',
+          'toTokenAddress',
+          'amount',
+          'fromAddress',
+          'slippage',
+          'destReceiver'
+        ])
+      ) {
         return reject(new ClientError('oneInchGetSwap request missing arguments'));
       }
 
@@ -5131,8 +5140,8 @@ export class WalletService {
       qs.push('slippage=' + req.body.slippage);
       qs.push('destReceiver=' + req.body.destReceiver);
 
-      if(credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
-      if(credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
+      if (credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
+      if (credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
 
       const URL: string = credentials.API + '/v3.0/1/swap/?' + qs.join('&');
 

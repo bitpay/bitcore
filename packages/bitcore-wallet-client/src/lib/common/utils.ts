@@ -4,9 +4,9 @@ import {
   BitcoreLib,
   BitcoreLibCash,
   BitcoreLibDoge,
+  BitcoreLibLtc,
   BitcoreLibXec,
   BitcoreLibXpi,
-  BitcoreLibLtc,
   Deriver,
   Transactions
 } from '@abcpros/crypto-wallet-core';
@@ -435,7 +435,7 @@ export class Utils {
         recipients[0].data = data;
       }
       const unsignedTxs = [];
-      const isERC20 = tokenAddress && !payProUrl  && !isTokenSwap;
+      const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
       const isETHMULTISIG = multisigContractAddress;
       const chain = isETHMULTISIG
         ? 'ETHMULTISIG'

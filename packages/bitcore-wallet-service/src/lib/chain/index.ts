@@ -4,9 +4,9 @@ import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
+import { LtcChain } from './ltc';
 import { XecChain } from './xec';
 import { XpiChain } from './xpi';
-import { LtcChain } from './ltc';
 import { XrpChain } from './xrp';
 
 const Common = require('../common');
