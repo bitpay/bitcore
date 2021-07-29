@@ -15,7 +15,8 @@ module.exports = {
     xec: 'ecash',
     eth: 'ethereum',
     xrp: 'ripple',
-    doge: 'binance-peg-dogecoin'
+    doge: 'binance-peg-dogecoin',
+    ltc: 'litecoin'
   },
   parseFn(raw) {
     const valueObject = Object.values(raw)[0];
