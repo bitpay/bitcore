@@ -391,8 +391,7 @@ export class Key {
       }
     } else if (opts.coin == 'xec') {
       coinCode = '899';
-    } 
-    else if (opts.coin == 'xpi') {
+    } else if (opts.coin == 'xpi') {
       coinCode = '10605';
     } else if (opts.coin == 'btc') {
       coinCode = '0';
