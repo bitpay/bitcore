@@ -23,7 +23,7 @@ var Bitcore_ = {
   bch: CWC.BitcoreLibCash
 };
 
-var BWS = require('bitcore-wallet-service');
+var BWS = require('@abcpros/bitcore-wallet-service');
 
 var { Constants } = require('../ts_build/lib/common');
 var Client = require('../ts_build').default;
