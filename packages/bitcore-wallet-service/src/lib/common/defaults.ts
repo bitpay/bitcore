@@ -99,29 +99,29 @@ module.exports = {
     ],
     ltc: [
       {
-        level: 'urgent',
-        feePerKb: 150000,
-        nbBlocks: 2
+        name: 'urgent',
+        nbBlocks: 2,
+        defaultValue: 150000
       },
       {
-        level: 'priority',
-        feePerKb: 100000,
-        nbBlocks: 2
+        name: 'priority',
+        nbBlocks: 2,
+        defaultValue: 100000
       },
       {
-        level: 'normal',
-        feePerKb: 100000,
-        nbBlocks: 3
+        name: 'normal',
+        nbBlocks: 3,
+        defaultValue: 100000
       },
       {
-        level: 'economy',
-        feePerKb: 10000,
-        nbBlocks: 6
+        name: 'economy',
+        nbBlocks: 6,
+        defaultValue: 10000
       },
       {
-        level: 'superEconomy',
-        feePerKb: 10000,
-        nbBlocks: 24
+        name: 'superEconomy',
+        nbBlocks: 24,
+        defaultValue: 10000
       }
     ]
   },
