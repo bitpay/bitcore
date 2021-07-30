@@ -36,7 +36,7 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
 import { Validation } from '@abcpros/crypto-wallet-core';
-import { DonationInfo, DonationStorage } from './model/donation';
+import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -2846,7 +2846,10 @@ export class WalletService {
   }
 
   checkIsDonation(txp): boolean {
-    const addressObjDonation = _.find(config.donationRemaining.donationToAddresses, item => item.coin == txp.coin);
+    const addressObjDonation = _.find(
+      config.donationRemaining.donationToAddresses,
+      (item: CoinDonationToAddress) => item.coin == txp.coin && item.network == txp.network
+    );
     if (_.isEmpty(addressObjDonation)) return false;
     return txp.isDonation && txp.outputs[0].toAddress == addressObjDonation.address;
   }
