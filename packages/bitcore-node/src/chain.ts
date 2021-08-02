@@ -1,11 +1,11 @@
 module.exports = {
   BTC: {
     lib: require('@abcpros/bitcore-lib'),
-    p2p: require('bitcore-p2p')
+    p2p: require('@abcpros/bitcore-p2p')
   },
   BCH: {
     lib: require('@abcpros/bitcore-lib-cash'),
-    p2p: require('bitcore-p2p-cash')
+    p2p: require('@abcpros/bitcore-p2p-cash')
   },
   XEC: {
     lib: require('@abcpros/bitcore-lib-xec'),
