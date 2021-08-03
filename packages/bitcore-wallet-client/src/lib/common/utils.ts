@@ -437,7 +437,7 @@ export class Utils {
         ? 'ETHMULTISIG'
         : isERC20
         ? 'ERC20'
-        : this.getChain(coin);
+        : 'ETH';
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,
