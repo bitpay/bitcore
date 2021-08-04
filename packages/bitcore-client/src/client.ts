@@ -6,6 +6,7 @@ import { URL } from 'url';
 let usingBrowser = (global as any).window;
 const URLClass = usingBrowser ? usingBrowser.URL : URL;
 const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
+import _ from 'lodash';
 
 export class Client {
   apiUrl: string;
@@ -94,27 +95,29 @@ export class Client {
   }
 
   listTransactions(params) {
-    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, payload, tokenContractAddress } = params;
+    const {
+      pubKey,
+      startBlock,
+      startDate,
+      endBlock,
+      endDate,
+      includeMempool,
+      payload,
+      tokenContractAddress,
+      includeInvalidTxs
+    } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/transactions`;
-    let query = '';
-    if (startBlock) {
-      query += `startBlock=${startBlock}&`;
-    }
-    if (endBlock) {
-      query += `endBlock=${endBlock}&`;
-    }
-    if (startDate) {
-      query += `startDate=${startDate}&`;
-    }
-    if (endDate) {
-      query += `endDate=${endDate}&`;
-    }
-    if (includeMempool) {
-      query += 'includeMempool=true';
-    }
-    if (tokenContractAddress) {
-      query += `tokenAddress=${tokenContractAddress}`;
-    }
+
+    const rawQuery = {
+      startBlock,
+      endBlock,
+      startDate,
+      endDate,
+      includeMempool: includeMempool && true,
+      tokenAddress: tokenContractAddress,
+      includeInvalidTxs
+    };
+    const query = _.map(_.keys(rawQuery), key => rawQuery[key] && `${key}=${rawQuery[key]}`).join('&');
     if (query) {
       url += '?' + query;
     }

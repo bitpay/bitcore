@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import { URL } from 'url';
@@ -126,25 +127,24 @@ export class Client {
       endDate,
       includeMempool,
       tokenAddress,
-      multisigContractAddress
+      multisigContractAddress,
+      includeInvalidTxs
     } = params;
-    let query = '';
     let apiUrl = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
-    if (startBlock) {
-      query += `startBlock=${startBlock}&`;
-    }
-    if (endBlock) {
-      query += `endBlock=${endBlock}&`;
-    }
-    if (tokenAddress) {
-      query += `tokenAddress=${tokenAddress}&`;
-    }
-    if (multisigContractAddress) {
-      apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}?`;
-    }
-    if (includeMempool) {
-      query += 'includeMempool=true';
-    }
+
+    const rawQuery = {
+      startBlock,
+      endBlock,
+      startDate,
+      endDate,
+      tokenAddress,
+      includeMempool: includeMempool && true,
+      includeInvalidTxs
+    };
+    const query = _.map(_.keys(rawQuery), key => rawQuery[key] && `${key}=${rawQuery[key]}`).join('&');
+
+    if (multisigContractAddress) apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}?`;
+
     const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url });
     logger.debug('List transactions', url);

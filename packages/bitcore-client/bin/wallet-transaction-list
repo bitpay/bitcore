@@ -18,10 +18,31 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token, tokenContractAddress } = program;
+  const {
+    name,
+    path,
+    startBlock,
+    startDate,
+    endBlock,
+    endDate,
+    includeMempool,
+    storageType,
+    token,
+    tokenContractAddress,
+    includeInvalidTxs,
+  } = program;
   try {
     const wallet = await Wallet.loadWallet({ name, path, storageType });
-    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, token, tokenContractAddress }).pipe(process.stdout);
+    wallet.listTransactions({
+      startBlock,
+      startDate,
+      endBlock,
+      endDate,
+      includeMempool,
+      token,
+      tokenContractAddress,
+      includeInvalidTxs
+    }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
   }
