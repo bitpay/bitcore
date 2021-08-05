@@ -2913,7 +2913,9 @@ export class API extends EventEmitter {
         ['ltc', 'testnet'],
         ['ltc', 'livenet'],
         ['btc', 'livenet', true],
-        ['bch', 'livenet', true]
+        ['bch', 'livenet', true],
+        ['doge', 'livenet', true],
+        ['ltc', 'livenet', true]
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig
@@ -3190,14 +3192,10 @@ export class API extends EventEmitter {
 
   oneInchGetSwap(data): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.request.post(
-        '/v1/service/oneInch/getSwap',
-        data,
-        (err, data) => {
-          if (err) return reject(err);
-          return resolve(data);
-        }
-      );
+      this.request.post('/v1/service/oneInch/getSwap', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
     });
   }
 }
