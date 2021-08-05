@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
+import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
-import { Transaction } from 'web3/eth/types';
 import { Config } from '../../../services/config';
 import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { MultisigAbi } from '../abi/multisig';
