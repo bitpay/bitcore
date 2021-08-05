@@ -154,6 +154,64 @@ describe('Push notifications', function() {
       });
     });
 
+    it('should show the correct template for zero amount outgoin transactions', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate zero amount outgoing tx notification
+        // ETH interaction with a contract
+        server._notify('NewOutgoingTx', {
+          txid: '999',
+          address: address,
+          amount: 0,
+        }, {
+          isGlobal: false
+        }, function(err) {
+          setTimeout(function() {
+            var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            calls.length.should.equal(2); // NewOutgoingTx
+
+            args[1].body.notification.title.should.contain('Payment sent');
+            args[1].body.notification.body.should.contain('A Payment has been sent from your wallet.');
+
+            should.not.exist(args[0].body.notification);
+            done();
+          }, 100);
+        });
+      });
+    });
+
+    it('should show the correct template for non zero amount outgoing transactions', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        server._notify('NewOutgoingTx', {
+          txid: '999',
+          address: address,
+          amount: 12345
+        }, {
+          isGlobal: false
+        }, function(err) {
+          setTimeout(function() {
+            var calls = requestStub.getCalls();
+            var args = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            calls.length.should.equal(2); // NewOutgoingTx
+
+            args[1].body.notification.title.should.contain('Payment sent');
+            args[1].body.notification.body.should.contain('A Payment of 123 bits has been sent from your wallet');
+
+            should.not.exist(args[0].body.notification);
+            done();
+          }, 100);
+        });
+      });
+    });
+
     it('should notify copayers when payment is received', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
