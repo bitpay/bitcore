@@ -7,6 +7,7 @@ export interface DonationStorage {
   txidGiveLotus?: string;
   addressDonation: string;
   createdOn: number;
+  error?: string;
 }
 
 export interface DonationInfo {

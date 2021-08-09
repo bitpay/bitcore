@@ -303,11 +303,12 @@ export class Storage {
       {
         $set: {
           txidGiveLotus: donationInfo.txidGiveLotus,
-          isGiven: donationInfo.isGiven
+          isGiven: donationInfo.isGiven,
+          error: donationInfo.error
         }
       },
       {
-        upsert: true
+        upsert: false
       },
       cb
     );

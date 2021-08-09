@@ -147,9 +147,7 @@ module.exports = {
       }
     ],
     donationCoin: 'xpi'
-  },
-
-  donationWalletId: '93ec81ff-0062-40d4-ac4c-1f6359b07ffb'
+  }
 
   // simplex: {
   //   sandbox: {

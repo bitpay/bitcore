@@ -1539,8 +1539,12 @@ export class ExpressApp {
 
     WalletService.initialize(opts, data => {
       const server = WalletService.getInstance(opts);
-      server.checkQueueHandleSendLotus();
-      return cb();
+      server.getWalletLotusDonation((err, client, key, addressDonation) => {
+        let isWalletLotusDonation: boolean = false;
+        if (!err && !_.isEmpty(client) && !_.isEmpty(key)) isWalletLotusDonation = true;
+        server.checkQueueHandleSendLotus(client, key, addressDonation, isWalletLotusDonation);
+        return cb();
+      });
     });
   }
 }

@@ -1,0 +1,41 @@
+
+{
+  "_comment_note": "This file is example content private Key of Lotus. It is Privacy and not share for anyone. Detail information in : https://gitlab.com/abcpros/bitcore/-/issues/5",
+  "key": {
+    "xPrivKey": "",
+    "mnemonic": "",
+    "version": 1,
+    "mnemonicHasPassphrase": false,
+    "fingerPrint": "e87e1da1",
+    "compliantDerivation": true,
+    "id": "08029e6e-2143-4ab2-8fb4-219e5db4a3c6"
+  },
+  "cred": {
+    "coin": "xpi",
+    "network": "livenet",
+    "xPubKey": "",
+    "requestPrivKey": "",
+    "requestPubKey": "",
+    "copayerId": "",
+    "publicKeyRing": [
+      {
+        "xPubKey": "",
+        "requestPubKey": "",
+        "copayerName": "me"
+      }
+    ],
+    "walletId": "181da376-11ab-4977-84af-83e030412ba4",
+    "walletName": "Lotus",
+    "m": 1,
+    "n": 1,
+    "walletPrivKey": "",
+    "personalEncryptingKey": "iMIOYU8mclUkQU9NvvgP3g==",
+    "sharedEncryptingKey": "8Boa6HeNxcAvqPwotEuRyQ==",
+    "copayerName": "me",
+    "account": 1,
+    "addressType": "P2PKH",
+    "version": 2,
+    "rootPath": "m/44'/10605'/1'",
+    "keyId": "1fdf886b-4fb2-4e15-a6cd-933aa20a96bf"
+  }
+}
