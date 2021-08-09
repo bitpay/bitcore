@@ -28,7 +28,7 @@ const PUSHNOTIFICATIONS_TYPES = {
     filename: 'new_tx_proposal'
   },
   NewOutgoingTx: {
-    filename: 'new_outgoing_tx'
+    filename: ['new_outgoing_tx', 'new_zero_outgoing_tx']
   },
   NewIncomingTx: {
     filename: ['new_incoming_tx_testnet', 'new_incoming_tx']
@@ -155,6 +155,9 @@ export class PushNotificationsService {
 
     if (notification.type === 'NewIncomingTx') {
       notifType.filename = notification.data.network === 'testnet' ? notifType.filename[0] : notifType.filename[1];
+    } else if (notification.type === 'NewOutgoingTx') {
+      // Handle zero amount ETH transactions to contract addresses
+      notifType.filename = notification.data.amount !== 0 ? notifType.filename[0] : notifType.filename[1];
     } else if (notification.type === 'TxConfirmation') {
       if (notification.data && !notification.data.amount) {
         // backward compatibility

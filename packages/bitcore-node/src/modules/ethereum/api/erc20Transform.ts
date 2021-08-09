@@ -30,7 +30,6 @@ export class Erc20RelatedFilterTransform extends Transform {
           (internalTx: any) =>
             internalTx.action.to && this.tokenAddress.toLowerCase() === internalTx.action.to.toLowerCase()
         );
-        let foundRelated = false;
         for (const internalTx of tokenRelatedIncomingInternalTxs) {
           if (
             internalTx.abiType &&
@@ -45,13 +44,10 @@ export class Erc20RelatedFilterTransform extends Transform {
                 _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
               }
             }
-            foundRelated = true;
             this.push(_tx);
           }
         }
-        if (tokenRelatedIncomingInternalTxs.length && foundRelated) {
-          return done();
-        }
+        return done();
       } catch (err) {
         console.error(err);
         return done();

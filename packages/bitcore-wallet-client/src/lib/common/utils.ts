@@ -431,13 +431,11 @@ export class Utils {
         recipients[0].data = data;
       }
       const unsignedTxs = [];
-      const isERC20 = tokenAddress && !payProUrl  && !isTokenSwap;
+      // If it is a token swap its an already created ERC20 transaction so we skip it and go directly to ETH transaction create
+      const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
       const isETHMULTISIG = multisigContractAddress;
-      const chain = isETHMULTISIG
-        ? 'ETHMULTISIG'
-        : isERC20
-        ? 'ERC20'
-        : this.getChain(coin);
+      // using ETH as default since getChain returns undefined for custom tokens
+      const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,

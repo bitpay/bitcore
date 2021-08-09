@@ -1,10 +1,9 @@
 import { CryptoRpc } from 'crypto-rpc';
-import * as _ from 'lodash';
 import { ObjectID } from 'mongodb';
 import { Readable } from 'stream';
 import Web3 from 'web3';
+import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
-import { Transaction } from 'web3/eth/types';
 import Config from '../../../config';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
