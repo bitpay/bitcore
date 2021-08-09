@@ -22,6 +22,7 @@
     "url": "https://github.com/bitpay/bitcore-wallet-service/issues"
   },
   "dependencies": {
+    "@abcpros/bitcore-wallet-client": "^8.25.33",
     "@abcpros/bitcore-lib": "^8.25.31",
     "@abcpros/bitcore-lib-cash": "^8.25.31",
     "@abcpros/bitcore-lib-doge": "^8.25.31",

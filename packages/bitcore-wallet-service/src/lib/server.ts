@@ -1,14 +1,13 @@
 import * as async from 'async';
 import * as _ from 'lodash';
 import 'source-map-support/register';
-import logger from './logger';
-
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
 import { ClientError } from './errors/clienterror';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
+import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
@@ -26,6 +25,11 @@ import {
   Wallet
 } from './model';
 import { Storage } from './storage';
+
+const Client = require('@abcpros/bitcore-wallet-client').default;
+const Key = Client.Key;
+const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
+const walletLotus = require('../../../../wallet-lotus-donation.json');
 
 const config = require('../config');
 const Uuid = require('uuid');
@@ -2854,37 +2858,129 @@ export class WalletService {
     return txp.isDonation && txp.outputs[0].toAddress == addressObjDonation.address;
   }
 
-  _sendLotusDonation(addressReceive, amountReceive, cb) {
-    // this parse may fail
-    var child = shell.exec(`bash send-donation.sh ${addressReceive} ${amountReceive}`, { async: true });
-    child.stdout.on('data', function(data) {
-      const firstvariable = 'Transaction Broadcasted: TXID: ';
-      const secondvariable = '\\n';
-      var testRE = data.match('Transaction Broadcasted: TXID: (.*)\\n');
-      if (testRE != null && testRE[1] != null) {
-        // console.log('Program output:', testRE != null ? testRE[1] : null);
-        return cb(testRE[1]);
+  _sendLotusDonation(client, key, txDonation, cb) {
+    this.createTx(txDonation, (err, txp) => {
+      if (err) return cb(err);
+      let proposalSignature;
+      try {
+        const t = commonBWC.Utils.buildTx(txp);
+        const hash = t.uncheckedSerialize();
+        proposalSignature = commonBWC.Utils.signMessage(hash, client.credentials.requestPrivKey);
+      } catch (error) {
+        return cb(error);
       }
-    });
 
-    child.stderr.on('data', function(data) {
-      // console.log('Program output:', data);
+      const optPublish = {
+        proposalSignature,
+        txProposalId: txp.id
+      };
+      this.publishTx(optPublish, (err, txp) => {
+        if (err) return cb(err);
+        let signatures;
+        try {
+          signatures = key.sign(client.getRootPath(), txp);
+        } catch (error) {
+          return cb(error);
+        }
+
+        const optSigh = {
+          maxTxpVersion: 3,
+          signatures,
+          supportBchSchnorr: true,
+          txProposalId: txp.id
+        };
+        this.signTx(optSigh, (err, txp) => {
+          if (err) return cb(err);
+          this.broadcastTx({ txProposalId: txp.id }, (err, txp) => {
+            if (err) return cb(err);
+            return cb(null, txp.txid);
+          });
+        });
+      });
     });
   }
 
-  checkQueueHandleSendLotus() {
+  _getKeyLotus(client, cb) {
+    let key;
+    const walletData = walletLotus;
+    try {
+      let imported = Client.upgradeCredentialsV1(walletData);
+      client.fromString(JSON.stringify(imported.credentials));
+
+      key = new Key({ seedType: 'object', seedData: imported.key });
+    } catch (e) {
+      try {
+        client.fromObj(walletData.cred);
+        key = new Key({ seedType: 'object', seedData: walletData.key });
+      } catch (e) {
+        return cb(e);
+      }
+    }
+    return cb(null, client, key);
+  }
+
+  getWalletLotusDonation(cb) {
+    this.copayerId = _.get(walletLotus, 'cred.copayerId', '');
+    this.walletId = _.get(walletLotus, 'cred.walletId', '');
+    const clientBwc = new Client();
+    this._getKeyLotus(clientBwc, (err, client, key) => {
+      if (err) return cb(err);
+      this.createAddress({}, function(err, x) {
+        if (err) return cb(err);
+        return cb(null, client, key, x.address);
+      });
+    });
+  }
+
+  _createOtpTxDonation(addressDonation, receiveLotusAddress, receiveAmountLotus) {
+    const tx = {
+      coin: 'xpi',
+      dryRun: false,
+      excludeUnconfirmedUtxos: false,
+      feeLevel: 'normal',
+      from: addressDonation,
+      isTokenSwap: null,
+      message: null,
+      outputs: [
+        {
+          amount: receiveAmountLotus,
+          message: null,
+          toAddress: receiveLotusAddress
+        }
+      ],
+      payProUrl: null,
+      txpVersion: 3
+    };
+    return tx;
+  }
+
+  checkQueueHandleSendLotus(client, key, addressDonation, isWalletLotusDonation) {
     setInterval(() => {
       if (this.storage && this.storage.queue) {
         this.storage.queue.get((err, data) => {
           if (data) {
             const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
+            const saveError = (donationStorage, err) => {
+              donationStorage.error = JSON.stringify(err);
+              this.storage.updateDonation(donationStorage, err => {
+                return ackQueue;
+              });
+            };
             const donationStorage: DonationStorage = data.payload;
             this.storage.storeDonation(donationStorage, err => {
-              if (err) return ackQueue;
+              if (!isWalletLotusDonation) return saveError(donationStorage, 'Lotus Donation not exist Wallet AWS');
+              if (err) return saveError(donationStorage, err);
               this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
-                if (err || remainingData.remaining < 0) return ackQueue;
-                this._sendLotusDonation(donationStorage.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
-                  donationStorage.txidGiveLotus = data;
+                if (err) return saveError(donationStorage, err);
+                if (remainingData.remaining < 0) saveError(donationStorage, 'RemainingLotus is over today');
+                const txDonation = this._createOtpTxDonation(
+                  addressDonation,
+                  donationStorage.receiveLotusAddress,
+                  remainingData.receiveAmountLotus
+                );
+                this._sendLotusDonation(client, key, txDonation, (err, txid) => {
+                  if (err) return saveError(donationStorage, err);
+                  donationStorage.txidGiveLotus = txid;
                   donationStorage.isGiven = true;
                   this.storage.updateDonation(donationStorage, err => {
                     return ackQueue;
@@ -2896,29 +2992,7 @@ export class WalletService {
         });
         this.storage.queue.clean(err => {});
       }
-    }, 1000);
-  }
-
-  handleSendLostus(txp, cb) {
-    if (this.checkIsDonation(txp)) {
-      this.storage.fetchDonationByTxid(txp.txid, (err, donationInfo) => {
-        if (_.isEmpty(donationInfo) || err) return cb('no donation infor');
-        if (!_.isEmpty(donationInfo.txidGiveLotus) || donationInfo.isGiven) return cb('this tx is received lotus');
-        this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
-          if (err) return cb(err);
-          this._sendLotusDonation(donationInfo.receiveLotusAddress, remainingData.receiveAmountLotus, data => {
-            donationInfo.txidGiveLotus = data;
-            donationInfo.isGiven = true;
-            this.storage.updateDonation(donationInfo, err => {
-              if (err) logger.error('Could not store updateDonation: ', err);
-              return cb(null, txp);
-            });
-          });
-        });
-      });
-    } else {
-      return cb('this tx is not donation');
-    }
+    }, 2000);
   }
 
   confirmationAndBroadcastRawTx(wallet, txp, sub, cb) {
