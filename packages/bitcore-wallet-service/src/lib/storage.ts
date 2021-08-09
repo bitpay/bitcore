@@ -106,13 +106,6 @@ export class Storage {
       walletId: 1,
       createdOn: 1
     });
-
-    db.collection(collections.ADDRESSES).createIndex(
-      {
-        address: 1
-      },
-      { unique: true }
-    );
     db.collection(collections.ADDRESSES).createIndex({
       address: 1,
       beRegistered: 1
