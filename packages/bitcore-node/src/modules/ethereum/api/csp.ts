@@ -74,7 +74,11 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       console.log('making a new connection');
       ETHStateProvider.rpcs[network] = new EthPool(this.chain, network, this.config);
     }
-    return ETHStateProvider.rpcs[network].getRpc();
+    const rpc: CryptoRpc = ETHStateProvider.rpcs[network].getRpc();
+    return {
+      rpc,
+      web3: rpc.web3
+    };
   }
 
   async erc20For(network: string, address: string) {
