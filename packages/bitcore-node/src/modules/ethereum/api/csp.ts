@@ -31,6 +31,7 @@ import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
+import { EthPool } from '../p2p/EthPool';
 import { EthTransactionJSON, IEthBlock, IEthTransaction } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
@@ -54,7 +55,7 @@ interface ERC20Transfer
 
 export class ETHStateProvider extends InternalStateProvider implements IChainStateService {
   config: any;
-  static rpcs = {} as { [network: string]: { rpc: CryptoRpc; web3: Web3 } };
+  static rpcs = {} as { [network: string]: EthPool };
 
   constructor(public chain: string = 'ETH') {
     super(chain);
@@ -64,18 +65,16 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
     try {
       if (ETHStateProvider.rpcs[network]) {
-        await ETHStateProvider.rpcs[network].web3.eth.getBlockNumber();
+        await ETHStateProvider.rpcs[network].getWeb3().eth.getBlockNumber();
       }
     } catch (e) {
-      delete ETHStateProvider.rpcs[network];
+      ETHStateProvider.rpcs[network].checkConnections();
     }
     if (!ETHStateProvider.rpcs[network]) {
       console.log('making a new connection');
-      const rpcConfig = { ...this.config[network].provider, chain: this.chain, currencyConfig: {} };
-      const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
-      ETHStateProvider.rpcs[network] = { rpc, web3: rpc.web3 };
+      ETHStateProvider.rpcs[network] = new EthPool(this.chain, network, this.config);
     }
-    return ETHStateProvider.rpcs[network];
+    return ETHStateProvider.rpcs[network].getRpc();
   }
 
   async erc20For(network: string, address: string) {
