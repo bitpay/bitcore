@@ -99,9 +99,29 @@ module.exports = {
     ],
     ltc: [
       {
-        name: 'normal',
+        name: 'urgent',
         nbBlocks: 2,
-        defaultValue: 1000
+        defaultValue: 150000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 2,
+        defaultValue: 100000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 3,
+        defaultValue: 100000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 6,
+        defaultValue: 10000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 24,
+        defaultValue: 10000
       }
     ]
   },
