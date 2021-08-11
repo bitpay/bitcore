@@ -72,24 +72,26 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       );
     });
     this.events.on('connected', async () => {
-      this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
-      this.txSubscription.subscribe(async (_err, txid) => {
-        if (!this.isCachedInv('TX', txid)) {
-          this.cacheInv('TX', txid);
-          const tx = (await this.web3!.eth.getTransaction(txid)) as ParityTransaction;
-          if (tx) {
-            await this.processTransaction(tx);
-            this.events.emit('transaction', tx);
+      for (const rpc of (await this.getWeb3()).pool.getRpcs()) {
+        this.txSubscription = rpc.web3.eth.subscribe('pendingTransactions');
+        this.txSubscription.subscribe(async (_err, txid) => {
+          if (!this.isCachedInv('TX', txid)) {
+            this.cacheInv('TX', txid);
+            const tx = (await this.web3!.eth.getTransaction(txid)) as ParityTransaction;
+            if (tx) {
+              await this.processTransaction(tx);
+              this.events.emit('transaction', tx);
+            }
           }
-        }
-      });
-      this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-      this.blockSubscription.subscribe((_err, block) => {
-        this.events.emit('block', block);
-        if (!this.syncing) {
-          this.sync();
-        }
-      });
+        });
+        this.blockSubscription = rpc.web3.eth.subscribe('newBlockHeaders');
+        this.blockSubscription.subscribe((_err, block) => {
+          this.events.emit('block', block);
+          if (!this.syncing) {
+            this.sync();
+          }
+        });
+      }
     });
   }
 

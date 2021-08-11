@@ -48,8 +48,11 @@ export class EthPool {
   /**
    * Checks for disconnected web3 instances in the providers array
    */
-  checkConnections = (): void => {
-    const disconnected = _.filter(this.providers, provider => !(provider && provider.web3.eth.net.isListening()));
+  checkConnections = async (): Promise<void> => {
+    const disconnected: CryptoRpc[] = [];
+    for (const provider of this.providers)
+      if (!(provider && await provider.web3.eth.net.isListening()))
+        disconnected.push(provider);
 
     if (disconnected.length > 0) {
       logger.info(`Found ${disconnected.length} disconnected ${this.chain} ${this.network} RPCs, reconnecting...`);
@@ -70,9 +73,9 @@ export class EthPool {
   /**
    * Gets the array of CryptoRPC providers in the Eth Pool
    *
-   * @returns {Array<CryptoRpc>} Array of CryptoRPC providers
+   * @returns {Array<CryptoRpc>} Shuffled array of CryptoRPC providers
    */
-  getRpcs = (): Array<CryptoRpc> => this.providers;
+  getRpcs = (): Array<CryptoRpc> => _.shuffle(this.providers);
 
   /**
    * Gets an instance of web3 from a random CryptoRpc provider
