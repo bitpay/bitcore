@@ -4,37 +4,66 @@ import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
 import { ETH, ETHStateProvider } from '../../../../src/modules/ethereum/api/csp';
+import { EthPool } from '../../../../src/modules/ethereum/p2p/EthPool';
 import { IEthBlock, IEthTransaction } from '../../../../src/modules/ethereum/types';
 import { mockModel } from '../../../helpers';
 
-describe('ETH Chain State Provider', function() {
+describe('ETH Chain State Provider', () => {
+  const sandbox = sinon.createSandbox();
+  const chain = 'ETH';
+  const network = 'testnet';
+
+  beforeEach(() => {
+    sandbox.stub(ETHStateProvider, 'rpcs').value({
+      [network]: new EthPool(chain, network, defaultPoolConfig(network))
+    });
+  });
+
+  afterEach(() => sandbox.restore());
+
+  // Helpers
+  const stubWeb3Connections = (web3Stub) =>
+    ETHStateProvider.rpcs[network].getRpcs().forEach(provider => {
+      const { web3 } = provider;
+      sandbox.stub(web3, 'eth').value({
+        ...web3.eth,
+        ...web3Stub.eth,
+      });
+    });
+
+  const defaultPoolConfig = (network) => {
+    const provider = {
+      protocol: 'http',
+      host: 'localhost',
+      port: 8545
+    };
+
+    return {
+      [network]: {
+        trustedPeers: [provider],
+        provider,
+      }
+    };
+  };
+
+  // Tests
   it('should be able to get web3', async () => {
-    const sandbox = sinon.createSandbox();
-    const network = 'testnet';
-    const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
     const { web3 } = await ETH.getWeb3(network);
+    sandbox.stub(web3, 'eth').value({ getBlockNumber: sandbox.stub().resolves(1) });
+
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
-    expect(stub.callCount).to.eq(2);
+    expect(stub.callCount).to.eq(1);
     expect(block).to.eq(1);
-    sandbox.restore();
   });
 
   it('should make a new web3 if getBlockNumber fails', async () => {
-    const sandbox = sinon.createSandbox();
-    const network = 'testnet';
-    const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
     const { web3 } = await ETH.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
     expect(stub.callCount).to.not.exist;
-    sandbox.restore();
   });
 
   it('should get ERC20 information', async () => {
-    const sandbox = sinon.createSandbox();
-    const network = 'testnet';
     const expected = {
       name: 'Test Token',
       decimals: 10,
@@ -52,11 +81,9 @@ describe('ETH Chain State Provider', function() {
     expect(token.name).to.eq(expected.name);
     expect(token.symbol).to.eq(expected.symbol);
     expect(token.decimals).to.eq(expected.decimals);
-    sandbox.restore();
   });
 
   it('should be able to find an ETH transaction', async () => {
-    const sandbox = sinon.createSandbox();
     const mockTx = {
       _id: new ObjectId(),
       txid: '123',
@@ -67,17 +94,13 @@ describe('ETH Chain State Provider', function() {
     sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
-    const found = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
+    const found = await ETH.getTransaction({ chain, network, txId: '123' });
     expect(found).to.exist;
     expect(found!.fee).to.eq(21000 * 10);
     expect(found!.confirmations).to.eq(1);
-    sandbox.restore();
   });
 
   it('should be able to broadcast an array of txs', async () => {
-    const sandbox = sinon.createSandbox();
-    const chain = 'ETH';
-    const network = 'testnet';
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
@@ -91,18 +114,15 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+
+    stubWeb3Connections(web3Stub);
     const txids = await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(true);
     expect(txids).to.deep.eq(['123', '456']);
-    sandbox.restore();
   });
 
   it('should be able to broadcast a single tx', async () => {
-    const sandbox = sinon.createSandbox();
-    const chain = 'ETH';
-    const network = 'testnet';
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
@@ -116,17 +136,14 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+
+    stubWeb3Connections(web3Stub);
     const txid = await ETH.broadcastTransaction({ chain, network, rawTx: '123' });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(txid).to.eq('123');
-    sandbox.restore();
   });
 
   it('should stop broadcasting txs on error', async () => {
-    const sandbox = sinon.createSandbox();
-    const chain = 'ETH';
-    const network = 'testnet';
     let shouldThrow = false;
     const web3Stub = {
       eth: {
@@ -149,7 +166,8 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+
+    stubWeb3Connections(web3Stub);
     let thrown = false;
     try {
       await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
@@ -159,23 +177,20 @@ describe('ETH Chain State Provider', function() {
     expect(thrown).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(false);
-    sandbox.restore();
   });
 
   it('should be able to find an ETH block', async () => {
-    const sandbox = sinon.createSandbox();
     const mockBlock = {
       _id: new ObjectId(),
       hash: '55555',
       height: 1
     } as MongoBound<IEthBlock>;
     mockModel('blocks', mockBlock);
-    const found = await ETH.getBlocks({ chain: 'ETH', network: 'testnet', blockId: mockBlock.hash });
+    const found = await ETH.getBlocks({ chain, network, blockId: mockBlock.hash });
     expect(found).to.exist;
     expect(found[0]).to.exist;
     expect(found[0].hash).to.eq(mockBlock.hash);
     expect(found[0].height).to.eq(mockBlock.height);
-    sandbox.restore();
   });
 
   describe('estimateGas', () => {
@@ -192,9 +207,19 @@ describe('ETH Chain State Provider', function() {
         send: sandbox.stub()
       }
     };
+    let provider;
 
-    beforeEach(() => {
-      sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    beforeEach(async () => {
+      sandbox.stub(ETHStateProvider, 'rpcs').value({
+        [network]: new EthPool(chain, network, defaultPoolConfig(network))
+      });
+
+      // Stub all available web3 providers and assign local provider
+      ETHStateProvider.rpcs[network].getRpcs().forEach(_provider => {
+        const { web3 } = _provider;
+        provider = web3.currentProvider as any;
+        sandbox.stub(provider,'send').value(web3Stub.currentProvider.send);
+      });
     });
 
     afterEach(() => {
@@ -202,23 +227,22 @@ describe('ETH Chain State Provider', function() {
     });
 
     it('it should return gas', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
+      provider.send.callsArgWith(1, null, { result: '12345' });
       const gas = await ETH.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
       expect(gas).to.equal(12345);
     });
 
     it('should return gas for optional params', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '1234' });
-      
-      const gas = await ETH.estimateGas({ network: 'testnet' });
+      provider.send.callsArgWith(1, null, { result: '1234' });
+      const gas = await ETH.estimateGas({ network });
       expect(gas).to.equal(1234);
     });
 
     it('should reject an error response', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, 'Unavailable server', null); // body is null
-  
+      provider.send.callsArgWith(1, 'Unavailable server', null); // body is null
+
       try {
-        await ETH.estimateGas({ network: 'testnet' });
+        await ETH.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
         expect(err).to.equal('Unavailable server');
@@ -226,10 +250,10 @@ describe('ETH Chain State Provider', function() {
     });
 
     it('should reject if response body is missing result', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { message: 'need some param' });
-  
+      provider.send.callsArgWith(1, null, { message: 'need some param' });
+
       try {
-        await ETH.estimateGas({ network: 'testnet' });
+        await ETH.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
         expect(err).to.equal('need some param');
@@ -237,21 +261,21 @@ describe('ETH Chain State Provider', function() {
     });
 
     it('should reject on unexpected error', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
-  
+      provider.send.callsArgWith(1, null, { result: '12345' });
+
       try {
         await ETH.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'provider\' of undefined');
+        expect(err.message).to.equal('Cannot read property \'trustedPeers\' of undefined');
       }
     });
 
     it('should reject on unexpected error in callback', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, null); // body is null
-  
+      provider.send.callsArgWith(1, null, null); // body is null
+
       try {
-        await ETH.estimateGas({ network: 'testnet' });
+        await ETH.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
         expect(err.message).to.equal('Cannot read property \'result\' of null');

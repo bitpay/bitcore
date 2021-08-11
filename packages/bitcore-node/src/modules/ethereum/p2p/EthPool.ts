@@ -68,6 +68,13 @@ export class EthPool {
   };
 
   /**
+   * Gets the array of CryptoRPC providers in the Eth Pool
+   *
+   * @returns {Array<CryptoRpc>} Array of CryptoRPC providers
+   */
+  getRpcs = (): Array<CryptoRpc> => this.providers;
+
+  /**
    * Gets an instance of web3 from a random CryptoRpc provider
    *
    * @returns {Web3} An instance of web3
