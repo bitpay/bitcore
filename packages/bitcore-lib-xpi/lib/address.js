@@ -396,7 +396,7 @@ Address._transformString = function (data, network, type) {
   if (typeof (data) !== 'string') {
     throw new TypeError('data parameter supplied is not a string.');
   }
-  if (data.length < 34) {
+  if (data.length < 26) {
     throw new Error('Invalid Address string provided');
   }
 

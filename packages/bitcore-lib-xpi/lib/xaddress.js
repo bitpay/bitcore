@@ -58,7 +58,7 @@ function XAddress(data, network, type, prefix = TOKEN_NAME) {
  * Internal function used to split different kinds of arguments of the constructor
  * @param {*} data - The encoded data in various formats
  * @param {Network|String|number=} network - The network: 'livenet' or 'testnet'
- * @param {string=} type - The type of address: 'script' or 'pubkey'
+ * @param {string=} type - The type of address: currently all are 'scriptpubkey'
  * @returns {Object} An "info" object with "type", "network", and "hashBuffer"
  */
 XAddress.prototype._classifyArguments = function (data, network, type, prefix) {
@@ -108,6 +108,8 @@ XAddress._transformObject = function (data) {
  * @private
  */
 XAddress._classifyFromVersion = function (buffer) {
+
+  // @TODO Currently incorrect, the format of xaddress is different
   var version = {};
 
   var pubkeyhashNetwork = Networks.get(buffer[0], 'pubkeyhash');
@@ -394,6 +396,15 @@ XAddress.prototype.toXAddress = function () {
 }
 
 XAddress.prototype.toString = XAddress.prototype.toXAddress;
+
+/**
+ * Will return a the base58 (legacy) string representation of the address
+ *
+ * @returns {string} Bitcoin address
+ */
+ XAddress.prototype.toLegacyAddress = function () {
+  return Base58Check.encode(this.toBuffer());
+};
 
 /**
  * Will return a string formatted for the console

@@ -60,25 +60,32 @@ describe('XAddress', function () {
       ['31nwvkZwyPdgzjBJZXfDmSWsC4ZLKpYyUw', 'lotus_1PrQAo6rZSfDwo8R6V8YnEkyjShiWqMuE6M6GV', 'bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37'],
     ];
 
-    var i;
-
-    for (i = 0; i < t.length; i++) {
-      var xaddr = t[i][1];
-      var cashaddr = t[i][2];
+    t.forEach(function(value, index) {
+      var xaddr = value[1];
+      var cashaddr = value[2];
       it('should convert ' + cashaddr, function() {
         var a = new Address(cashaddr);
         a.toXAddress().should.equal(xaddr);
       });
-    }
+    });
 
-    for (i = 0; i < t.length; i++) {
-      var legacyaddr = t[i][0];
-      var xaddr = t[i][1];
+    t.forEach(function(value, index) {
+      var xaddr = value[1];
+      var legacyaddr = value[0];
       it('should convert ' + legacyaddr, function() {
         var a = new Address(legacyaddr);
         a.toXAddress().should.equal(xaddr);
       });
-    }
+    });
+
+    t.forEach(function(value, index) {
+      var xaddr = value[1];
+      var legacyaddr = value[0];
+      it('should convert ' + xaddr, function() {
+        var x = new Address.fromString(xaddr);
+        x.toLegacyAddress().should.equal(legacyaddr);
+      });
+    });
   })
 });
 
