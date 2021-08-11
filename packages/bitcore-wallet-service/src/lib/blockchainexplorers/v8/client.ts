@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import { URL } from 'url';
@@ -141,7 +140,7 @@ export class Client {
       includeMempool: includeMempool && true,
       includeInvalidTxs
     };
-    const query = _.map(_.keys(rawQuery), key => rawQuery[key] && `${key}=${rawQuery[key]}`).join('&');
+    const query = Object.keys(rawQuery).map(key => rawQuery[key] && `${key}=${rawQuery[key]}`).join('&');
 
     if (multisigContractAddress) apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}?`;
 

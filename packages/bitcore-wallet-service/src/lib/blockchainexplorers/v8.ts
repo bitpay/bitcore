@@ -288,8 +288,9 @@ export class V8 {
       .catch(cb);
   }
 
-  getTransactions(wallet, startBlock, cb, includeInvalidTxs = false) {
+  getTransactions(wallet, options, cb) {
     console.time('V8 getTxs');
+    const startBlock = typeof options === 'number' ? options : options.startBlock;
     if (startBlock) {
       logger.debug(`getTxs: startBlock ${startBlock}`);
     } else {
@@ -307,7 +308,7 @@ export class V8 {
       startBlock: undefined,
       tokenAddress: wallet.tokenAddress,
       multisigContractAddress: wallet.multisigContractAddress,
-      includeInvalidTxs
+      includeInvalidTxs: typeof options === 'number' ? false : (options.includeInvalidTxs || false)
     };
 
     if (_.isNumber(startBlock)) opts.startBlock = startBlock;

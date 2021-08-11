@@ -6,7 +6,6 @@ import { URL } from 'url';
 let usingBrowser = (global as any).window;
 const URLClass = usingBrowser ? usingBrowser.URL : URL;
 const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
-import _ from 'lodash';
 
 export class Client {
   apiUrl: string;
@@ -117,7 +116,9 @@ export class Client {
       tokenAddress: tokenContractAddress,
       includeInvalidTxs
     };
-    const query = _.map(_.keys(rawQuery), key => rawQuery[key] && `${key}=${rawQuery[key]}`).join('&');
+    const query = Object.keys(rawQuery)
+      .map(key => rawQuery[key] && `${key}=${rawQuery[key]}`)
+      .join('&');
     if (query) {
       url += '?' + query;
     }
