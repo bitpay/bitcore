@@ -55,7 +55,11 @@ export class EthPool {
   checkConnections = async (reconnect: boolean = true): Promise<boolean> => {
     const disconnected: CryptoRpc[] = [];
     for (const provider of this.providers)
-      if (!(provider && (await provider.web3.eth.net.isListening()))) disconnected.push(provider);
+      try {
+        if (!(provider && (await provider.web3.eth.net.isListening()))) disconnected.push(provider);
+      } catch (e) {
+        disconnected.push(e);
+      }
 
     if (disconnected.length > 0) {
       logger.warn(
@@ -78,7 +82,7 @@ export class EthPool {
     for (const provider of this.providers) {
       this.subscriptions.push(await provider.web3.eth.subscribe(event));
       this.subscriptions[this.subscriptions.length - 1].subscribe((err, res) => {
-        if (err) cb(err);
+        if (err) return cb(err);
 
         const eventStore = getEventStore();
         const isSimilar = (event, _res) =>
