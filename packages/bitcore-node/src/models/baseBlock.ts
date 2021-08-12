@@ -1,5 +1,4 @@
 import { StorageService } from '../services/storage';
-import { IBlock } from '../types/Block';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformOptions } from '../types/TransformOptions';
 import { BaseModel, MongoBound } from './base';

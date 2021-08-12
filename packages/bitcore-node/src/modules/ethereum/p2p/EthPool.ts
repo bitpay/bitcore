@@ -11,6 +11,8 @@ export class EthPool {
   protected chain: string;
   protected network: string;
   protected providers: Array<CryptoRpc> = [];
+  protected subscriptions: Array<any>;
+  protected index: number;
 
   /**
    * @constructor
@@ -23,6 +25,8 @@ export class EthPool {
     this.chain = chain;
     this.network = network;
     this.config = config || {};
+    this.subscriptions = [];
+    this.index = 0;
     this._setupRpcs();
   }
 
@@ -34,7 +38,8 @@ export class EthPool {
     const baseRpcConfig = { chain: this.chain, currencyConfig: {} };
     const rpc = new CryptoRpc(_.merge(baseRpcConfig, this.config[this.network].provider), {}).get(this.chain);
 
-    this.providers = []; // Clear existing providers, if any
+    this.disconnectListeners(); // Disconnect any active listeners
+    this.providers = []; // Clear existing providers
     this.providers.push(rpc);
 
     if (trustedPeers && trustedPeers.length > 0)
@@ -48,16 +53,39 @@ export class EthPool {
   /**
    * Checks for disconnected web3 instances in the providers array
    */
-  checkConnections = async (): Promise<void> => {
+  checkConnections = async (reconnect: boolean = true): Promise<boolean> => {
     const disconnected: CryptoRpc[] = [];
     for (const provider of this.providers)
-      if (!(provider && await provider.web3.eth.net.isListening()))
-        disconnected.push(provider);
+      if (!(provider && (await provider.web3.eth.net.isListening()))) disconnected.push(provider);
 
     if (disconnected.length > 0) {
-      logger.info(`Found ${disconnected.length} disconnected ${this.chain} ${this.network} RPCs, reconnecting...`);
-      this._setupRpcs();
+      logger.warn(
+        `Found ${disconnected.length} disconnected ${this.chain} ${this.network} RPCs, attempting to reconnect...`
+      );
+      if (reconnect) this._setupRpcs();
+      return false;
     }
+    return true;
+  };
+
+  /**
+   * Set up a listener on all available CryptoRPC web3 connections
+   *
+   * @param event {string} - RPC event to register callback to
+   * @param cb {(err, res) => any} - Callback function that is executed when event fires
+   */
+  setupListeners = async (event: string, cb: (err, res) => any): Promise<void> => {
+    for (const provider of this.providers) {
+      this.subscriptions.push(await provider.web3.eth.subscribe(event));
+      this.subscriptions[this.subscriptions.length - 1].subscribe(cb);
+    }
+  };
+
+  /**
+   * Disconnect all active listeners
+   */
+  disconnectListeners = (): void => {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   };
 
   /**
@@ -67,7 +95,7 @@ export class EthPool {
    */
   getRpc = (): CryptoRpc => {
     this.checkConnections();
-    return _.shuffle(this.providers)[0];
+    return this.providers[(this.index = this.index === this.providers.length - 1 ? 0 : this.index + 1)];
   };
 
   /**

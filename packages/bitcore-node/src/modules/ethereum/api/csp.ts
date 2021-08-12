@@ -63,13 +63,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   }
 
   async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3; pool: EthPool }> {
-    if (ETHStateProvider.rpcs[network]) {
-      try {
-        await ETHStateProvider.rpcs[network].getWeb3().eth.getBlockNumber();
-      } catch (e) {
-        ETHStateProvider.rpcs[network].checkConnections();
-      }
-    } else {
+    if (!ETHStateProvider.rpcs[network]) {
       console.log('making a new connection');
       ETHStateProvider.rpcs[network] = new EthPool(this.chain, network, this.config);
     }

@@ -19,12 +19,10 @@ export class EthVerificationPeer extends EthP2pWorker implements IVerificationPe
   }
 
   async setupListeners() {
-    this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
-    this.txSubscription.subscribe((_err, tx) => {
+    await this.pool!.setupListeners('pendingTransactions', (_err, tx) => {
       this.events.emit('transaction', tx);
     });
-    this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-    this.blockSubscription.subscribe((_err, block) => {
+    await this.pool!.setupListeners('newBlockHeaders', (_err, block) => {
       this.events.emit('block', block);
     });
   }

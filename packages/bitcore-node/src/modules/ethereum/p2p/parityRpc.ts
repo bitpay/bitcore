@@ -1,10 +1,10 @@
 import AbiDecoder from 'abi-decoder';
-import Web3 from 'web3';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { EthTransactionStorage } from '../models/transaction';
 import { IEthTransaction } from '../types';
+import { EthPool } from './EthPool';
 
 AbiDecoder.addABI(ERC20Abi);
 AbiDecoder.addABI(ERC721Abi);
@@ -65,20 +65,20 @@ interface JsonRPCResponse {
 
 @LoggifyClass
 export class ParityRPC {
-  web3: Web3;
+  pool: EthPool;
 
-  constructor(web3: Web3) {
-    this.web3 = web3;
+  constructor(pool: EthPool) {
+    this.pool = pool;
   }
 
   public getBlock(blockNumber: number) {
-    return this.web3.eth.getBlock(blockNumber, true);
+    return this.pool.getWeb3().eth.getBlock(blockNumber, true);
   }
 
   private async traceBlock(blockNumber: number) {
     const txs = await this.send<Array<ParityTraceResponse>>({
       method: 'trace_block',
-      params: [this.web3.utils.toHex(blockNumber)],
+      params: [this.pool.getWeb3().utils.toHex(blockNumber)],
       jsonrpc: '2.0',
       id: 1
     });
@@ -92,7 +92,7 @@ export class ParityRPC {
 
   public send<T>(data: JsonRPCRequest) {
     return new Promise<T>((resolve, reject) => {
-      const provider = this.web3.eth.currentProvider as any; // Import type HttpProvider web3-core
+      const provider = this.pool.getWeb3().eth.currentProvider as any; // Import type HttpProvider web3-core
       provider.send(data, function(err, data) {
         if (err) return reject(err);
         resolve(data.result as T);

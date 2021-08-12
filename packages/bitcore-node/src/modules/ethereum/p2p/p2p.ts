@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import Web3 from 'web3';
 import { timestamp } from '../../../logger';
 import logger from '../../../logger';
 import { StateStorage } from '../../../models/state';
@@ -11,6 +10,7 @@ import { ETHStateProvider } from '../api/csp';
 import { EthBlockModel, EthBlockStorage } from '../models/block';
 import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
 import { IEthBlock, IEthTransaction, ParityBlock, ParityTransaction } from '../types';
+import { EthPool } from './EthPool';
 import { ParityRPC } from './parityRpc';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
@@ -23,7 +23,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected blockSubscription: any;
   protected rpc?: ParityRPC;
   protected provider: ETHStateProvider;
-  protected web3?: Web3;
+  protected pool?: EthPool;
   protected invCache: any;
   protected invCacheLimits: any;
   public events: EventEmitter;
@@ -70,40 +70,32 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       logger.warn(
         `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
       );
+      await this.pool!.checkConnections();
     });
     this.events.on('connected', async () => {
-      for (const rpc of (await this.getWeb3()).pool.getRpcs()) {
-        this.txSubscription = rpc.web3.eth.subscribe('pendingTransactions');
-        this.txSubscription.subscribe(async (_err, txid) => {
-          if (!this.isCachedInv('TX', txid)) {
-            this.cacheInv('TX', txid);
-            const tx = (await this.web3!.eth.getTransaction(txid)) as ParityTransaction;
-            if (tx) {
-              await this.processTransaction(tx);
-              this.events.emit('transaction', tx);
-            }
+      await this.pool!.setupListeners('pendingTransactions', async (_err, txid) => {
+        if (!this.isCachedInv('TX', txid)) {
+          this.cacheInv('TX', txid);
+          const tx = (await this.pool!.getWeb3().eth.getTransaction(txid)) as ParityTransaction;
+          if (tx) {
+            await this.processTransaction(tx);
+            this.events.emit('transaction', tx);
           }
-        });
-        this.blockSubscription = rpc.web3.eth.subscribe('newBlockHeaders');
-        this.blockSubscription.subscribe((_err, block) => {
-          this.events.emit('block', block);
-          if (!this.syncing) {
-            this.sync();
-          }
-        });
-      }
+        }
+      });
+      await this.pool!.setupListeners('newBlockHeaders', async (_err, block) => {
+        this.events.emit('block', block);
+        if (!this.syncing) {
+          this.sync();
+        }
+      });
     });
   }
 
   async disconnect() {
     this.disconnecting = true;
     try {
-      if (this.txSubscription) {
-        this.txSubscription.unsubscribe();
-      }
-      if (this.blockSubscription) {
-        this.blockSubscription.unsubscribe();
-      }
+      this.pool!.disconnectListeners();
     } catch (e) {
       console.error(e);
     }
@@ -121,13 +113,13 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     const { host, port } = this.chainConfig.provider;
     while (!this.disconnecting && !this.stopping) {
       try {
-        if (!this.web3) {
-          const { web3 } = await this.getWeb3();
-          this.web3 = web3;
-          this.rpc = new ParityRPC(this.web3);
+        if (!this.pool) {
+          const { pool } = await this.getWeb3();
+          this.pool = pool;
+          this.rpc = new ParityRPC(pool);
         }
         try {
-          connected = await this.web3.eth.net.isListening();
+          connected = await this.pool.checkConnections();
         } catch (e) {
           connected = false;
         }
@@ -136,9 +128,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
             this.events.emit('connected');
           }
         } else {
-          const { web3 } = await this.getWeb3();
-          this.web3 = web3;
-          this.rpc = new ParityRPC(this.web3);
+          const { pool } = await this.getWeb3();
+          this.pool = pool;
+          this.rpc = new ParityRPC(pool);
           this.events.emit('disconnected');
         }
         if (disconnected && connected && !firstConnect) {
@@ -224,7 +216,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     const startHeight = tip ? tip.height : 0;
     const startTime = Date.now();
     try {
-      let bestBlock = await this.web3!.eth.getBlockNumber();
+      let bestBlock = await this.pool!.getWeb3().eth.getBlockNumber();
       let lastLog = 0;
       let currentHeight = tip ? tip.height : 0;
       logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
@@ -237,7 +229,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         const { convertedBlock, convertedTxs } = await this.convertBlock(block);
         await this.processBlock(convertedBlock, convertedTxs);
         if (currentHeight === bestBlock) {
-          bestBlock = await this.web3!.eth.getBlockNumber();
+          bestBlock = await this.pool!.getWeb3().eth.getBlockNumber();
         }
         tip = await ChainStateProvider.getLocalTip({ chain, network });
         currentHeight = tip ? tip.height + 1 : 0;
