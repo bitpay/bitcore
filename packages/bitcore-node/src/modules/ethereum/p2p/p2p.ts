@@ -151,7 +151,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async connect() {
-    this.handleReconnects();
+    await this.handleReconnects();
   }
 
   public async getBlock(height: number) {

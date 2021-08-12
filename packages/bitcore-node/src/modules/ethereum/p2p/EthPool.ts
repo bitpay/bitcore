@@ -11,8 +11,9 @@ export class EthPool {
   protected chain: string;
   protected network: string;
   protected providers: Array<CryptoRpc> = [];
-  protected subscriptions: Array<any>;
-  protected index: number;
+  protected subscriptions: Array<any> = [];
+  protected eventStore: Array<any> = [];
+  protected index: number = 0;
 
   /**
    * @constructor
@@ -25,8 +26,6 @@ export class EthPool {
     this.chain = chain;
     this.network = network;
     this.config = config || {};
-    this.subscriptions = [];
-    this.index = 0;
     this._setupRpcs();
   }
 
@@ -44,7 +43,7 @@ export class EthPool {
 
     if (trustedPeers && trustedPeers.length > 0)
       this.providers = this.providers.concat(
-        _.map(trustedPeers, peer => new CryptoRpc(_.merge(baseRpcConfig, peer)).get(this.chain))
+        trustedPeers.map(peer => new CryptoRpc(_.merge(baseRpcConfig, peer)).get(this.chain))
       );
 
     logger.info(`Set up ${this.providers.length} peers in ETH pool`);
@@ -72,12 +71,29 @@ export class EthPool {
    * Set up a listener on all available CryptoRPC web3 connections
    *
    * @param event {string} - RPC event to register callback to
-   * @param cb {(err, res) => any} - Callback function that is executed when event fires
+   * @param cb {(err, res?) => any} - Callback function that is executed when event fires
    */
-  setupListeners = async (event: string, cb: (err, res) => any): Promise<void> => {
+  setupListeners = async (event: string, cb: (err, res?) => any): Promise<void> => {
+    const { setEventStore, getEventStore } = this;
     for (const provider of this.providers) {
       this.subscriptions.push(await provider.web3.eth.subscribe(event));
-      this.subscriptions[this.subscriptions.length - 1].subscribe(cb);
+      this.subscriptions[this.subscriptions.length - 1].subscribe((err, res) => {
+        if (err) cb(err);
+
+        const eventStore = getEventStore();
+        const isSimilar = (event, _res) =>
+          typeof event === 'object' ? event[Object.keys(event)[0]] === _res[Object.keys(res)[0]] : event === res;
+
+        // Check if the event has already been received by another RPC endpoint within the last 10s
+        if (!eventStore.some(event => isSimilar(event, res))) {
+          eventStore.push(res);
+          // Remove item from storage after 15s (approx 3 blocks).
+          // If a duplicate item comes in after this timeout, it will still be
+          // filtered out by the database's unique indexes.
+          setTimeout(() => setEventStore(eventStore.filter(event => isSimilar(event, res))), 15000);
+          cb(err, res);
+        }
+      });
     }
   };
 
@@ -101,9 +117,9 @@ export class EthPool {
   /**
    * Gets the array of CryptoRPC providers in the Eth Pool
    *
-   * @returns {Array<CryptoRpc>} Shuffled array of CryptoRPC providers
+   * @returns {Array<CryptoRpc>} Array of CryptoRPC providers
    */
-  getRpcs = (): Array<CryptoRpc> => _.shuffle(this.providers);
+  getRpcs = (): Array<CryptoRpc> => this.providers;
 
   /**
    * Gets an instance of web3 from a random CryptoRpc provider
@@ -111,4 +127,19 @@ export class EthPool {
    * @returns {Web3} An instance of web3
    */
   getWeb3 = (): Web3 => this.getRpc().web3;
+
+  /**
+   * Gets the event store. Utilized to treat incoming subscription events
+   * on a first come, first serve basis and prevent duplicates.
+   *
+   * @returns {Array<any>} Results of events
+   */
+  protected getEventStore = (): Array<any> => this.eventStore;
+
+  /**
+   * Replace the event store array
+   *
+   * @param eventStore {Array<any>} New event store array
+   */
+  protected setEventStore = (eventStore: Array<any>) => (this.eventStore = eventStore);
 }

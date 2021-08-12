@@ -2,6 +2,7 @@ import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
+import config from '../../../../src/config';
 import { MongoBound } from '../../../../src/models/base';
 import { ETH, ETHStateProvider } from '../../../../src/modules/ethereum/api/csp';
 import { EthPool } from '../../../../src/modules/ethereum/p2p/EthPool';
@@ -12,10 +13,11 @@ describe('ETH Chain State Provider', () => {
   const sandbox = sinon.createSandbox();
   const chain = 'ETH';
   const network = 'testnet';
+  const defaultPoolConfig = config.chains[chain];
 
   beforeEach(() => {
     sandbox.stub(ETHStateProvider, 'rpcs').value({
-      [network]: new EthPool(chain, network, defaultPoolConfig(network))
+      [network]: new EthPool(chain, network, defaultPoolConfig)
     });
   });
 
@@ -30,21 +32,6 @@ describe('ETH Chain State Provider', () => {
         ...web3Stub.eth,
       });
     });
-
-  const defaultPoolConfig = (network) => {
-    const provider = {
-      protocol: 'http',
-      host: 'localhost',
-      port: 8545
-    };
-
-    return {
-      [network]: {
-        trustedPeers: [provider],
-        provider,
-      }
-    };
-  };
 
   // Tests
   it('should be able to get web3', async () => {
@@ -211,7 +198,7 @@ describe('ETH Chain State Provider', () => {
 
     beforeEach(async () => {
       sandbox.stub(ETHStateProvider, 'rpcs').value({
-        [network]: new EthPool(chain, network, defaultPoolConfig(network))
+        [network]: new EthPool(chain, network, defaultPoolConfig)
       });
 
       // Stub all available web3 providers and assign local provider
