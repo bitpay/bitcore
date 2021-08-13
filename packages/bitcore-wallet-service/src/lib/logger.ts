@@ -15,6 +15,10 @@ export const logger = winston.createLogger({
   exitOnError: false
 });
 
+logger.on('error', function (err) { 
+  console.log(err)
+ });
+
 const timezone = new Date()
   .toLocaleString('en-US', { timeZoneName: 'short' })
   .split(' ')
