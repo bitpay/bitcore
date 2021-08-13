@@ -58,15 +58,16 @@ describe('Ethereum', function() {
     await intAfterHelper(suite);
   });
 
-  it('should be able to create a wallet with an address', async () => {
+  it('should be able to create a wallet with an address', async (done) => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
     expect(addresses).to.exist;
     expect(addresses.length).to.eq(1);
     expect(addresses[0].toLowerCase()).to.equal('0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d');
+    done();
   });
 
-  it('should be able to get block events from parity', async () => {
+  it('should be able to get block events from parity', async (done) => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
 
@@ -80,9 +81,10 @@ describe('Ethereum', function() {
     await sawBlock;
     await worker.disconnect();
     await worker.stop();
+    done();
   });
 
-  it('should be able to get the balance for the address', async () => {
+  it('should be able to get the balance for the address', async (done) => {
     const wallet = await getWallet();
     const balance = await wallet.getBalance();
     expect(balance.confirmed).to.be.gt(0);
@@ -92,9 +94,10 @@ describe('Ethereum', function() {
     expect(cached).to.exist;
     expect(cached!.value).to.deep.eq(balance);
     await wallet.lock();
+    done();
   });
 
-  it('should update after a send', async () => {
+  it('should update after a send', async (done) => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
     const beforeBalance = await wallet.getBalance();
@@ -113,9 +116,10 @@ describe('Ethereum', function() {
     expect(afterBalance).to.not.deep.eq(beforeBalance);
     expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
     await wallet.lock();
+    done();
   });
 
-  it('should have receipts on tx history', async () => {
+  it('should have receipts on tx history', async (done) => {
     const wallet = await getWallet();
     await new Promise(r =>
       wallet
@@ -135,9 +139,10 @@ describe('Ethereum', function() {
     );
 
     await wallet.lock();
+    done();
   });
 
-  it.skip('should be able to save blocks to the database', async () => {
+  it.skip('should be able to save blocks to the database', async (_done) => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
 
@@ -156,6 +161,7 @@ describe('Ethereum', function() {
     const dbBlocks = await EthBlockStorage.collection.count({ chain, network });
     expect(dbBlocks).to.be.gt(0);
     await wallet.lock();
+    _done();
   });
 
   it('should be able to handle reorgs');

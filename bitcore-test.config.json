@@ -33,7 +33,7 @@
             {
               "host": "parity",
               "protocol": "ws",
-              "port": 30303
+              "port": 8546
             }
           ],
           "provider": {

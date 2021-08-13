@@ -33,14 +33,14 @@ export class EthPool {
    * Creates array of CryptoRpc providers from config values
    */
   protected _setupRpcs = (): void => {
-    const { trustedPeers } = this.config[this.network];
-    const baseRpcConfig = { chain: this.chain, currencyConfig: {} };
-    const rpc = new CryptoRpc(_.merge(baseRpcConfig, this.config[this.network].provider), {}).get(this.chain);
-
     this.disconnectListeners(); // Disconnect any active listeners
     this.providers = []; // Clear existing providers
-    this.providers.push(rpc);
 
+    const { trustedPeers, provider } = this.config[this.network];
+    const baseRpcConfig = { chain: this.chain, currencyConfig: {} };
+    const rpc = new CryptoRpc(_.merge(baseRpcConfig, provider), {}).get(this.chain);
+
+    this.providers.push(rpc);
     if (trustedPeers && trustedPeers.length > 0)
       this.providers = this.providers.concat(
         trustedPeers.map(peer => new CryptoRpc(_.merge(baseRpcConfig, peer)).get(this.chain))
