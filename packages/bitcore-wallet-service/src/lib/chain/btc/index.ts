@@ -225,8 +225,9 @@ export class BtcChain implements IChain {
         return Math.ceil(32 + 4 + 1 + (5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4) + inputSafetyMargin; // vsize
 
       case Constants.SCRIPT_TYPES.P2SH:
-        return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
-
+        const redeemScriptSize = txp.walletN * PUBKEY_SIZE + 1 + 1 + 1; // OP_M: 1 byte + OP_N: 1 byte  + OP_CHECKMULTISIG: 1 byte
+        const scriptSigSize = txp.requiredSignatures * SIGNATURE_SIZE + 1 + 1 + 1; // nil_length: 1 byte + redeem_script_length + OP_N: 1 byte
+        return scriptSigSize + redeemScriptSize + inputSafetyMargin + 36 + 4 + 3; // previous_out_point: 36 bytes + sequence: 4 bytes + var_int: 3 byte (script_sig length. IF LENGTH <=250 --> 1 byte)
       default:
         logger.warn('Unknown address type at getEstimatedSizeForSingleInput:', txp.addressType);
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
