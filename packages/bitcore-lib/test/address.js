@@ -508,14 +508,14 @@ describe('Address', function() {
     it('should detect a P2SH address', function() {
       new Address(P2SHLivenet[0]).isPayToScriptHash().should.equal(true);
       new Address(P2SHLivenet[0]).isPayToPublicKeyHash().should.equal(false);
-      new Address(P2SHTestnet[0]).isPayToScriptHash().should.equal(true);
-      new Address(P2SHTestnet[0]).isPayToPublicKeyHash().should.equal(false);
+      new Address(P2SHTestnet[0]).isPayToWitnessScriptHash().should.equal(false);
+      new Address(P2SHTestnet[0]).isPayToWitnessPublicKeyHash().should.equal(false);
     });
     it('should detect a Pay To PubkeyHash address', function() {
       new Address(PKHLivenet[0]).isPayToPublicKeyHash().should.equal(true);
       new Address(PKHLivenet[0]).isPayToScriptHash().should.equal(false);
-      new Address(PKHTestnet[0]).isPayToPublicKeyHash().should.equal(true);
-      new Address(PKHTestnet[0]).isPayToScriptHash().should.equal(false);
+      new Address(PKHTestnet[0]).isPayToWitnessScriptHash().should.equal(false);
+      new Address(PKHTestnet[0]).isPayToWitnessPublicKeyHash().should.equal(false);
     });
   });
 
