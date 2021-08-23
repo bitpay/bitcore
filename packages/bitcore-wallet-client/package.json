@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "8.25.17",
+  "version": "8.25.18",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "ts_build/index.d.js",
