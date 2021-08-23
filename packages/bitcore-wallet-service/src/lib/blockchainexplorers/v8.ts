@@ -147,10 +147,10 @@ export class V8 {
     return 'V8 (' + this.coin + '/' + this.v8network + ') @ ' + this.host;
   }
 
-  _transformUtxos(unspent, bcheight) {
+  _transformUtxos(utxos, bcheight) {
     $.checkState(bcheight > 0, 'Failed state: No BC height passed to _transformUtxos()');
     const ret = _.map(
-      _.reject(unspent, x => {
+      _.reject(utxos, x => {
         return x.spentHeight && x.spentHeight <= -3;
       }),
       x => {
@@ -162,7 +162,8 @@ export class V8 {
           txid: x.mintTxid,
           vout: x.mintIndex,
           locked: false,
-          confirmations: x.mintHeight > 0 && bcheight >= x.mintHeight ? bcheight - x.mintHeight + 1 : 0
+          confirmations: x.mintHeight > 0 && bcheight >= x.mintHeight ? bcheight - x.mintHeight + 1 : 0,
+          spent: !!x.spentTxid
         };
 
         // v8 field name differences
@@ -179,15 +180,19 @@ export class V8 {
    *
    * This is for internal usage, address should be on internal representaion
    */
-  getUtxos(wallet, height, cb) {
+  getUtxos(wallet, height, cb, params: { includeSpent?: boolean } = {}) {
     $.checkArgument(cb);
     const client = this._getAuthClient(wallet);
     console.time('V8getUtxos');
     client
-      .getCoins({ pubKey: wallet.beAuthPublicKey2, payload: {} })
-      .then(unspent => {
+      .getCoins({
+        pubKey: wallet.beAuthPublicKey2,
+        payload: {},
+        ...params
+      })
+      .then(utxos => {
         console.timeEnd('V8getUtxos');
-        return cb(null, this._transformUtxos(unspent, height));
+        return cb(null, this._transformUtxos(utxos, height));
       })
       .catch(cb);
   }

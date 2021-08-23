@@ -270,6 +270,20 @@ Address.createMultisig = function(publicKeys, threshold, network) {
   return Address.payingTo(Script.buildMultisigOut(publicKeys, threshold), network);
 };
 
+/**
+ * Creates a P2SH Zero-Confirmation Escrow (ZCE) address from a set of input public keys and a reclaim public key.
+ *
+ * @param {Array} inputPublicKeys - the set of public keys needed to sign all inputs in a ZCE transaction
+ * @param {PublicKey} reclaimPublicKey - the public key required to reclaim the escrow
+ * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
+ * @return {Address}
+ */
+ Address.createEscrow = function(inputPublicKeys, reclaimPublicKey, network) {
+  const zceRedeemScript = Script.buildEscrowOut(inputPublicKeys, reclaimPublicKey);
+  network = network || reclaimPublicKey.network || Networks.defaultNetwork;
+  return Address.payingTo(zceRedeemScript, network);
+};
+
 function decodeCashAddress(address) {
 
 
