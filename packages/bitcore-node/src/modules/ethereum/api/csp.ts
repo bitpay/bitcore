@@ -239,7 +239,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       const query = {
         $or: [
           { chain, network, from: address },
-          { chain, network, to: address }
+          { chain, network, to: address },
+          { chain, network, 'internal.action.to': address }
         ]
       };
       Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req!, res!);
@@ -311,7 +312,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network,
       wallets: wallet._id,
       'wallets.0': { $exists: true },
-      blockHeight: { $gt: -3 } // Exclude invalid transactions
+      blockHeight: { $gt: -3 }, // Exclude invalid transactions
+      'receipt.status': { $ne: false } // Exclude reverted contract transactions
     } as any;
     if (args) {
       if (args.startBlock || args.endBlock) {
@@ -342,7 +344,10 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           }
         }
       }
-      if (args.includeInvalidTxs) delete query.blockHeight;
+      if (args.includeInvalidTxs) {
+        delete query.blockHeight;
+        delete query['receipt.status'];
+      }
     }
     return query;
   }
@@ -528,16 +533,18 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         }
       }
 
+      const addressBatchLC = addressBatch.map(address => address.toLowerCase());
+
       await EthTransactionStorage.collection.updateMany(
         {
           $or: [
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
-            { chain, network, 'internal.action.to': { $in: addressBatch } },
+            { chain, network, 'internal.action.to': { $in: addressBatchLC } },
             {
               chain,
               network,
-              'abiType.params.0.value': { $in: addressBatch.map(address => address.toLowerCase()) },
+              'abiType.params.0.value': { $in: addressBatchLC },
               'abiType.type': 'ERC20',
               'abiType.name': 'transfer'
             }
