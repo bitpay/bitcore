@@ -236,7 +236,7 @@ describe('Ethereum API', function() {
 
     await ETH.streamTransactions({ chain, network, res, req, args: { blockHeight: 1 } });
     let counter = 0;
-    await new Promise(r => {
+    await new Promise<void>(r => {
       res
         .on('data', () => {
           counter++;
@@ -281,7 +281,7 @@ describe('Ethereum API', function() {
 
     await ETH.streamTransactions({ chain, network, res, req, args: { blockHash: '12345' } });
     let counter = 0;
-    await new Promise(r => {
+    await new Promise<void>(r => {
       res
         .on('data', () => {
           counter++;
