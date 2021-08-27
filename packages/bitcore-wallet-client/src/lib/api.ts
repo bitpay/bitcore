@@ -2815,7 +2815,7 @@ export class API extends EventEmitter {
         : new API(clientOpts);
 
       client.fromString(c);
-      client.openWallet({}, (err, status) => {
+      client.openWallet({}, async (err, status) => {
         //        console.log(
         //          `PATH: ${c.rootPath} n: ${c.n}:`,
         //          err && err.message ? err.message : 'FOUND!'
@@ -2837,8 +2837,28 @@ export class API extends EventEmitter {
           // Eth wallet with tokens?
           const tokenAddresses = status.preferences.tokenAddresses;
           if (!_.isEmpty(tokenAddresses)) {
+            function oneInchGetTokensData() {
+              return new Promise((resolve, reject) => {
+                client.request.get(
+                  '/v1/service/oneInch/getTokens',
+                  (err, data) => {
+                    if (err) return reject(err);
+                    return resolve(data);
+                  }
+                );
+              });
+            }
+            let customTokensData;
+            try {
+              customTokensData = await oneInchGetTokensData();
+            } catch (error) {
+              log.warn('oneInchGetTokensData err', error);
+              customTokensData = null;
+            }
             _.each(tokenAddresses, t => {
-              const token = Constants.TOKEN_OPTS[t];
+              const token =
+                Constants.TOKEN_OPTS[t] ||
+                (customTokensData && customTokensData[t]);
               if (!token) {
                 log.warn(`Token ${t} unknown`);
                 return;

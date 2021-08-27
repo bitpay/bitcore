@@ -4940,6 +4940,33 @@ export class WalletService {
     });
   }
 
+  oneInchGetTokens(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const credentials = this.oneInchGetCredentials();
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const URL: string = credentials.API + '/v3.0/1/tokens';
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body.tokens);
+          }
+        }
+      );
+    });
+  }
+
   getPayId(url: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const headers = {
