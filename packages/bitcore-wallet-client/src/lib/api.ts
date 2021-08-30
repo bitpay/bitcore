@@ -2928,7 +2928,9 @@ export class API extends EventEmitter {
         ['ltc', 'testnet'],
         ['ltc', 'livenet'],
         ['btc', 'livenet', true],
-        ['bch', 'livenet', true]
+        ['bch', 'livenet', true],
+        ['xpi', 'livenet', true],
+        ['xec', 'livenet', true]
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig
