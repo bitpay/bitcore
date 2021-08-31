@@ -1484,6 +1484,23 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/service/oneInch/getTokens', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .oneInchGetTokens(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
     router.get('/v1/service/payId/:payId', (req, res) => {
       let server;
       const payId = req.params['payId'];
