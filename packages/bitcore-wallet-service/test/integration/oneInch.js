@@ -145,4 +145,34 @@ describe('OneInch integration', () => {
       });
     });
   });
+
+  describe('#oneInchGetTokens', () => {
+    beforeEach(() => {
+      req = {};
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: { tokens: 'data'}}) },
+      };
+    });
+
+    it('should get oneInch list of supported tokens', () => {
+      server.request = fakeRequest;
+      server.oneInchGetTokens(req).then(data => {
+        should.exist(data);
+      }).catch(err => {
+        should.not.exist(err);
+      });
+    });
+
+    it('should return error if oneInch is commented in config', () => {
+      config.oneInch = undefined;
+
+      server.request = fakeRequest;
+      server.oneInchGetTokens(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('1Inch missing credentials');
+      });
+    });
+  });
 });

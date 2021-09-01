@@ -37,7 +37,9 @@ const MAX_DECIMAL_ANY_COIN = 18; // more that 14 gives rounding errors
 export class Utils {
   static getChain(coin: string): string {
     let normalizedChain = coin.toUpperCase();
-    if (Constants.ERC20.includes(coin)) {
+
+    // TODO: If in the future we add a new chain that supports custom tokens, check this condition
+    if (Constants.ERC20.includes(coin.toLowerCase()) || !Constants.COINS.includes(coin.toLowerCase())) {
       normalizedChain = 'ETH';
     }
     return normalizedChain;
