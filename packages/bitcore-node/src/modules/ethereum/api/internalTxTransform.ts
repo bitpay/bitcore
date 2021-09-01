@@ -16,23 +16,30 @@ export class InternalTxRelatedFilterTransform extends Transform {
    * @param tx Transaction object
    * @param _ Encoding (discarded)
    * @param done Callback
-   * @returns 
+   * @returns
    */
   async _transform(tx: MongoBound<IEthTransaction>, _, done) {
-    // TODO: rethink how to handle complicated transactions.
+    // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
     if (tx.internal && tx.internal.length > 0) {
       const walletAddresses = await this.getWalletAddresses(tx);
       const walletAddressesArray = walletAddresses.map(walletAddress => walletAddress.address.toLowerCase());
       const walletRelatedInternalTxs = tx.internal.filter((internalTx: any) =>
         walletAddressesArray.includes(internalTx.action.to)
       );
-      walletRelatedInternalTxs.forEach(internalTx => {
-        const _tx = Object.assign({}, tx);
-        _tx.value = Number(internalTx.action.value);
-        _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
-        if (internalTx.action.from) _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
-        this.push(_tx);
-      });
+      for (let internalTx of walletRelatedInternalTxs) {
+        // Contract will refund the excess back to the sender
+        const isRefund = tx.value && internalTx.action.to === tx.from.toLowerCase();
+        const internalValue = Number(internalTx.action.value);
+        if (isRefund) {
+          tx.value -= internalValue;
+        } else {
+          const _tx = Object.assign({}, tx);
+          _tx.value = internalValue;
+          _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
+          if (internalTx.action.from) _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
+          this.push(_tx);
+        }
+      }
       // Discard original tx if original value is 0
       if (walletRelatedInternalTxs.length && tx.value === 0) return done();
     }
