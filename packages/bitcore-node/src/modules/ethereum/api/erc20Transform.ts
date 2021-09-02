@@ -39,8 +39,12 @@ export class Erc20RelatedFilterTransform extends Transform {
             for (const element of internalTx.abiType.params) {
               if (element.name === '_value') _tx.value = element.value as any;
               if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);
-              if (element.name === '_from') _tx.from = this.web3.utils.toChecksumAddress(element.value);
+              if (element.name === '_from') {
+                _tx.initialFrom = tx.from;
+                _tx.from = this.web3.utils.toChecksumAddress(element.value);
+              }
               else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
+                _tx.initialFrom = tx.from;
                 _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
               }
             }

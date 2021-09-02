@@ -36,7 +36,10 @@ export class InternalTxRelatedFilterTransform extends Transform {
           const _tx = Object.assign({}, tx);
           _tx.value = internalValue;
           _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
-          if (internalTx.action.from) _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
+          if (internalTx.action.from) {
+            _tx.initialFrom = tx.from;
+            _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
+          }
           this.push(_tx);
         }
       }

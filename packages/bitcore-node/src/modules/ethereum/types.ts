@@ -117,6 +117,7 @@ export type IEthTransaction = ITransaction & {
   nonce: number;
   to: string;
   from: string;
+  initialFrom?: string;
   internal: Array<ClassifiedTrace>;
   transactionIndex: number;
   abiType?: {
