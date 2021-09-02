@@ -42,8 +42,7 @@ export class Erc20RelatedFilterTransform extends Transform {
               if (element.name === '_from') {
                 _tx.initialFrom = tx.from;
                 _tx.from = this.web3.utils.toChecksumAddress(element.value);
-              }
-              else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
+              } else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
                 _tx.initialFrom = tx.from;
                 _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
               }
