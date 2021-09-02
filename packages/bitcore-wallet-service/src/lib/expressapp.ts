@@ -1501,6 +1501,20 @@ export class ExpressApp {
         });
     });
 
+    router.get('/v1/services/dex/getSpenderApprovalWhitelist', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.getSpenderApprovalWhitelist((err, response) => {
+        if (err) return returnError(err, res, req);
+        res.json(response);
+      });
+    });
+
     router.get('/v1/service/payId/:payId', (req, res) => {
       let server;
       const payId = req.params['payId'];
