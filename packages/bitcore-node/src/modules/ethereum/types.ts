@@ -117,7 +117,6 @@ export type IEthTransaction = ITransaction & {
   nonce: number;
   to: string;
   from: string;
-  initialFrom?: string;
   internal: Array<ClassifiedTrace>;
   transactionIndex: number;
   abiType?: {
@@ -137,6 +136,10 @@ export type IEthTransaction = ITransaction & {
     gasUsed: number;
     logs: Array<any>;
   };
+};
+
+export type IEthTransactionTransformed = IEthTransaction & {
+  initialFrom?: string;
 };
 
 export interface TransactionJSON {

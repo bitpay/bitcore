@@ -1,13 +1,13 @@
 import { Transform } from 'stream';
 import { MongoBound } from '../../../models/base';
-import { IEthTransaction } from '../types';
+import { IEthTransactionTransformed } from '../types';
 
 export class EthListTransactionsStream extends Transform {
   constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }
 
-  async _transform(transaction: MongoBound<IEthTransaction>, _, done) {
+  async _transform(transaction: MongoBound<IEthTransactionTransformed>, _, done) {
     let sending = this.walletAddresses.includes(transaction.from);
     if (sending) {
       let sendingToOurself = this.walletAddresses.includes(transaction.to);

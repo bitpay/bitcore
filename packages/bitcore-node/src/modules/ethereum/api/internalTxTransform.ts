@@ -2,7 +2,7 @@ import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../models/base';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
-import { IEthTransaction } from '../types';
+import { IEthTransaction, IEthTransactionTransformed } from '../types';
 
 export class InternalTxRelatedFilterTransform extends Transform {
   private walletAddresses: IWalletAddress[] = [];
@@ -33,7 +33,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
         if (isRefund) {
           tx.value -= internalValue;
         } else {
-          const _tx = Object.assign({}, tx);
+          const _tx: IEthTransactionTransformed = Object.assign({}, tx);
           _tx.value = internalValue;
           _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
           if (internalTx.action.from) {
