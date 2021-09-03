@@ -348,7 +348,7 @@ describe('Ethereum API', function() {
         }
       }) as unknown) as Request;
 
-      ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: { includeInvalidTxs: true } });
+      ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
       let total = BigInt(0);
       let totalRejected = BigInt(0);
       let totalFee = BigInt(0);

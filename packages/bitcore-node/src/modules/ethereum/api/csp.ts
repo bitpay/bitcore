@@ -312,8 +312,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network,
       wallets: wallet._id,
       'wallets.0': { $exists: true },
-      blockHeight: { $gt: -3 }, // Exclude invalid transactions
-      'receipt.status': { $ne: false } // Exclude reverted contract transactions
+      blockHeight: { $gt: -3 } // Exclude invalid transactions
     } as any;
     if (args) {
       if (args.startBlock || args.endBlock) {
@@ -346,7 +345,6 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       }
       if (args.includeInvalidTxs) {
         delete query.blockHeight;
-        delete query['receipt.status'];
       }
     }
     return query;
