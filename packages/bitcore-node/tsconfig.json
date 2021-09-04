@@ -19,7 +19,10 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["mocha"],
     "esModuleInterop": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
   "include": ["./src/**/*", "./test/**/*"]
 }
