@@ -1,5 +1,5 @@
 FROM node:10
-
+USER root
 # Install Chrome
 
 RUN echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/chrome.list
@@ -23,6 +23,6 @@ RUN set -x \
 RUN apt-get install -y make gcc g++ python3
 
 # Install prerequisites
-RUN npm i -g npm@6.14.12
+RUN npm i -g npm@6.14.5
 RUN npm i -g node-gyp@8.1.0
-#RUN npm i -g typescript@4.3.5
+
