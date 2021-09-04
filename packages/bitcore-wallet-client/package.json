@@ -70,7 +70,7 @@
     "compile": "npm run tsc",
     "tsc": "npm run clean && tsc",
     "build": "tsc && npm run lint",
-    "clean": "rm -rf ./ts_build",
+    "clean": "rm -rf ./ts_build && tsc --version",
     "fix": "npm run fix:style && npm run fix:lint",
     "pub": "npm run build && npm publish",
     "precommit": "npm run fix && npm run lint",
