@@ -1,3 +1,4 @@
+# the docker file is used for CI purpose
 FROM node:10
 USER root
 # Install Chrome
