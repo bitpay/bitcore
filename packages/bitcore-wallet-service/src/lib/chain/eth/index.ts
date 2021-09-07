@@ -148,7 +148,7 @@ export class EthChain implements IChain {
         const { coin, network } = wallet;
         let inGasLimit;
         let gasLimit;
-        let defaultGasLimit;
+        const defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
         let fee = 0;
         for (let output of opts.outputs) {
           if (!output.gasLimit) {
@@ -170,7 +170,6 @@ export class EthChain implements IChain {
                 data: output.data,
                 gasPrice
               });
-              defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
               output.gasLimit = inGasLimit || defaultGasLimit;
             } catch (err) {
               output.gasLimit = defaultGasLimit;
