@@ -171,6 +171,7 @@ var liveNetwork = {
   name: 'livenet',
   alias: 'mainnet',
   prefix: 'ecash',
+  legacyPrefix: 'bitconcash',
   pubkeyhash: 0,
   privatekey: 0x80,
   scripthash: 5,
@@ -184,6 +185,7 @@ var liveNetwork = {
 var testNetwork = {
   name: 'testnet',
   prefix: 'ectest',
+  legacyPrefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
@@ -197,6 +199,7 @@ var testNetwork = {
 var regtestNetwork = {
   name: 'regtest',
   prefix: 'ecregtest',
+  legacyPrefix: 'bchreg',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
@@ -209,7 +212,8 @@ var regtestNetwork = {
     'port',
     'name',
     'prefix',
-    'networkMagic'
+    'networkMagic',
+    'legacyPrefix'
   ]
 };
 
