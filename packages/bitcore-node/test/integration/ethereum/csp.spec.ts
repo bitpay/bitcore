@@ -321,6 +321,10 @@ describe('Ethereum API', function() {
       await EthTransactionStorage.collection.deleteMany({});
     });
 
+    after(async () => { 
+      sandbox.restore();
+    });
+
     it('should stream wallet\'s valid ETH transactions', async () =>
       await streamWalletTransactionsTest(chain, network)
     );
