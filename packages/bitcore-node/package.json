@@ -15,7 +15,7 @@
   "scripts": {
     "start": "npm run tsc && node build/src/server.js",
     "debug": "npm run tsc && node --trace-warnings --inspect build/src/server.js --DEBUG true",
-    "clean": "rm -rf build",
+    "clean": "rm -rf build && tsc --version",
     "compile": "npm run tsc",
     "docs:build-html": "typedoc --out ./docs/html --tsconfig tsconfig.json ./src",
     "docs:build-json": "typedoc --json ./docs/json --tsconfig tsconfig.json ./src",
@@ -122,7 +122,6 @@
     "ripple-lib": "1.4.2",
     "rxjs": "6.1.0",
     "secp256k1": "3.5.0",
-    "snappy": "6.0.1",
     "socket.io": "2.1.1",
     "socket.io-client": "2.1.1",
     "source-map-support": "^0.5.13",

@@ -97,7 +97,7 @@
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "tsc": "npm run clean && tsc",
     "build": "tsc",
-    "clean": "rm -rf ./ts_build",
+    "clean": "rm -rf ./ts_build && tsc --version",
     "compile": "npm run clean && npm run build",
     "pub": "npm run build && npm publish",
     "precommit": "npm run fix && npm run lint",
