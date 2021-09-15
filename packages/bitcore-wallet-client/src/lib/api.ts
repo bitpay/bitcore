@@ -1513,6 +1513,7 @@ export class API extends EventEmitter {
   // *
   // * @param {Object} opts
   // * @param {Boolean} opts.ignoreMaxGap[=false]
+  // * @param {Boolean} opts.isChange[=false]
   // * @param {Callback} cb
   // * @returns {Callback} cb - Return error or the address
   // */
@@ -2120,7 +2121,8 @@ export class API extends EventEmitter {
           for (const signed of serializedTxs) {
             signedTransactions.push({
               tx: signed,
-              weightedSize: weightedSize[i++]
+              weightedSize: weightedSize[i++],
+              escrowReclaimTx: txp.escrowReclaimTx
             });
           }
           PayProV2.verifyUnsignedPayment({

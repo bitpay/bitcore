@@ -1309,7 +1309,7 @@ export class WalletService {
     const createNewAddress = (wallet, cb) => {
       let address;
       try {
-        address = wallet.createAddress(false);
+        address = wallet.createAddress(!!opts.isChange);
       } catch (e) {
         this.logw('Error creating address', e);
         return cb('Bad xPub');
@@ -1472,7 +1472,7 @@ export class WalletService {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet;
+    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet, blockchainHeight;
     async.series(
       [
         next => {
@@ -1513,26 +1513,77 @@ export class WalletService {
         },
         next => {
           if (!wallet.isComplete()) return next();
-
           this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
             if (err) return next(err);
-
-            const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
-            bc.getUtxos(wallet, height, (err, utxos) => {
-              if (err) return next(err);
-              if (utxos.length == 0) return cb(null, []);
-
-              // filter out DUST
-              allUtxos = _.filter(utxos, x => {
-                return x.satoshis >= dustThreshold;
-              });
-
-              utxoIndex = _.keyBy(allUtxos, utxoKey);
-              return next();
-            });
+            blockchainHeight = height;
+            next();
           });
         },
         next => {
+          if (!wallet.isComplete()) return next();
+
+          const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
+          const isEscrowPayment = wallet.isZceCompatible() && opts.instantAcceptanceEscrow ? true : false;
+          bc.getUtxos(
+            wallet,
+            blockchainHeight,
+            (err, utxos) => {
+              if (err) return next(err);
+              if (utxos.length == 0) return cb(null, []);
+
+              let unusableAddresses = [];
+              if (isEscrowPayment) {
+                const unusableUtxos = utxos.filter(utxo => utxo.spent || utxo.address.startsWith('p'));
+                unusableAddresses = unusableUtxos.map(utxo => utxo.address);
+              }
+
+              allUtxos = utxos.filter(x => x.satoshis >= dustThreshold && !unusableAddresses.includes(x.address));
+
+              return next();
+            },
+            { includeSpent: isEscrowPayment }
+          );
+        },
+        next => {
+          if (!wallet.isComplete() || !wallet.isZceCompatible()) return next();
+
+          // Ensure no UTXOs which originate from addresses that were recently used to fund a currently
+          // insufficiently confirmed ZCE-secured payment can be used to fund any subsequent transactions
+          // until the ZCE-secured payment (and escrow reclaim tx) receives 11 confirmations.
+          // Rationale: https://github.com/bitjson/bch-zce#wallet-utxo-selection
+
+          const bchRollingBlockCheckpointNumber = 10;
+          const bchReorgSafeBlockHeight = blockchainHeight - bchRollingBlockCheckpointNumber - 1;
+          let lockedAddresses = [];
+          bc.getTransactions(wallet, bchReorgSafeBlockHeight, (err, txs) => {
+            if (err) return next(err);
+            const unconfirmedZceTxs = txs.filter(tx => tx.category === 'move' && tx.address.startsWith('p'));
+            async.each(
+              unconfirmedZceTxs,
+              (tx: any, next) => {
+                this.getCoinsForTx({ txId: tx.txid }, (err, coins) => {
+                  if (err) return next(err);
+                  const inputAddresses = coins.inputs.map(input => input.address);
+                  lockedAddresses = [...lockedAddresses, ...inputAddresses];
+                  return next();
+                });
+              },
+              err => {
+                if (err) return next(err);
+                allUtxos = allUtxos.map(utxo => {
+                  if (lockedAddresses.includes(utxo.address)) {
+                    utxo.locked = true;
+                  }
+                  return utxo;
+                });
+                return next();
+              }
+            );
+          });
+        },
+        next => {
+          utxoIndex = _.keyBy(allUtxos, utxoKey);
+
           this.getPendingTxs({}, (err, txps) => {
             if (err) return next(err);
 
@@ -2339,6 +2390,7 @@ export class WalletService {
                     walletM: wallet.m,
                     walletN: wallet.n,
                     excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
+                    instantAcceptanceEscrow: opts.instantAcceptanceEscrow,
                     addressType: wallet.addressType,
                     customData: opts.customData,
                     inputs: opts.inputs,
@@ -2361,6 +2413,18 @@ export class WalletService {
                 },
                 next => {
                   return ChainService.selectTxInputs(this, txp, wallet, opts, next);
+                },
+                async next => {
+                  if (!wallet.isZceCompatible() || !opts.instantAcceptanceEscrow) return next();
+                  try {
+                    opts.inputs = txp.inputs;
+                    const escrowAddress = await ChainService.getChangeAddress(this, wallet, opts);
+                    txp.escrowAddress = escrowAddress;
+                  } catch (error) {
+                    return next(error);
+                  }
+                  if (opts.dryRun) return next();
+                  this._store(wallet, txp.escrowAddress, next, true);
                 },
                 next => {
                   if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress) return next();
