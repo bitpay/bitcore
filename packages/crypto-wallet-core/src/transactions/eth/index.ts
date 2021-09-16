@@ -1,9 +1,9 @@
 import { ethers } from 'ethers';
+import { ERC20Abi } from 'transactions/erc20/abi';
+import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
 import { Key } from '../../derivation';
 import { MULTISENDAbi } from './abi';
-import Web3 from "web3";
-import {ERC20Abi} from "transactions/erc20/abi";
-import {AbiItem} from "web3-utils";
 const utils = require('web3-utils');
 export class ETHTxProvider {
   create(params: {
@@ -28,7 +28,7 @@ export class ETHTxProvider {
       amount = 0;
       const amounts = recipients.map(recipient => {
         amount += recipient.amount;
-        Number(recipient.amount).toLocaleString('en', { useGrouping: false })
+        Number(recipient.amount).toLocaleString('en', { useGrouping: false });
       });
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();

@@ -31,13 +31,13 @@ export class ERC20TxProvider extends ETHTxProvider {
   encodeData(params: {
     recipients: Array<{ address: string; amount: string }>;
     tokenAddress: string;
-    contractAddress: string
+    contractAddress?: string;
   }) {
     const { tokenAddress, recipients, contractAddress } = params;
     if (recipients.length > 1) {
       const addresses = recipients.map(recipient => recipient.address);
       const amounts = recipients.map(recipient => {
-        Number(recipient.amount).toLocaleString('en', { useGrouping: false })
+        Number(recipient.amount).toLocaleString('en', { useGrouping: false });
       });
       const multisendContract = this.getMultiSendContract(contractAddress);
       return multisendContract.methods.sendEth(tokenAddress, addresses, amounts).encodeABI();
