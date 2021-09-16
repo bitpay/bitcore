@@ -22,7 +22,7 @@ export class Verifier {
    * @param {String} address
    * @returns {Boolean} true or false
    */
-  static checkAddress(credentials, address) {
+  static checkAddress(credentials, address, escrowInputs?) {
     $.checkState(
       credentials.isComplete(),
       'Failed state: credentials at <checkAddress>'
@@ -34,7 +34,8 @@ export class Verifier {
       address.path,
       credentials.m,
       credentials.network,
-      credentials.coin
+      credentials.coin,
+      escrowInputs
     );
     return (
       local.address == address.address &&
@@ -208,11 +209,17 @@ export class Verifier {
     if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
-    if (
-      Constants.UTXO_COINS.includes(txp.coin) &&
-      !this.checkAddress(credentials, txp.changeAddress)
-    )
-      return false;
+    if (Constants.UTXO_COINS.includes(txp.coin)) {
+      if (!this.checkAddress(credentials, txp.changeAddress)) {
+        return false;
+      }
+      if (
+        txp.escrowAddress &&
+        !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)
+      ) {
+        return false;
+      }
+    }
 
     return true;
   }

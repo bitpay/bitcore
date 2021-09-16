@@ -21,9 +21,11 @@ var PublicKeyHashInput = Input.PublicKeyHash;
 var PublicKeyInput = Input.PublicKey;
 var MultiSigScriptHashInput = Input.MultiSigScriptHash;
 var MultiSigInput = Input.MultiSig;
+var EscrowInput = Input.Escrow;
 var Output = require('./output');
 var Script = require('../script');
 var PrivateKey = require('../privatekey');
+var PublicKey = require('../publickey');
 var BN = require('../crypto/bn');
 
 /**
@@ -553,10 +555,34 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   }
   if (pubkeys && threshold) {
     this._fromMultisigUtxo(utxo, pubkeys, threshold, opts);
+  } else if (utxo.publicKeys && utxo.publicKeys.length > 1) {
+    this._fromEscrowUtxo(utxo, utxo.publicKeys);
   } else {
     this._fromNonP2SH(utxo);
   }
   return this;
+};
+
+Transaction.prototype._fromEscrowUtxo = function(utxo, pubkeys) {
+  const publicKeys = pubkeys.map(pubkey => new PublicKey(pubkey));
+  const inputPublicKeys = publicKeys.slice(1);
+  const reclaimPublicKey = publicKeys[0];
+  utxo = new UnspentOutput(utxo);
+  this.addInput(
+    new EscrowInput(
+      {
+        output: new Output({
+          script: utxo.script,
+          satoshis: utxo.satoshis
+        }),
+        prevTxId: utxo.txId,
+        outputIndex: utxo.outputIndex,
+        script: Script.empty()
+      },
+      inputPublicKeys,
+      reclaimPublicKey
+    )
+  );
 };
 
 Transaction.prototype._fromNonP2SH = function(utxo) {
@@ -719,6 +745,27 @@ Transaction.prototype.change = function(address) {
   return this;
 };
 
+/**
+ * Set the Zero-Confirmation Escrow (ZCE) address for this transaction
+ *
+ * @param {Address} address The Zero-Confirmation Escrow (ZCE) address for this payment
+ * @param {number} amount The amount in satoshis to send to the ZCE address
+ * @return {Transaction} this, for chaining
+ */
+ Transaction.prototype.escrow = function(address, amount) {
+  $.checkArgument(this.inputs.length > 0, 'inputs must have already been set when setting escrow');
+  $.checkArgument(this.outputs.length > 0, 'non-change outputs must have already been set when setting escrow');
+  $.checkArgument(!this.getChangeOutput(), 'change must still be unset when setting escrow');
+  $.checkArgument(address, 'address is required');
+  $.checkArgument(amount, 'amount is required');
+  const totalSendAmountWithoutChange = this._getOutputAmount() + this.getFee() + amount;
+  const hasChange = this._getInputAmount() - totalSendAmountWithoutChange > Transaction.DUST_AMOUNT;
+  this.to(address, amount);
+  if(!hasChange) {
+    this._fee = undefined;
+  }
+  return this;
+};
 
 /**
  * @return {Output} change output, if it exists
@@ -1219,6 +1266,113 @@ Transaction.prototype.verify = function() {
       }
     }
   }
+  return true;
+};
+
+Transaction.prototype.isZceSecured = function(escrowReclaimTx, instantAcceptanceEscrow, requiredFeeRate) {
+  // ZCE-secured transactions must not contain more than 2^16 inputs (65,536)
+  // https://github.com/bitjson/bch-zce#zce-root-hash
+  if(this.inputs.length > 65536) {
+    return false;
+  }
+
+  const allInputsAreP2pkh = this.inputs.every(input => input.script.isPublicKeyHashIn());
+  if (!allInputsAreP2pkh) {
+    return false;
+  }
+
+  const escrowInputIndex = 0;
+
+  let reclaimTx;
+  try {
+    reclaimTx = new Transaction(escrowReclaimTx);
+  } catch (e) {
+    return false;
+  }
+
+  const escrowInput = reclaimTx.inputs[escrowInputIndex];
+
+  if (escrowInput.prevTxId.toString('hex') !== this.id) {
+    return false;
+  }
+
+  const escrowUtxo = this.outputs[escrowInput.outputIndex];
+
+  if (!escrowUtxo) {
+    return false;
+  }
+
+  // The escrow address must contain the instantAcceptanceEscrow satoshis specified
+  // by the merchant plus the minimum required miner fee on the ZCE-secured payment.
+  // Rationale: https://github.com/bitjson/bch-zce#zce-extension-to-json-payment-protocol
+  const zceRawTx = this.uncheckedSerialize();
+  const zceTxSize = zceRawTx.length / 2;
+  const minFee = zceTxSize * requiredFeeRate;
+  if (escrowUtxo.toObject().satoshis < instantAcceptanceEscrow + minFee) {
+    return false;
+  }
+
+  escrowInput.output = escrowUtxo;
+
+  const reclaimTxSize = escrowReclaimTx.length / 2;
+  const reclaimTxFeeRate = reclaimTx.getFee() / reclaimTxSize;
+
+  if (reclaimTxFeeRate < requiredFeeRate) {
+    return false;
+  }
+
+  const escrowUnlockingScriptParts = escrowInput.script.toASM().split(' ');
+  if (escrowUnlockingScriptParts.length !== 3) {
+    return false;
+  }
+  const [reclaimSignatureString, reclaimPublicKeyString, redeemScriptString] = escrowUnlockingScriptParts;
+  const reclaimPublicKey = new PublicKey(reclaimPublicKeyString);
+  const inputPublicKeys = this.inputs.map(input => new PublicKey(input.script.getPublicKey()));
+  const inputSignatureStrings = this.inputs.map(input => input.script.toASM().split(' ')[0]);
+
+  const sighashAll = Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+
+  const allSignaturesSighashAll = [reclaimSignatureString, ...inputSignatureStrings].every(signatureString =>
+    signatureString.endsWith(sighashAll.toString(16))
+  );
+  if (!allSignaturesSighashAll) {
+    return false;
+  }
+
+  const correctEscrowRedeemScript = Script.buildEscrowOut(inputPublicKeys, reclaimPublicKey);
+  const correctEscrowRedeemScriptHash = Hash.sha256ripemd160(correctEscrowRedeemScript.toBuffer());
+
+  const escrowUtxoRedeemScriptHash = escrowUtxo.script.getData();
+  const escrowInputRedeemScript = new Script(redeemScriptString);
+  const escrowInputRedeemScriptHash = Hash.sha256ripemd160(escrowInputRedeemScript.toBuffer());
+
+  const allRedeemScriptHashes = [
+    correctEscrowRedeemScriptHash,
+    escrowInputRedeemScriptHash,
+    escrowUtxoRedeemScriptHash
+  ].map(hash => hash.toString('hex'));
+
+  if (!allRedeemScriptHashes.every(hash => hash === allRedeemScriptHashes[0])) {
+    return false;
+  }
+
+  const reclaimSignature = Signature.fromString(reclaimSignatureString);
+  reclaimSignature.nhashtype = sighashAll;
+
+  const reclaimSigValid = reclaimTx.verifySignature(
+    reclaimSignature,
+    reclaimPublicKey,
+    escrowInputIndex,
+    escrowInputRedeemScript,
+    escrowUtxo.satoshisBN,
+    undefined,
+    reclaimSignature.isSchnorr ? 'schnorr' : 'ecdsa'
+  );
+
+  if (!reclaimSigValid) {
+    return false;
+  }
+
   return true;
 };
 
