@@ -1,5 +1,9 @@
 import { ethers } from 'ethers';
 import { Key } from '../../derivation';
+import { MULTISENDAbi } from './abi';
+import Web3 from "web3";
+import {ERC20Abi} from "transactions/erc20/abi";
+import {AbiItem} from "web3-utils";
 const utils = require('web3-utils');
 export class ETHTxProvider {
   create(params: {
@@ -10,21 +14,46 @@ export class ETHTxProvider {
     gasLimit: number;
     network: string;
     chainId?: number;
+    contractAddress?: string;
   }) {
-    const { recipients, nonce, gasPrice, data, gasLimit, network } = params;
-    const { address, amount } = recipients[0];
+    const { recipients, nonce, gasPrice, gasLimit, network, contractAddress } = params;
+    let { data } = params;
+    let to;
+    let amount;
+    if (recipients.length > 1) {
+      if (!contractAddress) {
+        throw new Error('Multiple recipients requires use of multi-send contract, please specify contractAddress');
+      }
+      const addresses = recipients.map(recipient => recipient.address);
+      amount = 0;
+      const amounts = recipients.map(recipient => {
+        amount += recipient.amount;
+        Number(recipient.amount).toLocaleString('en', { useGrouping: false })
+      });
+      const multisendContract = this.getMultiSendContract(contractAddress);
+      data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();
+      to = contractAddress;
+    } else {
+      to = recipients[0].address;
+      amount = recipients[0].amount;
+    }
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
     const txData = {
       nonce: utils.toHex(nonce),
       gasLimit: utils.toHex(gasLimit),
       gasPrice: utils.toHex(gasPrice),
-      to: address,
+      to,
       data,
       value: utils.toHex(amount),
       chainId
     };
     return ethers.utils.serializeTransaction(txData);
+  }
+
+  getMultiSendContract(tokenContractAddress: string) {
+    const web3 = new Web3();
+    return new web3.eth.Contract(MULTISENDAbi as AbiItem[], tokenContractAddress);
   }
 
   getChainId(network: string) {

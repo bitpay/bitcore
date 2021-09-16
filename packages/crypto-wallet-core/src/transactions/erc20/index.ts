@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { ETHTxProvider } from '../eth';
-import { ERC20Abi } from './abi';
+import { ERC20Abi, MULTISENDAbi } from './abi';
 
 export class ERC20TxProvider extends ETHTxProvider {
   getERC20Contract(tokenContractAddress: string) {
@@ -19,6 +19,7 @@ export class ERC20TxProvider extends ETHTxProvider {
     tokenAddress: string;
     network: string;
     chainId?: number;
+    contractAddress?: string;
   }) {
     const { tokenAddress } = params;
     const data = this.encodeData(params);
@@ -27,13 +28,26 @@ export class ERC20TxProvider extends ETHTxProvider {
     return super.create(newParams);
   }
 
-  encodeData(params: { recipients: Array<{ address: string; amount: string }>; tokenAddress: string }) {
-    const { tokenAddress } = params;
-    const [{ address, amount }] = params.recipients;
-    const amountStr = Number(amount).toLocaleString('en', { useGrouping: false });
-    const data = this.getERC20Contract(tokenAddress)
-      .methods.transfer(address, amountStr)
-      .encodeABI();
-    return data;
+  encodeData(params: {
+    recipients: Array<{ address: string; amount: string }>;
+    tokenAddress: string;
+    contractAddress: string
+  }) {
+    const { tokenAddress, recipients, contractAddress } = params;
+    if (recipients.length > 1) {
+      const addresses = recipients.map(recipient => recipient.address);
+      const amounts = recipients.map(recipient => {
+        Number(recipient.amount).toLocaleString('en', { useGrouping: false })
+      });
+      const multisendContract = this.getMultiSendContract(contractAddress);
+      return multisendContract.methods.sendEth(tokenAddress, addresses, amounts).encodeABI();
+    } else {
+      const [{ address, amount }] = params.recipients;
+      const amountStr = Number(amount).toLocaleString('en', { useGrouping: false });
+      const data = this.getERC20Contract(tokenAddress)
+        .methods.transfer(address, amountStr)
+        .encodeABI();
+      return data;
+    }
   }
 }
