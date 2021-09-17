@@ -28,7 +28,7 @@ export class ETHTxProvider {
       amount = 0;
       const amounts = recipients.map(recipient => {
         amount += recipient.amount;
-        Number(recipient.amount).toLocaleString('en', { useGrouping: false });
+        return Number(recipient.amount).toLocaleString('en', { useGrouping: false });
       });
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();

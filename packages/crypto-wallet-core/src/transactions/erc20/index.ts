@@ -37,10 +37,10 @@ export class ERC20TxProvider extends ETHTxProvider {
     if (recipients.length > 1) {
       const addresses = recipients.map(recipient => recipient.address);
       const amounts = recipients.map(recipient => {
-        Number(recipient.amount).toLocaleString('en', { useGrouping: false });
+        return Number(recipient.amount).toLocaleString('en', { useGrouping: false });
       });
       const multisendContract = this.getMultiSendContract(contractAddress);
-      return multisendContract.methods.sendEth(tokenAddress, addresses, amounts).encodeABI();
+      return multisendContract.methods.sendErc20(tokenAddress, addresses, amounts).encodeABI();
     } else {
       const [{ address, amount }] = params.recipients;
       const amountStr = Number(amount).toLocaleString('en', { useGrouping: false });
