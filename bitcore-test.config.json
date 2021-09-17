@@ -31,12 +31,12 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "parity",
+              "host": "openethereum",
               "port": 30303
             }
           ],
           "provider": {
-            "host": "parity",
+            "host": "openethereum",
             "protocol": "ws",
             "port": 8546
           }

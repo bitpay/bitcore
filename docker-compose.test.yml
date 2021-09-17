@@ -30,7 +30,6 @@ services:
       -txindex=0
       -listen=1
       -server=1
-      -irc=0
       -dnsseed=0
       -upnp=0
       -port=8332
