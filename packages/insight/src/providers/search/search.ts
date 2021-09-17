@@ -61,7 +61,7 @@ export class SearchProvider {
         { chain: 'BCH', network: 'mainnet' }
       ],
     },
-    // Testnet BTC / BCH / Doge Address
+    // Testnet BTC / BCH / Doge / LTC Address
     {
       regexes: [/^(bitcoin:|bchtest:|dogecoin:|litecoin:)?([2mn][1-9A-HJ-NP-Za-km-z]{26,35})/],
       dataIndex: 2,
@@ -99,6 +99,7 @@ export class SearchProvider {
         { chain: 'DOGE', network: 'mainnet' }
       ],
     },
+    // LTC Address
     {
       regexes: [/^(litecoin:)?([LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$)/],
       dataIndex: 2,
@@ -107,7 +108,7 @@ export class SearchProvider {
         { chain: 'LTC', network: 'mainnet' }
       ],
     },
-    // BTC / BCH / DOGE block or tx
+    // BTC / BCH / DOGE / LTC block or tx
     {
       regexes: [/^[A-Fa-f0-9]{64}$/],
       type: 'blockOrTx',
@@ -131,7 +132,7 @@ export class SearchProvider {
         { chain: 'ETH', network: 'testnet' }
       ],
     },
-    // BTC / BCH / DOGE / ETH block height
+    // BTC / BCH / DOGE / ETH / LTC block height
     {
       regexes: [/^[0-9]{1,9}$/],
       type: 'block',
