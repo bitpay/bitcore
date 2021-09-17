@@ -16,14 +16,14 @@ services:
     depends_on:
       - db
       - bitcoin
-      - parity
+      - openethereum
       - rippled
 
   db:
     image: mongo
 
   bitcoin:
-    image: ruimarinho/bitcoin-core:0.16
+    image: ruimarinho/bitcoin-core:0.21
     command:
       -printtoconsole
       -regtest=1
@@ -40,13 +40,13 @@ services:
       -rpcuser=bitcorenodetest
       -rpcpassword=local321
 
-  parity:
-    image: parity/parity:v2.4.6
+  openethereum:
+    image: openethereum/openethereum:v3.3.0-rc.8
     ports:
       - "8545:8545"
       - "8546:8546"
     volumes:
-      - ./.docker/parity-password:/data/pw
+      - ./.docker/openethereum-password:/data/pw
     command:
       --config=dev
       --jsonrpc-interface=0.0.0.0
