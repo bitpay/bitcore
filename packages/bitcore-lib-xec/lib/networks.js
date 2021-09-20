@@ -39,7 +39,7 @@ function get(arg, keys) {
       var filteredNet = _.pick(network, keys);
       var netValues = _.values(filteredNet);
       if(~netValues.indexOf(arg)) {
-	return network;
+	      return network;
       }
     }
     return undefined;
@@ -98,6 +98,12 @@ function addNetwork(data) {
     _.extend(network, {
       prefix: data.prefix,
       prefixArray: prefixToArray(data.prefix),
+    });
+  }
+
+  if (data.legacyPrefix) {
+    _.extend(network, {
+      legacyPrefix: data.legacyPrefix
     });
   }
 
