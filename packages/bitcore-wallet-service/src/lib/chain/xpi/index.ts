@@ -28,8 +28,8 @@ export class XpiChain extends BtcChain implements IChain {
   validateAddress(wallet, inaddr, opts) {
     const A = BitcoreLibXpi.Address;
     let addr: {
-      network?: string;
-      toString?: (cashAddr: boolean) => string;
+      network?: BitcoreLibXpi.Networks.Network;
+      toString?: () => string;
     } = {};
     try {
       addr = new A(inaddr);
