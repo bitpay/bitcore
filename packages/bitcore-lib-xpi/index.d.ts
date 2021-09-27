@@ -124,6 +124,7 @@ export namespace Transaction {
     class Output {
         readonly script: Script;
         satoshis: number;
+        readonly _scriptBuffer: Buffer;
 
         constructor(data: object);
 
@@ -238,6 +239,7 @@ export namespace Transaction {
         readonly sequenceNumber: number;
         readonly script: Script;
         readonly output?: Output | undefined;
+        readonly _scriptBuffer: Buffer;
 
         constructor(params: object);
 
@@ -488,6 +490,7 @@ export namespace Script {
 
 export class Script {
     constructor(data: string | object | Buffer | Script);
+    chunks: Array<Chunk>
 
     set(obj: object): this;
 
@@ -593,7 +596,7 @@ export class Address {
     readonly network: Networks.Network;
     readonly type: string;
 
-    constructor(data: Buffer | Uint8Array | string | object, network?: string | Networks.Network, type?: string);
+    constructor(data: Buffer | Uint8Array | string | object | any, network?: string | Networks.Network, type?: string);
 
     static createMultisig(publicKeys: PublicKey[], threshold: number, network: string | Networks.Network): Address;
     static payingTo(script: Script, network: string | Networks.Network): Address;
@@ -645,5 +648,11 @@ export class URI {
     static fromObject(data: string): URI;
     static isValid(data: string | Object, knownParams?: string[]): Boolean
     constructor(data: string | Object, knownParams?: string[]);
+}
+
+export class Chunk {
+    buf: Buffer;
+    len: number;
+    opcodenum: number;
 }
 
