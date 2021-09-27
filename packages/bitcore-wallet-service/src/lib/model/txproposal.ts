@@ -203,6 +203,11 @@ export class TxProposal {
       x.lockUntilBlockHeight = opts.lockUntilBlockHeight;
     }
 
+    // FOR DOGE RELAY FEE
+    if (opts.chain === 'DOGE' && opts.fee < 1e8) {
+      x.fee = 1e8;  
+    }
+
     // Coin specific features
 
     // ETH
