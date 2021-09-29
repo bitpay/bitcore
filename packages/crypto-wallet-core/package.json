@@ -1,6 +1,6 @@
 {
   "name": "crypto-wallet-core",
-  "version": "8.25.16",
+  "version": "8.25.21",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -28,7 +28,7 @@
   "license": "MIT",
   "dependencies": {
     "bitcore-lib": "^8.25.10",
-    "bitcore-lib-cash": "^8.25.10",
+    "bitcore-lib-cash": "^8.25.21",
     "bitcore-lib-doge": "^8.25.10",
     "bitcore-lib-ltc": "^8.25.14",
     "ethers": "^5.0.12",
