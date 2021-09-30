@@ -50,6 +50,7 @@ const Common = require('./common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
+const Services = Common.Services;
 
 const Errors = require('./errors/errordefinitions');
 
@@ -5026,6 +5027,14 @@ export class WalletService {
         }
       );
     });
+  }
+
+  getSpenderApprovalWhitelist(cb) {
+    if (Services.ERC20_SPENDER_APPROVAL_WHITELIST) {
+      return cb(null, Services.ERC20_SPENDER_APPROVAL_WHITELIST);
+    } else {
+      return cb(new Error('Could not get ERC20 spender approval whitelist'));
+    }
   }
 
   getPayId(url: string): Promise<any> {
