@@ -575,6 +575,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
  */
 Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
   let indexes = [];
+
   for(let utxo of utxos) {
     const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
     indexes.push(index);
