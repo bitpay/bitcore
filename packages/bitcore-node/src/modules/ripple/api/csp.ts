@@ -17,6 +17,7 @@ import {
   GetBalanceForAddressParams,
   GetBlockBeforeTimeParams,
   GetEstimateSmartFeeParams,
+  GetWalletBalanceAtBlockParams,
   GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
@@ -71,33 +72,57 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
     const { chain, network, address } = params;
-    const lowerAddress = address.toLowerCase();
-    const cacheKey = `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
-    return CacheStorage.getGlobalOrRefresh(
-      cacheKey,
-      async () => {
-        const client = await this.getClient(network);
-        try {
-          const info = await client.getAccountInfo(address);
-          const confirmed = Math.round(Number(info.xrpBalance) * 1e6);
-          const balance = confirmed;
-          const unconfirmed = 0;
-          return { confirmed, unconfirmed, balance };
-        } catch (e) {
-          if (e && e.data && e.data.error_code === 19) {
-            // Error code for when we have derived an address,
-            // but the account has not yet been funded
-            return {
-              confirmed: 0,
-              unconfirmed: 0,
-              balance: 0
-            };
-          }
-          throw e;
+    if (params.args && params.args.block) {
+      const block = params.args.block;
+      const client = await this.getClient(network);
+      try {
+        const blockNum = parseInt(block);
+        const info = await client.getAccountInfo(address, { ledgerVersion: blockNum });
+        const confirmed = Math.round(Number(info.xrpBalance) * 1e6);
+        const balance = confirmed;
+        const unconfirmed = 0;
+        return { confirmed, unconfirmed, balance };
+      } catch (e) {
+        if (e && e.data && e.data.error_code === 19) {
+          // Error code for when we have derived an address,
+          // but the account has not yet been funded
+          return {
+            confirmed: 0,
+            unconfirmed: 0,
+            balance: 0
+          };
         }
-      },
-      CacheStorage.Times.Hour / 2
-    );
+        throw e;
+      }
+    } else {
+      const lowerAddress = address.toLowerCase();
+      const cacheKey = `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
+      return CacheStorage.getGlobalOrRefresh(
+        cacheKey,
+        async () => {
+          const client = await this.getClient(network);
+          try {
+            const info = await client.getAccountInfo(address);
+            const confirmed = Math.round(Number(info.xrpBalance) * 1e6);
+            const balance = confirmed;
+            const unconfirmed = 0;
+            return { confirmed, unconfirmed, balance };
+          } catch (e) {
+            if (e && e.data && e.data.error_code === 19) {
+              // Error code for when we have derived an address,
+              // but the account has not yet been funded
+              return {
+                confirmed: 0,
+                unconfirmed: 0,
+                balance: 0
+              };
+            }
+            throw e;
+          }
+        },
+        CacheStorage.Times.Hour / 2
+      );
+    }
   }
 
   async getBlock(params: GetBlockParams) {
@@ -173,6 +198,23 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const addresses = await this.getWalletAddresses(params.wallet._id!);
     const balances = await Promise.all(
       addresses.map(a => this.getBalanceForAddress({ address: a.address, chain, network, args: {} }))
+    );
+    return balances.reduce(
+      (total, current) => {
+        total.balance += current.balance;
+        total.confirmed += current.confirmed;
+        total.unconfirmed += current.unconfirmed;
+        return total;
+      },
+      { confirmed: 0, unconfirmed: 0, balance: 0 }
+    );
+  }
+
+  async getWalletBalanceAtBlock(params: GetWalletBalanceAtBlockParams) {
+    const { chain, block, network } = params;
+    const addresses = await this.getWalletAddresses(params.wallet._id!);
+    const balances = await Promise.all(
+      addresses.map(a => this.getBalanceForAddress({ address: a.address, chain, network, args: { block } }))
     );
     return balances.reduce(
       (total, current) => {

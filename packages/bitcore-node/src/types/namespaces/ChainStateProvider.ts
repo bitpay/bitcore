@@ -78,6 +78,12 @@ export type GetWalletBalanceAtTimeParams = ChainNetwork & {
   args: any;
 };
 
+export type GetWalletBalanceAtBlockParams = ChainNetwork & {
+  wallet: MongoBound<IWallet>;
+  block: string
+  args: any;
+};
+
 export type StreamAddressUtxosParams = ChainNetwork & {
   address: string;
   req?: Request;

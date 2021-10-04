@@ -251,6 +251,20 @@ export class Wallet {
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
 
+  getBalanceAtBlock(block?: string, token?: string) {
+    let payload;
+    if (token) {
+      let tokenContractAddress;
+      const tokenObj = this.tokens.find(tok => tok.symbol === token);
+      if (!tokenObj) {
+        throw new Error(`${token} not found on wallet ${this.name}`);
+      }
+      tokenContractAddress = tokenObj.address;
+      payload = { tokenContractAddress };
+    }
+    return this.client.getBalanceAtBlock({ payload, pubKey: this.authPubKey, block });
+  }
+
   getNetworkFee(params: { target?: number } = {}) {
     const target = params.target || 2;
     return this.client.getFee({ target });
