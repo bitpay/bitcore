@@ -1,4 +1,9 @@
-export const ERC20Abi = [
+export {
+  ERC20Abi,
+  MULTISENDAbi
+};
+
+const ERC20Abi = [
   {
     constant: true,
     inputs: [],
@@ -221,7 +226,7 @@ export const ERC20Abi = [
   }
 ];
 
-export const MULTISENDAbi = [
+const MULTISENDAbi = [
   {
     constant: false,
     inputs: [

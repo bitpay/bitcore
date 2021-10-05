@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
-import { ERC20Abi } from 'transactions/erc20/abi';
+import { ERC20Abi, MULTISENDAbi } from '../erc20/abi';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { Key } from '../../derivation';
-import { MULTISENDAbi } from './abi';
 const utils = require('web3-utils');
+const { toBN } = Web3.utils;
 export class ETHTxProvider {
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
@@ -24,12 +24,14 @@ export class ETHTxProvider {
       if (!contractAddress) {
         throw new Error('Multiple recipients requires use of multi-send contract, please specify contractAddress');
       }
-      const addresses = recipients.map(recipient => recipient.address);
-      amount = 0;
-      const amounts = recipients.map(recipient => {
-        amount += recipient.amount;
-        return Number(recipient.amount).toLocaleString('en', { useGrouping: false });
-      });
+      const addresses = [];
+      const amounts = [];
+      amount = toBN(0);
+      for (let recipient of recipients) {
+        addresses.push(recipient.address);
+        amounts.push(toBN(recipient.amount));
+        amount = amount.add(toBN(recipient.amount));
+      }
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();
       to = contractAddress;
