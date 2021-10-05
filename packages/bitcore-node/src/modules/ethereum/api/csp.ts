@@ -156,7 +156,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
         }
       },
-      CacheStorage.Times.Hour / 2
+      CacheStorage.Times.Minute
     );
     return balances;
   }
