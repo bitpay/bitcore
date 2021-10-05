@@ -375,7 +375,7 @@ export class PushNotificationsService {
     );
   }
 
-  _getDataForTemplate(notification: INotification, recipient, cb) {
+  async _getDataForTemplate(notification: INotification, recipient, cb) {
     const UNIT_LABELS = {
       btc: 'BTC',
       bit: 'bits',
@@ -397,17 +397,33 @@ export class PushNotificationsService {
       try {
         let unit = recipient.unit.toLowerCase();
         let label = UNIT_LABELS[unit];
+        let opts = {} as any;
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
           if (Constants.TOKEN_OPTS[tokenAddress]) {
             unit = Constants.TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
-            label = 'tokens';
-            throw new Error('Notifications for unsupported token are not allowed');
+            let customTokensData;
+            try {
+              customTokensData = await this.getTokenData();
+            } catch (error) {
+              throw new Error('Could not get custom tokens data');
+            }
+            if (customTokensData && customTokensData[tokenAddress]) {
+              unit = customTokensData[tokenAddress].symbol.toLowerCase();
+              label = unit.toUpperCase();
+              opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
+              opts.decimals = {
+                maxDecimals: 6,
+                minDecimals: 2
+              };
+            } else {
+              throw new Error('Notifications for unsupported token are not allowed');
+            }
           }
         }
-        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
+        data.amount = Utils.formatAmount(+data.amount, unit, opts) + ' ' + label;
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }
@@ -538,5 +554,24 @@ export class PushNotificationsService {
       },
       cb
     );
+  }
+
+  getTokenData() {
+    return new Promise((resolve, reject) => {
+      this.request(
+        {
+          url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/1/tokens',
+          method: 'GET',
+          json: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        },
+        (err, data: any) => {
+          if (err) return reject(err);
+          return resolve(data.body.tokens);
+        }
+      );
+    });
   }
 }
