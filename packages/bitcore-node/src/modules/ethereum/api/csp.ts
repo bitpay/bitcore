@@ -245,7 +245,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
       // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
       // The case where an address has >1000 txns is an edge case ATM and can be addressed later
-      Storage.apiStreamingFind(EthTransactionStorage, query, { limit, /*since, paging: '_id'*/ }, req!, res!);
+      Storage.apiStreamingFind(EthTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
     } else {
       try {
         const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
