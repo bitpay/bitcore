@@ -326,6 +326,7 @@ export class Wallet {
     token?: string;
     gasLimit?: number;
     gasPrice?: number;
+    contractAddress?: string;
   }) {
     const chain = params.token ? 'ERC20' : this.chain;
     let tokenContractAddress;
@@ -352,7 +353,8 @@ export class Wallet {
       gasPrice: params.gasPrice || params.feeRate || params.fee,
       gasLimit: params.gasLimit || 200000,
       data: params.data,
-      tokenAddress: tokenContractAddress
+      tokenAddress: tokenContractAddress,
+      contractAddress: params.contractAddress
     };
     return Transactions.create(payload);
   }
