@@ -1,7 +1,4 @@
-export {
-  ERC20Abi,
-  MULTISENDAbi
-};
+export { ERC20Abi, MULTISENDAbi };
 
 const ERC20Abi = [
   {

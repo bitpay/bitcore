@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
-import { ERC20Abi, MULTISENDAbi } from '../erc20/abi';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { Key } from '../../derivation';
+import { ERC20Abi, MULTISENDAbi } from '../erc20/abi';
 const utils = require('web3-utils');
 const { toBN } = Web3.utils;
 export class ETHTxProvider {

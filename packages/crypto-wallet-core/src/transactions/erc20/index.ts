@@ -22,9 +22,9 @@ export class ERC20TxProvider extends ETHTxProvider {
     chainId?: number;
     contractAddress?: string;
   }) {
-    const { tokenAddress } = params;
+    const { tokenAddress, contractAddress } = params;
     const data = this.encodeData(params);
-    const recipients = [{ address: tokenAddress, amount: '0' }];
+    const recipients = [{ address: (contractAddress || tokenAddress), amount: '0' }];
     const newParams = { ...params, recipients, data };
     return super.create(newParams);
   }
