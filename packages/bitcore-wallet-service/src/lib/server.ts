@@ -5029,6 +5029,32 @@ export class WalletService {
     });
   }
 
+  checkServiceAvailability(req): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      if (!checkRequired(req.body, ['service', 'opts'])) {
+        return reject(new ClientError('checkServiceAvailability request missing arguments'));
+      }
+
+      let serviceEnabled: boolean;
+
+      switch (req.body.service) {
+        case '1inch':
+          if (req.body.opts && req.body.opts.country && req.body.opts.country.toUpperCase() == 'US') {
+            serviceEnabled = false;
+          } else {
+            serviceEnabled = true;
+          }
+          break;
+      
+        default:
+          serviceEnabled = true;
+          break;
+      }
+
+      resolve(serviceEnabled);
+    });
+  }
+
   getSpenderApprovalWhitelist(cb) {
     if (Services.ERC20_SPENDER_APPROVAL_WHITELIST) {
       return cb(null, Services.ERC20_SPENDER_APPROVAL_WHITELIST);
