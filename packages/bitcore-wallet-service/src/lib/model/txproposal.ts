@@ -72,6 +72,8 @@ export interface ITxProposal {
   lockUntilBlockHeight?: number;
   instantAcceptanceEscrow?: number;
   isTokenSwap?: boolean;
+  enableRBF?: boolean;
+  replaceTxByFee?: boolean;
 }
 
 export class TxProposal {
@@ -135,6 +137,8 @@ export class TxProposal {
   lockUntilBlockHeight?: number;
   instantAcceptanceEscrow?: number;
   isTokenSwap?: boolean;
+  enableRBF?: boolean;
+  replaceTxByFee?: boolean;
 
   static create(opts) {
     opts = opts || {};
@@ -204,6 +208,9 @@ export class TxProposal {
     }
 
     // Coin specific features
+    // BTC
+    x.enableRBF = opts.enableRBF;
+    x.replaceTxByFee = opts.replaceTxByFee;
 
     // ETH
     x.gasPrice = opts.gasPrice;
@@ -270,6 +277,10 @@ export class TxProposal {
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
 
     x.lockUntilBlockHeight = obj.lockUntilBlockHeight;
+
+    // BTC
+    x.enableRBF = obj.enableRBF;
+    x.replaceTxByFee = obj.replaceTxByFee;
 
     // ETH
     x.gasPrice = obj.gasPrice;
