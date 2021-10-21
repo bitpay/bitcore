@@ -5,6 +5,7 @@ import io = require('socket.io-client');
 import { ChainService } from '../chain/index';
 import logger from '../logger';
 import { Client } from './v8/client';
+import { UNITS } from '@abcpros/crypto-wallet-core/ts_build/src/constants/units';
 
 const $ = require('preconditions').singleton();
 const Common = require('../common');
@@ -156,7 +157,8 @@ export class V8 {
     return 'V8 (' + this.coin + '/' + this.v8network + ') @ ' + this.host;
   }
 
-  _transformUtxos(unspent, bcheight) {
+  _transformUtxos(unspent, bcheight, coin?: string) {
+    const unitSatoshi = coin && UNITS[coin] && UNITS[coin].toSatoshis ? UNITS[coin].toSatoshis : 1e8;
     $.checkState(bcheight > 0, 'Failed state: No BC height passed to _transformUtxos()');
     const ret = _.map(
       _.reject(unspent, x => {
@@ -166,7 +168,7 @@ export class V8 {
         const u = {
           address: x.address,
           satoshis: x.value,
-          amount: x.value / 1e8,
+          amount: x.value / unitSatoshi,
           scriptPubKey: x.script,
           txid: x.mintTxid,
           vout: x.mintIndex,
@@ -196,7 +198,7 @@ export class V8 {
       .getCoins({ pubKey: wallet.beAuthPublicKey2, payload: {} })
       .then(unspent => {
         console.timeEnd('V8getUtxos');
-        return cb(null, this._transformUtxos(unspent, height));
+        return cb(null, this._transformUtxos(unspent, height, wallet.coin));
       })
       .catch(cb);
   }
@@ -285,14 +287,14 @@ export class V8 {
       });
   }
 
-  getAddressUtxos(address, height, cb) {
+  getAddressUtxos(address, height, coin, cb) {
     console.log(' GET ADDR UTXO', address, height); // TODO
     const client = this._getClient();
 
     client
       .getAddressTxos({ address, unspent: true })
       .then(utxos => {
-        return cb(null, this._transformUtxos(utxos, height));
+        return cb(null, this._transformUtxos(utxos, height, coin));
       })
       .catch(cb);
   }
@@ -304,6 +306,8 @@ export class V8 {
     } else {
       logger.debug('getTxs: from 0');
     }
+    const coin = wallet.coin
+    const unitSatoshi = coin && UNITS[coin] && UNITS[coin].toSatoshis ? UNITS[coin].toSatoshis : 1e8;
 
     const client = this._getAuthClient(wallet);
     let acum = '',
@@ -343,7 +347,7 @@ export class V8 {
           return cb(e);
         }
         // v8 field name differences
-        if (tx.value) tx.amount = tx.satoshis / 1e8;
+        if (tx.value) tx.amount = tx.satoshis / unitSatoshi;
 
         if (tx.height >= 0) txs.push(tx);
         else unconf.push(tx);

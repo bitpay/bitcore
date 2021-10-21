@@ -1671,7 +1671,7 @@ export class WalletService {
 
         this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
           if (err) return cb(err);
-          bc.getAddressUtxos(address, height, (err, utxos) => {
+          bc.getAddressUtxos(address, height, wallet.coin, (err, utxos) => {
             if (err) return cb(err);
             return cb(null, utxos);
           });
