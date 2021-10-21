@@ -1,3 +1,4 @@
+import { UNITS } from '@abcpros/crypto-wallet-core/ts_build/src/constants/units';
 import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
@@ -5,7 +6,6 @@ import io = require('socket.io-client');
 import { ChainService } from '../chain/index';
 import logger from '../logger';
 import { Client } from './v8/client';
-import { UNITS } from '@abcpros/crypto-wallet-core/ts_build/src/constants/units';
 
 const $ = require('preconditions').singleton();
 const Common = require('../common');
@@ -306,7 +306,7 @@ export class V8 {
     } else {
       logger.debug('getTxs: from 0');
     }
-    const coin = wallet.coin
+    const coin = wallet.coin;
     const unitSatoshi = coin && UNITS[coin] && UNITS[coin].toSatoshis ? UNITS[coin].toSatoshis : 1e8;
 
     const client = this._getAuthClient(wallet);
