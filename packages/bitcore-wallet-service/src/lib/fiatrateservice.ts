@@ -58,9 +58,8 @@ export class FiatRateService {
     return cb();
   }
 
-
   _fetch(cb?) {
-    cb = cb || function () { };
+    cb = cb || function() {};
     const coins = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
     const provider = this.providers.find(provider => provider.name === this.defaultProvider);
     const lotusExbitronProvider = this.providers.find(provider => provider.name === 'LotusExbitron');
