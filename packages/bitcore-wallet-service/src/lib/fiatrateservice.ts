@@ -58,17 +58,17 @@ export class FiatRateService {
     return cb();
   }
 
+
   _fetch(cb?) {
-    cb = cb || function() {};
+    cb = cb || function () { };
     const coins = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
     const provider = this.providers.find(provider => provider.name === this.defaultProvider);
-    const xpiProvider = this.providers.find(provider => provider.name === 'LotusExplorer');
+    const lotusExbitronProvider = this.providers.find(provider => provider.name === 'LotusExbitron');
 
-    //    async.each(this.providers, (provider, next) => {
     async.each(
       coins,
       (coin, next2) => {
-        this._retrieve(coin === 'xpi' ? xpiProvider : provider, coin, (err, res) => {
+        this._retrieve(coin === 'xpi' ? lotusExbitronProvider : provider, coin, (err, res) => {
           if (err) {
             logger.warn('Error retrieving data for ' + provider.name + coin, err);
             return next2();
@@ -81,7 +81,6 @@ export class FiatRateService {
           });
         });
       },
-      //        next),
       cb
     );
   }
@@ -98,6 +97,8 @@ export class FiatRateService {
       params = provider.params;
       params['ids'] = provider.coinMapping[coin];
     } else if (provider.name === 'LotusExplorer') {
+      appendString = '';
+    } else if (provider.name === 'LotusExbitron') {
       appendString = '';
     } else {
       appendString = coin.toUpperCase();
@@ -149,8 +150,6 @@ export class FiatRateService {
         }
         this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
           if (err) return cb(err);
-          if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
-
           return cb(null, {
             ts: +ts,
             rate: rate ? rate.value : undefined,
@@ -196,7 +195,6 @@ export class FiatRateService {
             }
             this.storage.fetchFiatRate(c, currency.code, ts, (err, rate) => {
               if (err) return cb(err);
-              if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
               return cb(null, {
                 ts: +ts,
                 rate: rate ? rate.value : undefined,
