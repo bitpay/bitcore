@@ -58,9 +58,17 @@ export class FiatRateService {
 
   handleRateCurrencyXpi(res, dataBtc) {
     if (_.isEmpty(res) || _.isEmpty(dataBtc)) return res;
-    const rateUsdBtc = _.get(_.find(dataBtc, item => item.code == 'USD'), 'value', 0);
-    const rateUsdXpi = _.get(_.find(res, item => item.code == 'USD'), 'value', 0);
-    if(rateUsdBtc == 0) return res;
+    const rateUsdBtc = _.get(
+      _.find(dataBtc, item => item.code == 'USD'),
+      'value',
+      0
+    );
+    const rateUsdXpi = _.get(
+      _.find(res, item => item.code == 'USD'),
+      'value',
+      0
+    );
+    if (rateUsdBtc == 0) return res;
     const newData = _.cloneDeep(res);
     _.forEach(dataBtc, (itemBtc: any) => {
       if (_.some(res, itemXpi => itemXpi.code != itemBtc.code)) {
@@ -68,14 +76,14 @@ export class FiatRateService {
         newData.push({
           code: itemBtc.code,
           value: newRate
-        })
+        });
       }
     });
     return newData;
   }
 
   _fetch(cb?) {
-    cb = cb || function () { };
+    cb = cb || function() {};
     const coins = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
     const provider = this.providers.find(provider => provider.name === this.defaultProvider);
     const lotusExbitronProvider = this.providers.find(provider => provider.name === 'LotusExbitron');
