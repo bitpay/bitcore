@@ -149,6 +149,7 @@ export class FiatRateService {
         }
         this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
           if (err) return cb(err);
+          if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
           return cb(null, {
             ts: +ts,
             rate: rate ? rate.value : undefined,
@@ -194,6 +195,7 @@ export class FiatRateService {
             }
             this.storage.fetchFiatRate(c, currency.code, ts, (err, rate) => {
               if (err) return cb(err);
+              if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
               return cb(null, {
                 ts: +ts,
                 rate: rate ? rate.value : undefined,
