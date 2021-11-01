@@ -1791,26 +1791,27 @@ export class WalletService {
     });
   }
 
-  getRemainingAmount(cb) {
+  getRemainingAmount(receiveAmountLotus, cb) {
     this.storage.fetchDonationInToday((err, donationInToday: DonationStorage) => {
       if (err) return 0;
       if (_.isEmpty(donationInToday)) return cb(config.donationRemaining.totalAmountLotusInDay);
       const remaningAmount =
-        config.donationRemaining.totalAmountLotusInDay -
-        _.size(donationInToday) * config.donationRemaining.receiveAmountLotus;
+        config.donationRemaining.totalAmountLotusInDay - _.size(donationInToday) * receiveAmountLotus;
       return cb(remaningAmount);
     });
   }
 
   getRemainingInfo(opts, cb) {
     const infor: DonationInfo = {};
-    this.getRemainingAmount(remaningAmount => {
-      infor.remaining = remaningAmount;
-      infor.minMoneydonation = config.donationRemaining.minMoneydonation;
-      infor.receiveAmountLotus = config.donationRemaining.receiveAmountLotus;
-      infor.donationToAddresses = config.donationRemaining.donationToAddresses;
-      infor.donationCoin = config.donationRemaining.donationCoin;
-      return cb(null, infor);
+    this.convertUSDToSatoshiLotus(config.donationRemaining.minMoneydonation, 'xpi', receiveAmountLotus => {
+      this.getRemainingAmount(receiveAmountLotus, remaningAmount => {
+        infor.remaining = remaningAmount;
+        infor.minMoneydonation = config.donationRemaining.minMoneydonation;
+        infor.receiveAmountLotus = receiveAmountLotus;
+        infor.donationToAddresses = config.donationRemaining.donationToAddresses;
+        infor.donationCoin = config.donationRemaining.donationCoin;
+        return cb(null, infor);
+      });
     });
   }
 
@@ -3059,6 +3060,22 @@ export class WalletService {
     });
   }
 
+  convertUSDToSatoshiLotus(amountUSD, coin, cp) {
+    const option = {
+      coin,
+      code: 'USD'
+    };
+    this.getFiatRatesByCoin(option, (err, rate) => {
+      let satoshiLotus = 0;
+      if (err) return cp(satoshiLotus);
+      const rateCoin = rate[0].rate ? rate[0].rate : rate.rate;
+      if (rateCoin == 0 || !rateCoin) return cp(satoshiLotus);
+      const amoutLotus = _.toNumber(((1.1 * amountUSD) / rateCoin).toFixed(2)); // bonus 10% xpi;
+      satoshiLotus = amoutLotus * 1e6;
+      return cp(satoshiLotus);
+    });
+  }
+
   checkAmoutToSendLostus(txp, cb) {
     this.convertCoinToUSD(txp.outputs[0].amount, txp.coin, (err, amountUsd) => {
       if (err) return cb(err);
@@ -3066,8 +3083,7 @@ export class WalletService {
         return cb('not enough money donation to receive lotus');
       this.getRemainingInfo({}, (err, remainingData: DonationInfo) => {
         if (err) return cb(err);
-        if (remainingData.remaining < config.donationRemaining.receiveAmountLotus)
-          return cb('not enough lotus to send for you');
+        if (remainingData.remaining < remainingData.receiveAmountLotus) return cb('not enough Lotus to give');
         return cb(null, true);
       });
     });
