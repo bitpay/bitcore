@@ -21,7 +21,7 @@ describe('UnspentOutput', function() {
     'vout': 1,
     'address': 'ectest:qqrnkl4w9q37lg6fuwu32ku2wd2jv336puy98j7zd8',
     'scriptPubKey': '76a914073b7eae2823efa349e3b9155b8a735526463a0f88ac',
-    'amount': 0.01080000
+    'amount': 0.01
   };
 
   it('roundtrip from raw data', function() {

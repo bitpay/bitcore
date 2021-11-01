@@ -35,9 +35,9 @@ describe('Unit', function() {
     var unit = new Unit(1.2, 'BTC');
     unit.BTC.should.equal(1.2);
     unit.mBTC.should.equal(1200);
-    unit.uBTC.should.equal(1200000);
-    unit.bits.should.equal(1200000);
-    unit.satoshis.should.equal(120000000);
+    unit.uBTC.should.equal(12000);
+    unit.bits.should.equal(12000);
+    unit.satoshis.should.equal(1200000);
   });
 
   it('a string amount is allowed', function() {
@@ -47,10 +47,10 @@ describe('Unit', function() {
     unit.BTC.should.equal(1.00001);
 
     unit = Unit.fromMilis('1.00001');
-    unit.mBTC.should.equal(1.00001);
+    unit.mBTC.should.equal(1);
 
     unit = Unit.fromMillis('1.00001');
-    unit.mBTC.should.equal(1.00001);
+    unit.mBTC.should.equal(1);
 
     unit = Unit.fromBits('100');
     unit.bits.should.equal(100);
@@ -59,7 +59,7 @@ describe('Unit', function() {
     unit.satoshis.should.equal(8999);
 
     unit = Unit.fromFiat('43', 350);
-    unit.BTC.should.equal(0.12285714);
+    unit.BTC.should.equal(0.122857);
   });
 
   it('should have constructor helpers', function() {
@@ -69,7 +69,7 @@ describe('Unit', function() {
     unit.BTC.should.equal(1.00001);
 
     unit = Unit.fromMilis(1.00001);
-    unit.mBTC.should.equal(1.00001);
+    unit.mBTC.should.equal(1);
 
     unit = Unit.fromBits(100);
     unit.bits.should.equal(100);
@@ -78,7 +78,7 @@ describe('Unit', function() {
     unit.satoshis.should.equal(8999);
 
     unit = Unit.fromFiat(43, 350);
-    unit.BTC.should.equal(0.12285714);
+    unit.BTC.should.equal(0.122857);
   });
 
   it('converts to satoshis correctly', function() {
@@ -87,30 +87,30 @@ describe('Unit', function() {
 
     unit = Unit.fromBTC(1.3);
     unit.mBTC.should.equal(1300);
-    unit.bits.should.equal(1300000);
-    unit.satoshis.should.equal(130000000);
+    unit.bits.should.equal(13000);
+    unit.satoshis.should.equal(1300000);
 
     unit = Unit.fromMilis(1.3);
     unit.BTC.should.equal(0.0013);
-    unit.bits.should.equal(1300);
-    unit.satoshis.should.equal(130000);
+    unit.bits.should.equal(13);
+    unit.satoshis.should.equal(1300);
 
     unit = Unit.fromBits(1.3);
-    unit.BTC.should.equal(0.0000013);
-    unit.mBTC.should.equal(0.0013);
+    unit.BTC.should.equal(0.00013);
+    unit.mBTC.should.equal(0.13);
     unit.satoshis.should.equal(130);
 
     unit = Unit.fromSatoshis(3);
-    unit.BTC.should.equal(0.00000003);
-    unit.mBTC.should.equal(0.00003);
+    unit.BTC.should.equal(0.000003);
+    unit.mBTC.should.equal(0.003);
     unit.bits.should.equal(0.03);
   });
 
   it('takes into account floating point problems', function() {
     var unit = Unit.fromBTC(0.00000003);
-    unit.mBTC.should.equal(0.00003);
-    unit.bits.should.equal(0.03);
-    unit.satoshis.should.equal(3);
+    unit.mBTC.should.equal(0);
+    unit.bits.should.equal(0);
+    unit.satoshis.should.equal(0);
   });
 
   it('exposes unit codes', function() {
@@ -173,7 +173,7 @@ describe('Unit', function() {
 
   it('inspect method displays nicely', function() {
     var unit = new Unit(1.3, 'BTC');
-    unit.inspect().should.equal('<Unit: 130000000 satoshis>');
+    unit.inspect().should.equal('<Unit: 1300000 satoshis>');
   });
 
   it('fails when the unit is not recognized', function() {
