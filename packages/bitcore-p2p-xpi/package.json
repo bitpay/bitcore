@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-p2p-xpi",
-  "version": "8.25.31",
+  "version": "8.25.32",
   "description": "Interface to the bitcoin P2P network for lotus",
   "main": "index.js",
   "scripts": {
@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@abcpros/bitcore-lib": "^8.25.31",
-    "@abcpros/bitcore-lib-xpi": "^8.25.31",
+    "@abcpros/bitcore-lib-xpi": "^8.25.36",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
