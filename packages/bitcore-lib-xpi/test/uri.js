@@ -218,7 +218,7 @@ describe('URI', function() {
     it('parses amount', function() {
       uri = URI.fromString('lotus_1PrQAo6rZSfDwo8R6V8YnEkyjShiWqMuE6M6GV?amount=123.22');
       uri.address.toString().should.equal('lotus_1PrQAo6rZSfDwo8R6V8YnEkyjShiWqMuE6M6GV');
-      uri.amount.should.equal(12322000000);
+      uri.amount.should.equal(123220000);
       expect(uri.otherParam).to.be.equal(undefined);
     });
 
@@ -239,7 +239,7 @@ describe('URI', function() {
       uri = new URI('lotus_1PrRa971yGQAkFgANnGrixhXuZTFhGfkBFL2og?amount=1.2&other=param&' +
                     'req-required=param', ['req-required']);
       uri.address.should.be.instanceof(bitcore.Address);
-      uri.amount.should.equal(120000000);
+      uri.amount.should.equal(1200000);
       uri.extras.other.should.equal('param');
       uri.extras['req-required'].should.equal('param');
     });
@@ -343,7 +343,7 @@ describe('URI', function() {
 
   it('should support numeric amounts', function() {
     var uri = new URI('lotus_16PSJPLVnkMvbURPjfPGZqdrUhzwYJSAxJiXVcfKs?amount=12.10001');
-    expect(uri.amount).to.be.equal(1210001000);
+    expect(uri.amount).to.be.equal(12100010);
   });
 
   it('should generate a valid URI', function() {
@@ -359,7 +359,7 @@ describe('URI', function() {
       message: 'Hello World',
       something: 'else'
     }).toString().should.equal(
-      'payto:lotus_1PrQz5R11Ae1YcbvUpGDSvzPP2GsVw6E7mthMV?amount=1.10001&message=Hello%20World&something=else'
+      'payto:lotus_1PrQz5R11Ae1YcbvUpGDSvzPP2GsVw6E7mthMV?amount=110.001&message=Hello%20World&something=else'
     );
 
   });

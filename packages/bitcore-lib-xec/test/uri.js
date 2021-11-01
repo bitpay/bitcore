@@ -290,7 +290,7 @@ describe('URI', function() {
     it('parses amount', function() {
       uri = URI.fromString('ecash:qzruaav37d2hwqfaqvsktwdqjly502s06qswfymrrv?amount=123.22');
       uri.address.toString().should.equal('ecash:qzruaav37d2hwqfaqvsktwdqjly502s06qswfymrrv');
-      uri.amount.should.equal(12322000000);
+      uri.amount.should.equal(12322);
       expect(uri.otherParam).to.be.equal(undefined);
     });
 
@@ -311,7 +311,7 @@ describe('URI', function() {
       uri = new URI('ecash:qzruaav37d2hwqfaqvsktwdqjly502s06qswfymrrv?amount=1.2&other=param&' +
                     'req-required=param', ['req-required']);
       uri.address.should.be.instanceof(bitcore.Address);
-      uri.amount.should.equal(120000000);
+      uri.amount.should.equal(120);
       uri.extras.other.should.equal('param');
       uri.extras['req-required'].should.equal('param');
     });
@@ -330,7 +330,7 @@ describe('URI', function() {
     it('parses amount', function() {
       uri = URI.fromString('ectest:qqkj609un9sl896yezxj0j5hxagk7h7pnylknwe8uu?amount=123.22');
       uri.address.toString().should.equal('ectest:qqkj609un9sl896yezxj0j5hxagk7h7pnylknwe8uu');
-      uri.amount.should.equal(12322000000);
+      uri.amount.should.equal(12322);
       expect(uri.otherParam).to.be.equal(undefined);
     });
 
@@ -351,7 +351,7 @@ describe('URI', function() {
       uri = new URI('ectest:qqkj609un9sl896yezxj0j5hxagk7h7pnylknwe8uu?amount=1.2&other=param&' +
                     'req-required=param', ['req-required']);
       uri.address.should.be.instanceof(bitcore.Address);
-      uri.amount.should.equal(120000000);
+      uri.amount.should.equal(120);
       uri.extras.other.should.equal('param');
       uri.extras['req-required'].should.equal('param');
     });
@@ -433,7 +433,7 @@ describe('URI', function() {
 
   it('should support numeric amounts', function() {
     var uri = new URI('ecash:qzruaav37d2hwqfaqvsktwdqjly502s06qswfymrrv?amount=12.10001');
-    expect(uri.amount).to.be.equal(1210001000);
+    expect(uri.amount).to.be.equal(1210);
   });
 
   it('should support extra arguments', function() {
@@ -463,7 +463,7 @@ describe('URI', function() {
       message: 'Hello World',
       something: 'else'
     }).toString().should.equal(
-      'ecash:qzruaav37d2hwqfaqvsktwdqjly502s06qswfymrrv?amount=1.10001&message=Hello%20World&something=else'
+      'ecash:qzruaav37d2hwqfaqvsktwdqjly502s06qswfymrrv?amount=1100010&message=Hello%20World&something=else'
     );
 
   });
