@@ -5,7 +5,7 @@ const async = require('async');
 
 const chai = require('chai');
 const sinon = require('sinon');
-const  CWC = require('crypto-wallet-core');
+const CWC = require('crypto-wallet-core');
 
 const LOG_LEVEL = 'info';
 //const LOG_LEVEL = 'debug';
@@ -4703,15 +4703,15 @@ describe('Wallet service', function() {
         });
         it('should support creating a tx with no change address', function(done) {
           const coinFee = {
-            btc: 7000,
-            bch: 7000,
-            xrp: 7000,
+            btc: 3800,
+            bch: 3800,
+            xrp: 3800,
             eth: 210000000,
             doge: 1e8,
-            ltc: 7000
+            ltc: 3800
           }
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-            var max = 3 * ts - coinFee[coin]; // Fees for this tx at 100bits/kB = 7000 sat
+            var max = 3 * ts - coinFee[coin]; // Fees for this tx at 100bits/kB = 3740 sat
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4874,7 +4874,7 @@ describe('Wallet service', function() {
               var txOpts = {
                 outputs: [{
                   toAddress: addressStr,
-                  amount: 20e2,
+                  amount: Defaults.MIN_OUTPUT_AMOUNT - 1,
                 }],
                 feePerKb: 100e2,
               };
@@ -4892,7 +4892,7 @@ describe('Wallet service', function() {
           
             it('should create tx with 0 change output', function(done) {
             helpers.stubUtxos(server, wallet, 2, function() {
-              var fee = 4100; // The exact fee of the resulting tx
+              var fee = 2260; // The exact fee of the resulting tx
               var amount = 2e8 - fee;
 
               var txOpts = {
@@ -5718,7 +5718,7 @@ describe('Wallet service', function() {
           });
         });
         it('should correct fee if resulting change would be below threshold', function(done) {
-          helpers.stubUtxos(server, wallet, ['200bit', '500sat'], function() {
+          helpers.stubUtxos(server, wallet, ['180bit', '500sat'], function() {
             var txOpts = {
               outputs: [{
                 toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
