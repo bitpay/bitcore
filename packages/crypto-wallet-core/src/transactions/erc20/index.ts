@@ -24,7 +24,7 @@ export class ERC20TxProvider extends ETHTxProvider {
   }) {
     const { tokenAddress, contractAddress } = params;
     const data = this.encodeData(params);
-    const recipients = [{ address: (contractAddress || tokenAddress), amount: '0' }];
+    const recipients = [{ address: contractAddress || tokenAddress, amount: '0' }];
     const newParams = { ...params, recipients, data };
     return super.create(newParams);
   }
