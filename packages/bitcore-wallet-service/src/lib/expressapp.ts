@@ -1316,20 +1316,14 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/checkAvailability', (req, res) => {
-      let server;
+      let server, response;
       try {
         server = getServer(req, res);
+        response = server.checkServiceAvailability(req);
+        return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server
-        .checkServiceAvailability(req)
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          if (err) return returnError(err, res, req);
-        });
     });
 
     router.post('/v1/service/simplex/quote', (req, res) => {

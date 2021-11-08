@@ -5029,17 +5029,16 @@ export class WalletService {
     });
   }
 
-  checkServiceAvailability(req): Promise<boolean> {
-    return new Promise((resolve, reject) => {
+  checkServiceAvailability(req): boolean {
       if (!checkRequired(req.body, ['service', 'opts'])) {
-        return reject(new ClientError('checkServiceAvailability request missing arguments'));
+        throw new ClientError('checkServiceAvailability request missing arguments');
       }
 
       let serviceEnabled: boolean;
 
       switch (req.body.service) {
         case '1inch':
-          if (req.body.opts && req.body.opts.country && req.body.opts.country.toUpperCase() == 'US') {
+          if (req.body.opts?.country?.toUpperCase() === 'US') {
             serviceEnabled = false;
           } else {
             serviceEnabled = true;
@@ -5051,8 +5050,7 @@ export class WalletService {
           break;
       }
 
-      resolve(serviceEnabled);
-    });
+      return serviceEnabled;
   }
 
   getSpenderApprovalWhitelist(cb) {
