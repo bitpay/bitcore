@@ -210,8 +210,6 @@ export class Credentials {
         coin = '3';
       } else if (this.coin == 'ltc') {
         coin = '2';
-      } else if (this.coin == 'rsk' || this.coin == 'rbtc') {
-        coin = '137';
       } else {
         throw new Error('unknown coin: ' + this.coin);
       }

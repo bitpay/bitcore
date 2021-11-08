@@ -23,8 +23,7 @@ var Bitcore_ = {
   eth: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
-  ltc: CWC.BitcoreLibLtc,
-  rsk: CWC.BitcoreLib
+  ltc: CWC.BitcoreLibLtc
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -469,7 +468,7 @@ export class API extends EventEmitter {
     if (!_.includes(Constants.COINS, coin))
       return cb(new Error('Invalid coin'));
 
-    if (coin == 'eth' || coin == 'rsk' || coin == 'rbtc')
+    if (coin == 'eth')
       return cb(new Error('ETH not supported for this action'));
 
     var B = Bitcore_[coin];
@@ -704,7 +703,6 @@ export class API extends EventEmitter {
     switch (chain) {
       case 'XRP':
       case 'ETH':
-      case 'RSK':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
@@ -2517,7 +2515,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
   getNonce(opts, cb) {
-    $.checkArgument(opts.coin == 'eth' || opts.coin == 'rsk', 'Invalid coin: must be "eth"');
+    $.checkArgument(opts.coin == 'eth', 'Invalid coin: must be "eth"');
 
     var qs = [];
     qs.push(`coin=${opts.coin}`);
@@ -2935,7 +2933,6 @@ export class API extends EventEmitter {
         ['doge', 'testnet'],
         ['ltc', 'testnet'],
         ['ltc', 'livenet'],
-        ['rsk', 'livenet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true],
         ['doge', 'livenet', true],
