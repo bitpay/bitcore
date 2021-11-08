@@ -5040,6 +5040,30 @@ export class WalletService {
     });
   }
 
+  checkServiceAvailability(req): boolean {
+      if (!checkRequired(req.body, ['service', 'opts'])) {
+        throw new ClientError('checkServiceAvailability request missing arguments');
+      }
+
+      let serviceEnabled: boolean;
+
+      switch (req.body.service) {
+        case '1inch':
+          if (req.body.opts?.country?.toUpperCase() === 'US') {
+            serviceEnabled = false;
+          } else {
+            serviceEnabled = true;
+          }
+          break;
+      
+        default:
+          serviceEnabled = true;
+          break;
+      }
+
+      return serviceEnabled;
+  }
+
   getSpenderApprovalWhitelist(cb) {
     if (Services.ERC20_SPENDER_APPROVAL_WHITELIST) {
       return cb(null, Services.ERC20_SPENDER_APPROVAL_WHITELIST);
