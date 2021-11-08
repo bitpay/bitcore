@@ -399,6 +399,8 @@ export class Key {
       coinCode = '3';
     } else if (opts.coin == 'ltc') {
       coinCode = '2';
+    } else if (opts.coin == 'rsk' || opts.coin == 'rbtc') {
+      coinCode = '137';
     } else {
       throw new Error('unknown coin: ' + opts.coin);
     }
