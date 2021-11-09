@@ -260,10 +260,6 @@ module.exports = {
     ltc: 0.05 * 1e8
   },
 
-  // ETH
-  DEFAULT_GAS_LIMIT: 60000,
-  DEFAULT_ERC20_GAS_LIMIT: 160000,
-
   MIN_GAS_LIMIT: 21000,
 
   // XRP has a non-refundable mininum activation fee / balance
