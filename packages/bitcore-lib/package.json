@@ -35,7 +35,8 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bech32": "=1.1.3",
+    "bech32": "=2.0.0",
+    "bip-schnorr": "=0.6.4",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",

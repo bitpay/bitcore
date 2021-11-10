@@ -1,7 +1,5 @@
 'use strict';
 
-var buffer = require('buffer');
-
 var Signature = require('../crypto/signature');
 var Script = require('../script');
 var Output = require('./output');
@@ -12,6 +10,7 @@ var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
 var $ = require('../util/preconditions');
 var _ = require('lodash');
+const schnorr = require('bip-schnorr');
 
 var SIGHASH_SINGLE_BUG = '0000000000000000000000000000000000000000000000000000000000000001';
 var BITS_64_ON = 'ffffffffffffffff';
@@ -104,15 +103,19 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
 function sign(transaction, privateKey, sighashType, inputIndex, subscript, signingMethod) {
   signingMethod = signingMethod || 'ecdsa';
 
-  var sig;
-  if(signingMethod === 'ecdsa') {
-    var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
-    sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
+  let hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+  let sig; 
+  switch (signingMethod) {
+    case 'ecdsa':
+      sig = ECDSA.sign(hashbuf, privateKey, 'little').set({ nhashtype: sighashType });
+      break;
+    case 'schnorr':
+      sig = schnorr.sign(privateKey.toString(), hashbuf);
+      break;
+    default: 
+      throw new Error("signingMethod not supported ", signingMethod);
+  }
   return sig;
- }
-  throw new Error("signingMethod not supported ", signingMethod);
 }
 
 /**
@@ -132,11 +135,20 @@ function verify(transaction, signature, publicKey, inputIndex, subscript, signin
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype), "Signature Undefined");
 
   signingMethod = signingMethod || 'ecdsa';
-  if (signingMethod === 'ecdsa') {
-    var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
-    return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+  let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
+  let verified = false;
+
+  switch (signingMethod) {
+    case 'ecdsa':
+      verified = ECDSA.verify(hashbuf, signature, publicKey, 'little');
+      break;
+    case 'schnorr':
+      verified = schnorr.verify(publicKey, hashbuf, signature);
+      break;
+    default:
+      throw new Error("signingMethod not supported ", signingMethod);
   }
-  throw new Error("signingMethod not supported ", signingMethod);
+  return verified;
 }
 
 /**
