@@ -47,7 +47,7 @@ export class TransactionDetailsComponent implements OnInit {
 
   public ngOnInit(): void {
     this.getConfirmations();
-    if (this.chainNetwork.chain !== 'ETH') {
+    if (this.chainNetwork.chain !== 'ETH' && this.chainNetwork.chain !== 'RSK') {
       if (!this.tx.vin || !this.tx.vin.length) {
         this.getCoins();
       }

@@ -4,6 +4,7 @@ import { ETHTxProvider } from '../eth';
 import { MultisigAbi } from './abi';
 
 export class ETHMULTISIGTxProvider extends ETHTxProvider {
+  // TODO: extend to RSK
   getMultisigContract(multisigContractAddress: string) {
     const web3 = new Web3();
     const contract = new web3.eth.Contract(MultisigAbi as AbiItem[], multisigContractAddress);

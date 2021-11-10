@@ -58,7 +58,7 @@ export class TransactionPage {
         if (UTXO_CHAINS.includes(this.chainNetwork.chain)) {
           tx = this.txProvider.toUtxoCoinsAppTx(response);
         }
-        if (this.chainNetwork.chain === 'ETH') {
+        if (this.chainNetwork.chain === 'ETH' || this.chainNetwork.chain === 'RSK') {
           tx = this.txProvider.toEthAppTx(response);
         }
         this.tx = tx;

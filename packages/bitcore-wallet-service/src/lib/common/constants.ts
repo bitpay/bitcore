@@ -14,7 +14,9 @@ module.exports = {
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai',
-    WBTC: 'wbtc'
+    WBTC: 'wbtc',
+    RSK: 'rsk',
+    RBTC: 'rbtc'
   },
 
   ERC20: {

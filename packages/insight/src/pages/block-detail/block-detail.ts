@@ -57,7 +57,7 @@ export class BlockDetailPage {
         if (UTXO_CHAINS.includes(this.chainNetwork.chain)) {
           block = this.blocksProvider.toUtxoCoinAppBlock(response);
         }
-        if (this.chainNetwork.chain === 'ETH') {
+        if (this.chainNetwork.chain === 'ETH' || this.chainNetwork.chain === 'RSK') {
           block = this.blocksProvider.toEthAppBlock(response);
         }
         this.block = block;
