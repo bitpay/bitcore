@@ -2187,7 +2187,7 @@ export class WalletService {
       bc.estimateGas(opts, (err, gasLimit) => {
         if (err) {
           this.logw('Error estimating gas limit', err);
-          return reject(new Error('Error estimating gas limit: ' + err.message));
+          return reject(err);
         }
         return resolve(gasLimit);
       });
