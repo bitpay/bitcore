@@ -140,7 +140,7 @@ export class EthChain implements IChain {
   checkDust(output, opts) {}
 
   getFee(server, wallet, opts) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
         let gasPrice = inFeePerKb;
@@ -148,7 +148,6 @@ export class EthChain implements IChain {
         const { coin, network } = wallet;
         let inGasLimit;
         let gasLimit;
-        const defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
         let fee = 0;
         for (let output of opts.outputs) {
           if (!output.gasLimit) {
@@ -170,18 +169,18 @@ export class EthChain implements IChain {
                 data: output.data,
                 gasPrice
               });
-              output.gasLimit = inGasLimit || defaultGasLimit;
+              output.gasLimit = inGasLimit;
             } catch (err) {
-              output.gasLimit = defaultGasLimit;
+              return reject(err);
             }
           } else {
             inGasLimit = output.gasLimit;
           }
           if (_.isNumber(opts.fee)) {
             // This is used for sendmax
-            gasPrice = feePerKb = Number((opts.fee / (inGasLimit || defaultGasLimit)).toFixed());
+            gasPrice = feePerKb = Number((opts.fee / inGasLimit).toFixed());
           }
-          gasLimit = inGasLimit || defaultGasLimit;
+          gasLimit = inGasLimit;
           fee += feePerKb * gasLimit;
         }
         return resolve({ feePerKb, gasPrice, gasLimit, fee });
