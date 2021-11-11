@@ -272,7 +272,7 @@ Address._transformBuffer = function(buffer, network, type) {
  * Internal function to transform a {@link PublicKey}
  *
  * @param {PublicKey} pubkey - An instance of PublicKey
- * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', 'scripthash', or 'taprot'
+ * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', 'scripthash', or 'taproot'
  * @returns {Object} An object with keys: hashBuffer, type
  * @private
  */
