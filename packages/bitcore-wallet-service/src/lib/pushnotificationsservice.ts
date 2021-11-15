@@ -105,7 +105,7 @@ export class PushNotificationsService {
     };
 
     this.templatePath = path.normalize(
-      (opts.pushNotificationsOpts.templatePath || __dirname + '../../templates') + '/'
+      (opts.pushNotificationsOpts.templatePath || __dirname + '../../../templates') + '/'
     );
     this.defaultLanguage = opts.pushNotificationsOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.pushNotificationsOpts.defaultUnit || 'btc';
@@ -119,8 +119,16 @@ export class PushNotificationsService {
       [
         done => {
           _readDirectories(this.templatePath, (err, res) => {
-            this.availableLanguages = res;
-            done(err);
+            if (err) {
+              this.templatePath = path.normalize(__dirname + '../../../templates/');
+              _readDirectories(this.templatePath, (err, res) => {
+                this.availableLanguages = res;
+                done(err);
+              });
+            } else {
+              this.availableLanguages = res;
+              done(err);
+            }
           });
         },
         done => {
