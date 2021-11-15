@@ -48,21 +48,25 @@ export class BlockchainMonitor {
       [
         done => {
           this.explorers = {
-            btc: {},
-            bch: {},
-            eth: {},
-            xrp: {},
-            doge: {},
-            ltc: {}
+            // btc: {},
+            // bch: {},
+            // eth: {},
+            // xrp: {},
+            // doge: {},
+            // ltc: {},
+            xpi: {},
+            xec: {}
           };
 
           const coinNetworkPairs = [];
           _.each(_.values(Constants.COINS), coin => {
             _.each(_.values(Constants.NETWORKS), network => {
+              // if((coin != 'xpi' && network == 'testnet')){
               coinNetworkPairs.push({
                 coin,
                 network
               });
+              // }
             });
           });
           _.each(coinNetworkPairs, pair => {
@@ -95,8 +99,10 @@ export class BlockchainMonitor {
             }
             $.checkState(explorer, 'Failed State: explorer undefined at <start()>');
 
-            this._initExplorer(pair.coin, pair.network, explorer);
-            this.explorers[pair.coin][pair.network] = explorer;
+            if (this.explorers[pair.coin]) {
+              this._initExplorer(pair.coin, pair.network, explorer);
+              this.explorers[pair.coin][pair.network] = explorer;
+            }
           });
           done();
         },
