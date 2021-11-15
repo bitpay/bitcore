@@ -307,7 +307,31 @@ describe('History', function() {
       });
     });
 
-    it('should get tx history from cache', function(done) {
+    it('should handle multi-recipient transaction included my main address', function (done) {
+      var externals = ['18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP9'];
+      let _txs = helpers.createMultiRecipientsTxV8(externals, mainAddresses[0].address, changeAddresses[0].address, BCHEIGHT);
+      
+      helpers.stubHistory(null, null, _txs);
+      server.getTxHistory({ limit: 1 }, function (err, txs, fromCache) {
+        should.not.exist(err);
+        fromCache.should.equal(false);
+        should.exist(txs);
+        txs.length.should.equal(1);
+
+        // should have misunderstoodOutputs
+        txs[0].misunderstoodOutputs.should.equal(true);
+        
+        // should only have defined externals as outputs
+        txs[0].outputs.length.should.equal(externals.length);
+
+        _.each(txs[0].outputs, output => {
+          output.address.should.equal(externals.find(x => x == output.address));
+        });
+        done();
+      });
+    });
+    
+    it('should get tx history from cache', function (done) {
       var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
       Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
       helpers.stubHistory(50, BCHEIGHT); //(0->49)
@@ -824,37 +848,38 @@ describe('History', function() {
                },
               ];
 
-              helpers.stubHistory(null, null,txs);
-              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () =>{
+              helpers.stubHistory(null, null, txs);
+              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () => {
 
-              server.getTxHistory({}, function(err, txs) {
-                should.not.exist(err);
-                should.exist(txs);
-                txs.length.should.equal(1);
-                var tx = txs[0];
-                tx.createdOn.should.equal(txp.createdOn);
-                tx.action.should.equal('sent');
-                tx.amount.should.equal(0.8e8);
+                server.getTxHistory({}, function (err, txs) {
+                  should.not.exist(err);
+                  should.exist(txs);
+                  txs.length.should.equal(1);
+                  var tx = txs[0];
+                  tx.createdOn.should.equal(txp.createdOn);
+                  tx.action.should.equal('sent');
+                  tx.amount.should.equal(0.8e8);
 
-                should.not.exist(tx.raw);
-                tx.message.should.equal('some message');
-                tx.addressTo.should.equal(external);
-                tx.actions.length.should.equal(1);
-                tx.actions[0].type.should.equal('accept');
-                tx.actions[0].copayerName.should.equal('copayer 1');
-                tx.outputs[0].address.should.equal(external);
-                tx.outputs[0].amount.should.equal(0.5e8);
-                should.not.exist(tx.outputs[0].message);
-                should.not.exist(tx.outputs[0]['isMine']);
-                should.not.exist(tx.outputs[0]['isChange']);
-                tx.outputs[1].address.should.equal(external);
-                tx.outputs[1].amount.should.equal(0.3e8);
-                should.exist(tx.outputs[1].message);
-                tx.outputs[1].message.should.equal('message #2');
-                should.exist(tx.customData);
-                should.exist(tx.customData["test"]);
-                done();
-              });
+                  should.not.exist(tx.raw);
+                  tx.message.should.equal('some message');
+                  tx.addressTo.should.equal(external);
+                  tx.actions.length.should.equal(1);
+                  tx.actions[0].type.should.equal('accept');
+                  tx.actions[0].copayerName.should.equal('copayer 1');
+                  tx.outputs[0].address.should.equal(external);
+                  tx.outputs[0].amount.should.equal(0.5e8);
+                  tx.misunderstoodOutputs.should.equal(false);
+                  should.not.exist(tx.outputs[0].message);
+                  should.not.exist(tx.outputs[0]['isMine']);
+                  should.not.exist(tx.outputs[0]['isChange']);
+                  tx.outputs[1].address.should.equal(external);
+                  tx.outputs[1].amount.should.equal(0.3e8);
+                  should.exist(tx.outputs[1].message);
+                  tx.outputs[1].message.should.equal('message #2');
+                  should.exist(tx.customData);
+                  should.exist(tx.customData["test"]);
+                  done();
+                });
               });
             });
           });
@@ -970,6 +995,7 @@ describe('History', function() {
           amount: 0,
           action: 'sent',
           addressTo: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+          misunderstoodOutputs: false,
           outputs:
           [ { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
             amount: 0 } ],
