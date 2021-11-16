@@ -3115,7 +3115,6 @@ export class WalletService {
     const seenReceive = {};
 
     const moves: { [txid: string]: ITxProposal } = {};
-
     // remove 'fees' and 'moves' (probably change addresses)
     txs = _.filter(txs, tx => {
       // double spend or error
@@ -3219,7 +3218,17 @@ export class WalletService {
             action: undefined,
             addressTo: undefined,
             outputs: undefined,
-            dust: false
+            dust: false,
+            error: tx.error,
+            internal: tx.internal,
+            network: tx.network,
+            chain: tx.chain,
+            data: tx.data,
+            abiType: tx.abiType,
+            gasPrice: tx.gasPrice,
+            gasLimit: tx.gasLimit,
+            receipt: tx.receipt,
+            nonce: tx.nonce
           };
           switch (tx.category) {
             case 'send':
