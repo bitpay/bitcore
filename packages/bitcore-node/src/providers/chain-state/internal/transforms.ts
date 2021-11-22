@@ -104,6 +104,7 @@ export class ListTransactionsStream extends Transform {
               height: transaction.blockHeight,
               address: output.address,
               outputIndex: output.mintIndex,
+              coinbase: transaction.coinbase,
               blockTime: transaction.blockTimeNormalized
             }) + '\n'
           );

@@ -2,7 +2,7 @@
   "name": "@abcpros/bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "8.25.34",
+  "version": "8.25.35",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "./ts_build/index.d.ts",
@@ -22,7 +22,7 @@
     "url": "https://github.com/bitpay/bitcore-wallet-service/issues"
   },
   "dependencies": {
-    "@abcpros/bitcore-wallet-client": "^8.25.35",
+    "@abcpros/bitcore-wallet-client": "^8.25.36",
     "@abcpros/bitcore-lib": "^8.25.31",
     "@abcpros/bitcore-lib-cash": "^8.25.31",
     "@abcpros/bitcore-lib-doge": "^8.25.31",

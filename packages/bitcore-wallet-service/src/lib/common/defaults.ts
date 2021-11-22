@@ -150,6 +150,10 @@ module.exports = {
   // (ie we consider them inmutables)
   CONFIRMATIONS_TO_START_CACHING: 6 * 6, // ~ 6hrs
 
+  // Coinbase transaction outputs can only be spent after this number of new
+  // blocks (network rule).
+  COINBASE_MATURITY: 100,
+
   // Number of addresses from which tx history is enabled in a wallet
   HISTORY_CACHE_ADDRESS_THRESOLD: 100,
 
