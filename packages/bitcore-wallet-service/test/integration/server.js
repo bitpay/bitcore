@@ -5,7 +5,7 @@ const async = require('async');
 
 const chai = require('chai');
 const sinon = require('sinon');
-const  CWC = require('crypto-wallet-core');
+const CWC = require('crypto-wallet-core');
 
 const LOG_LEVEL = 'info';
 //const LOG_LEVEL = 'debug';
@@ -4541,6 +4541,178 @@ describe('Wallet service', function() {
                 done();
               });
             });
+
+            if (coin === 'btc') {
+
+              it('should fail to publish ( replaceTxByFee -> undefined ) a temporary tx proposal if utxos are already spent in a RBF tx', function(done) {
+                  var txp1, txp2;
+                  var txOpts = {
+                    outputs: [{
+                      toAddress: addressStr,
+                      amount: 1e8,
+                    }],
+                    message: 'some message',
+                    feePerKb: 100e2,
+                    enableRBF: true
+                  };
+    
+                  async.waterfall([
+    
+                    function(next) {
+                      helpers.stubUtxos(server, wallet, [1, 2], function() {
+                        next();
+                      });
+                    },
+                    function(next) {
+                      txOpts = Object.assign(txOpts, flags);
+                      server.createTx(txOpts, next);
+                    },
+                    function(txp, next) {
+                      txp1 = txp;
+                      txOpts = Object.assign(txOpts, flags);
+                      server.createTx( txOpts , next);
+                    },
+                    function(txp, next) {
+                      txp2 = txp;
+                      should.exist(txp1);
+                      should.exist(txp2);
+                      var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
+                      server.publishTx(publishOpts, next);
+                    },
+                    function(txp, next) {
+                      // Sign & Broadcast txp1
+                      var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+                      server.signTx({
+                        txProposalId: txp.id,
+                        signatures: signatures
+                      }, function(err, txp) {
+    
+                        should.not.exist(err);
+    
+                        helpers.stubBroadcast(txp.txid);
+                        server.broadcastTx({
+                          txProposalId: txp.id
+                        }, function(err, txp) {
+    
+                          should.not.exist(err);
+                          should.exist(txp.txid);
+                          txp.status.should.equal('broadcasted');
+                          next();
+                        });
+                      });
+                    },
+                    function(next) {
+    
+                      var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
+                      server.publishTx(publishOpts, function(err, txp) {
+                        err.code.should.equal('UNAVAILABLE_UTXOS');
+                        next();
+                      });
+                    },
+                  ], function(err) {
+                    should.not.exist(err);
+                    done();
+                  });
+                });
+
+              it('should not fail to publish, sign and broadcast ( replaceTxByFee -> true ) a tx proposal if utxos are already spent in a RBF tx', function(done) {
+                var txp1, txp2;
+                var txOpts1 = {
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1e8,
+                  }],
+                  message: 'some message',
+                  feePerKb: 100e2,
+                  enableRBF: true
+                };
+                var txOpts2 = {
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1e8,
+                  }],
+                  message: 'some message',
+                  feePerKb: 120e2
+                };
+
+
+                async.waterfall([
+
+                  function(next) {
+                    helpers.stubUtxos(server, wallet, [1, 2], function() {
+                      next();
+                    });
+                  },
+                  function(next) {
+                    txOpts1 = Object.assign(txOpts1, flags);
+                    server.createTx(txOpts1, next);
+                  },
+                  function(txp, next) {
+                    txp1 = txp;
+                    txOpts2 = Object.assign(txOpts2, flags);
+                    server.createTx({ ...txOpts2, ...{ replaceTxByFee: true, inputs: txp1.inputs} }, next);
+                  },
+                  function(txp, next) {
+                    txp2 = txp;
+                    should.exist(txp1);
+                    should.exist(txp2);
+                    var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
+                    server.publishTx(publishOpts, next);
+                  },
+                  function(txp, next) {
+                    // Sign & Broadcast txp1
+                    var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+                    server.signTx({
+                      txProposalId: txp.id,
+                      signatures: signatures
+                    }, function(err, txp) {
+
+                      should.not.exist(err);
+
+                      helpers.stubBroadcast(txp.txid);
+                      server.broadcastTx({
+                        txProposalId: txp.id
+                      }, function(err, txp) {
+
+                        should.not.exist(err);
+                        should.exist(txp.txid);
+                        txp.status.should.equal('broadcasted');
+                        next();
+                      });
+                    });
+                  },
+                  function(next) {
+                    var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
+                    server.publishTx(publishOpts, next);
+                  },
+                  function(txp, next) {
+                    // Sign & Broadcast txp2
+                    var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+                    server.signTx({
+                      txProposalId: txp.id,
+                      signatures: signatures
+                    }, function(err, txp) {
+
+                      should.not.exist(err);
+
+                      helpers.stubBroadcast(txp.txid);
+                      server.broadcastTx({
+                        txProposalId: txp.id
+                      }, function(err, txp) {
+
+                        should.not.exist(err);
+                        should.exist(txp.txid);
+                        txp.status.should.equal('broadcasted');
+                        next();
+                      });
+                    });
+                  },
+                ], function(err) {
+                  should.not.exist(err);
+                  done();
+                });
+              });
+            }
           }
         });
 
@@ -4703,15 +4875,15 @@ describe('Wallet service', function() {
         });
         it('should support creating a tx with no change address', function(done) {
           const coinFee = {
-            btc: 7000,
-            bch: 7000,
-            xrp: 7000,
+            btc: 3800,
+            bch: 3800,
+            xrp: 3800,
             eth: 210000000,
             doge: 1e8,
-            ltc: 7000
+            ltc: 3800
           }
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-            var max = 3 * ts - coinFee[coin]; // Fees for this tx at 100bits/kB = 7000 sat
+            var max = 3 * ts - coinFee[coin]; // Fees for this tx at 100bits/kB = 3740 sat
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4874,7 +5046,7 @@ describe('Wallet service', function() {
               var txOpts = {
                 outputs: [{
                   toAddress: addressStr,
-                  amount: 20e2,
+                  amount: Defaults.MIN_OUTPUT_AMOUNT - 1,
                 }],
                 feePerKb: 100e2,
               };
@@ -4892,7 +5064,7 @@ describe('Wallet service', function() {
           
             it('should create tx with 0 change output', function(done) {
             helpers.stubUtxos(server, wallet, 2, function() {
-              var fee = 4100; // The exact fee of the resulting tx
+              var fee = 2260; // The exact fee of the resulting tx
               var amount = 2e8 - fee;
 
               var txOpts = {
@@ -5718,7 +5890,7 @@ describe('Wallet service', function() {
           });
         });
         it('should correct fee if resulting change would be below threshold', function(done) {
-          helpers.stubUtxos(server, wallet, ['200bit', '500sat'], function() {
+          helpers.stubUtxos(server, wallet, ['180bit', '500sat'], function() {
             var txOpts = {
               outputs: [{
                 toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',

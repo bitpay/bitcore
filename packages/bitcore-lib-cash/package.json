@@ -1,6 +1,6 @@
 {
   "name": "bitcore-lib-cash",
-  "version": "8.25.10",
+  "version": "8.25.22",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",

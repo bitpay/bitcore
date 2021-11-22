@@ -61,9 +61,9 @@ export class SearchProvider {
         { chain: 'BCH', network: 'mainnet' }
       ],
     },
-    // Testnet BTC / BCH / Doge Address
+    // Testnet BTC / BCH / Doge / LTC Address
     {
-      regexes: [/^(bitcoin:|bchtest:|dogecoin:)?([2mn][1-9A-HJ-NP-Za-km-z]{26,35})/],
+      regexes: [/^(bitcoin:|bchtest:|dogecoin:|litecoin:)?([2mn][1-9A-HJ-NP-Za-km-z]{26,35})/],
       dataIndex: 2,
       type: 'address',
       chainNetworks: [
@@ -99,7 +99,16 @@ export class SearchProvider {
         { chain: 'DOGE', network: 'mainnet' }
       ],
     },
-    // BTC / BCH / DOGE block or tx
+    // LTC Address
+    {
+      regexes: [/^(litecoin:)?([LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$)/],
+      dataIndex: 2,
+      type: 'address',
+      chainNetworks: [
+        { chain: 'LTC', network: 'mainnet' }
+      ],
+    },
+    // BTC / BCH / DOGE / LTC block or tx
     {
       regexes: [/^[A-Fa-f0-9]{64}$/],
       type: 'blockOrTx',
@@ -107,9 +116,11 @@ export class SearchProvider {
         { chain: 'BTC', network: 'mainnet' },
         { chain: 'BCH', network: 'mainnet' },
         { chain: 'DOGE', network: 'mainnet' },
+        { chain: 'LTC', network: 'mainnet' },
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
-        { chain: 'DOGE', network: 'testnet' }
+        { chain: 'DOGE', network: 'testnet' },
+        { chain: 'LTC', network: 'testnet' }
       ],
     },
     // ETH block or tx
@@ -121,7 +132,7 @@ export class SearchProvider {
         { chain: 'ETH', network: 'testnet' }
       ],
     },
-    // BTC / BCH / DOGE / ETH block height
+    // BTC / BCH / DOGE / ETH / LTC block height
     {
       regexes: [/^[0-9]{1,9}$/],
       type: 'block',
@@ -130,10 +141,12 @@ export class SearchProvider {
         { chain: 'BCH', network: 'mainnet' },
         { chain: 'DOGE', network: 'mainnet' },
         { chain: 'ETH', network: 'mainnet' },
+        { chain: 'LTC', network: 'mainnet' },
         { chain: 'BTC', network: 'testnet' },
         { chain: 'BCH', network: 'testnet' },
         { chain: 'DOGE', network: 'testnet' },
-        { chain: 'ETH', network: 'testnet' }
+        { chain: 'ETH', network: 'testnet' },
+        { chain: 'LTC', network: 'testnet' }
       ],
     },
   ]

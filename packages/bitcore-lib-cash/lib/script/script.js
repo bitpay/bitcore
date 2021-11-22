@@ -12,6 +12,7 @@ var errors = require('../errors');
 var buffer = require('buffer');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
+var Escrow = require('./escrow');
 
 /**
  * A bitcoin transaction script. Each transaction's inputs and outputs
@@ -343,8 +344,8 @@ Script.prototype.isPublicKeyHashIn = function() {
 };
 
 Script.prototype.getPublicKey = function() {
-  $.checkState(this.isPublicKeyOut(), 'Can\'t retrieve PublicKey from a non-PK output');
-  return this.chunks[0].buf;
+  $.checkState(this.isPublicKeyOut() || this.isPublicKeyHashIn(), "Can't retrieve PublicKey from a non-PK output or non-PKH input");
+  return this.isPublicKeyOut() ? this.chunks[0].buf : this.chunks[1].buf;
 };
 
 Script.prototype.getPublicKeyHash = function() {
@@ -706,6 +707,24 @@ Script.prototype.removeCodeseparators = function() {
 // high level script builder methods
 
 /**
+ * @returns {Script} a new escrow output redeem script for given input public keys and reclaim public key
+ * @param {PublicKey[]} inputPublicKeys - list of all public keys associated with each P2PKH input of the
+ * zero-confirmation escrow transaction
+ * @param {PublicKey} reclaimPublicKey - the public key used to reclaim the escrow by the customer
+ */
+ Script.buildEscrowOut = function(inputPublicKeys, reclaimPublicKey) {
+  // Escrow redeem scripts support a max of 2^16 input public keys: 
+  // https://github.com/bitjson/bch-zce#zce-root-hash
+  $.checkArgument(inputPublicKeys.length < 65536, 'Number of input public keys exceeds 65,536');
+  $.checkArgument(inputPublicKeys.length > 0, 'Must provide at least one input public key');
+  $.checkArgument(reclaimPublicKey, 'Must provide a reclaim public key');
+  const redeemScript = new Script();
+  const redeemScriptOperations = Escrow.generateRedeemScriptOperations(inputPublicKeys, reclaimPublicKey);
+  redeemScriptOperations.forEach(operation => redeemScript.add(operation));
+  return redeemScript;
+};
+
+/**
  * @returns {Script} a new Multisig output script for given public keys,
  * requiring m of those public keys to spend
  * @param {PublicKey[]} publicKeys - list of all public keys controlling the output
@@ -972,6 +991,22 @@ Script.buildPublicKeyHashIn = function(publicKey, signature, sigtype) {
     ]))
     .add(new PublicKey(publicKey).toBuffer());
   return script;
+};
+
+/**
+ * Builds a scriptSig (a script for an input) that signs an escrow output script.
+ *
+ * @param {PublicKey} publicKey
+ * @param {Signature} signature - a Signature object
+ * @param {RedeemScript} redeemScript - the escrow redeemScript
+ */
+ Script.buildEscrowIn = function(publicKey, signature, redeemScript) {
+  $.checkArgument(signature instanceof Signature);
+  const sighashAll = Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+  return new Script()
+    .add(BufferUtil.concat([signature.toBuffer('schnorr'), BufferUtil.integerAsSingleByteBuffer(sighashAll)]))
+    .add(publicKey.toBuffer())
+    .add(redeemScript.toBuffer());
 };
 
 /**

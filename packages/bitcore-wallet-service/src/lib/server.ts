@@ -50,6 +50,7 @@ const Common = require('./common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
+const Services = Common.Services;
 
 const Errors = require('./errors/errordefinitions');
 
@@ -1309,7 +1310,7 @@ export class WalletService {
     const createNewAddress = (wallet, cb) => {
       let address;
       try {
-        address = wallet.createAddress(false);
+        address = wallet.createAddress(!!opts.isChange);
       } catch (e) {
         this.logw('Error creating address', e);
         return cb('Bad xPub');
@@ -1472,7 +1473,7 @@ export class WalletService {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet;
+    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet, blockchainHeight;
     async.series(
       [
         next => {
@@ -1513,26 +1514,78 @@ export class WalletService {
         },
         next => {
           if (!wallet.isComplete()) return next();
-
           this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
             if (err) return next(err);
-
-            const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
-            bc.getUtxos(wallet, height, (err, utxos) => {
-              if (err) return next(err);
-              if (utxos.length == 0) return cb(null, []);
-
-              // filter out DUST
-              allUtxos = _.filter(utxos, x => {
-                return x.satoshis >= dustThreshold;
-              });
-
-              utxoIndex = _.keyBy(allUtxos, utxoKey);
-              return next();
-            });
+            blockchainHeight = height;
+            next();
           });
         },
         next => {
+          if (!wallet.isComplete()) return next();
+
+          const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
+          const isEscrowPayment = wallet.isZceCompatible() && opts.instantAcceptanceEscrow ? true : false;
+          const replaceTxByFee = opts.replaceTxByFee ? true : false;
+          bc.getUtxos(
+            wallet,
+            blockchainHeight,
+            (err, utxos) => {
+              if (err) return next(err);
+              if (utxos.length == 0) return cb(null, []);
+
+              let unusableAddresses = [];
+              if (isEscrowPayment) {
+                const unusableUtxos = utxos.filter(utxo => utxo.spent || utxo.address.startsWith('p'));
+                unusableAddresses = unusableUtxos.map(utxo => utxo.address);
+              }
+
+              allUtxos = utxos.filter(x => x.satoshis >= dustThreshold && !unusableAddresses.includes(x.address));
+
+              return next();
+            },
+            { includeSpent: isEscrowPayment || replaceTxByFee }
+          );
+        },
+        next => {
+          if (!wallet.isComplete() || !wallet.isZceCompatible()) return next();
+
+          // Ensure no UTXOs which originate from addresses that were recently used to fund a currently
+          // insufficiently confirmed ZCE-secured payment can be used to fund any subsequent transactions
+          // until the ZCE-secured payment (and escrow reclaim tx) receives 11 confirmations.
+          // Rationale: https://github.com/bitjson/bch-zce#wallet-utxo-selection
+
+          const bchRollingBlockCheckpointNumber = 10;
+          const bchReorgSafeBlockHeight = blockchainHeight - bchRollingBlockCheckpointNumber - 1;
+          let lockedAddresses = [];
+          bc.getTransactions(wallet, bchReorgSafeBlockHeight, (err, txs) => {
+            if (err) return next(err);
+            const unconfirmedZceTxs = txs.filter(tx => tx.category === 'move' && tx.address.startsWith('p'));
+            async.each(
+              unconfirmedZceTxs,
+              (tx: any, next) => {
+                this.getCoinsForTx({ txId: tx.txid }, (err, coins) => {
+                  if (err) return next(err);
+                  const inputAddresses = coins.inputs.map(input => input.address);
+                  lockedAddresses = [...lockedAddresses, ...inputAddresses];
+                  return next();
+                });
+              },
+              err => {
+                if (err) return next(err);
+                allUtxos = allUtxos.map(utxo => {
+                  if (lockedAddresses.includes(utxo.address)) {
+                    utxo.locked = true;
+                  }
+                  return utxo;
+                });
+                return next();
+              }
+            );
+          });
+        },
+        next => {
+          utxoIndex = _.keyBy(allUtxos, utxoKey);
+
           this.getPendingTxs({}, (err, txps) => {
             if (err) return next(err);
 
@@ -1561,13 +1614,19 @@ export class WalletService {
             (err, txs) => {
               if (err) return next(err);
               const spentInputs = _.map(_.flatten(_.map(txs, 'inputs')), utxoKey);
+              const txIdArray = _.map(opts.inputs, 'txid');
+
               _.each(spentInputs, input => {
                 if (utxoIndex[input]) {
                   utxoIndex[input].spent = true;
                 }
               });
-              allUtxos = _.reject(allUtxos, {
-                spent: true
+              // except spent inputs of the RBF transaction if it's a replacement
+              allUtxos = _.reject(allUtxos, utxo => {
+                return (
+                  (!opts.replaceTxByFee && utxo.spent) ||
+                  (utxo.spent && opts.replaceTxByFee && !_.includes(txIdArray, utxo.txid))
+                );
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
@@ -2217,6 +2276,8 @@ export class WalletService {
    * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
    * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
    * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
+   * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
+   * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2339,6 +2400,7 @@ export class WalletService {
                     walletM: wallet.m,
                     walletN: wallet.n,
                     excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
+                    instantAcceptanceEscrow: opts.instantAcceptanceEscrow,
                     addressType: wallet.addressType,
                     customData: opts.customData,
                     inputs: opts.inputs,
@@ -2354,13 +2416,27 @@ export class WalletService {
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod,
-                    isTokenSwap: opts.isTokenSwap
+                    isTokenSwap: opts.isTokenSwap,
+                    enableRBF: opts.enableRBF,
+                    replaceTxByFee: opts.replaceTxByFee
                   };
                   txp = TxProposal.create(txOpts);
                   next();
                 },
                 next => {
                   return ChainService.selectTxInputs(this, txp, wallet, opts, next);
+                },
+                async next => {
+                  if (!wallet.isZceCompatible() || !opts.instantAcceptanceEscrow) return next();
+                  try {
+                    opts.inputs = txp.inputs;
+                    const escrowAddress = await ChainService.getChangeAddress(this, wallet, opts);
+                    txp.escrowAddress = escrowAddress;
+                  } catch (error) {
+                    return next(error);
+                  }
+                  if (opts.dryRun) return next();
+                  this._store(wallet, txp.escrowAddress, next, true);
                 },
                 next => {
                   if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress) return next();
@@ -4962,6 +5038,38 @@ export class WalletService {
         }
       );
     });
+  }
+
+  checkServiceAvailability(req): boolean {
+      if (!checkRequired(req.body, ['service', 'opts'])) {
+        throw new ClientError('checkServiceAvailability request missing arguments');
+      }
+
+      let serviceEnabled: boolean;
+
+      switch (req.body.service) {
+        case '1inch':
+          if (req.body.opts?.country?.toUpperCase() === 'US') {
+            serviceEnabled = false;
+          } else {
+            serviceEnabled = true;
+          }
+          break;
+      
+        default:
+          serviceEnabled = true;
+          break;
+      }
+
+      return serviceEnabled;
+  }
+
+  getSpenderApprovalWhitelist(cb) {
+    if (Services.ERC20_SPENDER_APPROVAL_WHITELIST) {
+      return cb(null, Services.ERC20_SPENDER_APPROVAL_WHITELIST);
+    } else {
+      return cb(new Error('Could not get ERC20 spender approval whitelist'));
+    }
   }
 
   getPayId(url: string): Promise<any> {

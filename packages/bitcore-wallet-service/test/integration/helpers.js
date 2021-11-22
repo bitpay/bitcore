@@ -69,6 +69,7 @@ helpers.before = function(cb) {
     be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
     be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
     be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
+    be.getTransactions = sinon.stub().callsArgWith(2, null,[]);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
     be.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
     be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });

@@ -28,7 +28,7 @@ describe('Witness Address', function() {
   it('should throw an error because of bad type param', function() {
     (function() {
       return new Address(P2WPKHLivenet[0], 'livenet', 'pubkey');
-    }).should.throw('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", or "witnessscripthash".');
+    }).should.throw('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", "witnessscripthash", or "taproot".');
   });
 
   // livenet valid
@@ -65,18 +65,38 @@ describe('Witness Address', function() {
     'bc1q9225rawdn2dlwsk3dd8phudsap6vjp7fgwh455'
   ];
 
-  //livenet incorrect witness version
+  // incorrect witness version
   var incorrectWitnessVersions = [
-    'bc1p9225pawdj2dlwsk3dd8phudsap6vjp7fr0y9q5',
-    'bc1p9225pawdn2dlwsk3dd8phudsap6vjp7fhqj5wnrpg457qjq0ycvsjzekl8'
+    ['tb1lnuql3d5r8fpkezf9jyvfjcczrwtfjndksaquvfr782uf7xvmpeuq3dyfg2', 'testnet', 'taproot'], // version 31
   ];
 
+
+  // incorrect witness encoding
+  var incorrectWitnessEncoding = [
+    ['bc1p9225pawdj2dlwsk3dd8phudsap6vjp7fr0y9q5', 'livenet', 'witnesspubkeyhash'],
+    ['bc1p9225pawdn2dlwsk3dd8phudsap6vjp7fhqj5wnrpg457qjq0ycvsjzekl8', 'livenet', 'witnesspubkeyhash']
+  ];
+  
   //testnet valid
   var P2WPKHTestnet = [
     'tb1q5lrlddcjejvu0qyx0f5fg59zj89danlxtt058g',
     'tb1qrqsut4l6payxr9zda6s74jsgupc096t40k234h',
     'tb1qkjxpx3kzdqj3qydxfsd88rj8vwzy2ry9luturg',
     'tb1qa38kkwah0mncpn29j6xlzv4xa5m3wrr0juyt2j'
+  ];
+
+
+  // taproot addresses generated using instructions here: https://bitcoin.stackexchange.com/questions/108006/how-to-make-a-taproot-transaction-with-bitcoin-cli
+  // "desc" used in descriptor.txt: "tr([8868ab13/86'/1'/0']tprv8ZgxMBicQKsPe7EVJZjbgFcxVx51KrdMU8MicmR6KBbtTYhuzzdFK8Q7B6GXaTJxaAfpw1gF1dXDjg1DD3K8dchjMVeS214MSFj1bA5iAnH/0/*)#l425xznh"
+
+  // testnet taproot valid
+  var P2TRTestnet = [
+    'tb1pnuql3d5r8fpkezf9jyvfjcczrwtfjndksaquvfr782uf7xvmpeuqnqg5lk',
+    'tb1p6qef90ncxz25pq59c0dfjfezjlk5l0fq7n3w0axh63usmtugtvhqylnyxq',
+    'tb1palsux05ufcpg25al0krew5szfj03vejkqfxpz9kd26ghvruw33qq8q9ykg',
+    'tb1p9g2t30jj3djsn0tlaf6en2pq5qu7vgknyhjg3n54zcmglzy2t52qemw4dy',
+    'tb1pkadknwnukaxnpkg9wwp3430dd0w0shfw4f6ry3e68my0vyz3we5qh6qwhf',
+    'tb1pwjhr3ttlpvshcgrwz7h4asfusyj6angdxx2yvx6q8ds08upk699s44d4ck'
   ];
 
   describe('validation', function() {
@@ -131,6 +151,13 @@ describe('Witness Address', function() {
       }
     });
 
+    it('validates correctly the P2TR testnet vector', function() {
+      for (var i = 0; i < P2TRTestnet.length; i++) {
+        var error = Address.getValidationError(P2TRTestnet[i], 'testnet');
+        should.not.exist(error);
+      }
+    });
+
     it('should not validate if checksum is invalid', function() {
       for (var i = 0; i < badChecksums.length; i++) {
         var error = Address.getValidationError(badChecksums[i], 'livenet', 'witnesspubkeyhash');
@@ -139,11 +166,21 @@ describe('Witness Address', function() {
       }
     });
 
-    it('should not validate if witness version is not 0', function() {
+    it('should not validate if wrong witness version', function() {
       for (var i = 0; i < incorrectWitnessVersions.length; i++) {
-        var error = Address.getValidationError(incorrectWitnessVersions[i], 'livenet', 'witnesspubkeyhash');
+        var [address, network, type] = incorrectWitnessVersions[i];
+        var error = Address.getValidationError(address, network, type);
         should.exist(error);
-        error.message.should.equal('Only witness v0 addresses are supported.');
+        error.message.should.equal('Only witness v0 and v1 addresses are supported.');
+      }
+    });
+
+    it('should not validate if wrong witness encoding', function() {
+      for (var i = 0; i < incorrectWitnessEncoding.length; i++) {
+        var [address, network, type] = incorrectWitnessEncoding[i];
+        var error = Address.getValidationError(address, network, type);
+        should.exist(error);
+        error.message.should.equal('Version 1+ witness address must use Bech32m checksum');
       }
     });
 
@@ -227,10 +264,10 @@ describe('Witness Address', function() {
 
     it('should error because of incorrect type for pubkey transform', function() {
       (function() {
-        return Address._transformPublicKey(new Buffer(20), null, Address.PayToWitnessPublicKeyHash);
+        return Address._transformPublicKey(Buffer.alloc(20), null, Address.PayToWitnessPublicKeyHash);
       }).should.throw('Address must be an instance of PublicKey.');
       (function() {
-        return Address._transformPublicKey(new Buffer(20), null, Address.PayToScriptHash);
+        return Address._transformPublicKey(Buffer.alloc(20), null, Address.PayToScriptHash);
       }).should.throw('Address must be an instance of PublicKey.');
     });
 

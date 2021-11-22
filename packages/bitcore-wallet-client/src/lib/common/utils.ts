@@ -39,7 +39,10 @@ export class Utils {
     let normalizedChain = coin.toUpperCase();
 
     // TODO: If in the future we add a new chain that supports custom tokens, check this condition
-    if (Constants.ERC20.includes(coin.toLowerCase()) || !Constants.COINS.includes(coin.toLowerCase())) {
+    if (
+      Constants.ERC20.includes(coin.toLowerCase()) ||
+      !Constants.COINS.includes(coin.toLowerCase())
+    ) {
       normalizedChain = 'ETH';
     }
     return normalizedChain;
@@ -168,7 +171,15 @@ export class Utils {
     return { _input, addressIndex, isChange };
   }
 
-  static deriveAddress(scriptType, publicKeyRing, path, m, network, coin) {
+  static deriveAddress(
+    scriptType,
+    publicKeyRing,
+    path,
+    m,
+    network,
+    coin,
+    escrowInputs?
+  ) {
     $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
     coin = coin || 'btc';
@@ -192,7 +203,24 @@ export class Utils {
         );
         break;
       case Constants.SCRIPT_TYPES.P2SH:
-        bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
+        if (escrowInputs) {
+          var xpub = new bitcore.HDPublicKey(publicKeyRing[0].xPubKey);
+          const inputPublicKeys = escrowInputs.map(
+            input => xpub.deriveChild(input.path).publicKey
+          );
+          bitcoreAddress = bitcore.Address.createEscrow(
+            inputPublicKeys,
+            publicKeys[0],
+            network
+          );
+          publicKeys = [publicKeys[0], ...inputPublicKeys];
+        } else {
+          bitcoreAddress = bitcore.Address.createMultisig(
+            publicKeys,
+            m,
+            network
+          );
+        }
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
         bitcoreAddress = bitcore.Address.fromPublicKey(
@@ -366,7 +394,17 @@ export class Utils {
       }
 
       t.fee(txp.fee);
+
+      if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
+        t.escrow(
+          txp.escrowAddress.address,
+          txp.instantAcceptanceEscrow + txp.fee
+        );
+      }
+
       t.change(txp.changeAddress.address);
+
+      if (txp.enableRBF) t.enableRBF();
 
       // Shuffle outputs for improved privacy
       if (t.outputs.length > 1) {

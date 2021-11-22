@@ -1406,6 +1406,7 @@ export class API extends EventEmitter {
       null;
     args.payProUrl = opts.payProUrl || null;
     args.isTokenSwap = opts.isTokenSwap || null;
+    args.replaceTxByFee = opts.replaceTxByFee || null;
     _.each(args.outputs, o => {
       o.message =
         API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) ||
@@ -1437,6 +1438,8 @@ export class API extends EventEmitter {
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
   // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
   // * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
+  // * @param {Boolean} opts.enableRBF - Optional. Enable BTC Replace By Fee
+  // * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
   // * @returns {Callback} cb - Return error or the transaction proposal
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
@@ -1513,6 +1516,7 @@ export class API extends EventEmitter {
   // *
   // * @param {Object} opts
   // * @param {Boolean} opts.ignoreMaxGap[=false]
+  // * @param {Boolean} opts.isChange[=false]
   // * @param {Callback} cb
   // * @returns {Callback} cb - Return error or the address
   // */
@@ -2120,7 +2124,8 @@ export class API extends EventEmitter {
           for (const signed of serializedTxs) {
             signedTransactions.push({
               tx: signed,
-              weightedSize: weightedSize[i++]
+              weightedSize: weightedSize[i++],
+              escrowReclaimTx: txp.escrowReclaimTx
             });
           }
           PayProV2.verifyUnsignedPayment({

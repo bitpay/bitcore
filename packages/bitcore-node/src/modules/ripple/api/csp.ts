@@ -96,7 +96,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
           throw e;
         }
       },
-      CacheStorage.Times.Hour / 2
+      CacheStorage.Times.Minute
     );
   }
 

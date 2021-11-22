@@ -107,7 +107,6 @@ export class Utils {
     }, {} as { [currency: string]: { toSatoshis: number; maxDecimals: number; minDecimals: number } });
 
     $.shouldBeNumber(satoshis);
-    $.checkArgument(_.includes(_.keys(UNITS), unit));
 
     function addSeparators(nStr, thousands, decimal, minDecimals) {
       nStr = nStr.replace('.', decimal);
@@ -126,12 +125,16 @@ export class Utils {
 
     opts = opts || {};
 
-    if (!UNITS[unit]) {
+    if (!UNITS[unit] && !opts.decimals && !opts.toSatoshis) {
       return Number(satoshis).toLocaleString();
     }
+
     const u = _.assign(UNITS[unit], opts);
-    const amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
-    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);
+    var decimals = opts.decimals ? opts.decimals : u;
+    var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
+
+    const amount = (satoshis / toSatoshis).toFixed(decimals.maxDecimals);
+    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', decimals.minDecimals);
   }
 
   static formatAmountInBtc(amount) {
