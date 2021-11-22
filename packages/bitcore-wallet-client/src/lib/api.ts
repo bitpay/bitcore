@@ -2194,7 +2194,7 @@ export class API extends EventEmitter {
   }
 
   // /**
-  // * Get transaction history
+  // * Get transaction history veriosn v2( include immature status and mined status of mining tx )
   // *
   // * @param {Object} opts
   // * @param {Number} opts.skip (defaults to 0)
@@ -2225,7 +2225,7 @@ export class API extends EventEmitter {
       qs = '?' + args.join('&');
     }
 
-    var url = '/v1/txhistory/' + qs;
+    var url = '/v2/txhistory/' + qs;
     this.request.get(url, (err, txs) => {
       if (err) return cb(err);
       this._processTxps(txs);

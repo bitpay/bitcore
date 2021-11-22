@@ -539,6 +539,7 @@ export class BtcChain implements IChain {
       );
 
       return _.filter(utxos, utxo => {
+        if (utxo.immature) return false;
         if (utxo.locked) return false;
         if (txp.excludeUnconfirmedUtxos && !utxo.confirmations) return false;
         if (excludeIndex[utxo.txid + ':' + utxo.vout]) return false;

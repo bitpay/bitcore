@@ -173,9 +173,11 @@ export class V8 {
           txid: x.mintTxid,
           vout: x.mintIndex,
           locked: false,
-          confirmations: x.mintHeight > 0 && bcheight >= x.mintHeight ? bcheight - x.mintHeight + 1 : 0
+          confirmations: x.mintHeight > 0 && bcheight >= x.mintHeight ? bcheight - x.mintHeight + 1 : 0,
+          coinbase: x.coinbase,
+          immature: false
         };
-
+        u.immature = u.coinbase && u.confirmations < Defaults.COINBASE_MATURITY;
         // v8 field name differences
         return u;
       }

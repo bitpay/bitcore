@@ -1018,6 +1018,31 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v2/txhistory/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        const opts: {
+          skip?: number;
+          limit?: number;
+          includeExtendedInfo?: boolean;
+          tokenAddress?: string;
+          multisigContractAddress?: string;
+          includeImmatureStatus?: boolean;
+        } = {};
+        if (req.query.skip) opts.skip = +req.query.skip;
+        if (req.query.limit) opts.limit = +req.query.limit;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
+        opts.includeImmatureStatus = true;
+
+        server.getTxHistory(opts, (err, txs) => {
+          if (err) return returnError(err, res, req);
+          res.json(txs);
+          res.end();
+        });
+      });
+    });
+
     router.get('/v1/txhistory/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts: {

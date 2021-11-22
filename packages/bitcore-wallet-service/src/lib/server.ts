@@ -3344,7 +3344,7 @@ export class WalletService {
     });
   }
 
-  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
+  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, includeImmatureStatus, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
 
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
@@ -3461,7 +3461,8 @@ export class WalletService {
             action: undefined,
             addressTo: undefined,
             outputs: undefined,
-            dust: false
+            dust: false,
+            coinbase: tx.coinbase
           };
           switch (tx.category) {
             case 'send':
@@ -3471,7 +3472,11 @@ export class WalletService {
               ret.outputs = tx.outputs;
               break;
             case 'receive':
-              ret.action = 'received';
+              let action = 'received';
+              if (tx.coinbase && includeImmatureStatus) {
+                action = c >= Defaults.COINBASE_MATURITY ? 'mined' : 'immature';
+              }
+              ret.action = action;
               ret.outputs = tx.outputs;
               ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
               ret.dust = ret.amount < dustThreshold;
@@ -4100,26 +4105,33 @@ export class WalletService {
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
             const dustThreshold = ChainService.getDustAmountValue(wallet.coin);
-            this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, (err, inTxs: any[]) => {
-              if (err) return cb(err);
+            this._normalizeTxHistory(
+              walletCacheKey,
+              txs,
+              dustThreshold,
+              bcHeight,
+              opts.includeImmatureStatus,
+              (err, inTxs: any[]) => {
+                if (err) return cb(err);
 
-              if (cacheStatus.tipTxId) {
-                // first item is the most recent tx.
-                // removes already cache txs
-                lastTxs = _.takeWhile(inTxs, tx => {
-                  // cacheTxs are very confirmed, so can't be reorged
-                  return tx.txid != cacheStatus.tipTxId;
-                });
+                if (cacheStatus.tipTxId) {
+                  // first item is the most recent tx.
+                  // removes already cache txs
+                  lastTxs = _.takeWhile(inTxs, tx => {
+                    // cacheTxs are very confirmed, so can't be reorged
+                    return tx.txid != cacheStatus.tipTxId;
+                  });
 
-                // only store stream IF cache is been used.
-                //
-                logger.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
-                return this.storage.storeTxHistoryStreamV8(walletCacheKey, streamKey, lastTxs, next);
+                  // only store stream IF cache is been used.
+                  //
+                  logger.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
+                  return this.storage.storeTxHistoryStreamV8(walletCacheKey, streamKey, lastTxs, next);
+                }
+
+                lastTxs = inTxs;
+                return next();
               }
-
-              lastTxs = inTxs;
-              return next();
-            });
+            );
           });
         },
         next => {
@@ -4169,8 +4181,10 @@ export class WalletService {
               if (x.blockheight > 0 && bcHeight >= x.blockheight) {
                 x.confirmations = bcHeight - x.blockheight + 1;
               }
+              if (x.action == 'immature' && x.confirmations >= Defaults.COINBASE_MATURITY) {
+                x.action = 'mined';
+              }
             });
-
             resultTxs = resultTxs.concat(oldTxs);
             return next();
           });
