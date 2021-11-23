@@ -135,15 +135,21 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
 
       if (internal && internal.length > 0) {
         internal.forEach(i => {
-          if (i.action.to) batch.push({ address: i.action.to });
-          if (i.action.from) batch.push({ address: i.action.from });
+          if (i.action.to) {
+            batch.push({ address: i.action.to });
+            batch.push({ address: from, tokenAddress: i.action.to });
+          }
+          if (i.action.from) {
+            batch.push({ address: i.action.from });
+            batch.push({ address: to, tokenAddress: i.action.from });
+          }
         });
       }
 
       for (const payload of batch) {
         const lowerAddress = payload.address.toLowerCase();
         const cacheKey = payload.tokenAddress
-          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${to.toLowerCase()}`
+          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${payload.tokenAddress.toLowerCase()}`
           : `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
         await CacheStorage.expire(cacheKey);
       }
