@@ -83,6 +83,13 @@ module.exports = {
         defaultValue: 1000000000
       }
     ],
+    rsk: [
+      {
+        name: 'superEconomy',
+        nbBlocks: 1,
+        defaultValue: 59240000
+      }
+    ],
     xrp: [
       {
         name: 'normal',
@@ -237,6 +244,7 @@ module.exports = {
     btc: 10000 * 1000, // 10k sat/b
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
+    rsk: 1000000000000,
     xrp: 1000000000000,
     doge: 100000000 * 100,
     ltc: 10000 * 1000 // 10k sat/b
@@ -248,7 +256,8 @@ module.exports = {
     eth: 0,
     xrp: 0,
     doge: 0,
-    ltc: 0
+    ltc: 0,
+    rsk: 59240000 // minGasPrice
   },
 
   MAX_TX_FEE: {
@@ -257,7 +266,8 @@ module.exports = {
     eth: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
-    ltc: 0.05 * 1e8
+    ltc: 0.05 * 1e8,
+    rsk: 1 * 1e18 // 1 rbtc
   },
 
   // ETH

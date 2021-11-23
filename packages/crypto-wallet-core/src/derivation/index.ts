@@ -22,6 +22,7 @@ const derivers: { [chain: string]: IDeriver } = {
   BTC: new BtcDeriver(),
   BCH: new BchDeriver(),
   ETH: new EthDeriver(),
+  RSK: new EthDeriver(),
   XRP: new XrpDeriver(),
   DOGE: new DogeDeriver(),
   LTC: new LtcDeriver()

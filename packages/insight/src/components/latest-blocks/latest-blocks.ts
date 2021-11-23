@@ -66,7 +66,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
                 if (UTXO_CHAINS.includes(this.chainNetwork.chain)) {
                   return this.blocksProvider.toUtxoCoinAppBlock(block);
                 }
-                if (this.chainNetwork.chain === 'ETH') {
+                if (this.chainNetwork.chain === 'ETH' || this.chainNetwork.chain === 'RSK') {
                   return this.blocksProvider.toEthAppBlock(block);
                 }
               }
@@ -105,7 +105,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
               ) {
                 return this.blocksProvider.toUtxoCoinAppBlock(block);
               }
-              if (this.chainNetwork.chain === 'ETH') {
+              if (this.chainNetwork.chain === 'ETH' || this.chainNetwork.chain === 'RSK') {
                 return this.blocksProvider.toEthAppBlock(block);
               }
             }
