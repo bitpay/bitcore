@@ -44,7 +44,7 @@ var PublicKey = require('./publickey');
  *
  * @param {*} data - The encoded data in various formats
  * @param {Network|String|number=} network - The network: 'livenet' or 'testnet'
- * @param {string=} type - The type of address: 'scripthash', 'pubkeyhash', witnessscripthash or 'witnesspubkeyhash'
+ * @param {string=} type - The type of address: 'scripthash', 'pubkeyhash', witnessscripthash, 'witnesspubkeyhash', or 'taproot'
  * @param {string=} multisigType - The type of multisig: 'scripthash' or 'witnessscripthash'
  * @returns {Address} A new valid and frozen instance of an Address
  * @constructor
@@ -76,8 +76,9 @@ function Address(data, network, type, multisigType) {
     type !== Address.PayToPublicKeyHash
     && type !== Address.PayToScriptHash
     && type !== Address.PayToWitnessPublicKeyHash
-    && type !== Address.PayToWitnessScriptHash)) {
-    throw new TypeError('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", or "witnessscripthash".');
+    && type !== Address.PayToWitnessScriptHash
+    && type !== Address.PayToTaproot)) {
+    throw new TypeError('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", "witnessscripthash", or "taproot".');
   }
 
   var info = this._classifyArguments(data, network, type);
@@ -130,6 +131,8 @@ Address.PayToScriptHash = 'scripthash';
 Address.PayToWitnessPublicKeyHash = 'witnesspubkeyhash';
 /** @static */
 Address.PayToWitnessScriptHash = 'witnessscripthash';
+/** @static */
+Address.PayToTaproot = 'taproot';
 
 /**
  * @param {Buffer} hash - An instance of a hash Buffer
@@ -182,15 +185,25 @@ Address._classifyFromVersion = function(buffer) {
 
   if (buffer.length > 21) {
     var info = Bech32.decode(buffer.toString('utf8'));
-    if (info.version !== 0) {
-      throw new TypeError('Only witness v0 addresses are supported.');
+    if (info.version !== 0 && info.version !== 1) { // v1 == taproot
+      throw new TypeError('Only witness v0 and v1 addresses are supported.');
     }
-    if (info.data.length === 20) {
-      version.type = Address.PayToWitnessPublicKeyHash;
-    } else if (info.data.length === 32) {
-      version.type = Address.PayToWitnessScriptHash;
+
+    if (info.version === 0) {
+      if (info.data.length === 20) {
+        version.type = Address.PayToWitnessPublicKeyHash;
+      } else if (info.data.length === 32) {
+        version.type = Address.PayToWitnessScriptHash;
+      } else {
+        throw new TypeError('Witness data must be either 20 or 32 bytes.')
+      }
+    } else if (info.version === 1) {
+      if (info.data.length === 32) {
+        version.type = Address.PayToTaproot;
+      } else {
+        throw new TypeError('Witness data must be 32 bytes for v1');
+      }
     } else {
-      throw new TypeError('Witness data must be either 20 or 32 bytes.')
     }
     version.network = Networks.get(info.prefix, 'bech32prefix');
   } else {
@@ -259,7 +272,7 @@ Address._transformBuffer = function(buffer, network, type) {
  * Internal function to transform a {@link PublicKey}
  *
  * @param {PublicKey} pubkey - An instance of PublicKey
- * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', or 'scripthash'
+ * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', 'scripthash', or 'taproot'
  * @returns {Object} An object with keys: hashBuffer, type
  * @private
  */
@@ -268,14 +281,16 @@ Address._transformPublicKey = function(pubkey, network, type) {
   if (!(pubkey instanceof PublicKey)) {
     throw new TypeError('Address must be an instance of PublicKey.');
   }
-  if (type && type !== Address.PayToScriptHash && type !== Address.PayToWitnessPublicKeyHash && type !== Address.PayToPublicKeyHash) {
-    throw new TypeError('Type must be either pubkeyhash, witnesspubkeyhash, or scripthash to transform public key.');
+  if (type && type !== Address.PayToScriptHash && type !== Address.PayToWitnessPublicKeyHash && type !== Address.PayToPublicKeyHash && type !== Address.PayToTaproot) {
+    throw new TypeError('Type must be either pubkeyhash, witnesspubkeyhash, scripthash, or taproot to transform public key.');
   }
   if (!pubkey.compressed && (type === Address.PayToScriptHash || type === Address.PayToWitnessPublicKeyHash)) {
     throw new TypeError('Witness addresses must use compressed public keys.');
   }
   if (type === Address.PayToScriptHash) {
     info.hashBuffer = Hash.sha256ripemd160(Script.buildWitnessV0Out(pubkey).toBuffer());
+  } else if (type === Address.PayToTaproot) {
+    info.hashBuffer = Hash.sha256ripemd160(Script.buildWitnessV1Out(pubkey).toBuffer());
   } else {
     info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
   }
@@ -361,7 +376,7 @@ Address._transformString = function(data, network, type) {
     var info = Address._transformBuffer(Buffer.from(data, 'utf8'), network, type);
     return info;
   } catch (e) {
-    if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash) {
+    if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash || type === Address.PayToTaproot) {
       throw e;
     }
   }
@@ -573,6 +588,14 @@ Address.prototype.isPayToWitnessScriptHash = function() {
 };
 
 /**
+ * Returns true if an address is of pay to Taproot script hash type
+ * @returns {boolean}
+ */
+Address.prototype.isPayToTaproot = function() {
+  return this.type === Address.PayToTaproot;
+}
+
+/**
  * Will return a buffer representation of the address
  *
  * @returns {Buffer} Bitcoin address buffer
@@ -602,10 +625,15 @@ Address.prototype.toObject = Address.prototype.toJSON = function toObject() {
  * @returns {string} Bitcoin address
  */
 Address.prototype.toString = function() {
-  if (this.isPayToWitnessPublicKeyHash() || this.isPayToWitnessScriptHash()) {
-    var prefix = this.network.bech32prefix;
-    var version = 0; // Only supporting segwit v0 for now
-    return Bech32.encode(prefix, version, this.hashBuffer);
+  if (this.isPayToWitnessPublicKeyHash() || this.isPayToWitnessScriptHash() || this.isPayToTaproot()) {
+    let prefix = this.network.bech32prefix;
+    let version = 0;
+    let encoding = Bech32.encodings.BECH32;
+    if (this.isPayToTaproot()) {
+      version = 1;
+      encoding = Bech32.encodings.BECH32M;
+    }
+    return Bech32.encode(prefix, version, this.hashBuffer, encoding);
   }
   return Base58Check.encode(this.toBuffer());
 };
