@@ -6,8 +6,9 @@ export class EthListTransactionsStream extends Transform {
   constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }
-
   async _transform(transaction: MongoBound<IEthTransactionTransformed>, _, done) {
+    const dataStr = transaction.data ? transaction.data.toString() : '';
+
     let sending = this.walletAddresses.includes(transaction.from);
     if (sending) {
       let sendingToOurself = this.walletAddresses.includes(transaction.to);
@@ -27,9 +28,13 @@ export class EthListTransactionsStream extends Transform {
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            internal: transaction.internal,
             abiType: transaction.abiType,
-            error: transaction.error
+            error: transaction.error,
+            internal: transaction.internal,
+            network: transaction.network,
+            chain: transaction.chain,
+            data: dataStr,
+            nonce: transaction.nonce
           }) + '\n'
         );
       } else {
@@ -48,9 +53,13 @@ export class EthListTransactionsStream extends Transform {
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            internal: transaction.internal,
             abiType: transaction.abiType,
-            error: transaction.error
+            error: transaction.error,
+            internal: transaction.internal,
+            network: transaction.network,
+            chain: transaction.chain,
+            data: dataStr,
+            nonce: transaction.nonce
           }) + '\n'
         );
       }
@@ -72,9 +81,13 @@ export class EthListTransactionsStream extends Transform {
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            internal: transaction.internal,
             abiType: transaction.abiType,
-            error: transaction.error
+            error: transaction.error,
+            internal: transaction.internal,
+            network: transaction.network,
+            chain: transaction.chain,
+            data: dataStr,
+            nonce: transaction.nonce
           }) + '\n'
         );
       }
