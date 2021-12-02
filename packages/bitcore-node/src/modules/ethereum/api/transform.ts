@@ -1,12 +1,12 @@
 import { Transform } from 'stream';
 import { MongoBound } from '../../../models/base';
-import { IEthTransaction } from '../types';
+import { IEthTransactionTransformed } from '../types';
 
 export class EthListTransactionsStream extends Transform {
   constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }
-  async _transform(transaction: MongoBound<IEthTransaction>, _, done) {
+  async _transform(transaction: MongoBound<IEthTransactionTransformed>, _, done) {
     const dataStr = transaction.data ? transaction.data.toString() : '';
 
     let sending = this.walletAddresses.includes(transaction.from);
@@ -22,6 +22,7 @@ export class EthListTransactionsStream extends Transform {
             satoshis: -transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            initialFrom: transaction.initialFrom || transaction.from,
             gasPrice: transaction.gasPrice,
             gasLimit: transaction.gasLimit,
             receipt: transaction.receipt,
@@ -46,6 +47,7 @@ export class EthListTransactionsStream extends Transform {
             satoshis: transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            initialFrom: transaction.initialFrom || transaction.from,
             gasPrice: transaction.gasPrice,
             gasLimit: transaction.gasLimit,
             receipt: transaction.receipt,
@@ -73,6 +75,7 @@ export class EthListTransactionsStream extends Transform {
             satoshis: transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            initialFrom: transaction.initialFrom || transaction.from,
             gasPrice: transaction.gasPrice,
             gasLimit: transaction.gasLimit,
             receipt: transaction.receipt,

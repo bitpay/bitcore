@@ -239,7 +239,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       const query = {
         $or: [
           { chain, network, from: address },
-          { chain, network, to: address }
+          { chain, network, to: address },
+          { chain, network, 'internal.action.to': address }
         ]
       };
 
@@ -248,7 +249,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       Storage.apiStreamingFind(EthTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
     } else {
       try {
-        const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
+        const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
         res!.json(tokenTransfers);
       } catch (e) {
         res!.status(500).send(e);
@@ -345,7 +346,9 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           }
         }
       }
-      if (args.includeInvalidTxs) delete query.blockHeight;
+      if (args.includeInvalidTxs) {
+        delete query.blockHeight;
+      }
     }
     return query;
   }
@@ -531,16 +534,18 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         }
       }
 
+      const addressBatchLC = addressBatch.map(address => address.toLowerCase());
+
       await EthTransactionStorage.collection.updateMany(
         {
           $or: [
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
-            { chain, network, 'internal.action.to': { $in: addressBatch } },
+            { chain, network, 'internal.action.to': { $in: addressBatchLC } },
             {
               chain,
               network,
-              'abiType.params.0.value': { $in: addressBatch.map(address => address.toLowerCase()) },
+              'abiType.params.0.value': { $in: addressBatchLC },
               'abiType.type': 'ERC20',
               'abiType.name': 'transfer'
             }
