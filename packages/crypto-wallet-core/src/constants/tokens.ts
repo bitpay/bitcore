@@ -34,5 +34,11 @@ export let TOKEN_OPTS = {
     symbol: 'WBTC',
     decimal: 9,
     address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
+  },
+  '0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce': {
+    address: '0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce',
+    decimal: 18,
+    name: 'SHIBA INU',
+    symbol: 'SHIB'
   }
 };
