@@ -412,6 +412,14 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
     });
+    it('adds no change if fee less than DUST_AMOUNT', function () {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith10DOGE)
+        .to(toAddress, 10*1e8 - Transaction.DUST_AMOUNT)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
     it('fee can be set up manually', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith10DOGE)
