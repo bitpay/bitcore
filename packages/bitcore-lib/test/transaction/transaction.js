@@ -236,7 +236,7 @@ describe('Transaction', function() {
       const reserialized = tx.uncheckedSerialize();
       reserialized.should.equal(taprootTx);
     });
-  
+
 
   describe('transaction creation test vector', function() {
     this.timeout(5000);
@@ -487,6 +487,14 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 100000)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
+    it('adds no change if fee less than DUST_AMOUNT', function () {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 100000 - Transaction.DUST_AMOUNT)
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);
