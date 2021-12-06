@@ -204,7 +204,7 @@ const aTXP = () => {
     'outputs': [
       {
         'toAddress': 'DKdkvdJfQwQmnT9Hvq1CdB9kzsy76f1Qsd',
-        'amount': 77700000000000,
+        'amount': 7770000000000,
         'message': 'first message'
       }, {
         'toAddress': 'DL2EGukahtib57Sg7FtHsvf8HgwMJtbBA3',
