@@ -392,6 +392,13 @@ describe('Fiat rate service', function() {
         code: 'EUR',
         rate: 170,
       }];
+      var shib = [{
+        code: 'USD',
+        rate: 0.00003678
+      }, {
+        code: 'EUR',
+        rate: 0.00003276
+      }]
 
       request.get.withArgs({
         url: 'https://bitpay.com/api/rates/BTC',
@@ -417,6 +424,10 @@ describe('Fiat rate service', function() {
         url: 'https://bitpay.com/api/rates/LTC',
         json: true
       }).yields(null, null, ltc);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/SHIB',
+        json: true
+      }).yields(null, null, shib);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -467,8 +478,16 @@ describe('Fiat rate service', function() {
                       should.not.exist(err);
                       res.fetchedOn.should.equal(100);
                       res.rate.should.equal(234.56);
-                      clock.restore();
-                      done();
+                      service.getRate({
+                        code: 'USD',
+                        coin: 'shib'
+                      }, function(err, res) {
+                        should.not.exist(err);
+                        res.fetchedOn.should.equal(100);
+                        res.rate.should.equal(0.00003678);  
+                        clock.restore();
+                        done();
+                      })
                     });
                   });
                 });
