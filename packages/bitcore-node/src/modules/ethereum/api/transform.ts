@@ -1,13 +1,14 @@
 import { Transform } from 'stream';
 import { MongoBound } from '../../../models/base';
-import { IEthTransaction } from '../types';
+import { IEthTransactionTransformed } from '../types';
 
 export class EthListTransactionsStream extends Transform {
   constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }
+  async _transform(transaction: MongoBound<IEthTransactionTransformed>, _, done) {
+    const dataStr = transaction.data ? transaction.data.toString() : '';
 
-  async _transform(transaction: MongoBound<IEthTransaction>, _, done) {
     let sending = this.walletAddresses.includes(transaction.from);
     if (sending) {
       let sendingToOurself = this.walletAddresses.includes(transaction.to);
@@ -21,14 +22,19 @@ export class EthListTransactionsStream extends Transform {
             satoshis: -transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            initialFrom: transaction.initialFrom || transaction.from,
             gasPrice: transaction.gasPrice,
             gasLimit: transaction.gasLimit,
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            internal: transaction.internal,
             abiType: transaction.abiType,
-            error: transaction.error
+            error: transaction.error,
+            internal: transaction.internal,
+            network: transaction.network,
+            chain: transaction.chain,
+            data: dataStr,
+            nonce: transaction.nonce
           }) + '\n'
         );
       } else {
@@ -41,14 +47,19 @@ export class EthListTransactionsStream extends Transform {
             satoshis: transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            initialFrom: transaction.initialFrom || transaction.from,
             gasPrice: transaction.gasPrice,
             gasLimit: transaction.gasLimit,
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            internal: transaction.internal,
             abiType: transaction.abiType,
-            error: transaction.error
+            error: transaction.error,
+            internal: transaction.internal,
+            network: transaction.network,
+            chain: transaction.chain,
+            data: dataStr,
+            nonce: transaction.nonce
           }) + '\n'
         );
       }
@@ -64,14 +75,19 @@ export class EthListTransactionsStream extends Transform {
             satoshis: transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            initialFrom: transaction.initialFrom || transaction.from,
             gasPrice: transaction.gasPrice,
             gasLimit: transaction.gasLimit,
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            internal: transaction.internal,
             abiType: transaction.abiType,
-            error: transaction.error
+            error: transaction.error,
+            internal: transaction.internal,
+            network: transaction.network,
+            chain: transaction.chain,
+            data: dataStr,
+            nonce: transaction.nonce
           }) + '\n'
         );
       }

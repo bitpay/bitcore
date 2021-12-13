@@ -43,6 +43,9 @@ var Script = function Script(from) {
   }
 };
 
+Script.VERIFY_TAPROOT = (1 << 17);
+
+
 Script.prototype.set = function(obj) {
   $.checkArgument(_.isObject(obj));
   $.checkArgument(_.isArray(obj.chunks));
@@ -414,7 +417,7 @@ Script.prototype.isScriptHashOut = function() {
  */
 Script.prototype.isWitnessScriptHashOut = function() {
   var buf = this.toBuffer();
-  return (buf.length === 34 && buf[0] === 0 && buf[1] === 32);
+  return (buf.length === 34 && buf[0] === Opcode.OP_0 && buf[1] === 32);
 };
 
 /**
@@ -422,8 +425,16 @@ Script.prototype.isWitnessScriptHashOut = function() {
  */
 Script.prototype.isWitnessPublicKeyHashOut = function() {
   var buf = this.toBuffer();
-  return (buf.length === 22 && buf[0] === 0 && buf[1] === 20);
+  return (buf.length === 22 && buf[0] === Opcode.OP_0 && buf[1] === 20);
 };
+
+/**
+ * @returns {boolean} if this is a p2tr output script
+ */
+Script.prototype.isTaproot = function() {
+  var buf = this.toBuffer();
+  return (buf.length === 34 && buf[0] === Opcode.OP_1 && buf[1] === 32);
+}
 
 /**
  * @param {Object=} values - The return values
@@ -526,7 +537,7 @@ Script.prototype.isDataOut = function() {
  * @returns {Buffer}
  */
 Script.prototype.getData = function() {
-  if (this.isDataOut() || this.isScriptHashOut() || this.isWitnessScriptHashOut() || this.isWitnessPublicKeyHashOut()) {
+  if (this.isDataOut() || this.isScriptHashOut() || this.isWitnessScriptHashOut() || this.isWitnessPublicKeyHashOut() || this.isTaproot()) {
     if (_.isUndefined(this.chunks[1])) {
       return Buffer.alloc(0);
     } else {
@@ -1057,6 +1068,9 @@ Script.prototype._getOutputAddressInfo = function() {
   } else if (this.isWitnessPublicKeyHashOut()) {
     info.hashBuffer = this.getData();
     info.type = Address.PayToWitnessPublicKeyHash;
+  } else if (this.isTaproot()) {
+    info.hashBuffer = this.getData();
+    info.type = Address.PayToTaproot;
   } else {
     return false;
   }

@@ -3928,6 +3928,51 @@ describe('client API', function() {
           );
         });
       });
+
+      it('Should sign a RBF proposal', done => {
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var opts = {
+          outputs: [
+            {
+              amount: 1e8,
+              toAddress: toAddress
+            },
+            {
+              amount: 2e8,
+              toAddress: toAddress
+            }
+          ],
+          feePerKb: 100e2,
+          message: 'just some message',
+          enableRBF: true
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal(
+            {
+              txp: txp
+            },
+            (err, publishedTxp) => {
+              should.not.exist(err);
+              should.exist(publishedTxp);
+              publishedTxp.status.should.equal('pending');
+
+              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+                should.not.exist(err);
+                let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
+                  should.not.exist(err);
+                  txp.status.should.equal('accepted');
+                  done();
+                });
+              });
+            }
+          );
+        });
+      });
+      
       it('Should sign proposal with no change', done => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {

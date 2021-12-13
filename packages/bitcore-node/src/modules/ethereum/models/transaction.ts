@@ -135,15 +135,21 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
 
       if (internal && internal.length > 0) {
         internal.forEach(i => {
-          if (i.action.to) batch.push({ address: i.action.to });
-          if (i.action.from) batch.push({ address: i.action.from });
+          if (i.action.to) {
+            batch.push({ address: i.action.to });
+            batch.push({ address: from, tokenAddress: i.action.to });
+          }
+          if (i.action.from) {
+            batch.push({ address: i.action.from });
+            batch.push({ address: to, tokenAddress: i.action.from });
+          }
         });
       }
 
       for (const payload of batch) {
         const lowerAddress = payload.address.toLowerCase();
         const cacheKey = payload.tokenAddress
-          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${to.toLowerCase()}`
+          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${payload.tokenAddress.toLowerCase()}`
           : `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
         await CacheStorage.expire(cacheKey);
       }
@@ -290,11 +296,14 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     return undefined;
   }
 
+  // Correct tx.data.toString() => 0xa9059cbb00000000000000000000000001503dfc5ad81bf630d83697e98601871bb211b60000000000000000000000000000000000000000000000000000000000002710
+  // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
+
   _apiTransform(
     tx: IEthTransaction | Partial<MongoBound<IEthTransaction>>,
     options?: TransformOptions
   ): EthTransactionJSON | string {
-    const dataStr = `0x${tx.data!.toString('hex')}`;
+    const dataStr = tx.data ? tx.data.toString() : '';
     const decodedData = this.abiDecode(dataStr);
 
     const transaction: EthTransactionJSON = {

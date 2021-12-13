@@ -1525,6 +1525,7 @@ export class WalletService {
 
           const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
           const isEscrowPayment = wallet.isZceCompatible() && opts.instantAcceptanceEscrow ? true : false;
+          const replaceTxByFee = opts.replaceTxByFee ? true : false;
           bc.getUtxos(
             wallet,
             blockchainHeight,
@@ -1542,7 +1543,7 @@ export class WalletService {
 
               return next();
             },
-            { includeSpent: isEscrowPayment }
+            { includeSpent: isEscrowPayment || replaceTxByFee }
           );
         },
         next => {
@@ -1613,13 +1614,19 @@ export class WalletService {
             (err, txs) => {
               if (err) return next(err);
               const spentInputs = _.map(_.flatten(_.map(txs, 'inputs')), utxoKey);
+              const txIdArray = _.map(opts.inputs, 'txid');
+
               _.each(spentInputs, input => {
                 if (utxoIndex[input]) {
                   utxoIndex[input].spent = true;
                 }
               });
-              allUtxos = _.reject(allUtxos, {
-                spent: true
+              // except spent inputs of the RBF transaction if it's a replacement
+              allUtxos = _.reject(allUtxos, utxo => {
+                return (
+                  (!opts.replaceTxByFee && utxo.spent) ||
+                  (utxo.spent && opts.replaceTxByFee && !_.includes(txIdArray, utxo.txid))
+                );
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
@@ -2269,6 +2276,8 @@ export class WalletService {
    * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
    * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
    * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
+   * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
+   * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2407,7 +2416,9 @@ export class WalletService {
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod,
-                    isTokenSwap: opts.isTokenSwap
+                    isTokenSwap: opts.isTokenSwap,
+                    enableRBF: opts.enableRBF,
+                    replaceTxByFee: opts.replaceTxByFee
                   };
                   txp = TxProposal.create(txOpts);
                   next();
@@ -3104,7 +3115,6 @@ export class WalletService {
     const seenReceive = {};
 
     const moves: { [txid: string]: ITxProposal } = {};
-
     // remove 'fees' and 'moves' (probably change addresses)
     txs = _.filter(txs, tx => {
       // double spend or error
@@ -3208,7 +3218,17 @@ export class WalletService {
             action: undefined,
             addressTo: undefined,
             outputs: undefined,
-            dust: false
+            dust: false,
+            error: tx.error,
+            internal: tx.internal,
+            network: tx.network,
+            chain: tx.chain,
+            data: tx.data,
+            abiType: tx.abiType,
+            gasPrice: tx.gasPrice,
+            gasLimit: tx.gasLimit,
+            receipt: tx.receipt,
+            nonce: tx.nonce
           };
           switch (tx.category) {
             case 'send':
@@ -5027,6 +5047,30 @@ export class WalletService {
         }
       );
     });
+  }
+
+  checkServiceAvailability(req): boolean {
+    if (!checkRequired(req.body, ['service', 'opts'])) {
+      throw new ClientError('checkServiceAvailability request missing arguments');
+    }
+
+    let serviceEnabled: boolean;
+
+    switch (req.body.service) {
+      case '1inch':
+        if (req.body.opts?.country?.toUpperCase() === 'US') {
+          serviceEnabled = false;
+        } else {
+          serviceEnabled = true;
+        }
+        break;
+
+      default:
+        serviceEnabled = true;
+        break;
+    }
+
+    return serviceEnabled;
   }
 
   getSpenderApprovalWhitelist(cb) {

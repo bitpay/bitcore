@@ -14,7 +14,8 @@ module.exports = {
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai',
-    WBTC: 'wbtc'
+    WBTC: 'wbtc',
+    SHIB: 'shib'
   },
 
   ERC20: {
@@ -23,7 +24,8 @@ module.exports = {
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai',
-    WBTC: 'wbtc'
+    WBTC: 'wbtc',
+    SHIB: 'shib'
   },
 
   UTXO_COINS: {
