@@ -393,6 +393,9 @@ export class Key {
       coinCode = '899';
     } else if (opts.coin == 'xpi') {
       coinCode = '10605';
+      if(opts.isSlpToken){
+        coinCode = '1899'
+      }
     } else if (opts.coin == 'btc') {
       coinCode = '0';
     } else if (opts.coin == 'eth') {

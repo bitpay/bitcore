@@ -2,7 +2,7 @@
   "name": "@abcpros/bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "8.25.36",
+  "version": "8.25.37",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "ts_build/index.d.js",
