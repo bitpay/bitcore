@@ -2811,7 +2811,8 @@ export class API extends EventEmitter {
         coin: opts.coin,
         network: opts.network,
         account: opts.account,
-        n: opts.n
+        n: opts.n,
+        isSlpToken: opts.isSlpToken
       });
 
       if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
@@ -2930,6 +2931,7 @@ export class API extends EventEmitter {
         ['btc', 'livenet', true],
         ['bch', 'livenet', true],
         ['xpi', 'livenet', true],
+        ['xpi', 'livenet', false, true],
         ['xec', 'livenet', true]
       ];
       if (key.use44forMultisig) {
@@ -2968,7 +2970,8 @@ export class API extends EventEmitter {
             coin: x[0],
             network: x[1],
             account: 0,
-            n: x[2] ? 2 : 1
+            n: x[2] ? 2 : 1,
+            isSlpToken: x[3] ? x[3] : false
           };
           // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
           // TODO OPTI: do not scan accounts if XX
