@@ -22,13 +22,22 @@ module.exports = {
         if (!buffer.Buffer.isBuffer(argument)) {
           throw new errors.InvalidArgumentType(argument, type, argumentName);
         }
-      } else if (typeof argument !== type) {
+      } else if (typeof argument !== type && (argument && argument.constructor && argument.constructor.name !== type)) {
+        // Note that the constructor check is more reliable than the `instanceof` check below.
         throw new errors.InvalidArgumentType(argument, type, argumentName);
       }
     } else {
       if (!(argument instanceof type)) {
         throw new errors.InvalidArgumentType(argument, type.name, argumentName);
       }
+    }
+  },
+  isType: function(argument, type, argumentName) {
+    try {
+      this.checkArgumentType(argument, type, argumentName);
+      return true;
+    } catch {
+      return false;
     }
   }
 };
