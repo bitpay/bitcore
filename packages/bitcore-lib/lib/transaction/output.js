@@ -19,7 +19,7 @@ function Output(args) {
   if (_.isObject(args)) {
     this.satoshis = args.satoshis;
     if (bufferUtil.isBuffer(args.script)) {
-      this._scriptBuffer = args.script;
+      this.setScriptFromBuffer(args.script);
     } else {
       var script;
       if (_.isString(args.script) && JSUtil.isHexa(args.script)) {
