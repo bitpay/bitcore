@@ -7,6 +7,7 @@ var JSUtil = require('./util/js');
 var Network = require('./networks');
 var _ = require('lodash');
 var $ = require('./util/preconditions');
+const TaggedHash = require('./crypto/taggedhash');
 
 /**
  * Instantiate a PublicKey from a {@link PrivateKey}, {@link Point}, `string`, or `Buffer`.
@@ -226,11 +227,25 @@ PublicKey.fromPrivateKey = function(privkey) {
 
 /**
  * Instantiate a PublicKey from a Buffer
+ * @param {Buffer} buf A DER buffer (33+ bytes) or a 32 byte X-only coordinate (taproot only)
+ * @param {Boolean} strict (optional; Only applies to DER format) If set to false, will loosen some conditions
+ * @returns {PublicKey}
+ */
+PublicKey.fromBuffer = function(buf, strict) {
+  $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key or 32 byte X coordinate (taproot)');
+  if (buf.length === 32) {
+    return PublicKey.fromX(false, buf);
+  }
+  return PublicKey.fromDER(buf, strict);
+}
+
+/**
+ * Instantiate a PublicKey from a DER buffer
  * @param {Buffer} buf - A DER hex buffer
  * @param {bool=} strict - if set to false, will loosen some conditions
  * @returns {PublicKey} A new valid instance of PublicKey
  */
-PublicKey.fromDER = PublicKey.fromBuffer = function(buf, strict) {
+PublicKey.fromDER = function(buf, strict) {
   $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key');
   var info = PublicKey._transformDER(buf, strict);
   return new PublicKey(info.point, {
@@ -280,6 +295,79 @@ PublicKey.fromX = function(odd, x) {
     compressed: info.compressed
   });
 };
+
+PublicKey.fromTaproot = function(buf) {
+  $.checkArgument(_.isBuffer(buf));
+  $.checkArgument(buf.length === 32, 'Taproot public keys must be 32 bytes');
+  return new PublicKey.fromX(false, buf);
+}
+
+PublicKey.isValidTaproot = function(buf) {
+  $.checkArgument(_.isBuffer(buf));
+  $.checkArgument(buf.length === 32, 'Taproot public keys must be 32 bytes');
+
+  // TODO: do a more thorough taproot validation
+
+  // if (!secp256k1_fe_set_b32(&x, input32)) {
+  //   return false;
+  // }
+  // if (!secp256k1_ge_set_xo_var(&pk, &x, 0)) {
+  //     return false;
+  // }
+  // if (!secp256k1_ge_is_in_correct_subgroup(&pk)) {
+  //     return false;
+  // }
+  return true;
+};
+
+
+PublicKey.prototype.computeTapTweakHash = function(p, merkleRoot) {
+  $.checkArgument(p instanceof PublicKey);
+  const taggedWriter = new TaggedHash('TapTweak');
+  taggedWriter.write(p.point.x.toBuffer({ size: 32 }));
+
+  //  If !merkleRoot, then we have no scripts. The actual tweak does not matter, but 
+  //  follow BIP341 here to allow for reproducible tweaking.
+
+  if (merkleRoot) {
+    $.checkArgument(_.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be 32 byte buffer');
+    taggedWriter.write(merkleRoot);
+  }
+  const tweakHash = taggedWriter.finalize();
+  
+  const order = Point.getN();
+  $.checkState(BN.fromBuffer(tweakHash).lt(order), 'TapTweak hash failed secp256k1 order check');
+  return tweakHash;
+};
+
+PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
+  const tweak = this.computeTapTweakHash(p, merkleRoot);
+
+  const P = p.point.liftX();
+  const Q = P.add(this.point.curve.g.mul(BN.fromBuffer(tweak)));
+  
+  if (!this.point.x.eq(Q.x)) {
+    return false;
+  }
+  if (!Q.y.mod(new BN(2)).eq(new BN(control[0] & 1))) {
+    return false;
+  }
+  return true;
+}
+
+PublicKey.prototype.createTapTweak = function(merkleRoot) {
+  $.checkArgument(_.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be a 32 byte buffer');
+
+  // TODO
+
+  // secp256k1_xonly_pubkey base_point;
+  // if (!secp256k1_xonly_pubkey_parse(secp256k1_context_verify, &base_point, data())) return std::nullopt;
+  // secp256k1_pubkey out;
+  const tweak = this.computeTapTweakHash(merkleRoot);
+  // if (!secp256k1_xonly_pubkey_tweak_add(secp256k1_context_verify, &out, &base_point, tweak.data())) return std::nullopt;
+  // const ret = secp256k1_xonly_pubkey_serialize(secp256k1_context_verify, ret.first.begin(), &out_xonly);
+  return ret;
+}
 
 /**
  * Check if there would be any errors when initializing a PublicKey

@@ -28,6 +28,9 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
   var Transaction = require('./transaction');
   var Input = require('./input');
 
+  // Convert a string to a number
+  inputNumber = parseInt(inputNumber);
+
   var i;
   // Copy transaction
   var txcopy = Transaction.shallowCopy(transaction);

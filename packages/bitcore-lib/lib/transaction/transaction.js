@@ -14,6 +14,7 @@ var Hash = require('../crypto/hash');
 var Signature = require('../crypto/signature');
 var Sighash = require('./sighash');
 var SighashWitness = require('./sighashwitness');
+const SighashSchnorr = require('./sighashschnorr');
 
 var Address = require('../address');
 var UnspentOutput = require('./unspentoutput');
@@ -642,12 +643,13 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
  * @param {Object} opts
  * @returns {Array<number>}
  */
-Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
+Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts = {}) {
   let indexes = [];
   for(let utxo of utxos) {
     const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
     indexes.push(index);
     if(index >= 0) {
+      opts.sequenceNumber = this.inputs[index].sequenceNumber; // maintain sequenceNumber
       this.inputs[index] = this._getInputFrom(utxo, pubkeys, threshold, opts);
     }
   }
@@ -675,7 +677,7 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
 }
 
 
-Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
+Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts = {}) {
   utxo = new UnspentOutput(utxo);
   const InputClass = this._selectInputType(utxo, pubkeys, threshold);
   const input = {
@@ -685,7 +687,7 @@ Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
     }),
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
-    sequenceNumber: utxo.sequenceNumber,
+    sequenceNumber: opts.sequenceNumber,
     script: Script.empty()
   };
   let args = pubkeys && threshold ? [pubkeys, threshold, false, opts] : []
@@ -1246,42 +1248,103 @@ Transaction.prototype.isValidSignature = function(signature, signingMethod) {
   return this.inputs[signature.inputIndex].isValidSignature(self, signature, signingMethod);
 };
 
+
 /**
- * @param {String} signingMethod method used to sign - 'ecdsa' or 'schnorr' (future signing method)
- * @returns {bool} whether the signature is valid for this transaction input
+ * Verify ECDSA signature
+ * @param {Signature} sig 
+ * @param {PublicKey} pubkey 
+ * @param {Number} nin 
+ * @param {Script} subscript 
+ * @param {Number} satoshis 
+ * @returns {Boolean}
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, signingMethod) {
+Transaction.prototype.checkEcdsaSignature = function(sig, pubkey, nin, subscript, satoshis) {
+  var subscriptBuffer = subscript.toBuffer();
+  var scriptCodeWriter = new BufferWriter();
+  scriptCodeWriter.writeVarintNum(subscriptBuffer.length);
+  scriptCodeWriter.write(subscriptBuffer);
+
+  var satoshisBuffer;
+  if (satoshis) {
+    $.checkState(JSUtil.isNaturalNumber(satoshis), 'satoshis needs to be a natural number');
+    satoshisBuffer = new BufferWriter().writeUInt64LEBN(new BN(satoshis)).toBuffer();
+  } else {
+    satoshisBuffer = this.inputs[nin].getSatoshisBuffer();
+  }
+  var verified = SighashWitness.verify(
+    this,
+    sig,
+    pubkey,
+    nin,
+    scriptCodeWriter.toBuffer(),
+    satoshisBuffer
+  );
+  return verified;
+};
+
+
+/**
+ * Verify Schnorr signature
+ * @param {Signature|Buffer} sig 
+ * @param {PublicKey|Buffer} pubkey 
+ * @param {Number} nin 
+ * @param {Number} sigversion 
+ * @param {Object} execdata 
+ * @returns {Boolean}
+ */
+Transaction.prototype.checkSchnorrSignature = function(sig, pubkey, nin, sigversion, execdata) {
+  if ($.isType(pubkey, 'PublicKey')) {
+    pubkey = pubkey.point.x.toBuffer();
+  }
+  $.checkArgument(pubkey && pubkey.length === 32, 'Schnorr signatures have 32-byte public keys. The caller is responsible for enforcing this.');
+
+  if (_.isBuffer(sig)) {
+    if (sig.length !== 64 && sig.length !== 65) {
+      return false;
+    }
+    sig = Signature.fromSchnorr(sig);
+  }
+  // Note that in Tapscript evaluation, empty signatures are treated specially (invalid signature that does not
+  // abort script execution). This is implemented in Interpreter.evalChecksigTapscript, which won't invoke
+  // CheckSchnorrSignature in that case. In other contexts, they are invalid like every other signature with
+  // size different from 64 or 65.
+  $.checkArgument(sig.isSchnorr, 'Signature must be schnorr');
+
+  if (!SighashSchnorr.verify(this, sig, pubkey, sigversion, nin, execdata)) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * This is here largely for legacy reasons. However, if the sig type
+ * is already known (via sigversion), then it would be better to call
+ * checkEcdsaSignature or checkSchnorrSignature directly.
+ * @param {Signature|Buffer} sig Signature to verify
+ * @param {PublicKey|Buffer} pubkey Public key used to verify sig
+ * @param {Number} nin Tx input index to verify signature against
+ * @param {Script} subscript ECDSA only
+ * @param {Number} sigversion See Signature.Version for valid versions (default: 0 or Signature.Version.BASE)
+ * @param {Number} satoshis ECDSA only
+ * @param {Object} execdata Schnorr only
+ * @returns {Boolean} whether the signature is valid for this transaction input
+ */
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, execdata) {
 
   if (_.isUndefined(sigversion)) {
-    sigversion = 0;
+    sigversion = Signature.Version.BASE;
   }
 
-  if (sigversion === 1) {
-    var subscriptBuffer = subscript.toBuffer();
-    var scriptCodeWriter = new BufferWriter();
-    scriptCodeWriter.writeVarintNum(subscriptBuffer.length);
-    scriptCodeWriter.write(subscriptBuffer);
-
-    var satoshisBuffer;
-    if (satoshis) {
-      $.checkState(JSUtil.isNaturalNumber(satoshis));
-      satoshisBuffer = new BufferWriter().writeUInt64LEBN(new BN(satoshis)).toBuffer();
-    } else {
-      satoshisBuffer = this.inputs[nin].getSatoshisBuffer();
-    }
-    var verified = SighashWitness.verify(
-      this,
-      sig,
-      pubkey,
-      nin,
-      scriptCodeWriter.toBuffer(),
-      satoshisBuffer,
-      signingMethod
-    );
-    return verified;
+  switch(sigversion) {
+    case Signature.Version.WITNESS_V0:
+      return this.checkEcdsaSignature(sig, pubkey, nin, subscript, satoshis);
+    case Signature.Version.TAPROOT:
+    case Signature.Version.TAPSCRIPT:
+      return this.checkSchnorrSignature(sig, pubkey, nin, sigversion, execdata);
+    case Signature.Version.BASE:
+    default:
+      return Sighash.verify(this, sig, pubkey, nin, subscript);
   }
-
-  return Sighash.verify(this, sig, pubkey, nin, subscript, signingMethod);
 };
 
 /**

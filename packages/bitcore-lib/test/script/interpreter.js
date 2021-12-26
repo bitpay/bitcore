@@ -9,10 +9,12 @@ var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var BN = bitcore.crypto.BN;
 var BufferWriter = bitcore.encoding.BufferWriter;
+var BufferReader = bitcore.encoding.BufferReader;
 var Opcode = bitcore.Opcode;
 var _ = require('lodash');
 
 var script_tests = require('../data/bitcoind/script_tests');
+const script_asset_tests = require('../data/bitcoind/script_assets_test.json');
 var tx_valid = require('../data/bitcoind/tx_valid');
 var tx_invalid = require('../data/bitcoind/tx_invalid');
 
@@ -257,72 +259,43 @@ describe('Interpreter', function() {
     });
   });
 
+  const FLAG_MAP = {
+    NONE: Interpreter.SCRIPT_VERIFY_NONE,
+    P2SH: Interpreter.SCRIPT_VERIFY_P2SH,
+    STRICTENC: Interpreter.SCRIPT_VERIFY_STRICTENC,
+    DERSIG: Interpreter.SCRIPT_VERIFY_DERSIG,
+    LOW_S: Interpreter.SCRIPT_VERIFY_LOW_S,
+    SIGPUSHONLY: Interpreter.SCRIPT_VERIFY_SIGPUSHONLY,
+    MINIMALDATA: Interpreter.SCRIPT_VERIFY_MINIMALDATA,
+    NULLDUMMY: Interpreter.SCRIPT_VERIFY_NULLDUMMY,
+    DISCOURAGE_UPGRADABLE_NOPS: Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS,
+    CLEANSTACK: Interpreter.SCRIPT_VERIFY_CLEANSTACK,
+    MINIMALIF: Interpreter.SCRIPT_VERIFY_MINIMALIF,
+    NULLFAIL: Interpreter.SCRIPT_VERIFY_NULLFAIL,
+    CHECKLOCKTIMEVERIFY: Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY,
+    CHECKSEQUENCEVERIFY: Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY,
+    WITNESS: Interpreter.SCRIPT_VERIFY_WITNESS,
+    DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM: Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
+    // DISCOURAGE_UPGRADABLE_WITNESS: Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM,
+    WITNESS_PUBKEYTYPE: Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE,
+    CONST_SCRIPTCODE: Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE,
+    TAPROOT: Interpreter.SCRIPT_VERIFY_TAPROOT,
+    DISCOURAGE_UPGRADABLE_PUBKEYTYPE: Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_PUBKEYTYPE,
+    DISCOURAGE_OP_SUCCESS: Interpreter.SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS,
+    DISCOURAGE_UPGRADABLE_TAPROOT_VERSION: Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_TAPROOT_VERSION,
+  };
 
   var getFlags = function getFlags(flagstr) {
     var flags = 0;
-    if (flagstr.indexOf('NONE') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_NONE;
+    
+    for (let flag of flagstr.split(',')) {
+      flag = flag.trim();
+      if (FLAG_MAP[flag] === undefined) {
+        throw new Error('Unknown flag: ' + flag);
+      }
+      flags |= FLAG_MAP[flag];
     }
-    if (flagstr.indexOf('P2SH') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_P2SH;
-    }
-    if (flagstr.indexOf('STRICTENC') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_STRICTENC;
-    }
-    if (flagstr.indexOf('DERSIG') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_DERSIG;
-    }
-    if (flagstr.indexOf('LOW_S') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_LOW_S;
-    }
-    if (flagstr.indexOf('NULLDUMMY') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_NULLDUMMY;
-    }
-    if (flagstr.indexOf('SIGPUSHONLY') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_SIGPUSHONLY;
-    }
-    if (flagstr.indexOf('MINIMALDATA') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_MINIMALDATA;
-    }
-    if (flagstr.indexOf('DISCOURAGE_UPGRADABLE_NOPS') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS;
-    }
-    if (flagstr.indexOf('CHECKLOCKTIMEVERIFY') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
-    }
-    if (flagstr.indexOf('CHECKSEQUENCEVERIFY') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
-    }
-    if (flagstr.indexOf('NULLFAIL') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_NULLFAIL;
-    }
-
-    if (flagstr.indexOf('WITNESS') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS;
-    }
-
-    if (flagstr.indexOf('DISCOURAGE_UPGRADABLE_WITNESS') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM;
-    }
-
-    if (flagstr.indexOf('CLEANSTACK') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
-    }
-
-    if (flagstr.indexOf('WITNESS_PUBKEYTYPE') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE;
-    }
-    if (flagstr.indexOf('MINIMALIF') !== -1) {
-      flags = flags | Interpreter.SCRIPT_VERIFY_MINIMALIF;
-    }
-
     return flags;
-  };
-
-
-  var testToFromString = function(script) {
-    var s = script.toString();
-    Script.fromString(s).toString().should.equal(s);
   };
 
   var testFixture = function(vector, expected, witness, amount) {
@@ -404,9 +377,10 @@ describe('Interpreter', function() {
   describe('bitcoind transaction evaluation fixtures', function() {
     var test_txs = function(set, expected) {
       var c = 0;
-      set.forEach(function(vector) {
+      for (let i in set) {
+        const vector = set[i];
         if (vector.length === 1) {
-          return;
+          continue;
         }
         c++;
         var cc = c; //copy to local
@@ -416,7 +390,7 @@ describe('Interpreter', function() {
 
           var flags = getFlags(vector[2]);
           var map = {};
-          inputs.forEach(function(input) {
+          for (let input of inputs) {
             var txid = input[0];
             var txoutnum = input[1];
             var scriptPubKeyStr = input[2];
@@ -424,13 +398,14 @@ describe('Interpreter', function() {
               txoutnum = 0xffffffff; //bitcoind casts -1 to an unsigned int
             }
             map[txid + ':' + txoutnum] = Script.fromBitcoindString(scriptPubKeyStr);
-          });
+          };
 
           var tx = new Transaction(txhex);
           var allInputsVerified = true;
-          tx.inputs.forEach(function(txin, j) {
+          for (let j in tx.inputs) {
+            const txin = tx.inputs[j];
             if (txin.isNull()) {
-              return;
+              continue;
             }
             var scriptSig = txin.script;
             var txidhex = txin.prevTxId.toString('hex');
@@ -443,18 +418,101 @@ describe('Interpreter', function() {
             if (!verified) {
               allInputsVerified = false;
             }
-          });
+          }
           var txVerified = tx.verify();
           txVerified = (txVerified === true) ? true : false;
           allInputsVerified = allInputsVerified && txVerified;
           allInputsVerified.should.equal(expected);
 
         });
-      });
+      }
     };
     test_txs(tx_valid, true);
     test_txs(tx_invalid, false);
 
   });
 
+
+  const allConsensusFlags = function() {
+    const ret = [];
+    for (let i = 0; i < 128; ++i) {
+      let flag = 0;
+      if (i & 1) flag |= Interpreter.SCRIPT_VERIFY_P2SH;
+      if (i & 2) flag |= Interpreter.SCRIPT_VERIFY_DERSIG;
+      if (i & 4) flag |= Interpreter.SCRIPT_VERIFY_NULLDUMMY;
+      if (i & 8) flag |= Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
+      if (i & 16) flag |= Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY;
+      if (i & 32) flag |= Interpreter.SCRIPT_VERIFY_WITNESS;
+      if (i & 64) flag |= Interpreter.SCRIPT_VERIFY_TAPROOT;
+
+      // SCRIPT_VERIFY_WITNESS requires SCRIPT_VERIFY_P2SH
+      if (flag & Interpreter.SCRIPT_VERIFY_WITNESS && !(flag & Interpreter.SCRIPT_VERIFY_P2SH)) continue;
+      // SCRIPT_VERIFY_TAPROOT requires SCRIPT_VERIFY_WITNESS
+      if (flag & Interpreter.SCRIPT_VERIFY_TAPROOT && !(flag & Interpreter.SCRIPT_VERIFY_WITNESS)) continue;
+
+      ret.push(flag);
+    }
+
+    return ret;
+  }
+
+  describe('bitcoind script asset tests', function() {
+    this.timeout(60000); // Some tests run a little long
+
+    for (let i = 0; i < script_asset_tests.length; i++) {
+      let test = script_asset_tests[i];
+      it(`script asset test vector ${i}: ${test.comment}`, function() {
+        const tx =  new Transaction(test.tx);
+        const prevOuts = [];
+        for (let j in test.prevouts) {
+          let prevout = test.prevouts[j];
+          const poBuffReader = new BufferReader(Buffer.from(prevout,'hex'));
+          prevout = Transaction.Output.fromBufferReader(poBuffReader);
+          
+          const utxo = new Transaction.UnspentOutput({
+            satoshis: prevout.satoshis,
+            address: prevout.script.toAddress(),
+            txid: tx.inputs[j].prevTxId.toString('hex'),
+            outputIndex: tx.inputs[j].outputIndex,
+            scriptPubKey: prevout.script,
+            sequenceNumber: tx.inputs[j].sequenceNumber
+          });
+          prevOuts.push(utxo);
+        }
+        tx.inputs.length.should.equal(prevOuts.length);
+        tx.associateInputs(prevOuts);
+        const idx = test.index;
+        const testFlags = getFlags(test.flags);
+        const fin = !!test.final;
+
+        if (test.success) {
+          tx.inputs[idx].setScript(test.success.scriptSig);
+          tx.inputs[idx].setWitnesses(test.success.witness);
+          for (let flags of [testFlags]) { // allConsensusFlags() takes too long for the javascript implementation. Keeping the logic here for anyone who wants to run with allConsensusFlags
+            if (fin || (flags & testFlags) == flags) {
+              const witness = tx.inputs[idx].witnesses.map(w => Buffer.from(w, 'hex'));
+              const interp = new Interpreter();
+              const ret = interp.verify(tx.inputs[idx].script, prevOuts[idx].script, tx, idx, flags, witness, tx.inputs[idx].satoshis);
+              ret.should.be.true;
+            }
+          }
+        }
+
+        if (test.failure) {
+          tx.inputs[idx].setScript(test.failure.scriptSig);
+          tx.inputs[idx].setWitnesses(test.failure.witness);
+
+          for (let flags of allConsensusFlags()) {
+            // If a test is supposed to fail with testFlags, it should also fail with any superset thereof.
+            if ((flags & testFlags) === testFlags) {
+              const witness = tx.inputs[idx].witnesses.map(w => Buffer.from(w, 'hex'));
+              const interp = new Interpreter();
+              const ret = interp.verify(tx.inputs[idx].script, prevOuts[idx].script, tx, idx, flags, witness, tx.inputs[idx].satoshis);
+              ret.should.be.false;
+            }
+          }
+        }
+      });
+    }
+  });
 });

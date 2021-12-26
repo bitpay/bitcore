@@ -6,14 +6,15 @@ var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
 
-var Signature = function Signature(r, s) {
+var Signature = function Signature(r, s, isSchnorr) {
   if (!(this instanceof Signature)) {
-    return new Signature(r, s);
+    return new Signature(r, s, isSchnorr);
   }
   if (r instanceof BN) {
     this.set({
       r: r,
-      s: s
+      s: s,
+      isSchnorr: isSchnorr
     });
   } else if (r) {
     var obj = r;
@@ -26,9 +27,11 @@ Signature.prototype.set = function(obj) {
   this.r = obj.r || this.r || undefined;
   this.s = obj.s || this.s || undefined;
 
-  this.i = typeof obj.i !== 'undefined' ? obj.i : this.i; //public key recovery parameter in range [0, 3]
-  this.compressed = typeof obj.compressed !== 'undefined' ?
-    obj.compressed : this.compressed; //whether the recovered pubkey is compressed
+  // public key recovery parameter in range [0, 3]
+  this.i = typeof obj.i !== 'undefined' ? obj.i : this.i;
+  // whether the recovered pubkey is compressed
+  this.compressed = typeof obj.compressed !== 'undefined' ? obj.compressed : this.compressed;
+  this.isSchnorr = typeof obj.isSchnorr !== 'undefined' ? obj.isSchnorr : this.isSchnorr;
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;
 };
@@ -61,8 +64,17 @@ Signature.fromCompact = function(buf) {
 };
 
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
-  var obj = Signature.parseDER(buf, strict);
   var sig = new Signature();
+
+  // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype
+  // NOTE: this check is not very reliable. You should use .fromSchnorr directly if you know it's a schnorr sig.
+  if((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
+    return Signature.fromSchnorr(buf);
+  }
+  
+  $.checkArgument(!(buf.length === 64 && buf[0] === 0x30), new Error('64 DER (ecdsa) signatures not allowed'));
+  
+  var obj = Signature.parseDER(buf, strict);
 
   sig.r = obj.r;
   sig.s = obj.s;
@@ -165,7 +177,15 @@ Signature.prototype.toCompact = function(i, compressed) {
   return Buffer.concat([b1, b2, b3]);
 };
 
+/**
+ * Returns either a DER encoded buffer or a Schnorr encoded buffer if isSchnor == true
+ */
 Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
+  if(this.isSchnorr) {
+    const hashTypeBuf = !this.nhashtype || this.nhashtype === Signature.SIGHASH_DEFAULT ? Buffer.alloc(0) : Buffer.from([this.nhashtype]);
+    return Buffer.concat([this.r.toBuffer({ size: 32 }), this.s.toBuffer({ size: 32 }), hashTypeBuf]);
+  }
+
   var rnbuf = this.r.toBuffer();
   var snbuf = this.s.toBuffer();
 
@@ -305,9 +325,43 @@ Signature.prototype.toTxFormat = function() {
   return Buffer.concat([derbuf, buf]);
 };
 
+/**
+ * Creates a Signature instance from a Schnorr sig
+ * @param {Buffer} buf Schnorr signature buffer
+ * @returns {Signature}
+ */
+Signature.fromSchnorr = function(buf) {
+  $.checkArgument(_.isBuffer(buf), 'Schnorr signature argument must be a buffer');
+  $.checkArgument(buf.length === 64 || buf.length === 65, 'Schnorr signatures must be 64 or 65 bytes');
+
+  const sig = new Signature();
+  let r = buf.slice(0,32);
+  let s = buf.slice(32, 64);
+  if (buf.length === 65) {
+    sig.nhashtype = buf[buf.length - 1];
+    $.checkState(sig.nhashtype !== Signature.SIGHASH_DEFAULT, new Error('invalid hashtype'));
+  } else {
+    sig.nhashtype = Signature.SIGHASH_DEFAULT;
+  }
+  sig.r = BN.fromBuffer(r);
+  sig.s = BN.fromBuffer(s);
+  sig.isSchnorr = true;
+  return sig;
+};
+
 Signature.SIGHASH_ALL = 0x01;
 Signature.SIGHASH_NONE = 0x02;
 Signature.SIGHASH_SINGLE = 0x03;
 Signature.SIGHASH_ANYONECANPAY = 0x80;
+
+Signature.SIGHASH_DEFAULT     = 0; //!< Taproot only; implied when sighash byte is missing, and equivalent to SIGHASH_ALL
+Signature.SIGHASH_OUTPUT_MASK = 3;
+Signature.SIGHASH_INPUT_MASK  = 128; // 0x80,
+
+Signature.Version = {};
+Signature.Version.BASE       = 0;
+Signature.Version.WITNESS_V0 = 1;
+Signature.Version.TAPROOT    = 2;
+Signature.Version.TAPSCRIPT  = 3;
 
 module.exports = Signature;

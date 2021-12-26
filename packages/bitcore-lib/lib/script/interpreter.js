@@ -1,13 +1,18 @@
 'use strict';
 
-var _ = require('lodash');
+const _ = require('lodash');
 
-var Script = require('./script');
-var Opcode = require('../opcode');
-var BN = require('../crypto/bn');
-var Hash = require('../crypto/hash');
-var Signature = require('../crypto/signature');
-var PublicKey = require('../publickey');
+const Script = require('./script');
+const Opcode = require('../opcode');
+const BN = require('../crypto/bn');
+const Hash = require('../crypto/hash');
+const Signature = require('../crypto/signature');
+const PublicKey = require('../publickey');
+const $ = require('../util/preconditions');
+const SighashWitness = require('../transaction/sighashwitness');
+const SighashSchnorr = require('../transaction/sighashschnorr');
+const BufferWriter = require('../encoding/bufferwriter');
+const TaggedHash = require('../crypto/taggedhash');
 
 /**
  * Bitcoin transactions contain scripts. Each input has a script called the
@@ -31,18 +36,14 @@ var Interpreter = function Interpreter(obj) {
   }
 };
 
-Interpreter.SIGVERSION_BASE = 0;
-Interpreter.SIGVERSION_WITNESS_V0 = 1;
-Interpreter.SIGVERSION_TAPROOT = 2;
-Interpreter.SIGVERSION_TAPSCRIPT = 3;
 
-Interpreter.prototype.verifyWitnessProgram = function(version, program, witness, satoshis, flags) {
+Interpreter.prototype.verifyWitnessProgram = function(version, program, witness, satoshis, flags, isP2SH) {
 
   var scriptPubKey = new Script();
   var stack = [];
 
   if (version === 0) {
-    if (program.length === 32) {
+    if (program.length === Interpreter.WITNESS_V0_SCRIPTHASH_SIZE) {
       if (witness.length === 0) {
         this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY';
         return false;
@@ -57,7 +58,8 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
       }
 
       stack = witness.slice(0, -1);
-    } else if (program.length === 20) {
+      return this.executeWitnessScript(scriptPubKey, stack, Signature.Version.WITNESS_V0, satoshis, flags);
+    } else if (program.length === Interpreter.WITNESS_V0_KEYHASH_SIZE) {
       if (witness.length !== 2) {
         this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH';
         return false;
@@ -70,16 +72,122 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
       scriptPubKey.add(Opcode.OP_CHECKSIG);
 
       stack = witness;
-
+      return this.executeWitnessScript(scriptPubKey, stack, Signature.Version.WITNESS_V0, satoshis, flags);
     } else {
       this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_WRONG_LENGTH';
       return false;
     }
+  } else if (version === 1 && program.length == Interpreter.WITNESS_V1_TAPROOT_SIZE && !isP2SH) {
+    const execdata = { annexPresent: false };
+    // BIP341 Taproot: 32-byte non-P2SH witness v1 program (which encodes a P2C-tweaked pubkey)
+    if (!(flags & Interpreter.SCRIPT_VERIFY_TAPROOT)) {
+      return true;
+    }
+    stack = Array.from(witness);
+    if (stack.length == 0) {
+      this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY';
+      return false;
+    }
+    if (stack.length >= 2 && stack[stack.length - 1].length && stack[stack.length - 1][0] === Script.ANNEX_TAG) {
+      // Drop annex (this is non-standard; see IsWitnessStandard)
+      const annex = stack.pop();
+      const annexWriter = new BufferWriter();
+      annexWriter.writeVarintNum(annex.length);
+      annexWriter.write(annex);
+      execdata.annexHash = Hash.sha256(annexWriter.toBuffer());
+      execdata.annexPresent = true;
+    }
+    execdata.annexInit = true;
+    if (stack.length === 1) {
+      // Key path spending (stack size is 1 after removing optional annex)
+      if (!this.checkSchnorrSignature(stack[0], program, Signature.Version.TAPROOT, execdata)) {
+        return false;
+      }
+      return true;
+    } else {
+      // Script path spending (stack size is >1 after removing optional annex)
+      const control = stack.pop();
+      const scriptPubKeyBuf = stack.pop();
+
+      if (
+        control.length < Interpreter.TAPROOT_CONTROL_BASE_SIZE  ||
+        control.length > Interpreter.TAPROOT_CONTROL_MAX_SIZE   ||
+        ((control.length - Interpreter.TAPROOT_CONTROL_BASE_SIZE) % Interpreter.TAPROOT_CONTROL_NODE_SIZE) != 0
+      ) {
+        this.errstr = 'SCRIPT_ERR_TAPROOT_WRONG_CONTROL_SIZE';
+        return false;
+      }
+      // TODO
+      execdata.tapleafHash = Interpreter.computeTapleafHash(control[0] & Interpreter.TAPROOT_LEAF_MASK, scriptPubKeyBuf);
+      if (!Interpreter.verifyTaprootCommitment(control, program, execdata.tapleafHash)) {
+        this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH';
+        return false;
+      }
+      execdata.tapleafHashInit = true;
+      if ((control[0] & Interpreter.TAPROOT_LEAF_MASK) === Interpreter.TAPROOT_LEAF_TAPSCRIPT) {
+        // Tapscript (leaf version 0xc0)
+        let witnessSize;
+        {
+          const bw = new BufferWriter();
+          bw.writeVarintNum(witness.length);
+          for (let element of witness) {
+            bw.writeVarintNum(element.length);
+            bw.write(element);
+          }
+          witnessSize = bw.toBuffer().length;
+        }
+
+        try {
+          scriptPubKey = new Script(scriptPubKeyBuf);
+        } catch (err) {
+          // Note how this condition would not be reached if an unknown OP_SUCCESSx was found
+          this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+          return false;
+        }
+
+        execdata.validationWeightLeft = witnessSize + Script.VALIDATION_WEIGHT_OFFSET;
+        execdata.validationWeightLeftInit = true;
+        return this.executeWitnessScript(scriptPubKey, stack, Signature.Version.TAPSCRIPT, satoshis, flags, execdata);
+      }
+      if (flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_TAPROOT_VERSION) {
+        this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_TAPROOT_VERSION';
+        return false;
+      }
+      return true;
+    }
   } else if ((flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)) {
     this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM';
     return false;
-  } else {
-    return true;
+  }
+  // Other version/size/p2sh combinations return true for future softfork compatibility
+  return true;
+};
+
+
+Interpreter.prototype.executeWitnessScript = function(scriptPubKey, stack, sigversion, satoshis, flags, execdata) {
+  if (sigversion === Signature.Version.TAPSCRIPT) {
+    for (let chunk of scriptPubKey.chunks) {
+      // New opcodes will be listed here. May use a different sigversion to modify existing opcodes.
+      if (Opcode.isOpSuccess(chunk.opcodenum)) {
+        if (flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS) {
+          this.errstr = 'SCRIPT_ERR_DISCOURAGE_OP_SUCCESS';
+          return false;
+        }
+        return true;
+      }
+    }
+
+    // Tapscript enforces initial stack size limits (altstack is empty here)
+    if (stack.length > Interpreter.MAX_STACK_SIZE) {
+      this.errstr = 'SCRIPT_ERR_STACK_SIZE';
+      return false;
+    }
+  }
+
+  // Disallow stack item size > MAX_SCRIPT_ELEMENT_SIZE in witness stack
+  if (stack.length && stack.some(elem => elem.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE)) {
+    this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+    return false;
   }
 
   this.initialize();
@@ -87,9 +195,10 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
   this.set({
     script: scriptPubKey,
     stack: stack,
-    sigversion: Interpreter.SIGVERSION_WITNESS_V0,
+    sigversion: sigversion,
     satoshis: satoshis,
     flags: flags,
+    execdata: execdata
   });
 
   if (!this.evaluate()) {
@@ -150,7 +259,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     script: scriptSig,
     tx: tx,
     nin: nin,
-    sigversion: Interpreter.SIGVERSION_BASE,
+    sigversion: Signature.Version.BASE,
     satoshis: 0,
     flags: flags
   });
@@ -202,9 +311,10 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     if (scriptPubkey.isWitnessProgram(witnessValues)) {
       hadWitness = true;
       if (scriptSig.toBuffer().length !== 0) {
+        this.errstr = 'SCRIPT_ERR_WITNESS_MALLEATED';
         return false;
       }
-      if (!this.verifyWitnessProgram(witnessValues.version, witnessValues.program, witness, satoshis, this.flags)) {
+      if (!this.verifyWitnessProgram(witnessValues.version, witnessValues.program, witness, satoshis, this.flags, /* isP2SH */ false)) {
         return false;
       }
     }
@@ -263,7 +373,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
           return false;
         }
 
-        if (!this.verifyWitnessProgram(p2shWitnessValues.version, p2shWitnessValues.program, witness, satoshis, this.flags)) {
+        if (!this.verifyWitnessProgram(p2shWitnessValues.version, p2shWitnessValues.program, witness, satoshis, this.flags, /* isP2SH */ true)) {
           return false;
         }
         // Bypass the cleanstack check at the end. The actual stack is obviously not clean
@@ -281,8 +391,12 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       // Disallow CLEANSTACK without P2SH, as otherwise a switch
       // CLEANSTACK->P2SH+CLEANSTACK would be possible, which is not a
       // softfork (and P2SH should be one).
-      if ((this.flags & Interpreter.SCRIPT_VERIFY_P2SH) == 0)
+      if (
+        (this.flags & Interpreter.SCRIPT_VERIFY_P2SH)    == 0 ||
+        (this.flags & Interpreter.SCRIPT_VERIFY_WITNESS) == 0
+      ) {
         throw 'flags & SCRIPT_VERIFY_P2SH';
+      }
 
       if (stackCopy.length != 1) {
         this.errstr = 'SCRIPT_ERR_CLEANSTACK';
@@ -307,18 +421,19 @@ Interpreter.prototype.initialize = function(obj) {
   this.altstack = [];
   this.pc = 0;
   this.satoshis = 0;
-  this.sigversion = Interpreter.SIGVERSION_BASE;
+  this.sigversion = Signature.Version.BASE;
   this.pbegincodehash = 0;
   this.nOpCount = 0;
   this.vfExec = [];
   this.errstr = '';
   this.flags = 0;
+  this.execdata = {};
 };
 
 Interpreter.prototype.set = function(obj) {
   this.script = obj.script || this.script;
   this.tx = obj.tx || this.tx;
-  this.nin = typeof obj.nin !== 'undefined' ? obj.nin : this.nin;
+  this.nin = typeof obj.nin !== 'undefined' ? parseInt(obj.nin) : this.nin;
   this.stack = obj.stack || this.stack;
   this.altstack = obj.altack || this.altstack;
   this.pc = typeof obj.pc !== 'undefined' ? obj.pc : this.pc;
@@ -329,11 +444,14 @@ Interpreter.prototype.set = function(obj) {
   this.vfExec = obj.vfExec || this.vfExec;
   this.errstr = obj.errstr || this.errstr;
   this.flags = typeof obj.flags !== 'undefined' ? obj.flags : this.flags;
+  this.execdata = typeof obj.execdata !== 'undefined' ? (obj.execdata || {}) : this.execdata
 };
 
 Interpreter.true = Buffer.from([1]);
 Interpreter.false = Buffer.from([]);
 
+Interpreter.MAX_SCRIPT_SIZE = 10000;
+Interpreter.MAX_STACK_SIZE = 1000;
 Interpreter.MAX_SCRIPT_ELEMENT_SIZE = 520;
 
 Interpreter.LOCKTIME_THRESHOLD = 500000000;
@@ -342,9 +460,6 @@ Interpreter.LOCKTIME_THRESHOLD_BN = new BN(Interpreter.LOCKTIME_THRESHOLD);
 // flags taken from bitcoind
 // bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
 Interpreter.SCRIPT_VERIFY_NONE = 0;
-
-// Making v1-v16 witness program non-standard
-Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM = (1 << 12);
 
 // Evaluate P2SH subscripts (softfork safe, BIP16).
 Interpreter.SCRIPT_VERIFY_P2SH = (1 << 0);
@@ -394,15 +509,24 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
 Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
 
-// CLTV See BIP65 for details.
+// Verify CHECKLOCKTIMEVERIFY
+//
+// See BIP65 for details.
 Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9);
-Interpreter.SCRIPT_VERIFY_WITNESS = (1 << 10);
-Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 11);
 
 // support CHECKSEQUENCEVERIFY opcode
 //
 // See BIP112 for details
 Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY = (1 << 10);
+
+// Support segregated witness
+//
+Interpreter.SCRIPT_VERIFY_WITNESS = (1 << 11);
+
+// Making v1-v16 witness program non-standard
+//
+Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM = (1 << 12);
+
 
 //
 // Segwit script only: Require the argument of OP_IF/NOTIF to be exactly
@@ -427,9 +551,23 @@ Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID = (1 << 16);
 //
 Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION = (1 << 17);
 
-// Enable new opcodes.
+// Making OP_CODESEPARATOR and FindAndDelete fail any non-segwit scripts
 //
-Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES = (1 << 18);
+Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE = (1 << 16);
+
+// Verify taproot script 
+//
+Interpreter.SCRIPT_VERIFY_TAPROOT = (1 << 17);
+
+// Making unknown Taproot leaf versions non-standard
+//
+Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_TAPROOT_VERSION = (1 << 18);
+
+// Making unknown OP_SUCCESS non-standard
+Interpreter.SCRIPT_VERIFY_DISCOURAGE_OP_SUCCESS = (1 << 19);
+
+// Making unknown public key versions (in BIP 342 scripts) non-standard
+Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_PUBKEYTYPE = (1 << 20);
 
 
 
@@ -453,6 +591,20 @@ Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22);
  */
 Interpreter.SEQUENCE_LOCKTIME_MASK = 0x0000ffff;
 
+/** Signature hash sizes */
+Interpreter.WITNESS_V0_SCRIPTHASH_SIZE = 32;
+Interpreter.WITNESS_V0_KEYHASH_SIZE = 20;
+Interpreter.WITNESS_V1_TAPROOT_SIZE = 32;
+
+Interpreter.TAPROOT_LEAF_MASK = 0xfe;
+Interpreter.TAPROOT_LEAF_TAPSCRIPT = 0xc0;
+Interpreter.TAPROOT_CONTROL_BASE_SIZE = 33;
+Interpreter.TAPROOT_CONTROL_NODE_SIZE = 32;
+Interpreter.TAPROOT_CONTROL_MAX_NODE_COUNT = 128;
+Interpreter.TAPROOT_CONTROL_MAX_SIZE = Interpreter.TAPROOT_CONTROL_BASE_SIZE + Interpreter.TAPROOT_CONTROL_NODE_SIZE * Interpreter.TAPROOT_CONTROL_MAX_NODE_COUNT;
+
+// Conceptually, this doesn't really belong with the Interpreter, but I haven't found a better place for it.
+Interpreter.PROTOCOL_VERSION = 70016;
 
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
@@ -509,12 +661,215 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
   }
 
   // Only compressed keys are accepted in segwit
-  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == Interpreter.SIGVERSION_WITNESS_V0 && !PublicKey.fromBuffer(buf).compressed) {
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == Signature.Version.WITNESS_V0 && !PublicKey.fromBuffer(buf).compressed) {
     this.errstr = 'SCRIPT_ERR_WITNESS_PUBKEYTYPE';
     return false;
   }
 
   return true;
+};
+
+
+/**
+ * Verifies ECDSA signature
+ * @param {Signature} sig 
+ * @param {PublicKey} pubkey 
+ * @param {Number} nin 
+ * @param {Script} subscript 
+ * @param {Number} satoshis 
+ * @returns {Boolean}
+ */
+Interpreter.prototype.checkEcdsaSignature = function(sig, pubkey, nin, subscript, satoshis) {
+  var subscriptBuffer = subscript.toBuffer();
+  var scriptCodeWriter = new BufferWriter();
+  scriptCodeWriter.writeVarintNum(subscriptBuffer.length);
+  scriptCodeWriter.write(subscriptBuffer);
+
+  $.checkState(JSUtil.isNaturalNumber(satoshis));
+  var satoshisBuffer = new BufferWriter().writeUInt64LEBN(new BN(satoshis)).toBuffer();
+
+  var verified = SighashWitness.verify(
+    this,
+    sig,
+    pubkey,
+    nin,
+    scriptCodeWriter.toBuffer(),
+    satoshisBuffer
+  );
+  return verified;
+};
+
+
+/**
+ * Verifies Schnorr signature
+ * @param {Signature|Buffer} sig 
+ * @param {PublicKey|Buffer} pubkey 
+ * @param {Number} sigversion 
+ * @param {Object} execdata 
+ * @returns {Boolean}
+ */
+Interpreter.prototype.checkSchnorrSignature = function(sig, pubkey, sigversion, execdata) {
+  $.checkArgument(sig && Buffer.isBuffer(sig), 'Missing sig');
+  $.checkArgument(pubkey && Buffer.isBuffer(pubkey), 'Missing pubkey');
+  $.checkArgument(sigversion, 'Missing sigversion');
+  $.checkArgument(execdata, 'Missing execdata');
+
+  $.checkArgument(pubkey.length === 32, 'Schnorr signatures have 32-byte public keys. The caller is responsible for enforcing this.');
+  // Note that in Tapscript evaluation, empty signatures are treated specially (invalid signature that does not
+  // abort script execution). This is implemented in EvalChecksigTapscript, which won't invoke
+  // CheckSchnorrSignature in that case. In other contexts, they are invalid like every other signature with
+  // size different from 64 or 65.
+  if (sig.length !== 64 && sig.length !== 65) {
+    this.errstr = 'SCRIPT_ERR_SCHNORR_SIG_SIZE';
+    return false;
+  }
+
+  if (sig.length === 65 && sig[sig.length - 1] === Signature.SIGHASH_DEFAULT) {
+    this.errstr = 'SCRIPT_ERR_SCHNORR_SIG_HASHTYPE';
+    return false;
+  }
+  sig = Signature.fromSchnorr(sig);
+  const verified = SighashSchnorr.verify(
+    this.tx,
+    sig,
+    pubkey,
+    sigversion,
+    this.nin,
+    execdata
+  );
+  return verified;
+};
+
+
+/**
+ * Based on bitcoind's EvalChecksigPreTapscript function
+ * bitcoind commit: a0988140b71485ad12c3c3a4a9573f7c21b1eff8
+ */
+Interpreter.prototype._evalChecksigPreTapscript = function(bufSig, bufPubkey) {
+  $.checkArgument(
+    this.sigversion === Signature.Version.BASE || this.sigversion === Signature.Version.WITNESS_V0,
+    'sigversion must be base or witness_v0'
+  );
+
+  // Success signifies if the signature is valid.
+  // Result signifies the result of this funciton, which also takes flags into account.
+  const retVal = { success: false, result: false };
+
+  const subscript = new Script().set({
+    chunks: this.script.chunks.slice(this.pbegincodehash)
+  });
+
+  // Drop the signature in pre-segwit scripts but not segwit scripts
+  if (this.sigversion === Signature.Version.BASE) {
+    // Drop the signature, since there's no way for a signature to sign itself
+    const tmpScript = new Script().add(bufSig);
+    let found = subscript.chunks.length;
+    subscript.findAndDelete(tmpScript);
+
+    found = found == subscript.chunks.length + 1; // found if a chunk was removed
+    if (found && (this.flags & Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE)) {
+      this.errstr = 'SCRIPT_ERR_SIG_FINDANDDELETE';
+      return retVal;
+    }
+  }
+
+  if (!this.checkSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+    return retVal;
+  }
+
+  try {
+    const sig = Signature.fromTxFormat(bufSig);
+    const pubkey = PublicKey.fromBuffer(bufPubkey, false);
+    retVal.success = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis);
+  } catch (e) {
+    //invalid sig or pubkey
+    retVal.success = false;
+  }
+
+  if (!retVal.success && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) && bufSig.length) {
+    this.errstr = 'SCRIPT_ERR_SIG_NULLFAIL';
+    return retVal;
+  }
+  
+  // If it reaches here, then true
+  retVal.result = true;
+  return retVal;
+};
+
+
+/**
+ * Based on bitcoind's EvalChecksigTapscript function
+ * bitcoind commit: a0988140b71485ad12c3c3a4a9573f7c21b1eff8
+ */
+Interpreter.prototype._evalChecksigTapscript = function(bufSig, bufPubkey) {
+  $.checkArgument(this.sigversion == Signature.Version.TAPSCRIPT, 'this.sigversion must by TAPSCRIPT');
+
+  /*
+    *  The following validation sequence is consensus critical. Please note how --
+    *    upgradable public key versions precede other rules;
+    *    the script execution fails when using empty signature with invalid public key;
+    *    the script execution fails when using non-empty invalid signature.
+    */
+
+  // Success signifies if the signature is valid.
+  // Result signifies the result of this funciton, which also takes flags into account.
+  const retVal = {
+    success: bufSig.length > 0,
+    result: false
+  }
+  if (retVal.success) {
+    // Implement the sigops/witnesssize ratio test.
+    // Passing with an upgradable public key version is also counted.
+    $.checkState(this.execdata.validationWeightLeftInit, 'validationWeightLeftInit is false');
+    this.execdata.validationWeightLeft -= Script.VALIDATION_WEIGHT_PER_SIGOP_PASSED;
+    if (this.execdata.validationWeightLeft < 0) {
+      this.errstr = 'SCRIPT_ERR_TAPSCRIPT_VALIDATION_WEIGHT';
+      return retVal;
+    }
+  }
+  if (bufPubkey.length === 0) {
+    this.errstr = 'SCRIPT_ERR_PUBKEYTYPE';
+    return retVal;
+  } else if (bufPubkey.length == 32) {
+    if (retVal.success && !this.tx.checkSchnorrSignature(bufSig, bufPubkey, this.nin, this.sigversion, this.execdata)) {
+      this.errstr = 'SCRIPT_ERR_SCHNORR_SIG';
+      return retVal;
+    }
+  } else {
+    /*
+      *  New public key version softforks should be defined before this `else` block.
+      *  Generally, the new code should not do anything but failing the script execution. To avoid
+      *  consensus bugs, it should not modify any existing values (including `success`).
+      */
+    if ((this.flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_PUBKEYTYPE) != 0) {
+      this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_PUBKEYTYPE';
+      return retVal;
+    }
+  }
+
+  // If it reaches here, then true
+  retVal.result = true;
+  return retVal;
+}
+
+/**
+ * Based on bitcoind's EvalChecksig function
+ * bitcoind commit: a0988140b71485ad12c3c3a4a9573f7c21b1eff8
+ * @returns {{ success: Boolean, verified: Boolean }}
+ */
+Interpreter.prototype._evalCheckSig = function(bufSig, bufPubkey) {
+  switch(this.sigversion) {
+    case Signature.Version.BASE:
+    case Signature.Version.WITNESS_V0:
+      // const verified = this._evalChecksigPreTapscript(bufSig, bufPubkey);
+      // return { success: verified, verified }; // This is to keep the same return format as _evalCheckSigTapscript
+      return this._evalChecksigPreTapscript(bufSig, bufPubkey);
+    case Signature.Version.TAPSCRIPT:
+      return this._evalChecksigTapscript(bufSig, bufPubkey);
+    case Signature.Version.TAPROOT:
+      // Key path spending in Taproot has no script, so this is unreachable.
+      throw new Error('Called evalCheckSig with a TAPROOT sigversion. Check your implementation');
+  }
 };
 
 /**
@@ -523,7 +878,13 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
 Interpreter.prototype.evaluate = function() {
-  if (this.script.toBuffer().length > 10000) {
+  // sigversion cannot be TAPROOT here, as it admits no script execution.
+  $.checkArgument(this.sigversion == Signature.Version.BASE || this.sigversion == Signature.Version.WITNESS_V0 || this.sigversion == Signature.Version.TAPSCRIPT, 'invalid sigversion');
+
+  if (
+    (this.sigversion == Signature.Version.BASE || this.sigversion == Signature.Version.WITNESS_V0) &&
+    this.script.toBuffer().length > Interpreter.MAX_SCRIPT_SIZE
+  ) {
     this.errstr = 'SCRIPT_ERR_SCRIPT_SIZE';
     return false;
   }
@@ -534,12 +895,6 @@ Interpreter.prototype.evaluate = function() {
       if (!fSuccess) {
         return false;
       }
-    }
-
-    // Size limits
-    if (this.stack.length + this.altstack.length > 1000) {
-      this.errstr = 'SCRIPT_ERR_STACK_SIZE';
-      return false;
     }
   } catch (e) {
     this.errstr = 'SCRIPT_ERR_UNKNOWN_ERROR: ' + e;
@@ -610,54 +965,104 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
  */
 Interpreter.prototype.checkSequence = function(nSequence) {
 
-    // Relative lock times are supported by comparing the passed in operand to
-    // the sequence number of the input.
-    var txToSequence = this.tx.inputs[this.nin].sequenceNumber;
+  // Relative lock times are supported by comparing the passed in operand to
+  // the sequence number of the input.
+  var txToSequence = this.tx.inputs[this.nin].sequenceNumber;
 
-    // Fail if the transaction's version number is not set high enough to
-    // trigger BIP 68 rules.
-    if (this.tx.version < 2) {
-        return false;
-    }
-
-    // Sequence numbers with their most significant bit set are not consensus
-    // constrained. Testing that the transaction's sequence number do not have
-    // this bit set prevents using this property to get around a
-    // CHECKSEQUENCEVERIFY check.
-    if (txToSequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
-        return false;
-    }
-
-    // Mask off any bits that do not have consensus-enforced meaning before
-    // doing the integer comparisons
-    var nLockTimeMask =
-        Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
-    var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
-    var nSequenceMasked = nSequence.and(nLockTimeMask);
-
-    // There are two kinds of nSequence: lock-by-blockheight and
-    // lock-by-blocktime, distinguished by whether nSequenceMasked <
-    // CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
-    //
-    // We want to compare apples to apples, so fail the script unless the type
-    // of nSequenceMasked being tested is the same as the nSequenceMasked in the
-    // transaction.
-    var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
-    
-    if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
-           nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
-          (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
-           nSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)))) {
-        return false;
-    }
-
-    // Now that we know we're comparing apples-to-apples, the comparison is a
-    // simple numeric one.
-    if (nSequenceMasked.gt(txToSequenceMasked)) {
-        return false;
-    }
-    return true;
+  // Fail if the transaction's version number is not set high enough to
+  // trigger BIP 68 rules.
+  if (this.tx.version < 2) {
+    return false;
   }
+
+  // Sequence numbers with their most significant bit set are not consensus
+  // constrained. Testing that the transaction's sequence number do not have
+  // this bit set prevents using this property to get around a
+  // CHECKSEQUENCEVERIFY check.
+  if (txToSequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+    return false;
+  }
+
+  // Mask off any bits that do not have consensus-enforced meaning before
+  // doing the integer comparisons
+  var nLockTimeMask =
+      Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
+  var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
+  var nSequenceMasked = nSequence.and(nLockTimeMask);
+
+  // There are two kinds of nSequence: lock-by-blockheight and
+  // lock-by-blocktime, distinguished by whether nSequenceMasked <
+  // CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
+  //
+  // We want to compare apples to apples, so fail the script unless the type
+  // of nSequenceMasked being tested is the same as the nSequenceMasked in the
+  // transaction.
+  var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
+  
+  if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
+          nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
+        (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
+          nSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)))) {
+    return false;
+  }
+
+  // Now that we know we're comparing apples-to-apples, the comparison is a
+  // simple numeric one.
+  if (nSequenceMasked.gt(txToSequenceMasked)) {
+    return false;
+  }
+  return true;
+}
+
+
+Interpreter.computeTapleafHash = function(leafVersion, scriptBuf) {
+  const tagWriter = TaggedHash.TAPLEAF;
+  tagWriter.writeUInt8(leafVersion);
+  tagWriter.writeVarintNum(scriptBuf.length);
+  tagWriter.write(scriptBuf);
+  return tagWriter.finalize();
+};
+
+
+Interpreter.computeTaprootMerkleRoot = function(control, tapleafHash) {
+  const pathLen = (control.length - Interpreter.TAPROOT_CONTROL_BASE_SIZE) / Interpreter.TAPROOT_CONTROL_NODE_SIZE;
+  let k = tapleafHash;
+  for (let i = 0; i < pathLen; ++i) {
+    const tagWriter = TaggedHash.TAPBRANCH;
+    const start = Interpreter.TAPROOT_CONTROL_BASE_SIZE + Interpreter.TAPROOT_CONTROL_NODE_SIZE * i;
+    const node = control.slice(start, start + Interpreter.TAPROOT_CONTROL_NODE_SIZE);
+    if (Buffer.compare(k, node) === -1) {
+      tagWriter.write(k);
+      tagWriter.write(node);
+    } else {
+      tagWriter.write(node);
+      tagWriter.write(k);
+    }
+    k = tagWriter.finalize();
+  }
+  return k;
+};
+
+
+Interpreter.verifyTaprootCommitment = function(control, program, tapleafHash) {
+  $.checkArgument(control.length >= Interpreter.TAPROOT_CONTROL_BASE_SIZE, 'control too short');
+  $.checkArgument(program.length >= 32, 'program is too short');
+
+  try {
+    //! The internal pubkey (x-only, so no Y coordinate parity).
+    const p = PublicKey.fromX(false, control.slice(1, Interpreter.TAPROOT_CONTROL_BASE_SIZE));
+    //! The output pubkey (taken from the scriptPubKey).
+    const q = PublicKey.fromX(false, program);
+    // Compute the Merkle root from the leaf and the provided path.
+    const merkleRoot = Interpreter.computeTaprootMerkleRoot(control, tapleafHash);
+    // Verify that the output pubkey matches the tweaked internal pubkey, after correcting for parity.
+    return q.checkTapTweak(p, merkleRoot, control);
+  } catch (err) {
+    // TODO: set this.errstr here?
+    return false
+  }
+};
+
 
 /** 
  * Based on the inner loop of bitcoind's EvalScript function
@@ -671,6 +1076,11 @@ Interpreter.prototype.step = function() {
   var buf, buf1, buf2, spliced, n, x1, x2, bn, bn1, bn2, bufSig, bufPubkey, subscript;
   var sig, pubkey;
   var fValue, fSuccess;
+  this.execdata = this.execdata || {};
+  if (!this.execdata.codeseparatorPosInit) {
+    this.execdata.codeseparatorPos = new BN(0xFFFFFFFF);
+    this.execdata.codeseparatorPosInit = true;
+  }
 
   // Read instruction
   var chunk = this.script.chunks[this.pc];
@@ -685,10 +1095,12 @@ Interpreter.prototype.step = function() {
     return false;
   }
 
-  // Note how Opcode.OP_RESERVED does not count towards the opcode limit.
-  if (opcodenum > Opcode.OP_16 && ++(this.nOpCount) > 201) {
-    this.errstr = 'SCRIPT_ERR_OP_COUNT';
-    return false;
+  if (this.sigversion === Signature.Version.BASE || this.sigversion === Signature.Version.WITNESS_V0) {
+    // Note how Opcode.OP_RESERVED does not count towards the opcode limit.
+    if (opcodenum > Opcode.OP_16 && ++(this.nOpCount) > 201) {
+      this.errstr = 'SCRIPT_ERR_OP_COUNT';
+      return false;
+    }
   }
 
 
@@ -708,6 +1120,12 @@ Interpreter.prototype.step = function() {
     opcodenum === Opcode.OP_LSHIFT ||
     opcodenum === Opcode.OP_RSHIFT) {
     this.errstr = 'SCRIPT_ERR_DISABLED_OPCODE';
+    return false;
+  }
+
+  // With SCRIPT_VERIFY_CONST_SCRIPTCODE, OP_CODESEPARATOR in non-segwit script is rejected even in an unexecuted branch
+  if (opcodenum == Opcode.OP_CODESEPARATOR && this.sigversion === Signature.Version.BASE && (this.flags & Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE)) {
+    this.errstr = 'SCRIPT_ERR_OP_CODESEPARATOR';
     return false;
   }
 
@@ -889,7 +1307,17 @@ Interpreter.prototype.step = function() {
 
             buf = this.stack[this.stack.length - 1];
 
-            if (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALIF) {
+            // Tapscript requires minimal IF/NOTIF inputs as a consensus rule.
+            if (this.sigversion === Signature.Version.TAPSCRIPT) {
+              // The input argument to the OP_IF and OP_NOTIF opcodes must be either
+              // exactly 0 (the empty vector) or exactly 1 (the one-byte vector with value 1).
+              if (buf.length > 1 || (buf.length === 1 && buf[0] !== 1)) {
+                this.errstr = 'SCRIPT_ERR_TAPSCRIPT_MINIMALIF';
+                return false;
+              }
+            }
+            // Under witness v0 rules it is only a policy rule, enabled through SCRIPT_VERIFY_MINIMALIF.
+            if (this.sigversion === Signature.Version.WITNESS_V0 && (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALIF)) {
               buf = this.stack[this.stack.length - 1];
               if (buf.length > 1) {
                 this.errstr = 'SCRIPT_ERR_MINIMALIF';
@@ -1436,6 +1864,7 @@ Interpreter.prototype.step = function() {
         {
           // Hash starts after the code separator
           this.pbegincodehash = this.pc;
+          this.execdata.codeseparatorPos = this.pc - 1;
         }
         break;
 
@@ -1450,32 +1879,9 @@ Interpreter.prototype.step = function() {
 
           bufSig = this.stack[this.stack.length - 2];
           bufPubkey = this.stack[this.stack.length - 1];
-          if (!this.checkSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
-            return false;
-          }
 
-          // Subset of script starting at the most recent codeseparator
-          // CScript scriptCode(pbegincodehash, pend);
-          subscript = new Script().set({
-            chunks: this.script.chunks.slice(this.pbegincodehash)
-          });
-
-          // Drop the signature, since there's no way for a signature to sign itself
-          var tmpScript = new Script().add(bufSig);
-          subscript.findAndDelete(tmpScript);
-
-          try {
-            sig = Signature.fromTxFormat(bufSig);
-            pubkey = PublicKey.fromBuffer(bufPubkey, false);
-            fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis);
-          } catch (e) {
-            //invalid sig or pubkey
-            fSuccess = false;
-          }
-
-          if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
-            bufSig.length) {
-            this.errstr = 'SCRIPT_ERR_NULLFAIL';
+          const { success: fSuccess, result } = this._evalCheckSig(bufSig, bufPubkey);
+          if (!result) {
             return false;
           }
 
@@ -1494,7 +1900,37 @@ Interpreter.prototype.step = function() {
           }
         }
         break;
+      case Opcode.OP_CHECKSIGADD:
+        {
+          // OP_CHECKSIGADD is only available in Tapscript
+          if (this.sigversion == Signature.Version.BASE || this.sigversion == Signature.Version.WITNESS_V0) {
+            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+            return false;
+          }
 
+          // (sig num pubkey -- num)
+          if (this.stack.length < 3) {
+            this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+            return false;
+          }
+
+          let sig = this.stack[this.stack.length - 3];
+          let num = this.stack[this.stack.length - 2];
+          let pubkey = this.stack[this.stack.length - 1];
+
+          num = BN.fromScriptNumBuffer(num, fRequireMinimal);
+
+          const { success, result } = this._evalCheckSig(sig, pubkey);
+          if (!result) {
+            return false;
+          }
+
+          this.stack.pop();
+          this.stack.pop();
+          this.stack.pop();
+          this.stack.push(num.addn(success ? 1 : 0).toScriptNumBuffer());
+        }
+        break;
       case Opcode.OP_CHECKMULTISIG:
       case Opcode.OP_CHECKMULTISIGVERIFY:
         {
@@ -1570,7 +2006,7 @@ Interpreter.prototype.step = function() {
             try {
               sig = Signature.fromTxFormat(bufSig);
               pubkey = PublicKey.fromBuffer(bufPubkey, false);
-              fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis);
+              fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis, this.execdata);
             } catch (e) {
               //invalid sig or pubkey
               fOk = false;
@@ -1640,6 +2076,12 @@ Interpreter.prototype.step = function() {
         this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
         return false;
     }
+  }
+
+  // Size limits
+  if (this.stack.length + this.altstack.length > Interpreter.MAX_STACK_SIZE) {
+    this.errstr = 'SCRIPT_ERR_STACK_SIZE';
+    return false;
   }
 
   return true;

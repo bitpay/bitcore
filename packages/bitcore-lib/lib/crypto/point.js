@@ -65,12 +65,20 @@ Point.getG = function getG() {
 /**
  *
  * Will return the max of range of valid private keys as governed by the secp256k1 ECDSA standard.
- *
+ * (A.K.A curve order)
  * @link https://en.bitcoin.it/wiki/Private_key#Range_of_valid_ECDSA_private_keys
  * @returns {BN} A BN instance of the number of points on the curve
  */
 Point.getN = function getN() {
   return new BN(ec.curve.n.toArray());
+};
+
+/**
+ * Secp256k1 field size
+ * @returns {BN} A BN instance of the field size
+ */
+Point.getP = function() {
+  return ec.curve.p.clone();
 };
 
 Point.prototype._getX = Point.prototype.getX;
@@ -145,6 +153,29 @@ Point.pointToCompressed = function pointToCompressed(point) {
     prefix = Buffer.from([0x02]);
   }
   return BufferUtil.concat([prefix, xbuf]);
+};
+
+
+Point.prototype.liftX = function() {
+  const fieldSize = Point.getP();
+  const zero = new BN(0);
+  const one = new BN(1);
+  const two = new BN(2);
+  const three = new BN(3);
+  const four = new BN(4);
+  const seven = new BN(7);
+  const red = BN.red('k256');
+
+  const c = this.x.pow(three).add(seven).mod(fieldSize);
+  const y = c.toRed(red).redPow(fieldSize.add(one).div(four)).mod(fieldSize);
+  
+  if (!c.eq(y.pow(two).mod(fieldSize))) {
+    throw new Error('liftX failed');
+  }
+  
+  const pointX = this.x.red ? this.x.fromRed() : this.x;
+  const pointY = y.mod(two).eq(zero) ? y.fromRed() : fieldSize.sub(y)
+  return new Point(pointX, pointY, true);
 };
 
 module.exports = Point;

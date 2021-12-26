@@ -637,7 +637,7 @@ describe('Script', function() {
   describe('#add and #prepend', function() {
 
     it('should add these ops', function() {
-      Script().add(1).add(10).add(186).toString().should.equal('0x01 0x0a 0xba');
+      Script().add(1).add(10).add(193).toString().should.equal('0x01 0x0a 0xc1');
       Script().add(1000).toString().should.equal('0x03e8');
       Script().add('OP_CHECKMULTISIG').toString().should.equal('OP_CHECKMULTISIG');
       Script().add('OP_1').add('OP_2').toString().should.equal('OP_1 OP_2');

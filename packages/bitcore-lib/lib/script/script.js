@@ -43,8 +43,6 @@ var Script = function Script(from) {
   }
 };
 
-Script.VERIFY_TAPROOT = (1 << 17);
-
 
 Script.prototype.set = function(obj) {
   $.checkArgument(_.isObject(obj));
@@ -94,6 +92,15 @@ Script.fromBuffer = function(buffer) {
           len: len,
           opcodenum: opcodenum
         });
+      } else if (Opcode.isOpSuccess(opcodenum)) {
+        // OP_SUCCESSx processing overrides everything, including stack element size limits
+        buf = br.readAll();
+        len = buf.length;
+        script.chunks.push({
+          buf: buf,
+          len: len,
+          opcodenum: opcodenum
+        });
       } else {
         script.chunks.push({
           opcodenum: opcodenum
@@ -128,6 +135,9 @@ Script.prototype.toBuffer = function() {
         bw.write(chunk.buf);
       } else if (opcodenum === Opcode.OP_PUSHDATA4) {
         bw.writeUInt32LE(chunk.len);
+        bw.write(chunk.buf);
+      } else {
+        // Could reach here if opcodenum is OP_SUCCESSx (see comment in .fromBuffer)
         bw.write(chunk.buf);
       }
     }
@@ -455,7 +465,7 @@ Script.prototype.isWitnessProgram = function(values) {
   }
 
   if (buf.length === buf[1] + 2) {
-    values.version = buf[0];
+    values.version = Opcode.decodeOpN(buf[0]);
     values.program = buf.slice(2, buf.length);
     return true;
   }
@@ -574,6 +584,18 @@ Script.types.MULTISIG_IN = 'Spend from multisig';
 Script.types.DATA_OUT = 'Data push';
 
 Script.OP_RETURN_STANDARD_SIZE = 80;
+
+// Tag for input annex. If there are at least two witness elements for a transaction input,
+// and the first byte of the last element is 0x50, this last element is called annex, and
+// has meanings independent of the script
+Script.ANNEX_TAG = 0x50;
+
+// Validation weight per passing signature (Tapscript only, see BIP 342).
+Script.VALIDATION_WEIGHT_PER_SIGOP_PASSED = 50;
+
+// How much weight budget is added to the witness size (Tapscript only, see BIP 342).
+Script.VALIDATION_WEIGHT_OFFSET = 50;
+
 
 /**
  * @returns {object} The Script type if it is a known form,
@@ -910,6 +932,30 @@ Script.buildWitnessV0Out = function(to) {
   return s;
 };
 
+
+/**
+ * Build Taproot script output
+ * @param {PublicKey} to 
+ * @returns {Script}
+ */
+Script.buildWitnessV1Out = function(to) {
+  $.checkArgument(!_.isUndefined(to));
+  $.checkArgument(to instanceof PublicKey || to instanceof Address || _.isString(to));
+  
+  if (to instanceof PublicKey) {
+    to = to.toAddress(null, Address.PayToWitnessPublicKeyHash);
+  } else if (_.isString(to)) {
+    to = new Address(to);
+  }
+  
+  var s = new Script();
+  s.add(Opcode.OP_1)
+    .add(to.hashBuffer);
+  s._network = to.network;
+  return s;
+};
+
+
 /**
  * @returns {Script} a new pay to public key output for the given
  *  public key
@@ -1168,20 +1214,6 @@ Script.prototype.checkMinimalPush = function(i) {
   return true;
 };
 
-/**
- * Comes from bitcoind's script DecodeOP_N function
- * @param {number} opcode
- * @returns {number} numeric value in range of 0 to 16
- */
-Script.prototype._decodeOP_N = function(opcode) {
-  if (opcode === Opcode.OP_0) {
-    return 0;
-  } else if (opcode >= Opcode.OP_1 && opcode <= Opcode.OP_16) {
-    return opcode - (Opcode.OP_1 - 1);
-  } else {
-    throw new Error('Invalid opcode: ' + JSON.stringify(opcode));
-  }
-};
 
 /**
  * Comes from bitcoind's script GetSigOpCount(boolean) function
@@ -1199,7 +1231,7 @@ Script.prototype.getSignatureOperationsCount = function(accurate) {
       n++;
     } else if (opcode == Opcode.OP_CHECKMULTISIG || opcode == Opcode.OP_CHECKMULTISIGVERIFY) {
       if (accurate && lastOpcode >= Opcode.OP_1 && lastOpcode <= Opcode.OP_16) {
-        n += self._decodeOP_N(lastOpcode);
+        n += Opcode.decodeOpN(lastOpcode);
       } else {
         n += 20;
       }
