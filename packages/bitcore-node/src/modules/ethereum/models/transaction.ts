@@ -18,6 +18,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
+import { ETH } from '../api/csp';
 
 import { EthTransactionJSON, IEthTransaction } from '../types';
 
@@ -192,7 +193,16 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     } else {
       return Promise.all(
         params.txs.map(async (tx: IEthTransaction) => {
-          const { to, txid, from } = tx;
+          let { to, txid, from } = tx;
+
+          // handle incoming ERC20 transactions
+          if (tx.abiType && tx.abiType.type === 'ERC20' && tx.abiType.name === 'transfer') {
+            const { web3 } = await ETH.getWeb3(network);
+            to = web3.utils.toChecksumAddress(tx.abiType.params[0].value);
+          }
+
+          // TODO handle incoming internal transactions ( receiving a token swap from a different wallet )
+
           const sentWallets = await WalletAddressStorage.collection.find({ chain, network, address: from }).toArray();
           const receivedWallets = await WalletAddressStorage.collection.find({ chain, network, address: to }).toArray();
           const wallets = _.uniqBy(

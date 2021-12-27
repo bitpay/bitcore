@@ -17,6 +17,7 @@ import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/Ch
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { EthTransactions } from '../../data/ETH/transactionsETH';
 import { EthBlocks } from '../../data/ETH/blocksETH';
+import { unprocessedEthBlocks } from '../../data/ETH/unprocessedBlocksETH';
 
 describe('Ethereum API', function() {
   const chain = 'ETH';
@@ -395,6 +396,43 @@ describe('Ethereum API', function() {
       });
     });
   });
+
+  describe('#batchImport', () => {
+    const chain = 'ETH';
+    const network = 'testnet';
+
+    const wallet = new ObjectId();
+    const address = '0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef';
+    
+    before(async () => {
+      await WalletAddressStorage.collection.insertOne({
+        chain,
+        network,
+        wallet,
+        address,
+        processed: true
+      });
+    });
+
+    afterEach(async () => { 
+      await EthTransactionStorage.collection.deleteMany({});
+    });
+
+    it('should update eth transactions with related wallet id correctly (incoming)', async () => {
+      const block = unprocessedEthBlocks[0] as any; // block containing an eth transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
+      await EthTransactionStorage.batchImport({...block});
+      const walletTxs = await EthTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      expect(walletTxs.length).eq(1);
+    });
+
+    it('should update erc20 transactions with related wallet id correctly (incoming)', async () => {
+      const block = unprocessedEthBlocks[1] as any; // block containing an ERC20 transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
+      await EthTransactionStorage.batchImport({...block});
+      const walletTxs = await EthTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      expect(walletTxs.length).eq(1);
+    });
+  });
+
 });
 
 const streamWalletTransactionsTest = async (chain: string, network: string, includeInvalidTxs: boolean = false) => {
