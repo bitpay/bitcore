@@ -1,5 +1,5 @@
-const schnorr = require('bip-schnorr');
 const $ = require('../util/preconditions');
+const JS = require('../util/js');
 const BN = require('./bn');
 const Point = require('./point');
 const TaggedHash = require('./taggedhash');
@@ -13,20 +13,73 @@ const Schnorr = function Schnorr() {
 
 Schnorr.prototype.set = function() {};
 
+/**
+ * Create a schnorr signature
+ * @param {PrivateKey|Buffer} privateKey 
+ * @param {String|Buffer} message Hex string or buffer
+ * @param {String|Buffer} aux Hex string or buffer
+ * @returns {Buffer}
+ * @link https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#Default_Signing
+ */
 Schnorr.sign = function(privateKey, message, aux) {
-  // TODO
-
-  if (!(message instanceof Buffer)) {
-    throw new Error('message must be a buffer');
+  if ($.isType(privateKey, 'PrivateKey')) {
+    privateKey = privateKey.point.x.toBuffer();
+  }
+  if (privateKey.length !== 32) {
+    throw new Error('Private key should be 32 bytes for schnorr signatures');
   }
 
-  if (aux && !(aux instanceof Buffer)) {
-    throw new Error('aux must be a buffer');
+  if (typeof message === 'string' && JS.isHexaString(message)) {
+    message = Buffer.from(message, 'hex')
   }
-  return schnorr.sign(privateKey.toString(), message, aux);
+  if (!$.isType(message, 'Buffer')) {
+    throw new Error('message must be a hex string or buffer');
+  }
+
+  if (typeof aux === 'string' && JS.isHexaString(aux)) {
+    aux = Buffer.from(aux, 'hex')
+  }
+  if (!$.isType(aux, 'Buffer')) {
+    throw new Error('aux must be a hex string or buffer');
+  }
+
+  const G = Point.getG();
+  const n = Point.getN();
+
+  const dPrime = new BN(privateKey);
+  if (dPrime.eqn(0) || dPrime.gte(Point.getN())) {
+    throw new Error('Invalid private key for schnorr signing');
+  }
+  const P = G.mul(dPrime);
+  const Pbuf = Buffer.from(P.encodeCompressed().slice(1)); // slice(1) removes the encoding prefix byte
+  const d = P.y.isEven() ? dPrime : n.sub(dPrime);
+  const t = d.xor(new BN(new TaggedHash('BIP0340/aux', aux).finalize()));
+  const rand = new TaggedHash('BIP0340/nonce', Buffer.concat([t.toBuffer(), Pbuf, message])).finalize();
+  const kPrime = new BN(rand).mod(n);
+  if (kPrime.eqn(0)) {
+    throw new Error('Error creating schnorr signature');
+  }
+  const R = G.mul(kPrime);
+  const Rbuf = Buffer.from(R.encodeCompressed().slice(1)); // slice(1) removes the encoding prefix byte
+  const k = R.y.isEven() ? kPrime : n.sub(kPrime);
+  const e = new BN(new TaggedHash('BIP0340/challenge', Buffer.concat([Rbuf, Pbuf, message])).finalize()).mod(n);
+  const sig = Buffer.concat([Rbuf, k.add(e.mul(d)).mod(n).toBuffer()]);
+
+  if (!Schnorr.verify(Pbuf, message, sig)) {
+    throw new Error('Error creating schnorr signature. Verification failed');
+  }
+  return sig;
 };
 
 
+/**
+ * Verify a schnorr signature
+ * @param {PublicKey|Buffer} publicKey 
+ * @param {String|Buffer} message Hex string or buffer
+ * @param {String|Signature|Buffer} signature Hex string, Signature instance, or buffer
+ * @returns {Boolean}
+ * @link https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#Verification
+ */
 Schnorr.verify = function(publicKey, message, signature) {
   if ($.isType(publicKey, 'PublicKey')) {
     publicKey = publicKey.point.x.toBuffer();
@@ -35,7 +88,7 @@ Schnorr.verify = function(publicKey, message, signature) {
     throw new Error('Public key should be 32 bytes for schnorr signatures');
   }
 
-  if (typeof message === 'string') {
+  if (typeof message === 'string' && JS.isHexaString(message)) {
     message = Buffer.from(message, 'hex');
   }
   if (message.length !== 32) {
@@ -77,6 +130,7 @@ Schnorr.verify = function(publicKey, message, signature) {
   }
 };
 
+/* Utility function used in Verify() */
 const getE = function(r, P, message) {
   const n = Point.getN();
   const hash = new TaggedHash('BIP0340/challenge', Buffer.concat([r.toBuffer({ size: 32 }), P.x.toBuffer({ size: 32 }), message])).finalize();
