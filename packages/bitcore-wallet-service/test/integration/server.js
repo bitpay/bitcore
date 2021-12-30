@@ -7690,6 +7690,17 @@ describe('Wallet service', function() {
           toAddress: 'DMHR9z3hVfEMkfsxfP7CbVtYdPh2f5ESqo',
         }],
       },
+      {
+        n: 2,
+        name: 'Legacy, above min relay fee',
+        requiredFeeRate: 1e8,
+        fromSegwit: false,
+        utxos: Array(10).fill(1), // 10 utxo's of 1 DOGE each
+        outputs: [{
+          toAddress: 'DMHR9z3hVfEMkfsxfP7CbVtYdPh2f5ESqo',
+          amount: 8e8
+        }]
+      },
     ];
 
     function checkTx(txOpts, x, cb) {
@@ -7728,9 +7739,14 @@ describe('Wallet service', function() {
           //console.log('[server.js.7001:log:]',txp.raw); // TODO
           console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
 
-          // size should be above (or equal) the required FeeRate
-          actualFeeRate.should.not.be.below(x.requiredFeeRate);
-          actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+          // Fee should be more than min relay fee
+          t.getFee().should.be.gte(CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT);
+
+          if (t.getFee() > CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT) {
+            // size should be above (or equal) the required FeeRate
+            actualFeeRate.should.not.be.below(x.requiredFeeRate);
+            actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+          }
           return cb(actualFeeRate);
         });
       });

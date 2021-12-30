@@ -311,6 +311,7 @@ export class BtcChain implements IChain {
 
     if (!fee) {
       fee = (txp.feePerKb * this.getEstimatedSize(txp, opts)) / 1000;
+      fee = Math.max(fee, this.bitcoreLib.Transaction.DUST_AMOUNT);
     }
     return parseInt(fee.toFixed(0));
   }
