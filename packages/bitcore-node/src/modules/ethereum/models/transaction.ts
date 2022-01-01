@@ -203,7 +203,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           if (tx.abiType?.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
             const _to = tx.abiType.params.find(f => f.name === '_to')?.value;
             const _from = tx.abiType.params.find(f => f.name === '_from')?.value;
-            
+
             if (_to) {
               tos.push(web3.utils.toChecksumAddress(_to));
             }
@@ -225,8 +225,12 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
             }
           }
 
-          const sentWallets = await WalletAddressStorage.collection.find({ chain, network, address: { $in: froms } }).toArray();
-          const receivedWallets = await WalletAddressStorage.collection.find({ chain, network, address: { $in: tos } }).toArray();
+          const sentWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: froms } })
+            .toArray();
+          const receivedWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: tos } })
+            .toArray();
           const wallets = _.uniqBy(
             sentWallets.concat(receivedWallets).map(w => w.wallet),
             w => w.toHexString()
