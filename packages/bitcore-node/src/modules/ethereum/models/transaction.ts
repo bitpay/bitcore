@@ -200,15 +200,15 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           const { web3 } = await ETH.getWeb3(network);
 
           // handle incoming ERC20 transactions
-          if (tx.abiType?.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
-            const _to = tx.abiType.params.find(f => f.name === '_to')?.value;
-            const _from = tx.abiType.params.find(f => f.name === '_from')?.value;
+          if (tx.abiType && tx.abiType.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
+            const _to = tx.abiType.params.find(f => f.name === '_to');
+            const _from = tx.abiType.params.find(f => f.name === '_from');
 
-            if (_to) {
-              tos.push(web3.utils.toChecksumAddress(_to));
+            if (_to && _to.value) {
+              tos.push(web3.utils.toChecksumAddress(_to.value));
             }
-            if (_from) {
-              froms.push(web3.utils.toChecksumAddress(_from));
+            if (_from && _from.value) {
+              froms.push(web3.utils.toChecksumAddress(_from.value));
             }
           }
 
