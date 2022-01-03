@@ -18,6 +18,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
+import { ETH } from '../api/csp';
 
 import { EthTransactionJSON, IEthTransaction } from '../types';
 
@@ -193,8 +194,43 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       return Promise.all(
         params.txs.map(async (tx: IEthTransaction) => {
           const { to, txid, from } = tx;
-          const sentWallets = await WalletAddressStorage.collection.find({ chain, network, address: from }).toArray();
-          const receivedWallets = await WalletAddressStorage.collection.find({ chain, network, address: to }).toArray();
+          const tos = [to];
+          const froms = [from];
+
+          const { web3 } = await ETH.getWeb3(network);
+
+          // handle incoming ERC20 transactions
+          if (tx.abiType && tx.abiType.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
+            const _to = tx.abiType.params.find(f => f.name === '_to');
+            const _from = tx.abiType.params.find(f => f.name === '_from');
+
+            if (_to && _to.value) {
+              tos.push(web3.utils.toChecksumAddress(_to.value));
+            }
+            if (_from && _from.value) {
+              froms.push(web3.utils.toChecksumAddress(_from.value));
+            }
+          }
+
+          // handle incoming internal transactions ( receiving a token swap from a different wallet )
+          if (tx.internal) {
+            for (let internal of tx.internal) {
+              const { to, from } = internal.action;
+              if (to) {
+                tos.push(web3.utils.toChecksumAddress(to));
+              }
+              if (from) {
+                froms.push(web3.utils.toChecksumAddress(from));
+              }
+            }
+          }
+
+          const sentWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: froms } })
+            .toArray();
+          const receivedWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: tos } })
+            .toArray();
           const wallets = _.uniqBy(
             sentWallets.concat(receivedWallets).map(w => w.wallet),
             w => w.toHexString()
