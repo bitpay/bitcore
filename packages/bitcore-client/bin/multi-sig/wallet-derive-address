@@ -1,18 +1,15 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const bitcoreLib = require('bitcore-lib');
-const bitcoreLibCash = require('bitcore-lib-cash');
-const bitcoreLibLtc = require('bitcore-lib-ltc');
-const bitcoreLibDoge = require('bitcore-lib-doge');
+const CWC = require('crypto-wallet-core');
 const program = require('commander');
 const { Wallet } = require('../../ts_build/wallet');
 const promptly = require('promptly');
 const bitcoreLibs = {
-  BTC: bitcoreLib,
-  DOGE: bitcoreLibDoge,
-  LTC: bitcoreLibLtc,
-  BCH: bitcoreLibCash
+  BTC: CWC.BitcoreLib,
+  DOGE: CWC.BitcoreLibDoge,
+  LTC: CWC.BitcoreLibLtc,
+  BCH: CWC.BitcoreLibCash
 };
 
 program
