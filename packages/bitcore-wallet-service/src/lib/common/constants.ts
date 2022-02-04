@@ -28,6 +28,14 @@ module.exports = {
     SHIB: 'shib'
   },
 
+  USD_STABLECOINS: {
+    USDC: 'usdc',
+    PAX: 'pax',
+    GUSD: 'gusd',
+    BUSD: 'busd',
+    DAI: 'dai'
+  },
+
   UTXO_COINS: {
     BTC: 'btc',
     BCH: 'bch',

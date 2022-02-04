@@ -203,15 +203,16 @@ export class FiatRateService {
   getRatesByCoin(opts, cb) {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesByCoin()>');
 
-    opts = opts || {};
-    const rates = [];
-
-    const now = Date.now();
-    let coin = opts.coin;
-    const ts = opts.ts ? opts.ts : now;
     let fiatFiltered = [];
 
-    if (opts.code) {
+    let { coin, code } = opts || {};
+    const ts = opts.ts || Date.now();
+    
+    if (Constants.USD_STABLECOINS[coin.toUpperCase()]) {
+      return this.getRatesForStablecoin({ fiatCode: 'USD', ts }, cb);
+    }
+
+    if (code) {
       fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
@@ -227,19 +228,18 @@ export class FiatRateService {
         this.storage.fetchFiatRate(coin, currency.code, ts, (err, rate) => {
           if (err) return cb(err);
           if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
-          rates.push({
+          return cb(null, {
             ts: +ts,
             rate: rate ? rate.value : undefined,
             fetchedOn: rate ? rate.ts : undefined,
             code: currency.code,
             name: currency.name
           });
-          return cb(null, rates);
         });
       },
       (err, res: any) => {
         if (err) return cb(err);
-        return cb(null, res[0]);
+        return cb(null, res);
       }
     );
   }
@@ -277,5 +277,14 @@ export class FiatRateService {
         return cb(null, res[0]);
       }
     );
+  }
+
+  getRatesForStablecoin(opts, cb) {
+    this.getRatesByCoin({ coin: opts.coin || 'btc', ts: opts.ts }, (err, rates) => {
+      if (err) return cb(err);
+      const fiatRate = rates.find(rate => rate.code === opts.fiatCode);
+      if (!fiatRate || !fiatRate.rate) return cb('rates not available for stablecoin');
+      cb(null, rates.map(({ rate, ...obj }) => ({ ...obj, rate: parseFloat((rate / fiatRate.rate).toFixed(2)) })));
+    });
   }
 }
