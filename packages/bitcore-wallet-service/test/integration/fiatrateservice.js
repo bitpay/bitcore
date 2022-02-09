@@ -656,7 +656,7 @@ describe('Fiat rate service', function() {
             USD: 1
           });
           service.getRatesForStablecoin.calledWith(sinon.match({
-            fiatCode: 'USD',
+            code: 'USD',
             ts: sinon.match.number
           })).should.equal(true);
           done();
