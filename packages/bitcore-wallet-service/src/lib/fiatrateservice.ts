@@ -202,20 +202,21 @@ export class FiatRateService {
 
   getRatesByCoin(opts, cb) {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesByCoin()>');
-
-    let fiatFiltered = [];
-
-    let { coin, code } = opts || {};
+    
+    let { coin, code } = opts;
     const ts = opts.ts || Date.now();
     
     if (Constants.USD_STABLECOINS[coin.toUpperCase()]) {
-      return this.getRatesForStablecoin({ fiatCode: 'USD', ts }, cb);
+      return this.getRatesForStablecoin({ code: 'USD', ts }, cb);
     }
-
+    
+    let fiatFiltered = [];
+    
     if (code) {
       fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
+
     const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
 
     async.map(
@@ -237,10 +238,7 @@ export class FiatRateService {
           });
         });
       },
-      (err, res: any) => {
-        if (err) return cb(err);
-        return cb(null, res);
-      }
+      cb
     );
   }
 
@@ -279,12 +277,32 @@ export class FiatRateService {
     );
   }
 
+  /**
+   * @description calculates fiat rates for a stablecoin
+   * @param {String} [opts.coin] crypto to base the fiat rates on (defaults to 'btc')
+   * @param {String} opts.code code for fiat currency that the stablecoin is pegged to
+   * @param {Number} [opts.ts] timestamp (defaults to now)
+   * @param {Function} cb
+   */
   getRatesForStablecoin(opts, cb) {
-    this.getRatesByCoin({ coin: opts.coin || 'btc', ts: opts.ts }, (err, rates) => {
+    $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesForStablecoin()>');
+
+    const { coin = 'btc', code } = opts;
+    const ts = opts.ts || Date.now();
+
+    this.getRatesByCoin({ coin, ts }, (err, rates) => {
       if (err) return cb(err);
-      const fiatRate = rates.find(rate => rate.code === opts.fiatCode);
-      if (!fiatRate || !fiatRate.rate) return cb('rates not available for stablecoin');
-      cb(null, rates.map(({ rate, ...obj }) => ({ ...obj, rate: parseFloat((rate / fiatRate.rate).toFixed(2)) })));
+  
+      const fiatRate = rates.find(rate => rate.code === code);
+      if (!fiatRate || !fiatRate.rate) return cb(null, []);
+
+      return cb(
+        null,
+        rates.map(({ rate, ...obj }) => ({
+          ...obj,
+          rate: parseFloat((rate / fiatRate.rate).toFixed(2))
+        }))
+      );
     });
   }
 }
