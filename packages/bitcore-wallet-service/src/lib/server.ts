@@ -4129,7 +4129,7 @@ export class WalletService {
             const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             opts.bc = bc;
-            
+
             const scanComplete = error => {
               this.storage.fetchWallet(wallet.id, (err, wallet) => {
                 if (err) return cb(err);
@@ -4138,7 +4138,7 @@ export class WalletService {
                   return cb(error || err);
                 });
               });
-            }
+            };
 
             if (!ChainService.isUTXOCoin(wallet.coin)) {
               // non-UTXO coin "scan" is just a resync
