@@ -4264,9 +4264,17 @@ export class WalletService {
       if (err) return cb(err);
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
-      // single address or non UTXO coins do not scan.
+      // resync non-UTXO coins
+      if (!ChainService.isUTXOCoin(wallet.coin)) {
+        // Reset sync and sync again...
+        wallet.beRegistered = false;
+        return this.storage.deregisterWallet(wallet.id, () => {
+          this.syncWallet(wallet, cb);
+        }); 
+      }
+
+      // do not scan single address.
       if (wallet.singleAddress) return cb();
-      if (!ChainService.isUTXOCoin(wallet.coin)) return cb();
 
       setTimeout(() => {
         wallet.beRegistered = false;
