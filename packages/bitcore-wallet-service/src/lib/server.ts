@@ -4118,9 +4118,8 @@ export class WalletService {
       }
 
       this.storage.clearWalletCache(this.walletId, () => {
-        // single address or non UTXO coins do not scan.
-        if (wallet.singleAddress) return cb();
-        if (!ChainService.isUTXOCoin(wallet.coin)) return cb();
+        // do not scan single address UTXO wallets.
+        if (wallet.singleAddress && ChainService.isUTXOCoin(wallet.coin)) return cb();
 
         this._runLocked(cb, cb => {
           wallet.scanStatus = 'running';
@@ -4130,6 +4129,22 @@ export class WalletService {
             const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             opts.bc = bc;
+            
+            const scanComplete = error => {
+              this.storage.fetchWallet(wallet.id, (err, wallet) => {
+                if (err) return cb(err);
+                wallet.scanStatus = error ? 'error' : 'success';
+                this.storage.storeWallet(wallet, err => {
+                  return cb(error || err);
+                });
+              });
+            }
+
+            if (!ChainService.isUTXOCoin(wallet.coin)) {
+              // non-UTXO coin "scan" is just a resync
+              return this.syncWallet(wallet, scanComplete);
+            }
+
             let step = opts.startingStep;
             async.doWhilst(
               next => {
@@ -4139,7 +4154,7 @@ export class WalletService {
                 step = step / 10;
                 return step >= 1;
               },
-              cb
+              scanComplete
             );
           });
         });
@@ -4230,15 +4245,7 @@ export class WalletService {
           this._store(wallet, addresses, next);
         });
       },
-      error => {
-        this.storage.fetchWallet(wallet.id, (err, wallet) => {
-          if (err) return cb(err);
-          wallet.scanStatus = error ? 'error' : 'success';
-          this.storage.storeWallet(wallet, err => {
-            return cb(error || err);
-          });
-        });
-      }
+      cb
     );
   }
 
@@ -4264,17 +4271,8 @@ export class WalletService {
       if (err) return cb(err);
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
-      // resync non-UTXO coins
-      if (!ChainService.isUTXOCoin(wallet.coin)) {
-        // Reset sync and sync again...
-        wallet.beRegistered = false;
-        return this.storage.deregisterWallet(wallet.id, () => {
-          this.syncWallet(wallet, cb);
-        }); 
-      }
-
-      // do not scan single address.
-      if (wallet.singleAddress) return cb();
+      // do not scan single address UTXO wallets.
+      if (wallet.singleAddress && ChainService.isUTXOCoin(wallet.coin)) return cb();
 
       setTimeout(() => {
         wallet.beRegistered = false;
