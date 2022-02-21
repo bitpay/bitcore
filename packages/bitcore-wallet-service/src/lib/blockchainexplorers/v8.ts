@@ -51,6 +51,10 @@ export class V8 {
     $.checkArgument(opts.url);
 
     this.apiPrefix = _.isUndefined(opts.apiPrefix) ? '/api' : opts.apiPrefix;
+    // TODO need to take `chain` instead of `coin`.
+    // This class treats `coin` as merely a lowerCase `chain`.
+    // In reality, coin may be an ERC20 which may not be in our list. Also, we won't be able
+    //  to infer the chain from an ERC20 when we implement other smart chains.
     this.chain = ChainService.getChain(opts.coin || Defaults.COIN);
     this.coin = this.chain.toLowerCase();
 
