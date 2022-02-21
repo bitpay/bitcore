@@ -892,6 +892,7 @@ export class API extends EventEmitter {
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
   // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
+  // * @param {Boolean} opts.isSlpToken - path 1899 suppport SLP Token
   // * @param cb
   // * @return {undefined}
   // */
@@ -940,7 +941,8 @@ export class API extends EventEmitter {
       singleAddress: !!opts.singleAddress,
       id: opts.id,
       usePurpose48: n > 1,
-      useNativeSegwit: !!opts.useNativeSegwit
+      useNativeSegwit: !!opts.useNativeSegwit,
+      isSlpToken: opts.isSlpToken ? true : false
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
@@ -1383,6 +1385,43 @@ export class API extends EventEmitter {
     }
     this.request.get(url, cb);
   }
+
+  // /**
+  // * Gets list of token
+  // *
+  // * @param {Function} cb
+  // * @param {Object} opts
+  // * @param {Array} opts.address
+  // * @returns {Callback} cb - Return error or the list of token
+  // */
+  getTokens(opts, cb) {
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getUtxos()>'
+    );
+    opts = opts || {};
+    var url = '/v1/tokens/';
+    this.request.get(url, cb);
+  }
+
+    // /**
+  // * Gets full data (token data) of list utxos
+  // *
+  // * @param {Function} cb
+  // * @param {Object} opts
+  // * @param {Array} opts.address
+  // * @returns {Callback} cb - Return error or the list of utxos (included all token data)
+  // */
+  getUtxosToken(opts, cb) {
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getUtxos()>'
+    );
+    opts = opts || {};
+    var url = '/v1/utxosToken/';
+    this.request.get(url, cb);
+  }
+
 
   // /**
   // * Gets list of coins
@@ -2932,7 +2971,8 @@ export class API extends EventEmitter {
         ['bch', 'livenet', true],
         ['xpi', 'livenet', true],
         ['xpi', 'livenet', false, true],
-        ['xec', 'livenet', true]
+        ['xec', 'livenet', true],
+        ['xec', 'livenet', false, true]
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig

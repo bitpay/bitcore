@@ -391,6 +391,9 @@ export class Key {
       }
     } else if (opts.coin == 'xec') {
       coinCode = '899';
+      if(opts.isSlpToken){
+        coinCode = '1899'
+      }
     } else if (opts.coin == 'xpi') {
       coinCode = '10605';
       if(opts.isSlpToken){
@@ -460,7 +463,8 @@ export class Key {
       keyId: this.id,
       requestPrivKey,
       addressType: opts.addressType,
-      walletPrivKey: opts.walletPrivKey
+      walletPrivKey: opts.walletPrivKey,
+      isSlpToken: !!opts.isSlpToken
     });
   };
 

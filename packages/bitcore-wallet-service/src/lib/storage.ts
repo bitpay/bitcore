@@ -40,7 +40,8 @@ const collections = {
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
   LOCKS: 'locks',
-  DONATION: 'donation'
+  DONATION: 'donation',
+  TOKEN_INFO: 'token_info'
 };
 
 const Common = require('./common');
@@ -49,7 +50,7 @@ const Defaults = Common.Defaults;
 
 const ObjectID = mongodb.ObjectID;
 
-var objectIdDate = function(date) {
+var objectIdDate = function (date) {
   return Math.floor(date / 1000).toString(16) + '0000000000000000';
 };
 export class Storage {
@@ -77,6 +78,11 @@ export class Storage {
     db.collection(collections.DONATION).createIndex({
       txidDonation: 1
     });
+
+    db.collection(collections.TOKEN_INFO).createIndex({
+      id: 1
+    });
+
     db.collection(collections.COPAYERS_LOOKUP).createIndex({
       copayerId: 1
     });
@@ -258,6 +264,38 @@ export class Storage {
         w: 1
       },
       cb
+    );
+  }
+
+  storeTokenInfo(tokenInfo, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', tokenInfo);
+      return;
+    }
+
+    this.db.collection(collections.TOKEN_INFO).insertOne(
+      tokenInfo,
+      {
+        w: 1
+      },
+      cb
+    );
+  }
+
+  fetchTokenInfoByid(tokenId, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.TOKEN_INFO).findOne(
+      {
+        id : tokenId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
     );
   }
 
@@ -1576,7 +1614,7 @@ export class Storage {
 
   _dump(cb, fn) {
     fn = fn || console.log;
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     this.db.collections((err, collections) => {
       if (err) return cb(err);
@@ -1620,7 +1658,7 @@ export class Storage {
 
   storeGlobalCache(key, values, cb) {
     const now = Date.now();
-    this.db.collection(collections.CACHE).replaceOne(
+    this.db.collection(collections.CACHE).findOneAndUpdate(
       {
         key,
         walletId: null,

@@ -847,7 +847,8 @@ export class BtcChain implements IChain {
   isSingleAddress() {
     return false;
   }
-
+  convertAddressToScriptPayload(address) {}
+  getTokenInfor(tokenId) {}
   addressFromStorageTransform(network, address) {}
 
   addressToStorageTransform(network, address) {}

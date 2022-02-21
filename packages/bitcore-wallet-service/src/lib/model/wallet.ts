@@ -48,6 +48,7 @@ export interface IWallet {
   nativeCashAddr: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
+  isSlpToken?: boolean;
 }
 
 export class Wallet {
@@ -75,6 +76,7 @@ export class Wallet {
   nativeCashAddr: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
+  isSlpToken?: boolean;
 
   scanning: boolean;
   static COPAYER_PAIR_LIMITS = {};
@@ -112,6 +114,7 @@ export class Wallet {
     x.usePurpose48 = opts.usePurpose48;
 
     x.scanStatus = null;
+    x.isSlpToken = !!opts.isSlpToken;
 
     // v8 related
     x.beRegistered = false; // Block explorer registered
@@ -158,7 +161,7 @@ export class Wallet {
 
     x.nativeCashAddr = obj.nativeCashAddr;
     x.usePurpose48 = obj.usePurpose48;
-
+    x.isSlpToken = !!obj.isSlpToken;
     return x;
   }
 

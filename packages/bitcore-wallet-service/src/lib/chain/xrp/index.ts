@@ -39,6 +39,9 @@ export class XrpChain implements IChain {
     return false;
   }
 
+  convertAddressToScriptPayload(address) {}
+  getTokenInfor(tokenId) {}
+
   getSizeSafetyMargin() {
     return 0;
   }
