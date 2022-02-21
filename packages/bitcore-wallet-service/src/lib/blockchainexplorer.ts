@@ -39,7 +39,7 @@ export function BlockChainExplorer(opts) {
 
   const provider = opts.provider || 'v8';
   // TODO require that `chain` be passed in instead of `coin`. Coin could refer to an ERC20 which may not be in our list.
-  const chain = ChainService.getChain(opts.chain || opts.coin || Defaults.COIN).toLowerCase();
+  const chain = (opts.chain || ChainService.getChain(opts.coin || Defaults.COIN)).toLowerCase();
   const network = opts.network || 'livenet';
 
   $.checkState(PROVIDERS[provider], 'Provider ' + provider + ' not supported');
