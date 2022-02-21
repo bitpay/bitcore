@@ -50,7 +50,7 @@ const Defaults = Common.Defaults;
 
 const ObjectID = mongodb.ObjectID;
 
-var objectIdDate = function (date) {
+var objectIdDate = function(date) {
   return Math.floor(date / 1000).toString(16) + '0000000000000000';
 };
 export class Storage {
@@ -288,7 +288,7 @@ export class Storage {
 
     this.db.collection(collections.TOKEN_INFO).findOne(
       {
-        id : tokenId
+        id: tokenId
       },
       (err, result) => {
         if (err) return cb(err);
@@ -1614,7 +1614,7 @@ export class Storage {
 
   _dump(cb, fn) {
     fn = fn || console.log;
-    cb = cb || function () { };
+    cb = cb || function() {};
 
     this.db.collections((err, collections) => {
       if (err) return cb(err);

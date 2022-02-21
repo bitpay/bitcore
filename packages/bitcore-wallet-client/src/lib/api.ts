@@ -1404,7 +1404,7 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
-    // /**
+  // /**
   // * Gets full data (token data) of list utxos
   // *
   // * @param {Function} cb
@@ -1421,7 +1421,6 @@ export class API extends EventEmitter {
     var url = '/v1/utxosToken/';
     this.request.get(url, cb);
   }
-
 
   // /**
   // * Gets list of coins
