@@ -3367,6 +3367,7 @@ export class WalletService {
     count = count || 0;
     const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
     if (!bc) {
+      logger.warn(`No blockchain explorer found for ${wallet.id}: ${wallet.coin} ${wallet.network}`);
       return cb(new Error('Could not get blockchain explorer instance'));
     }
 
