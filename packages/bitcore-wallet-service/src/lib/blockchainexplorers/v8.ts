@@ -47,15 +47,13 @@ export class V8 {
   constructor(opts) {
     $.checkArgument(opts);
     $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
+    $.checkArgument(Utils.checkValueInCollection(opts.chain, Constants.CHAINS));
     $.checkArgument(opts.url);
 
     this.apiPrefix = _.isUndefined(opts.apiPrefix) ? '/api' : opts.apiPrefix;
-    // TODO need to take `chain` instead of `coin`.
-    // This class treats `coin` as merely a lowerCase `chain`.
-    // In reality, coin may be an ERC20 which may not be in our list. Also, we won't be able
-    //  to infer the chain from an ERC20 when we implement other smart chains.
-    this.chain = ChainService.getChain(opts.coin || Defaults.COIN);
+    this.chain = opts.chain.toUpperCase();
+    // This class treats `coin` as merely a lowerCase `chain` which is confusing
+    // TODO refactor to not be confusing.
     this.coin = this.chain.toLowerCase();
 
     this.network = opts.network || 'livenet';

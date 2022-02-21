@@ -59,7 +59,7 @@ export function BlockChainExplorer(opts) {
   switch (provider) {
     case 'v8':
       return new V8({
-        coin: chain, // TODO V8 should take chain instead of coin
+        chain,
         network,
         url,
         apiPrefix: opts.apiPrefix,
