@@ -1,4 +1,4 @@
-FROM node:10
+FROM node:12
 
 # Install Chrome
 
@@ -21,7 +21,7 @@ RUN set -x \
     && google-chrome --version 
 
 
-RUN npm i -g npm@6.14.5
+RUN npm i -g npm@6.14.15
 
 WORKDIR /bitcore
 

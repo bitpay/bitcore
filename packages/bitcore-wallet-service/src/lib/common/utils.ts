@@ -82,6 +82,9 @@ export class Utils {
       if (!Buffer.isBuffer(signature)) {
         signatureBuffer = Buffer.from(signature, 'hex');
       }
+      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
+      // const sig = Bitcore.crypto.Signature.fromDER(signatureBuffer);
+      // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
       return secp256k1.signatureImport(signatureBuffer);
     } catch (e) {
       return false;
@@ -90,7 +93,13 @@ export class Utils {
 
   static _tryVerifyMessage(hash, sig, publicKeyBuffer) {
     try {
-      return secp256k1.verify(hash, sig, publicKeyBuffer);
+      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
+      // const { BN, Signature, ECDSA } = Bitcore.crypto;
+      // const { PublicKey } = Bitcore;
+      // const bitcoreSig = new Signature({ r: new BN(sig.slice(0, 32)), s: new BN(sig.slice(32)) });
+      // const bitcorePubKey = PublicKey.fromBuffer(publicKeyBuffer);
+      // return ECDSA.verify(hash, bitcoreSig, bitcorePubKey);
+      return secp256k1.ecdsaVerify(sig, hash, publicKeyBuffer);
     } catch (e) {
       return false;
     }
