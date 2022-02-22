@@ -1434,27 +1434,30 @@ export class WalletService {
     });
   }
 
-  _getBlockchainExplorer(coin, network): ReturnType<typeof BlockChainExplorer> {
+  _getBlockchainExplorer(chain, network): ReturnType<typeof BlockChainExplorer> {
     let opts: Partial<{
       provider: string;
-      coin: string;
+      chain: string;
       network: string;
       userAgent: string;
     }> = {};
 
     let provider;
 
+    // blockchainExplorerOpts has lowercased fields
+    chain = chain.toLowerCase();
+
     if (this.blockchainExplorer) return this.blockchainExplorer;
     if (this.blockchainExplorerOpts) {
-      if (this.blockchainExplorerOpts[coin] && this.blockchainExplorerOpts[coin][network]) {
-        opts = this.blockchainExplorerOpts[coin][network];
+      if (this.blockchainExplorerOpts[chain] && this.blockchainExplorerOpts[chain][network]) {
+        opts = this.blockchainExplorerOpts[chain][network];
         provider = opts.provider;
       } else if (this.blockchainExplorerOpts[network]) {
         opts = this.blockchainExplorerOpts[network];
       }
     }
     opts.provider = provider;
-    opts.coin = coin;
+    opts.chain = chain;
     opts.network = network;
     opts.userAgent = WalletService.getServiceVersion();
     let bc;
@@ -2702,7 +2705,7 @@ export class WalletService {
 
   _checkTxInBlockchain(txp, cb) {
     if (!txp.txid) return cb();
-    const bc = this._getBlockchainExplorer(txp.coin, txp.network);
+    const bc = this._getBlockchainExplorer(txp.chain, txp.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getTransaction(txp.txid, (err, tx) => {
       if (err) return cb(err);
