@@ -45,7 +45,7 @@ export interface IChain {
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
   convertAddressToScriptPayload(address: string);
-  getTokenInfor(tokenId);
+  getTokenInfo(tokenId);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
   selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: { utxosToExclude: any[] } & any, cb);
@@ -134,8 +134,8 @@ class ChainProxy {
     return this.get(coin).convertAddressToScriptPayload(address);
   }
 
-  async getTokenInfor(coin, tokenId) {
-    return await this.get(coin).getTokenInfor(tokenId);
+  async getTokenInfo(coin, tokenId) {
+    return await this.get(coin).getTokenInfo(tokenId);
   }
 
   addressToStorageTransform(coin, network, address) {

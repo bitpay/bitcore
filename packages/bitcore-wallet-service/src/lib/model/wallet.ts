@@ -77,7 +77,6 @@ export class Wallet {
   isTestnet?: boolean;
   usePurpose48?: boolean;
   isSlpToken?: boolean;
-
   scanning: boolean;
   static COPAYER_PAIR_LIMITS = {};
 

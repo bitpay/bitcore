@@ -8,7 +8,7 @@ const Errors = require('../../errors/errordefinitions');
 const Common = require('../../common');
 const Utils = Common.Utils;
 const BCHJS = require('@abcpros/xpi-js');
-const bchURL = config.token.xec.bchUrl;
+const bchURL = config.supportToken.xec.bchUrl;
 const bchjs = new BCHJS({ restURL: bchURL });
 const ecashaddr = require('ecashaddrjs');
 const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
@@ -32,7 +32,7 @@ export class XecChain extends BtcChain implements IChain {
     }
   }
 
-  async getTokenInfor(tokenId) {
+  async getTokenInfo(tokenId) {
     return await bchjs.SLP.Utils.list(tokenId);
   }
 

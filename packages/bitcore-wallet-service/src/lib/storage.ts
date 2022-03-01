@@ -283,7 +283,7 @@ export class Storage {
     );
   }
 
-  fetchTokenInfoByid(tokenId, cb) {
+  fetchTokenInfoById(tokenId, cb) {
     if (!this.db) return cb();
 
     this.db.collection(collections.TOKEN_INFO).findOne(

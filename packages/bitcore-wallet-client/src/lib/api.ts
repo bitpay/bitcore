@@ -1448,6 +1448,29 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
+  // /**
+  // * Gets Detail Tx
+  // *
+  // * @param {Function} cb
+  // * @param {String} opts.txId - Current tx id
+  // * @returns {Callback} cb - Return error or detail tx
+  // */
+  getTxDetail(opts, cb) {
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getTxDetail()>'
+    );
+    opts = opts || {};
+    var url = '/v1/txDetail/';
+    url +=
+      '?' +
+      querystring.stringify({
+        txId: opts.txId
+      });
+    this.request.get(url, cb);
+  }
+
+
   _getCreateTxProposalArgs(opts) {
     var args = _.cloneDeep(opts);
     args.message =

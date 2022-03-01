@@ -56,7 +56,7 @@ export class EthChain implements IChain {
     return 0;
   }
   convertAddressToScriptPayload(address) {}
-  getTokenInfor(tokenId) {}
+  getTokenInfo(tokenId) {}
 
   getInputSizeSafetyMargin() {
     return 0;
