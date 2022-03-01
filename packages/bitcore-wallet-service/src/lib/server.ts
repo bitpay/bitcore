@@ -1759,13 +1759,13 @@ export class WalletService {
   /**
    * Returns tx Detail by txid (function support XEC and XPI )
    * @param {string} txId - the transaction id.
-   * @returns {Obejct} tx detail 
+   * @returns {Obejct} tx detail
    */
   getTxDetail(txId, cb) {
     this.getWallet({}, async (err, wallet) => {
       let url = _.get(config.supportToken[wallet.coin], 'chronikClientUrl', undefined);
       if (!url) {
-        return cb(`chronik server not support ${wallet.coin}`)
+        return cb(`chronik server not support ${wallet.coin}`);
       }
       try {
         const chronikClient = new ChronikClient(url);
@@ -4250,11 +4250,14 @@ export class WalletService {
         if (txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
           item.isSlpToken = true;
           item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
-          item.amountTokenUnit = txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount ? txsSlp.outputs[1].slpToken.amount.toNumber() : undefined
+          item.amountTokenUnit =
+            txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
+              ? txsSlp.outputs[1].slpToken.amount.toNumber()
+              : undefined;
         }
         validTxs.push(item);
       }
-    })
+    });
     return validTxs;
   }
 
@@ -4326,13 +4329,14 @@ export class WalletService {
           if (wallet.isSlpToken && config.supportToken[wallet.coin]) {
             this.storage.fetchAddresses(this.walletId, (err, addresses) => {
               if (err) return cb(err);
-              if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss to get history by chronikClient ');
+              if (_.size(addresses) < 1 || !addresses[0].address)
+                return cb('no addresss to get history by chronikClient ');
               addressToken = addresses[0].address;
               return next();
-            })
+            });
           } else {
             return next();
-          } 
+          }
         },
         next => {
           if (streamData) {
@@ -4360,12 +4364,11 @@ export class WalletService {
                     if (lastTxsChronik) {
                       inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik);
                     }
-
                   } catch (err) {
                     return cb(err);
                   }
                 }
-               
+
                 if (cacheStatus.tipTxId) {
                   // first item is the most recent tx.
                   // removes already cache txs

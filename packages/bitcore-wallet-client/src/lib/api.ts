@@ -1470,7 +1470,6 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
-
   _getCreateTxProposalArgs(opts) {
     var args = _.cloneDeep(opts);
     args.message =
