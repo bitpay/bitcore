@@ -67,6 +67,26 @@ describe('Address', function() {
     });
   });
 
+  describe('encode', function () {
+    var t = [
+      ['ecash:qpm2qsznhks23z7629mms6s4cwef74vcwva87rkuu2', 'etoken:qpm2qsznhks23z7629mms6s4cwef74vcwvnehpqmca'],
+      ['ecash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4ykdcjcn6n', 'etoken:qr95sy3j9xwd2ap32xkykttr4cvcu7as4ycn3sw57y'],
+      ['ecash:qqq3728yw0y47sqn6l2na30mcw6zm78dzq653y7pv5', 'etoken:qqq3728yw0y47sqn6l2na30mcw6zm78dzq52cxgxgr'],
+      ['ecash:ppm2qsznhks23z7629mms6s4cwef74vcwv2zrv3l8h', 'etoken:ppm2qsznhks23z7629mms6s4cwef74vcwvyu2w8crq'],
+      ['ecash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4ypg9alspw', 'etoken:pr95sy3j9xwd2ap32xkykttr4cvcu7as4y0kvlfh9e'],
+      ['ecash:pqq3728yw0y47sqn6l2na30mcw6zm78dzqd3vtezhf', 'etoken:pqq3728yw0y47sqn6l2na30mcw6zm78dzqr09f09n7'],
+    ];
+    var i;
+
+    for (i = 0; i < t.length; i++) {
+      var eCashaddr = t[i][0];
+      var etoken = t[i][1];
+      var a = new Address(eCashaddr);
+      const { prefix, type, hash } = a.decode(eCashaddr);
+      a.encode('etoken', type, hash).should.equal(etoken);
+    }
+  })
+
   describe('Cashaddr', function() {
 
     //from https://github.com/Bitcoin-UAHF/spec/blob/master/cashaddr.md#examples-of-address-translation

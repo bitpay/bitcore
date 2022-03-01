@@ -7,12 +7,33 @@ const config = require('../../../config');
 const Errors = require('../../errors/errordefinitions');
 const Common = require('../../common');
 const Utils = Common.Utils;
+const BCHJS = require('@abcpros/xpi-js');
+const bchURL = config.supportToken.xec.bchUrl;
+const bchjs = new BCHJS({ restURL: bchURL });
+const ecashaddr = require('ecashaddrjs');
+const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
 
 export class XecChain extends BtcChain implements IChain {
   constructor() {
     super(BitcoreLibXec);
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
+  }
+
+  convertAddressToScriptPayload(address) {
+    try {
+      const protoXEC = protocolPrefix.livenet; // only support livenet
+      const protoAddr: string = protoXEC + ':' + address;
+      const { prefix, type, hash } = ecashaddr.decode(protoAddr);
+      const cashAddress = ecashaddr.encode('bitcoincash', type, hash);
+      return bchjs.Address.toHash160(cashAddress);
+    } catch {
+      return '';
+    }
+  }
+
+  async getTokenInfo(tokenId) {
+    return await bchjs.SLP.Utils.list(tokenId);
   }
 
   convertFeePerKb(p, feePerKb) {

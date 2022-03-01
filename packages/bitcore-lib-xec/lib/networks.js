@@ -94,6 +94,12 @@ function addNetwork(data) {
 
   var indexBy = data.indexBy || Object.keys(data);
 
+  if (data.tokenPrefix) {
+    _.extend(network, {
+      tokenPrefix: data.tokenPrefix
+    });
+  }
+
   if (data.prefix) {
     _.extend(network, {
       prefix: data.prefix,
@@ -173,10 +179,26 @@ var dnsSeeds = [
   'seed.bchd.cash'
 ];
 
+var liveEtokenNetwork = {
+  name: 'livenet',
+  alias: 'mainnet',
+  prefix: 'etoken',
+  legacyPrefix: 'bitconcash',
+  pubkeyhash: 0,
+  privatekey: 0x80,
+  scripthash: 5,
+  xpubkey: 0x0488b21e,
+  xprivkey: 0x0488ade4,
+  networkMagic: 0xe3e1f3e8,
+  port: 8333,
+  dnsSeeds: dnsSeeds
+};
+
 var liveNetwork = {
   name: 'livenet',
   alias: 'mainnet',
   prefix: 'ecash',
+  tokenPrefix: 'etoken',
   legacyPrefix: 'bitconcash',
   pubkeyhash: 0,
   privatekey: 0x80,
@@ -192,6 +214,7 @@ var testNetwork = {
   name: 'testnet',
   prefix: 'ectest',
   legacyPrefix: 'bchtest',
+  tokenPrefix: '',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
@@ -206,6 +229,7 @@ var regtestNetwork = {
   name: 'regtest',
   prefix: 'ecregtest',
   legacyPrefix: 'bchreg',
+  tokenPrefix: '',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
@@ -230,6 +254,7 @@ var regtestNetwork = {
 addNetwork(testNetwork);
 addNetwork(regtestNetwork);
 addNetwork(liveNetwork);
+// addNetwork(liveEtokenNetwork);
 
 var livenet = get('livenet');
 var regtest = get('regtest');

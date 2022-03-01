@@ -44,7 +44,8 @@ export class Credentials {
     'rootPath', // this is only for information
     'keyId', // this is only for information
     'token', // this is for a ERC20 token
-    'multisigEthInfo' // this is for a MULTISIG eth wallet
+    'multisigEthInfo', // this is for a MULTISIG eth wallet
+    'isSlpToken'
   ];
   version: number;
   account: number;
@@ -69,6 +70,7 @@ export class Credentials {
   token?: string;
   multisigEthInfo?: any;
   externalSource?: boolean; // deprecated property?
+  isSlpToken?: boolean;
 
   constructor() {
     this.version = 2;
@@ -97,7 +99,7 @@ export class Credentials {
     x.n = opts.n;
     x.xPubKey = opts.xPubKey;
     x.keyId = opts.keyId;
-
+    x.isSlpToken = opts.isSlpToken;
     // this allows to set P2SH in old n=1 wallets
     if (_.isUndefined(opts.addressType)) {
       x.addressType =
