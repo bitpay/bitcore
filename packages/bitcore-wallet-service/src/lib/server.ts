@@ -1,4 +1,5 @@
 import * as async from 'async';
+import { ChronikClient } from 'chronik-client';
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import { BlockChainExplorer } from './blockchainexplorer';
@@ -30,7 +31,6 @@ const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
-
 const config = require('../config');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
@@ -41,6 +41,7 @@ const EmailValidator = require('email-validator');
 
 import { Validation } from '@abcpros/crypto-wallet-core';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
+import { TokenInfo } from './model/tokenInfo';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -566,7 +567,8 @@ export class WalletService {
             derivationStrategy,
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
-            usePurpose48: opts.n > 1 && !!opts.usePurpose48
+            usePurpose48: opts.n > 1 && !!opts.usePurpose48,
+            isSlpToken: opts.isSlpToken
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -1621,6 +1623,25 @@ export class WalletService {
             utxo.publicKeys = addressToPath[utxo.address].publicKeys;
           });
           return next();
+        },
+        next => {
+          if (wallet.isSlpToken && config.supportToken[wallet.coin]) {
+            this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+              if (err) return next(err);
+              if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
+              return this._getUxtosByChronik(wallet.coin, addresses[0].address)
+                .then(async utxos => {
+                  const utxoNonSlpChronik = _.filter(utxos, item => item.isNonSLP);
+                  allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
+                  return next();
+                })
+                .catch(err => {
+                  return next(err);
+                });
+            });
+          } else {
+            return next();
+          }
         }
       ],
       (err: any) => {
@@ -1633,6 +1654,15 @@ export class WalletService {
     );
   }
 
+  _filterOutSlpUtxo(utxoNonSlpChronik, allUtxos) {
+    const utxoNonSlp = [];
+    _.forEach(utxoNonSlpChronik, itemUtxos => {
+      const utxosNonSlp = _.find(allUtxos, item => item.txid == itemUtxos.txid && item.vout == itemUtxos.outIdx);
+      if (utxosNonSlp) utxoNonSlp.push(utxosNonSlp);
+    });
+    return utxoNonSlp;
+  }
+
   /**
    * Returns list of UTXOs
    * @param {Object} opts
@@ -1641,7 +1671,6 @@ export class WalletService {
    */
   getUtxos(opts, cb) {
     opts = opts || {};
-
     if (opts.coin) {
       return cb(new ClientError('coins option no longer supported'));
     }
@@ -1671,9 +1700,25 @@ export class WalletService {
 
         this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
           if (err) return cb(err);
-          bc.getAddressUtxos(address, height, wallet.coin, (err, utxos) => {
+          bc.getAddressUtxos(address, height, wallet.coin, (err, allUtxos) => {
             if (err) return cb(err);
-            return cb(null, utxos);
+            if (wallet.isSlpToken && config.supportToken[wallet.coin]) {
+              this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+                if (err) return cb(err);
+                if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
+                return this._getUxtosByChronik(wallet.coin, addresses[0].address)
+                  .then(async utxos => {
+                    const utxoNonSlpChronik = _.filter(utxos, item => item.isNonSLP);
+                    allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
+                    return cb(null, allUtxos);
+                  })
+                  .catch(err => {
+                    return cb(err);
+                  });
+              });
+            } else {
+              return cb(null, allUtxos);
+            }
           });
         });
       });
@@ -1708,6 +1753,27 @@ export class WalletService {
         if (err) return cb(err);
         return cb(null, coins);
       });
+    });
+  }
+
+  /**
+   * Returns tx Detail by txid (function support XEC and XPI )
+   * @param {string} txId - the transaction id.
+   * @returns {Obejct} tx detail
+   */
+  getTxDetail(txId, cb) {
+    this.getWallet({}, async (err, wallet) => {
+      let url = _.get(config.supportToken[wallet.coin], 'chronikClientUrl', undefined);
+      if (!url) {
+        return cb(`chronik server not support ${wallet.coin}`);
+      }
+      try {
+        const chronikClient = new ChronikClient(url);
+        const txDetail = await chronikClient.tx(txId);
+        return cb(null, txDetail);
+      } catch (err) {
+        return cb(err);
+      }
     });
   }
 
@@ -1798,6 +1864,121 @@ export class WalletService {
       const remaningAmount =
         config.donationRemaining.totalAmountLotusInDay - _.size(donationInToday) * receiveAmountLotus;
       return cb(remaningAmount);
+    });
+  }
+
+  _getUxtosByChronik(coin, address) {
+    let chronikClient;
+    let scriptPayload;
+    try {
+      scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
+      const url = config.supportToken[coin].chronikClientUrl;
+      chronikClient = new ChronikClient(url);
+    } catch {
+      return Promise.reject('err funtion _getUxtosByChronik in aws');
+    }
+    return chronikClient
+      .script('p2pkh', scriptPayload)
+      .utxos()
+      .then(chronikUtxos => {
+        const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
+          return _.map(scriptUtxos.utxos, utxo => ({
+            txid: utxo.outpoint.txid,
+            outIdx: utxo.outpoint.outIdx,
+            value: utxo.value.toNumber(),
+            isNonSLP: utxo.slpToken ? false : true,
+            slpMeta: utxo.slpMeta,
+            tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
+            amountToken: utxo.slpToken && utxo.slpToken.amount ? utxo.slpToken.amount.toNumber() : undefined
+          }));
+        });
+        return utxos;
+      })
+      .catch(err => {
+        return Promise.reject(err);
+      });
+  }
+
+  getUtxosToken(opts, cb) {
+    opts = opts || {};
+    this.getWallet({}, (err, wallet) => {
+      if (err) return cb(err);
+      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+        if (err) return cb(err);
+        if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
+        return this._getUxtosByChronik(wallet.coin, addresses[0].address)
+          .then(async data => {
+            return cb(null, data);
+          })
+          .catch(err => {
+            return cb(err);
+          });
+      });
+    });
+  }
+
+  _getAndStoreTokenInfo(coin, tokenId): Promise<TokenInfo> {
+    return new Promise((resolve, reject) => {
+      return this.storage.fetchTokenInfoById(tokenId, (err, tokenInfo: TokenInfo) => {
+        if (err) return reject(err);
+        if (tokenInfo) return resolve(tokenInfo);
+        return ChainService.getTokenInfo(coin, tokenId)
+          .then((data: TokenInfo) => {
+            if (data && data.id) {
+              this.storage.storeTokenInfo(data, err => {
+                if (err) return reject(err);
+                return resolve(data);
+              });
+            } else {
+              return reject(`No info for token ${tokenId}`);
+            }
+          })
+          .catch(err => {
+            return reject(err);
+          });
+      });
+    });
+  }
+
+  getTokens(opts, cb) {
+    opts = opts || {};
+    const groupToken = [];
+    const caculateAmountToken = (utxoToken, decimals) => {
+      const totalAmount = _.sumBy(utxoToken, 'amountToken');
+      return totalAmount / Math.pow(10, decimals);
+    };
+    this.getWallet({}, (err, wallet) => {
+      if (err) return cb(err);
+      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+        if (err) return cb(err);
+        if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
+        return this._getUxtosByChronik(wallet.coin, addresses[0].address)
+          .then(async data => {
+            if (_.isEmpty(data)) return cb(null, []);
+            const groupTokenId = _.groupBy(data, 'tokenId');
+            for (var tokenId in groupTokenId) {
+              if (tokenId == 'undefined') continue;
+              if (groupTokenId.hasOwnProperty(tokenId)) {
+                try {
+                  const tokenInfor: TokenInfo = await this._getAndStoreTokenInfo(wallet.coin, tokenId);
+                  const tokenItem = {
+                    tokenId,
+                    tokenInfo: tokenInfor,
+                    amountToken: caculateAmountToken(groupTokenId[tokenId], tokenInfor.decimals),
+                    utxoToken: groupTokenId[tokenId]
+                  };
+                  groupToken.push(tokenItem);
+                } catch (err) {
+                  return cb(err);
+                }
+              }
+            }
+            return cb(null, groupToken);
+          })
+          .catch(err => {
+            return cb(err);
+          });
+      });
     });
   }
 
@@ -2706,6 +2887,17 @@ export class WalletService {
     });
   }
 
+  _broadcastRawTxByChronik(chronikClient, hex, cb) {
+    return chronikClient
+      .broadcastTx(hex)
+      .then(txidObj => {
+        return cb(null, txidObj.txid);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   /**
    * Broadcast a raw transaction.
    * @param {Object} opts
@@ -2713,16 +2905,23 @@ export class WalletService {
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network for this transaction.
    * @param {string} opts.rawTx - Raw tx data.
    */
-  broadcastRawTx(opts, cb) {
+  async broadcastRawTx(opts, cb) {
     if (!checkRequired(opts, ['network', 'rawTx'], cb)) return;
-
+    const ischronik = opts.ischronik ? opts.ischronik : undefined;
     opts.coin = opts.coin || Defaults.COIN;
     if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
 
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
-
-    this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
+    if (!ischronik) {
+      this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
+    } else {
+      const coin = opts.coin;
+      const url = config.supportToken[coin].chronikClientUrl;
+      if (!url) return cb(`chronik not support ${coin}`);
+      const chronikClient = new ChronikClient(url);
+      this._broadcastRawTxByChronik(chronikClient, opts.rawTx, cb);
+    }
   }
 
   _checkTxInBlockchain(txp, cb) {
@@ -4029,6 +4228,39 @@ export class WalletService {
     );
   }
 
+  async getlastTxsByChronik(wallet, address, limit) {
+    let url = _.get(config.supportToken[wallet.coin], 'chronikClientUrl', undefined);
+    let scriptPayload;
+    let totalTxs;
+    try {
+      const chronikClient = new ChronikClient(url);
+      scriptPayload = ChainService.convertAddressToScriptPayload(wallet.coin, address);
+      const txHistoryPage = await chronikClient.script('p2pkh', scriptPayload).history(0, limit);
+      return txHistoryPage.txs;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  updateStatusSlpTxs(inTxs, lastTxsChronik) {
+    const validTxs = [];
+    _.forEach(inTxs, item => {
+      const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
+      if (txsSlp) {
+        if (txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
+          item.isSlpToken = true;
+          item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
+          item.amountTokenUnit =
+            txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
+              ? txsSlp.outputs[1].slpToken.amount.toNumber()
+              : undefined;
+        }
+        validTxs.push(item);
+      }
+    });
+    return validTxs;
+  }
+
   getTxHistoryV8(bc, wallet, opts, skip, limit, cb) {
     let bcHeight,
       bcHash,
@@ -4041,7 +4273,7 @@ export class WalletService {
       fromBc;
     let streamData;
     let streamKey;
-
+    let addressToken;
     let walletCacheKey = wallet.id;
     if (opts.tokenAddress) {
       wallet.tokenAddress = opts.tokenAddress;
@@ -4094,6 +4326,19 @@ export class WalletService {
           });
         },
         next => {
+          if (wallet.isSlpToken && config.supportToken[wallet.coin]) {
+            this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+              if (err) return cb(err);
+              if (_.size(addresses) < 1 || !addresses[0].address)
+                return cb('no addresss to get history by chronikClient ');
+              addressToken = addresses[0].address;
+              return next();
+            });
+          } else {
+            return next();
+          }
+        },
+        next => {
           if (streamData) {
             lastTxs = streamData;
             return next();
@@ -4111,8 +4356,18 @@ export class WalletService {
               dustThreshold,
               bcHeight,
               opts.includeImmatureStatus,
-              (err, inTxs: any[]) => {
+              async (err, inTxs: any[]) => {
                 if (err) return cb(err);
+                if (wallet.isSlpToken && config.supportToken[wallet.coin] && addressToken && _.size(inTxs) > 0) {
+                  try {
+                    const lastTxsChronik = await this.getlastTxsByChronik(wallet, addressToken, _.size(inTxs));
+                    if (lastTxsChronik) {
+                      inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik);
+                    }
+                  } catch (err) {
+                    return cb(err);
+                  }
+                }
 
                 if (cacheStatus.tipTxId) {
                   // first item is the most recent tx.
