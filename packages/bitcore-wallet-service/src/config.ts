@@ -147,88 +147,11 @@ module.exports = {
       }
     ],
     donationCoin: 'xpi'
+  },
+  supportToken: {
+    xec: {
+      bchUrl: 'https://rest.kingbch.com/v4/',
+      chronikClientUrl: 'https://chronik.be.cash/xec'
+    }
   }
-
-  // simplex: {
-  //   sandbox: {
-  //     apiKey: 'simplex_sandbox_api_key_here',
-  //     api: 'https://sandbox.test-simplexcc.com',
-  //     appProviderId: 'simplex_provider_id_here'
-  //   },
-  //   production: {
-  //     apiKey: 'simplex_production_api_key_here',
-  //     api: 'https://backend-wallet-api.simplexcc.com',
-  //     appProviderId: 'simplex_provider_id_here'
-  //   }
-  // },
-  // wyre: {
-  //   sandbox: {
-  //     apiKey: 'wyre_sandbox_api_key_here',
-  //     secretApiKey: 'wyre_sandbox_secret_api_key_here',
-  //     api: 'https://api.testwyre.com',
-  //     widgetUrl: 'https://pay.testwyre.com',
-  //     appProviderAccountId: 'wyre_provider_sandbox_account_id_here'
-  //   },
-  //   production: {
-  //     apiKey: 'wyre_production_api_key_here',
-  //     secretApiKey: 'wyre_production_secret_api_key_here',
-  //     api: 'https://api.sendwyre.com',
-  //     widgetUrl: 'https://pay.sendwyre.com/',
-  //     appProviderAccountId: 'wyre_provider_production_account_id_here'
-  //   }
-  // },
-  // changelly: {
-  //   apiKey: 'changelly_api_key',
-  //   secret: 'changelly_secret',
-  //   api: 'https://api.changelly.com'
-  // },
-  // oneInch: {
-  //   api: 'https://api.1inch.exchange',
-  //   referrerAddress: 'one_inch_referrer_address', // ETH
-  //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
-  // },
-  // To use email notifications uncomment this:
-  // emailOpts: {
-  //  host: 'localhost',
-  //  port: 25,
-  //  ignoreTLS: true,
-  //  subjectPrefix: '[Wallet Service]',
-  //  from: 'wallet-service@bitcore.io',
-  //  templatePath: 'templates',
-  //  defaultLanguage: 'en',
-  //  defaultUnit: 'btc',
-  //  publicTxUrlTemplate: {
-  //   btc: {
-  //     livenet: 'https://bitpay.com/insight/#/BTC/mainnet/tx/{{txid}}',
-  //     testnet: 'https://bitpay.com/insight/#/BTC/testnet/tx/{{txid}}',
-  //   },
-  //   bch: {
-  //     livenet: 'https://bitpay.com/insight/#/BCH/mainnet/tx/{{txid}}',
-  //     testnet: 'https://bitpay.com/insight/#/BCH/testnet/tx/{{txid}}',
-  //   },
-  //   eth: {
-  //     livenet: 'https://etherscan.io/tx/{{txid}}',
-  //     testnet: 'https://kovan.etherscan.io/tx/{{txid}}',
-  //   },
-  //   xrp: {
-  //     livenet: 'https://xrpscan.com/tx/{{txid}}',
-  //     testnet: 'https://test.bithomp.com/explorer//tx/{{txid}}',
-  //   },
-  //   doge: {
-  //     livenet: 'https://blockchair.com/dogecoin/transaction/{{txid}}',
-  //     testnet: 'https://sochain.com/tx/DOGETEST/{{txid}}',
-  //  },
-  //   ltc: {
-  //     livenet: 'https://bitpay.com/insight/#/LTC/mainnet/tx/{{txid}}',
-  //     testnet: 'https://bitpay.com/insight/#/LTC/testnet/tx/{{txid}}',
-  //  }
-  // },
-  // },
-  // To use sendgrid:
-  // const sgMail = require('@sendgrid/mail');
-  // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  //
-  //
-  // //then add:
-  // mailer: sgMail,
 };
