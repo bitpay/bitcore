@@ -4246,17 +4246,17 @@ export class WalletService {
     const validTxs = [];
     _.forEach(inTxs, item => {
       const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
-      if (txsSlp) {
-        if (txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
-          item.isSlpToken = true;
-          item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
-          item.amountTokenUnit =
-            txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
-              ? txsSlp.outputs[1].slpToken.amount.toNumber()
-              : undefined;
-        }
-        validTxs.push(item);
+      if (txsSlp && txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
+        item.isSlpToken = true;
+        item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
+        item.tokenType = txsSlp.slpTxData.slpMeta.tokenType;
+        item.txType = txsSlp.slpTxData.slpMeta.txType;
+        item.amountTokenUnit =
+          txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
+            ? txsSlp.outputs[1].slpToken.amount.toNumber()
+            : undefined;
       }
+      validTxs.push(item);
     });
     return validTxs;
   }

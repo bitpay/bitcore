@@ -62,9 +62,6 @@ COPY  ./packages/bitcore-wallet-service/package-lock.json ./packages/bitcore-wal
 COPY  ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
 COPY  ./packages/bitcore-wallet/package-lock.json ./packages/bitcore-wallet/package-lock.json
 
-COPY  ./packages/insight/package.json ./packages/insight/package.json
-COPY  ./packages/insight/package-lock.json ./packages/insight/package-lock.json
-
 COPY  ./packages/crypto-wallet-core/package.json ./packages/crypto-wallet-core/package.json
 COPY  ./packages/crypto-wallet-core/package-lock.json ./packages/crypto-wallet-core/package-lock.json
 

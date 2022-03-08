@@ -10,7 +10,6 @@
     "watch": "./node_modules/.bin/lerna run watch --parallel",
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
-    "insight": "cd ./packages/insight && npm start",
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
@@ -60,8 +59,6 @@
     "ci:bitcore-p2p-doge": "./ci.sh 'npm run test:bitcore-p2p-doge'",
     "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
     "ci:bitcore-mnemonic": "./ci.sh 'npm run test:bitcore-mnemonic'",
-    "test:insight": "cd ./packages/insight && npm run test",
-    "ci:insight": "./ci.sh 'npm run test:insight'",
     "lerna:ci:unit": "./node_modules/.bin/lerna run test:ci --concurrency 1 --stream",
     "lerna:ci:integration": "./node_modules/.bin/lerna run test:ci:integration --concurrency 1 --stream",
     "lerna:ci:coverage": "./node_modules/.bin/lerna run coverage --concurrency 1 --stream"
