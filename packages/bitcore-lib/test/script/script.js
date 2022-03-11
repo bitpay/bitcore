@@ -2,6 +2,8 @@
 
 var should = require('chai').should();
 var expect = require('chai').expect;
+var testVectors = require('../data/bitcoind/wallet_test_vectors.json');
+throw new Error('TODO: write tests for wallet_test_vectors.json');
 var bitcore = require('../..');
 
 var BufferUtil = bitcore.util.buffer;
