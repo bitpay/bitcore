@@ -12,18 +12,14 @@ Bitcoin is a powerful new peer-to-peer platform for the next generation of finan
 
 ## Get Started
 
-Clone the Bitcore monorepo:
+Clone the Bitcore monorepo and `npm install`:
 ```sh
 git clone https://github.com/bitpay/bitcore.git
+npm install
 ```
-
-`cd` into the bitcore-lib directory
+`cd` into bitcore-lib repository:
 ```sh
-cd bitcore/packages/bitcore-lib
-```
-
-```sh
-npm install bitcore-lib
+cd packages/bitcore-lib
 ```
 
 ## Building the Browser Bundle
@@ -39,7 +35,7 @@ This will generate files named `bitcore-lib.js` and `bitcore-lib.min.js`.
 ## Running Tests
 
 ```sh
-gulp test
+npm test
 ```
 
 You can also run just the Node.js tests with `gulp test:node`, just the browser tests with `gulp test:browser` or create a test coverage report (you can open `coverage/lcov-report/index.html` to visualize it) with `gulp coverage`.

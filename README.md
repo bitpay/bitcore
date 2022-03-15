@@ -1,6 +1,4 @@
-# Bitcore
-
-
+# Bitcore Monorepo
 
   <p align="center">
   <img alt="npm" src="https://img.shields.io/npm/v/bitcore-lib">
@@ -11,157 +9,7 @@
  <img src="https://circleci.com/gh/bitpay/bitcore.svg?style=shield" alt="master build">
 </p>
   
-  
-  
 **Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.**
-
-## Getting Started
-
-### Requirements
-
-- Trusted P2P Peer
-- MongoDB Server >= v3.4
-- make g++ gcc 
-
-### Checkout the repo
-
-
-```sh
-git clone git@github.com:bitpay/bitcore.git
-git checkout master
-npm install
-```
-
-## Setup Guide
-
-### 1. Setup Bitcore config
-
-<details>
-<summary>Example bitcore.config.json</summary>
-<br>
-
-```json
-{
-  "bitcoreNode": {
-    "chains": {
-      "BTC": {
-        "mainnet": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 20008
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 20009,
-            "username": "username",
-            "password": "password"
-          }
-        },
-        "regtest": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 20020
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 20021,
-            "username": "username",
-            "password": "password"
-          }
-        }
-      },
-      "BCH": {
-        "mainnet": {
-          "parentChain": "BTC",
-          "forkHeight": 478558,
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 30008
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 30009,
-            "username": "username",
-            "password": "password"
-          }
-        },
-        "regtest": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 30020
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 30021,
-            "username": "username",
-            "password": "password"
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-</details>
-
-### 2. Setup Bitcoin Node
-
-<details>
-<summary>Example Bitcoin Mainnet Config</summary>
-
-```sh
-whitelist=127.0.0.1
-txindex=0
-listen=1
-server=1
-irc=1
-upnp=1
-
-# Make sure port & rpcport matches the
-# bitcore.config.json ports for BTC mainnet
-
-# if using Bitcoin Core v0.17+ prefix
-# [main]
-
-port=20008
-rpcport=20009
-rpcallowip=127.0.0.1
-
-rpcuser=username
-rpcpassword=password
-```
-
-</details>
-
-### 3. Run Bitcoin node
-
-<details>
-<summary>Example Starting a Bitcoin Node</summary>
-
-```sh
-# Path to your bitcoin application and path to the config above
-/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/
-```
-
-</details>
-
-### 4. Start Bitcore
-
-```sh
-npm run node
-```
 
 ## Applications
 
@@ -184,7 +32,7 @@ npm run node
 - [Bitcore Mnemonic](packages/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
 - [Bitcore P2P](packages/bitcore-p2p) - The peer-to-peer networking protocol for Bitcoin
 - [Bitcore P2P Cash](packages/bitcore-p2p-cash) - The peer-to-peer networking protocol for Bitcoin Cash
-- [Bitcore P2P Doge](packages/bitcore-p2p-doge) - The peer-to-peer networking protocol for Dogecoin
+- [Bitcore P2P Doge](packages/bitcore-p2p-doge) **DEPRECATED**[^1] - The peer-to-peer networking protocol for Dogecoin
 - [Crypto Wallet Core](packages/crypto-wallet-core) - A coin-agnostic wallet library for creating transactions, signing, and address derivation
 
 ## Extras
@@ -201,3 +49,5 @@ See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
 Copyright 2013-2022 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+
+[^1]: The Bitcore P2P Doge library is no longer maintained as all the core functionality is contained in Bitcore P2P

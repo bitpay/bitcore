@@ -95,7 +95,7 @@ Both `PublicKeyHashInput` and `MultisigScriptHashInput` cache the information ab
 Some methods related to adding inputs are:
 
 - `from`: A high level interface to add an input from a UTXO. It has a series of variants:
-  - `from(utxo)`: add an input from an [Unspent Transaction Output](unspentoutput.md). Currently, only P2PKH outputs are supported.
+  - `from(utxo)`: add an input from an [Unspent Transaction Output](unspentoutput.md). 
   - `from(utxos)`: same as above, but passing in an array of Unspent Outputs.
   - `from(utxo, publicKeys, threshold)`: add an input that spends a UTXO with a P2SH output for a Multisig script. The `publicKeys` argument is an array of public keys, and `threshold` is the number of required signatures in the Multisig script.
 
