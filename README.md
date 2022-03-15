@@ -176,12 +176,15 @@ npm run node
 
 - [Bitcore Channel](https://github.com/bitpay/bitcore-channel) - Micropayment channels for rapidly adjusting bitcoin transactions
 - [Bitcore ECIES](https://github.com/bitpay/bitcore-ecies) - Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams
-- [Bitcore Lib](packages/bitcore-lib) - A pure and powerful JavaScript Bitcoin library
-- [Bitcore Lib Cash](packages/bitcore-lib-cash) - A pure and powerful JavaScript Bitcoin Cash library
+- [Bitcore Lib](packages/bitcore-lib) - A powerful JavaScript library for Bitcoin
+- [Bitcore Lib Cash](packages/bitcore-lib-cash) - A powerful JavaScript library for Bitcoin Cash
+- [Bitcore Lib Doge](packages/bitcore-lib-doge) - A powerful JavaScript library for Dogecoin
+- [Bitcore Lib Litecoin](packages/bitcore-lib-ltc) - A powerful JavaScript library for Litecoin
 - [Bitcore Message](https://github.com/bitpay/bitcore-message) - Bitcoin message verification and signing
 - [Bitcore Mnemonic](packages/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
-- [Bitcore P2P](packages/bitcore-p2p) - The peer-to-peer networking protocol for BTC
-- [Bitcore P2P Cash](packages/bitcore-p2p-cash) - The peer-to-peer networking protocol for BCH
+- [Bitcore P2P](packages/bitcore-p2p) - The peer-to-peer networking protocol for Bitcoin
+- [Bitcore P2P Cash](packages/bitcore-p2p-cash) - The peer-to-peer networking protocol for Bitcoin Cash
+- [Bitcore P2P Doge](packages/bitcore-p2p-doge) - The peer-to-peer networking protocol for Dogecoin
 - [Crypto Wallet Core](packages/crypto-wallet-core) - A coin-agnostic wallet library for creating transactions, signing, and address derivation
 
 ## Extras
@@ -197,4 +200,4 @@ See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-Copyright 2013-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+Copyright 2013-2022 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
