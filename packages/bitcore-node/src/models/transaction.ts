@@ -26,10 +26,16 @@ function shouldFire(obj: { wallets?: Array<ObjectID> }) {
 }
 const MAX_BATCH_SIZE = 50000;
 
+export interface Input {
+  script?: string;
+  outputIndex: number;
+}
+
 export type IBtcTransaction = ITransaction & {
   coinbase: boolean;
   locktime: number;
   inputCount: number;
+  inputs?: Input[];
   outputCount: number;
   size: number;
 };
@@ -97,6 +103,7 @@ export interface TxOp {
         size: number;
         locktime: number;
         inputCount: number;
+        inputs: Input[];
         outputCount: number;
         value: number;
         wallets: Array<ObjectID>;
@@ -305,6 +312,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
                   size: parentTx.size,
                   locktime: parentTx.locktime,
                   inputCount: parentTx.inputCount,
+                  inputs: parentTx.inputs,
                   outputCount: parentTx.outputCount,
                   value: parentTx.value,
                   wallets: [],
@@ -379,6 +387,13 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
                 size: tx.toBuffer().length,
                 locktime: tx.nLockTime,
                 inputCount: tx.inputs.length,
+                inputs: lodash.map(tx.inputs, item => {
+                  const dataInput = item.toObject();
+                  return {
+                    script: dataInput.script,
+                    outputIndex: dataInput.outputIndex
+                  };
+                }),
                 outputCount: tx.outputs.length,
                 value: tx.outputAmount,
                 wallets,
