@@ -3542,8 +3542,31 @@ export class WalletService {
       );
     });
   }
+  _convertAddressFormInputScript(script: string, coin: string, isToken?: boolean) {
+    let address: string;
+    const scriptBitcore = Bitcore_[coin].Script(script);
+    const { hashBuffer, type } = scriptBitcore.getAddressInfo();
+    if (!hashBuffer || !type) return address;
+    switch (coin) {
+      case 'xpi':
+        address = Bitcore_[coin].Address(hashBuffer).toXAddress();
+        break;
+      case 'xec':
+        const addressBitcore = Bitcore_[coin].Address(hashBuffer);
+        if (isToken) {
+          address = addressBitcore.encode('etoken', type, hashBuffer);
+        } else {
+          address = addressBitcore.encode('ecash', type, hashBuffer);
+        }
+        break;
+      default:
+        address = Bitcore_[coin].Address(hashBuffer).toCashAddress();
+        break;
+    }
+    return address;
+  }
 
-  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, includeImmatureStatus, cb) {
+  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, includeImmatureStatus, wallet, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
 
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
@@ -3661,7 +3684,12 @@ export class WalletService {
             addressTo: undefined,
             outputs: undefined,
             dust: false,
-            coinbase: tx.coinbase
+            coinbase: tx.coinbase,
+            inputAddresses: _.uniq(
+              _.map(tx.inputs, item => {
+                return this._convertAddressFormInputScript(item.script, wallet.coin, wallet.isSlpToken);
+              })
+            )
           };
           switch (tx.category) {
             case 'send':
@@ -4242,7 +4270,7 @@ export class WalletService {
     }
   }
 
-  updateStatusSlpTxs(inTxs, lastTxsChronik) {
+  updateStatusSlpTxs(inTxs, lastTxsChronik, wallet) {
     const validTxs = [];
     _.forEach(inTxs, item => {
       const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
@@ -4251,6 +4279,11 @@ export class WalletService {
         item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
         item.tokenType = txsSlp.slpTxData.slpMeta.tokenType;
         item.txType = txsSlp.slpTxData.slpMeta.txType;
+        item.inputAddresses = _.uniq(
+          _.map(txsSlp.inputs, item => {
+            return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
+          })
+        );
         item.amountTokenUnit =
           txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
             ? txsSlp.outputs[1].slpToken.amount.toNumber()
@@ -4356,13 +4389,14 @@ export class WalletService {
               dustThreshold,
               bcHeight,
               opts.includeImmatureStatus,
+              wallet,
               async (err, inTxs: any[]) => {
                 if (err) return cb(err);
                 if (wallet.isSlpToken && config.supportToken[wallet.coin] && addressToken && _.size(inTxs) > 0) {
                   try {
                     const lastTxsChronik = await this.getlastTxsByChronik(wallet, addressToken, _.size(inTxs));
                     if (lastTxsChronik) {
-                      inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik);
+                      inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
                     }
                   } catch (err) {
                     return cb(err);
