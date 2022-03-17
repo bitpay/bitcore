@@ -151,7 +151,13 @@ module.exports = {
   supportToken: {
     xec: {
       bchUrl: 'https://rest.kingbch.com/v4/',
-      chronikClientUrl: 'https://chronik.be.cash/xec'
+      chronikClientUrl: 'https://chronik.be.cash/xec',
+      isSupportToken: true
+    },
+    xpi: {
+      bchUrl: '',
+      chronikClientUrl: 'https://chronik.be.cash/xpi',
+      isSupportToken: false
     }
   }
 };
