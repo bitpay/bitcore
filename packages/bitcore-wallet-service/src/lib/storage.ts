@@ -1234,6 +1234,27 @@ export class Storage {
     );
   }
 
+  updateCacheTxHistoryByTxId(walletId, txId, inputAddresses, cb) {
+    const now = Date.now();
+    this.db.collection(collections.CACHE).findOneAndUpdate(
+      {
+        walletId,
+        type: 'historyCacheV8',
+        'tx.txid': txId
+      },
+      {
+        $set: {
+          'tx.inputAddresses': inputAddresses
+        }
+      },
+      {
+        w: 1,
+        upsert: true
+      },
+      cb
+    );
+  }
+
   /*
    * @param {string} [opts.walletId] - The wallet id to use as current wallet
    * @param {tipIndex} [integer] - Last tx index of the current cache

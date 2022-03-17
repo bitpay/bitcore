@@ -1625,7 +1625,7 @@ export class WalletService {
           return next();
         },
         next => {
-          if (wallet.isSlpToken && config.supportToken[wallet.coin]) {
+          if (this._isSupportToken(wallet)) {
             this.storage.fetchAddresses(this.walletId, (err, addresses) => {
               if (err) return next(err);
               if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
@@ -1661,6 +1661,11 @@ export class WalletService {
       if (utxosNonSlp) utxoNonSlp.push(utxosNonSlp);
     });
     return utxoNonSlp;
+  }
+
+  _isSupportToken(wallet: any): boolean {
+    const isSupportToken = _.get(config, `supportToken[${wallet.coin}].isSupportToken`, false);
+    return wallet.isSlpToken && isSupportToken;
   }
 
   /**
@@ -1702,7 +1707,7 @@ export class WalletService {
           if (err) return cb(err);
           bc.getAddressUtxos(address, height, wallet.coin, (err, allUtxos) => {
             if (err) return cb(err);
-            if (wallet.isSlpToken && config.supportToken[wallet.coin]) {
+            if (this._isSupportToken(wallet)) {
               this.storage.fetchAddresses(this.walletId, (err, addresses) => {
                 if (err) return cb(err);
                 if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
@@ -1769,8 +1774,22 @@ export class WalletService {
       }
       try {
         const chronikClient = new ChronikClient(url);
-        const txDetail = await chronikClient.tx(txId);
-        return cb(null, txDetail);
+        const txDetail: any = await chronikClient.tx(txId);
+        if (!txDetail) return cb('no txDetail');
+        const inputAddresses = _.uniq(
+          _.map(txDetail.inputs, item => {
+            return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
+          })
+        );
+        if (inputAddresses) {
+          txDetail.inputAddresses = inputAddresses;
+          this.storage.updateCacheTxHistoryByTxId(wallet.id, txId, inputAddresses, (err, result) => {
+            if (err) return cb(err);
+            return cb(null, txDetail);
+          });
+        } else {
+          return cb(null, txDetail);
+        }
       } catch (err) {
         return cb(err);
       }
@@ -2917,7 +2936,7 @@ export class WalletService {
       this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
     } else {
       const coin = opts.coin;
-      const url = config.supportToken[coin].chronikClientUrl;
+      let url = _.get(config.supportToken[coin], 'chronikClientUrl', undefined);
       if (!url) return cb(`chronik not support ${coin}`);
       const chronikClient = new ChronikClient(url);
       this._broadcastRawTxByChronik(chronikClient, opts.rawTx, cb);
@@ -4359,7 +4378,7 @@ export class WalletService {
           });
         },
         next => {
-          if (wallet.isSlpToken && config.supportToken[wallet.coin]) {
+          if (this._isSupportToken(wallet)) {
             this.storage.fetchAddresses(this.walletId, (err, addresses) => {
               if (err) return cb(err);
               if (_.size(addresses) < 1 || !addresses[0].address)
@@ -4392,7 +4411,7 @@ export class WalletService {
               wallet,
               async (err, inTxs: any[]) => {
                 if (err) return cb(err);
-                if (wallet.isSlpToken && config.supportToken[wallet.coin] && addressToken && _.size(inTxs) > 0) {
+                if (this._isSupportToken(wallet) && addressToken && _.size(inTxs) > 0) {
                   try {
                     const lastTxsChronik = await this.getlastTxsByChronik(wallet, addressToken, _.size(inTxs));
                     if (lastTxsChronik) {
