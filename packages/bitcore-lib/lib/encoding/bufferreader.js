@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var BN = require('../crypto/bn');
@@ -9,18 +8,18 @@ var BufferReader = function BufferReader(buf) {
   if (!(this instanceof BufferReader)) {
     return new BufferReader(buf);
   }
-  if (_.isUndefined(buf)) {
+  if (typeof buf === 'undefined') {
     return;
   }
   if (Buffer.isBuffer(buf)) {
     this.set({
       buf: buf
     });
-  } else if (_.isString(buf)) {
+  } else if (typeof buf === 'string') {
     this.set({
       buf: Buffer.from(buf, 'hex'),
     });
-  } else if (_.isObject(buf)) {
+  } else if (typeof buf === 'object') {
     var obj = buf;
     this.set(obj);
   } else {
@@ -45,7 +44,7 @@ BufferReader.prototype.eof = function() {
 BufferReader.prototype.finished = BufferReader.prototype.eof;
 
 BufferReader.prototype.read = function(len) {
-  $.checkArgument(!_.isUndefined(len), 'Must specify a length');
+  $.checkArgument(typeof len !== 'undefined', 'Must specify a length');
   var buf = this.buf.slice(this.pos, this.pos + len);
   this.pos = this.pos + len;
   return buf;
@@ -136,7 +135,6 @@ BufferReader.prototype.readVarintNum = function() {
       } else {
         throw new Error('number too large to retain precision - use readVarintBN');
       }
-      break;
     default:
       return first;
   }
@@ -191,7 +189,7 @@ BufferReader.prototype.reverse = function() {
 };
 
 BufferReader.prototype.readReverse = function(len) {
-  if (_.isUndefined(len)) {
+  if (typeof len === 'undefined') {
     len = this.buf.length;
   }
   var buf = this.buf.slice(this.pos, this.pos + len);

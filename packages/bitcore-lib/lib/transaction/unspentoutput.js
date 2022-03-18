@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 var JSUtil = require('../util/js');
 
@@ -30,24 +29,24 @@ function UnspentOutput(data) {
   if (!(this instanceof UnspentOutput)) {
     return new UnspentOutput(data);
   }
-  $.checkArgument(_.isObject(data), 'Must provide an object from where to extract data');
+  $.checkArgument(typeof data === 'object', 'Must provide an object from where to extract data');
   var address = data.address ? new Address(data.address) : undefined;
   var txId = data.txid ? data.txid : data.txId;
   if (!txId || !JSUtil.isHexaString(txId) || txId.length > 64) {
     // TODO: Use the errors library
     throw new Error('Invalid TXID in object', data);
   }
-  var outputIndex = _.isUndefined(data.vout) ? data.outputIndex : data.vout;
-  if (!_.isNumber(outputIndex)) {
+  var outputIndex = typeof data.vout === 'undefined' ? data.outputIndex : data.vout;
+  if (typeof outputIndex !== 'number') {
     throw new Error('Invalid outputIndex, received ' + outputIndex);
   }
-  $.checkArgument(!_.isUndefined(data.scriptPubKey) || !_.isUndefined(data.script),
+  $.checkArgument(typeof data.scriptPubKey !== 'undefined' || typeof data.script !== 'undefined',
                   'Must provide the scriptPubKey for that output!');
   var script = new Script(data.scriptPubKey || data.script);
-  $.checkArgument(!_.isUndefined(data.amount) || !_.isUndefined(data.satoshis),
+  $.checkArgument(typeof data.amount !== 'undefined' || typeof data.satoshis !== 'undefined',
                       'Must provide an amount for the output');
-  var amount = !_.isUndefined(data.amount) ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
-  $.checkArgument(_.isNumber(amount), 'Amount must be a number');
+  var amount = typeof data.amount !== 'undefined' ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
+  $.checkArgument(typeof amount === 'number', 'Amount must be a number');
   JSUtil.defineImmutable(this, {
     address: address,
     txId: txId,

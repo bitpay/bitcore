@@ -1,7 +1,6 @@
 'use strict';
 
 var errors = require('../errors');
-var _ = require('lodash');
 
 module.exports = {
   checkState: function(condition, message) {
@@ -16,7 +15,7 @@ module.exports = {
   },
   checkArgumentType: function(argument, type, argumentName) {
     argumentName = argumentName || '(unknown name)';
-    if (_.isString(type)) {
+    if (typeof type === 'string') {
       if (type === 'Buffer') {
         var buffer = require('buffer'); // './buffer' fails on cordova & RN
         if (!buffer.Buffer.isBuffer(argument)) {

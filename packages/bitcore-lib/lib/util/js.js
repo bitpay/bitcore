@@ -1,7 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
-
 /**
  * Determines whether a string contains only hexadecimal values
  *
@@ -10,7 +8,7 @@ var _ = require('lodash');
  * @return {boolean} true if the string is the hexa representation of a number
  */
 var isHexa = function isHexa(value) {
-  if (!_.isString(value)) {
+  if (typeof value !== 'string') {
     return false;
   }
   return /^[0-9a-fA-F]+$/.test(value);
@@ -29,7 +27,7 @@ module.exports = {
    */
   isValidJSON: function isValidJSON(arg) {
     var parsed;
-    if (!_.isString(arg)) {
+    if (typeof arg !== 'string') {
       return false;
     }
     try {

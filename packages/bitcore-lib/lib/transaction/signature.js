@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 var inherits = require('inherits');
 var BufferUtil = require('../util/buffer');
@@ -24,7 +23,7 @@ function TransactionSignature(arg) {
   if (arg instanceof TransactionSignature) {
     return arg;
   }
-  if (_.isObject(arg)) {
+  if (typeof arg === 'object') {
     return this._fromObject(arg);
   }
   throw new errors.InvalidArgument('TransactionSignatures must be instantiated from an object');
@@ -46,10 +45,10 @@ TransactionSignature.prototype._fromObject = function(arg) {
 
 TransactionSignature.prototype._checkObjectArgs = function(arg) {
   $.checkArgument(PublicKey(arg.publicKey), 'publicKey');
-  $.checkArgument(!_.isUndefined(arg.inputIndex), 'inputIndex');
-  $.checkArgument(!_.isUndefined(arg.outputIndex), 'outputIndex');
-  $.checkState(_.isNumber(arg.inputIndex), 'inputIndex must be a number');
-  $.checkState(_.isNumber(arg.outputIndex), 'outputIndex must be a number');
+  $.checkArgument(typeof arg.inputIndex !== 'undefined', 'inputIndex');
+  $.checkArgument(typeof arg.outputIndex !== 'undefined', 'outputIndex');
+  $.checkState(typeof arg.inputIndex === 'number', 'inputIndex must be a number');
+  $.checkState(typeof arg.outputIndex === 'number', 'outputIndex must be a number');
   $.checkArgument(arg.signature, 'signature');
   $.checkArgument(arg.prevTxId, 'prevTxId');
   $.checkState(arg.signature instanceof Signature ||
@@ -58,7 +57,7 @@ TransactionSignature.prototype._checkObjectArgs = function(arg) {
   $.checkState(BufferUtil.isBuffer(arg.prevTxId) ||
                JSUtil.isHexa(arg.prevTxId), 'prevTxId must be a buffer or hexa value');
   $.checkArgument(arg.sigtype, 'sigtype');
-  $.checkState(_.isNumber(arg.sigtype), 'sigtype must be a number');
+  $.checkState(typeof arg.sigtype === 'number', 'sigtype must be a number');
 };
 
 /**

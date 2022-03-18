@@ -1,5 +1,4 @@
 'use strict';
-var _ = require('lodash');
 
 var BufferUtil = require('./util/buffer');
 var JSUtil = require('./util/js');
@@ -31,14 +30,11 @@ function get(arg, keys) {
     return arg;
   }
   if (keys) {
-    if (!_.isArray(keys)) {
+    if (!Array.isArray(keys)) {
       keys = [keys];
     }
-    var containsArg = function(key) {
-      return networks[index][key] === arg;
-    };
     for (var index in networks) {
-      if (_.some(keys, containsArg)) {
+      if (keys.some(key => networks[index][key] === arg)) {
         return networks[index];
       }
     }
@@ -101,9 +97,9 @@ function addNetwork(data) {
       dnsSeeds: data.dnsSeeds
     });
   }
-  _.each(network, function(value) {
-    if (!_.isUndefined(value) && !_.isObject(value)) {
-      if(!networkMaps[value]) {
+  network.forEach(function(value) {
+    if (!['undefined', 'object'].includes(typeof value)) {
+      if (!networkMaps[value]) {
         networkMaps[value] = [];
       }
       networkMaps[value].push(network);

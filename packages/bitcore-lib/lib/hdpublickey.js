@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var $ = require('./util/preconditions');
 
 var BN = require('./crypto/bn');
@@ -38,7 +37,7 @@ function HDPublicKey(arg) {
     return new HDPublicKey(arg);
   }
   if (arg) {
-    if (_.isString(arg) || BufferUtil.isBuffer(arg)) {
+    if (typeof arg === 'string' || BufferUtil.isBuffer(arg)) {
       var error = HDPublicKey.getSerializedError(arg);
       if (!error) {
         return this._buildFromSerialized(arg);
@@ -51,7 +50,7 @@ function HDPublicKey(arg) {
         throw error;
       }
     } else {
-      if (_.isObject(arg)) {
+      if (typeof arg === 'object') {
         if (arg instanceof HDPrivateKey) {
           return this._buildFromPrivate(arg);
         } else {
@@ -73,12 +72,12 @@ function HDPublicKey(arg) {
  * @return {boolean}
  */
 HDPublicKey.isValidPath = function(arg) {
-  if (_.isString(arg)) {
+  if (typeof arg === 'string') {
     var indexes = HDPrivateKey._getDerivationIndexes(arg);
-    return indexes !== null && _.every(indexes, HDPublicKey.isValidPath);
+    return indexes !== null && indexes.every(HDPublicKey.isValidPath);
   }
 
-  if (_.isNumber(arg)) {
+  if (typeof arg === 'number') {
     return arg >= 0 && arg < HDPublicKey.Hardened;
   }
 
@@ -140,9 +139,9 @@ HDPublicKey.prototype.derive = function(arg, hardened) {
  * @param {string|number} arg
  */
 HDPublicKey.prototype.deriveChild = function(arg, hardened) {
-  if (_.isNumber(arg)) {
+  if (typeof arg === 'number' && !isNaN(arg)) {
     return this._deriveWithNumber(arg, hardened);
-  } else if (_.isString(arg)) {
+  } else if (typeof arg === 'string') {
     return this._deriveFromString(arg);
   } else {
     throw new hdErrors.InvalidDerivationArgument(arg);
@@ -184,7 +183,7 @@ HDPublicKey.prototype._deriveWithNumber = function(index, hardened) {
 
 HDPublicKey.prototype._deriveFromString = function(path) {
   /* jshint maxcomplexity: 8 */
-  if (_.includes(path, "'")) {
+  if (path.includes("'")) {
     throw new hdErrors.InvalidIndexCantDeriveHardened();
   } else if (!HDPublicKey.isValidPath(path)) {
     throw new hdErrors.InvalidPath(path);
@@ -208,7 +207,7 @@ HDPublicKey.prototype._deriveFromString = function(path) {
  * @return {boolean}
  */
 HDPublicKey.isValidSerialized = function(data, network) {
-  return _.isNull(HDPublicKey.getSerializedError(data, network));
+  return HDPublicKey.getSerializedError(data, network) === null;
 };
 
 /**
@@ -223,7 +222,7 @@ HDPublicKey.isValidSerialized = function(data, network) {
 HDPublicKey.getSerializedError = function(data, network) {
   /* jshint maxcomplexity: 10 */
   /* jshint maxstatements: 20 */
-  if (!(_.isString(data) || BufferUtil.isBuffer(data))) {
+  if (typeof data !== 'string' && !BufferUtil.isBuffer(data)) {
     return new hdErrors.UnrecognizedArgument('expected buffer or string');
   }
   if (!Base58.validCharacters(data)) {
@@ -237,7 +236,7 @@ HDPublicKey.getSerializedError = function(data, network) {
   if (data.length !== HDPublicKey.DataSize) {
     return new hdErrors.InvalidLength(data);
   }
-  if (!_.isUndefined(network)) {
+  if (typeof network !== 'undefined') {
     var error = HDPublicKey._validateNetwork(data, network);
     if (error) {
       return error;
@@ -262,15 +261,17 @@ HDPublicKey._validateNetwork = function(data, networkArg) {
   return null;
 };
 
-HDPublicKey.prototype._buildFromPrivate = function (arg) {
-  var args = _.clone(arg._buffers);
-  var point = Point.getG().mul(BN.fromBuffer(args.privateKey));
-  args.publicKey = Point.pointToCompressed(point);
-  args.version = BufferUtil.integerAsBuffer(Network.get(BufferUtil.integerFromBuffer(args.version)).xpubkey);
-  args.privateKey = undefined;
-  args.checksum = undefined;
-  args.xprivkey = undefined;
-  return this._buildFromBuffers(args);
+HDPublicKey.prototype._buildFromPrivate = function(arg) {
+  let args = { ...arg._buffers };
+  let point = Point.getG().mul(BN.fromBuffer(args.privateKey));
+  return this._buildFromBuffers({
+    ...args,
+    publicKey: Point.pointToCompressed(point),
+    version: BufferUtil.integerAsBuffer(Network.get(BufferUtil.integerFromBuffer(args.version)).xpubkey),
+    privateKey: undefined,
+    checksum: undefined,
+    xprivkey: undefined
+  });
 };
 
 HDPublicKey.prototype._buildFromObject = function(arg) {
@@ -278,13 +279,13 @@ HDPublicKey.prototype._buildFromObject = function(arg) {
   // TODO: Type validation
   var buffers = {
     version: arg.network ? BufferUtil.integerAsBuffer(Network.get(arg.network).xpubkey) : arg.version,
-    depth: _.isNumber(arg.depth) ? BufferUtil.integerAsSingleByteBuffer(arg.depth) : arg.depth,
-    parentFingerPrint: _.isNumber(arg.parentFingerPrint) ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
-    childIndex: _.isNumber(arg.childIndex) ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
-    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode,'hex') : arg.chainCode,
-    publicKey: _.isString(arg.publicKey) ? Buffer.from(arg.publicKey,'hex') :
+    depth: typeof arg.depth === 'number' ? BufferUtil.integerAsSingleByteBuffer(arg.depth) : arg.depth,
+    parentFingerPrint: typeof arg.parentFingerPrint === 'number' ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
+    childIndex: typeof arg.childIndex === 'number' ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
+    chainCode: typeof arg.chainCode === 'string' ? Buffer.from(arg.chainCode,'hex') : arg.chainCode,
+    publicKey: typeof arg.publicKey === 'string' ? Buffer.from(arg.publicKey,'hex') :
       BufferUtil.isBuffer(arg.publicKey) ? arg.publicKey : arg.publicKey.toBuffer(),
-    checksum: _.isNumber(arg.checksum) ? BufferUtil.integerAsBuffer(arg.checksum) : arg.checksum
+    checksum: typeof arg.checksum === 'number' ? BufferUtil.integerAsBuffer(arg.checksum) : arg.checksum
   };
   return this._buildFromBuffers(buffers);
 };
@@ -386,12 +387,12 @@ HDPublicKey._validateBufferArguments = function(arg) {
 };
 
 HDPublicKey.fromString = function(arg) {
-  $.checkArgument(_.isString(arg), 'No valid string was provided');
+  $.checkArgument(typeof arg === 'string', 'No valid string was provided');
   return new HDPublicKey(arg);
 };
 
 HDPublicKey.fromObject = function(arg) {
-  $.checkArgument(_.isObject(arg), 'No valid argument was provided');
+  $.checkArgument(typeof arg === 'object', 'No valid argument was provided');
   return new HDPublicKey(arg);
 };
 

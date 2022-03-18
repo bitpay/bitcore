@@ -5,7 +5,6 @@ var Point = require('./crypto/point');
 var Hash = require('./crypto/hash');
 var JSUtil = require('./util/js');
 var Network = require('./networks');
-var _ = require('lodash');
 var $ = require('./util/preconditions');
 
 /**
@@ -69,7 +68,7 @@ function PublicKey(data, extra) {
 PublicKey.prototype._classifyArgs = function(data, extra) {
   /* jshint maxcomplexity: 10 */
   var info = {
-    compressed: _.isUndefined(extra.compressed) || extra.compressed
+    compressed: typeof extra.compressed === 'undefined' || extra.compressed
   };
 
   // detect type of data
@@ -87,7 +86,7 @@ PublicKey.prototype._classifyArgs = function(data, extra) {
     throw new TypeError('First argument is an unrecognized data format.');
   }
   if (!info.network) {
-    info.network = _.isUndefined(extra.network) ? undefined : Network.get(extra.network);
+    info.network = typeof extra.network === 'undefined' ? undefined : Network.get(extra.network);
   }
   return info;
 };
@@ -145,7 +144,7 @@ PublicKey._transformDER = function(buf, strict) {
   $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key');
   var info = {};
 
-  strict = _.isUndefined(strict) ? true : strict;
+  strict = typeof strict === 'undefined' ? true : strict;
 
   var x;
   var y;

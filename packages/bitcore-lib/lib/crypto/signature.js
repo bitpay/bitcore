@@ -1,7 +1,6 @@
 'use strict';
 
 var BN = require('./bn');
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
@@ -88,11 +87,8 @@ Signature.fromString = function(str) {
 /**
  * In order to mimic the non-strict DER encoding of OpenSSL, set strict = false.
  */
-Signature.parseDER = function(buf, strict) {
+Signature.parseDER = function(buf, strict = true) {
   $.checkArgument(BufferUtil.isBuffer(buf), new Error('DER formatted signature should be a buffer'));
-  if (_.isUndefined(strict)) {
-    strict = true;
-  }
 
   var header = buf[0];
   $.checkArgument(header === 0x30, new Error('Header byte should be 0x30'));

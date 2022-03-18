@@ -1,7 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
-
 var Script = require('./script');
 var Opcode = require('../opcode');
 var BN = require('../crypto/bn');
@@ -127,23 +125,18 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
  *
  * Translated from bitcoind's VerifyScript
  */
-Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, witness, satoshis) {
-
+Interpreter.prototype.verify = function(
+  scriptSig,
+  scriptPubkey,
+  tx,
+  nin = 0,
+  flags = 0,
+  witness = null,
+  satoshis = 0
+) {
   var Transaction = require('../transaction');
-  if (_.isUndefined(tx)) {
+  if (typeof tx === 'undefined') {
     tx = new Transaction();
-  }
-  if (_.isUndefined(nin)) {
-    nin = 0;
-  }
-  if (_.isUndefined(flags)) {
-    flags = 0;
-  }
-  if (_.isUndefined(witness)) {
-    witness = null;
-  }
-  if (_.isUndefined(satoshis)) {
-    satoshis = 0;
   }
 
   this.set({
@@ -676,7 +669,7 @@ Interpreter.prototype.step = function() {
   var chunk = this.script.chunks[this.pc];
   this.pc++;
   var opcodenum = chunk.opcodenum;
-  if (_.isUndefined(opcodenum)) {
+  if (typeof opcodenum === 'undefined') {
     this.errstr = 'SCRIPT_ERR_UNDEFINED_OPCODE';
     return false;
   }
@@ -954,7 +947,6 @@ Interpreter.prototype.step = function() {
           this.errstr = 'SCRIPT_ERR_OP_RETURN';
           return false;
         }
-        break;
 
 
         //

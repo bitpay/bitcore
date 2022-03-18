@@ -11,7 +11,6 @@ var BN = require('../crypto/bn');
 var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
 var $ = require('../util/preconditions');
-var _ = require('lodash');
 
 /**
  * Returns a buffer of length 32 bytes with the hash that needs to be signed
@@ -141,8 +140,8 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
+  $.checkArgument(typeof transaction !== 'undefined');
+  $.checkArgument(typeof signature !== 'undefined' && !typeof signature.nhashtype === 'undefined');
   signingMethod = signingMethod || 'ecdsa';
 
   if (signingMethod === 'ecdsa') {

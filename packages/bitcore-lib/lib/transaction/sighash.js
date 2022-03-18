@@ -9,7 +9,6 @@ var BN = require('../crypto/bn');
 var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
 var $ = require('../util/preconditions');
-var _ = require('lodash');
 const schnorr = require('bip-schnorr');
 
 var SIGHASH_SINGLE_BUG = '0000000000000000000000000000000000000000000000000000000000000001';
@@ -131,8 +130,8 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, signi
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, subscript, signingMethod) {
-  $.checkArgument(!_.isUndefined(transaction), "Transaction Undefined");
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype), "Signature Undefined");
+  $.checkArgument(typeof transaction !== 'undefined', 'Transaction Undefined');
+  $.checkArgument(typeof signature !== 'undefined' && typeof signature.nhashtype !== 'undefined', "Signature Undefined");
 
   signingMethod = signingMethod || 'ecdsa';
   let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
