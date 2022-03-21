@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { ParsedQs } from 'qs';
 import { ObjectId } from 'mongodb';
+import { ParsedQs } from 'qs';
 import { MongoBound } from '../../models/base';
 import { IBlock } from '../../models/baseBlock';
 import { IBtcBlock } from '../../models/block';
@@ -50,7 +50,13 @@ export type GetBlockBeforeTimeParams = ChainNetwork & {
 export type StreamBlocksParams = ChainNetwork & {
   blockId?: string;
   sinceBlock: string | ParsedQs | string[] | ParsedQs[] | undefined;
-  args?: Partial<{ startDate: Date; endDate: Date; date: string | ParsedQs | string[] | ParsedQs[] | undefined; } & StreamingFindOptions<IBtcBlock>>;
+  args?: Partial<
+    {
+      startDate: Date;
+      endDate: Date;
+      date: string | ParsedQs | string[] | ParsedQs[] | undefined;
+    } & StreamingFindOptions<IBtcBlock>
+  >;
   req: Request;
   res: Response;
 };

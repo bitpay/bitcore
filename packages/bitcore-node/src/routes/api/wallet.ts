@@ -10,7 +10,7 @@ function isTooLong(field, maxLength = 255) {
 // create wallet
 router.post('/', async function(req, res) {
   try {
-    let { chain, network } = req.params as {[k:string]:any};
+    let { chain, network } = req.params as { [k: string]: any };
     let { name, pubKey, path, singleAddress } = req.body;
 
     const existingWallet = await ChainStateProvider.getWallet({
@@ -63,7 +63,7 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
       chain,
       network,
       walletId: wallet!._id!,
-      limit:limitAsNum,
+      limit: limitAsNum,
       req,
       res
     };
@@ -175,7 +175,7 @@ router.get('/:pubKey/utxos', Auth.authenticateMiddleware, async (req: Authentica
       chain,
       network,
       wallet: req.wallet!,
-      limit:limitAsNum,
+      limit: limitAsNum,
       req,
       res,
       args: req.query

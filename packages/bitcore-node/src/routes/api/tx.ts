@@ -10,7 +10,7 @@ import { CacheTimes } from '../middleware';
 const router = Router({ mergeParams: true });
 
 router.get('/', function(req, res) {
-  let { chain, network } = req.params as {[k:string]:any};
+  let { chain, network } = req.params as { [k: string]: any };
   let { blockHeight, blockHash, limit, since, direction, paging } = req.query;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
@@ -38,7 +38,7 @@ router.get('/', function(req, res) {
 });
 
 router.get('/:txId', async (req, res) => {
-  let { chain, network, txId } = req.params as {[k:string]:any};
+  let { chain, network, txId } = req.params as { [k: string]: any };
   if (typeof txId !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -67,7 +67,7 @@ router.get('/:txId', async (req, res) => {
 
 // Get transaction with input and outputs, assigned to key coins
 router.get('/:txId/populated', async (req, res) => {
-  let { chain, network, txId } = req.params as {[k:string]:any};
+  let { chain, network, txId } = req.params as { [k: string]: any };
   let txid = txId;
   if (typeof txid !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
@@ -103,7 +103,7 @@ router.get('/:txId/populated', async (req, res) => {
 });
 
 router.get('/:txId/authhead', async (req, res) => {
-  let { chain, network, txId } = req.params as {[k:string]:any};
+  let { chain, network, txId } = req.params as { [k: string]: any };
   if (typeof txId !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -122,7 +122,7 @@ router.get('/:txId/authhead', async (req, res) => {
 });
 
 router.get('/:txid/coins', (req, res, next) => {
-  let { chain, network, txid } = req.params as {[k:string]:any};
+  let { chain, network, txid } = req.params as { [k: string]: any };
   if (typeof txid !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
     res.status(400).send('Missing required param');
   } else {
@@ -139,7 +139,7 @@ router.get('/:txid/coins', (req, res, next) => {
 
 router.post('/send', async function(req, res) {
   try {
-    let { chain, network } = req.params as {[k:string]:any};
+    let { chain, network } = req.params as { [k: string]: any };
     let { rawTx } = req.body;
     chain = chain.toUpperCase();
     network = network.toLowerCase();
