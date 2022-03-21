@@ -162,8 +162,8 @@ export class InternalStateProvider implements IChainStateService {
       Object.assign(query.time, { ...query.time, $lt: new Date(endDate) });
     }
     if (date) {
-      let firstDate = new Date(date);
-      let nextDate = new Date(date);
+      let firstDate = new Date(date as string);
+      let nextDate = new Date(date as string);
       nextDate.setDate(nextDate.getDate() + 1);
       query.time = { $gt: firstDate, $lt: nextDate };
     }
