@@ -97,7 +97,8 @@ function addNetwork(data) {
       dnsSeeds: data.dnsSeeds
     });
   }
-  network.forEach(function(value) {
+
+  Object.values(network).forEach(function(value) {
     if (!['undefined', 'object'].includes(typeof value)) {
       if (!networkMaps[value]) {
         networkMaps[value] = [];
