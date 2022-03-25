@@ -1,5 +1,7 @@
 'use strict';
 
+var _ = require('lodash');
+
 var Address = require('../address');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');

@@ -1091,6 +1091,7 @@ Transaction.prototype.sort = function() {
  * @return {Transaction} this
  */
 Transaction.prototype.shuffleOutputs = function() {
+  // TODO: replace lodash ref
   return this.sortOutputs(_.shuffle);
 };
 
@@ -1123,6 +1124,7 @@ Transaction.prototype.sortInputs = function(sortingFunction) {
 };
 
 Transaction.prototype._newOutputOrder = function(newOutputs) {
+  // TODO: replace lodash ref
   var isInvalidSorting = (this.outputs.length !== newOutputs.length ||
                           _.difference(this.outputs, newOutputs).length !== 0);
   if (isInvalidSorting) {
