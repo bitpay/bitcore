@@ -288,6 +288,72 @@ describe('ExpressApp', function() {
                 should.not.exist(err);
                 res.statusCode.should.equal(200);
                 var args = server.getBalance.getCalls()[1].args[0];
+                should.exist(args.twoStep);
+                args.twoStep.should.equal(true);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      describe('v1/balance/all', function() {
+        it('should return a balance for all identity/sig pairs given', function(done) {
+          var server = {
+            getBalance: sinon.stub().callsArgWith(1, null, {
+              totalAmount: 0,
+              lockedAmount: 0,
+              totalConfirmedAmount: 0,
+              lockedConfirmedAmount: 0,
+              availableAmount: 0,
+              availableConfirmedAmount: 0,
+              byAddress: []
+            }),
+            walletId: 'walletId',
+          };
+          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+            './server': {
+              WalletService : {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
+            }
+          });
+          start(TestExpressApp, function() {
+            var reqOpts = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/balance/all',
+              headers: {
+                'x-multi-credentials': JSON.stringify([
+                  {
+                    'x-identity': 'identity1',
+                    'x-signature': 'signature1'
+                  },
+                  {
+                    'x-identity': 'identity2',
+                    'x-signature': 'signature2'
+                  },
+                  {
+                    'x-identity': 'identity3',
+                    'x-signature': 'signature3'
+                  }
+                ])
+              }
+            };
+            request(reqOpts, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              var args = server.getBalance.getCalls()[0].args[0];
+              should.not.exist(args.twoStep);
+
+              reqOpts.url += '?twoStep=1';
+              request(reqOpts, function(err, res, body) {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+                var bodyObj = JSON.parse(body);
+                bodyObj.length.should.equal(3);
+                var args = server.getBalance.getCalls()[3].args[0];
+                should.exist(args.twoStep);
                 args.twoStep.should.equal(true);
                 done();
               });
