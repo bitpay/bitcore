@@ -94,7 +94,7 @@ export class API extends EventEmitter {
       r: opts.request,
       supportStaffWalletId: opts.supportStaffWalletId
     });
-    
+
     log.setLevel(this.logLevel);
   }
 

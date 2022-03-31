@@ -202,16 +202,16 @@ export class FiatRateService {
 
   getRatesByCoin(opts, cb) {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesByCoin()>');
-    
+
     let { coin, code } = opts;
     const ts = opts.ts || Date.now();
-    
+
     if (Constants.USD_STABLECOINS[coin.toUpperCase()]) {
       return this.getRatesForStablecoin({ code: 'USD', ts }, cb);
     }
-    
+
     let fiatFiltered = [];
-    
+
     if (code) {
       fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
@@ -292,7 +292,7 @@ export class FiatRateService {
 
     this.getRatesByCoin({ coin, ts }, (err, rates) => {
       if (err) return cb(err);
-  
+
       const fiatRate = rates.find(rate => rate.code === code);
       if (!fiatRate || !fiatRate.rate) return cb(null, []);
 

@@ -1,5 +1,5 @@
-import express from 'express';
 import * as async from 'async';
+import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
 import { logger, transport } from './logger';
@@ -230,14 +230,20 @@ export class ExpressApp {
       });
     };
 
-    const getServerWithMultiAuth = (req, res, opts, cb1: (err: any, data?: any) => void, cb2?: (err: any, data?: any) => void) => {
+    const getServerWithMultiAuth = (
+      req,
+      res,
+      opts,
+      cb1: (err: any, data?: any) => void,
+      cb2?: (err: any, data?: any) => void
+    ) => {
       if (_.isFunction(opts)) {
         cb2 = cb1;
         cb1 = opts;
         opts = {};
       }
       opts = opts || {};
-      
+
       let creds = req.headers['x-multi-credentials'] ? JSON.parse(req.headers['x-multi-credentials']) : false;
       if (!creds) {
         return returnError(
@@ -257,18 +263,15 @@ export class ExpressApp {
         requests.push(singleRequest);
       });
 
-      
-
-      const getServerWithAuthWrapper = (singleReq,next) => {
-        const callBack = (server) => {
+      const getServerWithAuthWrapper = (singleReq, next) => {
+        const callBack = server => {
           cb1(server, next);
         };
-        
+
         getServerWithAuth(singleReq, res, opts, callBack);
-      }
+      };
 
-      async.each(requests,getServerWithAuthWrapper, cb2);
-
+      async.each(requests, getServerWithAuthWrapper, cb2);
     };
 
     let createWalletLimiter;
@@ -777,23 +780,27 @@ export class ExpressApp {
 
     router.get('/v1/balance/all/', (req, res) => {
       let responses = [];
-      getServerWithMultiAuth(req, res, (server,next) => {
-        let opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};
-        if (req.query.coin) opts.coin = req.query.coin;
-        if (req.query.twoStep == '1') opts.twoStep = true;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+      getServerWithMultiAuth(
+        req,
+        res,
+        (server, next) => {
+          let opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};
+          if (req.query.coin) opts.coin = req.query.coin;
+          if (req.query.twoStep == '1') opts.twoStep = true;
+          if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
+          if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
 
-        server.getBalance(opts, (err, balance) => {
-          if (err) return returnError(err, res, req);
-          responses.push({[server.walletId]:balance});
-          next();
-          //return balance;
-        });
-      }, 
-      (err) => {
-        res.json(responses);
-      } );
+          server.getBalance(opts, (err, balance) => {
+            if (err) return returnError(err, res, req);
+            responses.push({ [server.walletId]: balance });
+            next();
+            // return balance;
+          });
+        },
+        err => {
+          res.json(responses);
+        }
+      );
     });
 
     let estimateFeeLimiter;
