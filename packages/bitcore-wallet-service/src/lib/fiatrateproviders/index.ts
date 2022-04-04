@@ -3,7 +3,8 @@ var Providers = {
   Coingecko: require('./coingecko'),
   LotusExplorer: require('./lotusexplorer'),
   BitPay: require('./bitpay'),
-  LotusExbitron: require('./lotus-exbitron')
+  LotusExbitron: require('./lotus-exbitron'),
+  EtokenPrice: require('./etoken-price')
   //  Bitstamp: require('./bitstamp'), // no longer used
 };
 

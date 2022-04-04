@@ -159,5 +159,21 @@ module.exports = {
       chronikClientUrl: 'https://chronik.be.cash/xpi',
       isSupportToken: false
     }
+  },
+  etoken: {
+    etokenSupportPrice: [
+      {
+        coin: 'EAT',
+        rate: 1 // USD
+      },
+      {
+        coin: 'bcPro',
+        rate: 0.25 // USD
+      },
+      {
+        coin: 'bcProStar',
+        rate: 1000000 // USD
+      }
+    ]
   }
 };
