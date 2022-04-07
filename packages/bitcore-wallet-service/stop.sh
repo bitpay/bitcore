@@ -12,6 +12,7 @@ stop_program ()
 
 stop_program pids/bws.pid
 stop_program pids/fiatrateservice.pid
+stop_program pids/currencyrateservice.pid
 stop_program pids/emailservice.pid
 stop_program pids/bcmonitor.pid
 stop_program pids/pushnotificationsservice.pid

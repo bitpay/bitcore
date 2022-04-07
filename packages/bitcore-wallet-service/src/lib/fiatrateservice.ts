@@ -1,5 +1,5 @@
 import * as async from 'async';
-import _ from 'lodash';
+import _, { countBy, reject } from 'lodash';
 import * as request from 'request';
 import { Storage } from './storage';
 
@@ -11,6 +11,7 @@ const config = require('../config');
 
 import logger from './logger';
 import { EtokenSupportPrice } from './model/config-model';
+import { resolve } from 'dns';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -58,36 +59,21 @@ export class FiatRateService {
     return cb();
   }
 
-  handleRateCurrencyCoin(res) {
-    let dataBtc;
-    const provider = this.providers.find(provider => provider.name === this.defaultProvider);
+  async handleRateCurrencyCoin(res, listRate) {
+    let newData = [];
+    const valueUsd = _.get(
+      _.find(res, item => item.code == 'USD'),
+      'value',
+      0
+    );
     return new Promise((resolve, reject) => {
-      this._retrieve(provider, 'btc', (err, resBTC) => {
-        dataBtc = resBTC;
-        if (_.isEmpty(res) || _.isEmpty(dataBtc) || err) return resolve(res);
-        const rateUsdBtc = _.get(
-          _.find(dataBtc, item => item.code == 'USD'),
-          'value',
-          0
-        );
-        const rateUsd = _.get(
-          _.find(res, item => item.code == 'USD'),
-          'value',
-          0
-        );
-        if (rateUsdBtc == 0 || rateUsd == 0) return resolve(res);
-        const newData = _.cloneDeep(res);
-        _.forEach(dataBtc, (itemBtc: any) => {
-          if (_.some(res, itemXpi => itemXpi.code != itemBtc.code)) {
-            const newRate = (rateUsd * itemBtc.value) / rateUsdBtc;
-            newData.push({
-              code: itemBtc.code,
-              value: newRate
-            });
-          }
-        });
-        return resolve(newData);
-      });
+      _.forEach(listRate, (rate: any) => {
+        newData.push({
+          code: rate.code,
+          value: valueUsd * rate.value
+        })
+      })
+      return resolve(newData);
     });
   }
 
@@ -104,39 +90,69 @@ export class FiatRateService {
     return _.find(this.providers, provider => provider.name === nameProvider);
   }
 
+  getLatestCurrencyRates(opts): any {
+    return new Promise((resolve, reject) => {
+      const now = Date.now();
+      const ts = opts.ts ? opts.ts : now;
+      let fiatFiltered = [];
+      let rates = [];
+
+      if (opts.code) {
+        fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
+        if (!fiatFiltered.length) return reject(opts.code + ' is not supported');
+      }
+      const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.SUPPORT_FIAT_CURRENCIES;
+      _.forEach(
+        currencies,
+        currency => {
+          this.storage.fetchCurrencyRates(currency.code, ts, async (err, res) => {
+            if (err) {
+              logger.warn('Error fetching data for ' + currency, err);
+
+            }
+            rates.push(res);
+          });
+        },
+      );
+      return resolve(rates);
+    });
+
+  }
+
   _getEtokenSupportPrice() {
     const etokenSupportPrice = _.get(config, 'etoken.etokenSupportPrice', undefined);
     if (!etokenSupportPrice) return [];
     return _.map(etokenSupportPrice, 'coin');
   }
 
-  _fetch(cb?) {
-    cb = cb || function() {};
+  async _fetch(cb?) {
+    cb = cb || function () { };
     let coinsData = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
     const etoken = this._getEtokenSupportPrice();
     const coins = _.concat(coinsData, etoken);
-    async.each(
-      coins,
-      (coin, next2) => {
-        const provider = this._getProviderRate(coin);
-        this._retrieve(provider, coin, async (err, res) => {
-          if (res && (coin == 'xpi' || _.includes(etoken, coin))) {
-            res = await this.handleRateCurrencyCoin(res);
-          }
-          if (err) {
-            logger.warn('Error retrieving data for ' + provider.name + coin, err);
-            return next2();
-          }
-          this.storage.storeFiatRate(coin, res, err => {
+    const listRate = await this.getLatestCurrencyRates({});
+    if (listRate) {
+      async.eachSeries(
+        coins,
+        async (coin, next2) => {
+          const provider = this._getProviderRate(coin);
+          this._retrieve(provider, coin, async (err, res) => {
             if (err) {
-              logger.warn('Error storing data for ' + provider.name, err);
+              logger.warn('Error retrieving data for ' + provider.name + coin, err);
+              return next2();
             }
-            return next2();
+            res = await this.handleRateCurrencyCoin(res, listRate);
+            this.storage.storeFiatRate(coin, res, err => {
+              if (err) {
+                logger.warn('Error storing data for ' + provider.name, err);
+              }
+              return next2();
+            });
           });
-        });
-      },
-      cb
-    );
+        },
+        cb
+      );
+    }
   }
 
   _retrieve(provider, coin, cb) {
@@ -244,7 +260,7 @@ export class FiatRateService {
       fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
-    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
+    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.SUPPORT_FIAT_CURRENCIES;
     const etoken = this._getEtokenSupportPrice();
     const coins = _.concat(_.values(Constants.COINS), etoken);
     async.map(
