@@ -8,7 +8,7 @@ module.exports = {
   url: 'https://min-api.cryptocompare.com/data/price',
   params: {
     fsym: '',
-    tsyms: Defaults.FIAT_CURRENCIES.map(currency => currency.code).join(',')
+    tsyms: Defaults.FIAT_CURRENCY.code
   },
   headers: {
     authorization: Config.fiatRateServiceOpts.cryptoCompareApiKey

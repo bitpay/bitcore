@@ -41,7 +41,7 @@ const collections = {
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
   LOCKS: 'locks',
   DONATION: 'donation',
-  TOKEN_INFO: 'token_info'
+  TOKEN_INFO: 'token_info',
 };
 
 const Common = require('./common');
@@ -1374,6 +1374,48 @@ export class Storage {
       },
       cb
     );
+  }
+
+  storeCurrencyRate(rates, cb) {
+    const now = Date.now();
+    async.each(
+      rates,
+      (rate: { code: string; value: string }, next) => {
+        let i = {
+          ts: now,
+          code: rate.code,
+          value: rate.value
+        };
+        this.db.collection(collections.FIAT_RATES2).insertOne(
+          i,
+          {
+            w: 1
+          },
+          next
+        );
+      },
+      cb
+    );
+  }
+
+  fetchCurrencyRates(code, ts, cb) {
+    this.db
+      .collection(collections.FIAT_RATES2)
+      .find({
+        coin: null,
+        code,
+        ts: {
+          $lte: ts
+        }
+      })
+      .sort({
+        ts: -1
+      })
+      .limit(1)
+      .toArray((err, result) => {
+        if (err || _.isEmpty(result)) return cb(err);
+        return cb(null, result[0]);
+      });
   }
 
   fetchFiatRate(coin, code, ts, cb) {

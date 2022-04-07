@@ -7,7 +7,7 @@ module.exports = {
   url: 'https://api.coingecko.com/api/v3/simple/price',
   params: {
     ids: '',
-    vs_currencies: Defaults.FIAT_CURRENCIES.map(currency => currency.code).join(',')
+    vs_currencies: Defaults.FIAT_CURRENCY.code
   },
   coinMapping: {
     btc: 'bitcoin',

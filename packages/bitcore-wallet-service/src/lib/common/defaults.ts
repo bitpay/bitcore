@@ -292,5 +292,13 @@ module.exports = {
     { code: 'JPY', name: 'Japanese Yen' },
     { code: 'NZD', name: 'New Zealand Dollar' },
     { code: 'HNL', name: 'Honduran Lempira' }
-  ]
+  ],
+
+  SUPPORT_FIAT_CURRENCIES: [
+    { code: 'USD', name: 'US Dollar' },
+    { code: 'AUD', name: 'Australian Dollar' },
+    { code: 'VND', name: 'Vietnamese Dong' },
+    { code: 'HNL', name: 'Honduran Lempira' }
+  ],
+  FIAT_CURRENCY: { code: 'USD', name: 'US Dollar' }
 };

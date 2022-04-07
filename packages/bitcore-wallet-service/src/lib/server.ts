@@ -42,6 +42,7 @@ const EmailValidator = require('email-validator');
 import { Validation } from '@abcpros/crypto-wallet-core';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
 import { TokenInfo } from './model/tokenInfo';
+import { CurrencyRateService } from './currencyrate';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -73,6 +74,7 @@ let blockchainExplorer;
 let blockchainExplorerOpts;
 let messageBroker;
 let fiatRateService;
+let currencyRateService;
 let serviceVersion;
 
 interface IAddress {
@@ -219,6 +221,24 @@ export class WalletService {
       }
     };
 
+    const initCurrencyRateService = cb => {
+      if (opts.currency) {
+        currencyRateService = opts.currencyRateService;
+        return cb();
+      } else {
+        const newCurrencyRateService = new CurrencyRateService();
+        const opts2 = opts.currencyRateServiceOpts || {};
+        opts2.storage = storage;
+        newCurrencyRateService.init(opts2, err => {
+          if (err) {
+            return cb(err);
+          }
+          currencyRateService = newCurrencyRateService;
+          return cb();
+        });
+      }
+    };
+
     async.series(
       [
         next => {
@@ -229,6 +249,9 @@ export class WalletService {
         },
         next => {
           initFiatRateService(next);
+        },
+        next => {
+          initCurrencyRateService(next);
         }
       ],
       err => {
@@ -245,7 +268,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -847,7 +870,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -3144,7 +3167,7 @@ export class WalletService {
     const clientBwc = new Client();
     this._getKeyLotus(clientBwc, (err, client, key) => {
       if (err) return cb(err);
-      this.createAddress({}, function(err, x) {
+      this.createAddress({}, function (err, x) {
         if (err) return cb(err);
         return cb(null, client, key, x.address);
       });
@@ -3178,7 +3201,7 @@ export class WalletService {
       if (this.storage && this.storage.queue) {
         this.storage.queue.get((err, data) => {
           if (data) {
-            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
+            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => { });
             const saveError = (donationStorage, err) => {
               donationStorage.error = JSON.stringify(err);
               this.storage.updateDonation(donationStorage, err => {
@@ -3209,7 +3232,7 @@ export class WalletService {
             });
           }
         });
-        this.storage.queue.clean(err => {});
+        this.storage.queue.clean(err => { });
       }
     }, 2000);
   }

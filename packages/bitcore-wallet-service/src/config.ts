@@ -117,6 +117,11 @@ module.exports = {
       miningEfficiency: 3.4
     }
   },
+  currencyRateServiceOpts:{
+    apiUrl: 'https://api.currencyapi.com/v3/latest',
+    apiKey: 'XFi09DtbVATR0TCdEVgisUpXr7NlE7GizvscYLTD',
+    fetchInterval: 180, // in minutes
+  },
   maintenanceOpts: {
     maintenanceMode: false
   },
