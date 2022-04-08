@@ -109,7 +109,6 @@ module.exports = {
   },
   fiatRateServiceOpts: {
     defaultProvider: 'Coingecko',
-    cryptoCompareApiKey: 'Apikey a5f8e442e001cd9ba2c5a61d32794c7209a3940f493a03bb2193027b1982d376',
     fetchInterval: 5, // in minutes
     lotusProvider: {
       electricityRate: 0.1,
@@ -117,10 +116,9 @@ module.exports = {
       miningEfficiency: 3.4
     }
   },
-  currencyRateServiceOpts:{
+  currencyRateServiceOpts: {
     apiUrl: 'https://api.currencyapi.com/v3/latest',
-    apiKey: 'XFi09DtbVATR0TCdEVgisUpXr7NlE7GizvscYLTD',
-    fetchInterval: 180, // in minutes
+    fetchInterval: 180 // in minutes
   },
   maintenanceOpts: {
     maintenanceMode: false

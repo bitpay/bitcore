@@ -10,7 +10,7 @@ var scripts = [
   'emailservice/emailservice.js',
   'pushnotificationsservice/pushnotificationsservice.js',
   'fiatrateservice/fiatrateservice.js',
-  'currencyrateservice/currencyrateservice.js',
+  'currencyrateservice/currencyrate.js',
   'bws.js'
 ];
 

@@ -3,7 +3,7 @@
 import logger from '../lib/logger';
 const config = require('../config');
 
-import { CurrencyRateService } from 'src/lib/currencyrate';
+import { CurrencyRateService } from '../lib/currencyrate';
 
 const service = new CurrencyRateService();
 service.init(config, err => {
