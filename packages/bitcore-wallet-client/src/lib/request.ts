@@ -85,7 +85,6 @@ export class Request {
   doRequest(method, url, args, useSession, cb) {
     var headers = this.getHeaders(method, url, args, useSession);
 
-
     var r = this.r[method](this.baseUrl + url);
     r.accept('json');
 
@@ -160,10 +159,10 @@ export class Request {
       } else {
         ret = new Error(
           body.code +
-          ': ' +
-          (_.isObject(body.message)
-            ? JSON.stringify(body.message)
-            : body.message)
+            ': ' +
+            (_.isObject(body.message)
+              ? JSON.stringify(body.message)
+              : body.message)
         );
       }
     } else {

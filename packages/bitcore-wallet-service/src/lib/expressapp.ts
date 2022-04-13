@@ -240,11 +240,11 @@ export class ExpressApp {
       let creds = req.headers['x-multi-credentials'] ? JSON.parse(req.headers['x-multi-credentials']) : false;
 
       if (!creds) {
-        throw new ClientError({code: 'NOT_AUTHORIZED'});
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
       }
 
       if (!Array.isArray(creds)) {
-        throw new ClientError({code: 'NOT_AUTHORIZED'});
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
       }
 
       // Add a max number of creds allowed and an error case
@@ -255,19 +255,16 @@ export class ExpressApp {
         ({ 'x-identity': id, 'x-signature': sig }) =>
           new Promise((resolve, reject) =>
             getServerWithAuth(
-              Object.assign(
-                req,
-                { 
-                  headers: {
+              Object.assign(req, {
+                headers: {
                   ...req.headers,
                   'x-identity': id,
                   'x-signature': sig
-                  }
                 }
-                ),
+              }),
               res,
               opts,
-              server => (server ?  resolve(server) : reject(server))
+              server => (server ? resolve(server) : reject(server))
             )
           )
       );
@@ -789,17 +786,18 @@ export class ExpressApp {
       try {
         responses = await Promise.all(
           getServerWithMultiAuth(req, res).map(promise =>
-            promise.then((server: any) =>
-              new Promise(resolve =>
-                server.getBalance(opts, (err, balance) =>
-                  resolve({
-                    walletId: server.walletId,
-                    status: 'success',
-                    ...(err ? { status: 'error', message: err.message } : {}),
-                    balance
-                  })
-                )
-              ),
+            promise.then(
+              (server: any) =>
+                new Promise(resolve =>
+                  server.getBalance(opts, (err, balance) =>
+                    resolve({
+                      walletId: server.walletId,
+                      status: 'success',
+                      ...(err ? { status: 'error', message: err.message } : {}),
+                      balance
+                    })
+                  )
+                ),
               ({ message }) => Promise.resolve({ status: 'error', error: message })
             )
           )
@@ -807,7 +805,7 @@ export class ExpressApp {
       } catch (err) {
         return returnError(err, res, req);
       }
-      
+
       return res.json(responses);
     });
 

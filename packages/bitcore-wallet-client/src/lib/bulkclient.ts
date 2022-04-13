@@ -5,7 +5,6 @@ import { Request } from './request';
 const $ = require('preconditions').singleton();
 
 export class BulkClient extends Request {
-
   /**
    * @description BulkClient constructor
    * @param {String} url base URL for client
@@ -20,7 +19,7 @@ export class BulkClient extends Request {
    * @description Override the existing method to use multiple credentials
    * @override
    */
-   _populateAuth(
+  _populateAuth(
     headers: any,
     signingParams: { method: string; url: string; args: any }
   ) {
