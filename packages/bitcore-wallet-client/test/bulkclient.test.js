@@ -93,14 +93,15 @@ describe('Bulk Client', function () {
                 })
             );
 
-            helpers.createAndJoinWallet(clients, keys, 1, 3, {}, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 5, {}, () => {
                 const clientsWithCredentials = clients.filter((client) => client.credentials);
                 clients[0].bulkClient.getBalanceAll(clientsWithCredentials, (err, wallets) => {
                     should.not.exist(err);
-                    const walletIds = wallets.map((wal) => Object.keys(wal));
-                    wallets[0][walletIds[0]].totalAmount.should.equal(0);
-                    wallets[0][walletIds[0]].availableAmount.should.equal(0);
-                    wallets[0][walletIds[0]].lockedAmount.should.equal(0);
+                    wallets.every(wallet => {
+                        return wallet.balance.totalAmount.should.equal(0) &&
+                        wallet.balance.availableAmount.should.equal(0) &&
+                        wallet.balance.lockedAmount.should.equal(0);
+                    }).should.equal(true);
                     done();
                 });
             });
