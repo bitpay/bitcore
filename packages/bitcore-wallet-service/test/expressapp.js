@@ -324,20 +324,8 @@ describe('ExpressApp', function() {
             var reqOpts = {
               url: testHost + ':' + testPort + config.basePath + '/v1/balance/all',
               headers: {
-                'x-multi-credentials': JSON.stringify([
-                  {
-                    'x-identity': 'identity1',
-                    'x-signature': 'signature1'
-                  },
-                  {
-                    'x-identity': 'identity2',
-                    'x-signature': 'signature2'
-                  },
-                  {
-                    'x-identity': 'identity3',
-                    'x-signature': 'signature3'
-                  }
-                ])
+                'x-identities': 'identity1,identity2,identity3',
+                'x-signature': 'signature'
               }
             };
             request(reqOpts, function(err, res, body) {
