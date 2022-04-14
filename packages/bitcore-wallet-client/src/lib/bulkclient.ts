@@ -24,7 +24,9 @@ export class BulkClient extends Request {
     signingParams: { method: string; url: string; args: any }
   ) {
     if (this.credentials && this.credentials.length) {
-      headers['x-identities'] = this.credentials.map(cred => cred.copayerId).join(',');
+      headers['x-identities'] = this.credentials
+        .map(cred => cred.copayerId)
+        .join(',');
       headers['x-signature'] = this._signRequest({
         ...signingParams,
         privKey: this.credentials[0].requestPrivKey
@@ -36,7 +38,11 @@ export class BulkClient extends Request {
     if (this.credentials && this.credentials.length > 0) {
       $.checkState(
         this.credentials.every(cred => {
-          return cred && cred.isComplete() && cred.requestPrivKey == this.credentials[0].requestPrivKey;
+          return (
+            cred &&
+            cred.isComplete() &&
+            cred.requestPrivKey == this.credentials[0].requestPrivKey
+          );
         }),
         failureMessage || 'All credentials must be complete'
       );

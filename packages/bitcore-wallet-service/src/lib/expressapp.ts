@@ -109,7 +109,9 @@ export class ExpressApp {
 
     const returnError = (err, res, req) => {
       // make sure headers have not been sent as this leads to an uncaught error
-      if (res.headersSent) {return;}
+      if (res.headersSent) {
+        return;
+      }
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
@@ -251,7 +253,7 @@ export class ExpressApp {
 
       // return a list of promises that we can await or chain
       return identities.map(
-        (id) =>
+        id =>
           new Promise((resolve, reject) =>
             getServerWithAuth(
               Object.assign(req, {
