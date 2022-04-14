@@ -108,6 +108,8 @@ export class ExpressApp {
     const router = express.Router();
 
     const returnError = (err, res, req) => {
+      // make sure headers have not been sent as this leads to an uncaught error
+      if (res.headersSent) {return;}
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
@@ -230,36 +232,32 @@ export class ExpressApp {
     };
 
     /**
-     * @description process simultaneous requests based on multiple sets of credentials
+     * @description process simultaneous requests based on multiple identities that have the same key, hence, the same signature
      * @param {Request} req
      * @param {Response} res
      * @param {Object} opts
      * @returns Array<Promise>
      */
     const getServerWithMultiAuth = (req, res, opts = {}) => {
-      let creds = req.headers['x-multi-credentials'] ? JSON.parse(req.headers['x-multi-credentials']) : false;
-
-      if (!creds) {
+      const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
+      const signature = req.headers['x-signature'];
+      if (!identities || !signature) {
         throw new ClientError({ code: 'NOT_AUTHORIZED' });
       }
 
-      if (!Array.isArray(creds)) {
+      if (!Array.isArray(identities)) {
         throw new ClientError({ code: 'NOT_AUTHORIZED' });
       }
-
-      // Add a max number of creds allowed and an error case
-      // (this is extra relevant since they execute in parallel)
 
       // return a list of promises that we can await or chain
-      return creds.map(
-        ({ 'x-identity': id, 'x-signature': sig }) =>
+      return identities.map(
+        (id) =>
           new Promise((resolve, reject) =>
             getServerWithAuth(
               Object.assign(req, {
                 headers: {
                   ...req.headers,
-                  'x-identity': id,
-                  'x-signature': sig
+                  'x-identity': id
                 }
               }),
               res,

@@ -93,9 +93,10 @@ describe('Bulk Client', function () {
                 })
             );
 
-            helpers.createAndJoinWallet(clients, keys, 1, 5, {}, () => {
-                const clientsWithCredentials = clients.filter((client) => client.credentials);
-                clients[0].bulkClient.getBalanceAll(clientsWithCredentials, (err, wallets) => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+                const credentials = Array(3).fill(clients[0].credentials);
+
+                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
                     should.not.exist(err);
                     wallets.every(wallet => {
                         return wallet.balance.totalAmount.should.equal(0) &&
@@ -118,9 +119,9 @@ describe('Bulk Client', function () {
                 })
             );
 
-            helpers.createAndJoinWallet(clients, keys, 1, 3, {}, () => {
-                const clientsWithCredentials = clients.filter((client) => client.credentials);
-                clients[0].bulkClient.getBalanceAll(clientsWithCredentials, (err, wallets) => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+                const credentials = Array(3).fill(clients[0].credentials);
+                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
                     should.not.exist(err);
                     wallets.length.should.equal(3);
                     done();
@@ -139,10 +140,10 @@ describe('Bulk Client', function () {
                 })
             );
 
-            helpers.createAndJoinWallet(clients, keys, 1, 3, {}, () => {
-                let clientsWithCredentials = clients.filter((client) => client.credentials);
-                clientsWithCredentials[2].credentials.requestPrivKey = '3da1b53f027ed856bb1922dde7438f91309a59fa1a3aaf7f64dd7f46a258c73c';
-                clients[0].bulkClient.getBalanceAll(clientsWithCredentials, (err, wallets) => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+                const credentials = Array(3).fill(clients[0].credentials);
+                credentials[0].requestPrivKey = '3da1b53f027ed856bb1922dde7438f91309a59fa1a3aaf7f64dd7f46a258c73c';
+                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
                     should.exist(err);
                     should.not.exist(wallets);
                     done();
@@ -161,9 +162,9 @@ describe('Bulk Client', function () {
             );
 
             helpers.createAndJoinWallet(clients, keys, 1, 3, {}, () => {
-                let clientsWithCredentials = clients.filter((client) => client.credentials);
-                clientsWithCredentials[2].credentials.copayerId = 'badCopayerId';
-                clients[0].bulkClient.getBalanceAll(clientsWithCredentials, (err, wallets) => {
+                const credentials = Array(3).fill(clients[0].credentials);
+                credentials[0].copayerId = 'badCopayerId';
+                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
                     should.exist(err);
                     should.not.exist(wallets);
                     done();
