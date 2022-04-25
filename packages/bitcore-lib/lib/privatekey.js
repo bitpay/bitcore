@@ -89,7 +89,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
   };
 
   // detect type of data
-  if (typeof data === 'undefined' || data === null) {
+  if (data === undefined || data === null) {
     info.bn = PrivateKey._getRandomBN();
   } else if (data instanceof BN) {
     info.bn = data;

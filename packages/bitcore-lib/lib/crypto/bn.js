@@ -26,7 +26,7 @@ BN.fromString = function(str, base) {
 };
 
 BN.fromBuffer = function(buf, opts) {
-  if (typeof opts !== 'undefined' && opts.endian === 'little') {
+  if (opts !== undefined && opts.endian === 'little') {
     buf = reversebuf(buf);
   }
   var hex = buf.toString('hex');
@@ -86,7 +86,7 @@ BN.prototype.toBuffer = function(opts) {
     buf = Buffer.from(hex, 'hex');
   }
 
-  if (typeof opts !== 'undefined' && opts.endian === 'little') {
+  if (opts !== undefined && opts.endian === 'little') {
     buf = reversebuf(buf);
   }
 

@@ -45,8 +45,8 @@ TransactionSignature.prototype._fromObject = function(arg) {
 
 TransactionSignature.prototype._checkObjectArgs = function(arg) {
   $.checkArgument(PublicKey(arg.publicKey), 'publicKey');
-  $.checkArgument(typeof arg.inputIndex !== 'undefined', 'inputIndex');
-  $.checkArgument(typeof arg.outputIndex !== 'undefined', 'outputIndex');
+  $.checkArgument(arg.inputIndex !== undefined, 'inputIndex');
+  $.checkArgument(arg.outputIndex !== undefined, 'outputIndex');
   $.checkState(typeof arg.inputIndex === 'number', 'inputIndex must be a number');
   $.checkState(typeof arg.outputIndex === 'number', 'outputIndex must be a number');
   $.checkArgument(arg.signature, 'signature');

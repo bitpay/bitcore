@@ -91,7 +91,7 @@ MultiSigInput.prototype._updateScript = function() {
 };
 
 MultiSigInput.prototype._createSignatures = function() {
-  return this.signatures.filter(signature => typeof signature !== 'undefined')
+  return this.signatures.filter(signature => signature !== undefined)
     // Future signature types may need refactor of toDER
     .map(signature => BufferUtil.concat([
       signature.signature.toDER(),

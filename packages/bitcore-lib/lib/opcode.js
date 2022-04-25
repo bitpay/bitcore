@@ -39,7 +39,7 @@ Opcode.fromNumber = function(num) {
 Opcode.fromString = function(str) {
   $.checkArgument(typeof str === 'string');
   var value = Opcode.map[str];
-  if (typeof value === 'undefined') {
+  if (value === undefined) {
     throw new TypeError('Invalid opcodestr');
   }
   return new Opcode(value);
@@ -59,7 +59,7 @@ Opcode.prototype.toNumber = function() {
 
 Opcode.prototype.toString = function() {
   var str = Opcode.reverseMap[this.num];
-  if (typeof str === 'undefined') {
+  if (str === undefined) {
     throw new Error('Opcode does not have a string representation');
   }
   return str;

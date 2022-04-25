@@ -27,8 +27,10 @@ var traverseNode = function(parent, errorDefinition) {
 };
 
 /* jshint latedef: false */
-var childDefinitions = function(parent, childDefinitions) {
-  childDefinitions.forEach(childDefinition => traverseNode(parent, childDefinition));
+const childDefinitions = function(parent, childDefinitions) {
+  for (let childDefinition of childDefinitions) {
+    traverseNode(parent, childDefinition);
+  }
 };
 /* jshint latedef: true */
 

@@ -8,7 +8,7 @@ var BufferReader = function BufferReader(buf) {
   if (!(this instanceof BufferReader)) {
     return new BufferReader(buf);
   }
-  if (typeof buf === 'undefined') {
+  if (buf === undefined) {
     return;
   }
   if (Buffer.isBuffer(buf)) {
@@ -44,7 +44,7 @@ BufferReader.prototype.eof = function() {
 BufferReader.prototype.finished = BufferReader.prototype.eof;
 
 BufferReader.prototype.read = function(len) {
-  $.checkArgument(typeof len !== 'undefined', 'Must specify a length');
+  $.checkArgument(len !== undefined, 'Must specify a length');
   var buf = this.buf.slice(this.pos, this.pos + len);
   this.pos = this.pos + len;
   return buf;
@@ -189,7 +189,7 @@ BufferReader.prototype.reverse = function() {
 };
 
 BufferReader.prototype.readReverse = function(len) {
-  if (typeof len === 'undefined') {
+  if (len === undefined) {
     len = this.buf.length;
   }
   var buf = this.buf.slice(this.pos, this.pos + len);

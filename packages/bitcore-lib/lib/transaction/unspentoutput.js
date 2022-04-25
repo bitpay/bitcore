@@ -36,16 +36,16 @@ function UnspentOutput(data) {
     // TODO: Use the errors library
     throw new Error('Invalid TXID in object', data);
   }
-  var outputIndex = typeof data.vout === 'undefined' ? data.outputIndex : data.vout;
+  var outputIndex = data.vout === undefined ? data.outputIndex : data.vout;
   if (typeof outputIndex !== 'number') {
     throw new Error('Invalid outputIndex, received ' + outputIndex);
   }
-  $.checkArgument(typeof data.scriptPubKey !== 'undefined' || typeof data.script !== 'undefined',
+  $.checkArgument(data.scriptPubKey !== 'undefined' || typeof data.script !== undefined,
                   'Must provide the scriptPubKey for that output!');
   var script = new Script(data.scriptPubKey || data.script);
-  $.checkArgument(typeof data.amount !== 'undefined' || typeof data.satoshis !== 'undefined',
+  $.checkArgument(data.amount !== 'undefined' || typeof data.satoshis !== undefined,
                       'Must provide an amount for the output');
-  var amount = typeof data.amount !== 'undefined' ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
+  var amount = data.amount !== undefined ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
   $.checkArgument(typeof amount === 'number', 'Amount must be a number');
   JSUtil.defineImmutable(this, {
     address: address,

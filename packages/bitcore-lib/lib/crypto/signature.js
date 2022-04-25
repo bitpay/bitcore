@@ -25,8 +25,8 @@ Signature.prototype.set = function(obj) {
   this.r = obj.r || this.r || undefined;
   this.s = obj.s || this.s || undefined;
 
-  this.i = typeof obj.i !== 'undefined' ? obj.i : this.i; //public key recovery parameter in range [0, 3]
-  this.compressed = typeof obj.compressed !== 'undefined' ?
+  this.i = obj.i !== undefined ? obj.i : this.i; //public key recovery parameter in range [0, 3]
+  this.compressed = obj.compressed !== undefined ?
     obj.compressed : this.compressed; //whether the recovered pubkey is compressed
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;

@@ -261,7 +261,7 @@ MerkleBlock.prototype._calcTreeHeight = function calcTreeHeight() {
  * @private
  */
 MerkleBlock.prototype.hasTransaction = function hasTransaction(tx) {
-  $.checkArgument(typeof tx !== 'undefined', 'tx cannot be undefined');
+  $.checkArgument(tx !== undefined, 'tx cannot be undefined');
   $.checkArgument(tx instanceof Transaction || typeof tx === 'string',
       'Invalid tx given, tx must be a "string" or "Transaction"');
 

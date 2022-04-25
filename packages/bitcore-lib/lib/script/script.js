@@ -146,7 +146,7 @@ Script.fromASM = function(str) {
     var opcode = Opcode(token);
     var opcodenum = opcode.toNumber();
 
-    if (typeof opcodenum === 'undefined') {
+    if (opcodenum === undefined) {
       var buf = Buffer.from(tokens[i], 'hex');
       script.chunks.push({
         buf: buf,
@@ -191,7 +191,7 @@ Script.fromString = function(str) {
     var opcode = Opcode(token);
     var opcodenum = opcode.toNumber();
 
-    if (typeof opcodenum === 'undefined') {
+    if (opcodenum === undefined) {
       opcodenum = parseInt(token);
       if (opcodenum > 0 && opcodenum < Opcode.OP_PUSHDATA1) {
         script.chunks.push({
@@ -231,7 +231,7 @@ Script.prototype._chunkToString = function(chunk, type) {
   var str = '';
   if (!chunk.buf) {
     // no data chunk
-    if (typeof Opcode.reverseMap[opcodenum] !== 'undefined') {
+    if (Opcode.reverseMap[opcodenum] !== undefined) {
       if (asm) {
         // A few cases where the opcode name differs from reverseMap
         // aside from 1 to 16 data pushes.
@@ -537,7 +537,7 @@ Script.prototype.isDataOut = function() {
  */
 Script.prototype.getData = function() {
   if (this.isDataOut() || this.isScriptHashOut() || this.isWitnessScriptHashOut() || this.isWitnessPublicKeyHashOut() || this.isTaproot()) {
-    if (typeof this.chunks[1] === 'undefined') {
+    if (this.chunks[1] === undefined) {
       return Buffer.alloc(0);
     } else {
       return Buffer.from(this.chunks[1].buf);
@@ -770,31 +770,39 @@ Script.prototype.removeCodeseparators = function() {
 // high level script builder methods
 
 /**
- * @returns {Script} a new Multisig output script for given public keys,
- * requiring m of those public keys to spend
- * @param {PublicKey[]} publicKeys - list of all public keys controlling the output
- * @param {number} threshold - amount of required signatures to spend the output
- * @param {Object=} opts - Several options:
- *        - noSorting: defaults to false, if true, don't sort the given
- *                      public keys before creating the script
+ * @description creates a multisig output script for given public keys, requiring m signatures to spend
+ * @param {PublicKey[]} publicKeys list of all public keys controlling the output
+ * @param {Number} threshold amount of required signatures to spend the output
+ * @param {Object} [opts] optional parameters
+ * @param {Boolean} [opts.noSorting] if set, no sorting is applied to public keys when building the script
+ * @returns {Script}
  */
-Script.buildMultisigOut = function(publicKeys, threshold, opts) {
-  $.checkArgument(threshold <= publicKeys.length,
-    'Number of required signatures must be less than or equal to the number of public keys');
-  opts = opts || {};
-  var script = new Script();
+Script.buildMultisigOut = function(publicKeys, threshold, opts = {}) {
+  $.checkArgument(
+    threshold <= publicKeys.length,
+    'Number of required signatures must be less than or equal to the number of public keys'
+  );
+
+  const script = new Script();
+
+  // add opcode for the threshold to script
   script.add(Opcode.smallInt(threshold));
-  publicKeys = publicKeys.map(PublicKey);
-  var sorted = publicKeys;
+
+  // add pubkey buffers to script
+  let pubKeys = publicKeys.map(PublicKey);
   if (!opts.noSorting) {
-    sorted = publicKeys.sort((a, b) => a.toString('hex') > b.toString('hex'));
+    pubKeys = pubKeys.sort((a, b) => a.toString() > b.toString());
   }
-  for (var i = 0; i < sorted.length; i++) {
-    var publicKey = sorted[i];
-    script.add(publicKey.toBuffer());
+  for (let pubKey of pubKeys) {
+    script.add(pubKey.toBuffer());
   }
-  script.add(Opcode.smallInt(publicKeys.length));
+
+  // add opcode for the number of keys to script
+  script.add(Opcode.smallInt(pubKeys.length));
+
+  // add opcode for multisig check to script
   script.add(Opcode.OP_CHECKMULTISIG);
+
   return script;
 };
 
@@ -828,11 +836,11 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
   opts = opts || {};
   var s = new Script();
   s.add(Opcode.OP_0);
-  signatures.forEach(function(signature) {
-    $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
+  for (let signature of signatures) {
     // TODO: allow signatures to be an array of Signature objects
+    $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     s.add(signature);
-  });
+  }
   return s;
 };
 
@@ -855,11 +863,11 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
   opts = opts || {};
   var s = new Script();
   s.add(Opcode.OP_0);
-  signatures.forEach(function(signature) {
-    $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
+  for (let signature of signatures) {
     // TODO: allow signatures to be an array of Signature objects
+    $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     s.add(signature);
-  });
+  }
   s.add((opts.cachedMultisig || Script.buildMultisigOut(pubkeys, threshold, opts)).toBuffer());
   return s;
 };
@@ -870,7 +878,7 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
  * @param {(Address|PublicKey)} to - destination address or public key
  */
 Script.buildPublicKeyHashOut = function(to) {
-  $.checkArgument(typeof to !== 'undefined');
+  $.checkArgument(to !== undefined);
   $.checkArgument(to instanceof PublicKey || to instanceof Address || typeof to === 'string');
   if (to instanceof PublicKey) {
     to = to.toAddress();
@@ -893,7 +901,7 @@ Script.buildPublicKeyHashOut = function(to) {
  * @param {(Address|PublicKey)} to - destination address
  */
 Script.buildWitnessV0Out = function(to) {
-  $.checkArgument(typeof to !== 'undefined');
+  $.checkArgument(to !== undefined);
   $.checkArgument(to instanceof PublicKey || to instanceof Address || typeof to === 'string');
   if (to instanceof PublicKey) {
     to = to.toAddress(null, Address.PayToWitnessPublicKeyHash);
@@ -925,13 +933,13 @@ Script.buildPublicKeyOut = function(pubkey) {
  * @param {(string)} encoding - the type of encoding of the string
  */
 Script.buildDataOut = function(data, encoding) {
-  $.checkArgument(typeof data === 'undefined' || typeof data === 'string' || BufferUtil.isBuffer(data));
+  $.checkArgument(data === undefined || typeof data === 'string' || BufferUtil.isBuffer(data));
   if (typeof data === 'string') {
     data = Buffer.from(data, encoding);
   }
   var s = new Script();
   s.add(Opcode.OP_RETURN);
-  if (typeof data !== 'undefined') {
+  if (data !== undefined) {
     s.add(data);
   }
   return s;
@@ -1181,28 +1189,23 @@ Script.prototype._decodeOP_N = function(opcode) {
 };
 
 /**
- * Comes from bitcoind's script GetSigOpCount(boolean) function
- * @param {boolean} use current (true) or pre-version-0.6 (false) logic
+ * @description Comes from bitcoind's script GetSigOpCount(boolean) function
+ * @param {boolean} accurate use current (true) or pre-version-0.6 (false) logic
  * @returns {number} number of signature operations required by this script
  */
 Script.prototype.getSignatureOperationsCount = function(accurate = true) {
-  var self = this;
-  var n = 0;
-  var lastOpcode = Opcode.OP_INVALIDOPCODE;
-  self.chunks.forEach(function getChunk(chunk) {
-    var opcode = chunk.opcodenum;
+  return this.chunks.reduce(({ n, lastOpcode }, { opcodenum: opcode }) => {
     if (opcode == Opcode.OP_CHECKSIG || opcode == Opcode.OP_CHECKSIGVERIFY) {
       n++;
     } else if (opcode == Opcode.OP_CHECKMULTISIG || opcode == Opcode.OP_CHECKMULTISIGVERIFY) {
       if (accurate && lastOpcode >= Opcode.OP_1 && lastOpcode <= Opcode.OP_16) {
-        n += self._decodeOP_N(lastOpcode);
+        n += this._decodeOP_N(lastOpcode);
       } else {
         n += 20;
       }
     }
-    lastOpcode = opcode;
-  });
-  return n;
+    return { n, lastOpcode: opcode };
+  }, { n: 0, lastOpcode: OP_INVALIDOPCODE });
 };
 
 module.exports = Script;

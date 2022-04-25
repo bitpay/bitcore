@@ -36,7 +36,7 @@ Script.fromBitcoindString = function(str) {
       var cbuf = Buffer.from(tstr);
       tbuf = Script().add(cbuf).toBuffer();
       bw.write(tbuf);
-    } else if (typeof Opcode['OP_' + token] !== 'undefined') {
+    } else if (Opcode['OP_' + token] !== undefined) {
       opstr = 'OP_' + token;
       opcodenum = Opcode[opstr];
       bw.writeUInt8(opcodenum);

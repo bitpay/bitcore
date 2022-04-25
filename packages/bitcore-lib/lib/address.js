@@ -333,9 +333,9 @@ Address.createMultisig = function(publicKeys, threshold, network, nestedWitness,
     throw new TypeError('Type must be either scripthash or witnessscripthash to create multisig.');
   }
   if (nestedWitness || type === Address.PayToWitnessScriptHash) {
-    publicKeys = publicKeys.map(PublicKey);
-    for (var i = 0; i < publicKeys.length; i++) {
-      if (!publicKeys[i].compressed) {
+    publicKeys = publicKeys.map(pubKey => PublicKey(pubKey));
+    for (let { compressed } of publicKeys) {
+      if (!compressed) {
         throw new TypeError('Witness addresses must use compressed public keys.');
       }
     }

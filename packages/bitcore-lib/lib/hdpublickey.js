@@ -236,7 +236,7 @@ HDPublicKey.getSerializedError = function(data, network) {
   if (data.length !== HDPublicKey.DataSize) {
     return new hdErrors.InvalidLength(data);
   }
-  if (typeof network !== 'undefined') {
+  if (network !== undefined) {
     var error = HDPublicKey._validateNetwork(data, network);
     if (error) {
       return error;

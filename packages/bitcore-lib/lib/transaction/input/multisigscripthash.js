@@ -19,14 +19,16 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
+function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts = {}) {
   /* jshint maxstatements:20 */
-  opts = opts || {};
   Input.apply(this, arguments);
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.publicKeys = opts.noSorting ? pubkeys : pubkeys.sort((a, b) => a.toString('hex') > b.toString('hex'));
+  if (!opts.noSorting) {
+    pubkeys.sort((a, b) => a.toString('hex') > b.toString('hex'));
+  }
+  this.publicKeys = pubkeys;
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold, opts);
   var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
   if (nested.equals(this.output.script)) {
@@ -48,7 +50,7 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
     this.setScript(scriptSig);
   }
 
-  this.publicKeyIndex = this.publicKeys.reduce((keyIndex, publicKey, index) => keyIndex[publicKey.toString()] = index, {});
+  this.publicKeyIndex = this.publicKeys.reduce((keyIndex, publicKey, index) => ({ ...keyIndex, [publicKey.toString()]: index }), {});
   this.threshold = threshold;
   // Empty array of signatures
   this.signatures = signatures ? this._deserializeSignatures(signatures) : new Array(this.publicKeys.length);
