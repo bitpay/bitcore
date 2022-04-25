@@ -22,12 +22,7 @@ function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  if (opts.noSorting) {
-    this.publicKeys = pubkeys
-  } else  {
-    // TODO: replace lodash ref
-    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
-  }
+  this.publicKeys = opts.noSorting ? pubkeys : pubkeys.sort((a, b) => a.toString('hex') > b.toString('hex'));
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),
     'Provided public keys don\'t match to the provided output script');
   this.publicKeyIndex = {};
@@ -79,7 +74,7 @@ MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index,
 
 MultiSigInput.prototype.addSignature = function(transaction, signature, signingMethod) {
   $.checkState(!this.isFullySigned(), 'All needed signatures have already been added');
-  $.checkArgument(this.publicKeyIndex[signature.publicKey.toString()], 'Signature has no matching public key');
+  $.checkArgument(this.publicKeyIndex[signature.publicKey.toString()] !== undefined, 'Signature has no matching public key');
   $.checkState(this.isValidSignature(transaction, signature, signingMethod), "Invalid Signature");
   this.signatures[this.publicKeyIndex[signature.publicKey.toString()]] = signature;
   this._updateScript();

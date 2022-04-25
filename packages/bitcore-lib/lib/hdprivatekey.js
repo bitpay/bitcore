@@ -352,7 +352,7 @@ HDPrivateKey.fromString = function(arg) {
 };
 
 HDPrivateKey.fromObject = function(arg) {
-  $.checkArgument(typeof arg === 'object', 'No valid argument was provided');
+  $.checkArgument(typeof arg === 'object' || arg === null, 'No valid argument was provided');
   return new HDPrivateKey(arg);
 };
 

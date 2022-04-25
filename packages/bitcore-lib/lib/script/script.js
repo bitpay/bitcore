@@ -1,7 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
-
 var Address = require('../address');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');
@@ -789,10 +787,7 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
   publicKeys = publicKeys.map(PublicKey);
   var sorted = publicKeys;
   if (!opts.noSorting) {
-    // TODO: replace lodash ref
-    sorted = _.sortBy(publicKeys, function(publicKey) {
-      return publicKey.toString('hex');
-    });
+    sorted = publicKeys.sort((a, b) => a.toString('hex') > b.toString('hex'));
   }
   for (var i = 0; i < sorted.length; i++) {
     var publicKey = sorted[i];

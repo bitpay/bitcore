@@ -98,14 +98,12 @@ function addNetwork(data) {
     });
   }
 
-  Object.values(network).forEach(function(value) {
+  for (let value of Object.values(network)) {
     if (!['undefined', 'object'].includes(typeof value)) {
-      if (!networkMaps[value]) {
-        networkMaps[value] = [];
-      }
+      networkMaps[value] = networkMaps[value] || [];
       networkMaps[value].push(network);
     }
-  });
+  }
 
   networks.push(network);
 

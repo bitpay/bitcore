@@ -59,7 +59,7 @@ function MerkleBlock(arg) {
   } else {
     throw new TypeError('Unrecognized argument for MerkleBlock');
   }
-  Object.assign(this,info);
+  Object.assign(this, info);
   this._flagBitsUsed = 0;
   this._hashesUsed = 0;
 

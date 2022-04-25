@@ -4,7 +4,6 @@
 /* jshint latedef: false */
 var should = require('chai').should();
 var expect = require('chai').expect;
-var _ = require('lodash');
 var sinon = require('sinon');
 
 var bitcore = require('../..');
@@ -16,7 +15,6 @@ var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var Interpreter = bitcore.Script.Interpreter;
 var Address = bitcore.Address;
-var Networks = bitcore.Networks;
 var Opcode = bitcore.Opcode;
 var errors = bitcore.errors;
 
@@ -131,7 +129,7 @@ describe('Transaction', function() {
   });
 
   it('fromObject with pay-to-public-key previous outputs', function() {
-    var tx = bitcore.Transaction({
+    var tx = new Transaction({
       hash: '132856bf03d6415562a556437d22ac63c37a4595fd986c796eb8e02dc031aa25',
       version: 1,
       inputs: [
@@ -159,7 +157,7 @@ describe('Transaction', function() {
       ],
       nLockTime: 139
     });
-    tx.inputs[0].should.be.instanceof(bitcore.Transaction.Input.PublicKey);
+    tx.inputs[0].should.be.instanceof(Transaction.Input.PublicKey);
     tx.inputs[0].output.satoshis.should.equal(5000000000);
     tx.inputs[0].output.script.toHex().should.equal('2103b1c65d65f1ff3fe145a4ede692460ae0606671d04e8449e99dd11c66ab55a7feac');
   });
@@ -509,84 +507,64 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.equal(10000);
     });
-    it('fee per kb can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
-        utxo.outputIndex = i;
-        return utxo;
+    describe('inputs', function() {
+      let transaction;
+      let inputs = [];
+
+      before(function() {
+        for (let i = 0; i < 10; i++) {
+          inputs.push({ ...simpleUtxoWith100000Satoshis, outputIndex: i })
+        }
       });
-      var transaction = new Transaction()
-        .from(inputs)
-        .to(toAddress, 950000)
-        .feePerKb(8000)
-        .change(changeAddress)
-        .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
-      transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(37584);
-    });
-    it('fee per byte (low fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
-        utxo.outputIndex = i;
-        return utxo;
+      
+      beforeEach(function() {
+        transaction = (new Transaction()).from(inputs).change(changeAddress);
       });
-      var transaction = new Transaction()
-        .from(inputs)
-        .to(toAddress, 950000)
-        .feePerByte(1)
-        .change(changeAddress)
-        .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
-      transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(48001, 49000);
-    });
-    it('fee per byte (high fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
-        utxo.outputIndex = i;
-        return utxo;
+
+      it('fee per kb can be set up manually', function() {
+        transaction
+          .to(toAddress, 950000)
+          .feePerKb(8000)
+          .sign(privateKey);
+        transaction._estimateSize().should.be.within(1000, 1999);
+        transaction.outputs.length.should.equal(2);
+        transaction.outputs[1].satoshis.should.equal(37584);
       });
-      var transaction = new Transaction()
-        .from(inputs)
-        .to(toAddress, 950000)
-        .feePerByte(2)
-        .change(changeAddress)
-        .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
-      transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(46002, 48000);
-    });
-    it('fee per byte can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
-        utxo.outputIndex = i;
-        return utxo;
+      it('fee per byte (low fee) can be set up manually', function () {
+        transaction
+          .to(toAddress, 950000)
+          .feePerByte(1)
+          .sign(privateKey);
+        transaction._estimateSize().should.be.within(1000, 1999);
+        transaction.outputs.length.should.equal(2);
+        transaction.outputs[1].satoshis.should.be.within(48001, 49000);
       });
-      var transaction = new Transaction()
-        .from(inputs)
-        .to(toAddress, 950000)
-        .feePerByte(13)
-        .change(changeAddress)
-        .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
-      transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(24013, 37000);
-    });
-    it('fee per byte not enough for change', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
-        utxo.outputIndex = i;
-        return utxo;
+      it('fee per byte (high fee) can be set up manually', function () {
+        transaction
+          .to(toAddress, 950000)
+          .feePerByte(2)
+          .sign(privateKey);
+        transaction._estimateSize().should.be.within(1000, 1999);
+        transaction.outputs.length.should.equal(2);
+        transaction.outputs[1].satoshis.should.be.within(46002, 48000);
       });
-      var transaction = new Transaction()
-        .from(inputs)
-        .to(toAddress, 999999)
-        .feePerByte(1)
-        .change(changeAddress)
-        .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
-      transaction.outputs.length.should.equal(1);
+      it('fee per byte can be set up manually', function () {
+        transaction
+          .to(toAddress, 950000)
+          .feePerByte(13)
+          .sign(privateKey);
+        transaction._estimateSize().should.be.within(1000, 1999);
+        transaction.outputs.length.should.equal(2);
+        transaction.outputs[1].satoshis.should.be.within(24013, 37000);
+      });
+      it('fee per byte not enough for change', function () {
+        transaction
+          .to(toAddress, 999999)
+          .feePerByte(1)
+          .sign(privateKey);
+        transaction._estimateSize().should.be.within(1000, 1999);
+        transaction.outputs.length.should.equal(1);
+      });
     });
     it('if satoshis are invalid', function() {
       var transaction = new Transaction()
@@ -1202,9 +1180,9 @@ describe('Transaction', function() {
       transaction.outputs[3].should.equal(out1);
     });
 
+    // TODO: make this actually test something
     it('allows the user to randomize the output order', function() {
-      var shuffle = sinon.stub(_, 'shuffle');
-      shuffle.onFirstCall().returns([out2, out1, out4, out3]);
+      sinon.stub(_, 'shuffle').returns([out2, out1, out4, out3]);
 
       transaction._changeIndex.should.equal(3);
       transaction.shuffleOutputs();
@@ -1316,6 +1294,12 @@ describe('Transaction', function() {
     });
 
     describe('bitcoinjs fixtures', function() {
+      before(function() {
+        sinon.stub(Input.prototype, 'clearSignatures');
+      });
+      after(function() {
+        Input.prototype.clearSignatures.restore();
+      });
 
       var fixture = require('../data/bip69.json');
 
@@ -1335,7 +1319,6 @@ describe('Transaction', function() {
               script: new Script(),
               output: new Output({ script: new Script(), satoshis: 0 })
             });
-            input.clearSignatures = function () {};
             return input;
           });
           tx.inputs = inputSet.inputs;
@@ -1834,8 +1817,8 @@ describe('Transaction', function() {
           var flags;
           var check;
           var interpreter;
-          var output1 = bitcore.Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000017a9147b615f35c476c8f3c555b4d52e54760b2873742f8700000000');
-          var input2 = bitcore.Transaction('01000000000101eefb67109c118e958d81f3f98638d48bc6c14eae97cedfce7c397eabb92b4e320000000017160014eff6eebd0dcd3923ca3ab3ea57071fa82ea1faa5ffffffff010100000000000000000247304402200ed4fa4bc8fbae2d1e88bbe8691b21233c23770e5eebf9767853de8579f5790a022015cb3f3dc88720199ee1ed5a9f4cf3186a29a0c361512f03b648c9998b3da7b4014104dfaee8168fe5d1ead2e0c8bb12e2d3ba500ade4f6c4983f3dbe5b70ffeaca1551d43c6c962b69fb8d2f4c02faaf1d4571aae7bbd209df5f3b8cd153e60e1627300000000');
+          var output1 = Transaction('01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff01010000000000000017a9147b615f35c476c8f3c555b4d52e54760b2873742f8700000000');
+          var input2 = Transaction('01000000000101eefb67109c118e958d81f3f98638d48bc6c14eae97cedfce7c397eabb92b4e320000000017160014eff6eebd0dcd3923ca3ab3ea57071fa82ea1faa5ffffffff010100000000000000000247304402200ed4fa4bc8fbae2d1e88bbe8691b21233c23770e5eebf9767853de8579f5790a022015cb3f3dc88720199ee1ed5a9f4cf3186a29a0c361512f03b648c9998b3da7b4014104dfaee8168fe5d1ead2e0c8bb12e2d3ba500ade4f6c4983f3dbe5b70ffeaca1551d43c6c962b69fb8d2f4c02faaf1d4571aae7bbd209df5f3b8cd153e60e1627300000000');
           var scriptPubkey = output1.outputs[0].script;
           var scriptSig = input2.inputs[0].script;
           var witnesses = input2.inputs[0].getWitnesses();
