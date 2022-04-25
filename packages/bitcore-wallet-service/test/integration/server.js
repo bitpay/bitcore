@@ -9872,7 +9872,8 @@ describe('Wallet service', function() {
     it('should start an asynchronous scan', function(done) {
       server.startScan({}, function(err, ret) {
         should.not.exist(err);
-        should.not.exist(ret);
+        should.exist(ret);
+        ret.should.deep.equal({ started: true });
         return done();
       });
     });

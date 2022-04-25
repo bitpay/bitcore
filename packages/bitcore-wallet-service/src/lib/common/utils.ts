@@ -1,5 +1,6 @@
 import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
+import { logger } from '../logger';
 
 const $ = require('preconditions').singleton();
 const bitcore = require('bitcore-lib');
@@ -72,6 +73,7 @@ export class Utils {
       }
       return publicKeyBuffer;
     } catch (e) {
+      logger.error('_tryImportPublicKey encountered an error.', e);
       return false;
     }
   }
@@ -87,6 +89,7 @@ export class Utils {
       // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
       return secp256k1.signatureImport(signatureBuffer);
     } catch (e) {
+      logger.error('_tryImportSignature encountered an error.', e);
       return false;
     }
   }
@@ -101,6 +104,7 @@ export class Utils {
       // return ECDSA.verify(hash, bitcoreSig, bitcorePubKey);
       return secp256k1.ecdsaVerify(sig, hash, publicKeyBuffer);
     } catch (e) {
+      logger.error('_tryVerifyMessage encountered an error.', e);
       return false;
     }
   }
