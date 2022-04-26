@@ -73,7 +73,7 @@ describe('Bulk Client', function () {
         done();
     });
 
-    describe('getBalanceAll', () => {
+    describe('getStatusAll', () => {
         var k;
 
         beforeEach(done => {
@@ -83,7 +83,7 @@ describe('Bulk Client', function () {
             });
         });
 
-        it('returns wallets with balance info when getBalanceAll is called', done => {
+        it('returns multiple wallets when getStatusAll is called with multiple sets of credentials', done => {
             clients[0].fromString(
                 k.createCredentials(null, {
                     coin: 'btc',
@@ -95,21 +95,16 @@ describe('Bulk Client', function () {
 
             helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
                 const credentials = Array(3).fill(clients[0].credentials);
-
-                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
+                clients[0].bulkClient.getStatusAll(credentials, (err, wallets) => {
                     should.not.exist(err);
-                    wallets.every(wallet => {
-                        return wallet.balance.totalAmount.should.equal(0) &&
-                        wallet.balance.availableAmount.should.equal(0) &&
-                        wallet.balance.lockedAmount.should.equal(0);
-                    }).should.equal(true);
+                    wallets.length.should.equal(3);
                     done();
                 });
             });
 
         });
 
-        it('returns multiple wallets when getBalanceAll is called with multiple clients', done => {
+        it('returns wallets with status when getStatusAll is called', done => {
             clients[0].fromString(
                 k.createCredentials(null, {
                     coin: 'btc',
@@ -121,9 +116,14 @@ describe('Bulk Client', function () {
 
             helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
                 const credentials = Array(3).fill(clients[0].credentials);
-                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
+                
+                clients[0].bulkClient.getStatusAll(credentials,(err, wallets) => {
                     should.not.exist(err);
-                    wallets.length.should.equal(3);
+                    wallets.every(wallet => {
+                        return wallet.status.balance.totalAmount.should.equal(0) &&
+                        wallet.status.balance.availableAmount.should.equal(0) &&
+                        wallet.status.balance.lockedAmount.should.equal(0);
+                    }).should.equal(true);
                     done();
                 });
             });
@@ -143,7 +143,7 @@ describe('Bulk Client', function () {
             helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
                 const credentials = Array(3).fill(clients[0].credentials);
                 credentials[0].requestPrivKey = '3da1b53f027ed856bb1922dde7438f91309a59fa1a3aaf7f64dd7f46a258c73c';
-                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
+                clients[0].bulkClient.getStatusAll(credentials, (err, wallets) => {
                     should.exist(err);
                     should.not.exist(wallets);
                     done();
@@ -164,7 +164,7 @@ describe('Bulk Client', function () {
             helpers.createAndJoinWallet(clients, keys, 1, 3, {}, () => {
                 const credentials = Array(3).fill(clients[0].credentials);
                 credentials[0].copayerId = 'badCopayerId';
-                clients[0].bulkClient.getBalanceAll(credentials, (err, wallets) => {
+                clients[0].bulkClient.getStatusAll(credentials, (err, wallets) => {
                     should.exist(err);
                     should.not.exist(wallets);
                     done();

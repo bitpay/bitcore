@@ -53,16 +53,40 @@ export class BulkClient extends Request {
   // * Get wallet balance for all wallets
   // *
   // * @param {credentials} { requestPrivKey: string, copayerIds: string[] }
+  // * @param {Object} opts { includeExtendedInfo: boolean, twoStep: boolean, wallets: { :copayerId: { tokenAddress: string, multisigContractAddress: string} } }
   // * @param {Callback} cb
   // */
-  getBalanceAll(credentials, cb) {
-    // parse out all of the credentials from each of the clients
+  getStatusAll(credentials, opts, cb) {
+    if (!cb) {
+      cb = opts;
+      opts = {};
+    }
+
     this.setCredentials(credentials);
 
+    var qs = [];
+    qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
+    qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
+    qs.push('serverMessageArray=1');
+
+    let wallets = opts.wallets;
+    if (wallets) {
+      Object.keys(wallets).forEach(copayerId => {
+        if (wallets[copayerId].tokenAddress) {
+          qs.push(`${copayerId}[tokenAddress]=` + wallets[copayerId].tokenAddress);
+        }
+  
+        if (wallets[copayerId].multisigContractAddress) {
+          qs.push(`${copayerId}[multisigContractAddress]=` + wallets[copayerId].multisigContractAddress);
+          qs.push(`${copayerId}[network]=` + this.credentials.find(cred => cred.copayerId == copayerId).network);
+        }
+      });
+    }
+
     this.checkStateOfMultipleCredentials(
-      'Failed state: this.credentials at <getBalanceAll()>'
+      'Failed state: this.credentials at <getStatusAll()>'
     );
 
-    return this.get('/v1/balance/all/', cb);
+    return this.get('/v1/wallets/all/?' + qs.join('&'), cb);
   }
 }

@@ -41,7 +41,7 @@ export class ExpressApp {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'x-signature,x-identity,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
+        'x-signature,x-identity,x-identities,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
       );
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
@@ -446,6 +446,48 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/wallets/all/', async (req, res) => {
+      let responses;
+
+      const buildOpts = (req) => {
+        const copayerId = req.headers['x-identity'];
+        const opts = {
+          includeExtendedInfo: req.query.includeExtendedInfo == '1',
+          twoStep: req.query.twoStep == '1',
+          includeServerMessages: req.query.serverMessageArray == '1',
+          tokenAddress: req.query[copayerId] ? req.query[copayerId].tokenAddress : null,
+          multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
+          network: req.query[copayerId] ? req.query[copayerId].network : null
+        };
+        return opts;
+      }
+
+      try {
+        responses = await Promise.all(
+          getServerWithMultiAuth(req, res).map(promise =>
+            promise.then(
+              (server: any) =>
+                new Promise(resolve =>
+                  server.getStatus(buildOpts(req), (err, status) =>
+                    resolve({
+                      walletId: server.walletId,
+                      success: true,
+                      ...(err ? { success: false, message: err.message } : {}),
+                      status
+                    })
+                  )
+                ),
+              ({ message }) => Promise.resolve({ success: false, error: message })
+            )
+          )
+        );
+      } catch (err) {
+        return returnError(err, res, req);
+      }
+
+      return res.json(responses);
+    });
+
     router.get('/v1/wallets/:identifier/', (req, res) => {
       getServerWithAuth(
         req,
@@ -772,41 +814,6 @@ export class ExpressApp {
           res.json(balance);
         });
       });
-    });
-
-    router.get('/v1/balance/all/', async (req, res) => {
-      let responses;
-
-      const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};
-      if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.twoStep == '1') opts.twoStep = true;
-      if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-      if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
-
-      try {
-        responses = await Promise.all(
-          getServerWithMultiAuth(req, res).map(promise =>
-            promise.then(
-              (server: any) =>
-                new Promise(resolve =>
-                  server.getBalance(opts, (err, balance) =>
-                    resolve({
-                      walletId: server.walletId,
-                      status: 'success',
-                      ...(err ? { status: 'error', message: err.message } : {}),
-                      balance
-                    })
-                  )
-                ),
-              ({ message }) => Promise.resolve({ status: 'error', error: message })
-            )
-          )
-        );
-      } catch (err) {
-        return returnError(err, res, req);
-      }
-
-      return res.json(responses);
     });
 
     let estimateFeeLimiter;
