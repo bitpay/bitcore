@@ -449,7 +449,7 @@ export class ExpressApp {
     router.get('/v1/wallets/all/', async (req, res) => {
       let responses;
 
-      const buildOpts = (req) => {
+      const buildOpts = req => {
         const copayerId = req.headers['x-identity'];
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
@@ -460,7 +460,7 @@ export class ExpressApp {
           network: req.query[copayerId] ? req.query[copayerId].network : null
         };
         return opts;
-      }
+      };
 
       try {
         responses = await Promise.all(

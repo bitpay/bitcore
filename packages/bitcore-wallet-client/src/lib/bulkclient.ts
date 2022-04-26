@@ -73,12 +73,20 @@ export class BulkClient extends Request {
     if (wallets) {
       Object.keys(wallets).forEach(copayerId => {
         if (wallets[copayerId].tokenAddress) {
-          qs.push(`${copayerId}[tokenAddress]=` + wallets[copayerId].tokenAddress);
+          qs.push(
+            `${copayerId}[tokenAddress]=` + wallets[copayerId].tokenAddress
+          );
         }
-  
+
         if (wallets[copayerId].multisigContractAddress) {
-          qs.push(`${copayerId}[multisigContractAddress]=` + wallets[copayerId].multisigContractAddress);
-          qs.push(`${copayerId}[network]=` + this.credentials.find(cred => cred.copayerId == copayerId).network);
+          qs.push(
+            `${copayerId}[multisigContractAddress]=` +
+              wallets[copayerId].multisigContractAddress
+          );
+          qs.push(
+            `${copayerId}[network]=` +
+              this.credentials.find(cred => cred.copayerId == copayerId).network
+          );
         }
       });
     }
