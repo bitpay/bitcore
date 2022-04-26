@@ -5,7 +5,6 @@ var inherits = require('util').inherits;
 var bitcore = require('bitcore-lib');
 var utils = require('../utils');
 var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
 var BufferUtil = bitcore.util.buffer;
 var BufferReader = bitcore.encoding.BufferReader;
 
@@ -20,7 +19,7 @@ function PingMessage(arg, options) {
   Message.call(this, options);
   this.command = 'ping';
   $.checkArgument(
-    _.isUndefined(arg) || (BufferUtil.isBuffer(arg) && arg.length === 8),
+    arg === undefined || (BufferUtil.isBuffer(arg) && arg.length === 8),
     'First argument is expected to be an 8 byte buffer'
   );
   this.nonce = arg || utils.getNonce();

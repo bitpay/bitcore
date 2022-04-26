@@ -4,7 +4,6 @@ var Message = require('../message');
 var inherits = require('util').inherits;
 var bitcore = require('bitcore-lib');
 var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
 
 /**
  * @param {Transaction=} arg - An instance of Transaction
@@ -17,7 +16,7 @@ function TransactionMessage(arg, options) {
   this.command = 'tx';
   this.Transaction = options.Transaction;
   $.checkArgument(
-    _.isUndefined(arg) || arg instanceof this.Transaction,
+    arg === undefined || arg instanceof this.Transaction,
     'An instance of Transaction or undefined is expected'
   );
   this.transaction = arg;

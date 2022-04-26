@@ -5,7 +5,6 @@ var inherits = require('util').inherits;
 var bitcore = require('bitcore-lib');
 var utils = require('../utils');
 var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 
@@ -19,11 +18,13 @@ function AddrMessage(arg, options) {
   Message.call(this, options);
   this.command = 'addr';
   $.checkArgument(
-    _.isUndefined(arg) ||
-      (Array.isArray(arg) &&
-       !_.isUndefined(arg[0].services) &&
-       !_.isUndefined(arg[0].ip) &&
-       !_.isUndefined(arg[0].port)),
+    arg === undefined ||
+      (
+        Array.isArray(arg) &&
+        arg[0].services &&
+        arg[0].ip &&
+        arg[0].port
+      ),
     'First argument is expected to be an array of addrs'
   );
   this.addresses = arg;

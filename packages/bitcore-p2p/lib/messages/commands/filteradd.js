@@ -8,7 +8,6 @@ var BufferUtil = bitcore.util.buffer;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var BufferReader = bitcore.encoding.BufferReader;
 var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
 
 /**
  * Request peer to add data to a bloom filter already set by 'filterload'
@@ -21,7 +20,7 @@ function FilteraddMessage(arg, options) {
   Message.call(this, options);
   this.command = 'filteradd';
   $.checkArgument(
-    _.isUndefined(arg) || BufferUtil.isBuffer(arg),
+    arg === undefined || BufferUtil.isBuffer(arg),
     'First argument is expected to be a Buffer or undefined'
   );
   this.data = arg || BufferUtil.EMPTY_BUFFER;

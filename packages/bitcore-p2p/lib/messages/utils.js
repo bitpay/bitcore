@@ -3,15 +3,14 @@
 var bitcore = require('bitcore-lib');
 var BufferUtil = bitcore.util.buffer;
 var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
 var utils;
 
 module.exports = utils = {
   checkInventory: function(arg) {
     $.checkArgument(
-      _.isUndefined(arg) ||
+      arg === undefined ||
         (Array.isArray(arg) && arg.length === 0) ||
-        (Array.isArray(arg) && !_.isUndefined(arg[0].type) && !_.isUndefined(arg[0].hash)),
+        (Array.isArray(arg) && arg[0] && arg[0].type && arg[0].hash),
       'Argument is expected to be an array of inventory objects'
     );
   },
@@ -33,7 +32,7 @@ module.exports = utils = {
     }
   },
   writeAddr: function writeAddr(addr, bw) {
-    if (_.isUndefined(addr)) {
+    if (!addr) {
       var pad = new Buffer(Array(26));
       bw.write(pad);
       return;
@@ -81,12 +80,12 @@ module.exports = utils = {
   sanitizeStartStop: function sanitizeStartStop(obj) {
     /* jshint maxcomplexity: 10 */
     /* jshint maxstatements: 20 */
-    $.checkArgument(_.isUndefined(obj.starts) || _.isArray(obj.starts));
+    $.checkArgument(!obj.starts || Array.isArray(obj.starts));
     var starts = obj.starts;
     var stop = obj.stop;
     if (starts) {
       starts = starts.map(function(hash) {
-        if (_.isString(hash)) {
+        if (typeof hash === 'string') {
           return BufferUtil.reverse(new Buffer(hash, 'hex'));
         } else {
           return hash;
@@ -103,7 +102,7 @@ module.exports = utils = {
     }
 
     stop = obj.stop;
-    if (_.isString(stop)) {
+    if (typeof stop === 'string') {
       stop = BufferUtil.reverse(new Buffer(stop, 'hex'));
     }
     if (!stop) {

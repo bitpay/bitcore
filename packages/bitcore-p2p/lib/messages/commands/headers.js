@@ -6,7 +6,6 @@ var bitcore = require('bitcore-lib');
 var utils = require('../utils');
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
-var _ = bitcore.deps._;
 var $ = bitcore.util.preconditions;
 
 /**
@@ -24,7 +23,7 @@ function HeadersMessage(arg, options) {
   this.BlockHeader = options.BlockHeader;
   this.command = 'headers';
   $.checkArgument(
-    _.isUndefined(arg) || (Array.isArray(arg) && arg[0] instanceof this.BlockHeader),
+    arg === undefined || (Array.isArray(arg) && arg[0] instanceof this.BlockHeader),
     'First argument is expected to be an array of BlockHeader instances'
   );
   this.headers = arg;
