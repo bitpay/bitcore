@@ -53,7 +53,7 @@ function PrivateKey(data, network) {
   if (!info.bn.lt(Point.getN())) {
     throw new TypeError('Number must be less than N');
   }
-  if (typeof(info.network) === 'undefined') {
+  if (!info.network) {
     throw new TypeError('Must specify the network ("livenet" or "testnet")');
   }
 

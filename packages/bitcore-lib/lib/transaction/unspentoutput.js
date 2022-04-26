@@ -29,7 +29,7 @@ function UnspentOutput(data) {
   if (!(this instanceof UnspentOutput)) {
     return new UnspentOutput(data);
   }
-  $.checkArgument(typeof data === 'object', 'Must provide an object from where to extract data');
+  $.checkArgument(JSUtil.isObject(data), 'Must provide an object from where to extract data');
   var address = data.address ? new Address(data.address) : undefined;
   var txId = data.txid ? data.txid : data.txId;
   if (!txId || !JSUtil.isHexaString(txId) || txId.length > 64) {
@@ -40,10 +40,10 @@ function UnspentOutput(data) {
   if (typeof outputIndex !== 'number') {
     throw new Error('Invalid outputIndex, received ' + outputIndex);
   }
-  $.checkArgument(data.scriptPubKey !== 'undefined' || typeof data.script !== undefined,
+  $.checkArgument(data.scriptPubKey !== undefined || data.script !== undefined,
                   'Must provide the scriptPubKey for that output!');
   var script = new Script(data.scriptPubKey || data.script);
-  $.checkArgument(data.amount !== 'undefined' || typeof data.satoshis !== undefined,
+  $.checkArgument(data.amount !== undefined || data.satoshis !== undefined,
                       'Must provide an amount for the output');
   var amount = data.amount !== undefined ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
   $.checkArgument(typeof amount === 'number', 'Amount must be a number');

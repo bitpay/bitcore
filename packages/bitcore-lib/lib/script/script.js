@@ -37,7 +37,7 @@ var Script = function Script(from) {
     return Script.fromBuffer(from.toBuffer());
   } else if (typeof from === 'string') {
     return Script.fromString(from);
-  } else if (typeof from === 'object' && Array.isArray(from.chunks)) {
+  } else if (JSUtil.isObject(from) && Array.isArray(from.chunks)) {
     this.set(from);
   }
 };
@@ -46,7 +46,7 @@ Script.VERIFY_TAPROOT = (1 << 17);
 
 
 Script.prototype.set = function(obj) {
-  $.checkArgument(typeof obj === 'object');
+  $.checkArgument(JSUtil.isObject(obj));
   $.checkArgument(Array.isArray(obj.chunks));
   this.chunks = obj.chunks;
   return this;
@@ -791,7 +791,7 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts = {}) {
   // add pubkey buffers to script
   let pubKeys = publicKeys.map(PublicKey);
   if (!opts.noSorting) {
-    pubKeys = pubKeys.sort((a, b) => a.toString() > b.toString());
+    JSUtil.sort(pubKeys);
   }
   for (let pubKey of pubKeys) {
     script.add(pubKey.toBuffer());
@@ -1193,8 +1193,8 @@ Script.prototype._decodeOP_N = function(opcode) {
  * @param {boolean} accurate use current (true) or pre-version-0.6 (false) logic
  * @returns {number} number of signature operations required by this script
  */
-Script.prototype.getSignatureOperationsCount = function(accurate = true) {
-  return this.chunks.reduce(({ n, lastOpcode }, { opcodenum: opcode }) => {
+ Script.prototype.getSignatureOperationsCount = function(accurate = true) {
+  const { n: opsCount } = this.chunks.reduce(({ n, lastOpcode }, { opcodenum: opcode }) => {
     if (opcode == Opcode.OP_CHECKSIG || opcode == Opcode.OP_CHECKSIGVERIFY) {
       n++;
     } else if (opcode == Opcode.OP_CHECKMULTISIG || opcode == Opcode.OP_CHECKMULTISIGVERIFY) {
@@ -1205,7 +1205,8 @@ Script.prototype.getSignatureOperationsCount = function(accurate = true) {
       }
     }
     return { n, lastOpcode: opcode };
-  }, { n: 0, lastOpcode: OP_INVALIDOPCODE });
+  }, { n: 0, lastOpcode: Opcode.OP_INVALIDOPCODE });
+  return opsCount;
 };
 
 module.exports = Script;

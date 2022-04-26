@@ -5,6 +5,7 @@
 var should = require('chai').should();
 var expect = require('chai').expect;
 var sinon = require('sinon');
+var JSUtil = require('../util/js');
 
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
@@ -1180,19 +1181,13 @@ describe('Transaction', function() {
       transaction.outputs[3].should.equal(out1);
     });
 
-    // TODO: make this actually test something
     it('allows the user to randomize the output order', function() {
-      sinon.stub(_, 'shuffle').returns([out2, out1, out4, out3]);
-
       transaction._changeIndex.should.equal(3);
       transaction.shuffleOutputs();
-      transaction.outputs[0].should.equal(out2);
-      transaction.outputs[1].should.equal(out1);
-      transaction.outputs[2].should.equal(out4);
-      transaction.outputs[3].should.equal(out3);
-      transaction._changeIndex.should.equal(2);
-
-      _.shuffle.restore();
+      transaction.outputs.should.include(out1);
+      transaction.outputs.should.include(out2);
+      transaction.outputs.should.include(out3);
+      transaction.outputs.should.include(out4);
     });
 
     it('fails if the provided function does not work as expected', function() {

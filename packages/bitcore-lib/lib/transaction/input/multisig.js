@@ -11,6 +11,7 @@ var Signature = require('../../crypto/signature');
 var Sighash = require('../sighash');
 var PublicKey = require('../../publickey');
 var BufferUtil = require('../../util/buffer');
+var JSUtil = require('../../util/js');
 var TransactionSignature = require('../signature');
 
 /**
@@ -22,7 +23,10 @@ function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.publicKeys = opts.noSorting ? pubkeys : pubkeys.sort((a, b) => a.toString('hex') > b.toString('hex'));
+  if (!opts.noSorting) {
+    JSUtil.sort(pubkeys);
+  }
+  this.publicKeys = pubkeys;
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),
     'Provided public keys don\'t match to the provided output script');
   this.publicKeyIndex = {};
@@ -46,7 +50,7 @@ MultiSigInput.prototype._deserializeSignatures = function(signatures) {
 };
 
 MultiSigInput.prototype._serializeSignatures = function() {
-  return this.signatures.map(signature => signature ? new signature.toObject() : undefined);
+  return this.signatures.map(signature => signature ? signature.toObject() : undefined);
 };
 
 MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {

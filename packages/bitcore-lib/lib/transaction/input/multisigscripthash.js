@@ -14,6 +14,7 @@ var Sighash = require('../sighash');
 var SighashWitness = require('../sighashwitness');
 var BufferWriter = require('../../encoding/bufferwriter');
 var BufferUtil = require('../../util/buffer');
+var JSUtil = require('../../util/js');
 var TransactionSignature = require('../signature');
 
 /**
@@ -26,7 +27,7 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts = {
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
   if (!opts.noSorting) {
-    pubkeys.sort((a, b) => a.toString('hex') > b.toString('hex'));
+    JSUtil.sort(pubkeys);
   }
   this.publicKeys = pubkeys;
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold, opts);

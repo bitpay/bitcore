@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 var buffer = require('buffer');
 var compare = Buffer.compare || require('buffer-compare');
@@ -418,18 +417,17 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
 
 Transaction.prototype.fromObject = function fromObject(arg, opts) {
   /* jshint maxstatements: 20 */
-  $.checkArgument(typeof arg === 'object' || arg instanceof Transaction);
-  var self = this;
+  $.checkArgument(JSUtil.isObject(arg) || arg instanceof Transaction);
   var transaction;
   if (arg instanceof Transaction) {
     transaction = transaction.toObject();
   } else {
     transaction = arg;
   }
-  transaction.inputs.forEach(function(input) {
+  for (let input of transaction.inputs || []) {
     if (!input.output || !input.output.script) {
-      self.uncheckedAddInput(new Input(input));
-      return;
+      this.uncheckedAddInput(new Input(input));
+      continue;
     }
     var script = new Script(input.output.script);
     var txin;
@@ -444,11 +442,11 @@ Transaction.prototype.fromObject = function fromObject(arg, opts) {
     } else {
       throw new errors.Transaction.Input.UnsupportedScript(input.output.script);
     }
-    self.addInput(txin);
-  });
-  transaction.outputs.forEach(function(output) {
-    self.addOutput(new Output(output));
-  });
+    this.addInput(txin);
+  }
+  for (let output of transaction.outputs || []) {
+    this.addOutput(new Output(output));
+  }
   if (transaction.changeIndex) {
     this._changeIndex = transaction.changeIndex;
   }
@@ -611,8 +609,8 @@ Transaction.prototype._newTransaction = function() {
  */
 Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (Array.isArray(utxo)) {
-    for (let utxo of utxo) {
-      this.from(utxo, pubkeys, threshold, opts);
+    for (let u of utxo) {
+      this.from(u, pubkeys, threshold, opts);
     }
     return this;
   }
@@ -715,7 +713,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opt
  */
 Transaction.prototype.addInput = function(input, outputScript, satoshis) {
   $.checkArgumentType(input, Input, 'input');
-  if (!input.output && (outputScript === 'undefined' || typeof satoshis === undefined)) {
+  if (!input.output && (outputScript === undefined || satoshis === undefined)) {
     throw new errors.Transaction.NeedMoreInfo('Need information about the UTXO script and satoshis');
   }
   if (!input.output && outputScript && satoshis !== undefined) {
@@ -1086,13 +1084,12 @@ Transaction.prototype.sort = function() {
 
 /**
  * Randomize this transaction's outputs ordering. The shuffling algorithm is a
- * version of the Fisher-Yates shuffle, provided by lodash's _.shuffle().
+ * version of the Fisher-Yates shuffle.
  *
  * @return {Transaction} this
  */
 Transaction.prototype.shuffleOutputs = function() {
-  // TODO: replace lodash ref
-  return this.sortOutputs(_.shuffle);
+  return this.sortOutputs(JSUtil.shuffle);
 };
 
 /**
@@ -1132,7 +1129,7 @@ Transaction.prototype._newOutputOrder = function(newOutputs) {
 
   if (this._changeIndex !== undefined) {
     var changeOutput = this.outputs[this._changeIndex];
-    this._changeIndex = newOutputs.findIndex(changeOutput);
+    this._changeIndex = newOutputs.findIndex(output => output.script.toString() === changeOutput.script.toString());
   }
 
   this.outputs = newOutputs;

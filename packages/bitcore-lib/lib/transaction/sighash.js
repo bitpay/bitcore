@@ -131,7 +131,7 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, signi
  */
 function verify(transaction, signature, publicKey, inputIndex, subscript, signingMethod) {
   $.checkArgument(transaction !== undefined, 'Transaction Undefined');
-  $.checkArgument(signature !== 'undefined' && typeof signature.nhashtype !== undefined, "Signature Undefined");
+  $.checkArgument(signature !== undefined && signature.nhashtype !== undefined, "Signature Undefined");
 
   signingMethod = signingMethod || 'ecdsa';
   let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);

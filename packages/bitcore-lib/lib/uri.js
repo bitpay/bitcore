@@ -174,7 +174,7 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
   var json = {};
   for (var i = 0; i < URI.Members.length; i++) {
     var m = URI.Members[i];
-    if (this.hasOwnProperty(m) && typeof(this[m]) !== 'undefined') {
+    if (this.hasOwnProperty(m) && this[m] !== undefined) {
       json[m] = this[m].toString();
     }
   }

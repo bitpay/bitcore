@@ -392,7 +392,7 @@ HDPublicKey.fromString = function(arg) {
 };
 
 HDPublicKey.fromObject = function(arg) {
-  $.checkArgument(typeof arg === 'object', 'No valid argument was provided');
+  $.checkArgument(JSUtil.isObject(arg), 'No valid argument was provided');
   return new HDPublicKey(arg);
 };
 

@@ -52,7 +52,7 @@ Object.defineProperty(Input.prototype, 'script', {
 });
 
 Input.fromObject = function(obj) {
-  $.checkArgument(typeof obj === 'object');
+  $.checkArgument(JSUtil.isObject(obj));
   var input = new Input();
   return input._fromObject(obj);
 };
@@ -71,7 +71,7 @@ Input.prototype._fromObject = function(params) {
   this.outputIndex = params.outputIndex === undefined ? params.txoutnum : params.outputIndex;
   this.sequenceNumber = params.sequenceNumber === undefined ?
     (params.seqnum === undefined ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
-  if (params.script === 'undefined' && typeof params.scriptBuffer === undefined) {
+  if (params.script === undefined && params.scriptBuffer === undefined) {
     throw new errors.Transaction.Input.MissingScript();
   }
   this.setScript(params.scriptBuffer || params.script);
