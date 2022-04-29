@@ -6506,7 +6506,7 @@ describe('client API', function() {
                   should.not.exist(err);
                   c.length.should.equal(1);
                   let recoveryClient = c[0];
-                  recoveryClient.openWallet(err => {
+                  recoveryClient.openWallet( err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
                     recoveryClient.credentials.copayerName.should.equal(copayerName);

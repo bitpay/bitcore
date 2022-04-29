@@ -34,13 +34,14 @@ export class BulkClient extends Request {
     }
   }
 
-  checkStateOfMultipleCredentials(failureMessage) {
+  checkStateOfMultipleCredentials(failureMessage, opts) {
+    if (!opts) opts = {};
     if (this.credentials && this.credentials.length > 0) {
       $.checkState(
         this.credentials.every(cred => {
           return (
             cred &&
-            cred.isComplete() &&
+            (opts.ignoreIncomplete || cred.isComplete()) &&
             cred.requestPrivKey == this.credentials[0].requestPrivKey
           );
         }),
@@ -68,6 +69,7 @@ export class BulkClient extends Request {
     qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
     qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
     qs.push('serverMessageArray=1');
+    qs.push('silentFailure=' + (opts.silentFailure ? '1' : '0'));
 
     let wallets = opts.wallets;
     if (wallets) {
@@ -92,7 +94,8 @@ export class BulkClient extends Request {
     }
 
     this.checkStateOfMultipleCredentials(
-      'Failed state: this.credentials at <getStatusAll()>'
+      'Failed state: this.credentials at <getStatusAll()>',
+      { ignoreIncomplete: opts.ignoreIncomplete }
     );
 
     return this.get('/v1/wallets/all/?' + qs.join('&'), cb);
