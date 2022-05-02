@@ -86,7 +86,7 @@ export class ParityRPC {
   }
 
   public async getTransactionsFromBlock(blockNumber: number) {
-    console.log("traceBlock for " + blockNumber)
+    console.log('traceBlock for ' + blockNumber);
     const txs = (await this.traceBlock(blockNumber)) || [];
     return txs.map(tx => this.transactionFromParityTrace(tx));
   }

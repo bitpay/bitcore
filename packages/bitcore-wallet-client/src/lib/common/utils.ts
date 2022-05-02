@@ -25,7 +25,7 @@ const Bitcore_ = {
   xrp: Bitcore,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc,
-  rsk: Bitcore,
+  rsk: Bitcore
 };
 const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;

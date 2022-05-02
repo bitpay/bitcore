@@ -19,7 +19,7 @@ import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
 
-import { RskTransactionJSON, IRskTransaction } from '../types';
+import { IRskTransaction, RskTransactionJSON } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];

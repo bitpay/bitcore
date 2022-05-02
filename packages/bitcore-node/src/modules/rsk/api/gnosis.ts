@@ -6,7 +6,7 @@ import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainS
 import { MultisigAbi } from '../abi/multisig';
 import { RskBlockStorage } from '../models/block';
 import { RskTransactionStorage } from '../models/transaction';
-import { RSK, EventLog } from './csp';
+import { EventLog, RSK } from './csp';
 import { EthMultisigRelatedFilterTransform } from './ethMultisigTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { RskListTransactionsStream } from './transform';
@@ -22,7 +22,8 @@ interface MULTISIGTxInfo
   }> {}
 
 export class GnosisApi {
-  public gnosisFactories = { // TODO: add the ones from RSK
+  public gnosisFactories = {
+    // TODO: add the ones from RSK
     testnet: '0x2C992817e0152A65937527B774c7A99a84603045',
     mainnet: '0x6e95C8E8557AbC08b46F3c347bA06F8dC012763f'
   };

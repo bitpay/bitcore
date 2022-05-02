@@ -73,16 +73,15 @@ export class RskP2pWorker extends BaseP2PWorker<IRskBlock> {
       );
     });
     this.events.on('connected', async () => {
-      console.log("pendingTransactions")
+      console.log('pendingTransactions');
       // TODO: this should be handled in a cleaner/better way
       if (this.web3Sockets == null) {
         const provider = this.web3!.eth.currentProvider as any;
         const wsProvider = new Web3.providers.WebsocketProvider(
           provider.host
-          .replace('http://', 'ws://')
-          .replace('https://', 'wss://')
-          .replace('4444', '4445') 
-          + '/websocket'
+            .replace('http://', 'ws://')
+            .replace('https://', 'wss://')
+            .replace('4444', '4445') + '/websocket'
         );
         this.web3Sockets = new Web3(wsProvider);
       }
@@ -90,11 +89,11 @@ export class RskP2pWorker extends BaseP2PWorker<IRskBlock> {
       this.txSubscription.subscribe(async (_err, txid) => {
         if (!this.isCachedInv('TX', txid)) {
           this.cacheInv('TX', txid);
-          console.log("setupListeners getTransaction for " + txid)
+          console.log('setupListeners getTransaction for ' + txid);
           if (txid != null && txid != false) {
             const tx = (await this.web3!.eth.getTransaction(txid)) as ParityTransaction;
             if (tx) {
-              console.log(tx)
+              console.log(tx);
               await this.processTransaction(tx);
               this.events.emit('transaction', tx);
             }
@@ -240,17 +239,17 @@ export class RskP2pWorker extends BaseP2PWorker<IRskBlock> {
     const startHeight = tip ? tip.height : 0;
     const startTime = Date.now();
     try {
-      console.log("bestBlock")
-      console.log("web3 " + this.web3!)
+      console.log('bestBlock');
+      console.log('web3 ' + this.web3!);
       let bestBlock = await this.web3!.eth.getBlockNumber();
-      console.log(bestBlock.toString())
+      console.log(bestBlock.toString());
       let lastLog = 0;
       let currentHeight = tip ? tip.height : 1; // TODO: move it back to 0
       logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
       while (currentHeight <= bestBlock) {
-        console.log("Getting block " + currentHeight)
+        console.log('Getting block ' + currentHeight);
         const block = await this.getBlock(currentHeight);
-        console.log("block: " + block)
+        console.log('block: ' + block);
         if (!block) {
           await wait(1000);
           continue;
@@ -298,7 +297,7 @@ export class RskP2pWorker extends BaseP2PWorker<IRskBlock> {
   }
 
   async convertBlock(block: ParityBlock) {
-    console.log("converting block")
+    console.log('converting block');
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;

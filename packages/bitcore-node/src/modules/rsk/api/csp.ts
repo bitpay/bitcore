@@ -31,7 +31,7 @@ import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { RskBlockStorage } from '../models/block';
 import { RskTransactionStorage } from '../models/transaction';
-import { RskTransactionJSON, IRskBlock, IRskTransaction } from '../types';
+import { IRskBlock, IRskTransaction, RskTransactionJSON } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
@@ -62,28 +62,28 @@ export class RSKStateProvider extends InternalStateProvider implements IChainSta
   }
 
   async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
-    console.log("getWeb3")
-    console.log("network " + network)
+    console.log('getWeb3');
+    console.log('network ' + network);
     try {
       if (RSKStateProvider.rpcs[network]) {
-        console.log("getBlockNumber")
+        console.log('getBlockNumber');
         await RSKStateProvider.rpcs[network].web3.eth.getBlockNumber();
-        console.log("getBlockNumber 2")
+        console.log('getBlockNumber 2');
       }
     } catch (e) {
-      console.log(e)
-      console.log("catch getWeb3")
+      console.log(e);
+      console.log('catch getWeb3');
       delete RSKStateProvider.rpcs[network];
     }
     if (!RSKStateProvider.rpcs[network]) {
       console.log('making a new connection');
       const rpcConfig = { ...this.config[network].provider, chain: this.chain, currencyConfig: {} };
-      console.log("rpcConfig: ")
-      logger.info(rpcConfig)
-      console.log("config: ")
-      logger.info(this.config[network])
-      console.log("provider: ")
-      logger.info(this.config[network].provider)
+      console.log('rpcConfig: ');
+      logger.info(rpcConfig);
+      console.log('config: ');
+      logger.info(this.config[network]);
+      console.log('provider: ');
+      logger.info(this.config[network].provider);
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
       RSKStateProvider.rpcs[network] = { rpc, web3: rpc.web3 };
     }

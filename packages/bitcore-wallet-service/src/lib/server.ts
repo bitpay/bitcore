@@ -500,7 +500,7 @@ export class WalletService {
       return cb(new ClientError('Invalid combination of required copayers / total copayers'));
     }
 
-    logger.info("checking coin: " + opts.coin)
+    logger.info('checking coin: ' + opts.coin);
     opts.coin = opts.coin || Defaults.COIN;
     if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) {
       return cb(new ClientError('Invalid coin'));
