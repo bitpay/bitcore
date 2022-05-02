@@ -2525,7 +2525,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
   getNonce(opts, cb) {
-    $.checkArgument(opts.coin == 'eth', 'Invalid coin: must be "eth"');
+    $.checkArgument(opts.coin == 'eth' || opts.coin == 'rsk' || opts.coin == 'rbtc', 'Invalid coin: must be "eth" or "rsk"');
 
     var qs = [];
     qs.push(`coin=${opts.coin}`);
@@ -2943,6 +2943,8 @@ export class API extends EventEmitter {
         ['doge', 'testnet'],
         ['ltc', 'testnet'],
         ['ltc', 'livenet'],
+        ['rsk', 'livenet'],
+        ['rbtc', 'livenet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true],
         ['doge', 'livenet', true],

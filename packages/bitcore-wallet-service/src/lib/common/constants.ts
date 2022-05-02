@@ -27,7 +27,9 @@ module.exports = {
     BUSD: 'busd',
     DAI: 'dai',
     WBTC: 'wbtc',
-    SHIB: 'shib'
+    SHIB: 'shib',
+    RSK: 'rsk',
+    RBTC: 'rbtc'
   },
 
   ERC20: {
