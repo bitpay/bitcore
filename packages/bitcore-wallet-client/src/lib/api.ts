@@ -2961,10 +2961,14 @@ export class API extends EventEmitter {
           n: clonedSettings.n
         });
 
-        accountKeyCredentialIndex.push({ credentials: c, key, opts: clonedSettings });
+        accountKeyCredentialIndex.push({
+          credentials: c,
+          key,
+          opts: clonedSettings
+        });
         credBatch.push(c);
       }
-      return { credentials: credBatch, accountKeyCredentialIndex};
+      return { credentials: credBatch, accountKeyCredentialIndex };
     };
 
     const getClientsFromWallets = (err, res) => {
@@ -3060,7 +3064,10 @@ export class API extends EventEmitter {
           async.whilst(
             () => mostRecentResults.every(x => x.success),
             next => {
-              let { credentials, accountKeyCredentialIndex } = getNextBatch(k, wallet.opts);
+              let { credentials, accountKeyCredentialIndex } = getNextBatch(
+                k,
+                wallet.opts
+              );
               client.bulkClient.getStatusAll(
                 credentials,
                 {
