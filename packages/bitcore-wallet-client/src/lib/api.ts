@@ -2824,9 +2824,9 @@ export class API extends EventEmitter {
         return;
       } else {
         copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
-        keyCredentialIndex.push({ credentials: c, key, opts });
       }
 
+      keyCredentialIndex.push({ credentials: c, key, opts });
       credentials.push(c);
 
       return;
@@ -2948,20 +2948,23 @@ export class API extends EventEmitter {
     }
 
     const getNextBatch = (key, settings) => {
+      let accountKeyCredentialIndex = [];
       let credBatch = [];
       // add potential wallet account credentials
       for (let i = 0; i < 5; i++) {
         settings.account++;
+        const clonedSettings = JSON.parse(JSON.stringify(settings));
         let c = key.createCredentials(null, {
-          coin: settings.coin,
-          network: settings.network,
-          account: settings.account,
-          n: settings.n
+          coin: clonedSettings.coin,
+          network: clonedSettings.network,
+          account: clonedSettings.account,
+          n: clonedSettings.n
         });
 
+        accountKeyCredentialIndex.push({ credentials: c, key, opts: clonedSettings });
         credBatch.push(c);
       }
-      return credBatch;
+      return { credentials: credBatch, accountKeyCredentialIndex};
     };
 
     const getClientsFromWallets = (err, res) => {
@@ -3057,9 +3060,9 @@ export class API extends EventEmitter {
           async.whilst(
             () => mostRecentResults.every(x => x.success),
             next => {
-              let batch = getNextBatch(k, wallet.opts);
+              let { credentials, accountKeyCredentialIndex } = getNextBatch(k, wallet.opts);
               client.bulkClient.getStatusAll(
-                batch,
+                credentials,
                 {
                   silentFailure: true,
                   twoStep: true,
@@ -3068,7 +3071,15 @@ export class API extends EventEmitter {
                 },
                 (err, response) => {
                   mostRecentResults = response;
-                  addtFoundWallets.push(...response.filter(x => x.success));
+                  let combined = accountKeyCredentialIndex
+                    .map((x, i) => {
+                      if (response[i].success) {
+                        x.status = response[i].status;
+                        return x;
+                      }
+                    })
+                    .filter(x => x);
+                  addtFoundWallets.push(...combined);
                   next(err);
                 }
               );

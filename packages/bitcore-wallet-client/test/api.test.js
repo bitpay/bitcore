@@ -6291,7 +6291,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', done => {
+      it('should be able to gain access to two LIVENET btc 1-1 wallets from mnemonic', done => {
         let key = new Key({ seedType: 'new' });
         helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, network: 'livenet' }, () => {
           helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', key: key, network: 'livenet' }, () => {
@@ -6328,6 +6328,118 @@ describe('client API', function() {
                   });
                 }
               );
+            });
+          });
+        });
+      });
+
+      it('should be able to gain access to three btc 1-1 accounts of a single wallet from mnemonic', done => {
+        let key = new Key({ seedType: 'new' });
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 1 }, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 2 }, () => {
+              var words = keys[0].get(null, true).mnemonic;
+              var walletName = clients[0].credentials.walletName;
+              var copayerName = clients[0].credentials.copayerName;
+              clients[0].createAddress((err, addr) => {
+                should.not.exist(err);
+                should.exist(addr);
+                Client.serverAssistedImport(
+                  { words },
+                  {
+                    clientFactory: () => {
+                      return helpers.newClient(app);
+                    }
+                  },
+                  (err, k, c) => {
+                    should.not.exist(err);
+                    c.length.should.equal(3);
+                    c[0].credentials.coin.should.equal('btc');
+                    c[1].credentials.coin.should.equal('btc');
+                    c[2].credentials.coin.should.equal('btc');
+                    c[0].credentials.account.should.equal(0);
+                    c[1].credentials.account.should.equal(1);
+                    c[2].credentials.account.should.equal(2);
+                    c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                    c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                    c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+
+                    let recoveryClient = c[2];
+                    recoveryClient.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient.credentials.walletName.should.equal(walletName);
+                      recoveryClient.credentials.copayerName.should.equal(copayerName);
+                      recoveryClient.getMainAddresses({}, (err, list) => {
+                        should.not.exist(err);
+                        should.exist(list);
+                        list[0].address.should.equal(addr.address);
+                        done();
+                      });
+                    });
+                  }
+                );
+              });
+            });
+          });
+        });
+      });
+
+      it('should be able to gain access to seven btc 1-1 accounts of a single wallet from mnemonic', done => {
+        let key = new Key({ seedType: 'new' });
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 1 }, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 2 }, () => {
+              helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 3 }, () => {
+                helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 4 }, () => {
+                  helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 5 }, () => {
+                    helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 6 }, () => {
+                      var words = keys[0].get(null, true).mnemonic;
+                      var walletName = clients[0].credentials.walletName;
+                      var copayerName = clients[0].credentials.copayerName;
+                      clients[0].createAddress((err, addr) => {
+                        should.not.exist(err);
+                        should.exist(addr);
+                        Client.serverAssistedImport(
+                          { words },
+                          {
+                            clientFactory: () => {
+                              return helpers.newClient(app);
+                            }
+                          },
+                          (err, k, c) => {
+                            should.not.exist(err);
+                            c.length.should.equal(7);
+                            // check the following data on each of the clients
+                            for (let i = 0; i < c.length; i++) {
+                              c[i].credentials.coin.should.equal('btc');
+                              c[i].credentials.account.should.equal(i);
+                            }
+                            // make sure only one client has each copayerId
+                            c.every(client => {
+                              let copayerId = client.credentials.copayerId;
+                              return c.filter(x => x.credentials.copayerId === copayerId).length === 1;
+                            }).should.equal(true);
+                            
+
+                            let recoveryClient = c[6];
+                            recoveryClient.openWallet(err => {
+                              should.not.exist(err);
+                              recoveryClient.credentials.walletName.should.equal(walletName);
+                              recoveryClient.credentials.copayerName.should.equal(copayerName);
+                              recoveryClient.getMainAddresses({}, (err, list) => {
+                                should.not.exist(err);
+                                should.exist(list);
+                                list[0].address.should.equal(addr.address);
+                                done();
+                              });
+                            });
+                          }
+                        );
+                      });
+                    });
+                  });
+                });
+              });
             });
           });
         });
