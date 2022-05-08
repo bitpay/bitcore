@@ -673,41 +673,7 @@ curl -v localhost:3000/api/BTC/mainnet/wallet/02870d8366cf8e50f383e38e5fafc01d95
 
 </details>
 
-### Get Wallet UTXOS
 
-GET `/api/BTC/mainnet/wallet/:pubKey/utxos`
-
-<details>
-<summary><b>Response</b></summary>
-<br>
-
-<b>Use Curl command in terminal to get a response</b>
-
-```sh
-curl -v localhost:3000/api/BTC/mainnet/wallet/02870d8366cf8e50f383e38e5fafc01d956b67f25fbf5c1dd4e3766cf85acbc400/addresses/missing
-```
-
-```json
-[
-    {
-        "_id": "5c34b36069d5562c2fc45b09",
-        "chain": "BTC",
-        "network": "mainnet",
-        "coinbase": false,
-        "mintIndex": 1,
-        "spentTxid": "",
-        "mintTxid": "828ef3b079f9c23829c56fe86e85b4a69d9e06e5b54ea597eef5fb3ffef509fe",
-        "mintHeight": 248,
-        "spentHeight": -2,
-        "address": "12cbQLTFMXRnSzktFkuoG3eHoMeFtpTu3S",
-        "script": "410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b412a3ac",
-        "value": 1800000000,
-        "confirmations": 103006
-    }
-]
-```
-
-</details>
 
 ## Fee
 
