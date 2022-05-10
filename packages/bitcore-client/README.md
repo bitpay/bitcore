@@ -129,3 +129,6 @@ See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
 Copyright 2013-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+
+
+./wallet-create --name myregtestwallet --chain BCH --network regtest --baseUrl http://localhost:3000/api
