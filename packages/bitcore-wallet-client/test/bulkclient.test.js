@@ -116,7 +116,6 @@ describe('Bulk Client', function () {
 
             helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
                 const credentials = Array(3).fill(clients[0].credentials);
-                
                 clients[0].bulkClient.getStatusAll(credentials,(err, wallets) => {
                     should.not.exist(err);
                     wallets.every(wallet => {
@@ -127,7 +126,50 @@ describe('Bulk Client', function () {
                     done();
                 });
             });
+        });
 
+        it('returns eth wallet and token wallet when getStatusAll is called', done => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
+                let walletOptions = {
+                    [clients[0].credentials.copayerId]: {
+                        tokenAddresses: [
+                            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+                        ]
+                    }
+                };
+
+                clients[0].bulkClient.getStatusAll([clients[0].credentials], { includeExtendedInfo: true, twoStep: true, wallets: walletOptions }, (err, wallets) => {
+                    should.not.exist(err);
+                    wallets.length.should.equal(2);
+                    wallets.findIndex(wallet => wallet.tokenAddress === null).should.be.above(-1);
+                    wallets.findIndex(wallet => wallet.tokenAddress === '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48').should.be.above(-1);
+
+                    done();
+                });
+            });
+        });
+
+        it('returns eth wallet and multiple token wallets when getStatusAll is called', done => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
+                let walletOptions = {
+                    [clients[0].credentials.copayerId]: {
+                        tokenAddresses: [
+                            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                            '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+                        ]
+                    }
+                };
+
+                clients[0].bulkClient.getStatusAll([clients[0].credentials], { includeExtendedInfo: true, twoStep: true, wallets: walletOptions }, (err, wallets) => {
+                    should.not.exist(err);
+                    wallets.length.should.equal(3);
+                    wallets.findIndex(wallet => wallet.tokenAddress === null).should.be.above(-1);
+                    wallets.findIndex(wallet => wallet.tokenAddress === '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48').should.be.above(-1);
+                    wallets.findIndex(wallet => wallet.tokenAddress === '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd').should.be.above(-1);
+
+                    done();
+                });
+            });
         });
 
         it('fails gracefully when given bad signature', done => {
