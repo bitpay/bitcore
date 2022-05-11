@@ -456,7 +456,11 @@ export class ExpressApp {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
-          tokenAddresses: req.query[copayerId] ? Array.isArray(req.query[copayerId].tokenAddress) ? req.query[copayerId].tokenAddress : [req.query[copayerId].tokenAddress] : null,
+          tokenAddresses: req.query[copayerId]
+            ? Array.isArray(req.query[copayerId].tokenAddress)
+              ? req.query[copayerId].tokenAddress
+              : [req.query[copayerId].tokenAddress]
+            : null,
           multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
           network: req.query[copayerId] ? req.query[copayerId].network : null
         };
@@ -473,32 +477,38 @@ export class ExpressApp {
                   if (options.tokenAddresses) {
                     // add a null entry to array so we can get the chain balance
                     options.tokenAddresses.unshift(null);
-                    return async.concat(options.tokenAddresses, (tokenAddress, cb) => {
-                      let optsClone = JSON.parse(JSON.stringify(options));
-                      optsClone.tokenAddresses = null;
-                      optsClone.tokenAddress = tokenAddress;
-                      return server.getStatus(optsClone, (err, status) => {
-                        let result: any = {
+                    return async.concat(
+                      options.tokenAddresses,
+                      (tokenAddress, cb) => {
+                        let optsClone = JSON.parse(JSON.stringify(options));
+                        optsClone.tokenAddresses = null;
+                        optsClone.tokenAddress = tokenAddress;
+                        return server.getStatus(optsClone, (err, status) => {
+                          let result: any = {
+                            walletId: server.walletId,
+                            tokenAddress: optsClone.tokenAddress,
+                            success: true,
+                            ...(err ? { success: false, message: err.message } : {}),
+                            status
+                          };
+                          cb(err, result);
+                        });
+                      },
+                      (err, result) => {
+                        return resolve(result);
+                      }
+                    );
+                  } else {
+                    return server.getStatus(options, (err, status) => {
+                      return resolve([
+                        {
                           walletId: server.walletId,
-                          tokenAddress: optsClone.tokenAddress,
+                          tokenAddress: null,
                           success: true,
                           ...(err ? { success: false, message: err.message } : {}),
                           status
                         }
-                        cb(err, result);
-                      });
-                    }, (err, result) => {
-                      return resolve(result);
-                    });
-                  } else {
-                    return server.getStatus(options, (err, status) => {
-                      return resolve([{
-                        walletId: server.walletId,
-                        tokenAddress: null,
-                        success: true,
-                        ...(err ? { success: false, message: err.message } : {}),
-                        status
-                      }]);
+                      ]);
                     });
                   }
                 }),

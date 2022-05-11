@@ -74,12 +74,10 @@ export class BulkClient extends Request {
       Object.keys(wallets).forEach(copayerId => {
         if (wallets[copayerId].tokenAddresses) {
           wallets[copayerId].tokenAddresses.forEach(address => {
-            qs.push(
-              `${copayerId}[tokenAddress]=` + address
-            );
-          })
+            qs.push(`${copayerId}[tokenAddress]=` + address);
+          });
         }
-      
+
         if (wallets[copayerId].multisigContractAddress) {
           qs.push(
             `${copayerId}[multisigContractAddress]=` +
