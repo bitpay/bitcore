@@ -41,7 +41,7 @@ export class ExpressApp {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'x-signature,x-identity,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
+        'x-signature,x-identity,x-identities,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
       );
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
@@ -108,6 +108,10 @@ export class ExpressApp {
     const router = express.Router();
 
     const returnError = (err, res, req) => {
+      // make sure headers have not been sent as this leads to an uncaught error
+      if (res.headersSent) {
+        return;
+      }
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
@@ -227,6 +231,43 @@ export class ExpressApp {
 
         return cb(server);
       });
+    };
+
+    /**
+     * @description process simultaneous requests based on multiple identities that have the same key, hence, the same signature
+     * @param {Request} req
+     * @param {Response} res
+     * @param {Object} opts
+     * @returns Array<Promise>
+     */
+    const getServerWithMultiAuth = (req, res, opts = {}) => {
+      const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
+      const signature = req.headers['x-signature'];
+      if (!identities || !signature) {
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+      }
+
+      if (!Array.isArray(identities)) {
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+      }
+
+      // return a list of promises that we can await or chain
+      return identities.map(
+        id =>
+          new Promise((resolve, reject) =>
+            getServerWithAuth(
+              Object.assign(req, {
+                headers: {
+                  ...req.headers,
+                  'x-identity': id
+                }
+              }),
+              res,
+              opts,
+              server => (server ? resolve(server) : reject(server))
+            )
+          )
+      );
     };
 
     let createWalletLimiter;
@@ -403,6 +444,48 @@ export class ExpressApp {
           res.json(status);
         });
       });
+    });
+
+    router.get('/v1/wallets/all/', async (req, res) => {
+      let responses;
+
+      const buildOpts = req => {
+        const copayerId = req.headers['x-identity'];
+        const opts = {
+          includeExtendedInfo: req.query.includeExtendedInfo == '1',
+          twoStep: req.query.twoStep == '1',
+          includeServerMessages: req.query.serverMessageArray == '1',
+          tokenAddress: req.query[copayerId] ? req.query[copayerId].tokenAddress : null,
+          multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
+          network: req.query[copayerId] ? req.query[copayerId].network : null
+        };
+        return opts;
+      };
+
+      try {
+        responses = await Promise.all(
+          getServerWithMultiAuth(req, res).map(promise =>
+            promise.then(
+              (server: any) =>
+                new Promise(resolve =>
+                  server.getStatus(buildOpts(req), (err, status) =>
+                    resolve({
+                      walletId: server.walletId,
+                      success: true,
+                      ...(err ? { success: false, message: err.message } : {}),
+                      status
+                    })
+                  )
+                ),
+              ({ message }) => Promise.resolve({ success: false, error: message })
+            )
+          )
+        );
+      } catch (err) {
+        return returnError(err, res, req);
+      }
+
+      return res.json(responses);
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {

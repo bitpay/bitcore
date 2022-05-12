@@ -4,6 +4,7 @@ import * as CWC from 'crypto-wallet-core';
 import { EventEmitter } from 'events';
 import _ from 'lodash';
 import sjcl from 'sjcl';
+import { BulkClient } from './bulkclient';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 import { Key } from './key';
@@ -46,6 +47,7 @@ export class API extends EventEmitter {
   logLevel: any;
   supportStaffWalletId: any;
   request: any;
+  bulkClient: any;
   credentials: any;
   notificationIncludeOwn: boolean;
   lastNotificationId: any;
@@ -84,6 +86,11 @@ export class API extends EventEmitter {
     this.bp_partner_version = opts.bp_partner_version;
 
     this.request = new Request(opts.baseUrl || BASE_URL, {
+      r: opts.request,
+      supportStaffWalletId: opts.supportStaffWalletId
+    });
+
+    this.bulkClient = new BulkClient(opts.baseUrl || BASE_URL, {
       r: opts.request,
       supportStaffWalletId: opts.supportStaffWalletId
     });
