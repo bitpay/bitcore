@@ -1,3 +1,4 @@
+import * as async from 'async';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
@@ -449,13 +450,16 @@ export class ExpressApp {
     router.get('/v1/wallets/all/', async (req, res) => {
       let responses;
 
-      const buildOpts = req => {
-        const copayerId = req.headers['x-identity'];
+      const buildOpts = (req, copayerId) => {
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
-          tokenAddress: req.query[copayerId] ? req.query[copayerId].tokenAddress : null,
+          tokenAddresses: req.query[copayerId]
+            ? Array.isArray(req.query[copayerId].tokenAddress)
+              ? req.query[copayerId].tokenAddress
+              : [req.query[copayerId].tokenAddress]
+            : null,
           multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
           network: req.query[copayerId] ? req.query[copayerId].network : null
         };
@@ -467,16 +471,46 @@ export class ExpressApp {
           getServerWithMultiAuth(req, res).map(promise =>
             promise.then(
               (server: any) =>
-                new Promise(resolve =>
-                  server.getStatus(buildOpts(req), (err, status) =>
-                    resolve({
-                      walletId: server.walletId,
-                      success: true,
-                      ...(err ? { success: false, message: err.message } : {}),
-                      status
-                    })
-                  )
-                ),
+                new Promise(resolve => {
+                  let options: any = buildOpts(req, server.copayerId);
+                  if (options.tokenAddresses) {
+                    // add a null entry to array so we can get the chain balance
+                    options.tokenAddresses.unshift(null);
+                    return async.concat(
+                      options.tokenAddresses,
+                      (tokenAddress, cb) => {
+                        let optsClone = JSON.parse(JSON.stringify(options));
+                        optsClone.tokenAddresses = null;
+                        optsClone.tokenAddress = tokenAddress;
+                        return server.getStatus(optsClone, (err, status) => {
+                          let result: any = {
+                            walletId: server.walletId,
+                            tokenAddress: optsClone.tokenAddress,
+                            success: true,
+                            ...(err ? { success: false, message: err.message } : {}),
+                            status
+                          };
+                          cb(err, result);
+                        });
+                      },
+                      (err, result) => {
+                        return resolve(result);
+                      }
+                    );
+                  } else {
+                    return server.getStatus(options, (err, status) => {
+                      return resolve([
+                        {
+                          walletId: server.walletId,
+                          tokenAddress: null,
+                          success: true,
+                          ...(err ? { success: false, message: err.message } : {}),
+                          status
+                        }
+                      ]);
+                    });
+                  }
+                }),
               ({ message }) => Promise.resolve({ success: false, error: message })
             )
           )
@@ -485,7 +519,7 @@ export class ExpressApp {
         return returnError(err, res, req);
       }
 
-      return res.json(responses);
+      return res.json(_.flatten(responses));
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {
