@@ -520,7 +520,7 @@ export class ExpressApp {
         return returnError(err, res, req);
       }
 
-      return res.json(responses.flat(1));
+      return res.json(_.flatten(responses));
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {
