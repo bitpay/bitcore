@@ -61,13 +61,14 @@ export class RskTransactionModel extends BaseTransaction<IRskTransaction> {
     this.collection.createIndex({ chain: 1, network: 1, to: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, from: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, from: 1, nonce: 1 }, { background: true, sparse: true });
-    this.collection.createIndex(
-      { chain: 1, network: 1, 'abiType.params.0.value': 1, blockTimeNormalized: 1 },
-      {
-        background: true,
-        partialFilterExpression: { 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
-      }
-    );
+    // Commented out because it conflicts with existing ETH index
+    // this.collection.createIndex(
+    //   { chain: 1, network: 1, 'abiType.params.0.value': 1, blockTimeNormalized: 1 },
+    //   {
+    //     background: true,
+    //     partialFilterExpression: { chain: 'RSK', 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
+    //   }
+    // );
     this.collection.createIndex(
       { chain: 1, network: 1, 'internal.action.to': 1 },
       {
