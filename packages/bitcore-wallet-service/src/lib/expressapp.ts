@@ -450,8 +450,7 @@ export class ExpressApp {
     router.get('/v1/wallets/all/', async (req, res) => {
       let responses;
 
-      const buildOpts = req => {
-        const copayerId = req.copayerId;
+      const buildOpts = (req, copayerId) => {
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
@@ -473,7 +472,7 @@ export class ExpressApp {
             promise.then(
               (server: any) =>
                 new Promise(resolve => {
-                  let options: any = buildOpts(req);
+                  let options: any = buildOpts(req, server.copayerId);
                   if (options.tokenAddresses) {
                     // add a null entry to array so we can get the chain balance
                     options.tokenAddresses.unshift(null);
