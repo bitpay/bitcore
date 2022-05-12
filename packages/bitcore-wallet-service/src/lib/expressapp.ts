@@ -451,7 +451,7 @@ export class ExpressApp {
       let responses;
 
       const buildOpts = req => {
-        const copayerId = req.headers['x-identity'];
+        const copayerId = req.copayerId;
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
