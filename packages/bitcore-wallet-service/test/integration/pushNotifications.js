@@ -258,7 +258,7 @@ describe('Push notifications', function() {
               calls.length.should.equal(2); // NewAdress, TxConfirmation
               should.not.exist(args[0].body.notification);
               done();
-            }, 100);
+            }, 300);
           });
         });
       });

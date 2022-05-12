@@ -378,7 +378,7 @@ describe('Email notifications', function() {
                 unsent.should.be.empty;
                 done();
               });
-            }, 100);
+            }, 300);
           });
         });
       });

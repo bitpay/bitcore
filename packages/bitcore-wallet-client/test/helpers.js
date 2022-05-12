@@ -112,7 +112,7 @@ const helpers = {
         let cred = keys[0].createCredentials(null, {
             coin: coin,
             network: network,
-            account: 0,
+            account: opts.account || 0,
             n: n,
             addressType: opts.addressType
         });
