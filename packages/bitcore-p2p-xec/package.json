@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-p2p-xec",
-  "version": "8.25.33",
+  "version": "8.25.34",
   "description": "Interface to the bitcoin P2P network for ecash",
   "author": "Viet <vince.tran8x@gmail.com>",
   "main": "index.js",
