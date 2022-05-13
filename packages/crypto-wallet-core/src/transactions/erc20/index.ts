@@ -5,6 +5,7 @@ import { ERC20Abi, MULTISENDAbi } from './abi';
 const { toBN } = Web3.utils;
 
 export class ERC20TxProvider extends ETHTxProvider {
+  // TODO: extend erc20 to RSK (not only ETH)
   getERC20Contract(tokenContractAddress: string) {
     const web3 = new Web3();
     const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], tokenContractAddress);

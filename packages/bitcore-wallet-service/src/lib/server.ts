@@ -42,6 +42,7 @@ const Bitcore_ = {
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
   xrp: Bitcore,
+  rsk: Bitcore,
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
 };
@@ -499,6 +500,7 @@ export class WalletService {
       return cb(new ClientError('Invalid combination of required copayers / total copayers'));
     }
 
+    logger.info('checking coin: ' + opts.coin);
     opts.coin = opts.coin || Defaults.COIN;
     if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) {
       return cb(new ClientError('Invalid coin'));
@@ -1172,7 +1174,7 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (wallet.coin != 'eth') {
+      if (wallet.coin != 'eth' && wallet.coin != 'rsk') {
         opts.tokenAddresses = null;
         opts.multisigEthInfo = null;
       }
@@ -2226,7 +2228,7 @@ export class WalletService {
   }
 
   getTokenContractInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTokenContractInfo(opts, (err, contractInfo) => {

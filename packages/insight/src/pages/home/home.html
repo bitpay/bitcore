@@ -13,6 +13,7 @@
                             <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" alt="BCH"/>
                             <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='DOGE'" src="assets/img/doge-logo-testnet.svg" class="logo" alt="DOGE"/>
                             <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='LTC'" src="assets/img/ltc-testnet.svg" class="logo" alt="LTC"/>
+                            <img *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='RSK'" src="assets/img/rsk-testnet.svg" class="logo" alt="RSK"/>
                           <img [ngClass]="{'secondary': availableNetwork.network ==='testnet'}" *ngIf="availableNetwork.network !== 'mainnet' && availableNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" alt="ETH"/>
                         </ion-avatar>
                         <ion-label color="dark" item-end>

@@ -12,6 +12,11 @@ export const Paths = {
     livenet: "m/44'/60'/",
     testnet: "m/44'/60'/"
   },
+  RSK: {
+    mainnet: "m/44'/137'/",
+    livenet: "m/44'/137'/",
+    testnet: "m/44'/37310'/"
+  },
   XRP: {
     mainnet: "m/44'/144'/",
     livenet: "m/44'/144'/",

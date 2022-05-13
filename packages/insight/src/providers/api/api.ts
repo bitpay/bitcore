@@ -42,7 +42,8 @@ export class ApiProvider {
     btc: 'https://bitpay.com/api/rates',
     bch: 'https://bitpay.com/api/rates/bch',
     doge: 'https://bitpay.com/api/rates/doge',
-    eth: 'https://bitpay.com/api/rates/eth'
+    eth: 'https://bitpay.com/api/rates/eth',
+    rsk: 'https://bitpay.com/api/rates/rsk'
   };
 
   public bwsUrl = {

@@ -397,7 +397,21 @@ describe('Fiat rate service', function() {
       }, {
         code: 'EUR',
         rate: 0.00003276
-      }]
+      }];
+      var rsk = [{
+        code: 'USD',
+        rate: 0.00003678
+      }, {
+        code: 'EUR',
+        rate: 0.00003276
+      }];
+      var rbtc = [{
+        code: 'USD',
+        rate: 0.00003678
+      }, {
+        code: 'EUR',
+        rate: 0.00003276
+      }];
 
       request.get.withArgs({
         url: 'https://bitpay.com/api/rates/BTC',
@@ -427,6 +441,14 @@ describe('Fiat rate service', function() {
         url: 'https://bitpay.com/api/rates/SHIB',
         json: true
       }).yields(null, null, shib);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/RSK',
+        json: true
+      }).yields(null, null, rsk);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/RBTC',
+        json: true
+      }).yields(null, null, rbtc);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -484,8 +506,24 @@ describe('Fiat rate service', function() {
                         should.not.exist(err);
                         res.fetchedOn.should.equal(100);
                         res.rate.should.equal(0.00003678);  
-                        clock.restore();
-                        done();
+                        service.getRate({
+                          code: 'USD',
+                          coin: 'rsk'
+                        }, function(err, res) {
+                          should.not.exist(err);
+                          res.fetchedOn.should.equal(100);
+                          res.rate.should.equal(0.00003678);  
+                          service.getRate({
+                            code: 'USD',
+                            coin: 'rbtc'
+                          }, function(err, res) {
+                            should.not.exist(err);
+                            res.fetchedOn.should.equal(100);
+                            res.rate.should.equal(0.00003678);  
+                            clock.restore();
+                            done();
+                          })
+                        })
                       })
                     });
                   });

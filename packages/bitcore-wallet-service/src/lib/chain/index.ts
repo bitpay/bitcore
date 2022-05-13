@@ -5,6 +5,7 @@ import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
 import { LtcChain } from './ltc';
+import { RskChain } from './rsk';
 import { XrpChain } from './xrp';
 
 const Common = require('../common');
@@ -72,7 +73,8 @@ const chain: { [chain: string]: IChain } = {
   ETH: new EthChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
-  LTC: new LtcChain()
+  LTC: new LtcChain(),
+  RSK: new RskChain()
 };
 
 class ChainProxy {
@@ -84,7 +86,7 @@ class ChainProxy {
   getChain(coin: string): string {
     let normalizedChain = coin.toUpperCase();
     if (Constants.ERC20[normalizedChain]) {
-      normalizedChain = 'ETH';
+      normalizedChain = 'ETH'; // TODO: add RSK
     }
     return normalizedChain;
   }

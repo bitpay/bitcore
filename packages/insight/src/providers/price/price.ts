@@ -24,6 +24,7 @@ export class PriceProvider {
       let ratesAPI;
       switch (this.api.getConfig().chain) {
         case 'BTC':
+        case 'RSK': // 1 RBTC = 1 BTC
           ratesAPI = this.api.ratesAPI.btc;
           break;
         case 'BCH':
