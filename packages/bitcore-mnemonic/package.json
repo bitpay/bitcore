@@ -43,11 +43,11 @@
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "@abcpros/bitcore-lib": "^8.25.31",
+    "@abcpros/bitcore-lib": "^8.25.32",
     "unorm": "^1.4.1"
   },
   "peerDependencies": {
-    "@abcpros/bitcore-lib": "^8.25.10"
+    "@abcpros/bitcore-lib": "^8.25.32"
   },
   "publishConfig": {
     "access": "public"
