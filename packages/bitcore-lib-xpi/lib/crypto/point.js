@@ -82,7 +82,7 @@ if (!Point.prototype._getX)
  *
  * @returns {BN} A BN instance of the X coordinate
  */
-Point.getX = function getX() {
+Point.prototype.getX = function getX() {
   return new BN(this._getX().toArray());
 };
 
@@ -95,7 +95,7 @@ if (!Point.prototype._getY)
  *
  * @returns {BN} A BN instance of the Y coordinate
  */
-Point.getY = function getY() {
+Point.prototype.getY = function getY() {
   return new BN(this._getY().toArray());
 };
 
