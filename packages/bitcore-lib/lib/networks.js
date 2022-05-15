@@ -131,7 +131,11 @@ function removeNetwork(network) {
   for (var key in networkMaps) {
     const index = networkMaps[key].indexOf(network);
     if (index >= 0) {
-      delete networkMaps[key][index];
+      if (networkMaps[key].length == 1) {
+        delete networkMaps[key];
+      } else {
+        networkMaps[key].splice(index, 1);
+      }
     }
   }
 }
