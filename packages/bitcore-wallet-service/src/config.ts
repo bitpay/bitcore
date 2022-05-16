@@ -51,7 +51,7 @@ module.exports = {
     },
     xec: {
       livenet: {
-        url: 'http://127.0.0.1:3000'
+        url: 'http://113.161.48.238:3000'
       },
       testnet: {
         url: 'http://127.0.0.1:3000'
@@ -83,7 +83,7 @@ module.exports = {
     },
     xpi: {
       livenet: {
-        url: 'http://127.0.0.1:3000'
+        url: 'http://113.161.48.238:3000'
       },
       testnet: {
         url: 'http://127.0.0.1:3000'
@@ -118,6 +118,7 @@ module.exports = {
   },
   currencyRateServiceOpts: {
     apiUrl: 'https://api.currencyapi.com/v3/latest',
+    apiKey: 'QJjwm0BtOmZyRQL6A91VETYY7R54izd53Qs2PaOy',
     fetchInterval: 180 // in minutes
   },
   maintenanceOpts: {
