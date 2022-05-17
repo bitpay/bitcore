@@ -58,7 +58,7 @@ var validCutom = Mnemonic.isValid(code, customWordlist);
 
 ## Generating a private key
 
-A mnemonic encodes entropy that can be used for creating a seed and later a [HDPrivateKey](hierarchical.md). During the seed generation process a passphrase can be used. The code for doing so looks like this:
+A mnemonic encodes entropy that can be used for creating a seed and later a [HDPrivateKey](/packages/bitcore-lib-cash/docs/hierarchical.md). During the seed generation process a passphrase can be used. The code for doing so looks like this:
 
 ```javascript
 var Mnemonic = require('bitcore-mnemonic');
