@@ -391,7 +391,7 @@ export class Wallet {
     let { tx, keys, utxos, passphrase, signingKeys } = params;
     if (!utxos) {
       utxos = [];
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         this.getUtxos()
           .pipe(new ParseApiStream())
           .on('data', utxo => utxos.push(utxo))
