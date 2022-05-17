@@ -13,6 +13,7 @@
     "clean": "rm -rf ./ts_build",
     "pub": "npm run compile && npm  publish",
     "watch": "tsc --watch",
+    "compile": "npm run clean && tsc",
     "test": "mocha ./test/unit",
     "precommit": "npm run fix && npm run lint",
     "lint": "npm run lint:ts && npm run lint:style",

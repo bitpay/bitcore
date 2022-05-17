@@ -143,11 +143,11 @@ export class Client {
     const url = `${this.apiUrl}/wallet/${pubKey}`;
     const signature = this.sign({ method: 'POST', url, payload });
 
-    return new Promise(resolve => {
+    return new Promise(async resolve => {
       let dataStream = new stream.Readable({ objectMode: true });
       dataStream
         .pipe(
-          request.post(url, {
+          await request.post(url, {
             headers: {
               'x-signature': signature,
               'content-type': 'application/octet-stream'

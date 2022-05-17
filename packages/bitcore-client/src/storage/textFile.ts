@@ -48,7 +48,7 @@ export class TextFile {
           }
         })
         .on('end', () => {
-          resolve();
+          resolve(null);
         });
     });
   }
@@ -69,7 +69,7 @@ export class TextFile {
         })
         .on('error', err => reject(err));
     });
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       const walletStream = new stream.Readable({ objectMode: true });
       for (const wallet of wallets) {
         walletStream.push(wallet);
@@ -133,7 +133,7 @@ export class TextFile {
     if (walletAlreadyExists) {
       await this.deleteWallet({ name: wallet.name });
     }
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       const walletStream = new stream.Readable({ objectMode: true });
       const writeStream = fs.createWriteStream(this.walletFileName, { flags: 'a' });
       walletStream.push(wallet);
@@ -156,7 +156,7 @@ export class TextFile {
           }
         })
         .on('end', () => {
-          resolve();
+          resolve(null);
         });
     });
   }
@@ -164,7 +164,7 @@ export class TextFile {
   async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
     const { name, key, toStore } = params;
     const objectToSave = { name, address: key.address, toStore };
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       const readStream = new stream.Readable({ objectMode: true });
       const writeStream = fs.createWriteStream(this.addressFileName, { flags: 'a' });
       readStream.push(objectToSave);
