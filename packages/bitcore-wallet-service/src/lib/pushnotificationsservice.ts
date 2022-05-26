@@ -3,12 +3,12 @@ import * as fs from 'fs';
 import _ from 'lodash';
 import 'source-map-support/register';
 
+import { ChronikClient } from 'chronik-client';
 import request from 'request';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
-import { ChronikClient } from 'chronik-client';
 
 const Mustache = require('mustache');
 const defaultRequest = require('request');
@@ -297,6 +297,7 @@ export class PushNotificationsService {
       let unit;
       let tokenId;
       let tokenName;
+      let tokenDecimals;
       if (wallet.coin != Defaults.COIN) {
         unit = wallet.coin;
       }
@@ -314,6 +315,7 @@ export class PushNotificationsService {
             tokenId = tokenInfo?.id;
             unit = tokenInfo?.symbol;
             tokenName = tokenInfo?.name;
+            tokenDecimals = tokenInfo?.decimals;
           });
           notification.data.amount = txDetail.outputs['1'].slpToken.amount.low || null;
           notification.data.tokenId = tokenId || null;
@@ -353,7 +355,8 @@ export class PushNotificationsService {
               language: p.language || this.defaultLanguage,
               unit: unit || p.unit || this.defaultUnit,
               tokenId: tokenId || null,
-              tokenName: tokenName || null
+              tokenName: tokenName || null,
+              tokenDecimals: tokenDecimals || null
             };
           })
         );
@@ -440,8 +443,11 @@ export class PushNotificationsService {
             throw new Error('Notifications for unsupported token are not allowed');
           }
         }
-        if (recipient.tokenId) {
-          data.amount = (data.amount / 100000) + ' ' + label;
+        if (recipient.tokenId && recipient.tokenDecimals) {
+          const caculateAmountToken = (amount, decimals) => {
+            return amount / Math.pow(10, decimals);
+          };
+          data.amount = caculateAmountToken(data.amount, recipient.tokenDecimals) + ' ' + label;
         } else {
           data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
         }
