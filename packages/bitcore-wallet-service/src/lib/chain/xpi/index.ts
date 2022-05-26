@@ -2,10 +2,12 @@ import { BitcoreLibXpi } from '@abcpros/crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
+import { ChronikClient } from 'chronik-client';
 const config = require('../../../config');
 const Common = require('../../common');
 const Utils = Common.Utils;
 const Errors = require('../../errors/errordefinitions');
+const chronikClient = new ChronikClient("https://chronik.be.cash/xpi");
 
 export class XpiChain extends BtcChain implements IChain {
   constructor() {
@@ -23,6 +25,10 @@ export class XpiChain extends BtcChain implements IChain {
 
   getInputSizeSafetyMargin(opts: any): number {
     return 0;
+  }
+
+  getChronikClient() {
+    return chronikClient;
   }
 
   validateAddress(wallet, inaddr, opts) {

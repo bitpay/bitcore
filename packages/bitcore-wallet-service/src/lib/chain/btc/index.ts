@@ -848,6 +848,7 @@ export class BtcChain implements IChain {
     return false;
   }
   convertAddressToScriptPayload(address) {}
+  getChronikClient() {}
   getTokenInfo(tokenId) {}
   addressFromStorageTransform(network, address) {}
 

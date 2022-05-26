@@ -45,6 +45,7 @@ export interface IChain {
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
   convertAddressToScriptPayload(address: string);
+  getChronikClient();
   getTokenInfo(tokenId);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
@@ -93,6 +94,10 @@ class ChainProxy {
       normalizedChain = 'ETH';
     }
     return normalizedChain;
+  }
+
+  getChronikClient(coin) {
+    return this.get(coin).getChronikClient();
   }
 
   getWalletBalance(server, wallet, opts, cb) {

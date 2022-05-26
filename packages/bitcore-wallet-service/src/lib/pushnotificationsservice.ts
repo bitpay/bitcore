@@ -3,12 +3,12 @@ import * as fs from 'fs';
 import _ from 'lodash';
 import 'source-map-support/register';
 
-import { ChronikClient } from 'chronik-client';
 import request from 'request';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
+import { ChainService } from './chain';
 
 const Mustache = require('mustache');
 const defaultRequest = require('request');
@@ -303,21 +303,27 @@ export class PushNotificationsService {
       }
 
       if (wallet.isSlpToken) {
-        let url = _.get(config.supportToken[unit], 'chronikClientUrl', undefined);
-        if (!url) return cb(`chronik not support ${unit}`);
-        const chronikClient = new ChronikClient(url);
-        const txDetail = await chronikClient.tx(notification.data.txProposalId);
-        tokenId = await txDetail?.slpTxData?.slpMeta?.tokenId || null;
+        const chronikClient = ChainService.getChronikClient(wallet.coin);
+        const txDetail = await chronikClient.tx(notification.data.txid);
+        tokenId = txDetail?.slpTxData?.slpMeta?.tokenId || null;
         if (tokenId) {
-          await this.storage.fetchTokenInfoById(tokenId, (err, tokenInfo) => {
+          this.storage.fetchTokenInfoById(tokenId, async (err, tokenInfo) => {
             if (err) logger.error(err);
-            if (_.isEmpty(tokenInfo)) tokenInfo = [];
-            tokenId = tokenInfo?.id;
-            unit = tokenInfo?.symbol;
-            tokenName = tokenInfo?.name;
-            tokenDecimals = tokenInfo?.decimals;
+            if (_.isEmpty(tokenInfo)) {
+              const tokenInfoChronik = await chronikClient.tx(tokenId);
+              let tokenInfo = tokenInfoChronik?.slpTxData?.genesisInfo;
+              tokenId = tokenId;
+              unit = tokenInfo?.tokenTicker;
+              tokenName = tokenInfo?.tokenName;
+              tokenDecimals = tokenInfo?.decimals;
+            } else {
+              tokenId = tokenId;
+              unit = tokenInfo?.symbol;
+              tokenName = tokenInfo?.name;
+              tokenDecimals = tokenInfo?.decimals;
+            }
           });
-          notification.data.amount = txDetail.outputs['1'].slpToken.amount.low || null;
+          notification.data.amount = txDetail.outputs[1].slpToken.amount.toNumber() || null;
           notification.data.tokenId = tokenId || null;
         }
       }

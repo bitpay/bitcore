@@ -1,5 +1,4 @@
 import * as async from 'async';
-import { ChronikClient } from 'chronik-client';
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import { BlockChainExplorer } from './blockchainexplorer';
@@ -1791,12 +1790,8 @@ export class WalletService {
    */
   getTxDetail(txId, cb) {
     this.getWallet({}, async (err, wallet) => {
-      let url = _.get(config.supportToken[wallet.coin], 'chronikClientUrl', undefined);
-      if (!url) {
-        return cb(`chronik server not support ${wallet.coin}`);
-      }
       try {
-        const chronikClient = new ChronikClient(url);
+        const chronikClient = ChainService.getChronikClient(wallet.coin);
         const txDetail: any = await chronikClient.tx(txId);
         if (!txDetail) return cb('no txDetail');
         const inputAddresses = _.uniq(
@@ -1914,8 +1909,7 @@ export class WalletService {
     let scriptPayload;
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
-      const url = config.supportToken[coin].chronikClientUrl;
-      chronikClient = new ChronikClient(url);
+      chronikClient = ChainService.getChronikClient(coin);
     } catch {
       return Promise.reject('err funtion _getUxtosByChronik in aws');
     }
@@ -2959,18 +2953,16 @@ export class WalletService {
       this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
     } else {
       const coin = opts.coin;
-      let url = _.get(config.supportToken[coin], 'chronikClientUrl', undefined);
-      if (!url) return cb(`chronik not support ${coin}`);
-      const chronikClient = new ChronikClient(url);
+      const chronikClient = ChainService.getChronikClient(coin);
       this._broadcastRawTxByChronik(chronikClient, opts.rawTx, async (err, txid) => {
         if (err || !txid) {
           logger.warn(`Broadcast failed: ${err}`);
         } else {
           const extraArgs = {};
-      
+
           const data = _.assign(
             {
-              txProposalId: txid,
+              txid: txid,
               creatorId: this.copayerId ? this.copayerId : null,
               amount: null,
               message: null,
@@ -4318,11 +4310,10 @@ export class WalletService {
   }
 
   async getlastTxsByChronik(wallet, address, limit) {
-    let url = _.get(config.supportToken[wallet.coin], 'chronikClientUrl', undefined);
     let scriptPayload;
     let totalTxs;
     try {
-      const chronikClient = new ChronikClient(url);
+      const chronikClient = ChainService.getChronikClient(wallet.coin);
       scriptPayload = ChainService.convertAddressToScriptPayload(wallet.coin, address);
       const txHistoryPage = await chronikClient.script('p2pkh', scriptPayload).history(0, limit);
       return txHistoryPage.txs;
