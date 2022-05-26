@@ -8,6 +8,7 @@ import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
+import { ChronikClient } from 'chronik-client';
 
 const Mustache = require('mustache');
 const defaultRequest = require('request');
@@ -16,6 +17,7 @@ const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
+const config = require('../config');
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -215,7 +217,8 @@ export class PushNotificationsService {
                     notification_type: notification.type,
                     // coin and network are needed for NewBlock notifications
                     coin: notification?.data?.coin,
-                    network: notification?.data?.network
+                    network: notification?.data?.network,
+                    tokenId: notification?.data?.tokenId
                   }
                 };
 
@@ -287,13 +290,34 @@ export class PushNotificationsService {
   _getRecipientsList(notification, notificationType, cb) {
     if (notificationType.broadcastToActiveUsers) return cb(null, []);
 
-    this.storage.fetchWallet(notification.walletId, (err, wallet) => {
+    this.storage.fetchWallet(notification.walletId, async (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(null, []);
 
       let unit;
+      let tokenId;
+      let tokenName;
       if (wallet.coin != Defaults.COIN) {
         unit = wallet.coin;
+      }
+
+      if (wallet.isSlpToken) {
+        let url = _.get(config.supportToken[unit], 'chronikClientUrl', undefined);
+        if (!url) return cb(`chronik not support ${unit}`);
+        const chronikClient = new ChronikClient(url);
+        const txDetail = await chronikClient.tx(notification.data.txProposalId);
+        tokenId = await txDetail?.slpTxData?.slpMeta?.tokenId || null;
+        if (tokenId) {
+          await this.storage.fetchTokenInfoById(tokenId, (err, tokenInfo) => {
+            if (err) logger.error(err);
+            if (_.isEmpty(tokenInfo)) tokenInfo = [];
+            tokenId = tokenInfo?.id;
+            unit = tokenInfo?.symbol;
+            tokenName = tokenInfo?.name;
+          });
+          notification.data.amount = txDetail.outputs['1'].slpToken.amount.low || null;
+          notification.data.tokenId = tokenId || null;
+        }
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
@@ -327,7 +351,9 @@ export class PushNotificationsService {
               walletId: notification.walletId,
               copayerId: copayer.id,
               language: p.language || this.defaultLanguage,
-              unit: unit || p.unit || this.defaultUnit
+              unit: unit || p.unit || this.defaultUnit,
+              tokenId: tokenId || null,
+              tokenName: tokenName || null
             };
           })
         );
@@ -403,7 +429,7 @@ export class PushNotificationsService {
     if (data.amount) {
       try {
         let unit = recipient.unit.toLowerCase();
-        let label = UNIT_LABELS[unit];
+        let label = recipient.tokenName || UNIT_LABELS[unit];
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
           if (Constants.TOKEN_OPTS[tokenAddress]) {
@@ -414,7 +440,11 @@ export class PushNotificationsService {
             throw new Error('Notifications for unsupported token are not allowed');
           }
         }
-        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
+        if (recipient.tokenId) {
+          data.amount = (data.amount / 100000) + ' ' + label;
+        } else {
+          data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
+        }
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }

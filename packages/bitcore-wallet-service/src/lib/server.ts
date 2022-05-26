@@ -2962,7 +2962,26 @@ export class WalletService {
       let url = _.get(config.supportToken[coin], 'chronikClientUrl', undefined);
       if (!url) return cb(`chronik not support ${coin}`);
       const chronikClient = new ChronikClient(url);
-      this._broadcastRawTxByChronik(chronikClient, opts.rawTx, cb);
+      this._broadcastRawTxByChronik(chronikClient, opts.rawTx, async (err, txid) => {
+        if (err || !txid) {
+          logger.warn(`Broadcast failed: ${err}`);
+        } else {
+          const extraArgs = {};
+      
+          const data = _.assign(
+            {
+              txProposalId: txid,
+              creatorId: this.copayerId ? this.copayerId : null,
+              amount: null,
+              message: null,
+              tokenAddress: null,
+              multisigContractAddress: null,
+            },
+            extraArgs
+          );
+          this._notify('NewOutgoingTx', data, extraArgs);
+        }
+      })
     }
   }
 
