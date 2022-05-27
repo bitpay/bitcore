@@ -39,6 +39,8 @@ export class XrpChain implements IChain {
     return false;
   }
 
+  getChronikClient() {}
+
   convertAddressToScriptPayload(address) {}
   getTokenInfo(tokenId) {}
 

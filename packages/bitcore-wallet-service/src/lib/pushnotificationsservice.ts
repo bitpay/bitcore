@@ -8,6 +8,7 @@ import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
+import { ChainService } from './chain';
 
 const Mustache = require('mustache');
 const defaultRequest = require('request');
@@ -16,6 +17,7 @@ const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
+const config = require('../config');
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -215,7 +217,8 @@ export class PushNotificationsService {
                     notification_type: notification.type,
                     // coin and network are needed for NewBlock notifications
                     coin: notification?.data?.coin,
-                    network: notification?.data?.network
+                    network: notification?.data?.network,
+                    tokenId: notification?.data?.tokenId
                   }
                 };
 
@@ -287,13 +290,42 @@ export class PushNotificationsService {
   _getRecipientsList(notification, notificationType, cb) {
     if (notificationType.broadcastToActiveUsers) return cb(null, []);
 
-    this.storage.fetchWallet(notification.walletId, (err, wallet) => {
+    this.storage.fetchWallet(notification.walletId, async (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(null, []);
 
       let unit;
+      let tokenId;
+      let tokenName;
+      let tokenDecimals;
       if (wallet.coin != Defaults.COIN) {
         unit = wallet.coin;
+      }
+
+      if (wallet.isSlpToken) {
+        const chronikClient = ChainService.getChronikClient(wallet.coin);
+        const txDetail = await chronikClient.tx(notification.data.txid);
+        tokenId = txDetail?.slpTxData?.slpMeta?.tokenId || null;
+        if (tokenId) {
+          this.storage.fetchTokenInfoById(tokenId, async (err, tokenInfo) => {
+            if (err) logger.error(err);
+            if (_.isEmpty(tokenInfo)) {
+              const tokenInfoChronik = await chronikClient.tx(tokenId);
+              let tokenInfo = tokenInfoChronik?.slpTxData?.genesisInfo;
+              tokenId = tokenId;
+              unit = tokenInfo?.tokenTicker;
+              tokenName = tokenInfo?.tokenName;
+              tokenDecimals = tokenInfo?.decimals;
+            } else {
+              tokenId = tokenId;
+              unit = tokenInfo?.symbol;
+              tokenName = tokenInfo?.name;
+              tokenDecimals = tokenInfo?.decimals;
+            }
+          });
+          notification.data.amount = txDetail.outputs[1].slpToken.amount.toNumber() || null;
+          notification.data.tokenId = tokenId || null;
+        }
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
@@ -327,7 +359,10 @@ export class PushNotificationsService {
               walletId: notification.walletId,
               copayerId: copayer.id,
               language: p.language || this.defaultLanguage,
-              unit: unit || p.unit || this.defaultUnit
+              unit: unit || p.unit || this.defaultUnit,
+              tokenId: tokenId || null,
+              tokenName: tokenName || null,
+              tokenDecimals: tokenDecimals || null
             };
           })
         );
@@ -403,7 +438,7 @@ export class PushNotificationsService {
     if (data.amount) {
       try {
         let unit = recipient.unit.toLowerCase();
-        let label = UNIT_LABELS[unit];
+        let label = recipient.tokenName || UNIT_LABELS[unit];
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
           if (Constants.TOKEN_OPTS[tokenAddress]) {
@@ -414,7 +449,14 @@ export class PushNotificationsService {
             throw new Error('Notifications for unsupported token are not allowed');
           }
         }
-        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
+        if (recipient.tokenId && recipient.tokenDecimals) {
+          const caculateAmountToken = (amount, decimals) => {
+            return amount / Math.pow(10, decimals);
+          };
+          data.amount = caculateAmountToken(data.amount, recipient.tokenDecimals) + ' ' + label;
+        } else {
+          data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
+        }
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }
