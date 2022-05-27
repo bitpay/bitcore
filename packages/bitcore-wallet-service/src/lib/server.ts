@@ -2967,13 +2967,14 @@ export class WalletService {
               amount: null,
               message: null,
               tokenAddress: null,
-              multisigContractAddress: null,
+              multisigContractAddress: null
             },
             extraArgs
           );
           this._notify('NewOutgoingTx', data, extraArgs);
+          return cb(null, txid);
         }
-      })
+      });
     }
   }
 
