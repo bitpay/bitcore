@@ -39,9 +39,9 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
 import { Validation } from '@abcpros/crypto-wallet-core';
+import { CurrencyRateService } from './currencyrate';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
 import { TokenInfo } from './model/tokenInfo';
-import { CurrencyRateService } from './currencyrate';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -2967,13 +2967,14 @@ export class WalletService {
               amount: null,
               message: null,
               tokenAddress: null,
-              multisigContractAddress: null,
+              multisigContractAddress: null
             },
             extraArgs
           );
           this._notify('NewOutgoingTx', data, extraArgs);
+          return cb(null, txid);
         }
-      })
+      });
     }
   }
 
