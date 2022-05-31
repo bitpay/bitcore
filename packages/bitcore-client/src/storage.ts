@@ -52,7 +52,9 @@ export class Storage {
           this.storageType = db;
           break;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error(e);
+      }
     }
     if (!wallet) {
       return;
@@ -66,7 +68,7 @@ export class Storage {
       try {
         await db.deleteWallet({ name });
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
     }
   }
