@@ -6,6 +6,7 @@ jobs:
     machine:
       image: ubuntu-2004:202201-02
       docker_layer_caching: true
+      resource_class: large
     working_directory: ~/bitcore
     steps:
       - checkout
