@@ -25,14 +25,18 @@ Network.prototype.toString = function toString() {
  * @param {Network} network
  */
 function removeNetwork(network) {
+  const id = (Math.random() * 1e8).toFixed();
+  console.log('Removing network ' + id, data);
   for (var i = 0; i < networks.length; i++) {
     if (networks[i] === network) {
       networks.splice(i, 1);
+      console.log('removed ' + id);
     }
   }
   for (var key in networkMaps) {
     if (networkMaps[key] === network) {
       delete networkMaps[key];
+      console.log('removed ' + id);
     }
   }
 }
@@ -87,6 +91,7 @@ function get(arg, keys) {
  * @return Network
  */
 function addNetwork(data) {
+  console.log('Adding network', data);
   var network = new Network();
   JSUtil.defineImmutable(network, {
     name: data.name,
