@@ -26,7 +26,7 @@ Network.prototype.toString = function toString() {
  */
 function removeNetwork(network) {
   const id = (Math.random() * 1e8).toFixed();
-  console.log('Removing network ' + id, data);
+  console.log('Removing network ' + id, network);
   for (var i = 0; i < networks.length; i++) {
     if (networks[i] === network) {
       networks.splice(i, 1);
@@ -39,6 +39,10 @@ function removeNetwork(network) {
       console.log('removed ' + id);
     }
   }
+  console.log('has1 ' + id, get(network));
+  console.log('has2 ' + id, get(network.name));
+  console.log('has3 ' + id, get(network.alias));
+  console.log('has4 ' + id, get('customnet'));
 }
 
 /**
