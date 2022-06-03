@@ -66,6 +66,7 @@ describe('Networks', function() {
   it('can remove a custom network', function() {
     networks.remove('customnet');
     Object.keys(networks).should.not.contain('customnet');
+    should.not.exist(networks.get('customnet'));
   });
 
   it('should not set a network map for an undefined value', function() {

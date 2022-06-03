@@ -25,24 +25,24 @@ Network.prototype.toString = function toString() {
  * @param {Network} network
  */
 function removeNetwork(network) {
-  const id = (Math.random() * 1e8).toFixed();
-  console.log('Removing network ' + id, network);
+  if (typeof network !== 'object') {
+    network = get(network);
+  }
   for (var i = 0; i < networks.length; i++) {
     if (networks[i] === network) {
       networks.splice(i, 1);
-      console.log('removed ' + id);
     }
   }
   for (var key in networkMaps) {
-    if (networkMaps[key] === network) {
+    if (networkMaps[key].length) {
+      const index = networkMaps[key].indexOf(network);
+      if (index >= 0) {
+        delete networkMaps[key][index];
+      }
+    } else if (networkMaps[key] === network) {
       delete networkMaps[key];
-      console.log('removed ' + id);
     }
   }
-  console.log('has1 ' + id, get(network));
-  console.log('has2 ' + id, get(network.name));
-  console.log('has3 ' + id, get(network.alias));
-  console.log('has4 ' + id, get('customnet'));
 }
 
 /**
