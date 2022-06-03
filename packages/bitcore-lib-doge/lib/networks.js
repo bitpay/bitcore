@@ -37,7 +37,10 @@ function removeNetwork(network) {
     if (networkMaps[key].length) {
       const index = networkMaps[key].indexOf(network);
       if (index >= 0) {
-        delete networkMaps[key][index];
+        networkMaps[key].splice(index, 1);
+      }
+      if (networkMaps[key].length === 0) {
+        delete networkMaps[key];
       }
     } else if (networkMaps[key] === network) {
       delete networkMaps[key];
@@ -95,7 +98,6 @@ function get(arg, keys) {
  * @return Network
  */
 function addNetwork(data) {
-  console.log('Adding network', data);
   var network = new Network();
   JSUtil.defineImmutable(network, {
     name: data.name,

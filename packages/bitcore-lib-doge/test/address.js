@@ -58,22 +58,8 @@ describe('Address', function() {
     });
     invalidbase58.map(function(d) {
       it('should describe input ' + d[0].slice(0, 10) + '... as invalid', function() {
-        if (d[0] == '4ctAH6AkHzq5ioiM1m9T3E2hiYEev5mTsB') {
-          console.log('here');
-        }
         expect(function() {
-          try {
-            const address = new Address(d[0]);
-            if (d[0] == '4ctAH6AkHzq5ioiM1m9T3E2hiYEev5mTsB') {
-              console.log('address: ', address);
-            }
-            return address;
-          } catch (e) {
-            if (d[0] == '4ctAH6AkHzq5ioiM1m9T3E2hiYEev5mTsB') {
-              console.log('error:', e);
-            }
-            throw e;
-          }
+          return new Address(d[0]);
         }).to.throw(Error);
       });
     });
@@ -410,7 +396,6 @@ describe('Address', function() {
       it('returns the same address if the script is a pay to public key hash out', function() {
         var address = 'D77Z1nmgSZxJTmtN65n2MVF9yvLSB4MpiC';
         var script = Script.buildPublicKeyHashOut(new Address(address));
-        console.log(script);
         Address(script, Networks.livenet).toString().should.equal(address);
       });
       it('returns the same address if the script is a pay to script hash out', function() {
