@@ -7209,6 +7209,10 @@ describe('Wallet service', function() {
   describe('Check requiredFeeRate  BTC', function() {
     var server, wallet;
 
+    // some of these tests, particularly case 26, can run a bit long
+    //  and cause the ci pipeline to fail
+    this.timeout(4000);
+
     beforeEach(function(done) {
       helpers.stubFeeLevels({
         1: 40002,

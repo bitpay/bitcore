@@ -124,17 +124,27 @@ function addNetwork(data) {
  * @param {Network} network
  */
 function removeNetwork(network) {
+  if (typeof network !== 'object') {
+    network = get(network);
+  }
   for (var i = 0; i < networks.length; i++) {
     if (networks[i] === network) {
       networks.splice(i, 1);
     }
   }
   for (var key in networkMaps) {
-    if (networkMaps[key] === network) {
+    if (networkMaps[key].length) {
+      const index = networkMaps[key].indexOf(network);
+      if (index >= 0) {
+        networkMaps[key].splice(index, 1);
+      }
+      if (networkMaps[key].length === 0) {
+        delete networkMaps[key];
+      }
+    } else if (networkMaps[key] === network) {
       delete networkMaps[key];
     }
-  }
-}
+  }}
 
 addNetwork({
   name: 'livenet',
