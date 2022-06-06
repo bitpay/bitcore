@@ -77,8 +77,10 @@ export class Storage {
     let passThrough = new PassThrough();
     for (let db of this.db) {
       const listWalletStream = await db.listWallets();
-      passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => this.db.length-- === 0 && passThrough.end());
+      if (listWalletStream) {
+        passThrough = listWalletStream.pipe(passThrough, { end: false });
+        listWalletStream.once('end', () => this.db.length-- === 0 && passThrough.end());
+      }
     }
     return passThrough;
   }
@@ -87,8 +89,10 @@ export class Storage {
     let passThrough = new PassThrough();
     for (let db of this.db) {
       const listWalletStream = await db.listKeys();
-      passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => --this.db.length === 0 && passThrough.end());
+      if (listWalletStream) {
+        passThrough = listWalletStream.pipe(passThrough, { end: false });
+        listWalletStream.once('end', () => --this.db.length === 0 && passThrough.end());
+      }
     }
     return passThrough;
   }
