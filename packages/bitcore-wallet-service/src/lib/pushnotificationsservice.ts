@@ -303,7 +303,7 @@ export class PushNotificationsService {
                 (notification: any, next) => {
                   if (notification && notification.external_user_ids) {
                     this._makeBrazeRequest(notification, (err, response) => {
-                      if (err) logger.error('ERROR:' + err);
+                      if (err) logger.error('An error occurred making a braze push notification request:' + err);
                       if (response) {
                         //                      logger.debug('Request status:  ' + response.statusCode);
                         //                      logger.debug('Request message: ' + response.statusMessage);
@@ -315,7 +315,7 @@ export class PushNotificationsService {
                     // if external_user_ids is not set use old version firebase token
                   } else if (notification && notification.to) {
                     this._makeRequest(notification, (err, response) => {
-                      if (err) logger.error('ERROR:' + err);
+                      if (err) logger.error('An error occurred making a firebase push notification request:' + err);
                       if (response) {
                         //                      logger.debug('Request status:  ' + response.statusCode);
                         //                      logger.debug('Request message: ' + response.statusMessage);
