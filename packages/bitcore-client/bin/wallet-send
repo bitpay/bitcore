@@ -41,7 +41,7 @@ const main = async () => {
     if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
       nonce = await wallet.getNonce();
     }
-    const utxos = await wallet.getUtxosArray();
+    const utxos = await wallet.getUtxosArray({watchOnly: true});
     const params = {
       feeRate,
       nonce: Number(nonce),
@@ -54,7 +54,7 @@ const main = async () => {
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
-    const signedTx = await wallet.signTx({ tx, passphrase });
+    const signedTx = await wallet.signTx({ utxos, tx, passphrase });
     console.log('signedRawTx: ', signedTx);
     const confirmed = await promptly.confirm('broadcast? (y/n)');
     if (!confirmed) {

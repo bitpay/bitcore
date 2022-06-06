@@ -264,18 +264,42 @@ export class Wallet {
     });
   }
 
-  getUtxosArray(params: { includeSpent?: boolean } = {}) {
+  getUtxosArray(params: { includeSpent?: boolean, watchOnly?: boolean } = {}) {
     return new Promise((resolve, reject) => {
-      const utxoArray = [];
-      const { includeSpent = false } = params;
+      const utxoTempArray = [];
+      let utxoFinalArrayResult = undefined;
+      const { includeSpent = false, watchOnly } = params;
       const utxoRequest = this.client.getCoins({
         pubKey: this.authPubKey,
         includeSpent
       });
       utxoRequest
         .pipe(new ParseApiStream())
-        .on('data', utxo => utxoArray.push(utxo))
-        .on('end', () => resolve(utxoArray))
+        .on('data', utxo => {
+          const checkUtxoAddress = async () => {
+            if (!watchOnly) {
+              try {
+                let keyResult = await this.storage.storageType.getKey({address: utxo.address, name: this.name, });
+                if (keyResult) {
+                  utxoTempArray.push(utxo);
+                }
+              } catch (error) {
+                if (error.message.includes('Key not found in database')) {
+                  console.log('Skipping UTXOs');
+                } else {
+                  console.error(error);
+                }
+              }
+            } else {
+              utxoTempArray.push(utxo);
+            }
+            return utxoTempArray;
+          }
+          utxoFinalArrayResult = checkUtxoAddress().then((result) => {
+            return result;
+          });
+        })
+        .on('end', () => resolve(utxoFinalArrayResult))
         .on('err', err => reject(err));
     });
   }
