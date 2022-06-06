@@ -294,7 +294,7 @@ export class Wallet {
               utxoTempArray.push(utxo);
             }
             return utxoTempArray;
-          }
+          };
           utxoFinalArrayResult = checkUtxoAddress().then(result => {
             return result;
           });
