@@ -264,10 +264,10 @@ export class Wallet {
     });
   }
 
-  getUtxosArray(params: { includeSpent?: boolean, watchOnly?: boolean } = {}) {
+  getUtxosArray(params: { includeSpent?: boolean; watchOnly?: boolean } = {}) {
     return new Promise((resolve, reject) => {
       const utxoTempArray = [];
-      let utxoFinalArrayResult = undefined;
+      let utxoFinalArrayResult;
       const { includeSpent = false, watchOnly } = params;
       const utxoRequest = this.client.getCoins({
         pubKey: this.authPubKey,
@@ -279,7 +279,7 @@ export class Wallet {
           const checkUtxoAddress = async () => {
             if (!watchOnly) {
               try {
-                let keyResult = await this.storage.storageType.getKey({address: utxo.address, name: this.name, });
+                let keyResult = await this.storage.storageType.getKey({ address: utxo.address, name: this.name });
                 if (keyResult) {
                   utxoTempArray.push(utxo);
                 }
@@ -295,7 +295,7 @@ export class Wallet {
             }
             return utxoTempArray;
           }
-          utxoFinalArrayResult = checkUtxoAddress().then((result) => {
+          utxoFinalArrayResult = checkUtxoAddress().then(result => {
             return result;
           });
         })
