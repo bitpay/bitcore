@@ -1310,12 +1310,18 @@ describe('Push notifications', function() {
               should.not.exist(args[0].body.messages.apple_push.alert.body);
               should.not.exist(args[0].body.messages.android_push.alert);
               should.not.exist(args[0].body.messages.android_push.title);
+
+              should.exist(args[0].body.messages.android_push.send_to_sync);
+              should.exist(args[0].body.messages.apple_push['content-available']);
+
               args[1].body.messages.apple_push.alert.title.should.contain('New payment received');
               args[1].body.messages.apple_push.alert.body.should.contain('123,000');
               args[1].body.messages.apple_push.alert.body.should.contain('bits');
               args[1].body.messages.android_push.title.should.contain('New payment received');
               args[1].body.messages.android_push.alert.should.contain('123,000');
               args[1].body.messages.android_push.alert.should.contain('bits');
+              should.not.exist(args[1].body.messages.android_push.send_to_sync);
+              should.not.exist(args[1].body.messages.apple_push['content-available']);
 
               done();
             }, 100);
@@ -1418,12 +1424,19 @@ describe('Push notifications', function() {
               should.not.exist(args[0].body.messages.apple_push.alert.body);
               should.not.exist(args[0].body.messages.android_push.alert);
               should.not.exist(args[0].body.messages.android_push.title);
+
+              should.exist(args[0].body.messages.android_push.send_to_sync);
+              should.exist(args[0].body.messages.apple_push['content-available']);
+
               args[1].body.messages.apple_push.alert.title.should.contain('New payment received');
               args[1].body.messages.apple_push.alert.body.should.contain('123,000');
               args[1].body.messages.apple_push.alert.body.should.contain('bits');
               args[1].body.messages.android_push.title.should.contain('New payment received');
               args[1].body.messages.android_push.alert.should.contain('123,000');
               args[1].body.messages.android_push.alert.should.contain('bits');
+
+              should.not.exist(args[1].body.messages.android_push.send_to_sync);
+              should.not.exist(args[1].body.messages.apple_push['content-available']);
 
               done();
             }, 100);
@@ -1552,10 +1565,14 @@ describe('Push notifications', function() {
               should.exist(args[0].body.messages.apple_push.custom_uri);
               should.exist(args[0].body.messages.android_push.extra);
               should.exist(args[0].body.messages.android_push.custom_uri);
+              should.exist(args[0].body.messages.android_push.send_to_sync);
+              should.exist(args[0].body.messages.apple_push['content-available']);
               should.exist(args[1].body.messages.apple_push.extra);
               should.exist(args[1].body.messages.apple_push.custom_uri);
               should.exist(args[1].body.messages.android_push.extra);
               should.exist(args[1].body.messages.android_push.custom_uri);
+              should.exist(args[1].body.messages.android_push.send_to_sync);
+              should.exist(args[1].body.messages.apple_push['content-available']);
               done();
             }, 100);
           });
@@ -1666,6 +1683,13 @@ describe('Push notifications', function() {
               should.not.exist(args[2].body.messages.apple_push.alert.body);
               should.not.exist(args[2].body.messages.android_push.alert);
               should.not.exist(args[2].body.messages.android_push.title);
+
+              should.exist(args[0].body.messages.android_push.send_to_sync);
+              should.exist(args[0].body.messages.apple_push['content-available']);
+              should.exist(args[1].body.messages.android_push.send_to_sync);
+              should.exist(args[1].body.messages.apple_push['content-available']);
+              should.exist(args[2].body.messages.android_push.send_to_sync);
+              should.exist(args[2].body.messages.apple_push['content-available']);
 
               should.exist(args[0].body.messages.apple_push.extra);
               should.exist(args[0].body.messages.apple_push.custom_uri);
