@@ -4382,6 +4382,28 @@ export class WalletService {
   }
 
   /**
+   * Subscribe this copayer to the Push Notifications service using the specified token.
+   * @param {Object} opts
+   * @param {string} opts.externalUserId - The token representing the app/device. - Braze
+   * @param {string} [opts.packageName] - The restricted_package_name option associated with this token.
+   * @param {string} [opts.platform] - The platform associated with this token.
+   * @param {string} [opts.walletId] - The walletId associated with this token.
+   */
+  pushNotificationsBrazeSubscribe(opts, cb) {
+    if (!checkRequired(opts, ['externalUserId'], cb)) return;
+
+    const sub = PushNotificationSub.create({
+      copayerId: this.copayerId,
+      externalUserId: opts.externalUserId,
+      packageName: opts.packageName,
+      platform: opts.platform,
+      walletId: opts.walletId
+    });
+
+    this.storage.storePushNotificationBrazeSub(sub, cb);
+  }
+
+  /**
    * Unsubscribe this copayer to the Push Notifications service using the specified token.
    * @param {Object} opts
    * @param {string} opts.token - The token representing the app/device.
@@ -4390,6 +4412,17 @@ export class WalletService {
     if (!checkRequired(opts, ['token'], cb)) return;
 
     this.storage.removePushNotificationSub(this.copayerId, opts.token, cb);
+  }
+
+  /**
+   * Unsubscribe this copayer to the Push Notifications service using the specified token.
+   * @param {Object} opts
+   * @param {string} opts.externalUserId - The token representing the app/device. // Braze
+   */
+  pushNotificationsBrazeUnsubscribe(opts, cb) {
+    if (!checkRequired(opts, ['externalUserId'], cb)) return;
+
+    this.storage.removePushNotificationBrazeSub(this.copayerId, opts.externalUserId, cb);
   }
 
   /**
