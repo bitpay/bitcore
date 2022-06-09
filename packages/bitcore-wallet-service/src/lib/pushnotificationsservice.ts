@@ -277,7 +277,7 @@ export class PushNotificationsService {
                       }
                     }
                   };
-                  if (!notifType.dataOnly) {
+                  if (notifType.dataOnly) {
                     notificationData.messages.apple_push['content-available'] = true;
                     notificationData.messages.android_push['send_to_sync'] = true;
                   }
