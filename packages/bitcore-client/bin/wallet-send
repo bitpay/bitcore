@@ -35,8 +35,8 @@ const main = async () => {
     const scale = Math.pow(10, decimals);
     const lastAddress = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];
-    const feerate = await wallet.getNetworkFee();
-    const feeRate = JSON.parse(feerate).feerate || 20 * scale;
+    const feeRateObject = await wallet.getNetworkFee();
+    const feeRate = JSON.parse(feeRateObject).feerate || 20;
     let nonce;
     if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
       nonce = await wallet.getNonce();
@@ -50,7 +50,35 @@ const main = async () => {
       from: lastAddress,
       token
     };
-    const tx = await wallet.newTx(params);
+    let tx;
+    const txTemp = await wallet.newTx(params);
+    let utxosValueSum = 0;
+    let inputCount = 0;
+    let outputAmount = recipients[0].amount;
+    if (['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
+      for (const utxo of utxos) {
+        if (utxosValueSum < outputAmount) {
+          utxosValueSum = utxosValueSum + utxo.value;
+          inputCount += 1;
+        }
+      }
+      if (utxosValueSum < outputAmount) {
+        console.error('wallet input was not sufficient to cover the output amount');
+        process.exit(1);
+      } else {
+        const estimatedBytes = txTemp.length / 2 + inputCount * (107 + 1);
+        const estimatedFee = Math.ceil(estimatedBytes * feeRate);
+        if (estimatedFee) {
+          params.fee = estimatedFee;
+        } else {
+          console.error('Could not estimate the fee');
+          params.fee = 1e3;
+        }
+      }
+      tx = await wallet.newTx(params);
+    } else {
+      tx = txTemp;
+    }
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
