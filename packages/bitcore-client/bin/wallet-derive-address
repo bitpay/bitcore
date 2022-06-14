@@ -1,0 +1,64 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--change [change]', 'optional - should derive change addresses')
+  .option('--addressIndexes [addressIndexes]', 'optional - takes one or more indexes')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, storageType, addressIndexes } = program;
+  let { change } = program;
+  change = (change === 'true');
+  let wallet;
+  let address;
+  let addressesAndIndex = new Object();
+  let indexes = [];
+  try {
+    const password = await promptly.password('Wallet Password:');
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+    wallet = await wallet.unlock(password);
+    await wallet.register({ baseUrl: wallet.baseUrl });
+
+    if (addressIndexes) {
+      indexes = JSON.parse(addressIndexes).indexes;
+    }
+
+    for (let i = 0; i < indexes.length; i++) {
+      address = wallet.deriveAddress(indexes[i], change);
+      addressesAndIndex[indexes[i]] = address;
+
+      if (address) {
+        try {
+          await wallet.storage.getKey({ address: address, name: name, encryptionKey: wallet.encryptionKey, keepAlive: true, open: true });
+        } catch (error) {
+          if (error.message.includes('Key not found in database')) {
+            const derivedKeys = await wallet.derivePrivateKey(change, indexes[i]);
+            await wallet.storage.addKeys({ name: name, keys: derivedKeys, encryptionKey: wallet.encryptionKey });
+          } else {
+            console.error(error);
+          }
+        }
+        await wallet.client.importAddresses({ pubKey: wallet.pubKey, payload: address });
+      }
+    }
+    if (change) {
+      console.log('Change Addresses & Indexes: ', addressesAndIndex);
+    } else {
+      console.log('Addresses & Indexes: ', addressesAndIndex);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();
