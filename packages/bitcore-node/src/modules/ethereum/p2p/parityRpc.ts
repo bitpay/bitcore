@@ -1,13 +1,7 @@
-import AbiDecoder from 'abi-decoder';
 import Web3 from 'web3';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { ERC20Abi } from '../abi/erc20';
-import { ERC721Abi } from '../abi/erc721';
 import { EthTransactionStorage } from '../models/transaction';
 import { IEthTransaction } from '../types';
-
-AbiDecoder.addABI(ERC20Abi);
-AbiDecoder.addABI(ERC721Abi);
 
 if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Symbol.for('asyncIterator');
 
