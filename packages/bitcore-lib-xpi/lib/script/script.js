@@ -775,12 +775,12 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
           } else {
             s.add(Opcode(checkBitsHex));
           }
-          
+
         }
         else if (N >= 9 && N <= 16) {
           s.add(0x02);
           s.add(checkBitsHex);
-        } 
+        }
         else if (N >= 17 && N <= 20) {
           s.add(0x03);
           s.add(checkBitsHex);
@@ -788,8 +788,8 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
     } else {
       s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
     }
-  
-  
+
+
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -818,7 +818,7 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
   $.checkArgument(_.isArray(signatures));
   opts = opts || {};
   var s = new Script();
-  
+
   if (opts.signingMethod === "schnorr" && opts.checkBits) {
 
     // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
@@ -843,7 +843,7 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
       else if (N >= 9 && N <= 16) {
         s.add(0x02);
         s.add(checkBitsHex);
-      } 
+      }
       else if (N >= 17 && N <= 20) {
         s.add(0x03);
         s.add(checkBitsHex);
@@ -851,7 +851,7 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
   } else {
     s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
   }
-  
+
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -910,6 +910,21 @@ Script.buildDataOut = function(data, encoding) {
   s.add(Opcode.OP_RETURN);
   if (!_.isUndefined(data)) {
     s.add(data);
+  }
+  return s;
+};
+
+/**
+ * @returns {Script} a new OP_RETURN script with data
+ * @param {(string|Buffer)} data - the data to embed in the output
+ */
+ Script.buildOnchainMessage = function(data) {
+  $.checkArgument(_.isUndefined(data) || _.isString(data) || BufferUtil.isBuffer(data));
+  var s = new Script();
+  s.add(Opcode.OP_RETURN);
+  if (!_.isUndefined(data)) {
+    s.add( Buffer.from('02020202', 'hex'));
+    s.add( Buffer.from(data));
   }
   return s;
 };

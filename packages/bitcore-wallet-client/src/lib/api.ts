@@ -254,6 +254,11 @@ export class API extends EventEmitter {
         // TODO get copayerName from Credentials -> copayerId to copayerName
         // action.copayerName = null;
       });
+      const outputFound = _.find(txp.outputs, o => o.outputScript && o.outputScript.length > 0);
+      if(outputFound){
+        txp.messageOnchain = Utils.decryptMessageOnchain(outputFound.outputScript);
+      }
+
       _.each(txp.outputs, output => {
         output.encryptedMessage = output.message;
         output.message =

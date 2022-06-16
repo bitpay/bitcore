@@ -905,6 +905,13 @@ Transaction.prototype.addData = function(value) {
   return this;
 };
 
+Transaction.prototype.addOnchainMessage = function(value) {
+  this.addOutput(new Output({
+    script: Script.buildOnchainMessage(value),
+    satoshis: 0
+  }));
+  return this;
+};
 
 /**
  * Add an output to the transaction.
@@ -1089,7 +1096,7 @@ Transaction.prototype.removeOutput = function(index) {
 Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
       return compare(first.prevTxId, second.prevTxId)
@@ -1100,7 +1107,7 @@ Transaction.prototype.sort = function() {
   });
   this.sortOutputs(function(outputs) {
     var copy = Array.prototype.concat.apply([], outputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
@@ -1198,7 +1205,7 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  */
 Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
   signingMethod = signingMethod || "ecdsa"
-  
+
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   var self = this;
   if (_.isArray(privateKey)) {
@@ -1220,7 +1227,7 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
   var transaction = this;
   var results = [];
-  
+
   var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
   _.each(this.inputs, function forEachInput(input, index) {
     _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {
@@ -1353,7 +1360,7 @@ Transaction.prototype.isCoinbase = function() {
 
 Transaction.prototype.setVersion = function(version) {
   $.checkArgument(
-    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION, 
+    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION,
     'Wrong version number');
   this.version = version;
   return this;

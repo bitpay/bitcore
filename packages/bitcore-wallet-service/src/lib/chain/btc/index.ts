@@ -1,3 +1,4 @@
+import { Message } from './../../../../../bitcore-wallet-client/.yalc/@abcpros/bitcore-lib-xpi/index.d';
 import { BitcoreLib } from '@abcpros/crypto-wallet-core';
 import * as async from 'async';
 import _ from 'lodash';
@@ -200,7 +201,7 @@ export class BtcChain implements IChain {
   }
 
   checkDust(output) {
-    const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
+    const dustThreshold = this.bitcoreLib.Transaction.DUST_AMOUNT;
 
     if (output.amount < dustThreshold) {
       return Errors.DUST_AMOUNT;
@@ -284,8 +285,11 @@ export class BtcChain implements IChain {
     if (!outputsSize) {
       outputsSize = this.getEstimatedSizeForSingleOutput();
     }
-
-    const size = overhead + inputSize * nbInputs + outputsSize;
+    let byteMessage = 0;
+    if(txp.messageOnChain){
+      byteMessage = Buffer.from(txp.messageOnChain).length + 17;
+    }
+    const size = overhead + inputSize * nbInputs + outputsSize + byteMessage;
     return Math.ceil(size * 1 + this.getSizeSafetyMargin(opts));
   }
 
@@ -318,7 +322,6 @@ export class BtcChain implements IChain {
 
   getBitcoreTx(txp, opts = { signed: true }) {
     const t = new this.bitcoreLib.Transaction();
-
     // BTC tx version
     if (txp.version <= 3) {
       t.setVersion(1);
@@ -358,12 +361,16 @@ export class BtcChain implements IChain {
         t.from(inputs);
         break;
     }
-
+    if(txp.messageOnChain){
+      t.addOnchainMessage(txp.messageOnChain);
+    }
     _.each(txp.outputs, o => {
       $.checkState(
         o.script || o.toAddress,
         'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
       );
+      if(o.message){
+      }
       if (o.script) {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
@@ -382,34 +389,44 @@ export class BtcChain implements IChain {
       t.change(txp.changeAddress.address);
     }
 
-    // Shuffle outputs for improved privacy
-    if (t.outputs.length > 1) {
-      const outputOrder = _.reject(txp.outputOrder, (order: number) => {
-        return order >= t.outputs.length;
-      });
-      $.checkState(
-        t.outputs.length == outputOrder.length,
-        'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
-      );
-      t.sortOutputs(outputs => {
-        return _.map(outputOrder, i => {
-          return outputs[i];
-        });
-      });
+    // backup opreturnOutput for checking other output
+    let opReturnOutput = null;
+    if(txp.messageOnChain){
+      opReturnOutput = t.outputs.shift();
     }
+      // Shuffle outputs for improved privacy
+      if (t.outputs.length > 1) {
+        const outputOrder = _.reject(txp.outputOrder, (order: number) => {
+          return order >= t.outputs.length;
+        });
+        $.checkState(
+          t.outputs.length == outputOrder.length,
+          'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
+        );
+        t.sortOutputs(outputs => {
+          return _.map(outputOrder, i => {
+            return outputs[i];
+          });
+        });
+      }
 
-    // Validate actual inputs vs outputs independently of Bitcore
-    const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
-    const totalOutputs = _.sumBy(t.outputs, 'satoshis');
+      // Validate actual inputs vs outputs independently of Bitcore
+      const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
+      const totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
-    $.checkState(
-      totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
-      'Failed state: not-enough-inputs at <getBitcoreTx()>'
-    );
-    $.checkState(
-      totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
-      'Failed state: fee-too-high at <getBitcoreTx()>'
-    );
+      $.checkState(
+        totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
+        'Failed state: not-enough-inputs at <getBitcoreTx()>'
+      );
+      $.checkState(
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
+        'Failed state: fee-too-high at <getBitcoreTx()>'
+      );
+
+      // Return opreturnOuput after checking other output
+      if(opReturnOutput){
+        t.outputs.unshift(opReturnOutput);
+      }
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
