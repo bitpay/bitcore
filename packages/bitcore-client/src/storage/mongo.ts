@@ -36,7 +36,7 @@ export class Mongo {
   }
 
   async init(params) {
-    setTimeout( async () => {
+    setTimeout(async () => {
       try {
         const { wallet, addresses } = params;
         this.client = new MongoClient(this.path, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -54,7 +54,7 @@ export class Mongo {
       } catch (e) {
         console.error(e);
       }
-    },2000);
+    }, 2000);
   }
 
   async close() {
