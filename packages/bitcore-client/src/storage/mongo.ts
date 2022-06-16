@@ -36,23 +36,25 @@ export class Mongo {
   }
 
   async init(params) {
-    const { wallet, addresses } = params;
-    try {
-      this.client = new MongoClient(this.path, { useNewUrlParser: true, useUnifiedTopology: true });
-      await this.client.connect();
-      this.db = this.client.db(this.databaseName);
-      if (wallet) {
-        this.collection = this.db.collection(this.collectionName);
-      } else if (addresses) {
-        this.collection = this.db.collection(this.addressCollectionName);
+    setTimeout( async () => {
+      try {
+        const { wallet, addresses } = params;
+        this.client = new MongoClient(this.path, { useNewUrlParser: true, useUnifiedTopology: true });
+        await this.client.connect();
+        this.db = this.client.db(this.databaseName);
+        if (this.db) {
+          this.initialized = true;
+          if (wallet) {
+            this.collection = this.db.collection(this.collectionName);
+          } else if (addresses) {
+            this.collection = this.db.collection(this.addressCollectionName);
+          }
+          await this.collection.createIndex({ name: 1 });
+        }
+      } catch (e) {
+        console.error(e);
       }
-      await this.collection.createIndex({ name: 1 });
-      if (this.db) {
-        this.initialized = true;
-      }
-    } catch (error) {
-      console.error(error);
-    }
+    },2000);
   }
 
   async close() {
@@ -60,20 +62,24 @@ export class Mongo {
   }
 
   async listWallets() {
-    await this.init({ wallet: 1 });
-    if (this.initialized) {
-      const stream = new Transform({
-        objectMode: true,
-        transform(data, enc, next) {
-          this.push(JSON.stringify(data));
-          next();
-        }
-      });
-      const cursor = this.collection
-        .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 })
-        .pipe(stream);
-      stream.on('end', async () => await this.close());
-      return cursor;
+    try {
+      await this.init({ wallet: 1 });
+      if (this.initialized) {
+        const stream = new Transform({
+          objectMode: true,
+          transform(data, enc, next) {
+            this.push(JSON.stringify(data));
+            next();
+          }
+        });
+        const cursor = this.collection
+          .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 })
+          .pipe(stream);
+        stream.on('end', async () => await this.close());
+        return cursor;
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
