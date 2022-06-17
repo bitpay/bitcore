@@ -268,7 +268,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -870,7 +870,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -2627,8 +2627,8 @@ export class WalletService {
                 },
                 next => {
                   // TanTodo: checking message onchain
-                  if(opts.messageOnChain){
-                    if(Buffer.from(opts.messageOnChain).length > 206){
+                  if (opts.messageOnChain) {
+                    if (Buffer.from(opts.messageOnChain).length > 206) {
                       return next(Errors.LONG_MESSAGE);
                     }
                   }
@@ -3190,7 +3190,7 @@ export class WalletService {
     const clientBwc = new Client();
     this._getKeyLotus(clientBwc, (err, client, key) => {
       if (err) return cb(err);
-      this.createAddress({}, function(err, x) {
+      this.createAddress({}, function (err, x) {
         if (err) return cb(err);
         return cb(null, client, key, x.address);
       });
@@ -3224,7 +3224,7 @@ export class WalletService {
       if (this.storage && this.storage.queue) {
         this.storage.queue.get((err, data) => {
           if (data) {
-            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
+            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => { });
             const saveError = (donationStorage, err) => {
               donationStorage.error = JSON.stringify(err);
               this.storage.updateDonation(donationStorage, err => {
@@ -3255,7 +3255,7 @@ export class WalletService {
             });
           }
         });
-        this.storage.queue.clean(err => {});
+        this.storage.queue.clean(err => { });
       }
     }, 2000);
   }
@@ -4458,7 +4458,7 @@ export class WalletService {
                 if (err) return cb(err);
                 if (this._isSupportToken(wallet) && addressToken && _.size(inTxs) > 0) {
                   try {
-                    const lastTxsChronik = await this.getlastTxsByChronik(wallet, addressToken, _.size(inTxs));
+                    const lastTxsChronik = await this.getlastTxsByChronik(wallet, addressToken, _.size(inTxs) > 200 ? 200 : _.size(inTxs) > 200);
                     if (lastTxsChronik) {
                       inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
                     }
@@ -4548,45 +4548,63 @@ export class WalletService {
         },
         next => {
           // get all txs from chronik client
-          if(resultTxs){
+          if (resultTxs && resultTxs.length > 0) {
             var chronikClient = ChainService.getChronikClient(wallet.coin);
-            const listTxDetailFromChronik = _.map(resultTxs, async tx => {
-              const txDetailFromChronik = chronikClient.tx(tx.txid);
-                return txDetailFromChronik;
+            // filter get only tx have on-chain message
+            let filterResulTxs = _.filter(resultTxs, tx => {
+              // if tx action = received => get all txs because we have no clue if this tx having message or not
+              if (tx.action === 'received') {
+                return true;
+              } else if (tx.action === 'sent') {
+                // if tx action = sent => check output having false address or not 
+                return !!_.find(tx.outputs, o => o.address === 'false' || !o.address);
+              }
             })
+            if (filterResulTxs && filterResulTxs.length > 0) {
 
-            // handle txs return from chronik client
-            return Promise.all(listTxDetailFromChronik).then(values => {
-              // remove undefined, false value from list txs return from chronik
-              values = _.compact(values);
+              // call chronik client get all tx details
+              const listTxDetailFromChronik = _.map(filterResulTxs, async tx => {
 
-              // mapping data txs from chronik with only 2 att : txid and outputScript
-              values = _.map(values, function(value)  {
-                if(value){
-                  return {
-                    txid: value.txid,
-                    outputScript: _.find(value.outputs, o => o.outputScript.includes("6a04")) ?  _.find(value.outputs, o => o.outputScript.includes("6a04")).outputScript : null
-                  }
-                }
+                const txDetailFromChronik = chronikClient.tx(tx.txid);
+                return txDetailFromChronik;
               })
 
-              // mapping txs from chronik with txs already on node or bws
-             _.each(values, txDetail => {
-                const txFound = _.find(resultTxs, tx =>  txDetail.outputScript && tx.txid === txDetail.txid );
-                if(txFound){
-                  const outputFalse = _.find(txFound.outputs, o => o.address === 'false' || !o.address);
-                  if(outputFalse){
-                    outputFalse.outputScript = txDetail.outputScript;
-                  } else {
-                    txFound.outputs.push({
-                      address: 'false',
-                      outputScript: txDetail.outputScript
-                    })
-                  }
+              // handle tx details return from chronik client
+              return Promise.all(listTxDetailFromChronik).then(values => {
+                if (!!values && values.length > 0) {
+                  // remove undefined, false value from list txs return from chronik
+                  values = _.compact(values);
+
+                  // mapping tx details from chronik with only 2 att : txid and outputScript
+                  values = _.map(values, function (value) {
+                    if (value) {
+                      return {
+                        txid: value.txid,
+                        outputScript: _.find(value.outputs, o => o.outputScript.includes("6a04")) ? _.find(value.outputs, o => o.outputScript.includes("6a04")).outputScript : null
+                      }
+                    }
+                  });
+
+                  // mapping txs from chronik with txs already on node or bws
+                  _.each(values, txDetail => {
+                    const txFound = _.find(filterResulTxs, tx => txDetail.outputScript && tx.txid === txDetail.txid);
+                    if (txFound) {
+                      const outputFalse = _.find(txFound.outputs, o => o.address === 'false' || !o.address);
+                      if (outputFalse) {
+                        outputFalse.outputScript = txDetail.outputScript;
+                      } else {
+                        txFound.outputs.push({
+                          address: 'false',
+                          outputScript: txDetail.outputScript
+                        })
+                      }
+                    }
+                  });
+                  return next();
                 }
-             })
-             return next();
-            })
+              })
+            }
+            return next();
           }
           return next();
         },

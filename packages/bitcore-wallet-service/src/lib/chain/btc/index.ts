@@ -1,4 +1,3 @@
-import { Message } from './../../../../../bitcore-wallet-client/.yalc/@abcpros/bitcore-lib-xpi/index.d';
 import { BitcoreLib } from '@abcpros/crypto-wallet-core';
 import * as async from 'async';
 import _ from 'lodash';
