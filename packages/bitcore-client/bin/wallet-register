@@ -9,15 +9,30 @@ program
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--baseUrl <url>', 'optional - Change configured wallet baseUrl')
   .option('--storageType [storageType]', 'optional - name of the database to use')
+  .option('--importAddress <importAddress>', 'optional - import addresses if set to true')
   .parse(process.argv);
 
 const main = async () => {
   const { name, path, baseUrl, storageType } = program;
+  let { importAddress } = program;
+  importAddress = (importAddress === 'true');
+  let listOfAddresses = [];
   let wallet;
+  
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
     await wallet.register({ baseUrl });
     console.log('Wallet registered!');
+    if (importAddress) {
+      const getKeysList = await wallet.storage.storageType.listKeys(wallet.name);
+      getKeysList.on('data', (keys) => {
+        listOfAddresses.push(keys.address);
+      });
+      getKeysList.on('end', async () => {
+        await wallet.client.importAddresses({pubKey: wallet.authPubKey, payload: listOfAddresses});
+        console.log('Addresses imported!');
+      });
+    }
   } catch (e) {
     console.error(e);
   }

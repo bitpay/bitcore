@@ -76,15 +76,21 @@ export class Level {
     );
   }
 
-  async listKeys() {
+  async listKeys(walletName) {
     return this.db.createReadStream().pipe(
       new Transform({
         objectMode: true,
         write(data, enc, next) {
-          if (data.key.toString().startsWith('key')) {
+          let keyString = 'key' + '|' + walletName;
+          if (data.key.toString().startsWith(keyString)) {
+            let listOfKeys = [];
+            listOfKeys.push(data.value.toString());
+            let keysEncPub = JSON.parse(listOfKeys[0]);
+            let keyAddress = data.key.toString().split('|');
             this.push({
-              data: data.value.toString(),
-              key: data.key.toString(),
+              encKey: keysEncPub.encKey,
+              pubKey: keysEncPub.pubKey,
+              address: keyAddress[2],
               storageType: 'Level'
             });
           }

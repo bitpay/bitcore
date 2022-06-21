@@ -68,12 +68,22 @@ export class Mongo {
     return cursor;
   }
 
-  async listKeys() {
+  async listKeys(walletName) {
     await this.init({ addresses: 1 });
     const stream = new Transform({
       objectMode: true,
       transform(data, enc, next) {
-        this.push(JSON.parse(JSON.stringify(data)));
+        if (data.name == walletName) {
+          let listOfKeys = [];
+          listOfKeys.push(data.data);
+          let keysEncPub = JSON.parse(listOfKeys[0]);
+          this.push({
+            encKey: keysEncPub.encKey,
+            pubKey: keysEncPub.pubKey,
+            address: data.address,
+            storageType: 'Mongo'
+          });
+        }
         next();
       }
     });

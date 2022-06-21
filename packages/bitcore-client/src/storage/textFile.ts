@@ -98,16 +98,22 @@ export class TextFile {
       );
   }
 
-  async listKeys() {
-    return fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' }).pipe(
+  async listKeys(walletName) {
+    return fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' }).pipe(StreamUtil.jsonlBufferToObjectMode()).pipe(
       new stream.Transform({
         objectMode: true,
         write(data, enc, next) {
-          this.push({
-            data: data.value.toString(),
-            key: data.key.toString(),
-            storageType: 'TextFile'
-          });
+          if (data.name == walletName) {
+            let listOfKeys = [];
+            listOfKeys.push(data.toStore);
+            let keysEncPub = JSON.parse(listOfKeys[0]);
+            this.push({
+              encKey: keysEncPub.encKey,
+              pubKey: keysEncPub.pubKey,
+              address: data.address,
+              storageType: 'TextFile'
+            });
+          }
           next();
         }
       })
