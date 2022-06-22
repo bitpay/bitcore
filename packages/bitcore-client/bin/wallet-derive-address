@@ -35,9 +35,8 @@ const main = async () => {
 
     for (let i = 0; i < indexes.length; i++) {
       address = wallet.deriveAddress(indexes[i], change);
-      addressesAndIndex[indexes[i]] = address;
-
       if (address) {
+        addressesAndIndex[indexes[i]] = address;
         try {
           await wallet.storage.getKey({ address: address, name: name, encryptionKey: wallet.encryptionKey, keepAlive: true, open: true });
         } catch (error) {
@@ -48,9 +47,12 @@ const main = async () => {
             console.error(error);
           }
         }
-        await wallet.client.importAddresses({ pubKey: wallet.pubKey, payload: address });
       }
     }
+
+    const listOfAddresses = Object.values(addressesAndIndex);
+    await wallet.client.importAddresses({ pubKey: wallet.authPubKey, payload: listOfAddresses });
+
     if (change) {
       console.log('Change Addresses & Indexes: ', addressesAndIndex);
     } else {
