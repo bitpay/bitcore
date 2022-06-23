@@ -1,7 +1,7 @@
 import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../models/base';
-import { IEthTransaction } from '../types';
+import { IEthTransaction, IEthTransactionTransformed } from '../types';
 
 export class Erc20RelatedFilterTransform extends Transform {
   constructor(private web3: Web3, private tokenAddress: string) {
@@ -35,12 +35,15 @@ export class Erc20RelatedFilterTransform extends Transform {
             internalTx.abiType &&
             (internalTx.abiType.name === 'transfer' || internalTx.abiType.name === 'transferFrom')
           ) {
-            const _tx = Object.assign({}, tx);
+            const _tx: IEthTransactionTransformed = Object.assign({}, tx);
             for (const element of internalTx.abiType.params) {
               if (element.name === '_value') _tx.value = element.value as any;
               if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);
-              if (element.name === '_from') _tx.from = this.web3.utils.toChecksumAddress(element.value);
-              else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
+              if (element.name === '_from') {
+                _tx.initialFrom = tx.from;
+                _tx.from = this.web3.utils.toChecksumAddress(element.value);
+              } else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
+                _tx.initialFrom = tx.from;
                 _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
               }
             }

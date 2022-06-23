@@ -50,6 +50,7 @@ const Common = require('./common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
+const Services = Common.Services;
 
 const Errors = require('./errors/errordefinitions');
 
@@ -1433,27 +1434,30 @@ export class WalletService {
     });
   }
 
-  _getBlockchainExplorer(coin, network): ReturnType<typeof BlockChainExplorer> {
+  _getBlockchainExplorer(chain, network): ReturnType<typeof BlockChainExplorer> {
     let opts: Partial<{
       provider: string;
-      coin: string;
+      chain: string;
       network: string;
       userAgent: string;
     }> = {};
 
     let provider;
 
+    // blockchainExplorerOpts has lowercased fields
+    chain = chain.toLowerCase();
+
     if (this.blockchainExplorer) return this.blockchainExplorer;
     if (this.blockchainExplorerOpts) {
-      if (this.blockchainExplorerOpts[coin] && this.blockchainExplorerOpts[coin][network]) {
-        opts = this.blockchainExplorerOpts[coin][network];
+      if (this.blockchainExplorerOpts[chain] && this.blockchainExplorerOpts[chain][network]) {
+        opts = this.blockchainExplorerOpts[chain][network];
         provider = opts.provider;
       } else if (this.blockchainExplorerOpts[network]) {
         opts = this.blockchainExplorerOpts[network];
       }
     }
     opts.provider = provider;
-    opts.coin = coin;
+    opts.chain = chain;
     opts.network = network;
     opts.userAgent = WalletService.getServiceVersion();
     let bc;
@@ -1524,6 +1528,7 @@ export class WalletService {
 
           const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
           const isEscrowPayment = wallet.isZceCompatible() && opts.instantAcceptanceEscrow ? true : false;
+          const replaceTxByFee = opts.replaceTxByFee ? true : false;
           bc.getUtxos(
             wallet,
             blockchainHeight,
@@ -1541,7 +1546,7 @@ export class WalletService {
 
               return next();
             },
-            { includeSpent: isEscrowPayment }
+            { includeSpent: isEscrowPayment || replaceTxByFee }
           );
         },
         next => {
@@ -1612,13 +1617,19 @@ export class WalletService {
             (err, txs) => {
               if (err) return next(err);
               const spentInputs = _.map(_.flatten(_.map(txs, 'inputs')), utxoKey);
+              const txIdArray = _.map(opts.inputs, 'txid');
+
               _.each(spentInputs, input => {
                 if (utxoIndex[input]) {
                   utxoIndex[input].spent = true;
                 }
               });
-              allUtxos = _.reject(allUtxos, {
-                spent: true
+              // except spent inputs of the RBF transaction if it's a replacement
+              allUtxos = _.reject(allUtxos, utxo => {
+                return (
+                  (!opts.replaceTxByFee && utxo.spent) ||
+                  (utxo.spent && opts.replaceTxByFee && !_.includes(txIdArray, utxo.txid))
+                );
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
@@ -2268,6 +2279,8 @@ export class WalletService {
    * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
    * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
    * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
+   * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
+   * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2406,7 +2419,9 @@ export class WalletService {
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod,
-                    isTokenSwap: opts.isTokenSwap
+                    isTokenSwap: opts.isTokenSwap,
+                    enableRBF: opts.enableRBF,
+                    replaceTxByFee: opts.replaceTxByFee
                   };
                   txp = TxProposal.create(txOpts);
                   next();
@@ -2690,7 +2705,7 @@ export class WalletService {
 
   _checkTxInBlockchain(txp, cb) {
     if (!txp.txid) return cb();
-    const bc = this._getBlockchainExplorer(txp.coin, txp.network);
+    const bc = this._getBlockchainExplorer(txp.chain, txp.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getTransaction(txp.txid, (err, tx) => {
       if (err) return cb(err);
@@ -3103,7 +3118,6 @@ export class WalletService {
     const seenReceive = {};
 
     const moves: { [txid: string]: ITxProposal } = {};
-
     // remove 'fees' and 'moves' (probably change addresses)
     txs = _.filter(txs, tx => {
       // double spend or error
@@ -3207,7 +3221,17 @@ export class WalletService {
             action: undefined,
             addressTo: undefined,
             outputs: undefined,
-            dust: false
+            dust: false,
+            error: tx.error,
+            internal: tx.internal,
+            network: tx.network,
+            chain: tx.chain,
+            data: tx.data,
+            abiType: tx.abiType,
+            gasPrice: tx.gasPrice,
+            gasLimit: tx.gasLimit,
+            receipt: tx.receipt,
+            nonce: tx.nonce
           };
           switch (tx.category) {
             case 'send':
@@ -4097,9 +4121,8 @@ export class WalletService {
       }
 
       this.storage.clearWalletCache(this.walletId, () => {
-        // single address or non UTXO coins do not scan.
-        if (wallet.singleAddress) return cb();
-        if (!ChainService.isUTXOCoin(wallet.coin)) return cb();
+        // do not scan single address UTXO wallets.
+        if (wallet.singleAddress && ChainService.isUTXOCoin(wallet.coin)) return cb();
 
         this._runLocked(cb, cb => {
           wallet.scanStatus = 'running';
@@ -4109,6 +4132,22 @@ export class WalletService {
             const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             opts.bc = bc;
+
+            const scanComplete = error => {
+              this.storage.fetchWallet(wallet.id, (err, wallet) => {
+                if (err) return cb(err);
+                wallet.scanStatus = error ? 'error' : 'success';
+                this.storage.storeWallet(wallet, err => {
+                  return cb(error || err);
+                });
+              });
+            };
+
+            if (!ChainService.isUTXOCoin(wallet.coin)) {
+              // non-UTXO coin "scan" is just a resync
+              return this.syncWallet(wallet, scanComplete);
+            }
+
             let step = opts.startingStep;
             async.doWhilst(
               next => {
@@ -4118,7 +4157,7 @@ export class WalletService {
                 step = step / 10;
                 return step >= 1;
               },
-              cb
+              scanComplete
             );
           });
         });
@@ -4209,15 +4248,7 @@ export class WalletService {
           this._store(wallet, addresses, next);
         });
       },
-      error => {
-        this.storage.fetchWallet(wallet.id, (err, wallet) => {
-          if (err) return cb(err);
-          wallet.scanStatus = error ? 'error' : 'success';
-          this.storage.storeWallet(wallet, err => {
-            return cb(error || err);
-          });
-        });
-      }
+      cb
     );
   }
 
@@ -4243,9 +4274,8 @@ export class WalletService {
       if (err) return cb(err);
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
-      // single address or non UTXO coins do not scan.
-      if (wallet.singleAddress) return cb();
-      if (!ChainService.isUTXOCoin(wallet.coin)) return cb();
+      // do not scan single address UTXO wallets.
+      if (wallet.singleAddress && ChainService.isUTXOCoin(wallet.coin)) return cb();
 
       setTimeout(() => {
         wallet.beRegistered = false;
@@ -4352,6 +4382,28 @@ export class WalletService {
   }
 
   /**
+   * Subscribe this copayer to the Push Notifications service using the specified token.
+   * @param {Object} opts
+   * @param {string} opts.externalUserId - The token representing the app/device. - Braze
+   * @param {string} [opts.packageName] - The restricted_package_name option associated with this token.
+   * @param {string} [opts.platform] - The platform associated with this token.
+   * @param {string} [opts.walletId] - The walletId associated with this token.
+   */
+  pushNotificationsBrazeSubscribe(opts, cb) {
+    if (!checkRequired(opts, ['externalUserId'], cb)) return;
+
+    const sub = PushNotificationSub.create({
+      copayerId: this.copayerId,
+      externalUserId: opts.externalUserId,
+      packageName: opts.packageName,
+      platform: opts.platform,
+      walletId: opts.walletId
+    });
+
+    this.storage.storePushNotificationBrazeSub(sub, cb);
+  }
+
+  /**
    * Unsubscribe this copayer to the Push Notifications service using the specified token.
    * @param {Object} opts
    * @param {string} opts.token - The token representing the app/device.
@@ -4360,6 +4412,17 @@ export class WalletService {
     if (!checkRequired(opts, ['token'], cb)) return;
 
     this.storage.removePushNotificationSub(this.copayerId, opts.token, cb);
+  }
+
+  /**
+   * Unsubscribe this copayer to the Push Notifications service using the specified token.
+   * @param {Object} opts
+   * @param {string} opts.externalUserId - The token representing the app/device. // Braze
+   */
+  pushNotificationsBrazeUnsubscribe(opts, cb) {
+    if (!checkRequired(opts, ['externalUserId'], cb)) return;
+
+    this.storage.removePushNotificationBrazeSub(this.copayerId, opts.externalUserId, cb);
   }
 
   /**
@@ -5026,6 +5089,38 @@ export class WalletService {
         }
       );
     });
+  }
+
+  checkServiceAvailability(req): boolean {
+    if (!checkRequired(req.body, ['service', 'opts'])) {
+      throw new ClientError('checkServiceAvailability request missing arguments');
+    }
+
+    let serviceEnabled: boolean;
+
+    switch (req.body.service) {
+      case '1inch':
+        if (req.body.opts?.country?.toUpperCase() === 'US') {
+          serviceEnabled = false;
+        } else {
+          serviceEnabled = true;
+        }
+        break;
+
+      default:
+        serviceEnabled = true;
+        break;
+    }
+
+    return serviceEnabled;
+  }
+
+  getSpenderApprovalWhitelist(cb) {
+    if (Services.ERC20_SPENDER_APPROVAL_WHITELIST) {
+      return cb(null, Services.ERC20_SPENDER_APPROVAL_WHITELIST);
+    } else {
+      return cb(new Error('Could not get ERC20 spender approval whitelist'));
+    }
   }
 
   getPayId(url: string): Promise<any> {

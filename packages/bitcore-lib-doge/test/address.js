@@ -396,7 +396,6 @@ describe('Address', function() {
       it('returns the same address if the script is a pay to public key hash out', function() {
         var address = 'D77Z1nmgSZxJTmtN65n2MVF9yvLSB4MpiC';
         var script = Script.buildPublicKeyHashOut(new Address(address));
-        console.log(script);
         Address(script, Networks.livenet).toString().should.equal(address);
       });
       it('returns the same address if the script is a pay to script hash out', function() {

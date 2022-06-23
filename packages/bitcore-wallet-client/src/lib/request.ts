@@ -31,7 +31,7 @@ export class Request {
     this.credentials = credentials;
   }
 
-  getHeaders(method, url, args) {
+  getHeaders(method: string, url: string, args: any, useSession?: boolean) {
     var headers = {
       'x-client-version': 'bwc-' + Package.version
     };
@@ -39,47 +39,51 @@ export class Request {
       headers['x-wallet-id'] = this.supportStaffWalletId;
     }
 
+    this._populateAuth(headers, { method, url, args }, useSession);
+
     return headers;
   }
 
-  //  Sign an HTTP request
-  //  @private
-  //  @static
-  //  @memberof Client.API
-  //  @param {String} method - The HTTP method
-  //  @param {String} url - The URL for the request
-  //  @param {Object} args - The arguments in case this is a POST/PUT request
-  //  @param {String} privKey - Private key to sign the request
-  static _signRequest(method, url, args, privKey) {
-    var message = [method.toLowerCase(), url, JSON.stringify(args)].join('|');
-    return Utils.signMessage(message, privKey);
-  }
-
-  //  Do an HTTP request
-  //  @private
-  //
-  //  @param {Object} method
-  //  @param {String} url
-  //  @param {Object} args
-  //  @param {Callback} cb
-  doRequest(method, url, args, useSession, cb) {
-    var headers = this.getHeaders(method, url, args);
-
+  _populateAuth(
+    headers: any,
+    signingParams: {
+      method: string;
+      url: string;
+      args: any;
+      _requestPrivKey?: string;
+    },
+    useSession?: boolean
+  ) {
     if (this.credentials) {
       headers['x-identity'] = this.credentials.copayerId;
 
       if (useSession && this.session) {
         headers['x-session'] = this.session;
       } else {
-        var reqSignature;
-        var key = args._requestPrivKey || this.credentials.requestPrivKey;
-        if (key) {
-          delete args['_requestPrivKey'];
-          reqSignature = Request._signRequest(method, url, args, key);
+        const { _requestPrivKey, ...params } = signingParams;
+        const privKey = _requestPrivKey || this.credentials.requestPrivKey;
+        if (privKey) {
+          headers['x-signature'] = this._signRequest({ ...params, privKey });
         }
-        headers['x-signature'] = reqSignature;
       }
     }
+  }
+
+  /**
+   * @description sign an HTTP request
+   * @private
+   * @param {String} params.method the HTTP method
+   * @param {String} params.url the URL for the request
+   * @param {String} params.privKey private key to sign the request
+   * @param {Object} params.args a POST/PUT request
+   */
+  _signRequest({ method, url, args, privKey }) {
+    var message = `${method.toLowerCase()}|${url}|${JSON.stringify(args)}`;
+    return Utils.signMessage(message, privKey);
+  }
+
+  doRequest(method, url, args, useSession, cb) {
+    var headers = this.getHeaders(method, url, args, useSession);
 
     var r = this.r[method](this.baseUrl + url);
     r.accept('json');

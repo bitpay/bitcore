@@ -39,7 +39,10 @@ export class Utils {
     let normalizedChain = coin.toUpperCase();
 
     // TODO: If in the future we add a new chain that supports custom tokens, check this condition
-    if (Constants.ERC20.includes(coin.toLowerCase()) || !Constants.COINS.includes(coin.toLowerCase())) {
+    if (
+      Constants.ERC20.includes(coin.toLowerCase()) ||
+      !Constants.COINS.includes(coin.toLowerCase())
+    ) {
       normalizedChain = 'ETH';
     }
     return normalizedChain;
@@ -400,6 +403,8 @@ export class Utils {
       }
 
       t.change(txp.changeAddress.address);
+
+      if (txp.enableRBF) t.enableRBF();
 
       // Shuffle outputs for improved privacy
       if (t.outputs.length > 1) {

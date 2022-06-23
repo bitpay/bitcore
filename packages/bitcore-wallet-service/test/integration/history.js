@@ -973,7 +973,17 @@ describe('History', function() {
           outputs:
           [ { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
             amount: 0 } ],
+          internal: [],
           dust: false,
+          abiType: '{"type":"ERC20","name":"transfer","params":[{"name":"_to","value":"0xeca2486a6a213fb40537658d7360ab6221eb26be","type":"address"},{"name":"_tokenId","value":"3000000","type":"uint256"}]}',
+          error: undefined,
+          network: 'testnet',
+          chain: 'ETH',
+          data: '0x',
+          nonce: 57,
+          gasPrice: 2500000000,
+          gasLimit: 163759,
+          receipt: undefined,
           lowFees: false,
         });
         done();
