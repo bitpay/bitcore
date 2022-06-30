@@ -1,7 +1,7 @@
 import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../models/base';
-import { IEthTransaction, IEthTransactionTransformed } from '../types';
+import { IEthTransaction } from '../types';
 
 export class Erc20RelatedFilterTransform extends Transform {
   constructor(private web3: Web3, private tokenAddress: string) {
@@ -9,54 +9,29 @@ export class Erc20RelatedFilterTransform extends Transform {
   }
 
   async _transform(tx: MongoBound<IEthTransaction>, _, done) {
-    if (
-      tx.abiType &&
-      tx.abiType.type === 'ERC20' &&
-      tx.abiType.name === 'transfer' &&
-      tx.to.toLowerCase() === this.tokenAddress.toLowerCase()
-    ) {
-      tx.value = tx.abiType!.params[1].value as any;
-      tx.to = this.web3.utils.toChecksumAddress(tx.abiType!.params[0].value);
-    } else if (
-      tx.abiType &&
-      tx.abiType.type === 'INVOICE' &&
-      tx.abiType.name === 'pay' &&
-      tx.abiType.params[8].value.toLowerCase() === this.tokenAddress.toLowerCase()
-    ) {
-      tx.value = tx.abiType!.params[0].value as any;
-    } else if (tx.internal && tx.internal.length > 0) {
-      try {
-        const tokenRelatedIncomingInternalTxs = tx.internal.filter(
-          (internalTx: any) =>
-            internalTx.action.to && this.tokenAddress.toLowerCase() === internalTx.action.to.toLowerCase()
+    if (tx.logs && tx.logs.length > 0) {
+      const ERC20Log: any = tx.logs.find(
+        l =>
+          l.type == 'ERC20' &&
+          !l.logs.find(
+            i =>
+              i.name == 'Transfer' &&
+              i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&
+              i.events[i.events.findIndex(j => j.name == '_from')].value.toLowerCase() == tx.from.toLowerCase()
+          )
+      );
+      if (ERC20Log) {
+        const log: any = ERC20Log.logs.find(
+          i =>
+            i.name == 'Transfer' &&
+            i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&
+            i.events[i.events.findIndex(j => j.name == '_from')].value.toLowerCase() == tx.from.toLowerCase()
         );
-        for (const internalTx of tokenRelatedIncomingInternalTxs) {
-          if (
-            internalTx.abiType &&
-            (internalTx.abiType.name === 'transfer' || internalTx.abiType.name === 'transferFrom')
-          ) {
-            const _tx: IEthTransactionTransformed = Object.assign({}, tx);
-            for (const element of internalTx.abiType.params) {
-              if (element.name === '_value') _tx.value = element.value as any;
-              if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);
-              if (element.name === '_from') {
-                _tx.initialFrom = tx.from;
-                _tx.from = this.web3.utils.toChecksumAddress(element.value);
-              } else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
-                _tx.initialFrom = tx.from;
-                _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
-              }
-            }
-            this.push(_tx);
-          }
+        if (log && log.events) {
+          tx.value = log.events.find(j => j.name == '_value').value;
+          tx.to = this.web3.utils.toChecksumAddress(log.events.find(j => j.name == '_to').value);
         }
-        return done();
-      } catch (err) {
-        console.error(err);
-        return done();
       }
-    } else {
-      return done();
     }
     this.push(tx);
     return done();

@@ -35,7 +35,7 @@ export interface ClassifiedTrace extends ParityTraceResponse {
 }
 
 export interface TokenTransferResponse {
-  name?: 'transfer';
+  name?: string;
   params?: Array<{ name: string; value: string; type: string }>;
 }
 
@@ -65,8 +65,15 @@ export class ParityRPC {
     this.web3 = web3;
   }
 
-  public getBlock(blockNumber: number) {
-    return this.web3.eth.getBlock(blockNumber, true);
+  public async getBlock(blockNumber: number) {
+    const logs = await this.web3.eth.getPastLogs({ fromBlock: blockNumber, toBlock: blockNumber });
+    let block: any = await this.web3.eth.getBlock(blockNumber, true);
+    block.logs = logs;
+    return block;
+  }
+
+  public async getTransactionReceipt(txHash: string) {
+    return await this.web3.eth.getTransactionReceipt(txHash);
   }
 
   private async traceBlock(blockNumber: number) {

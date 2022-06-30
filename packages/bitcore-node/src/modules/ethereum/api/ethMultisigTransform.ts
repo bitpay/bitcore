@@ -31,29 +31,54 @@ export class EthMultisigRelatedFilterTransform extends Transform {
         this.push(_tx);
       });
       if (walletRelatedIncomingInternalTxs.length || walletRelatedOutgoingInternalTxs.length) return done();
-    } else if (
-      tx.abiType &&
-      tx.abiType.type === 'ERC20' &&
-      tx.abiType.name === 'transfer' &&
-      this.tokenAddress &&
-      tx.to.toLowerCase() === this.tokenAddress.toLowerCase()
-    ) {
-      tx.value = tx.abiType!.params[1].value as any;
-      tx.to = this.web3.utils.toChecksumAddress(tx.abiType!.params[0].value);
-    } else if (
-      tx.internal &&
-      tx.internal.length > 0 &&
-      tx.internal[0].abiType &&
-      tx.internal[0].abiType.type === 'ERC20' &&
-      tx.internal[0].abiType.name === 'transfer' &&
-      tx.internal[0].action.to &&
-      tx.internal[0].action.from &&
-      tx.internal[0].action.to.toLowerCase() === this.tokenAddress.toLowerCase()
-    ) {
-      tx.value = tx.internal[0].abiType!.params[1].value as any;
-      tx.to = this.web3.utils.toChecksumAddress(tx.internal[0].abiType!.params[0].value);
-      tx.from = this.web3.utils.toChecksumAddress(tx.internal[0].action.from);
-    } else if (tx.to !== this.multisigContractAddress || (tx.to === this.multisigContractAddress && tx.abiType)) {
+    } else if (tx.logs && tx.logs.length > 0) {
+      const ERC20Log: any = tx.logs.find(
+        l =>
+          l.type == 'ERC20' &&
+          !l.logs.find(
+            i =>
+              i.name == 'Transfer' &&
+              i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&
+              i.events[i.events.findIndex(j => j.name == '_from')].value.toLowerCase() == tx.from.toLowerCase()
+          )
+      );
+      if (ERC20Log) {
+        const log: any = ERC20Log.logs.find(
+          i =>
+            i.name == 'Transfer' &&
+            i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&
+            i.events[i.events.findIndex(j => j.name == '_from')].value.toLowerCase() == tx.from.toLowerCase()
+        );
+        if (log && log.events) {
+          tx.value = log.events.find(j => j.name == '_value').value;
+          tx.to = this.web3.utils.toChecksumAddress(log.events.find(j => j.name == '_to').value);
+        }
+      }
+    } else if (tx.logs && tx.logs.length > 0) {
+      const ERC20Log: any = tx.logs.find(
+        l =>
+          l.type == 'ERC20' &&
+          !l.logs.find(
+            i =>
+              i.name == 'Transfer' &&
+              i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&
+              i.events[i.events.findIndex(j => j.name == '_from')].value.toLowerCase() == tx.from.toLowerCase()
+          )
+      );
+      if (ERC20Log) {
+        const log: any = ERC20Log.logs.find(
+          i =>
+            i.name == 'Transfer' &&
+            i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&
+            i.events[i.events.findIndex(j => j.name == '_to')].value.toLowerCase() == tx.to.toLowerCase()
+        );
+        if (log && log.events) {
+          tx.value = log.events.find(j => j.name == '_value').value;
+          tx.to = this.web3.utils.toChecksumAddress(log.events.find(j => j.name == '_to').value);
+          tx.from = this.web3.utils.toChecksumAddress(log.events.find(j => j.name == '_from').value);
+        }
+      }
+    } else if (tx.to !== this.multisigContractAddress || tx.to === this.multisigContractAddress) {
       return done();
     }
     this.push(tx);

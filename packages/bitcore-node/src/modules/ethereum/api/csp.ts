@@ -178,6 +178,12 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         await EthTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
         tx.receipt = receipt;
         tx.fee = fee;
+        if (receipt && receipt.logs && receipt.logs.length > 0) {
+          const decodedLogs = await EthTransactionStorage.abiDecodeLogs(receipt.logs);
+          if (decodedLogs.length > 0) {
+            tx.logs = decodedLogs;
+          }
+        }
       }
     }
     return tx;

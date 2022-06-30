@@ -20,7 +20,7 @@ import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
 import { ETH } from '../api/csp';
 
-import { EthTransactionJSON, IEthTransaction } from '../types';
+import { AbiDecodedEvent, AbiDecodedLogs, EthTransactionJSON, IEthTransaction } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -51,6 +51,50 @@ function getMultisigDecoder() {
   return MultisigDecoder;
 }
 
+const abiSet = [
+  {
+    type: 'ERC20',
+    abi: ERC20Abi,
+    decoder: getErc20Decoder,
+    qualifiedEvents: [
+      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+      '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'
+    ]
+  },
+  {
+    type: 'ERC721',
+    abi: ERC721Abi,
+    decoder: getErc721Decoder,
+    qualifiedEvents: [
+      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+      '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+      '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31'
+    ]
+  },
+  {
+    type: 'INVOICE',
+    abi: InvoiceAbi,
+    decoder: getInvoiceDecoder,
+    qualifiedEvents: ['0x826e7792f434a28ba302e6767da85b4b8e56b83a5e028687f30e848e32667f95']
+  },
+  {
+    type: 'MULTISIG',
+    abi: MultisigAbi,
+    decoder: getMultisigDecoder,
+    qualifiedEvents: [
+      '0x4a504a94899432a9846e1aa406dceb1bcfd538bb839071d49d1e5e23f5be30ef',
+      '0xf6a317157440607f36269043eb55f1287a5a19ba2216afeab88cd46cbcfb88e9',
+      '0xc0ba8fe4b176c1714197d43b9cc6bcf797a4a7461c5fe8d0ef6e184ae7601e51',
+      '0x33e13ecb54c3076d8e8bb8c2881800a4d972b792045ffae98fdf46df365fed75',
+      '0x526441bb6c1aba3c9a4a6ca1d6545da9c2333c8c48343ef398eb858d72b79236',
+      '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c',
+      '0xf39e6e1eb0edcf53c221607b54b00cd28f3196fed0a24994dc308b8f611b682d',
+      '0x8001553a916ef2f495d26a907cc54d96ed840d7bda71e73194bf5a9df7a76b90',
+      '0xa3f1ee9126a074d9326c682f561767f710e927faa811f7a99829d49dc421797a',
+      '0x4fb057ad4a26ed17a57957fa69c306f11987596069b89521c511fc9a894e6161'
+    ]
+  }
+];
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   constructor(storage: StorageService = Storage) {
@@ -63,10 +107,10 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     this.collection.createIndex({ chain: 1, network: 1, from: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, from: 1, nonce: 1 }, { background: true, sparse: true });
     this.collection.createIndex(
-      { chain: 1, network: 1, 'abiType.params.0.value': 1, blockTimeNormalized: 1 },
+      { chain: 1, network: 1, 'logs.logs.events': 1, blockTimeNormalized: 1 },
       {
         background: true,
-        partialFilterExpression: { chain: 'ETH', 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
+        partialFilterExpression: { chain: 'ETH', 'logs.type': 'ERC20', 'logs.logs.name': 'Transfer' }
       }
     );
     this.collection.createIndex(
@@ -127,24 +171,21 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     for (const op of txOps) {
       let batch = new Array<{ multisigContractAdress?: string; tokenAddress?: string; address: string }>();
       const { chain, network } = op.updateOne.filter;
-      const { from, to, abiType, internal } = op.updateOne.update.$set;
+      const { from, to, logs } = op.updateOne.update.$set;
       batch = batch.concat([{ address: from }, { address: to }]);
-      if (abiType && abiType.type === 'ERC20' && abiType.params.length) {
-        batch.push({ address: from, tokenAddress: to });
-        batch.push({ address: abiType.params[0].value, tokenAddress: to });
-      }
-
-      if (internal && internal.length > 0) {
-        internal.forEach(i => {
-          if (i.action.to) {
-            batch.push({ address: i.action.to });
-            batch.push({ address: from, tokenAddress: i.action.to });
-          }
-          if (i.action.from) {
-            batch.push({ address: i.action.from });
-            batch.push({ address: to, tokenAddress: i.action.from });
-          }
-        });
+      if (logs && logs.length > 0) {
+        const ERC20Logs = logs.filter(l => l.type == 'ERC20' && l.logs.find(e => e.name == 'Transfer'));
+        if (ERC20Logs && ERC20Logs.length > 0) {
+          batch.push({ address: from, tokenAddress: to });
+          ERC20Logs.forEach(i => {
+            if (i.name == 'Transfer') {
+              const toAddress = i.events.find(j => j.name == '_to').value;
+              const fromAddress = i.events.find(j => j.name == '_from').value;
+              batch.push({ address: from, tokenAddress: toAddress });
+              batch.push({ address: to, tokenAddress: fromAddress });
+            }
+          });
+        }
       }
 
       for (const payload of batch) {
@@ -200,15 +241,21 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           const { web3 } = await ETH.getWeb3(network);
 
           // handle incoming ERC20 transactions
-          if (tx.abiType && tx.abiType.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
-            const _to = tx.abiType.params.find(f => f.name === '_to');
-            const _from = tx.abiType.params.find(f => f.name === '_from');
-
-            if (_to && _to.value) {
-              tos.push(web3.utils.toChecksumAddress(_to.value));
-            }
-            if (_from && _from.value) {
-              froms.push(web3.utils.toChecksumAddress(_from.value));
+          if (tx.logs && tx.logs.length > 0) {
+            const ERC20TransferLogs = tx.logs.find(l => l.type == 'ERC20')
+              ? tx.logs.find(l => l.type == 'ERC20')!.logs.filter(l => l.name == 'Transfer')
+              : undefined;
+            if (ERC20TransferLogs && ERC20TransferLogs.length > 0) {
+              for (let log of ERC20TransferLogs) {
+                const _to = log.events.find(f => f.name === '_to');
+                const _from = log.events.find(f => f.name === '_from');
+                if (_to && _to.value) {
+                  tos.push(web3.utils.toChecksumAddress(_to.value));
+                }
+                if (_from && _from.value) {
+                  froms.push(web3.utils.toChecksumAddress(_from.value));
+                }
+              }
             }
           }
 
@@ -293,45 +340,94 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
-    try {
-      const erc20Data = getErc20Decoder().decodeMethod(input);
-      if (erc20Data) {
-        return {
-          type: 'ERC20',
-          ...erc20Data
-        };
-      }
-    } catch (e) {}
-    try {
-      const erc721Data = getErc721Decoder().decodeMethod(input);
-      if (erc721Data) {
-        return {
-          type: 'ERC721',
-          ...erc721Data
-        };
-      }
-    } catch (e) {}
-    try {
-      const invoiceData = getInvoiceDecoder().decodeMethod(input);
-      if (invoiceData) {
-        return {
-          type: 'INVOICE',
-          ...invoiceData
-        };
-      }
-    } catch (e) {}
-    try {
-      const multisigData = getMultisigDecoder().decodeMethod(input);
-      if (multisigData) {
-        return {
-          type: 'MULTISIG',
-          ...multisigData
-        };
-      }
-    } catch (e) {}
-    return undefined;
+    for (let i = 0; i < abiSet.length; i++) {
+      const abi = abiSet[i];
+      try {
+        const data = abi.decoder().decodeMethod(input);
+        if (data) {
+          return {
+            type: abi.type,
+            ...data
+          };
+        }
+      } catch (e) {}
+    }
+    return;
   }
 
+  checkTopics(topics, abi) {
+    const containsEvents = abi.qualifiedEvents.some(q => topics.includes(q));
+    if (containsEvents) {
+      if (abi.type == 'ERC20' && topics.length != 3) {
+        return false;
+      }
+      if (abi.type == 'ERC721' && topics.length != 4) {
+        return false;
+      }
+      return containsEvents;
+    }
+  }
+
+  abiDecodeLogs(inputs) {
+    let finalResult: AbiDecodedLogs[] = [];
+    let madeEntry = false;
+    let results = {
+      ERC20: [] as AbiDecodedEvent[],
+      ERC721: [] as AbiDecodedEvent[],
+      INVOICE: [] as AbiDecodedEvent[],
+      MULTISIG: [] as AbiDecodedEvent[]
+    };
+    for (let input of inputs) {
+      for (let abi of abiSet) {
+        try {
+          if (abi.type == 'ERC20') {
+            if (this.checkTopics(input.topics, abi)) {
+              const data = abi.decoder().decodeLogs([input]);
+              if (data && data.length > 0) {
+                results[abi.type].push(data);
+                madeEntry = true;
+              }
+            }
+          } else if (abi.type == 'ERC721') {
+            if (this.checkTopics(input.topics, abi)) {
+              const data = abi.decoder().decodeLogs([input]);
+              if (data && data.length > 0) {
+                results[abi.type].push(data);
+                madeEntry = true;
+              }
+            }
+          } else if (abi.type == 'INVOICE') {
+            if (this.checkTopics(input.topics, abi)) {
+              const data = abi.decoder().decodeLogs([input]);
+              if (data && data.length > 0) {
+                results[abi.type].push(data);
+                madeEntry = true;
+              }
+            }
+          } else if (abi.type == 'MULTISIG') {
+            if (this.checkTopics(input.topics, abi)) {
+              const data = abi.decoder().decodeLogs([input]);
+              if (data && data.length > 0) {
+                results[abi.type].push(data);
+                madeEntry = true;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+    }
+    if (madeEntry) {
+      for (let abiType of Object.keys(results)) {
+        if (results[abiType].length > 0) {
+          finalResult.push({
+            type: abiType as 'ERC20' | 'ERC721' | 'INVOICE' | 'MULTISIG',
+            logs: results[abiType].flat()
+          });
+        }
+      }
+    }
+    return finalResult;
+  }
   // Correct tx.data.toString() => 0xa9059cbb00000000000000000000000001503dfc5ad81bf630d83697e98601871bb211b60000000000000000000000000000000000000000000000000000000000002710
   // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
 
@@ -340,8 +436,6 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     options?: TransformOptions
   ): EthTransactionJSON | string {
     const dataStr = tx.data ? tx.data.toString() : '';
-    const decodedData = this.abiDecode(dataStr);
-
     const transaction: EthTransactionJSON = {
       txid: tx.txid || '',
       network: tx.network || '',
@@ -358,11 +452,10 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       nonce: valueOrDefault(tx.nonce, 0),
       to: tx.to || '',
       from: tx.from || '',
-      abiType: tx.abiType,
+      logs: tx.logs,
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
-      decodedData: valueOrDefault(decodedData, undefined),
       receipt: valueOrDefault(tx.receipt, undefined)
     };
     if (options && options.object) {
