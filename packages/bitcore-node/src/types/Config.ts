@@ -1,4 +1,3 @@
-
 export interface IChainConfig<T extends INetworkConfig> {
   [network: string]: T;
 }
@@ -22,28 +21,28 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     port: number;
     username: string;
     password: string;
-  }
+  };
+}
+
+interface IProvider {
+  host: string;
+  port?: string;
+  protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
+  options?: object;
 }
 
 export interface IEthNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'parity' | 'erigon';
-  providers: {
-    host: string;
-    port?: string;
-    protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
-    options?: object
-  }[];
+  providers?: IProvider[]; // mulitple providers can be configured to load balance for the syncing threads
+  provider?: IProvider;
   forkHeight?: number;
   parentChain?: string;
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
-  provider: {
-    host: string;
-    port: number | string;
-    protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
+  provider: IProvider & {
     dataHost: string;
-  },
+  };
   startHeight: number;
   walletOnlySync: boolean;
 }

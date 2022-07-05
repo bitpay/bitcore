@@ -6,6 +6,7 @@ import Config from '../../../config';
 import logger, { timestamp } from '../../../logger';
 import { StateStorage } from '../../../models/state';
 import { ChainStateProvider } from '../../../providers/chain-state';
+import { IEthNetworkConfig } from '../../../types/Config';
 import { wait } from '../../../utils/wait';
 import { EthBlockStorage } from '../models/block';
 
@@ -20,7 +21,7 @@ export class MultiThreadSync extends EventEmitter {
   private stopping: boolean = false;
   private syncQueue: number[] = [];
   private syncing: boolean = false;
-  private config: any;
+  private config: IEthNetworkConfig;
   protected currentHeight: number = 0;
 
   constructor({ chain, network }) {
@@ -39,7 +40,7 @@ export class MultiThreadSync extends EventEmitter {
       return false;
     }
     const { chain, network } = this;
-    const { parentChain, forkHeight } = this.config;
+    const { parentChain, forkHeight = 0 } = this.config;
     this.syncing = true;
 
     try {
@@ -57,8 +58,8 @@ export class MultiThreadSync extends EventEmitter {
 
       let startHeight = tip ? tip.height : this.config.sync!.startHeight || 0;
 
-      const providerIdx = threadId % this.config.providers.length;
-      const providerConfig = this.config.providers[providerIdx];
+      const providerIdx = threadId % this.config.providers!.length;
+      const providerConfig = this.config.provider || this.config.providers![providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
       this.bestBlock = await rpc.web3!.eth.getBlockNumber();
@@ -147,6 +148,10 @@ export class MultiThreadSync extends EventEmitter {
 
     const self = this;
     let threadCnt = this.config.sync!.threads || os.cpus().length - 1; // Subtract 1 for this process/thread
+
+    if (threadCnt <= 0) {
+      throw new Error('Invalid number of syncing threads.');
+    }
 
     logger.info(`Initializing ${threadCnt} syncing threads.`);
 

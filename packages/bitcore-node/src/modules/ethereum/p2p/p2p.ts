@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import * as os from 'os';
 import Web3 from 'web3';
 import { timestamp } from '../../../logger';
 import logger from '../../../logger';
@@ -69,7 +70,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async setupListeners() {
-    const { host, port } = this.chainConfig.providers[0];
+    const { host, port } = this.chainConfig.provider || this.chainConfig.providers![0];
     this.events.on('disconnected', async () => {
       logger.warn(
         `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
@@ -125,7 +126,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     let firstConnect = true;
     let connected = false;
     let disconnected = false;
-    const { host, port } = this.chainConfig.providers[0];
+    const { host, port } = this.chainConfig.provider || this.chainConfig.providers![0];
     while (!this.disconnecting && !this.stopping) {
       try {
         if (!this.web3) {
@@ -206,12 +207,17 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     });
   }
 
+  useMultiThread() {
+    // defaults to true if there are >2 threads in the CPU
+    return this.chainConfig.sync!.threads > 0 || os.cpus().length > 2;
+  }
+
   async sync() {
     if (this.syncing) {
       return false;
     }
 
-    if (!this.initialSyncComplete) {
+    if (!this.initialSyncComplete && this.useMultiThread()) {
       return this.multiThreadSync.sync();
     }
 
