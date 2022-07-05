@@ -57,7 +57,7 @@ export class GethRPC implements IRpc {
   }
 
   private transactionFromGethTrace(tx: IGethTransactionTrace) {
-    const convertedTx = tx.result;    
+    const convertedTx = tx.result;
     convertedTx.abiType = EthTransactionStorage.abiDecode(tx.result.input);
 
     for (let call of convertedTx.calls || []) {

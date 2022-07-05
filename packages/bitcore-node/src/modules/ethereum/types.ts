@@ -2,7 +2,7 @@ import BN from 'bn.js';
 
 import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../types/Block';
-import { ClassifiedTrace, TokenTransferResponse } from './p2p/parityRpc';
+import { ClassifiedTrace, TokenTransferResponse } from './p2p/rpcs/parityRpc';
 
 export interface ParityBlock {
   author: string;

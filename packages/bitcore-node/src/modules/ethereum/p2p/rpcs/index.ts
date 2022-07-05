@@ -5,7 +5,7 @@ import { ParityRPC } from './parityRpc';
 export const Rpcs = {
   geth: GethRPC,
   parity: ParityRPC
-}
+};
 
 export interface Callback<ResultType> {
   (error: Error): void;
@@ -32,4 +32,3 @@ export interface IRpc {
   getTransactionsFromBlock(blockNumber: number): Promise<Array<any>>;
   send<T>(data: IJsonRpcRequest): Promise<T>;
 }
-

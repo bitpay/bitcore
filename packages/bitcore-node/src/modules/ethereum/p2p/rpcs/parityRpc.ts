@@ -46,8 +46,6 @@ export interface TokenTransferResponse {
   params?: Array<{ name: string; value: string; type: string }>;
 }
 
-
-
 @LoggifyClass
 export class ParityRPC implements IRpc {
   web3: Web3;

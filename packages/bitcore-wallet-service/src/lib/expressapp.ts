@@ -841,7 +841,8 @@ export class ExpressApp {
         if (req.query.coin) opts.coin = req.query.coin as string;
         if (req.query.twoStep == '1') opts.twoStep = true;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress as string;
+        if (req.query.multisigContractAddress)
+          opts.multisigContractAddress = req.query.multisigContractAddress as string;
 
         server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
@@ -1129,7 +1130,8 @@ export class ExpressApp {
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress as string;
+        if (req.query.multisigContractAddress)
+          opts.multisigContractAddress = req.query.multisigContractAddress as string;
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
 
         server.getTxHistory(opts, (err, txs) => {

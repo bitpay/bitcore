@@ -182,8 +182,8 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     return JSON.stringify(transform);
   }
 
-  async verifySyncHeight(params: { chain: string, network: string, startHeight?: number }): Promise<number[]> {
-    const { chain, network, startHeight = 1 } = params
+  async verifySyncHeight(params: { chain: string; network: string; startHeight?: number }): Promise<number[]> {
+    const { chain, network, startHeight = 1 } = params;
     const self = this;
     return new Promise(async (resolve, reject) => {
       try {
@@ -192,13 +192,14 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
           return resolve([]);
         }
 
-        const stream = self.collection.find({ chain, network, height: { $gte: startHeight }})                              
-                                      .sort({ chain: 1, network: 1, height: 1 })
-                                      .addCursorFlag('noCursorTimeout', true)
-                                      // .stream({});
-        
+        const stream = self.collection
+          .find({ chain, network, height: { $gte: startHeight } })
+          .sort({ chain: 1, network: 1, height: 1 })
+          .addCursorFlag('noCursorTimeout', true);
+        // .stream({});
+
         const maxHeight = maxBlock.height;
-        let block = await stream.next() as IEthBlock;
+        let block = (await stream.next()) as IEthBlock;
         let prevBlock: IEthBlock | undefined;
         const outOfSync: number[] = [];
 
@@ -216,9 +217,9 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
               }
             }
             prevBlock = block;
-            block = await stream.next() as IEthBlock;
+            block = (await stream.next()) as IEthBlock;
           }
-        };
+        }
         resolve(outOfSync);
       } catch (err) {
         reject(err);

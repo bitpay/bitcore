@@ -10,8 +10,6 @@ import { EthTransactionStorage } from '../models/transaction';
 import { IEthBlock, IEthTransaction, ParityBlock, ParityTransaction } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 
-
-
 class SyncWorker {
   private chain: string = worker.workerData.chain;
   private network: string = worker.workerData.network;
@@ -31,13 +29,12 @@ class SyncWorker {
     this.parentPort!.on('message', this.messageHandler.bind(this));
   }
 
-
   async messageHandler(msg) {
     switch (msg.message) {
       case 'shutdown':
         logger.info('Stopping syncing thread ' + worker.threadId);
         this.stopping = true;
-        return
+        return;
       default:
         this.syncBlock(msg);
         return;
@@ -51,7 +48,7 @@ class SyncWorker {
         process.exit(0);
       }
 
-      const block = (await this.rpc!.getBlock(blockNum) as unknown) as ParityBlock;
+      const block = ((await this.rpc!.getBlock(blockNum)) as unknown) as ParityBlock;
       if (!block) {
         worker.parentPort!.postMessage({ message: 'sync', notFound: true, blockNum, threadId: worker.threadId });
         return;
@@ -62,8 +59,13 @@ class SyncWorker {
       logger.info('Thread ' + worker.threadId + ' here22222!!!!!');
       await this.processBlock(convertedBlock, convertedTxs);
       logger.info('Thread ' + worker.threadId + ' here33333!!!!!');
-  
-      worker.parentPort!.postMessage({ message: 'sync', notFound: !block, blockNum: block.number, threadId: worker.threadId });
+
+      worker.parentPort!.postMessage({
+        message: 'sync',
+        notFound: !block,
+        blockNum: block.number,
+        threadId: worker.threadId
+      });
     } catch (err) {
       logger.debug(`Syncing thread ${worker.threadId} error: ${err.stack}`);
 

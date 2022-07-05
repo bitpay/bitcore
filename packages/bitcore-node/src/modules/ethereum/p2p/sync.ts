@@ -1,14 +1,13 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { EventEmitter } from 'events';
 import * as os from 'os';
-import { threadId, Worker as Thread } from 'worker_threads'; 
+import { threadId, Worker as Thread } from 'worker_threads';
 import Config from '../../../config';
 import logger, { timestamp } from '../../../logger';
 import { StateStorage } from '../../../models/state';
 import { ChainStateProvider } from '../../../providers/chain-state';
 import { wait } from '../../../utils/wait';
 import { EthBlockStorage } from '../models/block';
-
 
 export class MultiThreadSync extends EventEmitter {
   private chain: string;
@@ -23,7 +22,6 @@ export class MultiThreadSync extends EventEmitter {
   private syncing: boolean = false;
   private config: any;
   protected currentHeight: number = 0;
-  
 
   constructor({ chain, network }) {
     super();
@@ -32,7 +30,7 @@ export class MultiThreadSync extends EventEmitter {
     this.config = Config.chains[chain][network];
   }
 
-  async syncBlock(blockNum){
+  async syncBlock(blockNum) {
     this.syncQueue.push(blockNum);
   }
 
@@ -57,21 +55,21 @@ export class MultiThreadSync extends EventEmitter {
         }
       }
 
-      let startHeight = tip ? tip.height : ( this.config.sync!.startHeight || 0 );
+      let startHeight = tip ? tip.height : this.config.sync!.startHeight || 0;
 
       const providerIdx = threadId % this.config.providers.length;
       const providerConfig = this.config.providers[providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
-      const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);  
+      const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
       this.bestBlock = await rpc.web3!.eth.getBlockNumber();
-      this.currentHeight = this.bestBlock - 10;// tip ? tip.height : ( this.config.sync!.startHeight || 0 );
+      this.currentHeight = tip ? tip.height : this.config.sync!.startHeight || 0;
       this.syncHeight = this.currentHeight;
       startHeight = this.currentHeight;
       logger.info(`Syncing ${this.bestBlock - this.currentHeight} blocks for ${chain} ${network}`);
-  
+
       await this.initializeThreads();
 
-      const  startTime = Date.now();
+      const startTime = Date.now();
 
       this.syncInterval = setInterval(() => {
         const oneSecond = 1000;
@@ -110,10 +108,10 @@ export class MultiThreadSync extends EventEmitter {
         default:
           self.threadSync(thread, msg);
       }
-    }
+    };
   }
 
-  threadSync(thread: Thread, msg: { blockNum: number; notFound?: boolean; error?: Error; }) {
+  threadSync(thread: Thread, msg: { blockNum: number; notFound?: boolean; error?: Error }) {
     if (msg.error) {
       logger.warn(`Syncing thread ${thread.threadId} returned an error: ${msg.error}`);
     }
@@ -127,13 +125,13 @@ export class MultiThreadSync extends EventEmitter {
         thread.postMessage({ message: 'sync', blockNum: this.syncHeight++ }); // syncHeight is incremented until there are no more blocks found
       }
       this.currentHeight = Math.max(msg.blockNum, this.currentHeight);
-      this.bestBlock     = Math.max(msg.blockNum, this.bestBlock);
-    
-    // If the thread didn't find the block for some reason, but we know it exists
+      this.bestBlock = Math.max(msg.blockNum, this.bestBlock);
+
+      // If the thread didn't find the block for some reason, but we know it exists
     } else if (msg.blockNum < this.bestBlock) {
       thread.postMessage({ message: 'sync', blockNum: msg.blockNum });
 
-    // Otherwise, decrement active syncing threads counter
+      // Otherwise, decrement active syncing threads counter
     } else {
       this.syncingThreads--;
       if (!this.syncingThreads) {
@@ -148,19 +146,24 @@ export class MultiThreadSync extends EventEmitter {
     }
 
     const self = this;
-    let threadCnt = this.config.sync!.threads || (os.cpus().length - 1); // Subtract 1 for this process/thread
+    let threadCnt = this.config.sync!.threads || os.cpus().length - 1; // Subtract 1 for this process/thread
 
     logger.info(`Initializing ${threadCnt} syncing threads.`);
 
     for (let i = 0; i < threadCnt; i++) {
-      const thread = new Thread(__dirname + '/syncWorker.js', { workerData: { chain: this.chain, network: this.network }});
+      const thread = new Thread(__dirname + '/syncWorker.js', {
+        workerData: { chain: this.chain, network: this.network }
+      });
       this.threads.push(thread);
 
       thread.on('message', this.threadMessageHandler(thread));
 
       thread.on('exit', function(code) {
         self.syncingThreads--;
-        self.threads.splice(self.threads.findIndex(t => t.threadId === thread.threadId), 1);
+        self.threads.splice(
+          self.threads.findIndex(t => t.threadId === thread.threadId),
+          1
+        );
         if (code !== 0) {
           logger.error('Thread exited with non-zero code', code);
         }
@@ -197,7 +200,7 @@ export class MultiThreadSync extends EventEmitter {
         { upsert: true }
       );
       this.emit('INITIALSYNCDONE');
-      this.shutdownThreads(); 
+      this.shutdownThreads();
     }
     this.syncing = false;
   }
