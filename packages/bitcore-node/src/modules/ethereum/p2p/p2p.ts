@@ -132,7 +132,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         if (!this.web3) {
           const { web3 } = await this.getWeb3();
           this.web3 = web3;
-          this.rpc = new Rpcs[this.chainConfig.client || 'geth'](this.web3);
+          this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3);
         }
         try {
           connected = await this.web3.eth.net.isListening();
@@ -146,7 +146,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         } else {
           const { web3 } = await this.getWeb3();
           this.web3 = web3;
-          this.rpc = new Rpcs[this.chainConfig.client || 'geth'](this.web3);
+          this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3);
           this.events.emit('disconnected');
         }
         if (disconnected && connected && !firstConnect) {
@@ -208,8 +208,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   useMultiThread() {
-    // defaults to true if there are >2 threads in the CPU
-    return this.chainConfig.sync!.threads > 0 || os.cpus().length > 2;
+    if (this.chainConfig.sync!.threads == null) {
+      // use multithread by default if there are >2 threads in the CPU
+      return os.cpus().length > 2;
+    }
+    return this.chainConfig.sync!.threads > 0;
   }
 
   async sync() {

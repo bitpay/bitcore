@@ -4,7 +4,7 @@ import { LoggifyClass } from '../../../../decorators/Loggify';
 import { ERC20Abi } from '../../abi/erc20';
 import { ERC721Abi } from '../../abi/erc721';
 import { EthTransactionStorage } from '../../models/transaction';
-import { IEthTransaction } from '../../types';
+import { IAbiDecodedData } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 AbiDecoder.addABI(ERC20Abi);
@@ -37,13 +37,8 @@ export interface ParityTraceResponse {
 }
 
 export interface ClassifiedTrace extends ParityTraceResponse {
-  abiType?: IEthTransaction['abiType'];
+  abiType?: IAbiDecodedData;
   to?: string;
-}
-
-export interface TokenTransferResponse {
-  name?: 'transfer';
-  params?: Array<{ name: string; value: string; type: string }>;
 }
 
 @LoggifyClass

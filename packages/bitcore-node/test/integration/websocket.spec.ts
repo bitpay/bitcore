@@ -6,12 +6,13 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 import { AsyncRPC } from '../../src/rpc';
 import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
+import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
 const { PrivateKey } = require('bitcore-lib');
 
 const chain = 'BTC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network];
+const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 import { Client } from 'bitcore-client';

@@ -11,14 +11,16 @@ interface INetworkConfig {
   };
   trustedPeers: {
     host: string;
-    port: number;
+    port: number | string;
   }[];
+  forkHeight?: number;
+  parentChain?: string;
 }
 
 export interface IUtxoNetworkConfig extends INetworkConfig {
   rpc: {
     host: string;
-    port: number;
+    port: number | string;
     username: string;
     password: string;
   };
@@ -26,7 +28,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
 
 interface IProvider {
   host: string;
-  port?: string;
+  port?: number | string;
   protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
   options?: object;
 }
@@ -35,8 +37,8 @@ export interface IEthNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'parity' | 'erigon';
   providers?: IProvider[]; // mulitple providers can be configured to load balance for the syncing threads
   provider?: IProvider;
-  forkHeight?: number;
-  parentChain?: string;
+  gnosisFactory?: string; // Address of the gnosis multisig contract
+  publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {

@@ -119,11 +119,7 @@ export type IEthTransaction = ITransaction & {
   from: string;
   internal: Array<ClassifiedTrace>;
   transactionIndex: number;
-  abiType?: {
-    type: string;
-    name: string;
-    params: Array<{ name: string; value: string; type: string }>;
-  };
+  abiType?: IAbiDecodedData;
   error?: string;
   receipt?: {
     status: boolean;
@@ -155,11 +151,12 @@ export interface TransactionJSON {
   value: number;
 }
 
-export interface AbiDecodedData {
+export interface IAbiDecodedData extends TokenTransferResponse {
   type: string;
-  decodedData: TokenTransferResponse;
 }
-export type DecodedTrace = ClassifiedTrace & AbiDecodedData;
+export type DecodedTrace = ClassifiedTrace & {
+  decodedData?: IAbiDecodedData;
+}
 export interface EthTransactionJSON {
   txid: string;
   chain: string;
@@ -175,8 +172,12 @@ export interface EthTransactionJSON {
   nonce: number;
   to: string;
   from: string;
-  abiType?: IEthTransaction['abiType'];
-  decodedData?: AbiDecodedData;
+  abiType?: IAbiDecodedData;
+  decodedData?: IAbiDecodedData;
+  // {
+  //   type: string;
+  //   decodedData: TokenTransferResponse;
+  // };
   data: string;
   internal: Array<DecodedTrace>;
   receipt?: IEthTransaction['receipt'];
