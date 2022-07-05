@@ -14,6 +14,7 @@ import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../services/storage';
 import { SpentHeightIndicators } from '../../../types/Coin';
+import { IChainConfig, IEthNetworkConfig } from '../../../types/Config';
 import {
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
@@ -54,12 +55,12 @@ interface ERC20Transfer
   }> {}
 
 export class ETHStateProvider extends InternalStateProvider implements IChainStateService {
-  config: any;
+  config: IChainConfig<IEthNetworkConfig>;
   static rpcs = {} as { [network: string]: { rpc: CryptoRpc; web3: Web3 } };
 
   constructor(public chain: string = 'ETH') {
     super(chain);
-    this.config = Config.chains[this.chain];
+    this.config = Config.chains[this.chain] as IChainConfig<IEthNetworkConfig>;
   }
 
   async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3 }> {

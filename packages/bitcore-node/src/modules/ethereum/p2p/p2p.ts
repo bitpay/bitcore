@@ -5,6 +5,7 @@ import logger from '../../../logger';
 import { StateStorage } from '../../../models/state';
 import { ChainStateProvider } from '../../../providers/chain-state';
 import { BaseP2PWorker } from '../../../services/p2p';
+import { IEthNetworkConfig } from '../../../types/Config';
 import { valueOrDefault } from '../../../utils/check';
 import { wait } from '../../../utils/wait';
 import { ETHStateProvider } from '../api/csp';
@@ -15,7 +16,7 @@ import { IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
-  protected chainConfig: any;
+  protected chainConfig: IEthNetworkConfig;
   protected syncing: boolean;
   protected initialSyncComplete: boolean;
   protected blockModel: EthBlockModel;
@@ -215,7 +216,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     }
 
     const { chain, chainConfig, network } = this;
-    const { parentChain, forkHeight } = chainConfig;
+    const { parentChain, forkHeight = 0 } = chainConfig;
     this.syncing = true;
     const state = await StateStorage.collection.findOne({});
     this.initialSyncComplete =

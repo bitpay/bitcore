@@ -4,7 +4,8 @@ import { ParityRPC } from './parityRpc';
 
 export const Rpcs = {
   geth: GethRPC,
-  parity: ParityRPC
+  parity: ParityRPC,
+  erigon: ParityRPC
 };
 
 export interface Callback<ResultType> {
