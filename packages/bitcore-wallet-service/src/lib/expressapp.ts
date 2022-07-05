@@ -838,10 +838,10 @@ export class ExpressApp {
     router.get('/v1/balance/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};
-        if (req.query.coin) opts.coin = req.query.coin;
+        if (req.query.coin) opts.coin = req.query.coin as string;
         if (req.query.twoStep == '1') opts.twoStep = true;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress as string;
 
         server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
@@ -871,7 +871,7 @@ export class ExpressApp {
       SetPublicCache(res, 1 * ONE_MINUTE);
       logDeprecated(req);
       const opts: { network?: string } = {};
-      if (req.query.network) opts.network = req.query.network;
+      if (req.query.network) opts.network = req.query.network as string;
       let server;
       try {
         server = getServer(req, res);
@@ -891,8 +891,8 @@ export class ExpressApp {
     router.get('/v2/feelevels/', (req, res) => {
       const opts: { coin?: string; network?: string } = {};
       SetPublicCache(res, 1 * ONE_MINUTE);
-      if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.network) opts.network = req.query.network;
+      if (req.query.coin) opts.coin = req.query.coin as string;
+      if (req.query.network) opts.network = req.query.network as string;
 
       let server;
       try {
@@ -960,7 +960,7 @@ export class ExpressApp {
           excludeUnconfirmedUtxos?: boolean;
         } = {};
         if (q.feePerKb) opts.feePerKb = +q.feePerKb;
-        if (q.feeLevel) opts.feeLevel = q.feeLevel;
+        if (q.feeLevel) opts.feeLevel = Number(q.feeLevel);
         if (q.excludeUnconfirmedUtxos == '1') opts.excludeUnconfirmedUtxos = true;
         if (q.returnInputs == '1') opts.returnInputs = true;
         server.getSendMaxInfo(opts, (err, info) => {
@@ -973,7 +973,7 @@ export class ExpressApp {
     router.get('/v1/utxos/', (req, res) => {
       const opts: { addresses?: string[] } = {};
       const addresses = req.query.addresses;
-      if (addresses && _.isString(addresses)) opts.addresses = req.query.addresses.split(',');
+      if (addresses && _.isString(addresses)) opts.addresses = (req.query.addresses as string).split(',');
       getServerWithAuth(req, res, server => {
         server.getUtxos(opts, (err, utxos) => {
           if (err) return returnError(err, res, req);
@@ -1128,8 +1128,8 @@ export class ExpressApp {
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress as string;
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
 
         server.getTxHistory(opts, (err, txs) => {
@@ -1161,10 +1161,10 @@ export class ExpressApp {
         to?: string;
       } = {};
 
-      if (req.query.network) opts.network = req.query.network;
-      if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.from) opts.from = req.query.from;
-      if (req.query.to) opts.to = req.query.to;
+      if (req.query.network) opts.network = req.query.network as string;
+      if (req.query.coin) opts.coin = req.query.coin as string;
+      if (req.query.from) opts.from = req.query.from as string;
+      if (req.query.to) opts.to = req.query.to as string;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {

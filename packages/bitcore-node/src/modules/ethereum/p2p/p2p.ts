@@ -11,7 +11,8 @@ import { ETHStateProvider } from '../api/csp';
 import { EthBlockModel, EthBlockStorage } from '../models/block';
 import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
 import { IEthBlock, IEthTransaction, ParityBlock, ParityTransaction } from '../types';
-import { ParityRPC } from './parityRpc';
+import { IRpc, Rpcs } from './rpcs';
+import { MultiThreadSync } from './sync';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected chainConfig: any;
@@ -21,11 +22,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected txModel: EthTransactionModel;
   protected txSubscription: any;
   protected blockSubscription: any;
-  protected rpc?: ParityRPC;
+  protected rpc?: IRpc;
   protected provider: ETHStateProvider;
   protected web3?: Web3;
   protected invCache: any;
   protected invCacheLimits: any;
+  protected multiThreadSync: MultiThreadSync;
   public events: EventEmitter;
   public disconnecting: boolean;
 
@@ -45,6 +47,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       TX: 100000
     };
     this.disconnecting = false;
+    this.multiThreadSync = new MultiThreadSync({ chain, network });
   }
 
   cacheInv(type: 'TX', hash: string): void {
@@ -65,7 +68,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async setupListeners() {
-    const { host, port } = this.chainConfig.provider;
+    const { host, port } = this.chainConfig.providers[0];
     this.events.on('disconnected', async () => {
       logger.warn(
         `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
@@ -90,6 +93,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
           this.sync();
         }
       });
+    });
+
+    this.multiThreadSync.once('INITIALSYNCDONE', () => {
+      this.initialSyncComplete = true;
+      this.events.emit('SYNCDONE');
     });
   }
 
@@ -116,13 +124,13 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     let firstConnect = true;
     let connected = false;
     let disconnected = false;
-    const { host, port } = this.chainConfig.provider;
+    const { host, port } = this.chainConfig.providers[0];
     while (!this.disconnecting && !this.stopping) {
       try {
         if (!this.web3) {
           const { web3 } = await this.getWeb3();
           this.web3 = web3;
-          this.rpc = new ParityRPC(this.web3);
+          this.rpc = new Rpcs[this.chainConfig.client || 'geth'](this.web3);
         }
         try {
           connected = await this.web3.eth.net.isListening();
@@ -136,7 +144,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         } else {
           const { web3 } = await this.getWeb3();
           this.web3 = web3;
-          this.rpc = new ParityRPC(this.web3);
+          this.rpc = new Rpcs[this.chainConfig.client || 'geth'](this.web3);
           this.events.emit('disconnected');
         }
         if (disconnected && connected && !firstConnect) {
@@ -201,6 +209,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     if (this.syncing) {
       return false;
     }
+
+    if (!this.initialSyncComplete) {
+      return this.multiThreadSync.sync();
+    }
+
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     this.syncing = true;
@@ -219,12 +232,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       }
     }
 
-    const startHeight = tip ? tip.height : 0;
+    const startHeight = tip ? tip.height : ( chainConfig.sync!.startHeight || 0 );
     const startTime = Date.now();
     try {
       let bestBlock = await this.web3!.eth.getBlockNumber();
       let lastLog = 0;
-      let currentHeight = tip ? tip.height : 0;
+      let currentHeight = tip ? tip.height : ( chainConfig.sync!.startHeight || 0 );
       logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
       while (currentHeight <= bestBlock) {
         const block = await this.getBlock(currentHeight);
@@ -402,6 +415,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
   async stop() {
     this.stopping = true;
+    this.multiThreadSync.stop();
     logger.debug(`Stopping worker for chain ${this.chain} ${this.network}`);
     await this.disconnect();
   }

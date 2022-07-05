@@ -17,6 +17,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
 
   async onConnect() {
     super.onConnect();
+    this.collection.createIndex({ chain: 1, network: 1, height: 1 }, { background: true });
   }
 
   async addBlock(params: {
@@ -31,13 +32,15 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const { block, chain, network } = params;
 
     let reorg = false;
-    const headers = await this.validateLocatorHashes({ chain, network });
-    if (headers.length) {
-      const last = headers[headers.length - 1];
-      reorg = await this.handleReorg({ block: last, chain, network });
-    }
+    if (params.initialSyncComplete) {
+      const headers = await this.validateLocatorHashes({ chain, network });
+      if (headers.length) {
+        const last = headers[headers.length - 1];
+        reorg = await this.handleReorg({ block: last, chain, network });
+      }
 
-    reorg = reorg || (await this.handleReorg({ block, chain, network }));
+      reorg = reorg || (await this.handleReorg({ block, chain, network }));
+    }
 
     if (reorg) {
       return Promise.reject('reorg');
@@ -177,6 +180,50 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       return transform;
     }
     return JSON.stringify(transform);
+  }
+
+  async verifySyncHeight(params: { chain: string, network: string, startHeight?: number }): Promise<number[]> {
+    const { chain, network, startHeight = 1 } = params
+    const self = this;
+    return new Promise(async (resolve, reject) => {
+      try {
+        const maxBlock = await self.collection.findOne({}, { sort: { height: -1 }, projection: { height: 1 } });
+        if (!maxBlock) {
+          return resolve([]);
+        }
+
+        const stream = self.collection.find({ chain, network, height: { $gte: startHeight }})                              
+                                      .sort({ chain: 1, network: 1, height: 1 })
+                                      .addCursorFlag('noCursorTimeout', true)
+                                      // .stream({});
+        
+        const maxHeight = maxBlock.height;
+        let block = await stream.next() as IEthBlock;
+        let prevBlock: IEthBlock | undefined;
+        const outOfSync: number[] = [];
+
+        for (let syncHeight = startHeight; syncHeight <= maxHeight; syncHeight++) {
+          if (block.height !== syncHeight) {
+            outOfSync.push(syncHeight);
+          } else {
+            if (prevBlock && !prevBlock.nextBlockHash && prevBlock.height === block.height - 1) {
+              const res = await self.collection.updateOne(
+                { chain, network, hash: prevBlock.hash },
+                { $set: { nextBlockHash: block.hash } }
+              );
+              if (res.modifiedCount === 1) {
+                prevBlock.nextBlockHash = block.hash;
+              }
+            }
+            prevBlock = block;
+            block = await stream.next() as IEthBlock;
+          }
+        };
+        resolve(outOfSync);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 }
 

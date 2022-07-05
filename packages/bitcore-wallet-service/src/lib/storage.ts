@@ -1571,7 +1571,7 @@ export class Storage {
 
   storeGlobalCache(key, values, cb) {
     const now = Date.now();
-    this.db.collection(collections.CACHE).replaceOne(
+    this.db.collection(collections.CACHE).updateOne(
       {
         key,
         walletId: null,

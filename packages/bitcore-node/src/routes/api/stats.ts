@@ -13,8 +13,8 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
     let dailyTxs = await ChainStateProvider.getDailyTransactions({
       chain,
       network,
-      startDate: req.query.startDate,
-      endDate: req.query.endDate
+      startDate: req.query.startDate as string,
+      endDate: req.query.endDate as string
     });
     SetCache(res, CacheTimes.Day);
     return res.json(dailyTxs);

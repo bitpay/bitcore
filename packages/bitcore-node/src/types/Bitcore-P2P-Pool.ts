@@ -1,4 +1,4 @@
-import EventEmitter = require('events');
+import { EventEmitter } from 'events';
 export interface Peer {
   bestHeight: number;
 }
