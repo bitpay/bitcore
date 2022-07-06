@@ -4,7 +4,12 @@ type CallbackType = (err: any, data?: any) => any;
 
 @LoggifyClass
 export class RPC {
-  constructor(private username: string, private password: string, private host: string, private port: number | string) {}
+  constructor(
+    private username: string,
+    private password: string,
+    private host: string,
+    private port: number | string
+  ) {}
 
   public callMethod(method: string, params: any, callback: CallbackType) {
     request(

@@ -2,7 +2,7 @@ import BN from 'bn.js';
 
 import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../types/Block';
-import { ClassifiedTrace, TokenTransferResponse } from './p2p/rpcs/parityRpc';
+import { ClassifiedTrace } from './p2p/rpcs/parityRpc';
 
 export interface ParityBlock {
   author: string;
@@ -151,12 +151,17 @@ export interface TransactionJSON {
   value: number;
 }
 
-export interface IAbiDecodedData extends TokenTransferResponse {
+export interface IAbiDecodeResponse {
+  name: string;
+  params: Array<{ name: string; value: string; type: string }>;
+}
+
+export interface IAbiDecodedData extends IAbiDecodeResponse {
   type: string;
 }
 export type DecodedTrace = ClassifiedTrace & {
   decodedData?: IAbiDecodedData;
-}
+};
 export interface EthTransactionJSON {
   txid: string;
   chain: string;
