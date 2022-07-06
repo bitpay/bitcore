@@ -7,7 +7,7 @@ import { Storage } from '../../../services/storage';
 import { valueOrDefault } from '../../../utils/check';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
-import { IEthBlock, IEthTransaction, ParityBlock, ParityTransaction } from '../types';
+import { ErigonBlock, ErigonTransaction, IEthBlock, IEthTransaction } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 
 class SyncWorker {
@@ -48,7 +48,7 @@ class SyncWorker {
         process.exit(0);
       }
 
-      const block = ((await this.rpc!.getBlock(blockNum)) as unknown) as ParityBlock;
+      const block = ((await this.rpc!.getBlock(blockNum)) as unknown) as ErigonBlock;
       if (!block) {
         worker.parentPort!.postMessage({ message: 'sync', notFound: true, blockNum, threadId: worker.threadId });
         return;
@@ -103,7 +103,7 @@ class SyncWorker {
     });
   }
 
-  async convertBlock(block: ParityBlock) {
+  async convertBlock(block: ErigonBlock) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -144,7 +144,7 @@ class SyncWorker {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<ParityTransaction>;
+    const transactions = block.transactions as Array<ErigonTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
     for (const tx of internalTxs) {
@@ -182,7 +182,7 @@ class SyncWorker {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ParityTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction>, block?: IEthBlock): IEthTransaction {
     const txid = tx.hash || '';
     const to = tx.to || '';
     const from = tx.from || '';

@@ -2,9 +2,9 @@ import BN from 'bn.js';
 
 import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../types/Block';
-import { ClassifiedTrace } from './p2p/rpcs/parityRpc';
+import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
 
-export interface ParityBlock {
+export interface ErigonBlock {
   author: string;
   difficulty: string;
   extraData: string;
@@ -24,11 +24,11 @@ export interface ParityBlock {
   stateRoot: string;
   timestamp: number;
   totalDifficulty: string;
-  transactions: Array<ParityTransaction>;
+  transactions: Array<ErigonTransaction>;
   transactionsRoot: string;
   uncles: Array<string>;
 }
-export interface ParityTransaction {
+export interface ErigonTransaction {
   blockHash: string;
   blockNumber: number;
   chainId: number;
@@ -179,10 +179,6 @@ export interface EthTransactionJSON {
   from: string;
   abiType?: IAbiDecodedData;
   decodedData?: IAbiDecodedData;
-  // {
-  //   type: string;
-  //   decodedData: TokenTransferResponse;
-  // };
   data: string;
   internal: Array<DecodedTrace>;
   receipt?: IEthTransaction['receipt'];

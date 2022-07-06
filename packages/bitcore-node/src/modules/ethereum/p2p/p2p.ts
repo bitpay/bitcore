@@ -12,7 +12,7 @@ import { wait } from '../../../utils/wait';
 import { ETHStateProvider } from '../api/csp';
 import { EthBlockModel, EthBlockStorage } from '../models/block';
 import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
-import { IEthBlock, IEthTransaction, ParityBlock, ParityTransaction } from '../types';
+import { ErigonBlock, ErigonTransaction, IEthBlock, IEthTransaction } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
 
@@ -81,7 +81,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       this.txSubscription.subscribe(async (_err, txid) => {
         if (!this.isCachedInv('TX', txid)) {
           this.cacheInv('TX', txid);
-          const tx = (await this.web3!.eth.getTransaction(txid)) as ParityTransaction;
+          const tx = (await this.web3!.eth.getTransaction(txid)) as ErigonTransaction;
           if (tx) {
             await this.processTransaction(tx);
             this.events.emit('transaction', tx);
@@ -171,7 +171,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   public async getBlock(height: number) {
-    return (this.rpc!.getBlock(height) as unknown) as ParityBlock;
+    return (this.rpc!.getBlock(height) as unknown) as ErigonBlock;
   }
 
   async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
@@ -192,7 +192,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     }
   }
 
-  async processTransaction(tx: ParityTransaction) {
+  async processTransaction(tx: ErigonTransaction) {
     const now = new Date();
     const convertedTx = this.convertTx(tx);
     this.txModel.batchImport({
@@ -297,7 +297,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return new Promise(resolve => this.events.once('SYNCDONE', resolve));
   }
 
-  async convertBlock(block: ParityBlock) {
+  async convertBlock(block: ErigonBlock) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -338,7 +338,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<ParityTransaction>;
+    const transactions = block.transactions as Array<ErigonTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
     for (const tx of internalTxs) {
@@ -376,7 +376,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ParityTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction>, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash || '';
       const to = tx.to || '';

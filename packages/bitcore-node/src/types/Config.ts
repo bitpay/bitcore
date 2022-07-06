@@ -34,7 +34,7 @@ interface IProvider {
 }
 
 export interface IEthNetworkConfig extends INetworkConfig {
-  client?: 'geth' | 'parity' | 'erigon';
+  client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
   providers?: IProvider[]; // mulitple providers can be configured to load balance for the syncing threads
   provider?: IProvider;
   gnosisFactory?: string; // Address of the gnosis multisig contract

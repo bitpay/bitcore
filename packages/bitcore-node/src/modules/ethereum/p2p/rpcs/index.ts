@@ -1,11 +1,10 @@
 import Web3 from 'web3';
+import { ErigonRPC } from './erigonRpc';
 import { GethRPC } from './gethRpc';
-import { ParityRPC } from './parityRpc';
 
 export const Rpcs = {
   geth: GethRPC,
-  parity: ParityRPC,
-  erigon: ParityRPC
+  erigon: ErigonRPC
 };
 
 export interface Callback<ResultType> {
