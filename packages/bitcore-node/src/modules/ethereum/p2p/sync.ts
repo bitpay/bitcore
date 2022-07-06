@@ -147,7 +147,7 @@ export class MultiThreadSync extends EventEmitter {
     }
 
     const self = this;
-    let threadCnt = this.config.syncThreads || os.cpus().length - 1; // Subtract 1 for this process/thread
+    let threadCnt = this.config.threads || os.cpus().length - 1; // Subtract 1 for this process/thread
 
     if (threadCnt <= 0) {
       throw new Error('Invalid number of syncing threads.');

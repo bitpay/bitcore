@@ -208,11 +208,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   useMultiThread() {
-    if (this.chainConfig.syncThreads == null) {
+    if (this.chainConfig.threads == null) {
       // use multithread by default if there are >2 threads in the CPU
       return os.cpus().length > 2;
     }
-    return this.chainConfig.syncThreads > 0;
+    return this.chainConfig.threads > 0;
   }
 
   async sync() {
