@@ -58,7 +58,7 @@ export class MultiThreadSync extends EventEmitter {
 
       let startHeight = tip ? tip.height : this.config.sync!.startHeight || 0;
 
-      const providerIdx = threadId % this.config.providers!.length;
+      const providerIdx = threadId % (this.config.providers || []).length;
       const providerConfig = this.config.provider || this.config.providers![providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
