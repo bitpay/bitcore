@@ -4934,29 +4934,23 @@ describe('Wallet service', function() {
             ltc:0.5
           }
           helpers.stubUtxos(server, wallet, 2, { coin }, function() {
-            var cwcStub = sandbox.stub(CWC.Transactions, 'create');
-            cwcStub.throws({
+            sandbox.stub(CWC.Transactions, 'create').throws({
               name: 'dummy',
               message: 'dummy exception'
             });
-            var bitcoreStub;
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLib, 'Transaction');
-            bitcoreStub.throws({
+            sandbox.stub(CWC.BitcoreLib, 'Transaction').throws({
               name: 'dummy',
               message: 'dummy exception'
             });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibCash, 'Transaction');
-            bitcoreStub.throws({
+            sandbox.stub(CWC.BitcoreLibCash, 'Transaction').throws({
               name: 'dummy',
               message: 'dummy exception'
             });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibDoge, 'Transaction');
-            bitcoreStub.throws({
+            sandbox.stub(CWC.BitcoreLibDoge, 'Transaction').throws({
               name: 'dummy',
               message: 'dummy exception'
             });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibLtc, 'Transaction');
-            bitcoreStub.throws({
+            sandbox.stub(CWC.BitcoreLibLtc, 'Transaction').throws({
               name: 'dummy',
               message: 'dummy exception'
             });
@@ -4971,8 +4965,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.message.should.equal('dummy exception');
-              if(bitcoreStub) bitcoreStub.restore();
-              cwcStub.restore();
+              sandbox.restore();
               done();
             });
           });
