@@ -1,7 +1,7 @@
 /**
  * !Important!
  * Erigon support is not actively maintained by BitPay. If there
- *  are issues with connecting to Erigon that need fixing, please 
+ *  are issues with connecting to Erigon that need fixing, please
  *  open a PR.
  */
 
