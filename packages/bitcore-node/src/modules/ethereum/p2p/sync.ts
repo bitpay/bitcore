@@ -56,14 +56,14 @@ export class MultiThreadSync extends EventEmitter {
         }
       }
 
-      let startHeight = tip ? tip.height : this.config.sync!.startHeight || 0;
+      let startHeight = tip ? tip.height : this.config.syncStartHeight || 0;
 
       const providerIdx = threadId % (this.config.providers || []).length;
       const providerConfig = this.config.provider || this.config.providers![providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
       this.bestBlock = await rpc.web3!.eth.getBlockNumber();
-      this.currentHeight = tip ? tip.height : this.config.sync!.startHeight || 0;
+      this.currentHeight = tip ? tip.height : this.config.syncStartHeight || 0;
       this.syncHeight = this.currentHeight;
       startHeight = this.currentHeight;
       logger.info(`Syncing ${this.bestBlock - this.currentHeight} blocks for ${chain} ${network}`);
@@ -147,7 +147,7 @@ export class MultiThreadSync extends EventEmitter {
     }
 
     const self = this;
-    let threadCnt = this.config.sync!.threads || os.cpus().length - 1; // Subtract 1 for this process/thread
+    let threadCnt = this.config.syncThreads || os.cpus().length - 1; // Subtract 1 for this process/thread
 
     if (threadCnt <= 0) {
       throw new Error('Invalid number of syncing threads.');

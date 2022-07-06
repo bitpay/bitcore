@@ -208,11 +208,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   useMultiThread() {
-    if (this.chainConfig.sync!.threads == null) {
+    if (this.chainConfig.syncThreads == null) {
       // use multithread by default if there are >2 threads in the CPU
       return os.cpus().length > 2;
     }
-    return this.chainConfig.sync!.threads > 0;
+    return this.chainConfig.syncThreads > 0;
   }
 
   async sync() {
@@ -242,12 +242,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       }
     }
 
-    const startHeight = tip ? tip.height : chainConfig.sync!.startHeight || 0;
+    const startHeight = tip ? tip.height : chainConfig.syncStartHeight || 0;
     const startTime = Date.now();
     try {
       let bestBlock = await this.web3!.eth.getBlockNumber();
       let lastLog = 0;
-      let currentHeight = tip ? tip.height : chainConfig.sync!.startHeight || 0;
+      let currentHeight = tip ? tip.height : chainConfig.syncStartHeight || 0;
       logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
       while (currentHeight <= bestBlock) {
         const block = await this.getBlock(currentHeight);

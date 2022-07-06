@@ -5,10 +5,6 @@ export interface IChainConfig<T extends INetworkConfig> {
 interface INetworkConfig {
   disabled?: boolean;
   chainSource?: 'p2p';
-  sync?: {
-    startHeight: number;
-    threads: number;
-  };
   trustedPeers: {
     host: string;
     port: number | string;
@@ -39,6 +35,8 @@ export interface IEthNetworkConfig extends INetworkConfig {
   provider?: IProvider;
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
+  syncStartHeight?: number;
+  syncThreads?: number; // defaults to your CPU's capabilities. Currently only available for ETH
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
