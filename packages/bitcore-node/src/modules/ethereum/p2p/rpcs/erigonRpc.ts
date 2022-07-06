@@ -63,7 +63,6 @@ export class ErigonRPC implements IRpc {
   private async traceBlock(blockNumber: number): Promise<Array<ErigonTraceResponse>> {
     const txs = await this.send<Array<ErigonTraceResponse>>({
       method: 'trace_block',
-      // method: 'debug_traceBlockByNumber',
       params: [this.web3.utils.toHex(blockNumber)],
       jsonrpc: '2.0',
       id: 1
