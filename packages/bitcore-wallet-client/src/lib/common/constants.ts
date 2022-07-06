@@ -34,6 +34,8 @@ export const Constants = {
     'busd',
     'dai',
     'wbtc',
+    'rsk',
+    'rbtc',
     'shib'
   ],
   ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc', 'shib'],
