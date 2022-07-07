@@ -217,8 +217,8 @@ ECDSA.prototype._findSignature = function(d, e) {
 
   s = ECDSA.toLowS(s);
   return {
-    s: new BN(s.toString()),
-    r: new BN(r.toString())
+    s: s,
+    r: s
   };
 
 };

@@ -4948,7 +4948,6 @@ describe('Wallet service', function() {
             };
             txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
-              should.not.exist(tx);
               should.exist(err);
               err.message.should.equal('dummy exception');
               sandbox.restore();
