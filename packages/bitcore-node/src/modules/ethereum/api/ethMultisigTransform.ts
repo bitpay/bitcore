@@ -35,7 +35,7 @@ export class EthMultisigRelatedFilterTransform extends Transform {
       const ERC20Log: any = tx.logs.find(
         l =>
           l.type == 'ERC20' &&
-          !l.logs.find(
+          !!l.logs.find(
             i =>
               i.name == 'Transfer' &&
               i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&
@@ -58,7 +58,7 @@ export class EthMultisigRelatedFilterTransform extends Transform {
       const ERC20Log: any = tx.logs.find(
         l =>
           l.type == 'ERC20' &&
-          !l.logs.find(
+          !!l.logs.find(
             i =>
               i.name == 'Transfer' &&
               i.address.toLowerCase() == this.tokenAddress.toLowerCase() &&

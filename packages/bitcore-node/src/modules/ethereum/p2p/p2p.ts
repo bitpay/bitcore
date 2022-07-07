@@ -185,13 +185,6 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   async processTransaction(tx: ParityTransaction) {
     const now = new Date();
     const convertedTx = this.convertTx(tx);
-    const receipt = this.rpc ? await this.rpc.getTransactionReceipt(tx.hash) : undefined;
-    if (receipt && receipt.logs && receipt.logs.length > 0) {
-      const decodedLogs = await this.txModel.abiDecodeLogs(receipt.logs);
-      if (decodedLogs.length > 0) {
-        convertedTx.logs = decodedLogs;
-      }
-    }
     this.txModel.batchImport({
       chain: this.chain,
       network: this.network,
@@ -200,7 +193,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       mempoolTime: now,
       blockTime: now,
       blockTimeNormalized: now,
-      initialSyncComplete: true
+      initialSyncComplete: true,
+      logs: []
     });
   }
 

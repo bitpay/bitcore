@@ -121,7 +121,7 @@ export type IEthTransaction = ITransaction & {
   from: string;
   internal: Array<ClassifiedTrace>;
   transactionIndex: number;
-  logs?: AbiDecodedLogs[];
+  logs?: IAbiDecodedLogs[];
   abiType?: {
     type: string;
     name: string;
@@ -178,7 +178,7 @@ export interface EthTransactionJSON {
   nonce: number;
   to: string;
   from: string;
-  logs?: AbiDecodedLogs[];
+  logs?: IAbiDecodedLogs[];
   abiType?: IEthTransaction['abiType'];
   decodedData?: AbiDecodedData;
   data: string;
@@ -186,30 +186,30 @@ export interface EthTransactionJSON {
   receipt?: IEthTransaction['receipt'];
 }
 
-export interface AbiMethodParam {
+export interface IAbiMethodParam {
   name: string;
   value: string;
   type: string;
 }
 
-export interface AbiDecodedMethod {
+export interface IAbiDecodedMethod {
   type: string;
   name: string;
-  params: AbiMethodParam[];
+  params: IAbiMethodParam[];
 }
 
-export interface AbiDecodedLogs {
+export interface IAbiDecodedLogs {
   type: 'ERC20' | 'ERC721' | 'INVOICE' | 'MULTISIG';
-  logs: AbiDecodedLog[];
+  logs: IAbiDecodedLog[];
 }
 
-export interface AbiDecodedLog {
+export interface IAbiDecodedLog {
   name: string;
-  events: AbiDecodedEvent[];
+  events: IAbiDecodedEvent[];
   address: string;
 }
 
-export interface AbiDecodedEvent {
+export interface IAbiDecodedEvent {
   name: string;
   type: string;
   value: string;

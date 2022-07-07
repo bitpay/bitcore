@@ -20,7 +20,7 @@ import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
 import { ETH } from '../api/csp';
 
-import { AbiDecodedEvent, AbiDecodedLogs, EthTransactionJSON, IEthTransaction } from '../types';
+import { EthTransactionJSON, IAbiDecodedEvent, IAbiDecodedLogs, IEthTransaction } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -51,6 +51,11 @@ function getMultisigDecoder() {
   return MultisigDecoder;
 }
 
+/*
+Qualified events are the Keccak256 hash of the event name and parameter types.
+For instance Transfer(address,address,uint256) = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+Listed here in qualifiedEvents we have all the possible event topics for each abi.
+*/
 const abiSet = [
   {
     type: 'ERC20',
@@ -134,6 +139,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     chain: string;
     network: string;
     initialSyncComplete: boolean;
+    logs: any[];
   }) {
     const operations = [] as Array<Promise<any>>;
     operations.push(this.pruneMempool({ ...params }));
@@ -174,15 +180,17 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       const { from, to, logs } = op.updateOne.update.$set;
       batch = batch.concat([{ address: from }, { address: to }]);
       if (logs && logs.length > 0) {
-        const ERC20Logs = logs.filter(l => l.type == 'ERC20' && l.logs.find(e => e.name == 'Transfer'));
+        const ERC20Logs = logs.filter(l => l.type == 'ERC20' && !!l.logs.find(e => e.name == 'Transfer'));
         if (ERC20Logs && ERC20Logs.length > 0) {
-          batch.push({ address: from, tokenAddress: to });
-          ERC20Logs.forEach(i => {
-            if (i.name == 'Transfer') {
-              const toAddress = i.events.find(j => j.name == '_to').value;
-              const fromAddress = i.events.find(j => j.name == '_from').value;
-              batch.push({ address: from, tokenAddress: toAddress });
-              batch.push({ address: to, tokenAddress: fromAddress });
+          ERC20Logs.forEach(y => {
+            for (const i of y.logs) {
+              if (i.name == 'Transfer') {
+                const toAddress = i.events.find(j => j.name == '_to').value;
+                const fromAddress = i.events.find(j => j.name == '_from').value;
+                const tokenAddress = i.address;
+                batch.push({ address: fromAddress, tokenAddress });
+                batch.push({ address: toAddress, tokenAddress });
+              }
             }
           });
         }
@@ -210,8 +218,9 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     chain: string;
     network: string;
     mempoolTime?: Date;
+    logs: any[];
   }) {
-    let { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
+    let { blockTimeNormalized, chain, height, network, parentChain, forkHeight, logs } = params;
     if (parentChain && forkHeight && height < forkHeight) {
       const parentTxs = await EthTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
@@ -237,7 +246,13 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           const { to, txid, from } = tx;
           const tos = [to];
           const froms = [from];
-
+          const txEvents = logs.filter(log => log.transactionIndex === tx.transactionIndex);
+          if (txEvents && txEvents.length > 0) {
+            const decodedLogs = EthTransactionStorage.abiDecodeLogs(txEvents);
+            if (decodedLogs.length > 0) {
+              tx.logs = decodedLogs;
+            }
+          }
           const { web3 } = await ETH.getWeb3(network);
 
           // handle incoming ERC20 transactions
@@ -369,13 +384,13 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecodeLogs(inputs) {
-    let finalResult: AbiDecodedLogs[] = [];
+    let finalResult: IAbiDecodedLogs[] = [];
     let madeEntry = false;
     let results = {
-      ERC20: [] as AbiDecodedEvent[],
-      ERC721: [] as AbiDecodedEvent[],
-      INVOICE: [] as AbiDecodedEvent[],
-      MULTISIG: [] as AbiDecodedEvent[]
+      ERC20: [] as IAbiDecodedEvent[],
+      ERC721: [] as IAbiDecodedEvent[],
+      INVOICE: [] as IAbiDecodedEvent[],
+      MULTISIG: [] as IAbiDecodedEvent[]
     };
     for (let input of inputs) {
       for (let abi of abiSet) {

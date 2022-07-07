@@ -54,7 +54,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     chain: string;
     network: string;
   }) {
-    const { chain, network, transactions, parentChain, forkHeight, initialSyncComplete } = params;
+    const { block, chain, network, transactions, parentChain, forkHeight, initialSyncComplete } = params;
     const blockOp = await this.getBlockOp(params);
     const convertedBlock = blockOp.updateOne.update.$set;
     const { height, timeNormalized, time } = convertedBlock;
@@ -80,7 +80,8 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       network,
       parentChain,
       forkHeight,
-      initialSyncComplete
+      initialSyncComplete,
+      logs: block.logs
     });
 
     if (initialSyncComplete) {
