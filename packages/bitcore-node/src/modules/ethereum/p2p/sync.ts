@@ -83,7 +83,7 @@ export class MultiThreadSync extends EventEmitter {
         );
       }, 1000);
 
-      this.syncingThreads = Math.min(this.threads.length, this.bestBlock - startHeight);
+      this.syncingThreads = this.threads.length;
       for (let i = 0; i < this.threads.length; i++) {
         this.threads[i].postMessage({ blockNum: this.currentHeight++ });
       }
@@ -182,25 +182,42 @@ export class MultiThreadSync extends EventEmitter {
     logger.info('Syncing threads ready.');
   }
 
+  async getVerifiedBlockHeight() {
+    const state = await StateStorage.collection.findOne({}, { sort: { _id: -1 }});
+    if (state && state.verifiedBlockHeight && state.verifiedBlockHeight[this.chain] && state.verifiedBlockHeight[this.chain][this.network]) {
+      return state.verifiedBlockHeight[this.chain][this.network];
+    }
+    return 0;
+  }
+
   async finishSync() {
     clearInterval(this.syncInterval as NodeJS.Timeout);
     if (this.stopping) {
       return;
     }
 
-    logger.info(`Verifying ${this.chain}:${this.network} blocks. This could take a while.`);
+    const verifiedBlockHeight = await this.getVerifiedBlockHeight();
+    logger.info(`Verifying ${this.currentHeight - verifiedBlockHeight} ${this.chain}:${this.network} blocks. This could take a while.`);
     const gaps = await EthBlockStorage.verifySyncHeight({ chain: this.chain, network: this.network });
+    logger.info(`Verification of ${this.chain}:${this.network} blocks finished.`);
     if (gaps.length) {
       for (let blockNum of gaps) {
         this.syncBlock(blockNum);
       }
+      await StateStorage.collection.updateOne(
+        {},
+        {
+          $set: { [`verifiedBlockHeight.${this.chain}.${this.network}`]: gaps[0] > 10 ? gaps[0] - 10 : 0  }
+        },
+        { upsert: true }
+      );
     } else {
       logger.info(`${this.chain}:${this.network} up to date.`);
-      StateStorage.collection.findOneAndUpdate(
+      await StateStorage.collection.updateOne(
         {},
         {
           $addToSet: { initialSyncComplete: `${this.chain}:${this.network}` },
-          $set: { 'verifiedBlockHeight.ETH.mainnet': this.currentHeight }
+          $set: { [`verifiedBlockHeight.${this.chain}.${this.network}`]: this.currentHeight }
         },
         { upsert: true }
       );
