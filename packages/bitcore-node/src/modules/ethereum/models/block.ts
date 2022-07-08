@@ -183,11 +183,11 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
   }
 
   async verifySyncHeight(params: { chain: string; network: string; startHeight?: number }): Promise<number[]> {
-    const { chain, network, startHeight = 1 } = params;
+    const { chain, network, startHeight = 0 } = params;
     const self = this;
     return new Promise(async (resolve, reject) => {
       try {
-        const maxBlock = await self.collection.findOne({}, { sort: { height: -1 }, projection: { height: 1 } });
+        const maxBlock = await self.collection.findOne({ chain, network }, { sort: { height: -1 }, projection: { height: 1 } });
         if (!maxBlock) {
           return resolve([]);
         }
@@ -196,7 +196,6 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
           .find({ chain, network, height: { $gte: startHeight } })
           .sort({ chain: 1, network: 1, height: 1 })
           .addCursorFlag('noCursorTimeout', true);
-        // .stream({});
 
         const maxHeight = maxBlock.height;
         let block = (await stream.next()) as IEthBlock;
