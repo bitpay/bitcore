@@ -83,8 +83,8 @@ class SyncWorker {
   }
 
   connect() {
-    const providerIdx = worker.threadId % this.chainConfig.providers.length;
-    const providerConfig = this.chainConfig.providers[providerIdx];
+    const providerIdx = worker.threadId % (this.chainConfig.providers || []).length;
+    const providerConfig = this.chainConfig.provider || this.chainConfig.providers[providerIdx];
     const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
     this.web3 = new CryptoRpc(rpcConfig).get(this.chain).web3;
     this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3!);
