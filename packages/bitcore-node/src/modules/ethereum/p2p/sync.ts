@@ -183,8 +183,13 @@ export class MultiThreadSync extends EventEmitter {
   }
 
   async getVerifiedBlockHeight() {
-    const state = await StateStorage.collection.findOne({}, { sort: { _id: -1 }});
-    if (state && state.verifiedBlockHeight && state.verifiedBlockHeight[this.chain] && state.verifiedBlockHeight[this.chain][this.network]) {
+    const state = await StateStorage.collection.findOne({}, { sort: { _id: -1 } });
+    if (
+      state &&
+      state.verifiedBlockHeight &&
+      state.verifiedBlockHeight[this.chain] &&
+      state.verifiedBlockHeight[this.chain][this.network]
+    ) {
       return state.verifiedBlockHeight[this.chain][this.network];
     }
     return 0;
@@ -207,7 +212,7 @@ export class MultiThreadSync extends EventEmitter {
       await StateStorage.collection.updateOne(
         {},
         {
-          $set: { [`verifiedBlockHeight.${this.chain}.${this.network}`]: gaps[0] > 10 ? gaps[0] - 10 : 0  }
+          $set: { [`verifiedBlockHeight.${this.chain}.${this.network}`]: gaps[0] > 10 ? gaps[0] - 10 : 0 }
         },
         { upsert: true }
       );

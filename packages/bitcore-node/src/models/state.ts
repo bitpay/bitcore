@@ -9,8 +9,8 @@ export interface IState {
   verifiedBlockHeight?: {
     [chain: string]: {
       [network: string]: number;
-    }
-  }
+    };
+  };
 }
 
 export class StateModel extends BaseModel<IState> {
