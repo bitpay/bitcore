@@ -4,6 +4,7 @@ import { DogeValidation } from './doge';
 import { EthValidation } from './eth';
 import { LtcValidation } from './ltc';
 import { XrpValidation } from './xrp';
+import { MaticValidation } from './matic';
 
 export interface IValidation {
   validateAddress(network: string, address: string): boolean;
@@ -16,7 +17,8 @@ const validation: { [chain: string]: IValidation } = {
   ETH: new EthValidation(),
   XRP: new XrpValidation(),
   DOGE: new DogeValidation(),
-  LTC: new LtcValidation()
+  LTC: new LtcValidation(),
+  MATIC: new MaticValidation()
 };
 
 export class ValidationProxy {

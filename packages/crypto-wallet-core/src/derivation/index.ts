@@ -5,6 +5,7 @@ import { EthDeriver } from './eth';
 import { LtcDeriver } from './ltc';
 import { Paths } from './paths';
 import { XrpDeriver } from './xrp';
+import { MaticDeriver } from './matic';
 
 export interface Key {
   address: string;
@@ -24,7 +25,8 @@ const derivers: { [chain: string]: IDeriver } = {
   ETH: new EthDeriver(),
   XRP: new XrpDeriver(),
   DOGE: new DogeDeriver(),
-  LTC: new LtcDeriver()
+  LTC: new LtcDeriver(),
+  MATIC: new MaticDeriver()
 };
 
 export class DeriverProxy {

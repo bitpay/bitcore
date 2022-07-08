@@ -6,6 +6,7 @@ import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { LTCTxProvider } from './ltc';
 import { XRPTxProvider } from './xrp';
+import { MaticTxProvider } from './matic';
 
 const providers = {
   BTC: new BTCTxProvider(),
@@ -15,7 +16,8 @@ const providers = {
   ETHMULTISIG: new ETHMULTISIGTxProvider(),
   XRP: new XRPTxProvider(),
   DOGE: new DOGETxProvider(),
-  LTC: new LTCTxProvider()
+  LTC: new LTCTxProvider(),
+  MATIC: new MaticTxProvider()
 };
 
 export class TransactionsProxy {
