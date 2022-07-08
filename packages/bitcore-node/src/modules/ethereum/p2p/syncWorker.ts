@@ -54,11 +54,8 @@ class SyncWorker {
         return;
       }
 
-      logger.info('Thread ' + worker.threadId + ' here!!!!!');
       const { convertedBlock, convertedTxs } = await this.convertBlock(block);
-      logger.info('Thread ' + worker.threadId + ' here22222!!!!!');
       await this.processBlock(convertedBlock, convertedTxs);
-      logger.info('Thread ' + worker.threadId + ' here33333!!!!!');
 
       worker.parentPort!.postMessage({
         message: 'sync',
