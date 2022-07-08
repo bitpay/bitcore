@@ -204,7 +204,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
         const outOfSync: number[] = [];
 
         for (let syncHeight = startHeight; syncHeight <= maxHeight; syncHeight++) {
-          if (block.height !== syncHeight) {
+          if (!block || block.height !== syncHeight) {
             outOfSync.push(syncHeight);
           } else {
             if (prevBlock && !prevBlock.nextBlockHash && prevBlock.height === block.height - 1) {
