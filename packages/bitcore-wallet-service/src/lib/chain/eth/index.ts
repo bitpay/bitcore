@@ -193,7 +193,7 @@ export class EthChain implements IChain {
     const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, isTokenSwap } = txp;
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
-    const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
+    const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ETHERC20' : 'ETH';
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,

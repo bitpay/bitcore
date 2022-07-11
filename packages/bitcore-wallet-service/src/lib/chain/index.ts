@@ -4,6 +4,7 @@ import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
+import { MaticChain } from './matic';
 import { LtcChain } from './ltc';
 import { XrpChain } from './xrp';
 
@@ -70,6 +71,7 @@ const chain: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
   ETH: new EthChain(),
+  MATIC: new MaticChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
   LTC: new LtcChain()
@@ -83,8 +85,11 @@ class ChainProxy {
 
   getChain(coin: string): string {
     let normalizedChain = coin.toUpperCase();
-    if (Constants.ERC20[normalizedChain]) {
+    if (Constants.ETH_ERC20[normalizedChain]) {
       normalizedChain = 'ETH';
+    }
+    if (Constants.MATIC_ERC20[normalizedChain]) {
+      normalizedChain = 'MATIC';
     }
     return normalizedChain;
   }

@@ -6,6 +6,7 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    MATIC:'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc'
@@ -18,34 +19,65 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    MATIC:'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
-    USDC: 'usdc',
-    PAX: 'pax',
-    GUSD: 'gusd',
-    BUSD: 'busd',
-    DAI: 'dai',
-    WBTC: 'wbtc',
-    SHIB: 'shib'
+    USDC_E: 'usdc_e',
+    PAX_E: 'pax_e',
+    GUSD_E: 'gusd_e',
+    BUSD_E: 'busd_e',
+    DAI_E: 'dai_e',
+    WBTC_E: 'wbtc_e',
+    SHIB_E: 'shib_e',
+    APE_E: 'ape_e',
+    EURC_E: 'eurc_e',
+    USDC_M: 'usdc_m',
+    PAX_M: 'pax_m',
+    GUSD_M: 'gusd_m',
+    BUSD_M: 'busd_m',
+    DAI_M: 'dai_m',
+    WBTC_M: 'wbtc_m',
+    SHIB_M: 'shib_m',
+    APE_M: 'ape_m',
+    EURC_M: 'eurc_m'
   },
 
-  ERC20: {
-    USDC: 'usdc',
-    PAX: 'pax',
-    GUSD: 'gusd',
-    BUSD: 'busd',
-    DAI: 'dai',
-    WBTC: 'wbtc',
-    SHIB: 'shib'
+  ETH_ERC20: {
+    USDC_E: 'usdc_e',
+    PAX_E: 'pax_e',
+    GUSD_E: 'gusd_e',
+    BUSD_E: 'busd_e',
+    DAI_E: 'dai_e',
+    WBTC_E: 'wbtc_e',
+    SHIB_E: 'shib_e',
+    APE_E: 'ape_e',
+    EURC_E: 'eurc_e'
+  },
+
+  MATIC_ERC20: {
+    USDC_M: 'usdc_m',
+    PAX_M: 'pax_m',
+    GUSD_M: 'gusd_m',
+    BUSD_M: 'busd_m',
+    DAI_M: 'dai_m',
+    WBTC_M: 'wbtc_m',
+    SHIB_M: 'shib_m',
+    APE_M: 'ape_m',
+    EURC_M: 'eurc_m'
   },
 
   USD_STABLECOINS: {
-    USDC: 'usdc',
-    PAX: 'pax',
-    GUSD: 'gusd',
-    BUSD: 'busd',
-    DAI: 'dai'
+    USDC_E: 'usdc_e',
+    PAX_E: 'pax_e',
+    GUSD_E: 'gusd_e',
+    BUSD_E: 'busd_e',
+    DAI_E: 'dai_e',
+    USDC_M: 'usdc_m',
+    PAX_M: 'pax_m',
+    GUSD_M: 'gusd_m',
+    BUSD_M: 'busd_m',
+    DAI_M: 'dai_m'
   },
 
   UTXO_COINS: {

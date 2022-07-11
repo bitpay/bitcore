@@ -41,6 +41,7 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
+  matic: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
@@ -1142,15 +1143,20 @@ export class WalletService {
       {
         name: 'tokenAddresses',
         isValid(value) {
-          return _.isArray(value) && value.every(x => Validation.validateAddress('eth', 'mainnet', x));
+          return _.isArray(value) && ( 
+              value.every(x => Validation.validateAddress('eth', 'mainnet', x)) ||
+              value.every(x => Validation.validateAddress('matic', 'mainnet', x))
+            );
         }
       },
       {
         name: 'multisigEthInfo',
         isValid(value) {
           return (
-            _.isArray(value) &&
-            value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress))
+            _.isArray(value) && (
+              value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress)) ||
+              value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress))
+            )      
           );
         }
       }
@@ -1172,7 +1178,7 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (wallet.coin != 'eth') {
+      if (wallet.coin != 'eth' && wallet.coin != 'matic') {
         opts.tokenAddresses = null;
         opts.multisigEthInfo = null;
       }
@@ -2198,7 +2204,10 @@ export class WalletService {
   }
 
   getMultisigContractInstantiationInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    if (!opts.coin) {
+      opts.coin = 'eth';
+    }
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInstantiationInfo(opts, (err, contractInstantiationInfo) => {
@@ -2212,7 +2221,10 @@ export class WalletService {
   }
 
   getMultisigContractInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    if (!opts.coin) {
+      opts.coin = 'eth';
+    }
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInfo(opts, (err, contractInfo) => {
@@ -2226,7 +2238,10 @@ export class WalletService {
   }
 
   getTokenContractInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    if (!opts.coin) {
+      opts.coin = 'eth';
+    }
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTokenContractInfo(opts, (err, contractInfo) => {
@@ -2240,7 +2255,10 @@ export class WalletService {
   }
 
   getMultisigTxpsInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    if (!opts.coin) {
+      opts.coin = 'eth';
+    }
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigTxpsInfo(opts, (err, multisigTxpsInfo) => {

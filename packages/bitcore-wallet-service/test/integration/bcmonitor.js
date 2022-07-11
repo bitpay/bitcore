@@ -29,6 +29,7 @@ describe('Blockchain monitor', function() {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       blockchainExplorerETH =  _.cloneDeep(blockchainExplorer);
+      blockchainExplorerMATIC =  _.cloneDeep(blockchainExplorer);
 
 
       blockchainExplorer.initSocket = function(callbacks) {
@@ -67,6 +68,36 @@ describe('Blockchain monitor', function() {
         // no uses in eth, interferes with btc
         //socket.handlers['block'] =  callbacks.onBlock;
       }
+
+      blockchainExplorerMATIC.initSocket = function(callbacks) {
+        socket.handlers['tx']= function(data) {
+ 
+           // copied from v8.tx
+           const tx = data.tx;
+           // script output, or similar.
+           if (!tx || tx.chain !== 'MATIC') return;
+           let tokenAddress;
+           let address;
+           let amount;
+ 
+           if (tx.abiType && tx.abiType.type === 'ERC20') {
+             tokenAddress = tx.to;
+             address = CWC.Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
+             amount = tx.abiType.params[1].value;
+           } else {
+             address = tx.to;
+             amount = tx.value;
+           }
+           const out = {
+             address,
+             amount,
+             tokenAddress
+           };
+           return callbacks.onIncomingPayments({ out, txid: tx.txid });
+         };
+         // no uses in eth, interferes with btc
+         //socket.handlers['block'] =  callbacks.onBlock;
+       }
       done();
     });
   });
@@ -114,6 +145,9 @@ describe('Blockchain monitor', function() {
             },
             'eth': {
               'livenet': blockchainExplorerETH
+            },
+            'matic': {
+              'livenet': blockchainExplorerMATIC
             }
           },
         }, function(err) {

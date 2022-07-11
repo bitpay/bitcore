@@ -883,6 +883,7 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/ethmultisig/', (req, res) => {
       getServerWithAuth(req, res, async server => {
         try {
@@ -894,7 +895,30 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/ethmultisig/info', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInfo = await server.getMultisigContractInfo(req.body);
+          res.json(multisigContractInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/multisig/', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInstantiationInfo = await server.getMultisigContractInstantiationInfo(req.body);
+          res.json(multisigContractInstantiationInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/multisig/info', (req, res) => {
       getServerWithAuth(req, res, async server => {
         try {
           const multisigContractInfo = await server.getMultisigContractInfo(req.body);
