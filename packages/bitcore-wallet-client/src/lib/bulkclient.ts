@@ -99,6 +99,8 @@ export class BulkClient extends Request {
     );
 
     return this.get('/v1/wallets/all/?' + qs.join('&'), (err, results) => {
+      if (err || !results) return cb(err, results);
+
       [].concat(results).forEach(result => {
         var status = result.status;
         var c = this.credentials.find(
@@ -114,7 +116,7 @@ export class BulkClient extends Request {
         }
         if (c) this._processStatus(status, c);
       });
-      return cb(err, results);
+      return cb(null, results);
     });
   }
 
