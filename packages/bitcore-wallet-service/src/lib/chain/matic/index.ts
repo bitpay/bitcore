@@ -102,5 +102,4 @@ export class MaticChain extends EthChain {
     }
     return;
   }
-
 }

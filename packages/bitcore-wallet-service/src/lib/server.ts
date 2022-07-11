@@ -1143,20 +1143,20 @@ export class WalletService {
       {
         name: 'tokenAddresses',
         isValid(value) {
-          return _.isArray(value) && ( 
-              value.every(x => Validation.validateAddress('eth', 'mainnet', x)) ||
-              value.every(x => Validation.validateAddress('matic', 'mainnet', x))
-            );
+          return (
+            _.isArray(value) &&
+            (value.every(x => Validation.validateAddress('eth', 'mainnet', x)) ||
+              value.every(x => Validation.validateAddress('matic', 'mainnet', x)))
+          );
         }
       },
       {
         name: 'multisigEthInfo',
         isValid(value) {
           return (
-            _.isArray(value) && (
-              value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress)) ||
-              value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress))
-            )      
+            _.isArray(value) &&
+            (value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress)) ||
+              value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress)))
           );
         }
       }

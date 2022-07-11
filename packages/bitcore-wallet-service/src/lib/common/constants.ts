@@ -6,7 +6,7 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
-    MATIC:'matic',
+    MATIC: 'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc'
@@ -19,7 +19,7 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
-    MATIC:'matic',
+    MATIC: 'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
