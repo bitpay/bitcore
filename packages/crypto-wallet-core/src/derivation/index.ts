@@ -3,9 +3,9 @@ import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
 import { LtcDeriver } from './ltc';
+import { MaticDeriver } from './matic';
 import { Paths } from './paths';
 import { XrpDeriver } from './xrp';
-import { MaticDeriver } from './matic';
 
 export interface Key {
   address: string;

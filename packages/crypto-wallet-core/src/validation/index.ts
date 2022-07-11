@@ -3,8 +3,8 @@ import { BtcValidation } from './btc';
 import { DogeValidation } from './doge';
 import { EthValidation } from './eth';
 import { LtcValidation } from './ltc';
-import { XrpValidation } from './xrp';
 import { MaticValidation } from './matic';
+import { XrpValidation } from './xrp';
 
 export interface IValidation {
   validateAddress(network: string, address: string): boolean;

@@ -1,4 +1,4 @@
-import { EthValidation } from '../eth'
+import { EthValidation } from '../eth';
 const utils = require('web3-utils');
 
 export class MaticValidation extends EthValidation {
