@@ -1,5 +1,8 @@
 'use strict';
 
+import _ from 'lodash';
+import { API } from './api';
+import { Utils } from './common';
 import { Request } from './request';
 
 const $ = require('preconditions').singleton();
@@ -95,6 +98,134 @@ export class BulkClient extends Request {
       'Failed state: this.credentials at <getStatusAll()>'
     );
 
-    return this.get('/v1/wallets/all/?' + qs.join('&'), cb);
+    return this.get('/v1/wallets/all/?' + qs.join('&'), (err, results) => {
+      [].concat(results).forEach(result => {
+        var status = result.status;
+        var c = this.credentials.find(
+          cred => cred.copayerId == status.preferences.copayerId
+        );
+        if (c && status.wallet.status == 'pending') {
+          result.wallet.secret = API._buildSecret(
+            c.walletId,
+            c.walletPrivKey,
+            c.coin,
+            c.network
+          );
+        }
+        if (c) this._processStatus(status, c);
+      });
+      return cb(err, results);
+    });
+  }
+
+  _processStatus(status, c) {
+    var processCustomData = (data, c) => {
+      var copayers = data.wallet.copayers;
+      if (!copayers) return;
+
+      var me = _.find(copayers, {
+        id: c.copayerId
+      });
+      if (!me || !me.customData) return;
+
+      var customData;
+      try {
+        customData = JSON.parse(
+          Utils.decryptMessage(me.customData, c.personalEncryptingKey)
+        );
+      } catch (e) {}
+      if (!customData) return;
+
+      // Add it to result
+      data.customData = customData;
+
+      // Update walletPrivateKey
+      if (!c.walletPrivKey && customData.walletPrivKey)
+        c.addWalletPrivateKey(customData.walletPrivKey);
+    };
+
+    processCustomData(status, c);
+    this._processWallet(status.wallet, c);
+    this._processTxps(status.pendingTxps, c);
+  }
+
+  _processWallet(wallet, c) {
+    var encryptingKey = c.sharedEncryptingKey;
+
+    var name = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
+    if (name != wallet.name) {
+      wallet.encryptedName = wallet.name;
+    }
+    wallet.name = name;
+    _.each(wallet.copayers, copayer => {
+      var name = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
+      if (name != copayer.name) {
+        copayer.encryptedName = copayer.name;
+      }
+      copayer.name = name;
+      _.each(copayer.requestPubKeys, access => {
+        if (!access.name) return;
+
+        var name = Utils.decryptMessageNoThrow(access.name, encryptingKey);
+        if (name != access.name) {
+          access.encryptedName = access.name;
+        }
+        access.name = name;
+      });
+    });
+  }
+
+  _processTxps(txps, c) {
+    if (!txps) return;
+
+    var encryptingKey = c.sharedEncryptingKey;
+    _.each([].concat(txps), txp => {
+      txp.encryptedMessage = txp.message;
+      txp.message =
+        Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
+      txp.creatorName = Utils.decryptMessageNoThrow(
+        txp.creatorName,
+        encryptingKey
+      );
+
+      _.each(txp.actions, action => {
+        // CopayerName encryption is optional (not available in older wallets)
+        action.copayerName = Utils.decryptMessageNoThrow(
+          action.copayerName,
+          encryptingKey
+        );
+
+        action.comment = Utils.decryptMessageNoThrow(
+          action.comment,
+          encryptingKey
+        );
+        // TODO get copayerName from Credentials -> copayerId to copayerName
+        // action.copayerName = null;
+      });
+      _.each(txp.outputs, output => {
+        output.encryptedMessage = output.message;
+        output.message =
+          Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
+      });
+      txp.hasUnconfirmedInputs = _.some(txp.inputs, input => {
+        return input.confirmations == 0;
+      });
+      this._processTxNotes(txp.note, c);
+    });
+  }
+
+  _processTxNotes(notes, c) {
+    if (!notes) return;
+
+    var encryptingKey = c.sharedEncryptingKey;
+    _.each([].concat(notes), note => {
+      note.encryptedBody = note.body;
+      note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
+      note.encryptedEditedByName = note.editedByName;
+      note.editedByName = Utils.decryptMessageNoThrow(
+        note.editedByName,
+        encryptingKey
+      );
+    });
   }
 }
