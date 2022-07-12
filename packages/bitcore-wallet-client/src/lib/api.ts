@@ -22,6 +22,7 @@ var Bitcore_ = {
   btc: CWC.BitcoreLib,
   bch: CWC.BitcoreLibCash,
   eth: CWC.BitcoreLib,
+  matic: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
   ltc: CWC.BitcoreLibLtc
@@ -475,8 +476,8 @@ export class API extends EventEmitter {
     if (!_.includes(Constants.COINS, coin))
       return cb(new Error('Invalid coin'));
 
-    if (coin == 'eth')
-      return cb(new Error('ETH not supported for this action'));
+    if (Constants.EVM_COINS.includes(opts.coin))
+      return cb(new Error('EVM based chains not supported for this action'));
 
     var B = Bitcore_[coin];
     var privateKey = B.PrivateKey(privateKey);
@@ -710,6 +711,7 @@ export class API extends EventEmitter {
     switch (chain) {
       case 'XRP':
       case 'ETH':
+      case 'MATIC':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
@@ -2525,7 +2527,10 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
   getNonce(opts, cb) {
-    $.checkArgument(opts.coin == 'eth', 'Invalid coin: must be "eth"');
+    $.checkArgument(
+      Constants.EVM_COINS.includes(opts.coin),
+      'Invalid coin: must be EVM based'
+    );
 
     var qs = [];
     qs.push(`coin=${opts.coin}`);
@@ -2540,12 +2545,13 @@ export class API extends EventEmitter {
 
   // /**
   // * Returns contract instantiation info. (All contract addresses instantiated by that sender with the current transaction hash and block number)
-  // * @param {string} opts.sender - sender eth wallet address
+  // * @param {string} opts.sender - sender wallet address
+  // * @param {string} opts.coin - chain name, defaults to 'eth'
   // * @param {string} opts.txId - instantiation transaction id
   // * @return {Callback} cb - Return error (if exists) instantiation info
   // */
   getMultisigContractInstantiationInfo(opts, cb) {
-    var url = '/v1/ethmultisig/';
+    var url = '/v1/multisig/';
     opts.network = this.credentials.network;
     this.request.post(url, opts, (err, contractInstantiationInfo) => {
       if (err) return cb(err);
@@ -2556,10 +2562,11 @@ export class API extends EventEmitter {
   // /**
   // * Returns contract info. (owners addresses and required number of confirmations)
   // * @param {string} opts.multisigContractAddress - multisig contract address
+  // * @param {string} opts.coin - chain name, defaults to 'eth'
   // * @return {Callback} cb - Return error (if exists) instantiation info
   // */
   getMultisigContractInfo(opts, cb) {
-    var url = '/v1/ethmultisig/info';
+    var url = '/v1/multisig/info';
     opts.network = this.credentials.network;
     this.request.post(url, opts, (err, contractInfo) => {
       if (err) return cb(err);
@@ -2570,6 +2577,7 @@ export class API extends EventEmitter {
   // /**
   // * Returns contract info. (name symbol precision)
   // * @param {string} opts.tokenAddress - token contract address
+  // * @param {string} opts.coin - chain name, defaults to 'eth'
   // * @return {Callback} cb - Return error (if exists) instantiation info
   // */
   getTokenContractInfo(opts, cb) {
@@ -2937,6 +2945,8 @@ export class API extends EventEmitter {
         ['bch', 'livenet'],
         ['eth', 'livenet'],
         ['eth', 'testnet'],
+        ['matic', 'livenet'],
+        ['matic', 'testnet'],
         ['xrp', 'livenet'],
         ['xrp', 'testnet'],
         ['doge', 'livenet'],

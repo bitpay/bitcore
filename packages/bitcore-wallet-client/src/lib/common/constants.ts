@@ -21,23 +21,35 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
-  COINS: [
-    'btc',
-    'bch',
-    'eth',
-    'xrp',
-    'doge',
-    'ltc',
-    'usdc',
-    'pax',
-    'gusd',
-    'busd',
-    'dai',
-    'wbtc',
-    'shib'
+  COINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],
+
+  ETH_ERC20: [
+    'matic_e',
+    'usdc_e',
+    'pax_e',
+    'gusd_e',
+    'busd_e',
+    'dai_e',
+    'wbtc_e',
+    'shib_e',
+    'ape_e',
+    'eurc_e'
   ],
-  ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc', 'shib'],
+
+  MATIC_ERC20: [
+    'eth_m',
+    'usdc_m',
+    'pax_m',
+    'gusd_m',
+    'busd_m',
+    'dai_m',
+    'wbtc_m',
+    'shib_m',
+    'ape_m',
+    'eurc_m'
+  ],
   UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
+  EVM_COINS: ['eth', 'matic'],
   TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS
 };

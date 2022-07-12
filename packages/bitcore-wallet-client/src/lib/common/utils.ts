@@ -22,6 +22,7 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash,
   eth: Bitcore,
+  matic: Bitcore,
   xrp: Bitcore,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc
@@ -40,10 +41,16 @@ export class Utils {
 
     // TODO: If in the future we add a new chain that supports custom tokens, check this condition
     if (
-      Constants.ERC20.includes(coin.toLowerCase()) ||
+      Constants.ETH_ERC20.includes(coin.toLowerCase()) ||
       !Constants.COINS.includes(coin.toLowerCase())
     ) {
       normalizedChain = 'ETH';
+    }
+    if (
+      Constants.MATIC_ERC20.includes(coin.toLowerCase()) ||
+      !Constants.COINS.includes(coin.toLowerCase())
+    ) {
+      normalizedChain = 'MATIC';
     }
     return normalizedChain;
   }
@@ -474,14 +481,15 @@ export class Utils {
       const unsignedTxs = [];
       // If it is a token swap its an already created ERC20 transaction so we skip it and go directly to ETH transaction create
       const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
-      const isETHMULTISIG = multisigContractAddress;
-      const chain = isETHMULTISIG
-        ? 'ETHMULTISIG'
-        : isERC20
-        ? 'ERC20'
-        : txp.chain
+      const isMULTISIG = multisigContractAddress;
+      const chainName = txp.chain
         ? txp.chain.toUpperCase()
         : this.getChain(coin);
+      const chain = isMULTISIG
+        ? chainName + 'MULTISIG'
+        : isERC20
+        ? chainName + 'ERC20'
+        : chainName;
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,

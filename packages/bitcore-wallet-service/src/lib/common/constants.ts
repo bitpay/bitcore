@@ -23,6 +23,7 @@ module.exports = {
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
+    MATIC_E: 'matic_e',
     USDC_E: 'usdc_e',
     PAX_E: 'pax_e',
     GUSD_E: 'gusd_e',
@@ -32,6 +33,7 @@ module.exports = {
     SHIB_E: 'shib_e',
     APE_E: 'ape_e',
     EURC_E: 'eurc_e',
+    ETH_M: 'eth_m',
     USDC_M: 'usdc_m',
     PAX_M: 'pax_m',
     GUSD_M: 'gusd_m',
@@ -44,6 +46,7 @@ module.exports = {
   },
 
   ETH_ERC20: {
+    MATIC_E: 'matic_e',
     USDC_E: 'usdc_e',
     PAX_E: 'pax_e',
     GUSD_E: 'gusd_e',
@@ -56,6 +59,7 @@ module.exports = {
   },
 
   MATIC_ERC20: {
+    ETH_M: 'eth_m',
     USDC_M: 'usdc_m',
     PAX_M: 'pax_m',
     GUSD_M: 'gusd_m',
