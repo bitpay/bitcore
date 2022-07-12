@@ -6,8 +6,8 @@ import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { LTCTxProvider } from './ltc';
 import { MATICTxProvider } from './matic';
-import { MATICMULTISIGTxProvider } from './matic-multisig';
 import { MATICERC20TxProvider } from './matic-erc20';
+import { MATICMULTISIGTxProvider } from './matic-multisig';
 import { XRPTxProvider } from './xrp';
 
 const providers = {
