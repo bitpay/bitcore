@@ -2434,11 +2434,11 @@ export class API extends EventEmitter {
   // * Subscribe to push notifications.
   // * @param {Object} opts
   // * @param {String} opts.type - Device type (ios or android).
-  // * @param {String} opts.token - Device token.
+  // * @param {String} opts.externalUserId - Device token. // Braze
   // * @returns {Object} response - Status of subscription.
   // */
   pushNotificationsSubscribe(opts, cb) {
-    var url = '/v1/pushnotifications/subscriptions/';
+    var url = '/v2/pushnotifications/subscriptions/';
     this.request.post(url, opts, (err, response) => {
       if (err) return cb(err);
       return cb(null, response);
@@ -2447,11 +2447,11 @@ export class API extends EventEmitter {
 
   // /**
   // * Unsubscribe from push notifications.
-  // * @param {String} token - Device token
+  // * @param {String} externalUserId - Device token. // Braze
   // * @return {Callback} cb - Return error if exists
   // */
-  pushNotificationsUnsubscribe(token, cb) {
-    var url = '/v2/pushnotifications/subscriptions/' + token;
+  pushNotificationsUnsubscribe(externalUserId, cb) {
+    var url = '/v3/pushnotifications/subscriptions/' + externalUserId;
     this.request.delete(url, cb);
   }
 
