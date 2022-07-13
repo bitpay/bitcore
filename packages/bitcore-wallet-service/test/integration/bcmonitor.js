@@ -11,7 +11,7 @@ var { WalletService } = require('../../ts_build/lib/server');
 var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
 
 var helpers = require('./helpers');
-var storage, blockchainExplorer, blockchainExplorerETH;
+var storage, blockchainExplorer, blockchainExplorerETH, blockchainExplorerMATIC;
 
 var socket = {
   handlers: {},
