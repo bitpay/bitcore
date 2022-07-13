@@ -490,7 +490,11 @@ export class ExpressApp {
                             ...(err ? { success: false, message: err.message } : {}),
                             status
                           };
-                          cb(err, result);
+                          if (err && err.message)
+                            logger.error(
+                              `An error occurred retrieving wallet status - id: ${server.walletId} - token address: ${optsClone.tokenAddress} - err: ${err.message}`
+                            );
+                          cb(null, result); // do not throw error, continue with next wallets
                         });
                       },
                       (err, result) => {
