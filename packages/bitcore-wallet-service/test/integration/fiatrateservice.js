@@ -882,7 +882,7 @@ describe('Fiat rate service', function() {
       sinon.spy(service, 'getRatesForStablecoin');
       service.storage.storeFiatRate('btc', btcRates, function(err) {
         should.not.exist(err);
-        service.getRatesByCoin({ coin: 'gusd' }, function(err, res) {
+        service.getRatesByCoin({ coin: 'gusd_e' }, function(err, res) {
           should.not.exist(err);
           should.exist(res);
           res

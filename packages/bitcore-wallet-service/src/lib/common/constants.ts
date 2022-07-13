@@ -91,6 +91,11 @@ module.exports = {
     LTC: 'ltc'
   },
 
+  EVM_COINS: {
+    ETH: 'eth',
+    MATIC: 'matic'
+  },
+
   NETWORKS: {
     LIVENET: 'livenet',
     TESTNET: 'testnet'

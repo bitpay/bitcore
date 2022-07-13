@@ -9,9 +9,10 @@ var should = chai.should();
 
 var { WalletService } = require('../../ts_build/lib/server');
 var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
+var { Constants } = require('../../ts_build/lib/common');
 
 var helpers = require('./helpers');
-var storage, blockchainExplorer, blockchainExplorerETH, blockchainExplorerMATIC;
+var storage, blockchainExplorer, blockchainExplorerEVM;
 
 var socket = {
   handlers: {},
@@ -28,8 +29,7 @@ describe('Blockchain monitor', function() {
     helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
-      blockchainExplorerETH =  _.cloneDeep(blockchainExplorer);
-      blockchainExplorerMATIC =  _.cloneDeep(blockchainExplorer);
+      blockchainExplorerEVM =  _.cloneDeep(blockchainExplorer);
 
 
       blockchainExplorer.initSocket = function(callbacks) {
@@ -39,13 +39,13 @@ describe('Blockchain monitor', function() {
         socket.handlers['block'] =  callbacks.onBlock;
       }
 
-      blockchainExplorerETH.initSocket = function(callbacks) {
+      blockchainExplorerEVM.initSocket = function(callbacks) {
        socket.handlers['tx']= function(data) {
 
           // copied from v8.tx
           const tx = data.tx;
           // script output, or similar.
-          if (!tx || tx.chain !== 'ETH') return;
+          if (!tx || !Constants.EVM_COINS[tx.chain]) return;
           let tokenAddress;
           let address;
           let amount;
@@ -68,36 +68,6 @@ describe('Blockchain monitor', function() {
         // no uses in eth, interferes with btc
         //socket.handlers['block'] =  callbacks.onBlock;
       }
-
-      blockchainExplorerMATIC.initSocket = function(callbacks) {
-        socket.handlers['tx']= function(data) {
- 
-           // copied from v8.tx
-           const tx = data.tx;
-           // script output, or similar.
-           if (!tx || tx.chain !== 'MATIC') return;
-           let tokenAddress;
-           let address;
-           let amount;
- 
-           if (tx.abiType && tx.abiType.type === 'ERC20') {
-             tokenAddress = tx.to;
-             address = CWC.Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
-             amount = tx.abiType.params[1].value;
-           } else {
-             address = tx.to;
-             amount = tx.value;
-           }
-           const out = {
-             address,
-             amount,
-             tokenAddress
-           };
-           return callbacks.onIncomingPayments({ out, txid: tx.txid });
-         };
-         // no uses in eth, interferes with btc
-         //socket.handlers['block'] =  callbacks.onBlock;
-       }
       done();
     });
   });
@@ -144,10 +114,10 @@ describe('Blockchain monitor', function() {
               'livenet': blockchainExplorer
             },
             'eth': {
-              'livenet': blockchainExplorerETH
+              'livenet': blockchainExplorerEVM
             },
             'matic': {
-              'livenet': blockchainExplorerMATIC
+              'livenet': blockchainExplorerEVM
             }
           },
         }, function(err) {
