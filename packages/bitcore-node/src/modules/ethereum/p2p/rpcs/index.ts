@@ -29,8 +29,8 @@ export interface IJsonRpcResponse {
 
 export interface IRpc {
   web3: Web3;
-  getBlock(blockNumber: number): Promise<ErigonBlock|GethBlock>;
-  getTransactionsFromBlock(blockNumber: number): Promise<Array<ClassifiedTrace|IGethTxTrace>>;
+  getBlock(blockNumber: number): Promise<ErigonBlock | GethBlock>;
+  getTransactionsFromBlock(blockNumber: number): Promise<Array<ClassifiedTrace | IGethTxTrace>>;
   send<T>(data: IJsonRpcRequest): Promise<T>;
-  reconcileTraces(block: IEthBlock, transactions: IEthTransaction[], traces: Array<ClassifiedTrace|IGethTxTrace>)
+  reconcileTraces(block: IEthBlock, transactions: IEthTransaction[], traces: Array<ClassifiedTrace | IGethTxTrace>);
 }

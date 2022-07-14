@@ -188,7 +188,10 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const self = this;
     return new Promise(async (resolve, reject) => {
       try {
-        const maxBlock = await self.collection.findOne({ chain, network }, { sort: { height: -1 }, projection: { height: 1 } });
+        const maxBlock = await self.collection.findOne(
+          { chain, network },
+          { sort: { height: -1 }, projection: { height: 1 } }
+        );
         if (!maxBlock) {
           return resolve([]);
         }

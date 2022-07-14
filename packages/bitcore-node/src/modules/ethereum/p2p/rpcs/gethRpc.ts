@@ -4,7 +4,7 @@ import { GethBlock, IAbiDecodedData, IEthBlock, IEthTransaction } from '../../ty
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 interface IGethTxTraceResponse {
-  result: IGethTxTrace
+  result: IGethTxTrace;
 }
 
 interface IGethTxTraceBase {
@@ -91,7 +91,7 @@ export class GethRPC implements IRpc {
     const retval: IGethTxTraceFlat[] = [];
 
     const calls = trace.calls;
-  
+
     delete trace.calls;
     trace.abiType = trace.input ? EthTransactionStorage.abiDecode(trace.input) : undefined;
     (trace as IGethTxTraceFlat).depth = depth;
@@ -100,7 +100,7 @@ export class GethRPC implements IRpc {
     if (calls) {
       retval.push(...calls.flatMap((call, idx) => this.flattenTraceCalls(call, depth + '_' + idx)));
     }
-    
+
     return retval;
   }
 }

@@ -5,7 +5,6 @@ import { IBlock } from '../../types/Block';
 import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
 import { IGethTxTraceFlat } from './p2p/rpcs/gethRpc';
 
-
 interface BaseBlock {
   difficulty: string;
   extraData: string;
@@ -45,7 +44,6 @@ interface BaseTransaction {
   v: string;
   value: string;
 }
-
 
 /**
  * ERIGON

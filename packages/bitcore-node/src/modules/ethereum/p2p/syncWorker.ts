@@ -87,7 +87,8 @@ class SyncWorker {
 
   async connect() {
     const providerIdx = worker.threadId % (this.chainConfig.providers || []).length;
-    const providerConfig = this.chainConfig.provider || this.chainConfig.providers[providerIdx];    const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
+    const providerConfig = this.chainConfig.provider || this.chainConfig.providers[providerIdx];
+    const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
     this.web3 = new CryptoRpc(rpcConfig).get(this.chain).web3;
     this.client = await this.getClient();
     this.rpc = new Rpcs[this.client](this.web3!);
@@ -156,7 +157,7 @@ class SyncWorker {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ErigonTransaction|GethTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEthBlock): IEthTransaction {
     const txid = tx.hash || '';
     const to = tx.to || '';
     const from = tx.from || '';

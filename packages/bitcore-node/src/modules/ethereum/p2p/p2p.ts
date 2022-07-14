@@ -153,7 +153,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
           this.client = undefined;
           this.events.emit('disconnected');
         } else if (disconnected || firstConnect) {
-          this.events.emit('connected'); 
+          this.events.emit('connected');
         }
         if (disconnected && connected && !firstConnect) {
           logger.warn(
@@ -199,7 +199,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     }
   }
 
-  async processTransaction(tx: ErigonTransaction|GethTransaction) {
+  async processTransaction(tx: ErigonTransaction | GethTransaction) {
     const now = new Date();
     const convertedTx = this.convertTx(tx);
     this.txModel.batchImport({
@@ -345,7 +345,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<ErigonTransaction|GethTransaction>;
+    const transactions = block.transactions as Array<ErigonTransaction | GethTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     const traceTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
 
@@ -354,7 +354,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ErigonTransaction|GethTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash || '';
       const to = tx.to || '';
