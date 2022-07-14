@@ -2,7 +2,7 @@
   "name": "bitcore-node",
   "description": "A blockchain indexing node with extended capabilities using bitcore",
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=12.0.0"
   },
   "version": "8.25.31",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
