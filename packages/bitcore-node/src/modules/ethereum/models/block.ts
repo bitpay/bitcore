@@ -62,17 +62,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const convertedBlock = blockOp.updateOne.update.$set;
     const { height, timeNormalized, time } = convertedBlock;
 
-    const previousBlock = await this.collection.findOne({ hash: convertedBlock.previousBlockHash, chain, network });
-
-    await this.collection.bulkWrite([blockOp]);
-    if (previousBlock) {
-      await this.collection.updateOne(
-        { chain, network, hash: previousBlock.hash },
-        { $set: { nextBlockHash: convertedBlock.hash } }
-      );
-      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
-    }
-
+    // Put in the transactions first
     await EthTransactionStorage.batchImport({
       txs: transactions,
       blockHash: convertedBlock.hash,
@@ -85,6 +75,17 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       forkHeight,
       initialSyncComplete
     });
+
+    const previousBlock = await this.collection.findOne({ hash: convertedBlock.previousBlockHash, chain, network });
+
+    await this.collection.bulkWrite([blockOp]);
+    if (previousBlock) {
+      await this.collection.updateOne(
+        { chain, network, hash: previousBlock.hash },
+        { $set: { nextBlockHash: convertedBlock.hash } }
+      );
+      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+    }
 
     if (initialSyncComplete) {
       EventStorage.signalBlock(convertedBlock);

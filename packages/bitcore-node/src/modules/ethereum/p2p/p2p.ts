@@ -12,7 +12,7 @@ import { wait } from '../../../utils/wait';
 import { ETHStateProvider } from '../api/csp';
 import { EthBlockModel, EthBlockStorage } from '../models/block';
 import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
-import { ErigonBlock, ErigonTransaction, IEthBlock, IEthTransaction } from '../types';
+import { AnyBlock, ErigonTransaction, GethTransaction, IEthBlock, IEthTransaction } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
 
@@ -27,6 +27,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected rpc?: IRpc;
   protected provider: ETHStateProvider;
   protected web3?: Web3;
+  protected client?: 'geth' | 'erigon';
   protected invCache: any;
   protected invCacheLimits: any;
   protected multiThreadSync: MultiThreadSync;
@@ -121,6 +122,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return this.provider.getWeb3(this.network);
   }
 
+  async getClient() {
+    const nodeVersion = await this.web3!.eth.getNodeInfo();
+    return nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
+  }
+
   async handleReconnects() {
     this.disconnecting = false;
     let firstConnect = true;
@@ -132,22 +138,22 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         if (!this.web3) {
           const { web3 } = await this.getWeb3();
           this.web3 = web3;
-          this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3);
         }
         try {
+          if (!this.client || !this.rpc) {
+            this.client = await this.getClient();
+            this.rpc = new Rpcs[this.client](this.web3);
+          }
           connected = await this.web3.eth.net.isListening();
         } catch (e) {
           connected = false;
         }
-        if (connected) {
-          if (disconnected || firstConnect) {
-            this.events.emit('connected');
-          }
-        } else {
-          const { web3 } = await this.getWeb3();
-          this.web3 = web3;
-          this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3);
+        if (!connected) {
+          this.web3 = undefined;
+          this.client = undefined;
           this.events.emit('disconnected');
+        } else if (disconnected || firstConnect) {
+          this.events.emit('connected'); 
         }
         if (disconnected && connected && !firstConnect) {
           logger.warn(
@@ -168,10 +174,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
   async connect() {
     this.handleReconnects();
+    return new Promise<void>(resolve => this.events.once('connected', resolve));
   }
 
   public async getBlock(height: number) {
-    return (this.rpc!.getBlock(height) as unknown) as ErigonBlock;
+    return this.rpc!.getBlock(height);
   }
 
   async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
@@ -192,7 +199,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     }
   }
 
-  async processTransaction(tx: ErigonTransaction) {
+  async processTransaction(tx: ErigonTransaction|GethTransaction) {
     const now = new Date();
     const convertedTx = this.convertTx(tx);
     this.txModel.batchImport({
@@ -297,7 +304,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return new Promise(resolve => this.events.once('SYNCDONE', resolve));
   }
 
-  async convertBlock(block: ErigonBlock) {
+  async convertBlock(block: AnyBlock) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -307,10 +314,10 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       Constantinople: 7280000
     };
 
-    if (height > ForkHeights.Byzantium) {
-      reward = 3;
-    } else if (height > ForkHeights.Constantinople) {
+    if (height > ForkHeights.Constantinople) {
       reward = 2;
+    } else if (height > ForkHeights.Byzantium) {
+      reward = 3;
     }
 
     const convertedBlock: IEthBlock = {
@@ -338,45 +345,16 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<ErigonTransaction>;
+    const transactions = block.transactions as Array<ErigonTransaction|GethTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
-    const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
-    for (const tx of internalTxs) {
-      if (tx.type === 'reward') {
-        if (tx.action.rewardType && tx.action.rewardType === 'block') {
-          const gasSum = convertedTxs.reduce((sum, e) => sum + e.fee, 0);
-          const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
-          convertedBlock.reward = totalReward;
-        }
-        if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
-          const uncles = convertedBlock.uncleReward || [];
-          const uncleValue = Number.parseInt(tx.action.value, 16);
-          Object.assign(convertedBlock, { uncleReward: uncles.concat([uncleValue]) });
-        }
-      }
-      if (tx && tx.action) {
-        const foundIndex = convertedTxs.findIndex(
-          t =>
-            t.txid === tx.transactionHash &&
-            t.from !== tx.action.from &&
-            t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
-        );
-        if (foundIndex > -1) {
-          convertedTxs[foundIndex].internal.push(tx);
-        }
-        if (tx.error) {
-          const errorIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
-          if (errorIndex && errorIndex > -1) {
-            convertedTxs[errorIndex].error = tx.error;
-          }
-        }
-      }
-    }
+    const traceTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
+
+    this.rpc!.reconcileTraces(convertedBlock, convertedTxs, traceTxs);
 
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ErigonTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction|GethTransaction>, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash || '';
       const to = tx.to || '';
@@ -404,7 +382,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         gasPrice: Number(tx.gasPrice),
         // gasUsed: Number(tx.gasUsed),
         nonce,
-        internal: []
+        internal: [],
+        calls: []
       };
       if (abiType) {
         convertedTx.abiType = abiType;
@@ -432,8 +411,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
   async start() {
     logger.debug(`Started worker for chain ${this.chain} ${this.network}`);
-    this.connect();
     this.setupListeners();
+    await this.connect();
     this.sync();
   }
 }

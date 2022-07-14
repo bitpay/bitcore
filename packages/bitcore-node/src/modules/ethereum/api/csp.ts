@@ -72,7 +72,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       delete ETHStateProvider.rpcs[network];
     }
     if (!ETHStateProvider.rpcs[network]) {
-      console.log('making a new connection');
+      logger.info(`Making a new connection for ${this.chain}:${network}`);
       const providerIdx = worker.threadId % (this.config[network].providers || []).length;
       const providerConfig = this.config[network].provider || this.config[network].providers![providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };

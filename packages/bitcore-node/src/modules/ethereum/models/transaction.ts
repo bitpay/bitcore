@@ -225,6 +225,18 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
             }
           }
 
+          if (tx.calls) {
+            for (let call of tx.calls) {
+              const { to, from } = call;
+              if (to) {
+                tos.push(web3.utils.toChecksumAddress(to));
+              }
+              if (from) {
+                froms.push(web3.utils.toChecksumAddress(from));
+              }
+            }
+          }
+
           const sentWallets = await WalletAddressStorage.collection
             .find({ chain, network, address: { $in: froms } })
             .toArray();

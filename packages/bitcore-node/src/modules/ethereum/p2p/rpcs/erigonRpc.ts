@@ -11,7 +11,7 @@ import { LoggifyClass } from '../../../../decorators/Loggify';
 import { ERC20Abi } from '../../abi/erc20';
 import { ERC721Abi } from '../../abi/erc721';
 import { EthTransactionStorage } from '../../models/transaction';
-import { IAbiDecodedData } from '../../types';
+import { ErigonBlock, IAbiDecodedData, IEthBlock, IEthTransaction } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 AbiDecoder.addABI(ERC20Abi);
@@ -56,8 +56,8 @@ export class ErigonRPC implements IRpc {
     this.web3 = web3;
   }
 
-  public getBlock(blockNumber: number) {
-    return this.web3.eth.getBlock(blockNumber, true);
+  public getBlock(blockNumber: number): Promise<ErigonBlock> {
+    return (this.web3.eth.getBlock(blockNumber, true) as unknown) as Promise<ErigonBlock>;
   }
 
   private async traceBlock(blockNumber: number): Promise<Array<ErigonTraceResponse>> {
@@ -70,7 +70,7 @@ export class ErigonRPC implements IRpc {
     return txs;
   }
 
-  public async getTransactionsFromBlock(blockNumber: number) {
+  public async getTransactionsFromBlock(blockNumber: number): Promise<ClassifiedTrace[]> {
     const txs = (await this.traceBlock(blockNumber)) || [];
     return txs.map(tx => this.transactionFromErigonTrace(tx));
   }
@@ -94,5 +94,41 @@ export class ErigonRPC implements IRpc {
       convertedTx.abiType = abiType;
     }
     return convertedTx;
+  }
+
+  public reconcileTraces(block: IEthBlock, transactions: IEthTransaction[], traceTxs: ClassifiedTrace[]) {
+    const gasSum = transactions.reduce((sum, e) => sum + e.fee, 0);
+
+    for (const tx of traceTxs) {
+      if (tx.type === 'reward') {
+        if (tx.action.rewardType && tx.action.rewardType === 'block') {
+          const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
+          block.reward = totalReward;
+        }
+        if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
+          const uncles = block.uncleReward || [];
+          const uncleValue = Number.parseInt(tx.action.value, 16);
+          uncles.push(uncleValue);
+          block.uncleReward = uncles;
+        }
+      }
+      if (tx && tx.action) {
+        const foundIndex = transactions.findIndex(
+          t =>
+            t.txid === tx.transactionHash &&
+            t.from !== tx.action.from &&
+            t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
+        );
+        if (foundIndex > -1) {
+          transactions[foundIndex].internal.push(tx);
+        }
+        if (tx.error) {
+          const errorIndex = transactions.findIndex(t => t.txid === tx.transactionHash);
+          if (errorIndex && errorIndex > -1) {
+            transactions[errorIndex].error = tx.error;
+          }
+        }
+      }
+    }
   }
 }
