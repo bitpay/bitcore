@@ -118,10 +118,10 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
           try {
             if (err) {
               return reject(err);
-            } else if (body.result === 'error') {
-              return reject(body);
             } else if (body == null) {
               return resolve(body);
+            } else if (body.result === 'error') {
+              return reject(body);
             } else {
               return resolve({
                 ...body.ledger,
