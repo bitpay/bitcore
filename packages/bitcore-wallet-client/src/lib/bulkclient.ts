@@ -104,8 +104,9 @@ export class BulkClient extends Request {
       [].concat(results).forEach(result => {
         if (result.success) {
           var status = result.status;
+          var walletId = result.walletId;
           var c = this.credentials.find(
-            cred => cred.copayerId == status.preferences.copayerId
+            cred => cred.walletId == walletId
           );
           if (c && status.wallet.status == 'pending') {
             result.wallet.secret = API._buildSecret(
