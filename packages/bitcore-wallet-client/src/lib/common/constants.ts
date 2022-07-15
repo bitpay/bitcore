@@ -50,6 +50,7 @@ export const Constants = {
   ],
   UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
   EVM_COINS: ['eth', 'matic'],
-  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
+  ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
+  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS
 };

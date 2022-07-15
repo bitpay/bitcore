@@ -32,7 +32,7 @@ module.exports = {
     WBTC_E: 'wbtc_e',
     SHIB_E: 'shib_e',
     APE_E: 'ape_e',
-    EURC_E: 'eurc_e',
+    EUROC_E: 'euroc_e',
     ETH_M: 'eth_m',
     USDC_M: 'usdc_m',
     PAX_M: 'pax_m',
@@ -42,7 +42,7 @@ module.exports = {
     WBTC_M: 'wbtc_m',
     SHIB_M: 'shib_m',
     APE_M: 'ape_m',
-    EURC_M: 'eurc_m'
+    EUROC_M: 'euroc_m'
   },
 
   ETH_ERC20: {
@@ -55,7 +55,7 @@ module.exports = {
     WBTC_E: 'wbtc_e',
     SHIB_E: 'shib_e',
     APE_E: 'ape_e',
-    EURC_E: 'eurc_e'
+    EUROC_E: 'euroc_e'
   },
 
   MATIC_ERC20: {
@@ -68,7 +68,7 @@ module.exports = {
     WBTC_M: 'wbtc_m',
     SHIB_M: 'shib_m',
     APE_M: 'ape_m',
-    EURC_M: 'eurc_m'
+    EUROC_M: 'euroc_m'
   },
 
   USD_STABLECOINS: {
@@ -123,5 +123,6 @@ module.exports = {
 
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
-  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS
+  ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
+  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS
 };

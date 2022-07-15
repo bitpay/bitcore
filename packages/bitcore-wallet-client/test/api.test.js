@@ -2533,6 +2533,59 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should save and retrieve matic token addresses', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        clients[0].getPreferences((err, preferences) => {
+          should.not.exist(err);
+          preferences.should.be.empty;
+          clients[0].savePreferences(
+            {
+              maticTokenAddresses: ['0x2791bca1f2de4661ed88a30c99a7a9449aa84174']
+            },
+            err => {
+              should.not.exist(err);
+              clients[0].getPreferences((err, preferences) => {
+                should.not.exist(err);
+                should.exist(preferences);
+                preferences.maticTokenAddresses[0].should.exist;
+                preferences.maticTokenAddresses[0].should.equal('0x2791bca1f2de4661ed88a30c99a7a9449aa84174');
+                done();
+              });
+            }
+          );
+        });
+      });
+    });
+
+    it('should save and retrieve matic multisig address', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        clients[0].getPreferences((err, preferences) => {
+          should.not.exist(err);
+          preferences.should.be.empty;
+          clients[0].savePreferences(
+            {
+              multisigMaticInfo: {
+                walletName: 'myWallet',
+                multisigContractAddress: '0xeC20607aa654D823DD01BEB8780a44863c57Ed07',
+                n: 0,
+                m: 1
+              }
+            },
+            err => {
+              should.not.exist(err);
+              clients[0].getPreferences((err, preferences) => {
+                should.not.exist(err);
+                should.exist(preferences);
+                preferences.multisigMaticInfo.should.exist;
+                preferences.maticTokenAddresses.multisigContractAddress.should.equal('0xeC20607aa654D823DD01BEB8780a44863c57Ed07');
+                done();
+              });
+            }
+          );
+        });
+      });
+    });
   });
 
   describe('Fiat rates', () => {
@@ -6218,7 +6271,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to gain access to tokens wallets from mnemonic', done => {
+      it('should be able to gain access to eth tokens wallets from mnemonic', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
@@ -6263,7 +6316,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to gain access to tokens wallets from mnemonic (Case 2)', done => {
+      it('should be able to gain access to eth tokens wallets from mnemonic (Case 2)', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
@@ -6324,6 +6377,119 @@ describe('client API', function() {
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  done();
+                });
+              })
+          });
+        });
+      });
+
+      it('should be able to gain access to matic tokens wallets from mnemonic', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences(
+            {
+              maticTokenAddresses: [
+                '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+                '0x6F3B3286fd86d8b47EC737CEB3D0D354cc657B3e'
+              ]
+            },
+            err => {
+              should.not.exist(err);
+              Client.serverAssistedImport(
+                { words },
+                {
+                  clientFactory: () => {
+                    return helpers.newClient(app);
+                  }
+                },
+                (err, k, c) => {
+                  // the matic wallet + 2 tokens.
+                  c.length.should.equal(3);
+                  let recoveryClient = c[0];
+                  recoveryClient.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.coin.should.equal('matic');
+                    let recoveryClient2 = c[2];
+                    recoveryClient2.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient2.credentials.coin.should.equal('pax');
+                      done();
+                    });
+                  });
+                }
+              );
+            }
+          );
+        });
+      });
+
+      it('should be able to gain access to matic tokens wallets from mnemonic (Case 2)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({ maticTokenAddresses: ['0x2791bca1f2de4661ed88a30c99a7a9449aa84174'] }, err => {
+            should.not.exist(err);
+            Client.serverAssistedImport(
+              { words },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the matic wallet + 1 token.
+                c.length.should.equal(2);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.coin.should.equal('matic');
+                  let recoveryClient2 = c[1];
+                  recoveryClient2.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient2.credentials.coin.should.equal('usdc');
+                    done();
+                  });
+                });
+              }
+            );
+          });
+        });
+      });
+
+      it('should not fail to gain access to matic wallet with unknown tokens addresses from mnemonic (Case 3)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({ maticTokenAddresses: ['0x9da9bc12b19b22d7c55798f722a1b6747ae9a710'] }, err => {
+            should.not.exist(err);
+              Client.serverAssistedImport(
+              { words },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the matic wallet + 1 unknown token addresses on preferences.
+                c.length.should.equal(1);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.coin.should.equal('matic');
                   done();
                 });
               })

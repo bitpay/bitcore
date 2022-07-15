@@ -464,7 +464,7 @@ export class PushNotificationsService {
       wbtc_e: 'WBTC',
       shib_e: 'SHIB',
       ape_e: 'APE',
-      eurc_e: 'EURC',
+      euroc_e: 'EUROC',
       eth_m: 'ETH',
       usdc_m: 'USDC',
       pax_m: 'PAX',
@@ -474,7 +474,7 @@ export class PushNotificationsService {
       wbtc_m: 'WBTC',
       shib_m: 'SHIB',
       ape_m: 'APE',
-      eurc_m: 'EURC'
+      euroc_m: 'EUROC'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -485,9 +485,12 @@ export class PushNotificationsService {
         let opts = {} as any;
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
-          if (Constants.TOKEN_OPTS[tokenAddress]) {
-            unit = Constants.TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
-            label = UNIT_LABELS[unit];
+          if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ETH_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit + '_e'];
+          } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit + '_m'];
           } else {
             let customTokensData;
             try {
@@ -495,7 +498,17 @@ export class PushNotificationsService {
             } catch (error) {
               throw new Error('Could not get custom tokens data');
             }
-            if (customTokensData && customTokensData[tokenAddress]) {
+            if (customTokensData && customTokensData[0] && customTokensData[0][tokenAddress]) {
+              // check for eth tokens
+              unit = customTokensData[tokenAddress].symbol.toLowerCase();
+              label = unit.toUpperCase();
+              opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
+              opts.decimals = {
+                maxDecimals: 6,
+                minDecimals: 2
+              };
+            } else if (customTokensData && customTokensData[1] && customTokensData[1][tokenAddress]) {
+              // check for matic tokens
               unit = customTokensData[tokenAddress].symbol.toLowerCase();
               label = unit.toUpperCase();
               opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
@@ -676,21 +689,41 @@ export class PushNotificationsService {
   }
 
   getTokenData() {
-    return new Promise((resolve, reject) => {
-      this.request(
-        {
-          url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/1/tokens',
-          method: 'GET',
-          json: true,
-          headers: {
-            'Content-Type': 'application/json'
+    return Promise.all([
+      new Promise((resolve, reject) => {
+        // Get Eth tokens
+        this.request(
+          {
+            url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/1/tokens',
+            method: 'GET',
+            json: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          },
+          (err, data: any) => {
+            if (err) return reject(err);
+            return resolve(data.body.tokens);
           }
-        },
-        (err, data: any) => {
-          if (err) return reject(err);
-          return resolve(data.body.tokens);
-        }
-      );
-    });
+        );
+      }),
+      new Promise((resolve, reject) => {
+        // Get Matic tokens
+        this.request(
+          {
+            url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/137/tokens',
+            method: 'GET',
+            json: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          },
+          (err, data: any) => {
+            if (err) return reject(err);
+            return resolve(data.body.tokens);
+          }
+        );
+      })
+    ]);
   }
 }

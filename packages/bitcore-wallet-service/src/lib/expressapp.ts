@@ -1650,6 +1650,7 @@ export class ExpressApp {
         });
     });
 
+    // DEPRECATED - should specify coin in address
     router.post('/v1/service/oneInch/getSwap', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
@@ -1663,7 +1664,38 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/oneInch/getSwap/:coin', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .oneInchGetSwap(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    // DEPRECATED - should specify coin in address
     router.get('/v1/service/oneInch/getTokens', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .oneInchGetTokens(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
+    router.get('/v1/service/oneInch/getTokens/:coin', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
