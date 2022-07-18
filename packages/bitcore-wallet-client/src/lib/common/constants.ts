@@ -21,7 +21,36 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
-  COINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],
+  
+  COINS: [
+    'btc',
+    'bch',
+    'eth',
+    'matic',
+    'xrp',
+    'doge',
+    'ltc',
+    'matic_e',
+    'usdc_e',
+    'pax_e',
+    'gusd_e',
+    'busd_e',
+    'dai_e',
+    'wbtc_e',
+    'shib_e',
+    'ape_e',
+    'euroc_e',
+    'eth_m',
+    'usdc_m',
+    'pax_m',
+    'gusd_m',
+    'busd_m',
+    'dai_m',
+    'wbtc_m',
+    'shib_m',
+    'ape_m',
+    'euroc_m'
+  ],
 
   ETH_ERC20: [
     'matic_e',
@@ -33,7 +62,7 @@ export const Constants = {
     'wbtc_e',
     'shib_e',
     'ape_e',
-    'eurc_e'
+    'euroc_e'
   ],
 
   MATIC_ERC20: [
@@ -46,7 +75,7 @@ export const Constants = {
     'wbtc_m',
     'shib_m',
     'ape_m',
-    'eurc_m'
+    'euroc_m'
   ],
   UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
   EVM_COINS: ['eth', 'matic'],
