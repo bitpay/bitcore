@@ -682,9 +682,9 @@ export class PushNotificationsService {
   getTokenData(chain) {
     return new Promise((resolve, reject) => {
       const chainIdMap = {
-        'eth': 1,
-        'matic': 137
-      }
+        eth: 1,
+        matic: 137
+      };
       // Get tokens
       this.request(
         {
@@ -700,7 +700,6 @@ export class PushNotificationsService {
           return resolve(data.body.tokens);
         }
       );
-    })
-      
+    });
   }
 }
