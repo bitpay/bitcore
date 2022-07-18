@@ -2535,7 +2535,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve matic token addresses', done => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic'}, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -2559,26 +2559,26 @@ describe('client API', function() {
     });
 
     it('should save and retrieve matic multisig address', done => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic'}, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
           clients[0].savePreferences(
             {
-              multisigMaticInfo: {
+              multisigMaticInfo: [{
                 walletName: 'myWallet',
                 multisigContractAddress: '0xeC20607aa654D823DD01BEB8780a44863c57Ed07',
                 n: 0,
                 m: 1
-              }
+              }]
             },
             err => {
               should.not.exist(err);
               clients[0].getPreferences((err, preferences) => {
                 should.not.exist(err);
                 should.exist(preferences);
-                preferences.multisigMaticInfo.should.exist;
-                preferences.maticTokenAddresses.multisigContractAddress.should.equal('0xeC20607aa654D823DD01BEB8780a44863c57Ed07');
+                preferences.multisigMaticInfo[0].should.exist;
+                preferences.multisigMaticInfo[0].multisigContractAddress.should.equal('0xeC20607aa654D823DD01BEB8780a44863c57Ed07');
                 done();
               });
             }

@@ -494,21 +494,12 @@ export class PushNotificationsService {
           } else {
             let customTokensData;
             try {
-              customTokensData = await this.getTokenData();
+              customTokensData = await this.getTokenData(data.address.coin);
             } catch (error) {
               throw new Error('Could not get custom tokens data');
             }
-            if (customTokensData && customTokensData[0] && customTokensData[0][tokenAddress]) {
+            if (customTokensData && customTokensData[tokenAddress]) {
               // check for eth tokens
-              unit = customTokensData[tokenAddress].symbol.toLowerCase();
-              label = unit.toUpperCase();
-              opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
-              opts.decimals = {
-                maxDecimals: 6,
-                minDecimals: 2
-              };
-            } else if (customTokensData && customTokensData[1] && customTokensData[1][tokenAddress]) {
-              // check for matic tokens
               unit = customTokensData[tokenAddress].symbol.toLowerCase();
               label = unit.toUpperCase();
               opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
@@ -688,42 +679,28 @@ export class PushNotificationsService {
     );
   }
 
-  getTokenData() {
-    return Promise.all([
-      new Promise((resolve, reject) => {
-        // Get Eth tokens
-        this.request(
-          {
-            url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/1/tokens',
-            method: 'GET',
-            json: true,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          },
-          (err, data: any) => {
-            if (err) return reject(err);
-            return resolve(data.body.tokens);
+  getTokenData(chain) {
+    return new Promise((resolve, reject) => {
+      const chainIdMap = {
+        'eth': 1,
+        'matic': 137
+      }
+      // Get tokens
+      this.request(
+        {
+          url: `https://bitpay.api.enterprise.1inch.exchange/v3.0/${chainIdMap[chain]}/tokens`,
+          method: 'GET',
+          json: true,
+          headers: {
+            'Content-Type': 'application/json'
           }
-        );
-      }),
-      new Promise((resolve, reject) => {
-        // Get Matic tokens
-        this.request(
-          {
-            url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/137/tokens',
-            method: 'GET',
-            json: true,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          },
-          (err, data: any) => {
-            if (err) return reject(err);
-            return resolve(data.body.tokens);
-          }
-        );
-      })
-    ]);
+        },
+        (err, data: any) => {
+          if (err) return reject(err);
+          return resolve(data.body.tokens);
+        }
+      );
+    })
+      
   }
 }
