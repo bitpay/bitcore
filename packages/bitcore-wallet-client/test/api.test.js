@@ -638,7 +638,7 @@ describe('client API', function() {
         var t = Utils.buildTx(txp);
         const rawTxp = t.uncheckedSerialize();
         rawTxp.should.deep.equal([
-          '0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080'
+          '0xec068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b80008081898080'
         ]);
       });
       it('should protect from creating excessive fee DOGE', () => {

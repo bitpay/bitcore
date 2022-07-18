@@ -14,7 +14,7 @@ const providers = {
   BTC: new BTCTxProvider(),
   BCH: new BCHTxProvider(),
   ETH: new ETHTxProvider(),
-  ERC20: new ERC20TxProvider(),
+  ETHERC20: new ERC20TxProvider(),
   ETHMULTISIG: new ETHMULTISIGTxProvider(),
   XRP: new XRPTxProvider(),
   DOGE: new DOGETxProvider(),
