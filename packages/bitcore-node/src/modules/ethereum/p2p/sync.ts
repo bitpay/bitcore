@@ -202,7 +202,11 @@ export class MultiThreadSync extends EventEmitter {
     }
 
     const verifiedBlockHeight = await this.getVerifiedBlockHeight();
-    logger.info(`Verifying ${this.currentHeight - verifiedBlockHeight} ${this.chain}:${this.network} blocks. This could take a while.`);
+    logger.info(
+      `Verifying ${this.currentHeight - verifiedBlockHeight} ${this.chain}:${
+        this.network
+      } blocks. This could take a while.`
+    );
     const gaps = await EthBlockStorage.getBlockSyncGaps({
       chain: this.chain,
       network: this.network,

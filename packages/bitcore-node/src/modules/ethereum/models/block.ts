@@ -188,7 +188,10 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     return new Promise(async (resolve, reject) => {
       let timeout;
       try {
-        const maxBlock = await self.collection.findOne({ chain, network }, { sort: { height: -1 }, projection: { height: 1 } });
+        const maxBlock = await self.collection.findOne(
+          { chain, network },
+          { sort: { height: -1 }, projection: { height: 1 } }
+        );
         if (!maxBlock) {
           return resolve([]);
         }
@@ -202,7 +205,10 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
         let block = (await stream.next()) as IEthBlock;
         let prevBlock: IEthBlock | undefined;
         const outOfSync: number[] = [];
-        timeout = setInterval(() => logger.info(`${chain}:${network} Block verification height: ${block.height}`), 1000 * 10);
+        timeout = setInterval(
+          () => logger.info(`${chain}:${network} Block verification height: ${block.height}`),
+          1000 * 10
+        );
 
         for (let syncHeight = startHeight; syncHeight <= maxHeight; syncHeight++) {
           if (!block || block.height !== syncHeight) {
