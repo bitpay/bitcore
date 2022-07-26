@@ -27,7 +27,8 @@ module.exports = {
     BUSD: 'busd',
     DAI: 'dai',
     WBTC: 'wbtc',
-    SHIB: 'shib'
+    SHIB: 'shib',
+    APE: 'ape'
   },
 
   ERC20: {
@@ -37,7 +38,8 @@ module.exports = {
     BUSD: 'busd',
     DAI: 'dai',
     WBTC: 'wbtc',
-    SHIB: 'shib'
+    SHIB: 'shib',
+    APE: 'ape'
   },
 
   USD_STABLECOINS: {
