@@ -47,7 +47,7 @@ Base58.decode = function(str) {
     }
     return Buffer.from(bs58.decode(str));
   } catch (err) {
-    console.log('str is: ', str);
+    console.log('str is: ', str, err);
     throw err;
   }
 };
