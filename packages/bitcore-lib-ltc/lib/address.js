@@ -364,6 +364,7 @@ Address._transformString = function(data, network, type) {
     if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash) {
       throw e;
     }
+    console.log(data, e);
   }
 
   var addressBuffer = Base58Check.decode(data);
