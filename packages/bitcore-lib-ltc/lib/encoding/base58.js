@@ -41,10 +41,15 @@ Base58.encode = function(buf) {
 };
 
 Base58.decode = function(str) {
-  if (typeof str !== 'string') {
-    throw new Error('Input should be a string');
+  try {
+    if (typeof str !== 'string') {
+      throw new Error('Input should be a string');
+    }
+    return Buffer.from(bs58.decode(str));
+  } catch (err) {
+    console.log('str is: ', str);
+    throw err;
   }
-  return Buffer.from(bs58.decode(str));
 };
 
 Base58.prototype.fromBuffer = function(buf) {
