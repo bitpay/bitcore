@@ -1,6 +1,6 @@
 {
   "name": "bitcore-lib",
-  "version": "8.25.31",
+  "version": "8.25.34",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -45,7 +45,7 @@
     "lodash": "^4.17.20"
   },
   "devDependencies": {
-    "bitcore-build": "^8.25.31",
+    "bitcore-build": "^8.25.34",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
