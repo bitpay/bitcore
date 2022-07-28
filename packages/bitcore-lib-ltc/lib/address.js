@@ -364,7 +364,10 @@ Address._transformString = function(data, network, type) {
     if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash) {
       throw e;
     }
-    console.log(data, e);
+    if (e.message.includes('mismatched network')) {
+      const N = require('./networks');
+      console.log(data, e, Networks === N, Networks.get('testnet'));
+    }
   }
 
   var addressBuffer = Base58Check.decode(data);
