@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var async = require('async');
 
 var chai = require('chai');
@@ -392,6 +391,13 @@ describe('Fiat rate service', function() {
         code: 'EUR',
         rate: 170,
       }];
+      var shib = [{
+        code: 'USD',
+        rate: 0.00003678
+      }, {
+        code: 'EUR',
+        rate: 0.00003276
+      }]
 
       request.get.withArgs({
         url: 'https://bitpay.com/api/rates/BTC',
@@ -417,6 +423,10 @@ describe('Fiat rate service', function() {
         url: 'https://bitpay.com/api/rates/LTC',
         json: true
       }).yields(null, null, ltc);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/SHIB',
+        json: true
+      }).yields(null, null, shib);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -467,8 +477,16 @@ describe('Fiat rate service', function() {
                       should.not.exist(err);
                       res.fetchedOn.should.equal(100);
                       res.rate.should.equal(234.56);
-                      clock.restore();
-                      done();
+                      service.getRate({
+                        code: 'USD',
+                        coin: 'shib'
+                      }, function(err, res) {
+                        should.not.exist(err);
+                        res.fetchedOn.should.equal(100);
+                        res.rate.should.equal(0.00003678);  
+                        clock.restore();
+                        done();
+                      })
                     });
                   });
                 });
@@ -564,6 +582,20 @@ describe('Fiat rate service', function() {
       { code: "JPY", value: 1124900.43 },
       { code: "NZD", value: 16119.66 }
     ]
+    const btcRates = [
+      { code: 'USD', value: 44173.54 },
+      { code: 'INR', value: 3306411.94 },
+      { code: 'GBP', value: 32558.07 },
+      { code: 'EUR', value: 38642.15 },
+      { code: 'CAD', value: 56070.58 },
+      { code: 'COP', value: 173924929.36 },
+      { code: 'NGN', value: 18409323.7 },
+      { code: 'BRL', value: 233457.17 },
+      { code: 'ARS', value: 4678684.28 },
+      { code: 'AUD', value: 61503.4 },
+      { code: 'JPY', value: 5099004.98 },
+      { code: 'NZD', value: 50966068.64 },
+    ];
     it('should get rates for all the supported fiat currencies of the specified coin', function(done) {
       service.storage.storeFiatRate('bch', bchRates, function(err) {
         should.not.exist(err);
@@ -598,6 +630,35 @@ describe('Fiat rate service', function() {
         }, function(err) {
           should.exist(err);
           err.should.equal('AOA is not supported');
+          done();
+        });
+      });
+    });
+    it('should get fiat rates for a USD stablecoin', function(done) {
+      sinon.spy(service, 'getRatesForStablecoin');
+      service.storage.storeFiatRate('btc', btcRates, function(err) {
+        should.not.exist(err);
+        service.getRatesByCoin({ coin: 'gusd' }, function(err, res) {
+          should.not.exist(err);
+          should.exist(res);
+          res.reduce((rates, { code, rate }) => ({ ...rates, [code]: rate }), {}).should.deep.equal({
+            ARS: 105.92,
+            AUD: 1.39,
+            BRL: 5.29,
+            CAD: 1.27,
+            COP: 3937.31,
+            EUR: 0.87,
+            GBP: 0.74,
+            INR: 74.85,
+            JPY: 115.43,
+            NGN: 416.75,
+            NZD: 1153.77,
+            USD: 1
+          });
+          service.getRatesForStablecoin.calledWith(sinon.match({
+            code: 'USD',
+            ts: sinon.match.number
+          })).should.equal(true);
           done();
         });
       });

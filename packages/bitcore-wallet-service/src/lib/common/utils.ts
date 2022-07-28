@@ -1,5 +1,6 @@
 import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
+import { logger } from '../logger';
 
 const $ = require('preconditions').singleton();
 const bitcore = require('bitcore-lib');
@@ -72,6 +73,7 @@ export class Utils {
       }
       return publicKeyBuffer;
     } catch (e) {
+      logger.error('_tryImportPublicKey encountered an error.', e);
       return false;
     }
   }
@@ -82,16 +84,27 @@ export class Utils {
       if (!Buffer.isBuffer(signature)) {
         signatureBuffer = Buffer.from(signature, 'hex');
       }
+      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
+      // const sig = Bitcore.crypto.Signature.fromDER(signatureBuffer);
+      // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
       return secp256k1.signatureImport(signatureBuffer);
     } catch (e) {
+      logger.error('_tryImportSignature encountered an error.', e);
       return false;
     }
   }
 
   static _tryVerifyMessage(hash, sig, publicKeyBuffer) {
     try {
-      return secp256k1.verify(hash, sig, publicKeyBuffer);
+      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
+      // const { BN, Signature, ECDSA } = Bitcore.crypto;
+      // const { PublicKey } = Bitcore;
+      // const bitcoreSig = new Signature({ r: new BN(sig.slice(0, 32)), s: new BN(sig.slice(32)) });
+      // const bitcorePubKey = PublicKey.fromBuffer(publicKeyBuffer);
+      // return ECDSA.verify(hash, bitcoreSig, bitcorePubKey);
+      return secp256k1.ecdsaVerify(sig, hash, publicKeyBuffer);
     } catch (e) {
+      logger.error('_tryVerifyMessage encountered an error.', e);
       return false;
     }
   }
@@ -107,7 +120,6 @@ export class Utils {
     }, {} as { [currency: string]: { toSatoshis: number; maxDecimals: number; minDecimals: number } });
 
     $.shouldBeNumber(satoshis);
-    $.checkArgument(_.includes(_.keys(UNITS), unit));
 
     function addSeparators(nStr, thousands, decimal, minDecimals) {
       nStr = nStr.replace('.', decimal);
@@ -126,12 +138,16 @@ export class Utils {
 
     opts = opts || {};
 
-    if (!UNITS[unit]) {
+    if (!UNITS[unit] && !opts.decimals && !opts.toSatoshis) {
       return Number(satoshis).toLocaleString();
     }
+
     const u = _.assign(UNITS[unit], opts);
-    const amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
-    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);
+    var decimals = opts.decimals ? opts.decimals : u;
+    var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
+
+    const amount = (satoshis / toSatoshis).toFixed(decimals.maxDecimals);
+    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', decimals.minDecimals);
   }
 
   static formatAmountInBtc(amount) {

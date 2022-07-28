@@ -219,12 +219,24 @@ describe('Transaction', function() {
     transaction.uncheckedSerialize().should.equal(tx_empty_hexV2);
   });
 
-
-
   it('serializes and deserializes correctly', function() {
     var transaction = new Transaction(tx_1_hex);
     transaction.uncheckedSerialize().should.equal(tx_1_hex);
   });
+
+    // testnet tx 2035ead4a9d0c8e2da1184924abc9034d26f2a7093371183ef12891623b235d1
+    const taprootTx = '02000000000102c1d8527f83a3061536d394cf50c476c60e885986b047d0d553c59f7a703cab700100000000fdffffffb843817220dc08b9f008207b5ea2591c26ce0ad5b3f842b934d9f0635a252d630000000000fdffffff02a086010000000000225120a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c6a720000000000001600141eadc6c059a0485e0f8cfff955be4f5a544f514d024730440220776ecbb80e66ada7fe379c93c790303a33c11e3e888e41c991bcdae7d7531487022022ff85dc93a45941b4941484c46b515a476a2f2ab4ccb7dfd243eaadeed05036012103e9f41161bafb6a4e54a9ad29a68cdb3194e4d98b784a1ebcafa0055eb7310c810247304402206b275c62d21aa152323cac83e037f660865ef2a3bc73cc208bdc275643291b6f0220257249964a0e42ced656f74247683b70249f0d65da50532a3d9a5c4df12a531401210332fe2e5317637bed2153bee395facec6a245b98831e5a5d8f7af091371e67264aa7f1f00';
+    it('deserializes and serializes a taproot tx', function() {
+      const tx = new Transaction(taprootTx);
+      tx.should.exist;
+      const script = new Script(tx.outputs[0]._scriptBuffer);
+      const addy = script.toAddress('testnet');
+      const addyString = addy.toString();
+      addyString.should.equal('tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv');
+      const reserialized = tx.uncheckedSerialize();
+      reserialized.should.equal(taprootTx);
+    });
+
 
   describe('transaction creation test vector', function() {
     this.timeout(5000);
@@ -475,6 +487,14 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 100000)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
+    it('adds no change if fee less than DUST_AMOUNT', function () {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 100000 - Transaction.DUST_AMOUNT)
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);

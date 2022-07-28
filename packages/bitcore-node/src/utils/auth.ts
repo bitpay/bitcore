@@ -22,7 +22,8 @@ export function verifyRequestSignature(params: VerificationPayload): boolean {
   const pub = new bitcoreLib.PublicKey(pubKey).toBuffer();
   const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
   if (typeof signature === 'string') {
-    return secp256k1.verify(messageHash, Buffer.from(signature, 'hex'), pub);
+    // TODO we should use bitcoreLib.crypto.ECDSA.verify() instead of external dependency.
+    return secp256k1.ecdsaVerify(Buffer.from(signature, 'hex'), messageHash, pub);
   } else {
     throw new Error('Signature must exist');
   }

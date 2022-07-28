@@ -1,3 +1,4 @@
+import * as async from 'async';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
@@ -41,7 +42,7 @@ export class ExpressApp {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'x-signature,x-identity,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
+        'x-signature,x-identity,x-identities,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
       );
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
@@ -108,6 +109,10 @@ export class ExpressApp {
     const router = express.Router();
 
     const returnError = (err, res, req) => {
+      // make sure headers have not been sent as this leads to an uncaught error
+      if (res.headersSent) {
+        return;
+      }
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
@@ -227,6 +232,43 @@ export class ExpressApp {
 
         return cb(server);
       });
+    };
+
+    /**
+     * @description process simultaneous requests based on multiple identities that have the same key, hence, the same signature
+     * @param {Request} req
+     * @param {Response} res
+     * @param {Object} opts
+     * @returns Array<Promise>
+     */
+    const getServerWithMultiAuth = (req, res, opts = {}) => {
+      const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
+      const signature = req.headers['x-signature'];
+      if (!identities || !signature) {
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+      }
+
+      if (!Array.isArray(identities)) {
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+      }
+
+      // return a list of promises that we can await or chain
+      return identities.map(
+        id =>
+          new Promise((resolve, reject) =>
+            getServerWithAuth(
+              Object.assign(req, {
+                headers: {
+                  ...req.headers,
+                  'x-identity': id
+                }
+              }),
+              res,
+              opts,
+              server => (server ? resolve(server) : reject(server))
+            )
+          )
+      );
     };
 
     let createWalletLimiter;
@@ -403,6 +445,85 @@ export class ExpressApp {
           res.json(status);
         });
       });
+    });
+
+    router.get('/v1/wallets/all/', async (req, res) => {
+      let responses;
+
+      const buildOpts = (req, copayerId) => {
+        const opts = {
+          includeExtendedInfo: req.query.includeExtendedInfo == '1',
+          twoStep: req.query.twoStep == '1',
+          includeServerMessages: req.query.serverMessageArray == '1',
+          tokenAddresses: req.query[copayerId]
+            ? Array.isArray(req.query[copayerId].tokenAddress)
+              ? req.query[copayerId].tokenAddress
+              : [req.query[copayerId].tokenAddress]
+            : null,
+          multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
+          network: req.query[copayerId] ? req.query[copayerId].network : null
+        };
+        return opts;
+      };
+
+      try {
+        responses = await Promise.all(
+          getServerWithMultiAuth(req, res).map(promise =>
+            promise.then(
+              (server: any) =>
+                new Promise(resolve => {
+                  let options: any = buildOpts(req, server.copayerId);
+                  if (options.tokenAddresses) {
+                    // add a null entry to array so we can get the chain balance
+                    options.tokenAddresses.unshift(null);
+                    return async.concat(
+                      options.tokenAddresses,
+                      (tokenAddress, cb) => {
+                        let optsClone = JSON.parse(JSON.stringify(options));
+                        optsClone.tokenAddresses = null;
+                        optsClone.tokenAddress = tokenAddress;
+                        return server.getStatus(optsClone, (err, status) => {
+                          let result: any = {
+                            walletId: server.walletId,
+                            tokenAddress: optsClone.tokenAddress,
+                            success: true,
+                            ...(err ? { success: false, message: err.message } : {}),
+                            status
+                          };
+                          if (err && err.message)
+                            logger.error(
+                              `An error occurred retrieving wallet status - id: ${server.walletId} - token address: ${optsClone.tokenAddress} - err: ${err.message}`
+                            );
+                          cb(null, result); // do not throw error, continue with next wallets
+                        });
+                      },
+                      (err, result) => {
+                        return resolve(result);
+                      }
+                    );
+                  } else {
+                    return server.getStatus(options, (err, status) => {
+                      return resolve([
+                        {
+                          walletId: server.walletId,
+                          tokenAddress: null,
+                          success: true,
+                          ...(err ? { success: false, message: err.message } : {}),
+                          status
+                        }
+                      ]);
+                    });
+                  }
+                }),
+              ({ message }) => Promise.resolve({ success: false, error: message })
+            )
+          )
+        );
+      } catch (err) {
+        return returnError(err, res, req);
+      }
+
+      return res.json(_.flatten(responses));
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {
@@ -1244,9 +1365,19 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
+          if (err) return returnError(err, res, req);
+          res.json(response);
+        });
+      });
+    });
+
+    router.post('/v2/pushnotifications/subscriptions/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server.pushNotificationsBrazeSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
@@ -1269,12 +1400,25 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.delete('/v2/pushnotifications/subscriptions/:token', (req, res) => {
       const opts = {
         token: req.params['token']
       };
       getServerWithAuth(req, res, server => {
         server.pushNotificationsUnsubscribe(opts, (err, response) => {
+          if (err) return returnError(err, res, req);
+          res.json(response);
+        });
+      });
+    });
+
+    router.delete('/v3/pushnotifications/subscriptions/:externalUserId', (req, res) => {
+      const opts = {
+        externalUserId: req.params['externalUserId']
+      };
+      getServerWithAuth(req, res, server => {
+        server.pushNotificationsBrazeUnsubscribe(opts, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
@@ -1313,6 +1457,17 @@ export class ExpressApp {
         if (err) return returnError(err, res, req);
         res.json(response);
       });
+    });
+
+    router.post('/v1/service/checkAvailability', (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = server.checkServiceAvailability(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
     });
 
     router.post('/v1/service/simplex/quote', (req, res) => {
@@ -1499,6 +1654,20 @@ export class ExpressApp {
         .catch(err => {
           if (err) return returnError(err, res, req);
         });
+    });
+
+    router.get('/v1/services/dex/getSpenderApprovalWhitelist', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.getSpenderApprovalWhitelist((err, response) => {
+        if (err) return returnError(err, res, req);
+        res.json(response);
+      });
     });
 
     router.get('/v1/service/payId/:payId', (req, res) => {

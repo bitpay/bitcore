@@ -156,7 +156,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
         }
       },
-      CacheStorage.Times.Hour / 2
+      CacheStorage.Times.Minute
     );
     return balances;
   }
@@ -234,18 +234,22 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
-    const { limit, since, tokenAddress } = args;
+    const { limit, /*since,*/ tokenAddress } = args;
     if (!args.tokenAddress) {
       const query = {
         $or: [
           { chain, network, from: address },
-          { chain, network, to: address }
+          { chain, network, to: address },
+          { chain, network, 'internal.action.to': address }
         ]
       };
-      Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req!, res!);
+
+      // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
+      // The case where an address has >1000 txns is an edge case ATM and can be addressed later
+      Storage.apiStreamingFind(EthTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
     } else {
       try {
-        const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
+        const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
         res!.json(tokenTransfers);
       } catch (e) {
         res!.status(500).send(e);
@@ -342,7 +346,9 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           }
         }
       }
-      if (args.includeInvalidTxs) delete query.blockHeight;
+      if (args.includeInvalidTxs) {
+        delete query.blockHeight;
+      }
     }
     return query;
   }
@@ -528,16 +534,18 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         }
       }
 
+      const addressBatchLC = addressBatch.map(address => address.toLowerCase());
+
       await EthTransactionStorage.collection.updateMany(
         {
           $or: [
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
-            { chain, network, 'internal.action.to': { $in: addressBatch } },
+            { chain, network, 'internal.action.to': { $in: addressBatchLC } },
             {
               chain,
               network,
-              'abiType.params.0.value': { $in: addressBatch.map(address => address.toLowerCase()) },
+              'abiType.params.0.value': { $in: addressBatchLC },
               'abiType.type': 'ERC20',
               'abiType.name': 'transfer'
             }
