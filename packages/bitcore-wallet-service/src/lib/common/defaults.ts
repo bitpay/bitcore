@@ -150,7 +150,7 @@ module.exports = {
   UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR: 5,
 
   // Minimum allowed amount for tx outputs (including change) in SAT
-  MIN_OUTPUT_AMOUNT: 5000,
+  MIN_OUTPUT_AMOUNT: 546,
 
   // Number of confirmations from which tx in history will be cached
   // (ie we consider them inmutables)

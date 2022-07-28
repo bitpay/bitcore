@@ -130,6 +130,7 @@ export class DogeChain extends BtcChain implements IChain {
 
         const txpSize = baseTxpSize + selected.length * sizePerInput;
         fee = Math.round(baseTxpFee + selected.length * feePerInput);
+        fee = Math.max(fee, this.bitcoreLibDoge.Transaction.DUST_AMOUNT);
 
         logger.debug('Tx size: ' + Utils.formatSize(txpSize) + ', Tx fee: ' + Utils.formatAmountInBtc(fee));
 
@@ -201,6 +202,7 @@ export class DogeChain extends BtcChain implements IChain {
           logger.debug('Using big input: ', Utils.formatUtxos(input));
           total = input.satoshis;
           fee = Math.round(baseTxpFee + feePerInput);
+          fee = Math.max(fee, this.bitcoreLibDoge.Transaction.DUST_AMOUNT);
           netTotal = total - fee;
           selected = [input];
         }

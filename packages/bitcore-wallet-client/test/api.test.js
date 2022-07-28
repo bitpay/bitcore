@@ -1,18 +1,13 @@
 'use strict';
 
 var _ = require('lodash');
-var $ = require('preconditions').singleton();
 var chai = require('chai');
 chai.config.includeStack = true;
 var sinon = require('sinon');
 var should = chai.should();
 var async = require('async');
-var request = require('supertest');
 var Uuid = require('uuid');
-var sjcl = require('sjcl');
 var log = require('../ts_build/lib/log');
-var mongodb = require('mongodb');
-var config = require('./test-config');
 var oldCredentials = require('./legacyCredentialsExports');
 
 var CWC = require('crypto-wallet-core');
@@ -25,7 +20,6 @@ var Bitcore_ = {
 
 var BWS = require('bitcore-wallet-service');
 
-var { Constants } = require('../ts_build/lib/common');
 var Client = require('../ts_build').default;
 var Key = Client.Key;
 var { Request } = require('../ts_build/lib/request.js');
@@ -35,295 +29,7 @@ var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
 var Errors = require('../ts_build/lib/errors');
-
-var helpers = {};
-helpers.toSatoshi = btc => {
-  if (_.isArray(btc)) {
-    return _.map(btc, helpers.toSatoshi);
-  } else {
-    return parseFloat((btc * 1e8).toPrecision(12));
-  }
-};
-
-helpers.newClient = app => {
-  $.checkArgument(app);
-  return new Client({
-    baseUrl: '/bws/api',
-    request: request(app),
-    bp_partner: 'xxx',
-    bp_partner_version: 'yyy'
-    //    logLevel: 'debug',
-  });
-};
-
-helpers.stubRequest = (err, res) => {
-  var request = {
-    accept: sinon.stub(),
-    set: sinon.stub(),
-    query: sinon.stub(),
-    send: sinon.stub(),
-    timeout: sinon.stub(),
-    end: sinon.stub().yields(err, res)
-  };
-  var reqFactory = _.reduce(
-    ['get', 'post', 'put', 'delete'],
-    (mem, verb) => {
-      mem[verb] = url => {
-        return request;
-      };
-      return mem;
-    },
-    {}
-  );
-
-  return reqFactory;
-};
-
-helpers.generateUtxos = (scriptType, publicKeyRing, path, requiredSignatures, amounts) => {
-  var amounts = [].concat(amounts);
-  var utxos = _.map(amounts, (amount, i) => {
-    var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet');
-
-    var scriptPubKey;
-    switch (scriptType) {
-      case Constants.SCRIPT_TYPES.P2WSH:
-      case Constants.SCRIPT_TYPES.P2SH:
-        scriptPubKey = new Bitcore.Script.buildMultisigOut(address.publicKeys, requiredSignatures).toScriptHashOut();
-        break;
-      case Constants.SCRIPT_TYPES.P2WPKH:
-      case Constants.SCRIPT_TYPES.P2PKH:
-        scriptPubKey = new Bitcore.Script.buildPublicKeyHashOut(address.address);
-        break;
-    }
-    should.exist(scriptPubKey);
-
-    var obj = {
-      txid: new Bitcore.crypto.Hash.sha256(Buffer.alloc(i)).toString('hex'),
-      vout: 100,
-      satoshis: helpers.toSatoshi(amount),
-      scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
-      address: address.address,
-      path: path,
-      publicKeys: address.publicKeys
-    };
-    return obj;
-  });
-  return utxos;
-};
-
-helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
-  opts = opts || {};
-
-  var coin = opts.coin || 'btc';
-  var network = opts.network || 'testnet';
-
-  let keyOpts = {
-    useLegacyCoinType: opts.useLegacyCoinType,
-    useLegacyPurpose: opts.useLegacyPurpose,
-    passphrase: opts.passphrase
-  };
-
-  keyOpts.seedType = keyOpts.seedType || 'new';
-  keys[0] = opts.key || new Key(keyOpts);
-  let cred = keys[0].createCredentials(null, {
-    coin: coin,
-    network: network,
-    account: 0,
-    n: n,
-    addressType: opts.addressType
-  });
-  clients[0].fromObj(cred);
-
-  clients[0].createWallet(
-    'mywallet',
-    'creator',
-    m,
-    n,
-    {
-      coin: coin,
-      network: network,
-      singleAddress: !!opts.singleAddress,
-      doNotCheck: true,
-      useNativeSegwit: !!opts.useNativeSegwit
-    },
-    (err, secret) => {
-      if (err) console.log(err);
-      should.not.exist(err);
-
-      if (n > 1) {
-        should.exist(secret);
-      }
-
-      async.series(
-        [
-          next => {
-            async.each(
-              _.range(1, n),
-              (i, cb) => {
-                keys[i] = new Key(keyOpts);
-                clients[i].fromString(
-                  keys[i].createCredentials(null, {
-                    coin: coin,
-                    network: network,
-                    account: 0,
-                    n: n,
-                    addressType: opts.addressType
-                  })
-                );
-                clients[i].joinWallet(
-                  secret,
-                  'copayer ' + i,
-                  {
-                    coin: coin
-                  },
-                  cb
-                );
-              },
-              next
-            );
-          },
-          next => {
-            async.each(
-              _.range(n),
-              (i, cb) => {
-                clients[i].openWallet(cb);
-              },
-              next
-            );
-          }
-        ],
-        err => {
-          should.not.exist(err);
-          return cb({
-            m: m,
-            n: n,
-            secret: secret
-          });
-        }
-      );
-    }
-  );
-};
-
-helpers.tamperResponse = (clients, method, url, args, tamper, cb) => {
-  clients = [].concat(clients);
-  // Use first client to get a clean response from server
-  clients[0].request.doRequest(method, url, args, false, (err, result) => {
-    should.not.exist(err);
-    tamper(result);
-    // Return tampered data for every client in the list
-    _.each(clients, client => {
-      client.request.doRequest = sinon
-        .stub()
-        .withArgs(method, url)
-        .yields(null, result);
-    });
-    return cb();
-  });
-};
-
-helpers.createAndPublishTxProposal = (client, opts, cb) => {
-  if (!opts.outputs) {
-    opts.outputs = [
-      {
-        toAddress: opts.toAddress,
-        amount: opts.amount
-      }
-    ];
-  }
-  client.createTxProposal(opts, (err, txp) => {
-    if (err) return cb(err);
-    client.publishTxProposal(
-      {
-        txp: txp
-      },
-      cb
-    );
-  });
-};
-
-var blockchainExplorerMock = {
-  register: sinon.stub().callsArgWith(1, null, null),
-  getCheckData: sinon.stub().callsArgWith(1, null, { sum: 100 }),
-  addAddresses: sinon.stub().callsArgWith(2, null, null)
-};
-
-blockchainExplorerMock.getUtxos = (wallet, height, cb) => {
-  return cb(null, _.cloneDeep(blockchainExplorerMock.utxos));
-};
-
-// v8
-blockchainExplorerMock.getAddressUtxos = (address, height, cb) => {
-  var selected = _.filter(blockchainExplorerMock.utxos, utxo => {
-    return _.includes(address, utxo.address);
-  });
-
-  return cb(null, _.cloneDeep(selected));
-};
-
-blockchainExplorerMock.setUtxo = (address, amount, m, confirmations) => {
-  var B = Bitcore_[address.coin];
-  var scriptPubKey;
-  switch (address.type) {
-    case Constants.SCRIPT_TYPES.P2SH:
-      scriptPubKey = address.publicKeys ? B.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
-      break;
-    case Constants.SCRIPT_TYPES.P2WPKH:
-    case Constants.SCRIPT_TYPES.P2PKH:
-      scriptPubKey = B.Script.buildPublicKeyHashOut(address.address);
-      break;
-    case Constants.SCRIPT_TYPES.P2WSH:
-      scriptPubKey = B.Script.buildWitnessV0Out(address.address);
-      break;
-  }
-  should.exist(scriptPubKey);
-  blockchainExplorerMock.utxos.push({
-    txid: new Bitcore.crypto.Hash.sha256(Buffer.alloc(Math.random() * 100000)).toString('hex'),
-    outputIndex: 0,
-    amount: amount,
-    satoshis: amount * 1e8,
-    address: address.address,
-    scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
-    confirmations: _.isUndefined(confirmations) ? Math.floor(Math.random() * 100 + 1) : +confirmations
-  });
-};
-
-blockchainExplorerMock.supportsGrouping = () => {
-  return false;
-};
-blockchainExplorerMock.getBlockchainHeight = cb => {
-  return cb(null, 1000);
-};
-
-blockchainExplorerMock.broadcast = (raw, cb) => {
-  blockchainExplorerMock.lastBroadcasted = raw;
-
-  let hash;
-  try {
-    let tx = new Bitcore.Transaction(raw);
-    if (_.isEmpty(tx.outputs)) {
-      throw 'no bitcoin';
-    }
-    hash = tx.id;
-    // btc/bch
-    return cb(null, hash);
-  } catch (e) {
-    // try eth
-    hash = CWC.Transactions.getHash({
-      tx: raw[0],
-      chain: 'ETH'
-    });
-    return cb(null, hash);
-  }
-};
-
-blockchainExplorerMock.setHistory = txs => {
-  blockchainExplorerMock.txHistory = txs;
-};
-
-blockchainExplorerMock.getTransaction = (txid, cb) => {
-  return cb();
-};
+var { helpers, blockchainExplorerMock } = require('./helpers');
 
 var createTxsV8 = (nr, bcHeight, txs) => {
   txs = txs || [];
@@ -353,66 +59,6 @@ var createTxsV8 = (nr, bcHeight, txs) => {
     }
   }
   return txs;
-};
-
-blockchainExplorerMock.getTransactions = (wallet, startBlock, cb) => {
-  var list = [].concat(blockchainExplorerMock.txHistory);
-  // -1 = mempool, always included in server' s v8.js
-  list = _.filter(list, x => {
-    return x.height >= startBlock || x.height == -1;
-  });
-  return cb(null, list);
-};
-
-blockchainExplorerMock.getAddressActivity = (address, cb) => {
-  var activeAddresses = _.map(blockchainExplorerMock.utxos || [], 'address');
-  return cb(null, _.includes(activeAddresses, address));
-};
-
-blockchainExplorerMock.setFeeLevels = levels => {
-  blockchainExplorerMock.feeLevels = levels;
-};
-
-blockchainExplorerMock.estimateFee = (nbBlocks, cb) => {
-  var levels = {};
-  _.each(nbBlocks, nb => {
-    var feePerKb = blockchainExplorerMock.feeLevels[nb];
-    levels[nb] = _.isNumber(feePerKb) ? feePerKb / 1e8 : -1;
-  });
-
-  return cb(null, levels);
-};
-
-blockchainExplorerMock.estimateGas = (nbBlocks, cb) => {
-  return cb(null, '20000000000');
-};
-
-blockchainExplorerMock.getBalance = (nbBlocks, cb) => {
-  return cb(null, {
-    unconfirmed: 0,
-    confirmed: 20000000000 * 5,
-    balance: 20000000000 * 5
-  });
-};
-
-blockchainExplorerMock.getTransactionCount = (addr, cb) => {
-  return cb(null, 0);
-};
-
-blockchainExplorerMock.reset = () => {
-  blockchainExplorerMock.utxos = [];
-  blockchainExplorerMock.txHistory = [];
-  blockchainExplorerMock.feeLevels = [];
-};
-
-helpers.newDb = (extra, cb) => {
-  extra = extra || '';
-  mongodb.MongoClient.connect(config.mongoDb.uri + extra, (err, in_db) => {
-    if (err) return cb(err);
-    in_db.dropDatabase(err => {
-      return cb(err, in_db);
-    });
-  });
 };
 
 var db;
@@ -3928,6 +3574,51 @@ describe('client API', function() {
           );
         });
       });
+
+      it('Should sign a RBF proposal', done => {
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var opts = {
+          outputs: [
+            {
+              amount: 1e8,
+              toAddress: toAddress
+            },
+            {
+              amount: 2e8,
+              toAddress: toAddress
+            }
+          ],
+          feePerKb: 100e2,
+          message: 'just some message',
+          enableRBF: true
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal(
+            {
+              txp: txp
+            },
+            (err, publishedTxp) => {
+              should.not.exist(err);
+              should.exist(publishedTxp);
+              publishedTxp.status.should.equal('pending');
+
+              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+                should.not.exist(err);
+                let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
+                  should.not.exist(err);
+                  txp.status.should.equal('accepted');
+                  done();
+                });
+              });
+            }
+          );
+        });
+      });
+      
       it('Should sign proposal with no change', done => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {

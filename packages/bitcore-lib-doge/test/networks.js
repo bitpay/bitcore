@@ -64,8 +64,9 @@ describe('Networks', function() {
   });
 
   it('can remove a custom network', function() {
-    networks.remove('customnet');
-    Object.keys(networks).should.not.contain('customnet');
+    networks.remove(customnet);
+    var net = networks.get('customnet');
+    should.equal(net, undefined);
   });
 
   it('should not set a network map for an undefined value', function() {
@@ -85,7 +86,14 @@ describe('Networks', function() {
     networks.add(custom);
     var network = networks.get(undefined);
     should.not.exist(network);
-    networks.remove(custom);
+  });
+
+  it('can remove a custom network by name', function() {
+    var net = networks.get('somenet');
+    should.exist(net);
+    networks.remove('somenet');
+    var net = networks.get('somenet');
+    should.equal(net, undefined);
   });
 
   var constants = ['name', 'alias', 'pubkeyhash', 'scripthash', 'xpubkey', 'xprivkey'];

@@ -138,6 +138,10 @@ export type IEthTransaction = ITransaction & {
   };
 };
 
+export type IEthTransactionTransformed = IEthTransaction & {
+  initialFrom?: string;
+};
+
 export interface TransactionJSON {
   txid: string;
   chain: string;

@@ -1,20 +1,27 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "declaration": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
+    "target": "es5",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
-    "module": "es2015",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
     "moduleResolution": "node",
-    "sourceMap": true,
-    "target": "es5"
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".", // To import directly from the root of the project
+    "types": ["cypress", "cypress-axe"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "src/test.ts", "src/mocks.ts", "**/*.spec.ts"],
-  "compileOnSave": false
+  "include": ["**/*.ts", "**/*.tsx", "."],
+  "exclude": ["node_modules"]
 }

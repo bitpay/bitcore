@@ -4,6 +4,7 @@ import * as CWC from 'crypto-wallet-core';
 import { EventEmitter } from 'events';
 import _ from 'lodash';
 import sjcl from 'sjcl';
+import { BulkClient } from './bulkclient';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 import { Key } from './key';
@@ -46,6 +47,7 @@ export class API extends EventEmitter {
   logLevel: any;
   supportStaffWalletId: any;
   request: any;
+  bulkClient: any;
   credentials: any;
   notificationIncludeOwn: boolean;
   lastNotificationId: any;
@@ -84,6 +86,11 @@ export class API extends EventEmitter {
     this.bp_partner_version = opts.bp_partner_version;
 
     this.request = new Request(opts.baseUrl || BASE_URL, {
+      r: opts.request,
+      supportStaffWalletId: opts.supportStaffWalletId
+    });
+
+    this.bulkClient = new BulkClient(opts.baseUrl || BASE_URL, {
       r: opts.request,
       supportStaffWalletId: opts.supportStaffWalletId
     });
@@ -1406,6 +1413,7 @@ export class API extends EventEmitter {
       null;
     args.payProUrl = opts.payProUrl || null;
     args.isTokenSwap = opts.isTokenSwap || null;
+    args.replaceTxByFee = opts.replaceTxByFee || null;
     _.each(args.outputs, o => {
       o.message =
         API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) ||
@@ -1437,6 +1445,8 @@ export class API extends EventEmitter {
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
   // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
   // * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
+  // * @param {Boolean} opts.enableRBF - Optional. Enable BTC Replace By Fee
+  // * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
   // * @returns {Callback} cb - Return error or the transaction proposal
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
@@ -2422,11 +2432,11 @@ export class API extends EventEmitter {
   // * Subscribe to push notifications.
   // * @param {Object} opts
   // * @param {String} opts.type - Device type (ios or android).
-  // * @param {String} opts.token - Device token.
+  // * @param {String} opts.externalUserId - Device token. // Braze
   // * @returns {Object} response - Status of subscription.
   // */
   pushNotificationsSubscribe(opts, cb) {
-    var url = '/v1/pushnotifications/subscriptions/';
+    var url = '/v2/pushnotifications/subscriptions/';
     this.request.post(url, opts, (err, response) => {
       if (err) return cb(err);
       return cb(null, response);
@@ -2435,11 +2445,11 @@ export class API extends EventEmitter {
 
   // /**
   // * Unsubscribe from push notifications.
-  // * @param {String} token - Device token
+  // * @param {String} externalUserId - Device token. // Braze
   // * @return {Callback} cb - Return error if exists
   // */
-  pushNotificationsUnsubscribe(token, cb) {
-    var url = '/v2/pushnotifications/subscriptions/' + token;
+  pushNotificationsUnsubscribe(externalUserId, cb) {
+    var url = '/v3/pushnotifications/subscriptions/' + externalUserId;
     this.request.delete(url, cb);
   }
 

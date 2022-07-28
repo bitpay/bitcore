@@ -251,11 +251,30 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     let currentHeight = startHeight;
     while (ourBestBlock.height < chainBestBlock) {
       currentHeight = ourBestBlock.height + 1;
-      const block = await client.getLedger({
-        ledgerVersion: currentHeight,
-        includeTransactions: true,
-        includeAllData: true
-      });
+      let block;
+      try {
+        block = await client.getLedger({
+          ledgerVersion: currentHeight,
+          includeTransactions: true,
+          includeAllData: true
+        });
+      } catch (e) {
+        // Patch fix for some transactions not parsing.
+        block = await client.getLedger({
+          ledgerVersion: currentHeight,
+          includeTransactions: true,
+          includeAllData: false
+        });
+        block.transactions = [];
+        for (let txid of block.transactionHashes as string[]) {
+          try {
+            const tx = await client.getTransaction(txid);
+            block.transactions.push(tx);
+          } catch (e) {
+            logger.warn(`Unparseable transaction. Skipping: Block ${currentHeight} Txid: ${txid}`, e);
+          }
+        }
+      }
       if (!block) {
         await wait(2000);
         continue;

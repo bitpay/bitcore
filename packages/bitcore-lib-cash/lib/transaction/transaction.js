@@ -563,6 +563,65 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   return this;
 };
 
+/**
+ * associateInputs - Update inputs with utxos, allowing you to specify value, and pubkey.
+ * Populating these inputs allows for them to be signed with .sign(privKeys)
+ *
+ * @param {Array<Object>} utxos
+ * @param {Array<string | PublicKey>} pubkeys
+ * @param {number} threshold
+ * @param {Object} opts
+ * @returns {Array<number>}
+ */
+Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
+  let indexes = [];
+
+  for(let utxo of utxos) {
+    const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
+    indexes.push(index);
+    if(index >= 0) {
+      this.inputs[index] = this._getInputFrom(utxo, pubkeys, threshold, opts);
+    }
+  }
+  return indexes;
+};
+
+Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
+  var clazz;
+  utxo = new UnspentOutput(utxo);
+  if(pubkeys && threshold) {
+    if (utxo.script.isMultisigOut()) {
+      clazz = MultiSigInput;
+    } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
+      clazz = MultiSigScriptHashInput;
+    }
+  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
+    clazz = PublicKeyHashInput;
+  } else if (utxo.script.isPublicKeyOut()) {
+    clazz = PublicKeyInput;
+  } else {
+    clazz = Input;
+  }
+  return clazz;
+};
+
+Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
+  utxo = new UnspentOutput(utxo);
+  const InputClass = this._selectInputType(utxo, pubkeys, threshold);
+  const input = {
+    output: new Output({
+      script: utxo.script,
+      satoshis: utxo.satoshis
+    }),
+    prevTxId: utxo.txId,
+    outputIndex: utxo.outputIndex,
+    sequenceNumber: utxo.sequenceNumber,
+    script: Script.empty()
+  };
+  let args = pubkeys && threshold ? [pubkeys, threshold, false, opts] : []
+  return new InputClass(input, ...args);
+}
+
 Transaction.prototype._fromEscrowUtxo = function(utxo, pubkeys) {
   const publicKeys = pubkeys.map(pubkey => new PublicKey(pubkey));
   const inputPublicKeys = publicKeys.slice(1);
@@ -1015,7 +1074,7 @@ Transaction.prototype.removeOutput = function(index) {
 Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
       return compare(first.prevTxId, second.prevTxId)
@@ -1026,7 +1085,7 @@ Transaction.prototype.sort = function() {
   });
   this.sortOutputs(function(outputs) {
     var copy = Array.prototype.concat.apply([], outputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
@@ -1124,7 +1183,7 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  */
 Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
   signingMethod = signingMethod || "ecdsa"
-  
+
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   var self = this;
   if (_.isArray(privateKey)) {
@@ -1146,7 +1205,7 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
   var transaction = this;
   var results = [];
-  
+
   var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
   _.each(this.inputs, function forEachInput(input, index) {
     _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {
@@ -1386,7 +1445,7 @@ Transaction.prototype.isCoinbase = function() {
 
 Transaction.prototype.setVersion = function(version) {
   $.checkArgument(
-    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION, 
+    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION,
     'Wrong version number');
   this.version = version;
   return this;
