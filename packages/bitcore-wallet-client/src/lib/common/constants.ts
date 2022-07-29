@@ -34,9 +34,11 @@ export const Constants = {
     'busd',
     'dai',
     'wbtc',
-    'shib'
+    'shib',
+    'ape',
+    'euroc'
   ],
-  ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc', 'shib'],
+  ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc', 'shib', 'ape', 'euroc'],
   UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
   TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS

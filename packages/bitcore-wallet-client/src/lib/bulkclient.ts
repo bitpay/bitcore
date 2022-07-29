@@ -105,9 +105,7 @@ export class BulkClient extends Request {
         if (result.success) {
           var status = result.status;
           var walletId = result.walletId;
-          var c = this.credentials.find(
-            cred => cred.walletId == walletId
-          );
+          var c = this.credentials.find(cred => cred.walletId == walletId);
           if (c && status.wallet.status == 'pending') {
             result.wallet.secret = API._buildSecret(
               c.walletId,
