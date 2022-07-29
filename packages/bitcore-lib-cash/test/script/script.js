@@ -889,6 +889,22 @@ describe('Script', function() {
 
   });
 
+  describe('#getPublicKey', () => {
+    const publicKey = PublicKey.fromString('02371b6955629ea6fd014b9e14612e72de2729d33ff26ad20b9e7c558c6a611221');
+    it('should return the public key for a public key output', () => {
+      const publicKeyOutput = Script.buildPublicKeyOut(publicKey);
+      const retrievedPublicKey = publicKeyOutput.getPublicKey();
+      retrievedPublicKey.toString('hex').should.equal(publicKey.toString('hex'));
+    })
+    it('should return the public key for a public key hash input', () => {
+      const signature = bitcore.crypto.Signature.fromString('e4acdce75b9033de8f3b0384f1e8eba3be6aade38b2c3ea17037b57ccf3c6b82589b6e39d8cd375839fa8990faa45948a70b07dec76140c956d48586404f3123');
+      const sigtype = 0x41;
+      const publicKeyHashInput = Script.buildPublicKeyHashIn(publicKey, signature, sigtype);
+      const retrievedPublicKey = publicKeyHashInput.getPublicKey();
+      retrievedPublicKey.toString('hex').should.equal(publicKey.toString('hex'));
+    });
+  });
+
   describe('getData returns associated data', function() {
     it('works with this testnet transaction', function() {
       // testnet block: 00000000a36400fc06440512354515964bc36ecb0020bd0b0fd48ae201965f54

@@ -311,6 +311,7 @@ export class BtcChain implements IChain {
 
     if (!fee) {
       fee = (txp.feePerKb * this.getEstimatedSize(txp, opts)) / 1000;
+      fee = Math.max(fee, this.bitcoreLib.Transaction.DUST_AMOUNT);
     }
     return parseInt(fee.toFixed(0));
   }
@@ -388,6 +389,8 @@ export class BtcChain implements IChain {
     if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
       t.escrow(txp.escrowAddress.address, txp.instantAcceptanceEscrow + txp.fee);
     }
+
+    if (txp.enableRBF) t.enableRBF();
 
     if (txp.changeAddress) {
       t.change(txp.changeAddress.address);
@@ -478,6 +481,11 @@ export class BtcChain implements IChain {
   checkTxUTXOs(server, txp, opts, cb) {
     logger.debug('Rechecking UTXOs availability for publishTx');
 
+    if (txp.replaceTxByFee) {
+      logger.debug('Ignoring spend utxos check (Replacing tx designated as RBF)');
+      return cb();
+    }
+
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
@@ -521,7 +529,7 @@ export class BtcChain implements IChain {
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
     // todo: check inputs are ours and have enough value
-    if (txp.inputs && !_.isEmpty(txp.inputs)) {
+    if (txp.inputs && !_.isEmpty(txp.inputs) && !txp.replaceTxByFee) {
       if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
       return cb(this.checkTx(txp));
     }
@@ -555,7 +563,7 @@ export class BtcChain implements IChain {
 
       return _.filter(utxos, utxo => {
         if (utxo.locked) return false;
-        if (txp.excludeUnconfirmedUtxos && !utxo.confirmations) return false;
+        if (txp.excludeUnconfirmedUtxos && !txp.replaceTxByFee && !utxo.confirmations) return false;
         if (excludeIndex[utxo.txid + ':' + utxo.vout]) return false;
         return true;
       });
@@ -746,7 +754,9 @@ export class BtcChain implements IChain {
 
     server.getUtxosForCurrentWallet(
       {
-        instantAcceptanceEscrow: txp.instantAcceptanceEscrow
+        instantAcceptanceEscrow: txp.instantAcceptanceEscrow,
+        replaceTxByFee: txp.replaceTxByFee,
+        inputs: txp.inputs
       },
       (err, utxos) => {
         if (err) return cb(err);
@@ -755,7 +765,7 @@ export class BtcChain implements IChain {
         let availableAmount;
 
         const balance = this.totalizeUtxos(utxos);
-        if (txp.excludeUnconfirmedUtxos) {
+        if (txp.excludeUnconfirmedUtxos && !txp.replaceTxByFee) {
           totalAmount = balance.totalConfirmedAmount;
           availableAmount = balance.availableConfirmedAmount;
         } else {
@@ -793,6 +803,14 @@ export class BtcChain implements IChain {
               const utxosSortedByDescendingAmount = candidateUtxos.sort((a, b) => b.amount - a.amount);
               const utxosWithUniqueAddresses = _.uniqBy(utxosSortedByDescendingAmount, 'address');
               candidateUtxos = utxosWithUniqueAddresses;
+            }
+
+            if (txp.replaceTxByFee) {
+              // make sure we are using at least one input from the transaction that we are replacing
+              const txIdArray: any[] = _.map(opts.inputs, 'txid');
+              candidateUtxos = candidateUtxos.sort((a, b) => {
+                return txIdArray.indexOf(b.txid) - txIdArray.indexOf(a.txid);
+              });
             }
 
             // logger.debug('Group >= ' + group);

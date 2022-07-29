@@ -23,7 +23,10 @@ var errors = bitcore.errors;
 var transactionVector = require('../data/tx_creation');
 
 describe('Transaction', function() {
-
+  beforeEach(() => {
+    Networks.disableRegtest();
+  });
+  
   it('should serialize and deserialize correctly a given transaction', function() {
     var transaction = new Transaction(tx_1_hex);
     transaction.uncheckedSerialize().should.equal(tx_1_hex);
@@ -479,6 +482,14 @@ describe('Transaction', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 100000)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
+    it('adds no change if fee less than DUST_AMOUNT', function () {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 100000 - Transaction.DUST_AMOUNT)
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(1);

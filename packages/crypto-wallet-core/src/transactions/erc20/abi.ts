@@ -1,4 +1,6 @@
-export const ERC20Abi = [
+export { ERC20Abi, MULTISENDAbi };
+
+const ERC20Abi = [
   {
     constant: true,
     inputs: [],
@@ -218,5 +220,58 @@ export const ERC20Abi = [
     ],
     name: 'Transfer',
     type: 'event'
+  }
+];
+
+const MULTISENDAbi = [
+  {
+    constant: false,
+    inputs: [
+      {
+        name: 'recipients',
+        type: 'address[]'
+      },
+      {
+        name: 'amounts',
+        type: 'uint256[]'
+      }
+    ],
+    name: 'sendEth',
+    outputs: [
+      {
+        name: '',
+        type: 'bool'
+      }
+    ],
+    payable: true,
+    stateMutability: 'payable',
+    type: 'function'
+  },
+  {
+    constant: false,
+    inputs: [
+      {
+        name: 'tokenAddress',
+        type: 'address'
+      },
+      {
+        name: 'recipients',
+        type: 'address[]'
+      },
+      {
+        name: 'amounts',
+        type: 'uint256[]'
+      }
+    ],
+    name: 'sendErc20',
+    outputs: [
+      {
+        name: '',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
   }
 ];

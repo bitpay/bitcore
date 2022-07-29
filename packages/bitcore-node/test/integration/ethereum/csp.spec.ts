@@ -4,14 +4,19 @@ import { Request, Response } from 'express-serve-static-core';
 import _ from 'lodash';
 import * as sinon from 'sinon';
 import { Transform } from 'stream';
+import Web3 from 'web3';
 import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
-import { IWallet } from '../../../src/models/wallet';
+import { IWallet, WalletStorage } from '../../../src/models/wallet';
+import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { ETH } from '../../../src/modules/ethereum/api/csp';
+import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
 import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
 import { IEthTransaction } from '../../../src/modules/ethereum/types';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { EthTransactions } from '../../data/ETH/transactionsETH';
+import { EthBlocks } from '../../data/ETH/blocksETH';
 
 describe('Ethereum API', function() {
   const chain = 'ETH';
@@ -199,14 +204,6 @@ describe('Ethereum API', function() {
     expect(counter).to.eq(expected);
   });
 
-  it('should stream wallet\'s valid ETH transactions', async () =>
-    await streamWalletTransactionsTest(chain, network)
-  );
-
-  it('should stream wallet\'s valid & invalid ETH transactions', async () =>
-    await streamWalletTransactionsTest(chain, network, true)
-  );
-
   it('should stream ETH transactions for block', async () => {
     const txCount = 100;
     const txs = new Array(txCount).fill({}).map(() => {
@@ -236,7 +233,7 @@ describe('Ethereum API', function() {
 
     await ETH.streamTransactions({ chain, network, res, req, args: { blockHeight: 1 } });
     let counter = 0;
-    await new Promise(r => {
+    await new Promise<void>(r => {
       res
         .on('data', () => {
           counter++;
@@ -281,7 +278,7 @@ describe('Ethereum API', function() {
 
     await ETH.streamTransactions({ chain, network, res, req, args: { blockHash: '12345' } });
     let counter = 0;
-    await new Promise(r => {
+    await new Promise<void>(r => {
       res
         .on('data', () => {
           counter++;
@@ -295,6 +292,108 @@ describe('Ethereum API', function() {
     const bracketCount = 2;
     const expected = txCount + commaCount + bracketCount;
     expect(counter).to.eq(expected);
+  });
+
+  describe('#streamWalletTransactions', () => {
+    let sandbox = sinon.createSandbox();
+    let chain = 'ETH';
+    let network = 'mainnet';
+    let address = '0x1Eee23160Db790ee48Fd39871A64b13e76Fc2C3C';
+    let wallet: IWallet = {
+      chain,
+      network,
+      pubKey: '',
+      name: 'this-name',
+      singleAddress: false,
+      path: 'm/0/0'
+    }
+    let web3 = new Web3();
+
+    before(async () => {
+      const res = await WalletStorage.collection.findOneAndUpdate({ name: wallet.name }, { $set: wallet }, { returnOriginal: false, upsert: true });
+      wallet = res.value as IWallet;
+      await WalletAddressStorage.collection.updateOne({ network, address }, { $set: { chain, network, wallet: (wallet._id as ObjectId), processed: true, address } }, { upsert: true })
+      sandbox.stub(ETH, 'getWeb3').resolves({ web3 });
+    });
+
+    afterEach(async () => {
+      await EthBlockStorage.collection.deleteMany({});
+      await EthTransactionStorage.collection.deleteMany({});
+    });
+
+    after(async () => { 
+      sandbox.restore();
+    });
+
+    it('should stream wallet\'s valid ETH transactions', async () =>
+      await streamWalletTransactionsTest(chain, network)
+    );
+
+    it('should stream wallet\'s valid & invalid ETH transactions', async () =>
+      await streamWalletTransactionsTest(chain, network, true)
+    );
+
+    it('should stream DEX wallet transactions', async () => {
+      await EthBlockStorage.collection.insertMany(EthBlocks as any);
+      await EthTransactionStorage.collection.insertMany(EthTransactions as any);
+
+      await ETH.updateWallet({ chain, network, wallet, addresses: [address] });
+
+      const res = (new Transform({
+        transform: (data, _, cb) => {
+          cb(null, data);
+        }
+      }) as unknown) as Response;
+      res.type = () => res;
+  
+      const req = (new Transform({
+        transform: (_data, _, cb) => {
+          cb(null);
+        }
+      }) as unknown) as Request;
+
+      ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
+      let total = BigInt(0);
+      let totalRejected = BigInt(0);
+      let totalFee = BigInt(0);
+
+      await new Promise((resolve, reject) => {
+        res.on('data', (data) => {
+          try {
+            const doc = JSON.parse(data.toString())
+            if (doc.error) {
+              totalRejected += BigInt(doc.satoshis);
+            } else {
+              total += BigInt(doc.satoshis);
+            }
+
+            if (doc.category !== 'receive' || doc.initialFrom === address) {
+              totalFee += BigInt(doc.fee);
+            }
+          } catch (e) {
+            reject(e);
+          }
+        });
+
+        res.on('finish', () => {
+          try {
+            let totalETH = web3.utils.fromWei(total.toString());
+            let totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
+            let totalFeeETH = web3.utils.fromWei(totalFee.toString());
+            let balanceETH = web3.utils.fromWei((total - totalFee).toString());
+
+            // Need to slice b/c we're using Number rounding instead of BigInt
+            expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));
+            expect(totalETH.slice(0, -6)).to.equal('309.833211546562');
+            expect(totalFeeETH).to.equal('0.16692773559');
+            expect(totalRejectedETH.slice(0, -4)).to.equal('-3.99999999192707');
+            resolve(true);
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+    });
   });
 });
 

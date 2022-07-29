@@ -972,7 +972,7 @@ Transaction.prototype._updateChangeOutput = function() {
   var available = this._getUnspentValue();
   var fee = this.getFee();
   var changeAmount = available - fee;
-  if (changeAmount > 0) {
+  if (changeAmount >= Transaction.DUST_AMOUNT) {
     this._changeIndex = this.outputs.length;
     this._addOutput(new Output({
       script: this._changeScript,
@@ -980,6 +980,7 @@ Transaction.prototype._updateChangeOutput = function() {
     }));
   } else {
     this._changeIndex = undefined;
+    this._fee = fee + changeAmount;
   }
 };
 /**

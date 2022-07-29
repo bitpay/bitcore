@@ -1,60 +1,86 @@
-# Git Workflow
+# Submitting Issues
+## Bug Reports
 
-This project is a monorepo that uses lerna to link dependencies.
+A bug is a _demonstrable problem_ that is caused by the code in the repository.
+Good bug reports are extremely helpful - thank you!
 
-https://github.com/lerna/lerna
+Guidelines for bug reports:
 
-This mono repo should contain the commits from all of the packages.
+1. **Use the GitHub issue search** &mdash; Check if the issue has already been
+   reported. If it already exists, consider leaving a comment with any extra clarifying
+   details about your situation that might help us narrow in on the nature of the problem.
 
-Each package has it's own repo.
+2. **Check if the issue has already been fixed** &mdash; In the event that you are don't 
+    have the latest, try to reproduce it using the latest changes in the `master` branch.
 
-## Packages
+3. **Submit a clear and detailed issue** &mdash; Please try to be as detailed as possible 
+    in your report. Please include the following:
+    - Your environment, OS and/or browsers facing the issue
+    - Steps to reproduce the issue
+    - Specific errors thrown, stack trace etc.
+    - The behaviour you expect vs what it's doing
 
-Each package is in the packages directory.
 
-Code changes that touch multiple modules should be done on the bitcore repo.
-This way one branch can update multiple modules.
+## Feature Requests
 
-Lengthy developments on a single package should be done on that package's repo.
-Once the package is at a good point, it should be merged into the monorepo
+Feature requests are welcome. But take a moment to find out whether your idea
+fits with the scope and aims of the project. It's up to *you* to make a strong
+case to convince the project's developers of the merits of this feature. Please
+provide as much detail and context as possible.
 
-## Updating Packages From Their Own Repo
 
-The monorepo packages can be updated via git subtrees, then submitted to the bitcore repo as a MR
+# Contributing Code
 
-Example:
+Good pull requests - patches, improvements, new features - are a fantastic
+help. They should remain focused in scope and avoid containing unrelated
+commits.
 
-```sh
-git co -b feature/bitcore-node-update
-git subtree pull --prefix=packages/bitcore-node git@github.com:bitpay/bitcore-node.git branchToPull
-git push -u origin feature/bitcore-node-update
-# Create MR from origin:feature/bitcore-node-update to upstream:bitcore
-```
+Please adhere to the coding conventions used throughout this monorepo (indentation,
+accurate comments, etc.) and any other requirements (such as test coverage).
 
-## Updating Repos from Bitcore Package
+Follow this process:
 
-Changes to the mono repo can be pushed to the package repo.
+1. [Fork](http://help.github.com/fork-a-repo/) the project, clone your fork,
+   and configure the remotes:
 
-```sh
-git subtree push --prefix=packages/bitcore-node git@github.com:micahriggan/bitcore-node.git branchToPush
-```
+   ```bash
+   # Clone your fork of the repo into the current directory
+   git clone https://github.com/<your-username>/bitcore
+   # Navigate to the newly cloned directory
+   cd bitcore
+   # Assign the original repo to a remote called "upstream"
+   git remote add upstream https://github.com/bitpay/bitcore
+   ```
 
-## Adding New Packages from Existing Repos
+2. If you cloned a while ago, get the latest changes from upstream:
 
-Packages can be added via Lerna or via git subtrees.
+   ```bash
+   git checkout master
+   git pull upstream master
+   ```
 
-```sh
-lerna import ~/somedir/path-to-bitcore-repo --flatten
-# OR
-git subtree add --prefix=packages/bitcore-repo-to-add git@github.com:bitpay/bitcore-repo-to-add.git branchToAdd
-```
+3. Create a new feature branch (off the `master` branch) to
+   contain your feature, change, or fix:
 
-This will merge all of the commits into the bitcore history
+   ```bash
+   git checkout -b <feature-branch-name>
+   ```
 
-## Dev Dependencies
+4. Write code and commit your changes in logical chunks.
 
-Dev dependencies that are used on multiple packages can be hoisted to the top-level
+5. Locally merge (or rebase) the upstream `master` branch into your feature branch:
 
-Linters, formatters, and other standards can be defined top-level for the monorepo
+   ```bash
+   git pull [--rebase] upstream master
+   ```
 
-This allows reuse of eslint/tslint/prettier standards for all projects.
+6. Push your feature branch up to your fork:
+
+   ```bash
+   git push origin <feature-branch-name>
+   ```
+
+7. [Open a Merge Request](https://help.github.com/articles/using-pull-requests/)
+    with a clear title and description from your fork to the base repository (bitpay/bitcore - master).
+
+

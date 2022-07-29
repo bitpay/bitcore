@@ -1,4 +1,4 @@
-# Bitcore examples
+# Bitcore Javascript Library examples
 
 ## Generate a random address
 

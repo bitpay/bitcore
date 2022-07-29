@@ -73,7 +73,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'btc',
+        chain: 'btc',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -110,7 +110,7 @@ describe('V8', () => {
         };
       };
       var be2 = new V8({
-        coin: 'btc',
+        chain: 'btc',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -143,7 +143,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -182,7 +182,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -211,7 +211,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -235,7 +235,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -259,7 +259,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -293,7 +293,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -318,7 +318,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
@@ -351,7 +351,7 @@ describe('V8', () => {
       };
 
       var be = new V8({
-        coin: 'bch',
+        chain: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',

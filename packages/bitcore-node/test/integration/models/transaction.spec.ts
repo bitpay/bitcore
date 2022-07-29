@@ -1,3 +1,4 @@
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import * as crypto from 'crypto';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
@@ -5,6 +6,9 @@ import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/model
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { unprocessedEthBlocks } from '../../data/ETH/unprocessedBlocksETH';
+import { WalletAddressStorage } from '../../../src/models/walletAddress';
+import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
 
 async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
   let txid = startingTxid;
@@ -199,4 +203,37 @@ describe('Transaction Model', function() {
     expect(goodTxs[0].txid).to.eq(blockTx.txid);
     expect(goodTxs[0].blockHeight).to.eq(blockTx.blockHeight);
   });
+
+  describe('#batchImport', () => {
+    const chain = 'ETH';
+    const network = 'testnet';
+
+    const wallet = new ObjectId();
+    const address = '0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef';
+    
+    beforeEach(async () => {
+      await WalletAddressStorage.collection.insertOne({
+        chain,
+        network,
+        wallet,
+        address,
+        processed: true
+      });
+    });
+
+    it('should update eth transactions with related wallet id correctly (incoming)', async () => {
+      const block = unprocessedEthBlocks[0] as any; // block containing an eth transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
+      await EthTransactionStorage.batchImport({...block});
+      const walletTxs = await EthTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      expect(walletTxs.length).eq(1);
+    });
+
+    it('should update erc20 transactions with related wallet id correctly (incoming)', async () => {
+      const block = unprocessedEthBlocks[1] as any; // block containing an ERC20 transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
+      await EthTransactionStorage.batchImport({...block});
+      const walletTxs = await EthTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      expect(walletTxs.length).eq(1);
+    });
+  });
+
 });

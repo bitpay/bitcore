@@ -18,6 +18,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
+import { ETH } from '../api/csp';
 
 import { EthTransactionJSON, IEthTransaction } from '../types';
 
@@ -135,15 +136,21 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
 
       if (internal && internal.length > 0) {
         internal.forEach(i => {
-          if (i.action.to) batch.push({ address: i.action.to });
-          if (i.action.from) batch.push({ address: i.action.from });
+          if (i.action.to) {
+            batch.push({ address: i.action.to });
+            batch.push({ address: from, tokenAddress: i.action.to });
+          }
+          if (i.action.from) {
+            batch.push({ address: i.action.from });
+            batch.push({ address: to, tokenAddress: i.action.from });
+          }
         });
       }
 
       for (const payload of batch) {
         const lowerAddress = payload.address.toLowerCase();
         const cacheKey = payload.tokenAddress
-          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${to.toLowerCase()}`
+          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${payload.tokenAddress.toLowerCase()}`
           : `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
         await CacheStorage.expire(cacheKey);
       }
@@ -187,8 +194,43 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       return Promise.all(
         params.txs.map(async (tx: IEthTransaction) => {
           const { to, txid, from } = tx;
-          const sentWallets = await WalletAddressStorage.collection.find({ chain, network, address: from }).toArray();
-          const receivedWallets = await WalletAddressStorage.collection.find({ chain, network, address: to }).toArray();
+          const tos = [to];
+          const froms = [from];
+
+          const { web3 } = await ETH.getWeb3(network);
+
+          // handle incoming ERC20 transactions
+          if (tx.abiType && tx.abiType.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
+            const _to = tx.abiType.params.find(f => f.name === '_to');
+            const _from = tx.abiType.params.find(f => f.name === '_from');
+
+            if (_to && _to.value) {
+              tos.push(web3.utils.toChecksumAddress(_to.value));
+            }
+            if (_from && _from.value) {
+              froms.push(web3.utils.toChecksumAddress(_from.value));
+            }
+          }
+
+          // handle incoming internal transactions ( receiving a token swap from a different wallet )
+          if (tx.internal) {
+            for (let internal of tx.internal) {
+              const { to, from } = internal.action;
+              if (to) {
+                tos.push(web3.utils.toChecksumAddress(to));
+              }
+              if (from) {
+                froms.push(web3.utils.toChecksumAddress(from));
+              }
+            }
+          }
+
+          const sentWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: froms } })
+            .toArray();
+          const receivedWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: tos } })
+            .toArray();
           const wallets = _.uniqBy(
             sentWallets.concat(receivedWallets).map(w => w.wallet),
             w => w.toHexString()
@@ -290,11 +332,14 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     return undefined;
   }
 
+  // Correct tx.data.toString() => 0xa9059cbb00000000000000000000000001503dfc5ad81bf630d83697e98601871bb211b60000000000000000000000000000000000000000000000000000000000002710
+  // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
+
   _apiTransform(
     tx: IEthTransaction | Partial<MongoBound<IEthTransaction>>,
     options?: TransformOptions
   ): EthTransactionJSON | string {
-    const dataStr = `0x${tx.data!.toString('hex')}`;
+    const dataStr = tx.data ? tx.data.toString() : '';
     const decodedData = this.abiDecode(dataStr);
 
     const transaction: EthTransactionJSON = {

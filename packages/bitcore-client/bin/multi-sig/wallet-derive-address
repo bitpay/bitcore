@@ -1,15 +1,22 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const bitcoreLib = require('bitcore-lib');
+const CWC = require('crypto-wallet-core');
 const program = require('commander');
 const { Wallet } = require('../../ts_build/wallet');
 const promptly = require('promptly');
+const bitcoreLibs = {
+  BTC: CWC.BitcoreLib,
+  DOGE: CWC.BitcoreLibDoge,
+  LTC: CWC.BitcoreLibLtc,
+  BCH: CWC.BitcoreLibCash
+};
 
 program
   .version(require('../../package.json').version)
   .option('--path <path>', 'REQUIRED - Filepath where wallet is stored')
   .option('--m <m>', 'REQUIRED - Number of signers required')
+  .option('--currency <currency>', 'REQUIRED - currency. [BTC, DOGE, LTC, BCH]')
   .option('--depth <depth>', 'REQUIRED - Number of addresses to derive (will derive that many change addresses too)')
   .option('--network <network>', 'REQUIRED - Network to derive for')
   .option('--input [input]', 'OPTIONAL - A json string to parse in the form {"xpubkey": "mXy1234"}')
@@ -17,6 +24,7 @@ program
   .option('--prompt', 'OPTIONAL - Ask for the xpubkeys to derive from')
   .option('--importToWallet [importToWallet]', 'OPTIONAL flag - import the derived addresses. Requires path')
   .option('--exportToFile [export]', 'OPTIONAL flag - File path to save derived addresses to')
+  .option('--bech32', 'OPTIONAL - Use this flag if you need bech32 addresses')
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -37,20 +45,37 @@ const parseKeys = keys => {
   }
 };
 
-function getAddress(publicKeyRing, addressIndex, isChange, m, network) {
+function getAddress(publicKeyRing, addressIndex, isChange, m, network, currency) {
   const publicKeys = publicKeyRing.map(function(key) {
-    const xpub = new bitcoreLib.HDPublicKey(key);
+    const xpub = new bitcoreLibs[currency].HDPublicKey(key.xpubkey);
     const changeNum = isChange ? 1 : 0;
-    const path = `m/${changeNum}/${addressIndex}`;
+    let path = key.path ? key.path : `m/${changeNum}/${addressIndex}`;
+    if (key.path) {
+      let split = path.split('/');
+      split[split.length -1] = Number(split[split.length - 1]) + addressIndex;
+      path = split.join('/');
+    }
+    if (isChange && key.changePath) {
+      path = key.changePath
+      let split = path.split('/');
+      split[split.length -1] = Number(split[split.length - 1]) + addressIndex;
+      path = split.join('/');
+    }
     return xpub.derive(path).publicKey;
   });
-  return bitcoreLib.Address.createMultisig(publicKeys, m, network);
+  let nestedWitness;
+  let type;
+  if (program.bech32) {
+    nestedWitness = false;
+    type = 'witnessscripthash';
+  }
+  return bitcoreLibs[currency].Address.createMultisig(publicKeys, m, network, nestedWitness, type);
 }
 
-function getAllAddresses(publicKeyRing, numberOfAddresses, isChange, m, network) {
+function getAllAddresses(publicKeyRing, numberOfAddresses, isChange, m, network, currency) {
   let addresses = [];
   for (let i = 0; i < numberOfAddresses; i++) {
-    const address = getAddress(publicKeyRing, i, isChange, m, network);
+    const address = getAddress(publicKeyRing, i, isChange, m, network, currency);
     addresses.push({ address: address.toString() });
     console.log('address', address.toString(), i);
   }
@@ -81,7 +106,10 @@ async function importAddressesToWallet(path, addresses) {
 }
 
 const main = async () => {
-  const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth } = program;
+  const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth, currency } = program;
+  if (!currency || !['BTC', 'DOGE', 'LTC', 'BCH'].includes(currency)) {
+    throw new Error('Invalid currency. Currency must be BTC, DOGE, LTC, or BCH');
+  }
   let keyInput = [];
   try {
     if (file) {
@@ -92,8 +120,8 @@ const main = async () => {
       keyInput = await readFromPrompt();
     }
     const mOfN = Number(m);
-    let results = getAllAddresses(keyInput, depth, false, mOfN, network);
-    let changeResult = getAllAddresses(keyInput, depth, true, mOfN, network);
+    let results = getAllAddresses(keyInput, depth, false, mOfN, network, currency);
+    let changeResult = getAllAddresses(keyInput, depth, true, mOfN, network, currency);
     const allAddresses = [].concat(results, changeResult);
     if (keyInput.length < mOfN) {
       throw new Error(`You must enter at least ${m} xpubkeys`);
