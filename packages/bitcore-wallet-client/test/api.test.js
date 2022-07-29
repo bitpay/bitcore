@@ -691,7 +691,7 @@ describe('client API', function() {
 
         (() => {
           var t = x.buildTx(txp);
-        }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin) at buildTx');
+        }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx');
 
         x.newBitcoreTransaction = x;
       });
