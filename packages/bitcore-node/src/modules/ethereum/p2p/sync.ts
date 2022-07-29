@@ -73,6 +73,7 @@ export class MultiThreadSync extends EventEmitter {
       const startTime = Date.now();
 
       this.syncInterval = setInterval(() => {
+        // TODO account for this.syncQueue
         const oneSecond = 1000;
         const blocksProcessed = this.currentHeight - startHeight;
         const elapsedMinutes = (Date.now() - startTime) / (60 * oneSecond);
@@ -120,7 +121,7 @@ export class MultiThreadSync extends EventEmitter {
     // If last block was found
     if (!msg.notFound) {
       if (this.syncQueue.length > 0) {
-        const blockNum = this.syncQueue.pop();
+        const blockNum = this.syncQueue.shift();
         thread.postMessage({ message: 'sync', blockNum });
       } else {
         thread.postMessage({ message: 'sync', blockNum: this.syncHeight++ }); // syncHeight is incremented until there are no more blocks found
@@ -192,7 +193,7 @@ export class MultiThreadSync extends EventEmitter {
     ) {
       return state.verifiedBlockHeight[this.chain][this.network];
     }
-    return 0;
+    return this.config.syncStartHeight || 0;
   }
 
   async finishSync() {
@@ -202,8 +203,12 @@ export class MultiThreadSync extends EventEmitter {
     }
 
     const verifiedBlockHeight = await this.getVerifiedBlockHeight();
-    logger.info(`Verifying ${this.currentHeight - verifiedBlockHeight} ${this.chain}:${this.network} blocks. This could take a while.`);
-    const gaps = await EthBlockStorage.verifySyncHeight({
+    logger.info(
+      `Verifying ${this.currentHeight - verifiedBlockHeight} ${this.chain}:${
+        this.network
+      } blocks. This could take a while.`
+    );
+    const gaps = await EthBlockStorage.getBlockSyncGaps({
       chain: this.chain,
       network: this.network,
       startHeight: verifiedBlockHeight

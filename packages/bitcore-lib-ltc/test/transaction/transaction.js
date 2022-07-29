@@ -23,7 +23,10 @@ var errors = bitcore.errors;
 var transactionVector = require('../data/tx_creation');
 
 describe('Transaction', function() {
-
+  beforeEach(() => {
+    Networks.disableRegtest();
+  });
+  
   it('should serialize and deserialize correctly a given transaction', function() {
     var transaction = new Transaction(tx_1_hex);
     transaction.uncheckedSerialize().should.equal(tx_1_hex);

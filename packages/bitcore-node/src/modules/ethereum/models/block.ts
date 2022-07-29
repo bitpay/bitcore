@@ -183,10 +183,11 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     return JSON.stringify(transform);
   }
 
-  async verifySyncHeight(params: { chain: string; network: string; startHeight?: number }): Promise<number[]> {
+  async getBlockSyncGaps(params: { chain: string; network: string; startHeight?: number }): Promise<number[]> {
     const { chain, network, startHeight = 0 } = params;
     const self = this;
     return new Promise(async (resolve, reject) => {
+      let timeout;
       try {
         const maxBlock = await self.collection.findOne(
           { chain, network },
@@ -205,6 +206,10 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
         let block = (await stream.next()) as IEthBlock;
         let prevBlock: IEthBlock | undefined;
         const outOfSync: number[] = [];
+        timeout = setInterval(
+          () => logger.info(`${chain}:${network} Block verification height: ${block.height}`),
+          1000 * 10
+        );
 
         for (let syncHeight = startHeight; syncHeight <= maxHeight; syncHeight++) {
           if (!block || block.height !== syncHeight) {
@@ -226,6 +231,8 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
         resolve(outOfSync);
       } catch (err) {
         reject(err);
+      } finally {
+        clearTimeout(timeout);
       }
     });
   }
