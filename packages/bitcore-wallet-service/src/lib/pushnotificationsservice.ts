@@ -461,7 +461,8 @@ export class PushNotificationsService {
       wbtc: 'WBTC',
       dai: 'DAI',
       shib: 'SHIB',
-      ape: 'APE'
+      ape: 'APE',
+      euroc: 'EUROC'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
