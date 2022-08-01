@@ -40,7 +40,8 @@ module.exports = {
     DAI: 'dai',
     WBTC: 'wbtc',
     SHIB: 'shib',
-    APE: 'ape'
+    APE: 'ape',
+    EUROC: 'euroc'
   },
 
   USD_STABLECOINS: {
