@@ -50,8 +50,7 @@ const main = async () => {
       from: lastAddress,
       token
     };
-    let tx;
-    const txTemp = await wallet.newTx(params);
+    let tx = await wallet.newTx(params);
     let utxosValueSum = 0;
     let inputCount = 0;
     let outputAmount = recipients[0].amount;
@@ -66,7 +65,7 @@ const main = async () => {
         console.error('wallet input was not sufficient to cover the output amount');
         process.exit(1);
       } else {
-        const estimatedBytes = txTemp.length / 2 + inputCount * (107 + 1);
+        const estimatedBytes = tx.length / 2 + inputCount * (107 + 1);
         const estimatedFee = Math.ceil(estimatedBytes * feeRate);
         if (estimatedFee) {
           params.fee = estimatedFee;
@@ -76,8 +75,6 @@ const main = async () => {
         }
       }
       tx = await wallet.newTx(params);
-    } else {
-      tx = txTemp;
     }
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
