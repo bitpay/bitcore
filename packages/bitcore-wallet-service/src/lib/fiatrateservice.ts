@@ -210,6 +210,10 @@ export class FiatRateService {
       return this.getRatesForStablecoin({ code: 'USD', ts }, cb);
     }
 
+    if (Constants.EUR_STABLECOINS[coin.toUpperCase()]) {
+      return this.getRatesForStablecoin({ code: 'EUR', ts }, cb);
+    }
+
     let fiatFiltered = [];
 
     if (code) {
