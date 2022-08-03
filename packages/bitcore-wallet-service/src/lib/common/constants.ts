@@ -84,6 +84,11 @@ module.exports = {
     DAI_M: 'dai_m'
   },
 
+  EUR_STABLECOINS: {
+    EUROC_E: 'euroc_e',
+    EUROC_M: 'euroc_m'
+  },
+
   UTXO_COINS: {
     BTC: 'btc',
     BCH: 'bch',
