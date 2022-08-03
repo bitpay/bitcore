@@ -68,6 +68,7 @@ let serviceVersion;
 
 interface IAddress {
   coin: string;
+  chain: string;
   network: string;
   address: string;
   hasActivity: boolean;
@@ -465,6 +466,7 @@ export class WalletService {
    * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
+   * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
    * @param {string} opts.account[=0] - BIP44 account number
    * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
@@ -473,7 +475,12 @@ export class WalletService {
   createWallet(opts, cb) {
     let pubKey;
 
-    if (opts.coin === 'bch' && opts.n > 1) {
+    opts.coin = opts.coin || Defaults.COIN;
+    if (!opts.chain) {
+      opts.chain = opts.coin; // chain === coin for stored clients
+    }
+
+    if (opts.chain === 'bch' && opts.n > 1) {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -499,8 +506,7 @@ export class WalletService {
       return cb(new ClientError('Invalid combination of required copayers / total copayers'));
     }
 
-    opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) {
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) {
       return cb(new ClientError('Invalid coin'));
     }
 
@@ -522,11 +528,13 @@ export class WalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-    if (opts.n > 1 && !ChainService.supportsMultisig(opts.coin)) {
+    // using coin for simplicity
+    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain)) {
       return cb(new ClientError('Multisig wallets are not supported for this coin'));
     }
 
-    if (ChainService.isSingleAddress(opts.coin)) {
+    // using coin for simplicity
+    if (ChainService.isSingleAddress(opts.chain)) {
       opts.singleAddress = true;
     }
 
@@ -552,6 +560,7 @@ export class WalletService {
             m: opts.m,
             n: opts.n,
             coin: opts.coin,
+            chain: opts.chain, // chain === coin for stored wallets
             network: opts.network,
             pubKey: pubKey.toString(),
             singleAddress: !!opts.singleAddress,
@@ -588,6 +597,9 @@ export class WalletService {
 
       // only for testing
       if (opts.doNotMigrate) return cb(null, wallet);
+
+      // backwards compatibility
+      if (!wallet.chain) wallet.chain = ChainService.getChain(wallet.coin);
 
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
@@ -630,7 +642,7 @@ export class WalletService {
           });
         },
         done => {
-          this.storage.fetchAddressByCoin(Defaults.COIN, opts.identifier, (err, address) => {
+          this.storage.fetchAddressByChain(Defaults.CHAIN, opts.identifier, (err, address) => {
             if (address) walletId = address.walletId;
             return done(err);
           });
@@ -855,6 +867,7 @@ export class WalletService {
   _addCopayerToWallet(wallet, opts, cb) {
     const copayer = Copayer.create({
       coin: wallet.coin,
+      chain: wallet.coin, // chain === coin for stored clients
       name: opts.name,
       copayerIndex: wallet.copayers.length,
       xPubKey: opts.xPubKey,
@@ -1019,7 +1032,8 @@ export class WalletService {
     if (_.isEmpty(opts.name)) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
+    // checking in chains for simplicity
+    if (!Utils.checkValueInCollection(opts.coin, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
     try {
@@ -1172,7 +1186,7 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (wallet.coin != 'eth') {
+      if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
         opts.tokenAddresses = null;
         opts.multisigEthInfo = null;
       }
@@ -1281,7 +1295,7 @@ export class WalletService {
 
   _store(wallet, address, cb, checkSync = false) {
     let stoAddress = _.clone(address);
-    ChainService.addressToStorageTransform(wallet.coin, wallet.network, stoAddress);
+    ChainService.addressToStorageTransform(wallet.chain, wallet.network, stoAddress);
     this.storage.storeAddressAndWallet(wallet, stoAddress, (err, isDuplicate) => {
       if (err) return cb(err);
       this.syncWallet(
@@ -1322,7 +1336,7 @@ export class WalletService {
         (err, duplicate) => {
           if (err) return cb(err);
           if (duplicate) return cb(null, address);
-          if (wallet.coin == 'bch' && opts.noCashAddr) {
+          if (wallet.chain == 'bch' && opts.noCashAddr) {
             address = _.cloneDeep(address);
             address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }
@@ -1346,7 +1360,7 @@ export class WalletService {
         if (err) return cb(err);
         if (!_.isEmpty(addresses)) {
           let x = _.head(addresses);
-          ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+          ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
           return cb(null, x);
         }
         return createNewAddress(wallet, cb);
@@ -1356,7 +1370,7 @@ export class WalletService {
     this.getWallet({ doNotMigrate: opts.doNotMigrate }, (err, wallet) => {
       if (err) return cb(err);
 
-      if (ChainService.isSingleAddress(wallet.coin)) {
+      if (ChainService.isSingleAddress(wallet.chain)) {
         opts.ignoreMaxGap = true;
         opts.singleAddress = true;
       }
@@ -1407,7 +1421,7 @@ export class WalletService {
 
       this.getWallet({}, (err, wallet) => {
         _.each(onlyMain, x => {
-          ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+          ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
         });
         return cb(null, onlyMain);
       });
@@ -1487,9 +1501,7 @@ export class WalletService {
 
             if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
-            coin = wallet.coin;
-
-            bc = this._getBlockchainExplorer(coin, wallet.network);
+            bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             return next();
           });
@@ -1503,7 +1515,7 @@ export class WalletService {
           // even with Grouping we need address for pubkeys and path (see last step)
           this.storage.fetchAddresses(this.walletId, (err, addresses) => {
             _.each(addresses, x => {
-              ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+              ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
             });
             allAddresses = addresses;
             if (allAddresses.length == 0) return cb(null, []);
@@ -1517,7 +1529,7 @@ export class WalletService {
         },
         next => {
           if (!wallet.isComplete()) return next();
-          this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+          this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
             if (err) return next(err);
             blockchainHeight = height;
             next();
@@ -1526,7 +1538,7 @@ export class WalletService {
         next => {
           if (!wallet.isComplete()) return next();
 
-          const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
+          const dustThreshold = Bitcore_[wallet.chain].Transaction.DUST_AMOUNT;
           const isEscrowPayment = wallet.isZceCompatible() && opts.instantAcceptanceEscrow ? true : false;
           const replaceTxByFee = opts.replaceTxByFee ? true : false;
           bc.getUtxos(
@@ -1679,13 +1691,13 @@ export class WalletService {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
 
-        const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+        const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
         if (!bc) {
           return cb(new Error('Could not get blockchain explorer instance'));
         }
 
         const address = opts.addresses[0];
-        const A = Bitcore_[wallet.coin].Address;
+        const A = Bitcore_[wallet.chain].Address;
         let addrObj: { network?: { name?: string } } = {};
         try {
           addrObj = new A(address);
@@ -1696,7 +1708,7 @@ export class WalletService {
           return cb(null, []);
         }
 
-        this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+        this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
           if (err) return cb(err);
           bc.getAddressUtxos(address, height, (err, utxos) => {
             if (err) return cb(err);
@@ -1719,14 +1731,14 @@ export class WalletService {
    */
   getCoinsForTx(opts, cb) {
     this.getWallet({}, (err, wallet) => {
-      if (!ChainService.isUTXOCoin(wallet.coin)) {
+      if (!ChainService.isUTXOChain(wallet.chain)) {
         // this prevents old BWC clients to break
         return cb(null, {
           inputs: [],
           outputs: []
         });
       }
-      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
       if (!bc) {
         return cb(new Error('Could not get blockchain explorer instance'));
       }
@@ -1805,7 +1817,7 @@ export class WalletService {
         opts.feeLevel = 'normal';
       }
 
-      const feeLevels = Defaults.FEE_LEVELS[wallet.coin];
+      const feeLevels = Defaults.FEE_LEVELS[wallet.chain];
       if (opts.feeLevel) {
         if (
           !_.some(feeLevels, {
@@ -1816,7 +1828,7 @@ export class WalletService {
       }
 
       if (_.isNumber(opts.feePerKb)) {
-        if (opts.feePerKb < Defaults.MIN_FEE_PER_KB || opts.feePerKb > Defaults.MAX_FEE_PER_KB[wallet.coin])
+        if (opts.feePerKb < Defaults.MIN_FEE_PER_KB || opts.feePerKb > Defaults.MAX_FEE_PER_KB[wallet.chain])
           return cb(new ClientError('Invalid fee per KB'));
       }
 
@@ -1824,8 +1836,8 @@ export class WalletService {
     });
   }
 
-  _sampleFeeLevels(coin, network, points, cb) {
-    const bc = this._getBlockchainExplorer(coin, network);
+  _sampleFeeLevels(chain, network, points, cb) {
+    const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.estimateFee(points, (err, result) => {
       if (err) {
@@ -1842,7 +1854,7 @@ export class WalletService {
           // NOTE: ONLY BTC/BCH/DOGE/LTC expect feePerKb to be Bitcoin amounts
           // others... expect wei.
 
-          return ChainService.convertFeePerKb(coin, p, feePerKb);
+          return ChainService.convertFeePerKb(chain, p, feePerKb);
         })
       );
 
@@ -1859,28 +1871,29 @@ export class WalletService {
    * Returns fee levels for the current state of the network.
    * @param {Object} opts
    * @param {string} [opts.coin = 'btc'] - The coin to estimate fee levels from.
+   * @param {string} [opts.chain = 'btc'] - The coin to estimate fee levels from.
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network to estimate fee levels from.
    * @returns {Object} feeLevels - A list of fee levels & associated amount per kB in satoshi.
    */
   getFeeLevels(opts, cb) {
     opts = opts || {};
 
-    opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
+    opts.chain = opts.chain || Defaults.CHAIN;
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
 
-    const cacheKey = 'feeLevel:' + opts.coin + ':' + opts.network;
+    const cacheKey = 'feeLevel:' + opts.chain + ':' + opts.network;
 
     this.storage.checkAndUseGlobalCache(cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values, oldvalues) => {
       if (err) return cb(err);
       if (values) return cb(null, values, true);
 
-      const feeLevels = Defaults.FEE_LEVELS[opts.coin];
+      const feeLevels = Defaults.FEE_LEVELS[opts.chain];
 
       /*
-      if (opts.coin === 'doge') {
+      if (opts.chain === 'doge') {
         const defaultDogeFeeLevels = feeLevels[0];
         const result: {
           feePerKb?: number;
@@ -1927,7 +1940,7 @@ export class WalletService {
         return result;
       };
 
-      this._sampleFeeLevels(opts.coin, opts.network, samplePoints(), (err, feeSamples, failed) => {
+      this._sampleFeeLevels(opts.chain, opts.network, samplePoints(), (err, feeSamples, failed) => {
         if (err) {
           if (oldvalues) {
             this.logw('##  There was an error estimating fees... using old cached values');
@@ -2016,11 +2029,11 @@ export class WalletService {
         return new ClientError('Argument missing in output #' + (i + 1) + '.');
       }
 
-      if (!ChainService.checkValidTxAmount(wallet.coin, output)) {
+      if (!ChainService.checkValidTxAmount(wallet.chain, output)) {
         return new ClientError('Invalid amount');
       }
 
-      const error = ChainService.checkDust(wallet.coin, output, opts);
+      const error = ChainService.checkDust(wallet.chain, output, opts);
       if (error) return error;
       output.valid = true;
     }
@@ -2039,7 +2052,7 @@ export class WalletService {
             opts.feeLevel = 'normal';
           }
 
-          const feeLevels = Defaults.FEE_LEVELS[wallet.coin];
+          const feeLevels = Defaults.FEE_LEVELS[wallet.chain];
           if (opts.feeLevel) {
             if (
               !_.some(feeLevels, {
@@ -2051,7 +2064,7 @@ export class WalletService {
               );
           }
 
-          const error = ChainService.checkUtxos(wallet.coin, opts);
+          const error = ChainService.checkUtxos(wallet.chain, opts);
           if (error) {
             return next(new ClientError('fee can only be set when inputs are specified'));
           }
@@ -2098,7 +2111,7 @@ export class WalletService {
         },
         next => {
           // check outputs are on 'copay' format for BCH
-          if (wallet.coin != 'bch') return next();
+          if (wallet.chain != 'bch') return next();
           if (!opts.noCashAddr) return next();
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
@@ -2141,7 +2154,7 @@ export class WalletService {
     if (_.isNumber(opts.feePerKb)) return cb(null, opts.feePerKb);
     this.getFeeLevels(
       {
-        coin: wallet.coin,
+        chain: wallet.chain,
         network: wallet.network
       },
       (err, levels) => {
@@ -2158,7 +2171,7 @@ export class WalletService {
   }
 
   _getTransactionCount(wallet, address, cb) {
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getTransactionCount(address, (err, nonce) => {
       if (err) {
@@ -2170,7 +2183,7 @@ export class WalletService {
   }
 
   getNonce(opts) {
-    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTransactionCount(opts.address, (err, nonce) => {
@@ -2184,7 +2197,7 @@ export class WalletService {
   }
 
   estimateGas(opts) {
-    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.estimateGas(opts, (err, gasLimit) => {
@@ -2198,7 +2211,7 @@ export class WalletService {
   }
 
   getMultisigContractInstantiationInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInstantiationInfo(opts, (err, contractInstantiationInfo) => {
@@ -2212,7 +2225,7 @@ export class WalletService {
   }
 
   getMultisigContractInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInfo(opts, (err, contractInfo) => {
@@ -2226,7 +2239,7 @@ export class WalletService {
   }
 
   getTokenContractInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTokenContractInfo(opts, (err, contractInfo) => {
@@ -2240,7 +2253,7 @@ export class WalletService {
   }
 
   getMultisigTxpsInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigTxpsInfo(opts, (err, multisigTxpsInfo) => {
@@ -2301,9 +2314,9 @@ export class WalletService {
 
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
-          if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+          if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
             let Err = Errors.NETWORK_SUSPENDED;
-            Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+            Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
             return cb(Err);
           }
 
@@ -2314,7 +2327,7 @@ export class WalletService {
             async.series(
               [
                 next => {
-                  if (ChainService.isUTXOCoin(wallet.coin)) return next();
+                  if (ChainService.isUTXOChain(wallet.chain)) return next();
                   this.getMainAddresses({ reverse: true, limit: 1 }, (err, mainAddr) => {
                     if (err) return next(err);
                     opts.from = mainAddr[0].address;
@@ -2378,7 +2391,7 @@ export class WalletService {
 
                   if (!txOptsFee) {
                     const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
-                    const isNotUtxoCoin = !ChainService.isUTXOCoin(wallet.coin);
+                    const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
                     const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 
                     if (shouldUseOptsFee) {
@@ -2391,7 +2404,7 @@ export class WalletService {
                     walletId: this.walletId,
                     creatorId: this.copayerId,
                     coin: opts.coin,
-                    chain: opts.chain ? opts.chain : ChainService.getChain(opts.coin),
+                    chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
@@ -2490,9 +2503,9 @@ export class WalletService {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
 
-        if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
           let Err = Errors.NETWORK_SUSPENDED;
-          Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+          Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
           return cb(Err);
         }
 
@@ -2675,8 +2688,8 @@ export class WalletService {
     });
   }
 
-  _broadcastRawTx(coin, network, raw, cb) {
-    const bc = this._getBlockchainExplorer(coin, network);
+  _broadcastRawTx(chain, network, raw, cb) {
+    const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.broadcast(raw, (err, txid) => {
       if (err) return cb(err);
@@ -2688,19 +2701,20 @@ export class WalletService {
    * Broadcast a raw transaction.
    * @param {Object} opts
    * @param {string} [opts.coin = 'btc'] - The coin for this transaction.
+   * @param {string} [opts.chain = 'btc'] - The coin for this transaction.
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network for this transaction.
    * @param {string} opts.rawTx - Raw tx data.
    */
   broadcastRawTx(opts, cb) {
     if (!checkRequired(opts, ['network', 'rawTx'], cb)) return;
 
-    opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
+    opts.chain = opts.chain || opts.coin || Defaults.COIN;
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
 
-    this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
+    this._broadcastRawTx(opts.chain, opts.network, opts.rawTx, cb);
   }
 
   _checkTxInBlockchain(txp, cb) {
@@ -2728,9 +2742,9 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
         let Err = Errors.NETWORK_SUSPENDED;
-        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
         return cb(Err);
       }
 
@@ -2839,9 +2853,9 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
         let Err = Errors.NETWORK_SUSPENDED;
-        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
         return cb(Err);
       }
 
@@ -2872,7 +2886,7 @@ export class WalletService {
             } catch (ex) {
               return cb(ex);
             }
-            this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
+            this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
               if (err || txid != txp.txid) {
                 if (!err || txp.txid != txid) {
                   logger.warn(`Broadcast failed for: ${raw}`);
@@ -3033,7 +3047,7 @@ export class WalletService {
               return txp.status == 'broadcasted';
             });
 
-            if (txps[0] && txps[0].coin == 'bch') {
+            if (txps[0] && txps[0].chain == 'bch') {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
               _.each(txps, x => {
                 if (x.changeAddress) {
@@ -3084,7 +3098,7 @@ export class WalletService {
       if (err) return cb(err);
 
       async.map(
-        [`${wallet.coin}:${wallet.network}`, this.walletId],
+        [`${wallet.chain}:${wallet.network}`, this.walletId],
         (walletId, next) => {
           this.storage.fetchNotifications(walletId, opts.notificationId, opts.minTs || 0, next);
         },
@@ -3272,8 +3286,8 @@ export class WalletService {
     });
   }
 
-  _getBlockchainHeight(coin, network, cb) {
-    const cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
+  _getBlockchainHeight(chain, network, cb) {
+    const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
 
     this.storage.checkAndUseGlobalCache(cacheKey, Defaults.BLOCKHEIGHT_CACHE_TIME, (err, values) => {
       if (err) return cb(err);
@@ -3282,7 +3296,7 @@ export class WalletService {
 
       values = {};
 
-      const bc = this._getBlockchainExplorer(coin, network);
+      const bc = this._getBlockchainExplorer(chain, network);
       if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
       bc.getBlockchainHeight((err, height, hash) => {
         if (!err && height > 0) {
@@ -3313,7 +3327,7 @@ export class WalletService {
     if (wallet.beRegistered) {
       return cb();
     }
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
 
     this.logd('Registering wallet');
     bc.register(wallet, err => {
@@ -3368,7 +3382,7 @@ export class WalletService {
   // Syncs wallet regitration and address with a V8 type blockexplorerer
   syncWallet(wallet, cb, skipCheck?, count?) {
     count = count || 0;
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
     if (!bc) {
       return cb(new Error('Could not get blockchain explorer instance'));
     }
@@ -3396,7 +3410,7 @@ export class WalletService {
             }
 
             const addressStr = _.map(addresses, x => {
-              ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+              ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
               return x.address;
             });
 
@@ -3772,7 +3786,7 @@ export class WalletService {
 
     this.getFeeLevels(
       {
-        coin: wallet.coin,
+        chain: wallet.chain,
         network: wallet.network
       },
       (err, levels) => {
@@ -3825,7 +3839,7 @@ export class WalletService {
           this.syncWallet(wallet, next, true);
         },
         next => {
-          this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+          this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
             if (err) return next(err);
             bcHeight = height;
             bcHash = hash;
@@ -3869,7 +3883,7 @@ export class WalletService {
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
-            const dustThreshold = ChainService.getDustAmountValue(wallet.coin);
+            const dustThreshold = ChainService.getDustAmountValue(wallet.chain);
             this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, (err, inTxs: any[]) => {
               if (err) return cb(err);
 
@@ -4010,7 +4024,7 @@ export class WalletService {
 
       if (wallet.scanStatus == 'running') return cb(Errors.WALLET_BUSY);
 
-      bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
       if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
 
       const from = opts.skip || 0;
@@ -4122,14 +4136,14 @@ export class WalletService {
 
       this.storage.clearWalletCache(this.walletId, () => {
         // do not scan single address UTXO wallets.
-        if (wallet.singleAddress && ChainService.isUTXOCoin(wallet.coin)) return cb();
+        if (wallet.singleAddress && ChainService.isUTXOChain(wallet.chain)) return cb();
 
         this._runLocked(cb, cb => {
           wallet.scanStatus = 'running';
           this.storage.storeWallet(wallet, err => {
             if (err) return cb(err);
 
-            const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+            const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             opts.bc = bc;
 
@@ -4143,8 +4157,8 @@ export class WalletService {
               });
             };
 
-            if (!ChainService.isUTXOCoin(wallet.coin)) {
-              // non-UTXO coin "scan" is just a resync
+            if (!ChainService.isUTXOChain(wallet.chain)) {
+              // non-UTXO chain "scan" is just a resync
               return this.syncWallet(wallet, scanComplete);
             }
 
@@ -4275,7 +4289,7 @@ export class WalletService {
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
       // do not scan single address UTXO wallets.
-      if (wallet.singleAddress && ChainService.isUTXOCoin(wallet.coin)) return cb();
+      if (wallet.singleAddress && ChainService.isUTXOChain(wallet.chain)) return cb();
 
       setTimeout(() => {
         wallet.beRegistered = false;

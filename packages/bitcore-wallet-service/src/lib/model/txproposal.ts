@@ -242,7 +242,7 @@ export class TxProposal {
     x.walletId = obj.walletId;
     x.creatorId = obj.creatorId;
     x.coin = obj.coin || Defaults.COIN;
-    x.chain = obj.chain ? obj.chain : ChainService.getChain(x.coin);
+    x.chain = obj.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
     x.network = obj.network;
     x.outputs = obj.outputs;
     x.amount = obj.amount;

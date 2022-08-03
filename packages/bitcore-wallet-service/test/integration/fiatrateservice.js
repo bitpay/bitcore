@@ -530,7 +530,7 @@ describe('Fiat rate service', function() {
     it('should get the rates of all coins supported', function(done) {
       service.getRates({}, function(err, res) {
         should.not.exist(err);
-        Object.keys(res).length.should.equal( Object.keys(Constants.COINS).length)
+        Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length)
         done();
       });
     });
@@ -539,7 +539,7 @@ describe('Fiat rate service', function() {
           code: 'EUR'
         }, function(err, res) {
           should.not.exist(err);
-          Object.keys(res).length.should.equal( Object.keys(Constants.COINS).length)
+          Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length)
           Object.keys(res).forEach(key=>{
             res[key].length.should.equal(1);
           })

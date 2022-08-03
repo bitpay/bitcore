@@ -4719,7 +4719,7 @@ describe('Wallet service', function() {
         describe('Fee levels', function() {
           var level, expected, expectedNormal;
           before(() => {
-            if (Constants.UTXO_COINS[coin.toUpperCase()]) {
+            if (Constants.UTXO_CHAINS[coin.toUpperCase()]) {
               const normal = coin == 'doge' ? 1e8: 200e2;   // normal BCH, DOGE
               helpers.stubFeeLevels({
                 1: 400e2,
@@ -5435,7 +5435,7 @@ describe('Wallet service', function() {
       });
     });
 
-    if(Constants.UTXO_COINS[coin.toUpperCase()]) {
+    if(Constants.UTXO_CHAINS[coin.toUpperCase()]) {
       describe('UTXO Selection ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
