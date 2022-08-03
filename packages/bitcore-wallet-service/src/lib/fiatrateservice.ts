@@ -57,7 +57,7 @@ export class FiatRateService {
 
   _fetch(cb?) {
     cb = cb || function() {};
-    const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc', 'shib'];
+    const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc', 'shib', 'ape'];
     const provider = this.providers[0];
 
     //    async.each(this.providers, (provider, next) => {
@@ -210,6 +210,10 @@ export class FiatRateService {
       return this.getRatesForStablecoin({ code: 'USD', ts }, cb);
     }
 
+    if (Constants.EUR_STABLECOINS[coin.toUpperCase()]) {
+      return this.getRatesForStablecoin({ code: 'EUR', ts }, cb);
+    }
+
     let fiatFiltered = [];
 
     if (code) {
@@ -251,7 +255,7 @@ export class FiatRateService {
     // Oldest date in timestamp range in epoch number ex. 24 hours ago
     const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
     const ts = _.isNumber(opts.ts) ? opts.ts : now;
-    const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc', 'shib'];
+    const coins = ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc', 'shib', 'ape'];
 
     async.map(
       coins,
