@@ -10,42 +10,42 @@ program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--change [change]', 'optional - should derive change addresses')
-  .option('--addressIndexes [addressIndexes]', 'optional - takes one or more indexes')
+  .option('--addressIndexRange [addressIndexRange]', 'optional - takes range of indexes i.e 10-20')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, storageType, addressIndexes } = program;
-  let { change } = program;
-  change = (change === 'true');
-  let wallet;
-  let address;
+  const { name, path, storageType, addressIndexRange, change } = program;
   let addressesAndIndex = new Object();
-  let indexes = [];
+  let wallet, address, changeAddress, startRange, endRange;
+
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet = await wallet.unlock(password);
     await wallet.register({ baseUrl: wallet.baseUrl });
 
-    if (addressIndexes) {
-      indexes = JSON.parse(addressIndexes).indexes;
+    if (addressIndexRange) {
+      let range = addressIndexRange.split('-');
+      startRange = parseInt(range[0]);
+      endRange = parseInt(range[1]);
+    }
+    if (change) {
+      changeAddress = JSON.parse(change);
     }
 
-    for (let i = 0; i < indexes.length; i++) {
-      address = wallet.deriveAddress(indexes[i], change);
-      if (address) {
-        addressesAndIndex[indexes[i]] = address;
-        try {
-          await wallet.storage.getKey({ address: address, name: name, encryptionKey: wallet.encryptionKey, keepAlive: true, open: true });
-        } catch (error) {
-          if (error.message.includes('Key not found in database')) {
-            const derivedKeys = await wallet.derivePrivateKey(change, indexes[i]);
-            await wallet.storage.addKeys({ name: name, keys: derivedKeys, encryptionKey: wallet.encryptionKey });
-          } else {
-            console.error(error);
-          }
+    for (let i = startRange; i <= endRange; i++) {
+      address = wallet.deriveAddress(i, changeAddress);
+      addressesAndIndex[i] = address;
+      try {
+        await wallet.storage.getKey({ address: address, name: name, encryptionKey: wallet.encryptionKey, keepAlive: true, open: true });
+      } catch (error) {
+        if (error.message.includes('Key not found in database')) {
+          const derivedKeys = await wallet.derivePrivateKey(changeAddress, i);
+          await wallet.storage.addKeys({ name: name, keys: derivedKeys, encryptionKey: wallet.encryptionKey });
+        } else {
+          console.error(error);
         }
       }
     }
@@ -53,7 +53,7 @@ const main = async () => {
     const listOfAddresses = Object.values(addressesAndIndex);
     await wallet.client.importAddresses({ pubKey: wallet.authPubKey, payload: listOfAddresses });
 
-    if (change) {
+    if (changeAddress) {
       console.log('Change Addresses & Indexes: ', addressesAndIndex);
     } else {
       console.log('Addresses & Indexes: ', addressesAndIndex);
