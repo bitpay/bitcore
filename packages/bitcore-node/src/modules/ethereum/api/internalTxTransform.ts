@@ -19,33 +19,21 @@ export class InternalTxRelatedFilterTransform extends Transform {
    * @returns
    */
   async _transform(tx: MongoBound<IEthTransaction>, _, done) {
+    const walletAddresses = await this.getWalletAddresses(tx);
     // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
+
+    let numInternalTxs = 0;
     if (tx.internal && tx.internal.length > 0) {
-      const walletAddresses = await this.getWalletAddresses(tx);
-      const walletAddressesArray = walletAddresses.map(walletAddress => walletAddress.address.toLowerCase());
-      const walletRelatedInternalTxs = tx.internal.filter((internalTx: any) =>
-        walletAddressesArray.includes(internalTx.action.to)
-      );
-      for (let internalTx of walletRelatedInternalTxs) {
-        // Contract will refund the excess back to the sender
-        const isRefund = tx.value && internalTx.action.to === tx.from.toLowerCase();
-        const internalValue = Number(internalTx.action.value);
-        if (isRefund) {
-          tx.value -= internalValue;
-        } else {
-          const _tx: IEthTransactionTransformed = Object.assign({}, tx);
-          _tx.value = internalValue;
-          _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
-          if (internalTx.action.from) {
-            _tx.initialFrom = tx.from;
-            _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
-          }
-          this.push(_tx);
-        }
-      }
-      // Discard original tx if original value is 0
-      if (walletRelatedInternalTxs.length && tx.value === 0) return done();
+      numInternalTxs = this.erigonTransform(tx, walletAddresses);
+    } else if (tx.calls && tx.calls.length > 0) {
+      numInternalTxs = this.gethTransform(tx, walletAddresses);
     }
+
+    // Discard original tx if original value is 0
+    if (numInternalTxs > 0 && tx.value === 0) {
+      return done();
+    }
+
     this.push(tx);
     return done();
   }
@@ -56,6 +44,54 @@ export class InternalTxRelatedFilterTransform extends Transform {
         .find({ chain: tx.chain, network: tx.network, wallet: this.walletId })
         .toArray();
     }
-    return this.walletAddresses;
+    return this.walletAddresses.map(walletAddress => walletAddress.address.toLowerCase());
+  }
+
+  erigonTransform(tx: MongoBound<IEthTransaction>, walletAddresses: string[]) {
+    const walletRelatedInternalTxs = tx.internal.filter((internalTx: any) =>
+      walletAddresses.includes(internalTx.action.to)
+    );
+    for (let internalTx of walletRelatedInternalTxs) {
+      // Contract will refund the excess back to the sender
+      const isRefund = tx.value && internalTx.action.to === tx.from.toLowerCase();
+      const internalValue = Number(internalTx.action.value);
+      if (isRefund) {
+        tx.value -= internalValue;
+      } else {
+        const _tx: IEthTransactionTransformed = Object.assign({}, tx);
+        _tx.value = internalValue;
+        _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
+        if (internalTx.action.from) {
+          _tx.initialFrom = tx.from;
+          _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
+        }
+        this.push(_tx);
+      }
+    }
+    return walletRelatedInternalTxs.length;
+  }
+
+  gethTransform(tx: MongoBound<IEthTransaction>, walletAddresses: string[]) {
+    const walletRelatedInternalTxs = tx.calls.filter((call: any) =>
+      walletAddresses.includes(call.to)
+    );
+    for (let call of walletRelatedInternalTxs) {
+      // Contract will refund the excess back to the sender
+      const isRefund = tx.value && call.to === tx.from.toLowerCase();
+      const internalValue = Number(call.value);
+      if (isRefund) {
+        tx.value -= internalValue;
+      } else {
+        const _tx: IEthTransactionTransformed = JSON.parse(JSON.stringify(tx));
+        _tx.value = internalValue;
+        _tx.to = this.web3.utils.toChecksumAddress(call.to);
+        if (call.from) {
+          _tx.initialFrom = tx.from;
+          _tx.from = this.web3.utils.toChecksumAddress(call.from);
+        }
+        this.push(_tx);
+      }
+    }
+    return walletRelatedInternalTxs.length;
   }
 }
