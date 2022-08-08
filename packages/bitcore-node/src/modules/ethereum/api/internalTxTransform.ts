@@ -72,9 +72,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
   }
 
   gethTransform(tx: MongoBound<IEthTransaction>, walletAddresses: string[]) {
-    const walletRelatedInternalTxs = tx.calls.filter((call: any) =>
-      walletAddresses.includes(call.to)
-    );
+    const walletRelatedInternalTxs = tx.calls.filter((call: any) => walletAddresses.includes(call.to));
     for (let call of walletRelatedInternalTxs) {
       // Contract will refund the excess back to the sender
       const isRefund = tx.value && call.to === tx.from.toLowerCase();

@@ -546,13 +546,14 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
             { chain, network, 'internal.action.to': { $in: addressBatchLC } },
-            { chain, network, 'calls.to': { $in: addressBatchLC }},
-            { chain,
+            { chain, network, 'calls.to': { $in: addressBatchLC } },
+            {
+              chain,
               network,
               'calls.abiType.type': 'ERC20',
               'calls.abiType.name': { $in: ['transfer', 'transferFrom'] },
               'calls.abiType.params.value': { $in: addressBatchLC }
-            }, 
+            },
             {
               chain,
               network,

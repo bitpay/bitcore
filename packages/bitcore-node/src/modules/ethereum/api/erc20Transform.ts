@@ -70,14 +70,11 @@ export class Erc20RelatedFilterTransform extends Transform {
 
   gethInternalTransform(tx: MongoBound<IEthTransaction>) {
     try {
-      const tokenRelatedIncomingCalls = tx.calls.filter(call =>
-        this.tokenAddress.toLowerCase() === call.to.toLowerCase()
+      const tokenRelatedIncomingCalls = tx.calls.filter(
+        call => this.tokenAddress.toLowerCase() === call.to.toLowerCase()
       );
       for (const call of tokenRelatedIncomingCalls) {
-        if (
-          call.abiType &&
-          (call.abiType.name === 'transfer' || call.abiType.name === 'transferFrom')
-        ) {
+        if (call.abiType && (call.abiType.name === 'transfer' || call.abiType.name === 'transferFrom')) {
           const _tx: IEthTransactionTransformed = Object.assign({}, tx);
           for (const element of call.abiType.params) {
             if (element.name === '_value') _tx.value = element.value as any;
