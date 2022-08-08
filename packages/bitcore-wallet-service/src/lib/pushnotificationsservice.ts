@@ -455,26 +455,15 @@ export class PushNotificationsService {
       xrp: 'XRP',
       doge: 'DOGE',
       ltc: 'LTC',
-      matic_e: 'MATIC',
-      usdc_e: 'USDC',
-      pax_e: 'PAX',
-      gusd_e: 'GUSD',
-      busd_e: 'BUSD',
-      dai_e: 'DAI',
-      wbtc_e: 'WBTC',
-      shib_e: 'SHIB',
-      ape_e: 'APE',
-      euroc_e: 'EUROC',
-      eth_m: 'ETH',
-      usdc_m: 'USDC',
-      pax_m: 'PAX',
-      gusd_m: 'GUSD',
-      busd_m: 'BUSD',
-      dai_m: 'DAI',
-      wbtc_m: 'WBTC',
-      shib_m: 'SHIB',
-      ape_m: 'APE',
-      euroc_m: 'EUROC'
+      usdc: 'USDC',
+      pax: 'PAX',
+      gusd: 'GUSD',
+      busd: 'BUSD',
+      dai: 'DAI',
+      wbtc: 'WBTC',
+      shib: 'SHIB',
+      ape: 'APE',
+      euroc: 'EUROC'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -487,10 +476,10 @@ export class PushNotificationsService {
           const tokenAddress = data.tokenAddress.toLowerCase();
           if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.ETH_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
-            label = UNIT_LABELS[unit + '_e'];
+            label = UNIT_LABELS[unit];
           } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
-            label = UNIT_LABELS[unit + '_m'];
+            label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
             try {
