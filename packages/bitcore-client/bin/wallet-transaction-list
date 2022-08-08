@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+const { Transform } = require('stream');
+const fs = require('fs');
+const Path = require('path');
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 
@@ -15,15 +18,59 @@ program
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .option('--tokenContractAddress [tokenContractAddress]', 'optional - address of the token to query')
   .option('--token [token]', 'optional - name of the token to query')
+  .option('--outFile [outFile]', 'optional - file to write transactions output to')
   .parse(process.argv);
 
+const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token, tokenContractAddress, outFile } = program;
+
 const main = async () => {
-  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token, tokenContractAddress } = program;
   try {
+    let firstWrite = true;
     const wallet = await Wallet.loadWallet({ name, path, storageType });
-    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, token, tokenContractAddress }).pipe(process.stdout);
+    const txTransform = new Transform({
+      objectMode: true,
+      transform: function(txBuffer, encoding, next) {
+        try {
+          let tx = txBuffer.toString().trim();
+          tx = JSON.stringify(JSON.parse(tx), null, 2);
+          writeOutput((firstWrite ? '' : ',\n') + tx);
+          firstWrite = false;
+          next()
+        } catch (e) {
+          next(e);
+        }
+      },
+      final: function(done) {
+        writeOutput(']');
+        done();
+      }
+    });
+
+    writeOutput('[', true);
+    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, token, tokenContractAddress }).pipe(txTransform);
   } catch (e) {
     console.error(e);
+  }
+};
+
+const writeOutput = (input = '', initial = false) => {
+  if (typeof input !== 'string') {
+    input = input.toString();
+  }
+  try {
+    input = JSON.stringify(JSON.parse(input), null, 2);
+  } catch {
+    input = input;
+  }
+
+  if (outFile) {
+    if (initial) {
+      fs.writeFileSync(Path.join(__dirname, outFile), input);
+    } else {
+      fs.appendFileSync(Path.join(__dirname, outFile), input);
+    }
+  } else {
+    console.log(input);
   }
 };
 
