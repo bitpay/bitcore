@@ -34,7 +34,7 @@ export class Verifier {
       address.path,
       credentials.m,
       credentials.network,
-      credentials.coin,
+      credentials.chain,
       escrowInputs
     );
     return (
@@ -161,13 +161,9 @@ export class Verifier {
       'Failed state: credentials at checkTxProposalSignature'
     );
 
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
     var creatorKeys = _.find(credentials.publicKeyRing, item => {
-      if (
-        Utils.xPubToCopayerId(
-          txp.chain ? txp.chain : txp.coin ? txp.coin : 'btc',
-          item.xPubKey
-        ) === txp.creatorId
-      )
+      if (Utils.xPubToCopayerId(chain, item.xPubKey) === txp.creatorId)
         return true;
     });
 
@@ -209,7 +205,7 @@ export class Verifier {
     if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
-    if (Constants.UTXO_COINS.includes(txp.coin)) {
+    if (Constants.UTXO_CHAINS.includes(chain)) {
       if (!this.checkAddress(credentials, txp.changeAddress)) {
         return false;
       }
