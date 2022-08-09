@@ -1033,7 +1033,7 @@ describe('Wallet service', function() {
         });
         server.joinWallet(copayerOpts, function(err) {
           should.exist(err);
-          err.message.should.contain('different coin');
+          err.message.should.contain('different chain');
           done();
         });
       });

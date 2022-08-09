@@ -507,7 +507,7 @@ export class WalletService {
     }
 
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) {
-      return cb(new ClientError('Invalid coin'));
+      return cb(new ClientError('Invalid chain'));
     }
 
     opts.network = opts.network || 'livenet';
@@ -867,7 +867,7 @@ export class WalletService {
   _addCopayerToWallet(wallet, opts, cb) {
     const copayer = Copayer.create({
       coin: wallet.coin,
-      chain: wallet.coin, // chain === coin for stored clients
+      chain: wallet.chain, // chain === coin for stored clients
       name: opts.name,
       copayerIndex: wallet.copayers.length,
       xPubKey: opts.xPubKey,
@@ -1019,6 +1019,7 @@ export class WalletService {
    * @param {Object} opts
    * @param {string} opts.walletId - The wallet id.
    * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge, ltc).
+   * @param {string} opts.chain[='btc'] - The expected chain for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.name - The copayer name.
    * @param {string} opts.xPubKey - Extended Public Key for this copayer.
    * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
@@ -1032,12 +1033,14 @@ export class WalletService {
     if (_.isEmpty(opts.name)) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
-    // checking in chains for simplicity
-    if (!Utils.checkValueInCollection(opts.coin, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
+    if (!opts.chain) {
+      opts.chain = opts.coin; // chain === coin for stored clients
+    }
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
     try {
-      xPubKey = Bitcore_[opts.coin].HDPublicKey(opts.xPubKey);
+      xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
     } catch (ex) {
       return cb(new ClientError('Invalid extended public key'));
     }
@@ -1051,7 +1054,7 @@ export class WalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if (opts.coin === 'bch' && wallet.n > 1) {
+        if (opts.chain === 'bch' && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -1087,8 +1090,8 @@ export class WalletService {
           }
         }
 
-        if (opts.coin != wallet.coin) {
-          return cb(new ClientError('The wallet you are trying to join was created for a different coin'));
+        if (opts.chain != wallet.chain) {
+          return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
         if (wallet.network != xPubKey.network.name) {
@@ -2271,6 +2274,7 @@ export class WalletService {
    * @param {Object} opts
    * @param {string} opts.txProposalId - Optional. If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet.
    * @param {String} opts.coin - tx coin.
+   * @param {String} opts.chain - tx chain.
    * @param {Array} opts.outputs - List of outputs.
    * @param {string} opts.outputs[].toAddress - Destination address.
    * @param {number} opts.outputs[].amount - Amount to transfer in satoshi.

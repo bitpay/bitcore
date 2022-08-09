@@ -82,10 +82,12 @@ class ChainProxy {
     return chains[normalizedChain];
   }
 
-  // only used for backwards compatibility
+  /**
+   * @deprecated
+   */
   getChain(coin: string): string {
     try {
-      // TODO add a warning that we are not uncluding chain
+      // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
       if (
         Constants.BITPAY_SUPPORTED_ERC20[coin.toUpperCase()] ||
