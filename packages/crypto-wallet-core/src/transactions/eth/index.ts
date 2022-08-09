@@ -72,7 +72,7 @@ export class ETHTxProvider {
         chainId = 4;
         break;
       case 'regtest':
-        chainId = 17;
+        chainId = 1337;
         break;
       default:
         chainId = 1;
