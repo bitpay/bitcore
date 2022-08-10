@@ -14,13 +14,13 @@ import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
 import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
 import { IEthTransaction } from '../../../src/modules/ethereum/types';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
-import { EthBlocks } from '../../data/ETH/blocksETH';
-import { EthTransactions } from '../../data/ETH/transactionsETH';
+import { ErigonEthBlocks } from '../../data/ETH/erigonDbBlocks';
+import { ErigonEthTransactions } from '../../data/ETH/erigonDbTransactions';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Ethereum API', function() {
   const chain = 'ETH';
-  const network = 'testnet';
+  const network = 'regtest';
 
   const suite = this;
   this.timeout(30000);
@@ -333,66 +333,11 @@ describe('Ethereum API', function() {
       await streamWalletTransactionsTest(chain, network, true)
     );
 
-    it('should stream DEX wallet transactions', async () => {
-      await EthBlockStorage.collection.insertMany(EthBlocks as any);
-      await EthTransactionStorage.collection.insertMany(EthTransactions as any);
+    it('should stream DEX wallet transactions with parity trace blocks', async () => {
+      await EthBlockStorage.collection.insertMany(ErigonEthBlocks as any);
+      await EthTransactionStorage.collection.insertMany(ErigonEthTransactions as any);
 
-      await ETH.updateWallet({ chain, network, wallet, addresses: [address] });
-
-      const res = (new Transform({
-        transform: (data, _, cb) => {
-          cb(null, data);
-        }
-      }) as unknown) as Response;
-      res.type = () => res;
-  
-      const req = (new Transform({
-        transform: (_data, _, cb) => {
-          cb(null);
-        }
-      }) as unknown) as Request;
-
-      ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
-      let total = BigInt(0);
-      let totalRejected = BigInt(0);
-      let totalFee = BigInt(0);
-
-      await new Promise((resolve, reject) => {
-        res.on('data', (data) => {
-          try {
-            const doc = JSON.parse(data.toString())
-            if (doc.error) {
-              totalRejected += BigInt(doc.satoshis);
-            } else {
-              total += BigInt(doc.satoshis);
-            }
-
-            if (doc.category !== 'receive' || doc.initialFrom === address) {
-              totalFee += BigInt(doc.fee);
-            }
-          } catch (e) {
-            reject(e);
-          }
-        });
-
-        res.on('finish', () => {
-          try {
-            let totalETH = web3.utils.fromWei(total.toString());
-            let totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
-            let totalFeeETH = web3.utils.fromWei(totalFee.toString());
-            let balanceETH = web3.utils.fromWei((total - totalFee).toString());
-
-            // Need to slice b/c we're using Number rounding instead of BigInt
-            expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));
-            expect(totalETH.slice(0, -6)).to.equal('309.833211546562');
-            expect(totalFeeETH).to.equal('0.16692773559');
-            expect(totalRejectedETH.slice(0, -4)).to.equal('-3.99999999192707');
-            resolve(true);
-          } catch (e) {
-            reject(e);
-          }
-        });
-      });
+      await streamDexWalletTransactions(chain, network, wallet, address, web3);
     });
   });
 });
@@ -464,4 +409,63 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
 
   expect(counter).to.eq(includeInvalidTxs ? txCount * 2 : txCount);
   sandbox.restore();
+};
+
+const streamDexWalletTransactions = async (chain, network, wallet, address, web3) => {
+  await ETH.updateWallet({ chain, network, wallet, addresses: [address] });
+
+  const res = (new Transform({
+    transform: (data, _, cb) => {
+      cb(null, data);
+    }
+  }) as unknown) as Response;
+  res.type = () => res;
+
+  const req = (new Transform({
+    transform: (_data, _, cb) => {
+      cb(null);
+    }
+  }) as unknown) as Request;
+
+  ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
+  let total = BigInt(0);
+  let totalRejected = BigInt(0);
+  let totalFee = BigInt(0);
+
+  await new Promise((resolve, reject) => {
+    res.on('data', (data) => {
+      try {
+        const doc = JSON.parse(data.toString())
+        if (doc.error) {
+          totalRejected += BigInt(doc.satoshis);
+        } else {
+          total += BigInt(doc.satoshis);
+        }
+
+        if (doc.category !== 'receive' || doc.initialFrom === address) {
+          totalFee += BigInt(doc.fee);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    res.on('finish', () => {
+      try {
+        let totalETH = web3.utils.fromWei(total.toString());
+        let totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
+        let totalFeeETH = web3.utils.fromWei(totalFee.toString());
+        let balanceETH = web3.utils.fromWei((total - totalFee).toString());
+
+        // Need to slice b/c we're using Number rounding instead of BigInt
+        expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));
+        expect(totalETH.slice(0, -6)).to.equal('309.833211546562');
+        expect(totalFeeETH).to.equal('0.16692773559');
+        expect(totalRejectedETH.slice(0, -4)).to.equal('-3.99999999192707');
+        resolve(true);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
 };
