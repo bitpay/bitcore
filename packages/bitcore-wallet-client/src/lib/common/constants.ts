@@ -21,36 +21,7 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
-  BITPAY_SUPPORTED_COINS: [
-    'btc',
-    'bch',
-    'eth',
-    'matic',
-    'xrp',
-    'doge',
-    'ltc',
-    'matic_e',
-    'usdc_e',
-    'pax_e',
-    'gusd_e',
-    'busd_e',
-    'dai_e',
-    'wbtc_e',
-    'shib_e',
-    'ape_e',
-    'euroc_e',
-    'eth_m',
-    'usdc_m',
-    'pax_m',
-    'gusd_m',
-    'busd_m',
-    'dai_m',
-    'wbtc_m',
-    'shib_m',
-    'ape_m',
-    'euroc_m'
-  ],
-
+ 
   BITPAY_SUPPORTED_ETH_ERC20: [
     'matic_e',
     'usdc_e',
