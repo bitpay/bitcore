@@ -39,13 +39,13 @@ export class Utils {
   // only used for backwards compatibility
   static getChain(coin: string): string {
     try {
-      // TODO add a warning that we are not uncluding chain
+      // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (
-        Constants.BITPAY_SUPPORTED_ERC20.includes(coin.toLowerCase()) ||
-        !Constants.BITPAY_SUPPORTED_COINS.includes(coin.toLowerCase())
-      ) {
+      if (Constants.BITPAY_SUPPORTED_ETH_ERC20.includes(coin.toLowerCase())) {
         normalizedChain = 'eth';
+      }
+      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20.includes(coin.toLowerCase())) {
+        normalizedChain = 'matic';
       }
       return normalizedChain;
     } catch (_) {
@@ -479,10 +479,8 @@ export class Utils {
       // If it is a token swap its an already created ERC20 transaction so we skip it and go directly to ETH transaction create
       const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
       const isMULTISIG = multisigContractAddress;
-      const chainName = txp.chain
-        ? txp.chain.toUpperCase()
-        : this.getChain(coin);
-      const chain = isMULTISIG
+      const chainName = chain.toUpperCase();
+      const _chain = isMULTISIG
         ? chainName + 'MULTISIG'
         : isERC20
         ? chainName + 'ERC20'

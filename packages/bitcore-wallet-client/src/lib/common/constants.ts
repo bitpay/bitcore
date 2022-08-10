@@ -51,7 +51,7 @@ export const Constants = {
     'euroc_m'
   ],
 
-  ETH_ERC20: [
+  BITPAY_SUPPORTED_ETH_ERC20: [
     'matic_e',
     'usdc_e',
     'pax_e',
@@ -64,7 +64,7 @@ export const Constants = {
     'euroc_e'
   ],
 
-  MATIC_ERC20: [
+  BITPAY_SUPPORTED_MATIC_ERC20: [
     'eth_m',
     'usdc_m',
     'pax_m',
@@ -76,10 +76,10 @@ export const Constants = {
     'ape_m',
     'euroc_m'
   ],
-  UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
-  CHAINS: ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc'],
+  CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],
   UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
-  EVM_CHAINS: ['eth'],
-  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
+  EVM_CHAINS: ['eth', 'matic'],
+  ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
+  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS
 };
