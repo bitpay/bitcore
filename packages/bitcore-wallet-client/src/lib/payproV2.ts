@@ -218,8 +218,8 @@ export class PayProV2 {
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
-        chain,
-        currency,
+        chain: chain?.toUpperCase(),
+        currency: currency?.toUpperCase(),
         payload
       })
     });
@@ -259,8 +259,8 @@ export class PayProV2 {
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
-        chain,
-        currency,
+        chain: chain?.toUpperCase(),
+        currency: currency?.toUpperCase(),
         transactions: unsignedTransactions
       })
     });
@@ -303,8 +303,8 @@ export class PayProV2 {
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
-        chain,
-        currency,
+        chain: chain?.toUpperCase(),
+        currency: currency?.toUpperCase(),
         transactions: signedTransactions
       })
     });
@@ -461,7 +461,8 @@ export class PayProV2 {
     }
 
     if (responseData.chain) {
-      payProDetails.coin = responseData.chain.toLowerCase();
+      payProDetails.coin = responseData.chain?.toLowerCase(); // TODO responseData.coin ???
+      payProDetails.chain = responseData.chain?.toLowerCase();
     }
 
     if (responseData.expires) {
@@ -484,7 +485,7 @@ export class PayProV2 {
 
       if (payProDetails.requiredFeeRate) {
         if (
-          payProDetails.requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]
+          payProDetails.requiredFeeRate > MAX_FEE_PER_KB[payProDetails.chain]
         ) {
           throw new Error('Fee rate too high:' + payProDetails.requiredFeeRate);
         }

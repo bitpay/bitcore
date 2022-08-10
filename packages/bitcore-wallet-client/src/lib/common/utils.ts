@@ -33,26 +33,24 @@ const crypto = Bitcore.crypto;
 
 let SJCL = {};
 
-const MAX_DECIMAL_ANY_COIN = 18; // more that 14 gives rounding errors
+const MAX_DECIMAL_ANY_CHAIN = 18; // more that 14 gives rounding errors
 
 export class Utils {
+  // only used for backwards compatibility
   static getChain(coin: string): string {
-    let normalizedChain = coin.toUpperCase();
-
-    // TODO: If in the future we add a new chain that supports custom tokens, check this condition
-    if (
-      Constants.ETH_ERC20.includes(coin.toLowerCase()) ||
-      !Constants.COINS.includes(coin.toLowerCase())
-    ) {
-      normalizedChain = 'ETH';
+    try {
+      // TODO add a warning that we are not uncluding chain
+      let normalizedChain = coin.toLowerCase();
+      if (
+        Constants.BITPAY_SUPPORTED_ERC20.includes(coin.toLowerCase()) ||
+        !Constants.BITPAY_SUPPORTED_COINS.includes(coin.toLowerCase())
+      ) {
+        normalizedChain = 'eth';
+      }
+      return normalizedChain;
+    } catch (_) {
+      return 'btc'; // coin should always exist but most unit test don't have it -> return btc as default
     }
-    if (
-      Constants.MATIC_ERC20.includes(coin.toLowerCase()) ||
-      !Constants.COINS.includes(coin.toLowerCase())
-    ) {
-      normalizedChain = 'MATIC';
-    }
-    return normalizedChain;
   }
 
   static encryptMessage(message, encryptingKey) {
@@ -184,13 +182,12 @@ export class Utils {
     path,
     m,
     network,
-    coin,
+    chain,
     escrowInputs?
   ) {
     $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
-    coin = coin || 'btc';
-    const chain = this.getChain(coin).toLowerCase();
+    chain = chain || 'btc';
     var bitcore = Bitcore_[chain];
     var publicKeys = _.map(publicKeyRing, item => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
@@ -241,7 +238,7 @@ export class Utils {
           _.isArray(publicKeys) && publicKeys.length == 1,
           'publicKeys array undefined'
         );
-        if (Constants.UTXO_COINS.includes(coin)) {
+        if (Constants.UTXO_CHAINS.includes(chain)) {
           bitcoreAddress = bitcore.Address.fromPublicKey(
             publicKeys[0],
             network
@@ -271,13 +268,13 @@ export class Utils {
   // serialized by BITCORE BTC.
   // testnet xpub starts with t.
   // livenet xpub starts with x.
-  // no matter WHICH coin
-  static xPubToCopayerId(coin, xpub) {
-    // this was introduced because we allowed coin = 0' wallets for BCH
+  // no matter WHICH chain
+  static xPubToCopayerId(_chain, xpub) {
+    // this was introduced because we allowed coinType = 0' wallets for BCH
     // for the  "wallet duplication" feature
     // now it is effective for all coins.
 
-    const chain = this.getChain(coin).toLowerCase();
+    const chain = _chain.toLowerCase();
     var str = chain == 'btc' ? xpub : chain + xpub;
 
     var hash = sjcl.hash.sha256.hash(str);
@@ -305,7 +302,7 @@ export class Utils {
       let str = number.toString();
       if (str.indexOf('e') >= 0) {
         // fixes eth small balances
-        str = number.toFixed(MAX_DECIMAL_ANY_COIN);
+        str = number.toFixed(MAX_DECIMAL_ANY_CHAIN);
       }
       var x = str.split('.');
 
@@ -348,10 +345,10 @@ export class Utils {
   }
 
   static buildTx(txp) {
-    var coin = txp.coin || 'btc';
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
 
-    if (Constants.UTXO_COINS.includes(coin)) {
-      var bitcore = Bitcore_[coin];
+    if (Constants.UTXO_CHAINS.includes(chain)) {
+      var bitcore = Bitcore_[chain];
 
       var t = new bitcore.Transaction();
 
@@ -450,8 +447,8 @@ export class Utils {
         'Failed state: totalInputs - totalOutputs >= 0 at buildTx'
       );
       $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin),
-        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin) at buildTx'
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain),
+        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx'
       );
 
       return t;
@@ -495,7 +492,7 @@ export class Utils {
           ...txp,
           ...recipients[index],
           tag: destinationTag ? Number(destinationTag) : undefined,
-          chain,
+          chain: _chain,
           nonce: Number(txp.nonce) + Number(index),
           recipients: [recipients[index]]
         });

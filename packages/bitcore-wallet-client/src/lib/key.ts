@@ -359,8 +359,8 @@ export class Key {
     return deriveFn(path);
   };
 
-  _checkCoin = function (coin) {
-    if (!_.includes(Constants.COINS, coin)) throw new Error('Invalid coin');
+  _checkChain = function (chain) {
+    if (!_.includes(Constants.CHAINS, chain)) throw new Error('Invalid chain');
   };
 
   _checkNetwork = function (network) {
@@ -381,7 +381,11 @@ export class Key {
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
     var coinCode = '0';
 
-    if (opts.network == 'testnet' && Constants.UTXO_COINS.includes(opts.coin)) {
+    // checking in chains for simplicity
+    if (
+      opts.network == 'testnet' &&
+      Constants.UTXO_CHAINS.includes(opts.coin)
+    ) {
       coinCode = '1';
     } else if (opts.coin == 'bch') {
       if (this.use0forBCH) {
@@ -448,6 +452,7 @@ export class Key {
     return Credentials.fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
       coin: opts.coin,
+      chain: opts.chain?.toLowerCase() || Utils.getChain(opts.coin), // getChain -> backwards compatibility
       network: opts.network,
       account: opts.account,
       n: opts.n,
@@ -495,7 +500,9 @@ export class Key {
 
     var t = Utils.buildTx(txp);
 
-    if (Constants.UTXO_COINS.includes(txp.coin)) {
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+
+    if (Constants.UTXO_CHAINS.includes(chain)) {
       _.each(txp.inputs, function (i) {
         $.checkState(
           i.path,
@@ -522,14 +529,11 @@ export class Key {
     } else {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
-      const chain = txp.chain
-        ? txp.chain.toUpperCase()
-        : Utils.getChain(txp.coin);
       const txArray = _.isArray(tx) ? tx : [tx];
       const isChange = false;
       const addressIndex = 0;
       const { privKey, pubKey } = Deriver.derivePrivateKey(
-        chain,
+        chain.toUpperCase(),
         txp.network,
         derived,
         addressIndex,
@@ -538,7 +542,7 @@ export class Key {
       let signatures = [];
       for (const rawTx of txArray) {
         const signed = Transactions.getSignature({
-          chain,
+          chain: chain.toUpperCase(),
           tx: rawTx,
           key: { privKey, pubKey }
         });

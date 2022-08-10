@@ -21,8 +21,7 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
-
-  COINS: [
+  BITPAY_SUPPORTED_COINS: [
     'btc',
     'bch',
     'eth',
@@ -78,8 +77,9 @@ export const Constants = {
     'euroc_m'
   ],
   UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
-  EVM_COINS: ['eth', 'matic'],
-  ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
-  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
+  CHAINS: ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc'],
+  UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
+  EVM_CHAINS: ['eth'],
+  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS
 };
