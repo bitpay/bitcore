@@ -21,6 +21,50 @@ npm install bitcore-lib
 bower install bitcore-lib
 ```
 
+## Using bitcore-lib with ReactJS `create-react-app`
+If you are using `create-react-app` version >= 5 you may run into issues building. The issue can be resolved following the instructions below:
+
+### Solution
+Install `react-app-rewired` and the missing modules into your application
+```
+npm install --save-dev react-app-rewired crypto-browserify stream-browserify assert stream-http https-browserify os-browserify url buffer process
+```
+Create `config-overrides.js` in the root of your project folder with the content:
+```
+const webpack = require("webpack");
+
+module.exports = function override(config) {
+  const fallback = config.resolve.fallback || {};
+  Object.assign(fallback, {
+    crypto: require.resolve("crypto-browserify"),
+    stream: require.resolve("stream-browserify"),
+    assert: require.resolve("assert"),
+    http: require.resolve("stream-http"),
+    https: require.resolve("https-browserify"),
+    os: require.resolve("os-browserify"),
+    url: require.resolve("url"),
+  });
+  config.resolve.fallback = fallback;
+  config.plugins = (config.plugins || []).concat([
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+      Buffer: ["buffer", "Buffer"],
+    }),
+  ]);
+  return config;
+};
+```
+
+Within `package.json` change the scripts field for "start", "build" and "test". Instead of "react-scripts" replace it with "react-app-rewired"
+```
+"scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject"
+},
+```
+
 ## Documentation
 
 The complete docs are hosted here: [bitcore documentation](http://bitcore.io/guide/). There's also a [bitcore API reference](http://bitcore.io/api/) available generated from the JSDocs of the project, where you'll find low-level details on each bitcore utility.
