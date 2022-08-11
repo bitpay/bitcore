@@ -490,7 +490,11 @@ export class ExpressApp {
                             ...(err ? { success: false, message: err.message } : {}),
                             status
                           };
-                          cb(err, result);
+                          if (err && err.message)
+                            logger.error(
+                              `An error occurred retrieving wallet status - id: ${server.walletId} - token address: ${optsClone.tokenAddress} - err: ${err.message}`
+                            );
+                          cb(null, result); // do not throw error, continue with next wallets
                         });
                       },
                       (err, result) => {
@@ -889,9 +893,10 @@ export class ExpressApp {
     });
 
     router.get('/v2/feelevels/', (req, res) => {
-      const opts: { coin?: string; network?: string } = {};
+      const opts: { coin?: string; network?: string; chain?: string } = {};
       SetPublicCache(res, 1 * ONE_MINUTE);
       if (req.query.coin) opts.coin = req.query.coin;
+      if (req.query.chain || req.query.coin) opts.chain = req.query.chain || req.query.coin;
       if (req.query.network) opts.network = req.query.network;
 
       let server;

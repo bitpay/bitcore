@@ -48,7 +48,7 @@ export class XrpChain implements IChain {
   }
 
   getWalletBalance(server, wallet, opts, cb) {
-    const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
@@ -209,7 +209,7 @@ export class XrpChain implements IChain {
     return true;
   }
 
-  isUTXOCoin() {
+  isUTXOChain() {
     return false;
   }
   isSingleAddress() {
@@ -234,7 +234,7 @@ export class XrpChain implements IChain {
       throw new Error('Signatures Required');
     }
 
-    const chain = 'XRP';
+    const chain = 'XRP'; // TODO use lowercase always to avoid confusion
     const network = tx.network;
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
@@ -257,7 +257,7 @@ export class XrpChain implements IChain {
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const chain = 'XRP';
+    const chain = 'xrp';
     const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
     if (!isValidTo) {
       throw Errors.INVALID_ADDRESS;

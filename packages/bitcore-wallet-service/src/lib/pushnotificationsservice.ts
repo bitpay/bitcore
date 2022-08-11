@@ -4,6 +4,7 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import request from 'request';
+import { ChainService } from './chain';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
@@ -210,8 +211,9 @@ export class PushNotificationsService {
                 const walletId = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId || sub.walletId));
                 const copayerId = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId));
                 const notification_type = notification.type;
-                // coin and network are needed for NewBlock notifications
-                const coin = notification?.data?.coin;
+                // chain and network are needed for NewBlock notifications
+                const chain = notification?.data?.chain || notification?.data?.coin;
+                const coin = chain; // backwards compatibility
                 const network = notification?.data?.network;
 
                 if (sub.token) {
@@ -225,7 +227,8 @@ export class PushNotificationsService {
                       multisigContractAddress,
                       copayerId,
                       notification_type,
-                      coin,
+                      coin, // not really coin value it's chain
+                      chain,
                       network
                     }
                   };
@@ -250,14 +253,15 @@ export class PushNotificationsService {
                     walletId,
                     copayerId,
                     notification_type,
-                    coin,
+                    coin, // not really coin value it's chain
+                    chain,
                     network,
                     tokenAddress,
                     multisigContractAddress,
                     title,
                     body
                   };
-                  const custom_uri = `bitpay://wallet?walletId=${walletId}&tokenAddress=${tokenAddress}&multisigContractAddress=${multisigContractAddress}&copayerId=${copayerId}&coin=${coin}&network=${network}&notification_type=${notification_type}&title=${title}&body=${body}`;
+                  const custom_uri = `bitpay://wallet?walletId=${walletId}&tokenAddress=${tokenAddress}&multisigContractAddress=${multisigContractAddress}&copayerId=${copayerId}&coin=${coin}&chain=${chain}&network=${network}&notification_type=${notification_type}&title=${title}&body=${body}`;
                   notificationData = {
                     external_user_ids: [sub.externalUserId],
                     messages: {
@@ -460,7 +464,9 @@ export class PushNotificationsService {
       busd: 'BUSD',
       wbtc: 'WBTC',
       dai: 'DAI',
-      shib: 'SHIB'
+      shib: 'SHIB',
+      ape: 'APE',
+      euroc: 'EUROC'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -593,7 +599,9 @@ export class PushNotificationsService {
         // avoid multiple notifications
         const allSubs = allSubsWithExternalId.length > 0 ? allSubsWithExternalId : allSubsWithToken;
         logger.info(
-          `Sending ${notification.type} [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} devices`
+          `Sending ${notification.type} [${notification.data.chain || notification.data.coin}/${
+            notification.data.network
+          }] notifications to: ${allSubs.length} devices`
         );
         return cb(null, allSubs);
       });

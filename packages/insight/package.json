@@ -1,12 +1,7 @@
 {
-  "name": "@bitpay/insight-previous",
-  "description": "A blockchain explorer for Bitcore",
-  "version": "8.25.22",
-  "repository": "git://github.com/bitpay/bitcore.git",
-  "bugs": {
-    "url": "https://github.com/bitpay/bitcore/issues"
-  },
-  "homepage": "https://github.com/bitpay/bitcore",
+  "name": "insight",
+  "version": "8.25.36",
+  "description": "Insight Blockchain Explorer",
   "license": "MIT",
   "private": true,
   "keywords": [
@@ -18,72 +13,78 @@
     "bitcore",
     "API"
   ],
-  "config": {
-    "ionic_sass": "./sass.js"
-  },
-  "prettier": {
-    "singleQuote": true
-  },
   "scripts": {
-    "clean": "ionic-app-scripts clean",
-    "build:prod": "ENV=prod CHAIN=ALL NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
-    "serve:prod": "npm run clean && npm run build:prod && npm run serve",
-    "serve": "serve www",
-    "ionic:build": "ionic-app-scripts build",
-    "ionic:serve": "ionic-app-scripts serve --port 8200",
-    "postinstall": "./node_modules/.bin/webdriver-manager update --gecko false",
-    "start": "npm run ionic:serve",
-    "start:prod": "ENV=prod CHAIN=ALL NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:serve",
-    "test": "ng test --watch=false --code-coverage --no-progress",
-    "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
-    "fix:tslint": "tslint --type-check --fix --project .",
-    "fix": "npm run fix:tslint && npm run fix:prettier"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,json\"}",
+    "fix:lint": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\"",
+    "fix:prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\" --config ./.prettierrc"
   },
   "dependencies": {
-    "@angular/common": "5.2.10",
-    "@angular/compiler": "5.2.10",
-    "@angular/core": "5.2.10",
-    "@angular/forms": "5.2.10",
-    "@angular/http": "5.2.10",
-    "@angular/platform-browser": "5.2.10",
-    "@angular/platform-browser-dynamic": "5.2.10",
-    "angular2-moment": "1.7.1",
-    "angular2-qrcode": "2.0.1",
-    "bs58": "^4.0.1",
-    "ionic-angular": "3.9.2",
-    "ionicons": "3.0.0",
-    "lodash": "4.17.11",
-    "rxjs": "5.5.12",
-    "zone.js": "0.8.12"
+    "@reduxjs/toolkit": "1.8.1",
+    "axios": "0.21.1",
+    "chart.js": "3.5.1",
+    "framer-motion": "6.3.3",
+    "nprogress": "0.2.0",
+    "qrcode.react": "3.0.1",
+    "react": "18.1.0",
+    "react-chartjs-2": "3.2.0",
+    "react-copy-to-clipboard": "5.1.0",
+    "react-dom": "18.0.0",
+    "react-infinite-scroll-component": "6.1.0",
+    "react-masonry-css": "1.0.16",
+    "react-parallax": "3.3.0",
+    "react-redux": "8.0.1",
+    "react-router-dom": "6.3.0",
+    "react-scripts": "5.0.1",
+    "redux": "4.2.0",
+    "redux-thunk": "2.4.1",
+    "styled-components": "5.3.5",
+    "swr": "1.3.0",
+    "web-vitals": "2.1.4"
   },
   "devDependencies": {
-    "@angular/cli": "7.3.4",
-    "@angular/compiler-cli": "5.2.10",
-    "@ionic/app-scripts": "3.2.3",
-    "@types/jasmine": "2.5.41",
-    "@types/lodash": "4.14.104",
-    "@types/node": "7.0.4",
-    "codecov": "2.2.0",
-    "jasmine-core": "2.5.2",
-    "jasmine-spec-reporter": "3.2.0",
-    "karma": "1.4.1",
-    "karma-chrome-launcher": "2.1.1",
-    "karma-cli": "1.0.1",
-    "karma-coverage-istanbul-reporter": "1.2.1",
-    "karma-jasmine": "1.1.0",
-    "karma-jasmine-html-reporter": "0.2.2",
-    "prettier": "^1.15.3",
-    "serve": "^10.1.1",
-    "serve-static": "1.13.2",
-    "ts-node": "3.0.4",
-    "tslint": "5.3.2",
-    "tslint-angular": "^1.1.2",
-    "tslint-config-prettier": "^1.15.0",
-    "tslint-eslint-rules": "4.1.1",
-    "typescript": "^3.3.4000",
-    "webdriver-manager": "^12.1.1"
+    "@testing-library/jest-dom": "5.16.4",
+    "@testing-library/react": "13.0.1",
+    "@testing-library/user-event": "13.5.0",
+    "@types/chart.js": "2.9.34",
+    "@types/jest": "27.4.1",
+    "@types/node": "16.11.26",
+    "@types/nprogress": "0.2.0",
+    "@types/qrcode.react": "1.0.2",
+    "@types/react": "18.0.4",
+    "@types/react-copy-to-clipboard": "5.0.2",
+    "@types/react-dom": "18.0.0",
+    "@types/react-redux": "7.1.24",
+    "@types/styled-components": "5.1.25",
+    "@typescript-eslint/eslint-plugin": "5.23.0",
+    "@typescript-eslint/parser": "5.23.0",
+    "eslint": "8.15.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-prettier": "4.0.0",
+    "eslint-plugin-react": "7.30.0",
+    "file-loader": "6.2.0",
+    "prettier": "2.6.2",
+    "typescript": "4.6.3"
+  },
+  "resolutions": {
+    "styled-components": "5"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "engines": {
-    "node": ">=8"
+    "node": ">=12"
   }
 }
