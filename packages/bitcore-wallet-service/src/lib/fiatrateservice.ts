@@ -9,9 +9,9 @@ const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 const config = require('../config');
 
+import { resolve } from 'dns';
 import logger from './logger';
 import { EtokenSupportPrice } from './model/config-model';
-import { resolve } from 'dns';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -71,8 +71,8 @@ export class FiatRateService {
         newData.push({
           code: rate.code,
           value: valueUsd * rate.value
-        })
-      })
+        });
+      });
       return resolve(newData);
     });
   }
@@ -101,22 +101,19 @@ export class FiatRateService {
         fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
         if (!fiatFiltered.length) return reject(opts.code + ' is not supported');
       }
-      const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.SUPPORT_FIAT_CURRENCIES;
-      _.forEach(
-        currencies,
-        currency => {
-          this.storage.fetchCurrencyRates(currency.code, ts, async (err, res) => {
-            if (err) {
-              logger.warn('Error fetching data for ' + currency, err);
-
-            }
-            rates.push(res);
-          });
-        },
-      );
+      const currencies: { code: string; name: string }[] = fiatFiltered.length
+        ? fiatFiltered
+        : Defaults.SUPPORT_FIAT_CURRENCIES;
+      _.forEach(currencies, currency => {
+        this.storage.fetchCurrencyRates(currency.code, ts, async (err, res) => {
+          if (err) {
+            logger.warn('Error fetching data for ' + currency, err);
+          }
+          rates.push(res);
+        });
+      });
       return resolve(rates);
     });
-
   }
 
   _getEtokenSupportPrice() {
@@ -126,7 +123,7 @@ export class FiatRateService {
   }
 
   async _fetch(cb?) {
-    cb = cb || function () { };
+    cb = cb || function() {};
     let coinsData = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
     const etoken = this._getEtokenSupportPrice();
     const coins = _.concat(coinsData, etoken);
@@ -260,7 +257,9 @@ export class FiatRateService {
       fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
-    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.SUPPORT_FIAT_CURRENCIES;
+    const currencies: { code: string; name: string }[] = fiatFiltered.length
+      ? fiatFiltered
+      : Defaults.SUPPORT_FIAT_CURRENCIES;
     const etoken = this._getEtokenSupportPrice();
     const coins = _.concat(_.values(Constants.COINS), etoken);
     async.map(

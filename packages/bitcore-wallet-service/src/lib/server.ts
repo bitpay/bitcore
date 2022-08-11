@@ -39,10 +39,10 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
 import { Validation } from '@abcpros/crypto-wallet-core';
+import { validate_async } from 'email-validator';
 import { CurrencyRateService } from './currencyrate';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
 import { TokenInfo } from './model/tokenInfo';
-import { validate_async } from 'email-validator';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -268,7 +268,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function () { };
+    cb = cb || function() {};
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -870,7 +870,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function () { };
+    cb = cb || function() {};
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -2633,8 +2633,7 @@ export class WalletService {
                     }
                   }
                   return next();
-                }
-                ,
+                },
                 next => {
                   let txOptsFee = fee;
 
@@ -2973,7 +2972,7 @@ export class WalletService {
 
           const data = _.assign(
             {
-              txid: txid,
+              txid,
               creatorId: this.copayerId ? this.copayerId : null,
               amount: null,
               message: null,
@@ -3190,7 +3189,7 @@ export class WalletService {
     const clientBwc = new Client();
     this._getKeyLotus(clientBwc, (err, client, key) => {
       if (err) return cb(err);
-      this.createAddress({}, function (err, x) {
+      this.createAddress({}, function(err, x) {
         if (err) return cb(err);
         return cb(null, client, key, x.address);
       });
@@ -3224,7 +3223,7 @@ export class WalletService {
       if (this.storage && this.storage.queue) {
         this.storage.queue.get((err, data) => {
           if (data) {
-            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => { });
+            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
             const saveError = (donationStorage, err) => {
               donationStorage.error = JSON.stringify(err);
               this.storage.updateDonation(donationStorage, err => {
@@ -3255,7 +3254,7 @@ export class WalletService {
             });
           }
         });
-        this.storage.queue.clean(err => { });
+        this.storage.queue.clean(err => {});
       }
     }, 2000);
   }
@@ -4458,7 +4457,11 @@ export class WalletService {
                 if (err) return cb(err);
                 if (this._isSupportToken(wallet) && addressToken && _.size(inTxs) > 0) {
                   try {
-                    const lastTxsChronik = await this.getlastTxsByChronik(wallet, addressToken, _.size(inTxs) > 200 ? 200 : _.size(inTxs) > 200);
+                    const lastTxsChronik = await this.getlastTxsByChronik(
+                      wallet,
+                      addressToken,
+                      _.size(inTxs) > 200 ? 200 : _.size(inTxs) > 200
+                    );
                     if (lastTxsChronik) {
                       inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
                     }
@@ -4540,8 +4543,6 @@ export class WalletService {
               }
             });
 
-
-
             resultTxs = resultTxs.concat(oldTxs);
             return next();
           });
@@ -4556,18 +4557,16 @@ export class WalletService {
               if (tx.action === 'received') {
                 return true;
               } else if (tx.action === 'sent') {
-                // if tx action = sent => check output having false address or not 
+                // if tx action = sent => check output having false address or not
                 return !!_.find(tx.outputs, o => o.address === 'false' || !o.address);
               }
-            })
+            });
             if (filterResulTxs && filterResulTxs.length > 0) {
-
               // call chronik client get all tx details
               const listTxDetailFromChronik = _.map(filterResulTxs, async tx => {
-
                 const txDetailFromChronik = chronikClient.tx(tx.txid);
                 return txDetailFromChronik;
-              })
+              });
 
               // handle tx details return from chronik client
               return Promise.all(listTxDetailFromChronik).then(values => {
@@ -4576,12 +4575,14 @@ export class WalletService {
                   values = _.compact(values);
 
                   // mapping tx details from chronik with only 2 att : txid and outputScript
-                  values = _.map(values, function (value) {
+                  values = _.map(values, function(value) {
                     if (value) {
                       return {
                         txid: value.txid,
-                        outputScript: _.find(value.outputs, o => o.outputScript.includes("6a04")) ? _.find(value.outputs, o => o.outputScript.includes("6a04")).outputScript : null
-                      }
+                        outputScript: _.find(value.outputs, o => o.outputScript.includes('6a04'))
+                          ? _.find(value.outputs, o => o.outputScript.includes('6a04')).outputScript
+                          : null
+                      };
                     }
                   });
 
@@ -4596,13 +4597,13 @@ export class WalletService {
                         txFound.outputs.push({
                           address: 'false',
                           outputScript: txDetail.outputScript
-                        })
+                        });
                       }
                     }
                   });
                   return next();
                 }
-              })
+              });
             }
             return next();
           }

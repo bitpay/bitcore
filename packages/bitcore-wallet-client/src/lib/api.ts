@@ -121,7 +121,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function () { };
+    cb = cb || function () {};
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -254,9 +254,14 @@ export class API extends EventEmitter {
         // TODO get copayerName from Credentials -> copayerId to copayerName
         // action.copayerName = null;
       });
-      const outputFound = _.find(txp.outputs, o => o.outputScript && o.outputScript.length > 0);
+      const outputFound = _.find(
+        txp.outputs,
+        o => o.outputScript && o.outputScript.length > 0
+      );
       if (outputFound) {
-        txp.messageOnchain = Utils.decryptMessageOnchain(outputFound.outputScript);
+        txp.messageOnchain = Utils.decryptMessageOnchain(
+          outputFound.outputScript
+        );
         const index = txp.outputs.indexOf(outputFound, 0);
         if (index > -1) {
           txp.outputs.splice(index, 1);
@@ -320,7 +325,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) { }
+      } catch (ex) {}
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -703,7 +708,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s, txp.signingMethod);
         i++;
-      } catch (e) { }
+      } catch (e) {}
     });
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
@@ -846,9 +851,9 @@ export class API extends EventEmitter {
 
     this.request.get(
       '/v2/feelevels/?coin=' +
-      (chain || 'btc') +
-      '&network=' +
-      (network || 'livenet'),
+        (chain || 'btc') +
+        '&network=' +
+        (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -1746,9 +1751,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                  JSON.stringify(this.credentials.publicKeyRing),
-                  this.credentials.personalEncryptingKey
-                ),
+                    JSON.stringify(this.credentials.publicKeyRing),
+                    this.credentials.personalEncryptingKey
+                  ),
               unencryptedPkr: opts.doNotEncryptPkr
                 ? JSON.stringify(this.credentials.publicKeyRing)
                 : null,
@@ -2718,7 +2723,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) { }
+    } catch (e) {}
     return ret;
   }
 

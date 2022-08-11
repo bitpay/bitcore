@@ -285,7 +285,7 @@ export class BtcChain implements IChain {
       outputsSize = this.getEstimatedSizeForSingleOutput();
     }
     let byteMessage = 0;
-    if(txp.messageOnChain){
+    if (txp.messageOnChain) {
       byteMessage = Buffer.from(txp.messageOnChain).length + 17;
     }
     const size = overhead + inputSize * nbInputs + outputsSize + byteMessage;
@@ -360,7 +360,7 @@ export class BtcChain implements IChain {
         t.from(inputs);
         break;
     }
-    if(txp.messageOnChain){
+    if (txp.messageOnChain) {
       t.addOnchainMessage(txp.messageOnChain);
     }
     _.each(txp.outputs, o => {
@@ -368,7 +368,7 @@ export class BtcChain implements IChain {
         o.script || o.toAddress,
         'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
       );
-      if(o.message){
+      if (o.message) {
       }
       if (o.script) {
         t.addOutput(
@@ -390,42 +390,42 @@ export class BtcChain implements IChain {
 
     // backup opreturnOutput for checking other output
     let opReturnOutput = null;
-    if(txp.messageOnChain){
+    if (txp.messageOnChain) {
       opReturnOutput = t.outputs.shift();
     }
-      // Shuffle outputs for improved privacy
-      if (t.outputs.length > 1) {
-        const outputOrder = _.reject(txp.outputOrder, (order: number) => {
-          return order >= t.outputs.length;
-        });
-        $.checkState(
-          t.outputs.length == outputOrder.length,
-          'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
-        );
-        t.sortOutputs(outputs => {
-          return _.map(outputOrder, i => {
-            return outputs[i];
-          });
-        });
-      }
-
-      // Validate actual inputs vs outputs independently of Bitcore
-      const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
-      const totalOutputs = _.sumBy(t.outputs, 'satoshis');
-
+    // Shuffle outputs for improved privacy
+    if (t.outputs.length > 1) {
+      const outputOrder = _.reject(txp.outputOrder, (order: number) => {
+        return order >= t.outputs.length;
+      });
       $.checkState(
-        totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
-        'Failed state: not-enough-inputs at <getBitcoreTx()>'
+        t.outputs.length == outputOrder.length,
+        'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
       );
-      $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
-        'Failed state: fee-too-high at <getBitcoreTx()>'
-      );
+      t.sortOutputs(outputs => {
+        return _.map(outputOrder, i => {
+          return outputs[i];
+        });
+      });
+    }
 
-      // Return opreturnOuput after checking other output
-      if(opReturnOutput){
-        t.outputs.unshift(opReturnOutput);
-      }
+    // Validate actual inputs vs outputs independently of Bitcore
+    const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
+    const totalOutputs = _.sumBy(t.outputs, 'satoshis');
+
+    $.checkState(
+      totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
+      'Failed state: not-enough-inputs at <getBitcoreTx()>'
+    );
+    $.checkState(
+      totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
+      'Failed state: fee-too-high at <getBitcoreTx()>'
+    );
+
+    // Return opreturnOuput after checking other output
+    if (opReturnOutput) {
+      t.outputs.unshift(opReturnOutput);
+    }
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();

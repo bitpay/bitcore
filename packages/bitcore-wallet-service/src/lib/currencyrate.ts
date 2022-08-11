@@ -57,7 +57,7 @@ export class CurrencyRateService {
   }
 
   _fetch(cb?) {
-    cb = cb || function () { };
+    cb = cb || function() {};
 
     this._retrieve((err, res) => {
       if (err) {
@@ -72,7 +72,7 @@ export class CurrencyRateService {
   }
 
   _retrieve(cb) {
-    logger.debug(`Fetching data for currency rate `);
+    logger.debug('Fetching data for currency rate ');
     let params = {
       apikey: this.apiKey
     };
@@ -87,9 +87,11 @@ export class CurrencyRateService {
         if (err || !body) {
           return cb(err);
         }
-        logger.debug(`Data for currency rate fetched successfully`);
+        logger.debug('Data for currency rate fetched successfully');
         try {
-          const rates = _.filter(this.convertRates(body.data), x => _.some(Defaults.SUPPORT_FIAT_CURRENCIES, ['code', x.code]));
+          const rates = _.filter(this.convertRates(body.data), x =>
+            _.some(Defaults.SUPPORT_FIAT_CURRENCIES, ['code', x.code])
+          );
           return cb(null, rates);
         } catch (e) {
           return cb(e);
