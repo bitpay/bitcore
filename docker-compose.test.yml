@@ -46,8 +46,6 @@ services:
     ports:
       - "8545:8545"
       - "8546:8546"
-    volumes:
-      - ./.docker/erigon-password:/data/pw
     command:
       /usr/local/bin/erigon
       --chain=dev
