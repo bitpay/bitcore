@@ -38,7 +38,7 @@
           "providers": [{
             "host": "erigon",
             "protocol": "ws",
-            "port": 8546
+            "port": 8545
           }, {
             "host": "geth",
             "protocol": "ws",
