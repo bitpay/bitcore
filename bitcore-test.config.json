@@ -43,7 +43,8 @@
             "host": "geth",
             "protocol": "ws",
             "port": 8556
-          }]
+          }],
+          "threads": 0
         }
       },
       "XRP": {
