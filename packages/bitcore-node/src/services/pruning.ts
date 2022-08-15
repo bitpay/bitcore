@@ -155,7 +155,7 @@ export class PruningService {
       // Set all invalid txs to conflicting status
       this.transactionModel.collection.updateMany({ txid: { $in: invalidTxids } }, { $set: { blockHeight: -3 } }),
       // Set all coins that were pending to be spent by an invalid tx back to unspent
-      this.coinModel.collection.updateMany({ spentTxid: { $in: invalidTxids } }, { $set: { spentHeight: -2 } }), 
+      this.coinModel.collection.updateMany({ spentTxid: { $in: invalidTxids } }, { $set: { spentHeight: -2 } }),
       // Set all coins that were created by invalid txs to conflicting status
       this.coinModel.collection.updateMany({ mintTxid: { $in: invalidTxids } }, { $set: { mintHeight: -3 } })
     ]);
