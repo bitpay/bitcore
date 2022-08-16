@@ -47,8 +47,10 @@ async function getWallet() {
   }
 }
 
-async function sendTransaction(from, to, amount, web3) {
-  const wallet = await getWallet();
+async function sendTransaction(from, to, amount, web3, wallet) {
+  if (!wallet) {
+    wallet = await getWallet();
+  }
   const nonce = await web3.eth.getTransactionCount(accounts[from]);
   const gasPrice = Number(await web3.eth.getGasPrice());
   const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
@@ -89,7 +91,7 @@ describe('Ethereum', function() {
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const { web3 } = await worker.getWeb3();
-    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3);
+    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
     await sawBlock;
     await worker.disconnect();
     await worker.stop();
@@ -109,7 +111,7 @@ describe('Ethereum', function() {
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const { web3 } = await worker.getWeb3();
-    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3);
+    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
     await sawBlock;
     await worker.disconnect();
     await worker.stop();
@@ -139,7 +141,7 @@ describe('Ethereum', function() {
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const { web3 } = await worker.getWeb3();
-    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3);
+    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
     await sawBlock;
     await worker.disconnect();
     await worker.stop();
@@ -151,7 +153,7 @@ describe('Ethereum', function() {
 
   it('should have receipts on tx history', async () => {
     const wallet = await getWallet();
-    await new Promise(r =>
+    await new Promise<void>(r =>
       wallet
         .listTransactions({})
         .pipe(StreamUtil.jsonlBufferToObjectMode())
@@ -182,7 +184,7 @@ describe('Ethereum', function() {
     await wait(1000);
 
     const { web3 } = await worker.getWeb3();
-    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.02', 'ether'), web3);
+    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.02', 'ether'), web3, wallet);
     await sawBlock;
     await done;
     await worker.stop();
