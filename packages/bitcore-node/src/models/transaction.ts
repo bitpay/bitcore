@@ -678,6 +678,11 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
           { multi: true }
         ),
         CoinStorage.collection.update(
+          { chain, network, spentTxid: txid, spentHeight: SpentHeightIndicators.pending }, 
+          { $set: { spentHeight: SpentHeightIndicators.unspent } },
+          { multi: true }
+        ),
+        CoinStorage.collection.update(
           { chain, network, mintTxid: { $in: txids } },
           { $set: { mintHeight: SpentHeightIndicators.conflicting } },
           { multi: true }
