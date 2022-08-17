@@ -54,64 +54,62 @@ const currency = {
   tokenName: 'eToken',
   tokenTicker: 'eToken',
   tokenPrefixes: ['etoken'],
-  tokenIconsUrl: '', //https://tokens.bitcoin.com/32 for BCH SLP
+  tokenIconsUrl: '', // https://tokens.bitcoin.com/32 for BCH SLP
   txHistoryCount: 10,
   hydrateUtxoBatchSize: 20,
   defaultSettings: { fiatCurrency: 'usd' },
   opReturn: {
-      opReturnPrefixHex: '6a',
-      opReturnAppPrefixLengthHex: '04',
-      opPushDataOne: '4c',
-      appPrefixesHex: {
-          eToken: '534c5000',
-          lotusChat: '02020202',
-          lotusChatEncrypted: '03030303'
-      },
-      encryptedMsgByteLimit: 206,
-      unencryptedMsgByteLimit: 215,
+    opReturnPrefixHex: '6a',
+    opReturnAppPrefixLengthHex: '04',
+    opPushDataOne: '4c',
+    appPrefixesHex: {
+      eToken: '534c5000',
+      lotusChat: '02020202',
+      lotusChatEncrypted: '03030303'
+    },
+    encryptedMsgByteLimit: 206,
+    unencryptedMsgByteLimit: 215
   },
   settingsValidation: {
-      fiatCurrency: [
-          'usd',
-          'idr',
-          'krw',
-          'cny',
-          'zar',
-          'vnd',
-          'cad',
-          'nok',
-          'eur',
-          'gbp',
-          'jpy',
-          'try',
-          'rub',
-          'inr',
-          'brl',
-      ],
+    fiatCurrency: [
+      'usd',
+      'idr',
+      'krw',
+      'cny',
+      'zar',
+      'vnd',
+      'cad',
+      'nok',
+      'eur',
+      'gbp',
+      'jpy',
+      'try',
+      'rub',
+      'inr',
+      'brl'
+    ]
   },
   fiatCurrencies: {
-      usd: { name: 'US Dollar', symbol: '$', slug: 'usd' },
-      brl: { name: 'Brazilian Real', symbol: 'R$', slug: 'brl' },
-      gbp: { name: 'British Pound', symbol: '£', slug: 'gbp' },
-      cad: { name: 'Canadian Dollar', symbol: '$', slug: 'cad' },
-      cny: { name: 'Chinese Yuan', symbol: '元', slug: 'cny' },
-      eur: { name: 'Euro', symbol: '€', slug: 'eur' },
-      inr: { name: 'Indian Rupee', symbol: '₹', slug: 'inr' },
-      idr: { name: 'Indonesian Rupiah', symbol: 'Rp', slug: 'idr' },
-      jpy: { name: 'Japanese Yen', symbol: '¥', slug: 'jpy' },
-      krw: { name: 'Korean Won', symbol: '₩', slug: 'krw' },
-      nok: { name: 'Norwegian Krone', symbol: 'kr', slug: 'nok' },
-      rub: { name: 'Russian Ruble', symbol: 'р.', slug: 'rub' },
-      zar: { name: 'South African Rand', symbol: 'R', slug: 'zar' },
-      try: { name: 'Turkish Lira', symbol: '₺', slug: 'try' },
-      vnd: { name: 'Vietnamese đồng', symbol: 'đ', slug: 'vnd' },
-  },
+    usd: { name: 'US Dollar', symbol: '$', slug: 'usd' },
+    brl: { name: 'Brazilian Real', symbol: 'R$', slug: 'brl' },
+    gbp: { name: 'British Pound', symbol: '£', slug: 'gbp' },
+    cad: { name: 'Canadian Dollar', symbol: '$', slug: 'cad' },
+    cny: { name: 'Chinese Yuan', symbol: '元', slug: 'cny' },
+    eur: { name: 'Euro', symbol: '€', slug: 'eur' },
+    inr: { name: 'Indian Rupee', symbol: '₹', slug: 'inr' },
+    idr: { name: 'Indonesian Rupiah', symbol: 'Rp', slug: 'idr' },
+    jpy: { name: 'Japanese Yen', symbol: '¥', slug: 'jpy' },
+    krw: { name: 'Korean Won', symbol: '₩', slug: 'krw' },
+    nok: { name: 'Norwegian Krone', symbol: 'kr', slug: 'nok' },
+    rub: { name: 'Russian Ruble', symbol: 'р.', slug: 'rub' },
+    zar: { name: 'South African Rand', symbol: 'R', slug: 'zar' },
+    try: { name: 'Turkish Lira', symbol: '₺', slug: 'try' },
+    vnd: { name: 'Vietnamese đồng', symbol: 'đ', slug: 'vnd' }
+  }
 };
 
 export class Utils {
-  static encryptMessageOnchain(message, privKey, addressTo){
-    
-  }
+  static encryptMessageOnchain(message, privKey, addressTo) {}
 
   static getChain(coin: string): string {
     let normalizedChain = coin.toUpperCase();
@@ -422,7 +420,7 @@ export class Utils {
       if (txp.toAddress && txp.amount && !txp.outputs) {
         t.to(txp.toAddress, txp.amount);
       } else if (txp.outputs) {
-        if(txp.messageOnChain){
+        if (txp.messageOnChain) {
           t.addOnchainMessage(txp.messageOnChain);
         }
         _.each(txp.outputs, o => {
@@ -446,9 +444,9 @@ export class Utils {
       t.fee(txp.fee);
       t.change(txp.changeAddress.address);
 
-      // backup opreturnOutput for checking other output 
+      // backup opreturnOutput for checking other output
       let opReturnOutput = null;
-      if(txp.messageOnChain){
+      if (txp.messageOnChain) {
         opReturnOutput = t.outputs.shift();
       }
       // Shuffle outputs for improved privacy
@@ -466,7 +464,7 @@ export class Utils {
           });
         });
       }
-      
+
       // Validate inputs vs outputs independently of Bitcore
       var totalInputs = _.reduce(
         txp.inputs,
@@ -493,7 +491,7 @@ export class Utils {
       );
 
       // Return opreturnOuput after checking other output
-      if(opReturnOutput){
+      if (opReturnOutput) {
         t.outputs.unshift(opReturnOutput);
       }
       return t;
@@ -544,11 +542,11 @@ export class Utils {
 
   static parseOpReturn(hexStr) {
     if (
-        !hexStr ||
-        typeof hexStr !== 'string' ||
-        hexStr.substring(0, 2) !== currency.opReturn.opReturnPrefixHex
+      !hexStr ||
+      typeof hexStr !== 'string' ||
+      hexStr.substring(0, 2) !== currency.opReturn.opReturnPrefixHex
     ) {
-        return false;
+      return false;
     }
 
     hexStr = hexStr.slice(2); // remove the first byte i.e. 6a
@@ -564,63 +562,63 @@ export class Utils {
     let hexStrLength = hexStr.length;
 
     for (let i = 0; hexStrLength !== 0; i++) {
-        // part 1: check the preceding byte value for the subsequent message
-        let byteValue = hexStr.substring(0, 2);
-        let msgByteSize = 0;
-        if (byteValue === currency.opReturn.opPushDataOne) {
-            // if this byte is 4c then the next byte is the message byte size - retrieve the message byte size only
-            msgByteSize = parseInt(hexStr.substring(2, 4), 16); // hex base 16 to decimal base 10
-            hexStr = hexStr.slice(4); // strip the 4c + message byte size info
-        } else {
-            // take the byte as the message byte size
-            msgByteSize = parseInt(hexStr.substring(0, 2), 16); // hex base 16 to decimal base 10
-            hexStr = hexStr.slice(2); // strip the message byte size info
-        }
+      // part 1: check the preceding byte value for the subsequent message
+      let byteValue = hexStr.substring(0, 2);
+      let msgByteSize = 0;
+      if (byteValue === currency.opReturn.opPushDataOne) {
+        // if this byte is 4c then the next byte is the message byte size - retrieve the message byte size only
+        msgByteSize = parseInt(hexStr.substring(2, 4), 16); // hex base 16 to decimal base 10
+        hexStr = hexStr.slice(4); // strip the 4c + message byte size info
+      } else {
+        // take the byte as the message byte size
+        msgByteSize = parseInt(hexStr.substring(0, 2), 16); // hex base 16 to decimal base 10
+        hexStr = hexStr.slice(2); // strip the message byte size info
+      }
 
-        // part 2: parse the subsequent message based on bytesize
-        const msgCharLength = 2 * msgByteSize;
-        message = hexStr.substring(0, msgCharLength);
-        if (i === 0 && message === currency.opReturn.appPrefixesHex.eToken) {
-            // add the extracted eToken prefix to array then exit loop
-            resultArray[i] = currency.opReturn.appPrefixesHex.eToken;
-            break;
-        } 
-        // else if (
-        //     i === 0 &&
-        //     message === currency.opReturn.appPrefixesHex.cashtab
-        // ) {
-        //     // add the extracted Cashtab prefix to array
-        //     resultArray[i] = currency.opReturn.appPrefixesHex.cashtab;
-        // } else if (
-        //     i === 0 &&
-        //     message === currency.opReturn.appPrefixesHex.cashtabEncrypted
-        // ) {
-        //     // add the Cashtab encryption prefix to array
-        //     resultArray[i] = currency.opReturn.appPrefixesHex.cashtabEncrypted;
-        // } 
-        else {
-            // this is either an external message or a subsequent cashtab message loop to extract the message
-            resultArray[i] = message;
-        }
+      // part 2: parse the subsequent message based on bytesize
+      const msgCharLength = 2 * msgByteSize;
+      message = hexStr.substring(0, msgCharLength);
+      if (i === 0 && message === currency.opReturn.appPrefixesHex.eToken) {
+        // add the extracted eToken prefix to array then exit loop
+        resultArray[i] = currency.opReturn.appPrefixesHex.eToken;
+        break;
+      }
+      // else if (
+      //     i === 0 &&
+      //     message === currency.opReturn.appPrefixesHex.cashtab
+      // ) {
+      //     // add the extracted Cashtab prefix to array
+      //     resultArray[i] = currency.opReturn.appPrefixesHex.cashtab;
+      // } else if (
+      //     i === 0 &&
+      //     message === currency.opReturn.appPrefixesHex.cashtabEncrypted
+      // ) {
+      //     // add the Cashtab encryption prefix to array
+      //     resultArray[i] = currency.opReturn.appPrefixesHex.cashtabEncrypted;
+      // }
+      else {
+        // this is either an external message or a subsequent cashtab message loop to extract the message
+        resultArray[i] = message;
+      }
 
-        // strip out the parsed message
-        hexStr = hexStr.slice(msgCharLength);
-        hexStrLength = hexStr.length;
+      // strip out the parsed message
+      hexStr = hexStr.slice(msgCharLength);
+      hexStrLength = hexStr.length;
     }
     return resultArray;
   }
 
-  static decryptMessageOnchain(opReturnOutput){
+  static decryptMessageOnchain(opReturnOutput) {
     let attachedMsg = null;
     const opReturn = this.parseOpReturn(opReturnOutput);
     switch (opReturn[0]) {
       // unencrypted LotusChat
       case currency.opReturn.appPrefixesHex.lotusChat:
-          attachedMsg = Buffer.from(opReturn[1],'hex');
-          break;
-      case currency.opReturn.appPrefixesHex.lotusChatEncrypted:    
-          attachedMsg = 'Not yet implemented chat encrypted';
-          break;
+        attachedMsg = Buffer.from(opReturn[1], 'hex');
+        break;
+      case currency.opReturn.appPrefixesHex.lotusChatEncrypted:
+        attachedMsg = 'Not yet implemented chat encrypted';
+        break;
       // TanTodo: support lotus chat encrypted later
       // case currency.opReturn.appPrefixesHex.lotusChatEncrypted:
       //     // 1. get the public key of the fromAddress
@@ -648,8 +646,8 @@ export class Utils {
       //     }
       //     break;
       default:
-          break;
-  }
-  return attachedMsg ? attachedMsg.toString() : null;
+        break;
+    }
+    return attachedMsg ? attachedMsg.toString() : null;
   }
 }
