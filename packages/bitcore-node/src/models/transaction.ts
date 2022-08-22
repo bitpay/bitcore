@@ -667,25 +667,22 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
     const invalidatedTxids = Array.from(new Set(coins.map(c => c.spentTxid)));
 
-    for (const txid of invalidatedTxids) {
-      const allRelatedCoins = await this.findAllRelatedOutputs(txid);
+    for (const invalidTxid of invalidatedTxids) {
+      const allRelatedCoins = await this.findAllRelatedOutputs(invalidTxid);
       const spentTxids = new Set(allRelatedCoins.filter(c => c.spentTxid).map(c => c.spentTxid));
-      const txids = [txid].concat(Array.from(spentTxids));
+      const txids = [invalidTxid].concat(Array.from(spentTxids));
       await Promise.all([
-        this.collection.update(
+        this.collection.updateMany(
           { chain, network, txid: { $in: txids } },
-          { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-          { multi: true }
+          { $set: { blockHeight: SpentHeightIndicators.conflicting } }
         ),
-        CoinStorage.collection.update(
-          { chain, network, spentTxid: txid, spentHeight: SpentHeightIndicators.pending },
-          { $set: { spentHeight: SpentHeightIndicators.unspent } },
-          { multi: true }
+        CoinStorage.collection.updateMany(
+          { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
+          { $set: { spentHeight: SpentHeightIndicators.unspent } }
         ),
-        CoinStorage.collection.update(
+        CoinStorage.collection.updateMany(
           { chain, network, mintTxid: { $in: txids } },
-          { $set: { mintHeight: SpentHeightIndicators.conflicting } },
-          { multi: true }
+          { $set: { mintHeight: SpentHeightIndicators.conflicting } }
         )
       ]);
     }

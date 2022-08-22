@@ -3,6 +3,7 @@ import logger from '../logger';
 import { ITransaction } from '../models/baseTransaction';
 import { CoinModel, CoinStorage } from '../models/coin';
 import { TransactionModel, TransactionStorage } from '../models/transaction';
+import { SpentHeightIndicators } from '../types/Coin';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
@@ -153,11 +154,20 @@ export class PruningService {
     logger.info(`Invalidating ${invalidTxids.length} txids`);
     return Promise.all([
       // Set all invalid txs to conflicting status
-      this.transactionModel.collection.updateMany({ txid: { $in: invalidTxids } }, { $set: { blockHeight: -3 } }),
+      this.transactionModel.collection.updateMany(
+        { txid: { $in: invalidTxids } },
+        { $set: { blockHeight: SpentHeightIndicators.conflicting } }
+      ),
       // Set all coins that were pending to be spent by an invalid tx back to unspent
-      this.coinModel.collection.updateMany({ spentTxid: { $in: invalidTxids } }, { $set: { spentHeight: -2 } }),
+      this.coinModel.collection.updateMany(
+        { spentTxid: { $in: invalidTxids } },
+        { $set: { spentHeight: SpentHeightIndicators.unspent } }
+      ),
       // Set all coins that were created by invalid txs to conflicting status
-      this.coinModel.collection.updateMany({ mintTxid: { $in: invalidTxids } }, { $set: { mintHeight: -3 } })
+      this.coinModel.collection.updateMany(
+        { mintTxid: { $in: invalidTxids } },
+        { $set: { mintHeight: SpentHeightIndicators.conflicting } }
+      )
     ]);
   }
 
