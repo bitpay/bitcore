@@ -97,9 +97,9 @@ class ChainProxy {
       ) {
         normalizedChain = 'eth';
       }
-    if (Constants.MATIC_ERC20[normalizedChain]) {
-      normalizedChain = 'MATIC';
-    }
+      if (Constants.MATIC_ERC20[normalizedChain]) {
+        normalizedChain = 'MATIC';
+      }
       return normalizedChain;
     } catch (err) {
       return Defaults.CHAIN; // coin should always exist but most unit test don't have it -> return btc as default
