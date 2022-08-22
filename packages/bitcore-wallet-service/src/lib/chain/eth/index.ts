@@ -69,7 +69,7 @@ export class EthChain implements IChain {
   }
 
   getWalletBalance(server, wallet, opts, cb) {
-    const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
 
     if (opts.tokenAddress) {
       wallet.tokenAddress = opts.tokenAddress;
@@ -383,7 +383,7 @@ export class EthChain implements IChain {
     return true;
   }
 
-  isUTXOCoin() {
+  isUTXOChain() {
     return false;
   }
   isSingleAddress() {
@@ -408,7 +408,7 @@ export class EthChain implements IChain {
       throw new Error('Signatures Required');
     }
 
-    const chain = 'ETH';
+    const chain = 'ETH'; // TODO use lowercase always to avoid confusion
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
     for (let index = 0; index < signatures.length; index++) {
@@ -426,7 +426,7 @@ export class EthChain implements IChain {
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const chain = 'ETH';
+    const chain = 'eth';
     const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
     if (!isValidTo) {
       throw Errors.INVALID_ADDRESS;

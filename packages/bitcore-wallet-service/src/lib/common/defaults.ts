@@ -230,8 +230,10 @@ module.exports = {
     //   max: 1200 , // 1 post every 3 sec average, max.
     // },
   },
-
   COIN: 'btc',
+  EVM_COIN: 'eth',
+  CHAIN: 'btc',
+  EVM_CHAIN: 'eth',
   INSIGHT_REQUEST_POOL_SIZE: 10,
   INSIGHT_TIMEOUT: 30000,
 
