@@ -45,7 +45,7 @@ module.exports = {
     EUROC_M: 'euroc_m'
   },
 
-  ETH_ERC20: {
+  BITPAY_SUPPORTED_ETH_ERC20: {
     MATIC_E: 'matic_e',
     USDC_E: 'usdc_e',
     PAX_E: 'pax_e',
@@ -58,7 +58,7 @@ module.exports = {
     EUROC_E: 'euroc_e'
   },
 
-  MATIC_ERC20: {
+  BITPAY_SUPPORTED_MATIC_ERC20: {
     ETH_M: 'eth_m',
     USDC_M: 'usdc_m',
     PAX_M: 'pax_m',
@@ -71,7 +71,7 @@ module.exports = {
     EUROC_M: 'euroc_m'
   },
 
-  USD_STABLECOINS: {
+  BITPAY_USD_STABLECOINS: {
     USDC_E: 'usdc_e',
     PAX_E: 'pax_e',
     GUSD_E: 'gusd_e',
@@ -84,7 +84,7 @@ module.exports = {
     DAI_M: 'dai_m'
   },
 
-  EUR_STABLECOINS: {
+  BITPAY_EUR_STABLECOINS: {
     EUROC_E: 'euroc_e',
     EUROC_M: 'euroc_m'
   },
@@ -97,10 +97,6 @@ module.exports = {
   },
 
   EVM_CHAINS: {
-    ETH: 'eth'
-  },
-
-  EVM_COINS: {
     ETH: 'eth',
     MATIC: 'matic'
   },
