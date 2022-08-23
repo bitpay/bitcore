@@ -102,19 +102,20 @@ export class BulkClient extends Request {
       if (err || !results) return cb(err, results);
 
       [].concat(results).forEach(result => {
-        var status = result.status;
-        var c = this.credentials.find(
-          cred => cred.copayerId == status.preferences.copayerId
-        );
-        if (c && status.wallet.status == 'pending') {
-          result.wallet.secret = API._buildSecret(
-            c.walletId,
-            c.walletPrivKey,
-            c.coin,
-            c.network
-          );
+        if (result.success) {
+          var status = result.status;
+          var walletId = result.walletId;
+          var c = this.credentials.find(cred => cred.walletId == walletId);
+          if (c && status.wallet.status == 'pending') {
+            result.wallet.secret = API._buildSecret(
+              c.walletId,
+              c.walletPrivKey,
+              c.coin,
+              c.network
+            );
+          }
+          if (c) this._processStatus(status, c);
         }
-        if (c) this._processStatus(status, c);
       });
       return cb(null, results);
     });

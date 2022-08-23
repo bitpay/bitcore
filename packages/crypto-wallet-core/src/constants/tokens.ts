@@ -40,5 +40,17 @@ export let TOKEN_OPTS = {
     decimal: 18,
     name: 'SHIBA INU',
     symbol: 'SHIB'
+  },
+  '0x4d224452801ACEd8B2F0aebE155379bb5D594381': {
+    address: '0x4d224452801ACEd8B2F0aebE155379bb5D594381',
+    decimal: 18,
+    name: 'ApeCoin',
+    symbol: 'APE'
+  },
+  '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c': {
+    address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
+    decimal: 18,
+    name: 'Euro Coin',
+    symbol: 'EUROC'
   }
 };
