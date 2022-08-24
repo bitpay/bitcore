@@ -14,7 +14,7 @@ module.exports = {
   // TODO rethink COINS. If we want to concatenate CHAINS + ERC20's, we can do that in the implementation.
   // In the future, ERC20 "coins" may not be specific to ETH, so inferring that a USDC coin is on ETH (for example) may be incorrect.
   // Perhaps, this should be a nested object, with there being coins nested inside smart chains.
-  COINS: {
+  BITPAY_SUPPORTED_COINS: {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
@@ -32,7 +32,7 @@ module.exports = {
     EUROC: 'euroc'
   },
 
-  ERC20: {
+  BITPAY_SUPPORTED_ERC20: {
     USDC: 'usdc',
     PAX: 'pax',
     GUSD: 'gusd',
@@ -44,7 +44,7 @@ module.exports = {
     EUROC: 'euroc'
   },
 
-  USD_STABLECOINS: {
+  BITPAY_USD_STABLECOINS: {
     USDC: 'usdc',
     PAX: 'pax',
     GUSD: 'gusd',
@@ -52,15 +52,19 @@ module.exports = {
     DAI: 'dai'
   },
 
-  EUR_STABLECOINS: {
+  BITPAY_EUR_STABLECOINS: {
     EUROC: 'euroc'
   },
 
-  UTXO_COINS: {
+  UTXO_CHAINS: {
     BTC: 'btc',
     BCH: 'bch',
     DOGE: 'doge',
     LTC: 'ltc'
+  },
+
+  EVM_CHAINS: {
+    ETH: 'eth'
   },
 
   NETWORKS: {

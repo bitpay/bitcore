@@ -894,9 +894,10 @@ export class ExpressApp {
     });
 
     router.get('/v2/feelevels/', (req, res) => {
-      const opts: { coin?: string; network?: string } = {};
+      const opts: { coin?: string; network?: string; chain?: string } = {};
       SetPublicCache(res, 1 * ONE_MINUTE);
       if (req.query.coin) opts.coin = req.query.coin as string;
+      if (req.query.chain || req.query.coin) opts.chain = (req.query.chain || req.query.coin) as string;
       if (req.query.network) opts.network = req.query.network as string;
 
       let server;
