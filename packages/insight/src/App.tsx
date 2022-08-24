@@ -18,7 +18,7 @@ function App() {
   return (
     <ThemeProvider theme={colorScheme}>
       <GlobalStyles />
-      <BrowserRouter>
+      <BrowserRouter basename={'/insight'}>
         <SWRConfig
           value={{
             fetcher,
