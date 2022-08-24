@@ -891,7 +891,7 @@ export class BtcChain implements IChain {
     return true;
   }
 
-  isUTXOCoin() {
+  isUTXOChain() {
     return true;
   }
   isSingleAddress() {
