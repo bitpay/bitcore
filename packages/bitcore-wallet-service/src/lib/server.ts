@@ -1648,11 +1648,17 @@ export class WalletService {
         },
         next => {
           if (this._isSupportToken(wallet)) {
-            this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+            this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
               if (err) return next(err);
               if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
-              return this._getUxtosByChronik(wallet.coin, addresses[0].address)
+              let promiseList = [];
+              _.each(addresses, address => {
+                promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+              });
+
+              await Promise.all(promiseList)
                 .then(async utxos => {
+                  utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
                   const utxoNonSlpChronik = _.filter(utxos, item => item.isNonSLP);
                   allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
                   return next();
@@ -1730,11 +1736,16 @@ export class WalletService {
           bc.getAddressUtxos(address, height, wallet.coin, (err, allUtxos) => {
             if (err) return cb(err);
             if (this._isSupportToken(wallet)) {
-              this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+              this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
                 if (err) return cb(err);
                 if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
-                return this._getUxtosByChronik(wallet.coin, addresses[0].address)
+                let promiseList = [];
+                _.each(addresses, address => {
+                  promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+                });
+                await Promise.all(promiseList)
                   .then(async utxos => {
+                    utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
                     const utxoNonSlpChronik = _.filter(utxos, item => item.isNonSLP);
                     allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
                     return cb(null, allUtxos);
@@ -1939,12 +1950,19 @@ export class WalletService {
     opts = opts || {};
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
-      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+      this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
         if (err) return cb(err);
+
         if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
-        return this._getUxtosByChronik(wallet.coin, addresses[0].address)
-          .then(async data => {
-            return cb(null, data);
+        let promiseList = [];
+        _.each(addresses, address => {
+          promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+        });
+
+        await Promise.all(promiseList)
+          .then(async utxos => {
+            utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
+            return cb(null, utxos);
           })
           .catch(err => {
             return cb(err);
@@ -1985,11 +2003,18 @@ export class WalletService {
     };
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
-      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+      this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
         if (err) return cb(err);
+
         if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
-        return this._getUxtosByChronik(wallet.coin, addresses[0].address)
+        let promiseList = [];
+        _.each(addresses, address => {
+          promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+        });
+
+        await Promise.all(promiseList)
           .then(async data => {
+            data = data.reduce((accumulator, value) => accumulator.concat(value), []);
             if (_.isEmpty(data)) return cb(null, []);
             const groupTokenId = _.groupBy(data, 'tokenId');
             for (var tokenId in groupTokenId) {
@@ -2962,7 +2987,7 @@ export class WalletService {
 
           const data = _.assign(
             {
-              txid: txid,
+              txid,
               creatorId: this.copayerId ? this.copayerId : null,
               amount: null,
               message: null,
@@ -4359,7 +4384,7 @@ export class WalletService {
       fromBc;
     let streamData;
     let streamKey;
-    let addressToken;
+    let addressesToken;
     let walletCacheKey = wallet.id;
     if (opts.tokenAddress) {
       wallet.tokenAddress = opts.tokenAddress;
@@ -4417,7 +4442,7 @@ export class WalletService {
               if (err) return cb(err);
               if (_.size(addresses) < 1 || !addresses[0].address)
                 return cb('no addresss to get history by chronikClient ');
-              addressToken = addresses[0].address;
+              addressesToken = addresses;
               return next();
             });
           } else {
@@ -4445,12 +4470,18 @@ export class WalletService {
               wallet,
               async (err, inTxs: any[]) => {
                 if (err) return cb(err);
-                if (this._isSupportToken(wallet) && addressToken && _.size(inTxs) > 0) {
+                if (this._isSupportToken(wallet) && addressesToken && _.size(inTxs) > 0) {
                   try {
-                    const lastTxsChronik = await this.getlastTxsByChronik(wallet, addressToken, _.size(inTxs));
-                    if (lastTxsChronik) {
-                      inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
-                    }
+                    let promiseList = [];
+                    _.each(addressesToken, address => {
+                      promiseList.push(this.getlastTxsByChronik(wallet, address.address, _.size(inTxs)));
+                    });
+                    await Promise.all(promiseList).then(async lastTxsChronik => {
+                      lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
+                      if (lastTxsChronik.length > 0) {
+                        inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
+                      }
+                    });
                   } catch (err) {
                     return cb(err);
                   }
