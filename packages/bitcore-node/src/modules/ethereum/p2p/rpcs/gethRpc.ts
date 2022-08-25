@@ -32,7 +32,6 @@ export class GethRPC implements IRpc {
 
   constructor(web3: Web3) {
     this.web3 = web3;
-    // throw new Error('Geth support is not fully implemented yet.');
   }
 
   public getBlock(blockNumber: number): Promise<GethBlock> {

@@ -333,7 +333,7 @@ describe('Ethereum API', function() {
       await streamWalletTransactionsTest(chain, network, true)
     );
 
-    it('should stream DEX wallet transactions with parity trace blocks', async () => {
+    it('should stream DEX wallet transactions with erigon trace blocks', async () => {
       await EthBlockStorage.collection.insertMany(ErigonEthBlocks as any);
       await EthTransactionStorage.collection.insertMany(ErigonEthTransactions as any);
 
