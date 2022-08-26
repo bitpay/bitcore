@@ -70,12 +70,27 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       }
     );
     this.collection.createIndex(
+      { chain: 1, network: 1, 'calls.abiType.params.value': 1, blockTimeNormalized: 1 },
+      {
+        background: true,
+        partialFilterExpression: { 'calls.abiType.type': 'ERC20', 'calls.abiType.params.type': 'address' }
+      }
+    );
+    this.collection.createIndex(
       { chain: 1, network: 1, 'internal.action.to': 1 },
       {
         background: true,
         sparse: true
       }
     );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'calls.to': 1 },
+      {
+        background: true,
+        sparse: true
+      }
+    );
+
   }
 
   async batchImport(params: {
