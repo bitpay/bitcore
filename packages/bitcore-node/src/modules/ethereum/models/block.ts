@@ -17,7 +17,6 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
 
   async onConnect() {
     super.onConnect();
-    this.collection.createIndex({ chain: 1, network: 1, height: 1 }, { background: true });
   }
 
   async addBlock(params: {
@@ -189,16 +188,32 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       let timeout;
       try {
         const maxBlock = await self.collection.findOne(
-          { chain, network },
-          { sort: { height: -1 }, projection: { height: 1 } }
+          {
+            chain,
+            network,
+            // height and processed are here to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
+            height: { $exists: true },
+            $or: [{ processed: { $exists: true } }, { processed: { $exists: false } }]
+          },
+          {
+            // height all that matters in the sort. The rest is there to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
+            sort: { height: -1, chain: 1, network: 1, processed: 1 },
+            projection: { height: 1 }
+          }
         );
         if (!maxBlock) {
           return resolve([]);
         }
 
         const stream = self.collection
-          .find({ chain, network, height: { $gte: startHeight } })
-          .sort({ chain: 1, network: 1, height: 1 })
+          .find({
+            chain,
+            network,
+            height: { $gte: startHeight },
+            // processed is here to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
+            $or: [{ processed: { $exists: true } }, { processed: { $exists: false } }]
+          })
+          .sort({ chain: 1, network: 1, height: 1, processed: 1 }) // height is the only sort that matters
           .addCursorFlag('noCursorTimeout', true);
 
         const maxHeight = maxBlock.height;
