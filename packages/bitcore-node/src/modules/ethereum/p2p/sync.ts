@@ -71,10 +71,10 @@ export class MultiThreadSync extends EventEmitter {
       await this.initializeThreads();
 
       const startTime = Date.now();
+      const oneSecond = 1000;
 
       this.syncInterval = setInterval(() => {
         // TODO account for this.syncQueue
-        const oneSecond = 1000;
         const blocksProcessed = this.currentHeight - startHeight;
         const elapsedMinutes = (Date.now() - startTime) / (60 * oneSecond);
         logger.info(
@@ -82,7 +82,7 @@ export class MultiThreadSync extends EventEmitter {
             .toFixed(2)
             .padStart(8)} blocks/min | Height: ${this.currentHeight.toString().padStart(7)}`
         );
-      }, 1000);
+      }, oneSecond);
 
       this.syncingThreads = this.threads.length;
       for (let i = 0; i < this.threads.length; i++) {
