@@ -4,7 +4,6 @@ import { MaticRoutes } from './api/matic-routes';
 import { MaticVerificationPeer } from './p2p/MaticVerificationPeer';
 import { MaticP2pWorker } from './p2p/p2p';
 
-
 export default class MATICModule extends BaseModule {
   constructor(services: BaseModule['bitcoreServices']) {
     super(services);

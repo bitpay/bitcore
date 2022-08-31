@@ -11,7 +11,6 @@ export class MaticP2pWorker extends EthP2pWorker {
     super({ chain, network, chainConfig, blockModel });
     this.provider = new MATICStateProvider();
     this.multiThreadSync = new MaticMultiThreadSync({ chain, network });
-
   }
   async setupListeners() {
     return;
@@ -20,5 +19,4 @@ export class MaticP2pWorker extends EthP2pWorker {
   async sync() {
     return false;
   }
-
 }

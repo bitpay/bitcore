@@ -1,10 +1,7 @@
-
 import * as worker from 'worker_threads';
 import { SyncWorker } from '../../ethereum/p2p/syncWorker';
 
-class MaticSyncWorker extends SyncWorker {
-
-}
+class MaticSyncWorker extends SyncWorker {}
 
 worker.parentPort!.once('message', async function(msg) {
   if (msg.message !== 'start') {
