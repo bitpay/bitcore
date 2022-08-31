@@ -1,7 +1,5 @@
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
-import { Web3 } from 'crypto-wallet-core';
-import sinon from 'sinon';
 import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
 import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
@@ -78,62 +76,62 @@ describe('Polygon', function() {
     const addresses = await wallet.getAddresses();
     expect(addresses).to.exist;
     expect(addresses.length).to.eq(1);
-    expect(addresses[0].toLowerCase()).to.equal('0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d');
+    expect(addresses[0].toLowerCase()).to.equal('0xaf5b457a1687919bfb078f12947381559f79e36a');
   });
 
-  it('should be able to get block events from geth', async () => {
-    const gethOnlyConfig = { ...chainConfig, provider: chainConfig.providers![0] };
-    const { protocol, host, port } = gethOnlyConfig.provider;
-    const getWeb3Stub = sinon.stub(EthP2pWorker.prototype, 'getWeb3').resolves({ web3: new Web3(`${protocol}://${host}:${port}`) });
+  // it('should be able to get block events from geth', async () => {
+  //   const gethOnlyConfig = { ...chainConfig, provider: chainConfig.providers![0] };
+  //   const { protocol, host, port } = gethOnlyConfig.provider;
+  //   const getWeb3Stub = sinon.stub(EthP2pWorker.prototype, 'getWeb3').resolves({ web3: new Web3(`${protocol}://${host}:${port}`) });
 
-    const wallet = await getWallet();
-    const addresses = await wallet.getAddresses();
+  //   const wallet = await getWallet();
+  //   const addresses = await wallet.getAddresses();
 
-    const worker = new EthP2pWorker({ chain, network, chainConfig: gethOnlyConfig });
-    await worker.setupListeners();
-    await worker.connect();
-    const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+  //   const worker = new EthP2pWorker({ chain, network, chainConfig: gethOnlyConfig });
+  //   await worker.setupListeners();
+  //   await worker.connect();
+  //   const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
-    const { web3 } = await worker.getWeb3();
-    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
-    await sawBlock;
-    await worker.disconnect();
-    await worker.stop();
-    getWeb3Stub.restore();
-  });
+  //   const { web3 } = await worker.getWeb3();
+  //   await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
+  //   await sawBlock;
+  //   await worker.disconnect();
+  //   await worker.stop();
+  //   getWeb3Stub.restore();
+  // });
 
   it('should be able to get the balance for the address', async () => {
     const wallet = await getWallet();
     const balance = await wallet.getBalance();
     expect(balance.confirmed).to.be.eq(0);
 
-    const key = 'getBalanceForAddress-MATIC-regtest-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const key = 'getBalanceForAddress-MATIC-regtest-0xaf5b457a1687919bfb078f12947381559f79e36a';
     const cached = await CacheStorage.collection.findOne({ key });
     expect(cached).to.exist;
     expect(cached!.value).to.deep.eq(balance);
     await wallet.lock();
   });
 
-  it('should update after a send', async () => {
-    const wallet = await getWallet();
-    const addresses = await wallet.getAddresses();
-    const beforeBalance = await wallet.getBalance();
+  // it('should update after a send', async () => {
+  //   const wallet = await getWallet();
+  //   const addresses = await wallet.getAddresses();
+  //   const beforeBalance = await wallet.getBalance();
 
-    const worker = new EthP2pWorker({ chain, network, chainConfig });
-    await worker.setupListeners();
-    await worker.connect();
-    const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+  //   const worker = new EthP2pWorker({ chain, network, chainConfig });
+  //   await worker.setupListeners();
+  //   await worker.connect();
+  //   const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
-    const { web3 } = await worker.getWeb3();
-    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
-    await sawBlock;
-    await worker.disconnect();
-    await worker.stop();
-    const afterBalance = await wallet.getBalance();
-    expect(afterBalance).to.not.deep.eq(beforeBalance);
-    expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
-    await wallet.lock();
-  });
+  //   const { web3 } = await worker.getWeb3();
+  //   await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
+  //   await sawBlock;
+  //   await worker.disconnect();
+  //   await worker.stop();
+  //   const afterBalance = await wallet.getBalance();
+  //   expect(afterBalance).to.not.deep.eq(beforeBalance);
+  //   expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
+  //   await wallet.lock();
+  // });
 
   it('should have receipts on tx history', async () => {
     const wallet = await getWallet();
