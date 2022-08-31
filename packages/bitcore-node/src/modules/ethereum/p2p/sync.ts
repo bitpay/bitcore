@@ -142,6 +142,12 @@ export class MultiThreadSync extends EventEmitter {
     }
   }
 
+  getWorkerThread(workerData): Thread{
+    return new Thread(__dirname + '/syncWorker.js', {
+      workerData
+    });
+  }
+
   async initializeThreads() {
     if (this.threads.length > 0) {
       return;
@@ -155,11 +161,9 @@ export class MultiThreadSync extends EventEmitter {
     }
 
     logger.info(`Initializing ${threadCnt} syncing threads.`);
-
+    const workerData = { chain: this.chain, network: this.network }
     for (let i = 0; i < threadCnt; i++) {
-      const thread = new Thread(__dirname + '/syncWorker.js', {
-        workerData: { chain: this.chain, network: this.network }
-      });
+      const thread = this.getWorkerThread(workerData);
       this.threads.push(thread);
 
       thread.on('message', this.threadMessageHandler(thread));

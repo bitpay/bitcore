@@ -304,11 +304,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return new Promise(resolve => this.events.once('SYNCDONE', resolve));
   }
 
-  async convertBlock(block: AnyBlock) {
-    const blockTime = Number(block.timestamp) * 1000;
-    const hash = block.hash;
-    const height = block.number;
+  getBlockReward(block: AnyBlock): number {
     let reward = 5;
+    const height = block.number;
     const ForkHeights = {
       Byzantium: 4370000,
       Constantinople: 7280000
@@ -319,6 +317,14 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     } else if (height > ForkHeights.Byzantium) {
       reward = 3;
     }
+    return reward;
+  }
+
+  async convertBlock(block: AnyBlock) {
+    const blockTime = Number(block.timestamp) * 1000;
+    const hash = block.hash;
+    const height = block.number;
+    const reward = this.getBlockReward(block);
 
     const convertedBlock: IEthBlock = {
       chain: this.chain,

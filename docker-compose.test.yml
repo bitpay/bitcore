@@ -21,7 +21,7 @@ services:
       - rippled
 
   db:
-    image: mongo
+    image: mongo:3.4-jessie
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16

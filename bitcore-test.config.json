@@ -47,6 +47,23 @@
           "threads": 0
         }
       },
+      "MATIC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "geth",
+              "port": 30303
+            }
+          ],
+          "providers": [{
+            "host": "geth",
+            "protocol": "ws",
+            "port": 8556
+          }],
+          "threads": 0
+        }
+      },
       "XRP": {
         "testnet": {
           "chainSource": "rpc",
