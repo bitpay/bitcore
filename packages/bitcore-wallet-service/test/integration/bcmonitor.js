@@ -9,9 +9,10 @@ var should = chai.should();
 
 var { WalletService } = require('../../ts_build/lib/server');
 var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
+var { Constants } = require('../../ts_build/lib/common');
 
 var helpers = require('./helpers');
-var storage, blockchainExplorer, blockchainExplorerETH;
+var storage, blockchainExplorer, blockchainExplorerEVM;
 
 var socket = {
   handlers: {},
@@ -28,7 +29,7 @@ describe('Blockchain monitor', function() {
     helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
-      blockchainExplorerETH =  _.cloneDeep(blockchainExplorer);
+      blockchainExplorerEVM =  _.cloneDeep(blockchainExplorer);
 
 
       blockchainExplorer.initSocket = function(callbacks) {
@@ -38,13 +39,13 @@ describe('Blockchain monitor', function() {
         socket.handlers['block'] =  callbacks.onBlock;
       }
 
-      blockchainExplorerETH.initSocket = function(callbacks) {
+      blockchainExplorerEVM.initSocket = function(callbacks) {
        socket.handlers['tx']= function(data) {
 
           // copied from v8.tx
           const tx = data.tx;
           // script output, or similar.
-          if (!tx || tx.chain !== 'ETH') return;
+          if (!tx || !Constants.EVM_COINS[tx.chain]) return;
           let tokenAddress;
           let address;
           let amount;
@@ -113,7 +114,10 @@ describe('Blockchain monitor', function() {
               'livenet': blockchainExplorer
             },
             'eth': {
-              'livenet': blockchainExplorerETH
+              'livenet': blockchainExplorerEVM
+            },
+            'matic': {
+              'livenet': blockchainExplorerEVM
             }
           },
         }, function(err) {

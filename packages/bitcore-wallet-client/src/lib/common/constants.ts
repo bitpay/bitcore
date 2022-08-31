@@ -21,25 +21,36 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
-  COINS: [
-    'btc',
-    'bch',
-    'eth',
-    'xrp',
-    'doge',
-    'ltc',
-    'usdc',
-    'pax',
-    'gusd',
-    'busd',
-    'dai',
-    'wbtc',
-    'shib',
-    'ape',
-    'euroc'
+
+  BITPAY_SUPPORTED_ETH_ERC20: [
+    'matic_e',
+    'usdc_e',
+    'pax_e',
+    'gusd_e',
+    'busd_e',
+    'dai_e',
+    'wbtc_e',
+    'shib_e',
+    'ape_e',
+    'euroc_e'
   ],
-  ERC20: ['usdc', 'pax', 'gusd', 'busd', 'dai', 'wbtc', 'shib', 'ape', 'euroc'],
-  UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
-  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
+
+  BITPAY_SUPPORTED_MATIC_ERC20: [
+    'eth_m',
+    'usdc_m',
+    'pax_m',
+    'gusd_m',
+    'busd_m',
+    'dai_m',
+    'wbtc_m',
+    'shib_m',
+    'ape_m',
+    'euroc_m'
+  ],
+  CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],
+  UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
+  EVM_CHAINS: ['eth', 'matic'],
+  ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
+  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS
 };

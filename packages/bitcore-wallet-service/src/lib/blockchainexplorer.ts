@@ -19,6 +19,10 @@ const PROVIDERS = {
       livenet: 'https://api-eth.bitcore.io',
       testnet: 'https://api-eth.bitcore.io'
     },
+    matic: {
+      livenet: 'https://api-matic.bitcore.io',
+      testnet: 'https://api-matic.bitcore.io'
+    },
     xrp: {
       livenet: 'https://api-xrp.bitcore.io',
       testnet: 'https://api-xrp.bitcore.io'
@@ -38,8 +42,7 @@ export function BlockChainExplorer(opts) {
   $.checkArgument(opts, 'Failed state: opts undefined at <BlockChainExplorer()>');
 
   const provider = opts.provider || 'v8';
-  // TODO require that `chain` be passed in instead of `coin`. Coin could refer to an ERC20 which may not be in our list.
-  const chain = (opts.chain || ChainService.getChain(opts.coin || Defaults.COIN)).toLowerCase();
+  const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
   const network = opts.network || 'livenet';
 
   $.checkState(PROVIDERS[provider], 'Provider ' + provider + ' not supported');

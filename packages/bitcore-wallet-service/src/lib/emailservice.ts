@@ -243,6 +243,7 @@ export class EmailService {
       bit: 'bits',
       bch: 'BCH',
       eth: 'ETH',
+      matic: 'MATIC',
       xrp: 'XRP',
       doge: 'DOGE',
       ltc: 'LTC'
@@ -281,7 +282,7 @@ export class EmailService {
       }
 
       if (_.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) && data.txid) {
-        const urlTemplate = this.publicTxUrlTemplate[wallet.coin][wallet.network];
+        const urlTemplate = this.publicTxUrlTemplate[wallet.coin][wallet.network]; // TODO ERC20
         if (urlTemplate) {
           try {
             data.urlForTx = Mustache.render(urlTemplate, data);

@@ -602,6 +602,45 @@ describe('client API', function() {
           '0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080'
         ]);
       });
+      it('should build a matic txp correctly', () => {
+        const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const path = "m/44'/966'/0'";
+        const publicKeyRing = [
+          {
+            xPubKey: new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString()
+          }
+        ];
+
+        const from = Utils.deriveAddress('P2PKH', publicKeyRing, 'm/0/0', 1, 'livenet', 'matic');
+
+        const txp = {
+          version: 3,
+          from: from.address,
+          coin: 'matic',
+          outputs: [
+            {
+              toAddress: toAddress,
+              amount: 3896000000000000,
+              gasLimit: 21000,
+              message: 'first output'
+            }
+          ],
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 420000000000000,
+          nonce: 6,
+          gasPrice: 20000000000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+          amount: 3896000000000000
+        };
+        var t = Utils.buildTx(txp);
+        const rawTxp = t.uncheckedSerialize();
+        rawTxp.should.deep.equal([
+          '0xec068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b80008081898080'
+        ]);
+      });
       it('should protect from creating excessive fee DOGE', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -691,7 +730,7 @@ describe('client API', function() {
 
         (() => {
           var t = x.buildTx(txp);
-        }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin) at buildTx');
+        }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx');
 
         x.newBitcoreTransaction = x;
       });
@@ -2487,6 +2526,59 @@ describe('client API', function() {
                 should.not.exist(err);
                 should.exist(preferences);
                 preferences.email.should.equal('dummy@dummy.com');
+                done();
+              });
+            }
+          );
+        });
+      });
+    });
+
+    it('should save and retrieve matic token addresses', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic'}, () => {
+        clients[0].getPreferences((err, preferences) => {
+          should.not.exist(err);
+          preferences.should.be.empty;
+          clients[0].savePreferences(
+            {
+              maticTokenAddresses: ['0x2791bca1f2de4661ed88a30c99a7a9449aa84174']
+            },
+            err => {
+              should.not.exist(err);
+              clients[0].getPreferences((err, preferences) => {
+                should.not.exist(err);
+                should.exist(preferences);
+                preferences.maticTokenAddresses[0].should.exist;
+                preferences.maticTokenAddresses[0].should.equal('0x2791bca1f2de4661ed88a30c99a7a9449aa84174');
+                done();
+              });
+            }
+          );
+        });
+      });
+    });
+
+    it('should save and retrieve matic multisig address', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic'}, () => {
+        clients[0].getPreferences((err, preferences) => {
+          should.not.exist(err);
+          preferences.should.be.empty;
+          clients[0].savePreferences(
+            {
+              multisigMaticInfo: [{
+                walletName: 'myWallet',
+                multisigContractAddress: '0xeC20607aa654D823DD01BEB8780a44863c57Ed07',
+                n: 0,
+                m: 1
+              }]
+            },
+            err => {
+              should.not.exist(err);
+              clients[0].getPreferences((err, preferences) => {
+                should.not.exist(err);
+                should.exist(preferences);
+                preferences.multisigMaticInfo[0].should.exist;
+                preferences.multisigMaticInfo[0].multisigContractAddress.should.equal('0xeC20607aa654D823DD01BEB8780a44863c57Ed07');
                 done();
               });
             }
@@ -5146,6 +5238,50 @@ describe('client API', function() {
       });
     });
 
+    it('Send and broadcast in 1-1 wallet MATIC', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, w => {
+        clients[0].createAddress((err, x0) => {
+          should.not.exist(err);
+          should.exist(x0.address);
+          //blockchainExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            outputs: [
+              {
+                amount: 10000000,
+                toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+                message: 'output 0',
+                gasLimit: 21000
+              }
+            ],
+            message: 'hello',
+            feePerKb: 100e2
+          };
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
+            should.not.exist(err);
+            txp.requiredRejections.should.equal(1);
+            txp.requiredSignatures.should.equal(1);
+            txp.status.should.equal('pending');
+            txp.outputs[0].message.should.equal('output 0');
+            txp.message.should.equal('hello');
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(txp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              txp.outputs[0].message.should.equal('output 0');
+              txp.message.should.equal('hello');
+              clients[0].broadcastTxProposal(txp, (err, txp) => {
+                should.not.exist(err);
+                txp.status.should.equal('broadcasted');
+                txp.txid.should.contain('0x');
+                txp.message.should.equal('hello');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
     it('Send and broadcast in 2-3 wallet', done => {
       helpers.createAndJoinWallet(clients, keys, 2, 3, {}, w => {
         clients[0].createAddress((err, x0) => {
@@ -6135,7 +6271,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to gain access to tokens wallets from mnemonic', done => {
+      it('should be able to gain access to eth tokens wallets from mnemonic', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
@@ -6180,7 +6316,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to gain access to tokens wallets from mnemonic (Case 2)', done => {
+      it('should be able to gain access to eth tokens wallets from mnemonic (Case 2)', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
@@ -6241,6 +6377,119 @@ describe('client API', function() {
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  done();
+                });
+              })
+          });
+        });
+      });
+
+      it('should be able to gain access to matic tokens wallets from mnemonic', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences(
+            {
+              maticTokenAddresses: [
+                '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+                '0x6F3B3286fd86d8b47EC737CEB3D0D354cc657B3e'
+              ]
+            },
+            err => {
+              should.not.exist(err);
+              Client.serverAssistedImport(
+                { words },
+                {
+                  clientFactory: () => {
+                    return helpers.newClient(app);
+                  }
+                },
+                (err, k, c) => {
+                  // the matic wallet + 2 tokens.
+                  c.length.should.equal(3);
+                  let recoveryClient = c[0];
+                  recoveryClient.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.coin.should.equal('matic');
+                    let recoveryClient2 = c[2];
+                    recoveryClient2.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient2.credentials.coin.should.equal('pax');
+                      done();
+                    });
+                  });
+                }
+              );
+            }
+          );
+        });
+      });
+
+      it('should be able to gain access to matic tokens wallets from mnemonic (Case 2)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({ maticTokenAddresses: ['0x2791bca1f2de4661ed88a30c99a7a9449aa84174'] }, err => {
+            should.not.exist(err);
+            Client.serverAssistedImport(
+              { words },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the matic wallet + 1 token.
+                c.length.should.equal(2);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.coin.should.equal('matic');
+                  let recoveryClient2 = c[1];
+                  recoveryClient2.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient2.credentials.coin.should.equal('usdc');
+                    done();
+                  });
+                });
+              }
+            );
+          });
+        });
+      });
+
+      it('should not fail to gain access to matic wallet with unknown tokens addresses from mnemonic (Case 3)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({ maticTokenAddresses: ['0x9da9bc12b19b22d7c55798f722a1b6747ae9a710'] }, err => {
+            should.not.exist(err);
+              Client.serverAssistedImport(
+              { words },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the matic wallet + 1 unknown token addresses on preferences.
+                c.length.should.equal(1);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.coin.should.equal('matic');
                   done();
                 });
               })

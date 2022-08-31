@@ -15,7 +15,7 @@ export class EthValidation implements IValidation {
     return !!ethereumPrefix && utils.isAddress(address);
   }
 
-  private extractAddress(data) {
+  protected extractAddress(data) {
     const prefix = /^[a-z]+:/i;
     const params = /([\?\&](value|gas|gasPrice|gasLimit)=(\d+([\,\.]\d+)?))+/i;
     return data.replace(prefix, '').replace(params, '');

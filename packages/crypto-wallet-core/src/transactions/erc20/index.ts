@@ -46,9 +46,9 @@ export class ERC20TxProvider extends ETHTxProvider {
       return multisendContract.methods.sendErc20(tokenAddress, addresses, amounts).encodeABI();
     } else {
       const [{ address, amount }] = params.recipients;
-      const amountStr = Number(amount).toLocaleString('en', { useGrouping: false });
+      const amountBN = toBN(amount);
       const data = this.getERC20Contract(tokenAddress)
-        .methods.transfer(address, amountStr)
+        .methods.transfer(address, amountBN)
         .encodeABI();
       return data;
     }

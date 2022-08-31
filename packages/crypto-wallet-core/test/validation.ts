@@ -23,6 +23,10 @@ describe('Address Validation', () => {
   const ethAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
   const prefixEthAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
 
+  // MATIC
+  const maticAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+  const prefixMaticAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+
   // XRP
   const xrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
 
@@ -41,6 +45,9 @@ describe('Address Validation', () => {
   const xrpUri = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF';
   const xrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456&dt=123456';
   const xrpUriSingleParam = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456';
+  const maticUri = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+  const maticUriParams = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123&gasPrice=123&gas=123&gasLimit=123';
+  const maticUriSingleParam = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123';
 
   // Invalid Address
   const invalidBtcAddress = '1NuKwkDtCymgA1FNLUBaUWLD8s4kKWvgn';
@@ -49,12 +56,15 @@ describe('Address Validation', () => {
   const invalidLtcAddress = 'LYgDcZ3oW3aZBhZUyiC84fb99hyUPVxLw';
   const invalidEthAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08';
   const invalidXrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTH';
+  const invalidMaticAddress = '57d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08';
 
   // Invalid Uri
   const invalidEthPrefix = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
   const invalidXrpPrefix = 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF';
+  const invalidMaticPrefix = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
   const invalidEthUriParams = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=invalid&gasLimit=123&gas=123';
   const invalidXrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=invalid&dt=123';
+  const invalidMaticUriParams = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=invalid&gasLimit=123&gas=123';
 
   it('should be able to validate an BTC address', async () => {
     const isValidAddress = await Validation.validateAddress('BTC', 'mainnet', btcAddress);
@@ -94,6 +104,13 @@ describe('Address Validation', () => {
   it('should be able to validate an XRP address', async () => {
     const isValidAddress = await Validation.validateAddress('XRP', 'mainnet', xrpAddress);
     expect(isValidAddress).to.equal(true);
+  });
+
+  it('should be able to validate an MATIC address', async () => {
+    const isValidAddress = await Validation.validateAddress('MATIC', 'mainnet', maticAddress);
+    const isValidPrefixAddress = await Validation.validateAddress('MATIC', 'mainnet', prefixMaticAddress);
+    expect(isValidAddress).to.equal(true);
+    expect(isValidPrefixAddress).to.equal(true);
   });
 
   it('should be able to validate an BTC Uri', async () => {
@@ -142,6 +159,15 @@ describe('Address Validation', () => {
     expect(isValidUriSingleParam).to.equal(true);
   });
 
+  it('should be able to validate an MATIC Uri', async () => {
+    const isValidUri = await Validation.validateUri('MATIC', maticUri);
+    const isValidUriParams = await Validation.validateUri('MATIC', maticUriParams);
+    const isValidUriSingleParam = await Validation.validateUri('MATIC', maticUriSingleParam);
+    expect(isValidUri).to.equal(true);
+    expect(isValidUriParams).to.equal(true);
+    expect(isValidUriSingleParam).to.equal(true);
+  });
+
   it('should be able to invalidate an incorrect BTC address', async () => {
     const inValidAddress = await Validation.validateAddress('BTC', 'mainnet', invalidBtcAddress);
     expect(inValidAddress).to.equal(false);
@@ -172,6 +198,11 @@ describe('Address Validation', () => {
     expect(inValidAddress).to.equal(false);
   });
 
+  it('should be able to invalidate an incorrect MATIC address', async () => {
+    const inValidAddress = await Validation.validateAddress('MATIC', 'mainnet', invalidMaticAddress);
+    expect(inValidAddress).to.equal(false);
+  });
+
   it('should be able to invalidate incorrect ETH Uri params', async () => {
     const inValidEthUri = await Validation.validateUri('ETH', invalidEthUriParams);
     expect(inValidEthUri).to.equal(false);
@@ -190,5 +221,15 @@ describe('Address Validation', () => {
   it('should be able to invalidate XRP URI without ripple prefix', async () => {
     const inValidXrpPrefix = await Validation.validateUri('XRP', invalidXrpPrefix);
     expect(inValidXrpPrefix).to.equal(false);
+  });
+
+  it('should be able to invalidate incorrect MATIC Uri params', async () => {
+    const inValidMaticUri = await Validation.validateUri('MATIC', invalidMaticUriParams);
+    expect(inValidMaticUri).to.equal(false);
+  });
+
+  it('should be able to invalidate MATIC URI without ethereum prefix', async () => {
+    const inValidMaticPrefix = await Validation.validateUri('MATIC', invalidMaticPrefix);
+    expect(inValidMaticPrefix).to.equal(false);
   });
 });

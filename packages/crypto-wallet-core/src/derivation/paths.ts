@@ -31,6 +31,11 @@ export const Paths = {
     testnet: "m/44'/2'/",
     regtest: "m/44'/2'/"
   },
+  MATIC: {
+    mainnet: "m/44'/966'/",
+    livenet: "m/44'/966'/",
+    testnet: "m/44'/966'/"
+  },
   default: {
     testnet: "m/44'/1'/"
   }
