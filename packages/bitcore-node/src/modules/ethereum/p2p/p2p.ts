@@ -193,7 +193,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       mempoolTime: now,
       blockTime: now,
       blockTimeNormalized: now,
-      initialSyncComplete: true
+      initialSyncComplete: true,
+      logs: []
     });
   }
 
@@ -308,6 +309,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       size: block.size,
       reward,
       logsBloom: Buffer.from(block.logsBloom),
+      logs: block.logs,
       sha3Uncles: Buffer.from(block.sha3Uncles),
       receiptsRoot: Buffer.from(block.receiptsRoot),
       processed: false,
@@ -316,7 +318,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       stateRoot: Buffer.from(block.stateRoot)
     };
     const transactions = block.transactions as Array<ParityTransaction>;
-    const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
+    const convertedTxs: any = transactions.map(t => this.convertTx(t, convertedBlock));
     const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
     for (const tx of internalTxs) {
       if (tx.type === 'reward') {
@@ -353,51 +355,50 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ParityTransaction>, block?: IEthBlock): IEthTransaction {
-    if (!block) {
-      const txid = tx.hash || '';
-      const to = tx.to || '';
-      const from = tx.from || '';
-      const value = Number(tx.value);
-      const fee = Number(tx.gas) * Number(tx.gasPrice);
-      const abiType = this.txModel.abiDecode(tx.input!);
-      const nonce = tx.nonce || 0;
-      const convertedTx: IEthTransaction = {
-        chain: this.chain,
-        network: this.network,
-        blockHeight: valueOrDefault(tx.blockNumber, -1),
-        blockHash: valueOrDefault(tx.blockHash, undefined),
-        data: Buffer.from(tx.input || '0x'),
-        txid,
-        blockTime: new Date(),
-        blockTimeNormalized: new Date(),
-        fee,
-        transactionIndex: tx.transactionIndex || 0,
-        value,
-        wallets: [],
-        to,
-        from,
-        gasLimit: Number(tx.gas),
-        gasPrice: Number(tx.gasPrice),
-        // gasUsed: Number(tx.gasUsed),
-        nonce,
-        internal: []
-      };
-      if (abiType) {
-        convertedTx.abiType = abiType;
+  convertTx(tx: Partial<ParityTransaction>, block?: IEthBlock) {
+    const txid = tx.hash || '';
+    const to = tx.to || '';
+    const from = tx.from || '';
+    const value = Number(tx.value);
+    const fee = Number(tx.gas) * Number(tx.gasPrice);
+    const nonce = tx.nonce || 0;
+    const convertedTx: IEthTransaction = {
+      chain: this.chain,
+      network: this.network,
+      blockHeight: valueOrDefault(tx.blockNumber, -1),
+      blockHash: valueOrDefault(tx.blockHash, undefined),
+      data: Buffer.from(tx.input || '0x'),
+      txid,
+      blockTime: new Date(),
+      blockTimeNormalized: new Date(),
+      fee,
+      transactionIndex: tx.transactionIndex || 0,
+      value,
+      wallets: [],
+      to,
+      from,
+      gasLimit: Number(tx.gas),
+      gasPrice: Number(tx.gasPrice),
+      // gasUsed: Number(tx.gasUsed),
+      nonce,
+      internal: []
+    };
+
+    if (block) {
+      const txEvents = block.logs!.filter(log => log.transactionHash === tx.hash);
+      if (txEvents && txEvents.length > 0) {
+        const decodedLogs = this.txModel.abiDecodeLogs(txEvents);
+        if (decodedLogs.length > 0) {
+          convertedTx.logs = decodedLogs;
+        }
       }
-      return convertedTx;
-    } else {
       const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
-      const noBlockTx = this.convertTx(tx);
-      return {
-        ...noBlockTx,
-        blockHeight: height,
-        blockHash,
-        blockTime,
-        blockTimeNormalized
-      };
+      convertedTx.blockHeight = height;
+      convertedTx.blockHash = blockHash;
+      convertedTx.blockTime = blockTime;
+      convertedTx.blockTimeNormalized = blockTimeNormalized;
     }
+    return convertedTx;
   }
 
   async stop() {

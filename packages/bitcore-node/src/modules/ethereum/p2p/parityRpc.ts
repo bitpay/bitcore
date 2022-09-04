@@ -1,13 +1,7 @@
-import AbiDecoder from 'abi-decoder';
 import Web3 from 'web3';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { ERC20Abi } from '../abi/erc20';
-import { ERC721Abi } from '../abi/erc721';
 import { EthTransactionStorage } from '../models/transaction';
 import { IEthTransaction } from '../types';
-
-AbiDecoder.addABI(ERC20Abi);
-AbiDecoder.addABI(ERC721Abi);
 
 if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Symbol.for('asyncIterator');
 
@@ -41,7 +35,7 @@ export interface ClassifiedTrace extends ParityTraceResponse {
 }
 
 export interface TokenTransferResponse {
-  name?: 'transfer';
+  name?: string;
   params?: Array<{ name: string; value: string; type: string }>;
 }
 
@@ -71,8 +65,11 @@ export class ParityRPC {
     this.web3 = web3;
   }
 
-  public getBlock(blockNumber: number) {
-    return this.web3.eth.getBlock(blockNumber, true);
+  public async getBlock(blockNumber: number) {
+    const logs = await this.web3.eth.getPastLogs({ fromBlock: blockNumber, toBlock: blockNumber });
+    const block: any = await this.web3.eth.getBlock(blockNumber, true);
+    block.logs = logs;
+    return block;
   }
 
   private async traceBlock(blockNumber: number) {

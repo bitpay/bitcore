@@ -12,6 +12,7 @@ export interface ParityBlock {
   gasUsed: number;
   hash: string;
   logsBloom: string;
+  logs: any[];
   miner: string;
   mixHash: string;
   nonce: string;
@@ -102,6 +103,7 @@ export type IEthBlock = IBlock & {
   gasUsed: number;
   stateRoot: Buffer;
   logsBloom: Buffer;
+  logs: any[];
   sha3Uncles: Buffer;
   receiptsRoot: Buffer;
   merkleRoot: Buffer;
@@ -119,6 +121,7 @@ export type IEthTransaction = ITransaction & {
   from: string;
   internal: Array<ClassifiedTrace>;
   transactionIndex: number;
+  logs?: IAbiDecodedLogs[];
   abiType?: {
     type: string;
     name: string;
@@ -175,9 +178,39 @@ export interface EthTransactionJSON {
   nonce: number;
   to: string;
   from: string;
+  logs?: IAbiDecodedLogs[];
   abiType?: IEthTransaction['abiType'];
   decodedData?: AbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
   receipt?: IEthTransaction['receipt'];
+}
+
+export interface IAbiMethodParam {
+  name: string;
+  value: string;
+  type: string;
+}
+
+export interface IAbiDecodedMethod {
+  type: string;
+  name: string;
+  params: IAbiMethodParam[];
+}
+
+export interface IAbiDecodedLogs {
+  type: 'ERC20' | 'ERC721' | 'INVOICE' | 'MULTISIG';
+  logs: IAbiDecodedLog[];
+}
+
+export interface IAbiDecodedLog {
+  name: string;
+  events: IAbiDecodedEvent[];
+  address: string;
+}
+
+export interface IAbiDecodedEvent {
+  name: string;
+  type: string;
+  value: string;
 }
