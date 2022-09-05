@@ -960,7 +960,7 @@ describe('Push notifications', function() {
         });
       });
     });
-    it('should send notification if the tx is PAX', (done) => {
+    it('should send notification if the tx is USDP', (done) => {
       server.savePreferences({
         language: 'es',
         unit: 'bit',

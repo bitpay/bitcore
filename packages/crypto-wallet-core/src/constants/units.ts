@@ -87,6 +87,18 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  usdp: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  // backwards compatibility
   pax: {
     toSatoshis: 1e18,
     full: {

@@ -22,7 +22,8 @@ module.exports = {
     DOGE: 'doge',
     LTC: 'ltc',
     USDC: 'usdc',
-    PAX: 'pax',
+    USDP: 'usdp',
+    PAX: 'pax', // backwards compatibility
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai',
@@ -34,7 +35,8 @@ module.exports = {
 
   BITPAY_SUPPORTED_ERC20: {
     USDC: 'usdc',
-    PAX: 'pax',
+    USDP: 'usdp',
+    PAX: 'pax', // backwards compatibility
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai',
@@ -46,7 +48,8 @@ module.exports = {
 
   BITPAY_USD_STABLECOINS: {
     USDC: 'usdc',
-    PAX: 'pax',
+    USDP: 'usdp',
+    PAX: 'pax', // backwards compatibility
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai'
