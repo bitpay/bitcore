@@ -140,8 +140,10 @@ const Search = ({
           `No matching records found on the ${currency} ${network}. Select a different chain or try a different search`,
         );
         clearErrorMsg();
+      } else {
+        setErrorMessage(message);
+        clearErrorMsg();
       }
-      console.error(message);
     }
   };
 
