@@ -491,7 +491,7 @@ export class PushNotificationsService {
             try {
               customTokensData = await this.getTokenData();
             } catch (error) {
-              throw new Error('Could not get custom tokens data');
+              return cb(new Error('Could not get custom tokens data'));
             }
             if (customTokensData && customTokensData[tokenAddress]) {
               unit = customTokensData[tokenAddress].symbol.toLowerCase();
@@ -502,7 +502,7 @@ export class PushNotificationsService {
                 minDecimals: 2
               };
             } else {
-              throw new Error('Notifications for unsupported token are not allowed');
+              return cb(new Error(`Push notifications for unsupported tokens are not allowed: ${tokenAddress}`));
             }
           }
         }
