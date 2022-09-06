@@ -17,12 +17,9 @@ const { Storage } = require('../build/src/services/storage');
 const { wait } = require('../build/src/utils/wait');
 
 const RBFEnabledUTXOChains = ['BTC', 'LTC', 'DOGE'];
-const networks = ['regtest', 'testnet', 'livenet'];
+const networks = ['regtest', 'testnet', 'mainnet'];
 
 class Migration {
-  transactionModel = new TransactionModel();
-  coinModel = new CoinModel();
-
   constructor({ transactionModel = TransactionStorage, coinModel = CoinStorage } = {}) {
     this.transactionModel = transactionModel;
     this.coinModel = coinModel;
