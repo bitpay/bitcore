@@ -5119,7 +5119,7 @@ export class WalletService {
         matic: 137
       };
 
-      const chainId = chainIdMap[req.params['coin'] || 'eth'];
+      const chainId = chainIdMap[req.params?.['coin'] || 'eth'];
 
       const URL: string = `${credentials.API}/v3.0/${chainId}/swap/?${qs.join('&')}`;
 
@@ -5153,7 +5153,7 @@ export class WalletService {
         matic: 137
       };
 
-      const chainId = chainIdMap[req.params['coin'] || 'eth'];
+      const chainId = chainIdMap[req.params?.['coin'] || 'eth'];
 
       const URL: string = `${credentials.API}/v3.0/${chainId}/tokens`;
 
