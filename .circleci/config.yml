@@ -6,12 +6,14 @@ jobs:
     machine:
       image: ubuntu-2004:202201-02
       docker_layer_caching: true
-      resource_class: large
+    resource_class: large
     working_directory: ~/bitcore
     steps:
       - checkout
-
       - run:
           name: Build service
-          command: npm run test:ci
+          command: npm run test:ci:build
           no_output_timeout: 1200
+      - run:
+          name: Run tests
+          command: npm run test:ci
