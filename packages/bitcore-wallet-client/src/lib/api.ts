@@ -709,22 +709,26 @@ export class API extends EventEmitter {
 
   _addSignaturesToBitcoreTx(txp, t, signatures, xpub) {
     const { chain, network } = txp;
-    switch (chain) {
-      case 'XRP':
-      case 'ETH':
-      case 'MATIC':
+    switch (chain.toLowerCase()) {
+      case 'xrp':
+      case 'eth':
+      case 'matic':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
           const signed = CWC.Transactions.applySignature({
-            chain,
+            chain: chain.toUpperCase(),
             tx: unsignedTxs[index],
             signature: signatures[index]
           });
           signedTxs.push(signed);
 
           // bitcore users id for txid...
-          t.id = CWC.Transactions.getHash({ tx: signed, chain, network });
+          t.id = CWC.Transactions.getHash({
+            tx: signed,
+            chain: chain.toUpperCase(),
+            network
+          });
         }
         t.uncheckedSerialize = () => signedTxs;
         t.serialize = () => signedTxs;
