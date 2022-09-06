@@ -187,7 +187,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({currency, network, block}) =
                     3,
                   )} ${currency}`}
                 />
-                <SharedTile title='Confirmation' description={summary.confirmations} />
+                <SharedTile title='Confirmations' description={summary.confirmations} />
 
                 <SharedTile title='Timestamp' description={getFormattedDate(summary.time) || ''} />
               </Grid>
