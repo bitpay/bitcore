@@ -1,17 +1,25 @@
+/**
+ * !Important!
+ * Erigon support is not actively maintained by BitPay. If there
+ *  are issues with connecting to Erigon that need fixing, please
+ *  open a PR.
+ */
+
 import AbiDecoder from 'abi-decoder';
 import Web3 from 'web3';
-import { LoggifyClass } from '../../../decorators/Loggify';
-import { ERC20Abi } from '../abi/erc20';
-import { ERC721Abi } from '../abi/erc721';
-import { EthTransactionStorage } from '../models/transaction';
-import { IEthTransaction } from '../types';
+import { LoggifyClass } from '../../../../decorators/Loggify';
+import { ERC20Abi } from '../../abi/erc20';
+import { ERC721Abi } from '../../abi/erc721';
+import { EthTransactionStorage } from '../../models/transaction';
+import { IAbiDecodedData } from '../../types';
+import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 AbiDecoder.addABI(ERC20Abi);
 AbiDecoder.addABI(ERC721Abi);
 
 if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Symbol.for('asyncIterator');
 
-interface ParityCall {
+interface ErigonCall {
   callType?: 'call' | 'delegatecall';
   author?: string;
   rewardType?: 'block' | 'uncle';
@@ -22,8 +30,8 @@ interface ParityCall {
   value: string;
 }
 
-export interface ParityTraceResponse {
-  action: ParityCall;
+export interface ErigonTraceResponse {
+  action: ErigonCall;
   blockHash: string;
   blockNumber: number;
   error: string;
@@ -35,36 +43,13 @@ export interface ParityTraceResponse {
   type: 'reward' | 'call' | 'delegatecall' | 'create';
 }
 
-export interface ClassifiedTrace extends ParityTraceResponse {
-  abiType?: IEthTransaction['abiType'];
+export interface ClassifiedTrace extends ErigonTraceResponse {
+  abiType?: IAbiDecodedData;
   to?: string;
 }
 
-export interface TokenTransferResponse {
-  name?: 'transfer';
-  params?: Array<{ name: string; value: string; type: string }>;
-}
-
-interface Callback<ResultType> {
-  (error: Error): void;
-  (error: null, val: ResultType): void;
-}
-
-interface JsonRPCRequest {
-  jsonrpc: string;
-  method: string;
-  params: any[];
-  id: number;
-}
-interface JsonRPCResponse {
-  jsonrpc: string;
-  id: number;
-  result?: any;
-  error?: string;
-}
-
 @LoggifyClass
-export class ParityRPC {
+export class ErigonRPC implements IRpc {
   web3: Web3;
 
   constructor(web3: Web3) {
@@ -75,8 +60,8 @@ export class ParityRPC {
     return this.web3.eth.getBlock(blockNumber, true);
   }
 
-  private async traceBlock(blockNumber: number) {
-    const txs = await this.send<Array<ParityTraceResponse>>({
+  private async traceBlock(blockNumber: number): Promise<Array<ErigonTraceResponse>> {
+    const txs = await this.send<Array<ErigonTraceResponse>>({
       method: 'trace_block',
       params: [this.web3.utils.toHex(blockNumber)],
       jsonrpc: '2.0',
@@ -87,20 +72,20 @@ export class ParityRPC {
 
   public async getTransactionsFromBlock(blockNumber: number) {
     const txs = (await this.traceBlock(blockNumber)) || [];
-    return txs.map(tx => this.transactionFromParityTrace(tx));
+    return txs.map(tx => this.transactionFromErigonTrace(tx));
   }
 
-  public send<T>(data: JsonRPCRequest) {
+  public send<T>(data: IJsonRpcRequest) {
     return new Promise<T>((resolve, reject) => {
       const provider = this.web3.eth.currentProvider as any; // Import type HttpProvider web3-core
       provider.send(data, function(err, data) {
         if (err) return reject(err);
         resolve(data.result as T);
-      } as Callback<JsonRPCResponse>);
+      } as Callback<IJsonRpcResponse>);
     });
   }
 
-  private transactionFromParityTrace(tx: ParityTraceResponse): ClassifiedTrace {
+  private transactionFromErigonTrace(tx: ErigonTraceResponse): ClassifiedTrace {
     const abiType = EthTransactionStorage.abiDecode(tx.action.input!);
     const convertedTx: ClassifiedTrace = {
       ...tx

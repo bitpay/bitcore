@@ -4934,32 +4934,11 @@ describe('Wallet service', function() {
             ltc:0.5
           }
           helpers.stubUtxos(server, wallet, 2, { coin }, function() {
-            var cwcStub = sandbox.stub(CWC.Transactions, 'create');
-            cwcStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub;
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLib, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibCash, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibDoge, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibLtc, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
+            sandbox.stub(CWC.Transactions, 'create').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLib, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLibCash, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLibDoge, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLibLtc, 'Transaction').throws(new Error('dummy exception'));
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4971,8 +4950,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.message.should.equal('dummy exception');
-              if(bitcoreStub) bitcoreStub.restore();
-              cwcStub.restore();
+              sandbox.restore();
               done();
             });
           });

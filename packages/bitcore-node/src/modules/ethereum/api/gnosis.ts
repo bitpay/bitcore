@@ -2,6 +2,7 @@ import { Readable } from 'stream';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import { Config } from '../../../services/config';
+import { IEthNetworkConfig } from '../../../types/Config';
 import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { MultisigAbi } from '../abi/multisig';
 import { EthBlockStorage } from '../models/block';
@@ -41,7 +42,7 @@ export class GnosisApi {
     txId: string
   ): Promise<Partial<Transaction>[]> {
     const { web3 } = await ETH.getWeb3(network);
-    const networkConfig = Config.chainConfig({ chain: 'ETH', network });
+    const networkConfig: IEthNetworkConfig = Config.chainConfig({ chain: 'ETH', network });
     const { gnosisFactory = this.gnosisFactories[network] } = networkConfig;
     let query = { chain: 'ETH', network, txid: txId };
     const found = await EthTransactionStorage.collection.findOne(query);
