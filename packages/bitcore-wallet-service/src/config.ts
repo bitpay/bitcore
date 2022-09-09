@@ -61,6 +61,14 @@ const Config = () => {
           url: 'https://api-eth.bitcore.io'
         }
       },
+      rsk: {
+        livenet: {
+          url: 'https://api-rsk.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-rsk.bitcore.io'
+        }
+      },
       xrp: {
         livenet: {
           url: 'https://api-xrp.bitcore.io'

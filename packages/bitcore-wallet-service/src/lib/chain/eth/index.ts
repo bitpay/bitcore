@@ -31,6 +31,11 @@ function getInvoiceDecoder() {
 }
 
 export class EthChain implements IChain {
+  chain: string;
+  constructor() {
+    // Now RSK will inherit EthChain and override this.chain = 'RSK';
+    this.chain = 'ETH';
+  }
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -193,7 +198,7 @@ export class EthChain implements IChain {
     const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, isTokenSwap } = txp;
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
-    const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
+    const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : this.chain;
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,
@@ -408,7 +413,7 @@ export class EthChain implements IChain {
       throw new Error('Signatures Required');
     }
 
-    const chain = 'ETH'; // TODO use lowercase always to avoid confusion
+    const chain = this.chain; // TODO use lowercase always to avoid confusion
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
     for (let index = 0; index < signatures.length; index++) {
@@ -426,7 +431,7 @@ export class EthChain implements IChain {
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const chain = 'eth';
+    const chain = this.chain.toLowerCase();
     const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
     if (!isValidTo) {
       throw Errors.INVALID_ADDRESS;

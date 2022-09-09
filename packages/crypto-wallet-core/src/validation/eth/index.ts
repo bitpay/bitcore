@@ -14,8 +14,9 @@ export class EthValidation implements IValidation {
     const ethereumPrefix = /ethereum/i.exec(addressUri);
     return !!ethereumPrefix && utils.isAddress(address);
   }
-
-  private extractAddress(data) {
+  
+  // Make it protected so that RSK can override extractAddress
+  protected extractAddress(data) {
     const prefix = /^[a-z]+:/i;
     const params = /([\?\&](value|gas|gasPrice|gasLimit)=(\d+([\,\.]\d+)?))+/i;
     return data.replace(prefix, '').replace(params, '');

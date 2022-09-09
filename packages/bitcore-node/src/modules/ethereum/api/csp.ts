@@ -89,7 +89,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   }
 
   async getERC20TokenInfo(network: string, tokenAddress: string) {
-    const token = await ETH.erc20For(network, tokenAddress);
+    const token = await this.erc20For(network, tokenAddress); // Use `this` rather than ETH to make it generic for other EVM compatible chains to facilitate the class based inheritance of ETHStateProvider
     const [name, decimals, symbol] = await Promise.all([
       token.methods.name().call(),
       token.methods.decimals().call(),
@@ -360,7 +360,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     const { network, wallet, res, args } = params;
     const { web3 } = await this.getWeb3(network);
-    const query = ETH.getWalletTransactionQuery(params);
+    const query = this.getWalletTransactionQuery(params); // Use this rather than ETH to make it generic for other EVM compatible chains to facilitate the class based inheritance of ETHStateProvider
 
     let transactionStream = new Readable({ objectMode: true });
     const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
@@ -572,5 +572,11 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     };
   }
 }
-
-export const ETH = new ETHStateProvider();
+/*
+ * 
+ * Use the ETH implementation for RSK by inheriting the ETHStateProvider class rather than making its clone
+ * This will reduce lot of maintenance cost and avoid code duplication
+ * For other EVM compatible chains like RSK below export needs to be like new ETHStateProvider('RSK')
+ * It's just a suggestion to use process.env.chain evn variable untill bitpay team can make it more generic for other EVM like chains
+ */
+export const ETH = new ETHStateProvider(process.env.chain || 'ETH');

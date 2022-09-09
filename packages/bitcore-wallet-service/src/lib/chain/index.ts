@@ -4,6 +4,7 @@ import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
+import { RskChain } from './rsk';
 import { LtcChain } from './ltc';
 import { XrpChain } from './xrp';
 
@@ -73,7 +74,8 @@ const chains: { [chain: string]: IChain } = {
   ETH: new EthChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
-  LTC: new LtcChain()
+  LTC: new LtcChain(),
+  RSK: new RskChain()
 };
 
 class ChainProxy {

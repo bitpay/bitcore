@@ -6,6 +6,8 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    RSK: 'rsk',
+    RBTC: 'rbtc',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc'
@@ -18,6 +20,7 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    RSK: 'rsk',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
@@ -67,7 +70,8 @@ module.exports = {
   },
 
   EVM_CHAINS: {
-    ETH: 'eth'
+    ETH: 'eth',
+    RSK: 'rsk'
   },
 
   NETWORKS: {
