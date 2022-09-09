@@ -29,7 +29,8 @@ export const Constants = {
     'doge',
     'ltc',
     'usdc',
-    'pax',
+    'usdp',
+    'pax', // backwards compatibility
     'gusd',
     'busd',
     'dai',
@@ -40,7 +41,8 @@ export const Constants = {
   ],
   BITPAY_SUPPORTED_ERC20: [
     'usdc',
-    'pax',
+    'usdp',
+    'pax', // backwards compatibility
     'gusd',
     'busd',
     'dai',

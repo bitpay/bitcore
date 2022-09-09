@@ -207,6 +207,7 @@ export class PayProV2 {
     payload,
     unsafeBypassValidation = false
   }) {
+    if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -248,6 +249,7 @@ export class PayProV2 {
     unsignedTransactions,
     unsafeBypassValidation = false
   }) {
+    if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -290,6 +292,7 @@ export class PayProV2 {
     unsafeBypassValidation = false,
     bpPartner
   }) {
+    if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await this._asyncRequest({
       url: paymentUrl,
       method: 'post',
