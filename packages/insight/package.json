@@ -21,7 +21,8 @@
     "eject": "react-scripts eject",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,json\"}",
     "fix:lint": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\"",
-    "fix:prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\" --config ./.prettierrc"
+    "fix:prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\" --config ./.prettierrc",
+    "postbuild": "./postbuild.sh"
   },
   "dependencies": {
     "@reduxjs/toolkit": "1.8.1",
