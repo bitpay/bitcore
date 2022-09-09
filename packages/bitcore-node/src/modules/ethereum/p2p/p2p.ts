@@ -1,31 +1,35 @@
 import { EventEmitter } from 'events';
+import * as os from 'os';
 import Web3 from 'web3';
 import { timestamp } from '../../../logger';
 import logger from '../../../logger';
 import { StateStorage } from '../../../models/state';
 import { ChainStateProvider } from '../../../providers/chain-state';
 import { BaseP2PWorker } from '../../../services/p2p';
+import { IEthNetworkConfig } from '../../../types/Config';
 import { valueOrDefault } from '../../../utils/check';
 import { wait } from '../../../utils/wait';
 import { ETHStateProvider } from '../api/csp';
 import { EthBlockModel, EthBlockStorage } from '../models/block';
 import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
-import { IEthBlock, IEthTransaction, ParityBlock, ParityTransaction } from '../types';
-import { ParityRPC } from './parityRpc';
+import { ErigonBlock, ErigonTransaction, IEthBlock, IEthTransaction } from '../types';
+import { IRpc, Rpcs } from './rpcs';
+import { MultiThreadSync } from './sync';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
-  protected chainConfig: any;
+  protected chainConfig: IEthNetworkConfig;
   protected syncing: boolean;
   protected initialSyncComplete: boolean;
   protected blockModel: EthBlockModel;
   protected txModel: EthTransactionModel;
   protected txSubscription: any;
   protected blockSubscription: any;
-  protected rpc?: ParityRPC;
+  protected rpc?: IRpc;
   protected provider: ETHStateProvider;
   protected web3?: Web3;
   protected invCache: any;
   protected invCacheLimits: any;
+  protected multiThreadSync: MultiThreadSync;
   public events: EventEmitter;
   public disconnecting: boolean;
 
@@ -45,6 +49,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       TX: 100000
     };
     this.disconnecting = false;
+    this.multiThreadSync = new MultiThreadSync({ chain, network });
   }
 
   cacheInv(type: 'TX', hash: string): void {
@@ -65,7 +70,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async setupListeners() {
-    const { host, port } = this.chainConfig.provider;
+    const { host, port } = this.chainConfig.provider || this.chainConfig.providers![0];
     this.events.on('disconnected', async () => {
       logger.warn(
         `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
@@ -76,7 +81,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       this.txSubscription.subscribe(async (_err, txid) => {
         if (!this.isCachedInv('TX', txid)) {
           this.cacheInv('TX', txid);
-          const tx = (await this.web3!.eth.getTransaction(txid)) as ParityTransaction;
+          const tx = (await this.web3!.eth.getTransaction(txid)) as ErigonTransaction;
           if (tx) {
             await this.processTransaction(tx);
             this.events.emit('transaction', tx);
@@ -90,6 +95,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
           this.sync();
         }
       });
+    });
+
+    this.multiThreadSync.once('INITIALSYNCDONE', () => {
+      this.initialSyncComplete = true;
+      this.events.emit('SYNCDONE');
     });
   }
 
@@ -116,13 +126,13 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     let firstConnect = true;
     let connected = false;
     let disconnected = false;
-    const { host, port } = this.chainConfig.provider;
+    const { host, port } = this.chainConfig.provider || this.chainConfig.providers![0];
     while (!this.disconnecting && !this.stopping) {
       try {
         if (!this.web3) {
           const { web3 } = await this.getWeb3();
           this.web3 = web3;
-          this.rpc = new ParityRPC(this.web3);
+          this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3);
         }
         try {
           connected = await this.web3.eth.net.isListening();
@@ -136,7 +146,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         } else {
           const { web3 } = await this.getWeb3();
           this.web3 = web3;
-          this.rpc = new ParityRPC(this.web3);
+          this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3);
           this.events.emit('disconnected');
         }
         if (disconnected && connected && !firstConnect) {
@@ -161,7 +171,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   public async getBlock(height: number) {
-    return (this.rpc!.getBlock(height) as unknown) as ParityBlock;
+    return (this.rpc!.getBlock(height) as unknown) as ErigonBlock;
   }
 
   async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
@@ -182,7 +192,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     }
   }
 
-  async processTransaction(tx: ParityTransaction) {
+  async processTransaction(tx: ErigonTransaction) {
     const now = new Date();
     const convertedTx = this.convertTx(tx);
     this.txModel.batchImport({
@@ -197,12 +207,25 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     });
   }
 
+  useMultiThread() {
+    if (this.chainConfig.threads == null) {
+      // use multithread by default if there are >2 threads in the CPU
+      return os.cpus().length > 2;
+    }
+    return this.chainConfig.threads > 0;
+  }
+
   async sync() {
     if (this.syncing) {
       return false;
     }
+
+    if (!this.initialSyncComplete && this.useMultiThread()) {
+      return this.multiThreadSync.sync();
+    }
+
     const { chain, chainConfig, network } = this;
-    const { parentChain, forkHeight } = chainConfig;
+    const { parentChain, forkHeight = 0 } = chainConfig;
     this.syncing = true;
     const state = await StateStorage.collection.findOne({});
     this.initialSyncComplete =
@@ -219,12 +242,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       }
     }
 
-    const startHeight = tip ? tip.height : 0;
+    const startHeight = tip ? tip.height : chainConfig.syncStartHeight || 0;
     const startTime = Date.now();
     try {
       let bestBlock = await this.web3!.eth.getBlockNumber();
       let lastLog = 0;
-      let currentHeight = tip ? tip.height : 0;
+      let currentHeight = tip ? tip.height : chainConfig.syncStartHeight || 0;
       logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
       while (currentHeight <= bestBlock) {
         const block = await this.getBlock(currentHeight);
@@ -274,7 +297,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return new Promise(resolve => this.events.once('SYNCDONE', resolve));
   }
 
-  async convertBlock(block: ParityBlock) {
+  async convertBlock(block: ErigonBlock) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -315,7 +338,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<ParityTransaction>;
+    const transactions = block.transactions as Array<ErigonTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
     for (const tx of internalTxs) {
@@ -353,7 +376,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ParityTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction>, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash || '';
       const to = tx.to || '';
@@ -402,6 +425,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
   async stop() {
     this.stopping = true;
+    this.multiThreadSync.stop();
     logger.debug(`Stopping worker for chain ${this.chain} ${this.network}`);
     await this.disconnect();
   }

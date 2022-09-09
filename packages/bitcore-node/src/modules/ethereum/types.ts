@@ -2,9 +2,9 @@ import BN from 'bn.js';
 
 import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../types/Block';
-import { ClassifiedTrace, TokenTransferResponse } from './p2p/parityRpc';
+import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
 
-export interface ParityBlock {
+export interface ErigonBlock {
   author: string;
   difficulty: string;
   extraData: string;
@@ -24,11 +24,11 @@ export interface ParityBlock {
   stateRoot: string;
   timestamp: number;
   totalDifficulty: string;
-  transactions: Array<ParityTransaction>;
+  transactions: Array<ErigonTransaction>;
   transactionsRoot: string;
   uncles: Array<string>;
 }
-export interface ParityTransaction {
+export interface ErigonTransaction {
   blockHash: string;
   blockNumber: number;
   chainId: number;
@@ -119,11 +119,7 @@ export type IEthTransaction = ITransaction & {
   from: string;
   internal: Array<ClassifiedTrace>;
   transactionIndex: number;
-  abiType?: {
-    type: string;
-    name: string;
-    params: Array<{ name: string; value: string; type: string }>;
-  };
+  abiType?: IAbiDecodedData;
   error?: string;
   receipt?: {
     status: boolean;
@@ -155,11 +151,17 @@ export interface TransactionJSON {
   value: number;
 }
 
-export interface AbiDecodedData {
-  type: string;
-  decodedData: TokenTransferResponse;
+export interface IAbiDecodeResponse {
+  name: string;
+  params: Array<{ name: string; value: string; type: string }>;
 }
-export type DecodedTrace = ClassifiedTrace & AbiDecodedData;
+
+export interface IAbiDecodedData extends IAbiDecodeResponse {
+  type: string;
+}
+export type DecodedTrace = ClassifiedTrace & {
+  decodedData?: IAbiDecodedData;
+};
 export interface EthTransactionJSON {
   txid: string;
   chain: string;
@@ -175,8 +177,8 @@ export interface EthTransactionJSON {
   nonce: number;
   to: string;
   from: string;
-  abiType?: IEthTransaction['abiType'];
-  decodedData?: AbiDecodedData;
+  abiType?: IAbiDecodedData;
+  decodedData?: IAbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
   receipt?: IEthTransaction['receipt'];

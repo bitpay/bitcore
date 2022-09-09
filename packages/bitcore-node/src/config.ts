@@ -41,8 +41,8 @@ function setTrustedPeers(config: ConfigType): ConfigType {
       if (env[envString]) {
         let peers = config.chains[chain][network].trustedPeers || [];
         peers.push({
-          host: env[envString],
-          port: env[`${envString}_PORT`]
+          host: env[envString] as string,
+          port: env[`${envString}_PORT`] as string
         });
         config.chains[chain][network].trustedPeers = peers;
       }

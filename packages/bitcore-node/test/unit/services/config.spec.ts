@@ -32,8 +32,8 @@ describe('Config', function() {
         }
       }
     };
-    Config.updateConfig({ chains: testConfig });
-    const testnetConfig = Config.chainConfig({ chain, network });
+    Config.updateConfig({ chains: testConfig as any });
+    const testnetConfig: any = Config.chainConfig({ chain, network });
     expect(testnetConfig.title).to.exist;
     expect(testnetConfig).to.deep.eq(testConfig[chain][network]);
     Config.updateConfig(originalConfig);

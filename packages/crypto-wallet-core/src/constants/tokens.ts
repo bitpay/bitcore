@@ -12,8 +12,8 @@ export let ETH_TOKEN_OPTS = {
     address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   },
   '0x8e870d67f660d95d5be530380d0ec0bd388289e1': {
-    name: 'Paxos Standard',
-    symbol: 'PAX',
+    name: 'Paxos Dollar',
+    symbol: 'USDP',
     decimal: 18,
     address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1'
   },

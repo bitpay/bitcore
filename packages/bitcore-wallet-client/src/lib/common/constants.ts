@@ -47,6 +47,7 @@ export const Constants = {
     'ape_m',
     'euroc_m'
   ],
+  
   CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],
   UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
   EVM_CHAINS: ['eth', 'matic'],

@@ -362,7 +362,13 @@ export class PushNotificationsService {
 
       let unit;
       if (wallet.coin != Defaults.COIN) {
-        unit = wallet.coin;
+        switch (wallet.coin) {
+          case 'pax':
+            unit = 'usdp'; // backwards compatibility
+            break;
+          default:
+            unit = wallet.coin;
+        }
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
@@ -460,7 +466,7 @@ export class PushNotificationsService {
       doge: 'DOGE',
       ltc: 'LTC',
       usdc: 'USDC',
-      pax: 'PAX',
+      usdp: 'USDP',
       gusd: 'GUSD',
       busd: 'BUSD',
       dai: 'DAI',

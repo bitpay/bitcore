@@ -6,6 +6,11 @@ import { BaseModel } from './base';
 export interface IState {
   _id?: ObjectID;
   initialSyncComplete: any;
+  verifiedBlockHeight?: {
+    [chain: string]: {
+      [network: string]: number;
+    };
+  };
 }
 
 export class StateModel extends BaseModel<IState> {

@@ -6,6 +6,7 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { AsyncRPC } from '../../../src/rpc';
 import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
+import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 let lockedWallet: Wallet;
@@ -13,7 +14,7 @@ const walletName = 'Test Wallet';
 const password = 'iamsatoshi';
 const chain = 'BTC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network];
+const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
