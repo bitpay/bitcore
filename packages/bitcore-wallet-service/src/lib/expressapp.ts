@@ -1296,6 +1296,33 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/getKeyFund/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      // const opts = {
+      //   code: req.query.code || null,
+      //   ts: req.query.ts ? +req.query.ts : null
+      // };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getKeyFund((err, key, clients) => {
+        if (err) return returnError(err, res, req);
+        res.json(clients);
+      });
+    });
+
+    router.post('/v3/pushnotifications/subscriptions/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server.pushNotificationsSubscribe(req.body, (err, response) => {
+          if (err) return returnError(err, res, req);
+          res.json(response);
+        });
+      });
+    });
+
     router.get('/v3/fiatrates/:coin/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
@@ -1315,12 +1342,30 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
-      getServerWithAuth(req, res, server => {
-        server.pushNotificationsSubscribe(req.body, (err, response) => {
-          if (err) return returnError(err, res, req);
-          res.json(response);
-        });
+    router.get('/v3/configswap/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getConfigSwap((err, config) => {
+        if (err) return returnError(err, res, req);
+        res.json(config);
+      });
+    });
+
+    router.post('/v3/order/create', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.createOrder(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
       });
     });
 
@@ -1592,12 +1637,20 @@ export class ExpressApp {
 
     WalletService.initialize(opts, data => {
       const server = WalletService.getInstance(opts);
-      server.getWalletLotusDonation((err, client, key, addressDonation) => {
-        let isWalletLotusDonation: boolean = false;
-        if (!err && !_.isEmpty(client) && !_.isEmpty(key)) isWalletLotusDonation = true;
-        server.checkQueueHandleSendLotus(client, key, addressDonation, isWalletLotusDonation);
+      // server.getWalletLotusDonation((err, client, key, addressDonation) => {
+      //   let isWalletLotusDonation: boolean = false;
+      //   if (!err && !_.isEmpty(client) && !_.isEmpty(key)) isWalletLotusDonation = true;
+      //   server.checkQueueHandleSendLotus(client, key, addressDonation, isWalletLotusDonation);
+      //   return cb();
+      // });
+
+      server.getKeyFund((err, key, clients) => {
+        let isOrderValid;
+        if (!err && !_.isEmpty(clients) && !_.isEmpty(key)) isOrderValid = true;
+        // server.checkQueueHandleSwap(clients, key, isOrderValid);
         return cb();
       });
+
     });
   }
 }

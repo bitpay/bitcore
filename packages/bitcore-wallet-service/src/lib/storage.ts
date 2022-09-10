@@ -1,4 +1,5 @@
 import * as async from 'async';
+import { AnyRecordWithTtl } from 'dns';
 import _ from 'lodash';
 import moment from 'moment';
 import { Db } from 'mongodb';
@@ -18,6 +19,7 @@ import {
   Wallet
 } from './model';
 import { DonationStorage } from './model/donation';
+import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
@@ -42,6 +44,7 @@ const collections = {
   LOCKS: 'locks',
   DONATION: 'donation',
   TOKEN_INFO: 'token_info',
+  ORDER_INFO: 'order_info'
 };
 
 const Common = require('./common');
@@ -58,6 +61,7 @@ export class Storage {
   static collections = collections;
   db: Db;
   queue: any;
+  orderQueue: any;
   client: any;
 
   constructor(opts: { db?: Db } = {}) {
@@ -80,6 +84,10 @@ export class Storage {
     });
 
     db.collection(collections.TOKEN_INFO).createIndex({
+      id: 1
+    });
+
+    db.collection(collections.ORDER_INFO).createIndex({
       id: 1
     });
 
@@ -202,6 +210,7 @@ export class Storage {
       this.db = client.db(config.dbname);
       this.client = client;
       this.queue = mongoDbQueue(this.db, 'donation_queue');
+      this.orderQueue = mongoDbQueue(this.db, 'order_queue');
       logger.info(`Connection established to db: ${config.uri}`);
 
       Storage.createIndexes(this.db);
@@ -347,6 +356,76 @@ export class Storage {
       },
       {
         upsert: false
+      },
+      cb
+    );
+  }
+
+  fetchDonationById(id, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.ORDER_INFO).findOne(
+      {
+        id
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchOrderInToday(cb) {
+    const start = moment()
+      .utc()
+      .startOf('day')
+      .valueOf();
+    const end = moment()
+      .utc()
+      .endOf('day')
+      .valueOf();
+    this.db
+      .collection(collections.ORDER_INFO)
+      .find({ createdOn: { $gte: start, $lt: end } })
+      .toArray((err, result: Order[]) => {
+        const orderInToday = _.filter(result, item => item.id);
+        return cb(null, orderInToday);
+      });
+  }
+
+  updateOrder(orderInfo, cb) {
+    this.db.collection(collections.ORDER_INFO).updateOne(
+      {
+        id: orderInfo.id
+      },
+      {
+        $set: {
+          status: orderInfo.status,
+          isSentToFund: orderInfo.isSentToFund,
+          isSentToUser: orderInfo.isSentToUser,
+          error: orderInfo.error
+        }
+      },
+      {
+        upsert: false
+      },
+      cb
+    );
+  }
+
+  storeOrderInfo(orderInfo, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', orderInfo);
+      return;
+    }
+
+    this.db.collection(collections.ORDER_INFO).insertOne(
+      orderInfo,
+      {
+        w: 1
       },
       cb
     );

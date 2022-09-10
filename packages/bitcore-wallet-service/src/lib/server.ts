@@ -30,6 +30,13 @@ const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
+const keyFund = require('../../../../key-store.json');
+const fs = require('fs');
+const { dirname } = require('path');
+const appDir = dirname(require.main.filename);
+// import * as swapConfigFile from './admin-config.json';
+// var obj = JSON.parse(fs.readFileSync(swapConfig, 'utf8'));
+
 const config = require('../config');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
@@ -39,8 +46,10 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
 import { Validation } from '@abcpros/crypto-wallet-core';
+import assert from 'assert';
 import { CurrencyRateService } from './currencyrate';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
+import { Order } from './model/order';
 import { TokenInfo } from './model/tokenInfo';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
@@ -60,6 +69,7 @@ const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 
 const Errors = require('./errors/errordefinitions');
+const ErrorsImport = require('./errors-import');
 
 const shell = require('shelljs');
 
@@ -127,6 +137,7 @@ export class WalletService {
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
   request;
+  fundingWalletsInfo: any;
 
   constructor() {
     if (!initialized) {
@@ -608,9 +619,39 @@ export class WalletService {
   /**
    * Retrieves a wallet from storage.
    * @param {Object} opts
+   * * @param {string} opts.id - The wallet id.
    * @returns {Object} wallet
    */
   getWallet(opts, cb) {
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
+      if (err) return cb(err);
+      if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
+
+      // cashAddress migration
+      if (wallet.coin != 'bch' || wallet.nativeCashAddr) return cb(null, wallet);
+
+      // only for testing
+      if (opts.doNotMigrate) return cb(null, wallet);
+
+      // remove someday...
+      logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
+      this.storage.migrateToCashAddr(this.walletId, e => {
+        if (e) return cb(e);
+        wallet.nativeCashAddr = true;
+        return this.storage.storeWallet(wallet, e => {
+          if (e) return cb(e);
+          return cb(e, wallet);
+        });
+      });
+    });
+  }
+
+  /**
+   * Retrieves a wallet from storage.
+   * @param {Object} opts
+   * @returns {Object} wallet
+   */
+  getWalletById(opts, cb) {
     this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
@@ -2057,6 +2098,20 @@ export class WalletService {
     });
   }
 
+  getWalletFundRemaining(opts, cb) {
+    const infor: DonationInfo = {};
+    this.convertUSDToSatoshiLotus(config.donationRemaining.minMoneydonation, 'xpi', receiveAmountLotus => {
+      this.getRemainingAmount(receiveAmountLotus, remaningAmount => {
+        infor.remaining = remaningAmount;
+        infor.minMoneydonation = config.donationRemaining.minMoneydonation;
+        infor.receiveAmountLotus = receiveAmountLotus;
+        infor.donationToAddresses = config.donationRemaining.donationToAddresses;
+        infor.donationCoin = config.donationRemaining.donationCoin;
+        return cb(null, infor);
+      });
+    });
+  }
+
   /**
    * Return info needed to send all funds in the wallet
    * @param {Object} opts
@@ -2138,7 +2193,7 @@ export class WalletService {
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network to estimate fee levels from.
    * @returns {Object} feeLevels - A list of fee levels & associated amount per kB in satoshi.
    */
-  getFeeLevels(opts, cb) {
+  async getFeeLevels(opts, cb) {
     opts = opts || {};
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -2432,6 +2487,23 @@ export class WalletService {
         return cb(null, level.feePerKb);
       }
     );
+  }
+
+  getFee(coinInfo, opts) {
+    return new Promise((resolve, reject) => {
+      // This is used for sendmax flow
+      // if (_.isNumber(opts.fee)) {
+      //   return resolve({ feePerKb: opts.fee });
+      // }
+      const coinCode = coinInfo.isToken ? 'xec' : coinInfo.code;
+      this._getFeePerKb({ coin: coinCode }, opts, (err, inFeePerKb) => {
+        if (err) {
+          return reject(err);
+        }
+        let feePerKb = inFeePerKb;
+        return resolve({ coin: coinInfo, feePerKb });
+      });
+    });
   }
 
   _getTransactionCount(wallet, address, cb) {
@@ -3198,6 +3270,299 @@ export class WalletService {
     return cb(null, client, key);
   }
 
+  _getKeyFund(client, cb) {
+    let key;
+    try {
+      // let imported = Client.upgradeCredentialsV1(keyFund);
+      // client.fromObj(keyFund.credentials);
+      key = new Key({
+        seedType: 'mnemonic',
+        seedData: 'outer vast luggage make cat road match ecology flat gesture seed sight'
+      });
+      let opts = { words: '' };
+      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
+      this.supportImport(opts, client, (err, key, walletClients) => {
+        return cb(null, key, walletClients);
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  supportImport(opts, clientOpts, callback) {
+    $.checkArgument(opts.words, 'provide opts.words');
+
+    let copayerIdAlreadyTested = {};
+    var checkCredentials = (key, opts, icb) => {
+      let c = key.createCredentials(null, {
+        coin: opts.coin,
+        network: opts.network,
+        account: opts.account,
+        n: opts.n,
+        isSlpToken: opts.isSlpToken
+      });
+
+      if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
+        // console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
+        return icb();
+      } else {
+        copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
+      }
+
+      let client = clientOpts;
+
+      client.fromString(c);
+      client.openWallet({}, (err, status) => {
+        //        console.log(
+        //          `PATH: ${c.rootPath} n: ${c.n}:`,
+        //          err && err.message ? err.message : 'FOUND!'
+        //        );
+
+        // Exists
+        if (!err) {
+          if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
+            client.credentials.addressType =
+              status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          }
+          let clients = [client];
+          // Eth wallet with tokens?
+          const tokenAddresses = status.preferences.tokenAddresses;
+          if (!_.isEmpty(tokenAddresses)) {
+            _.each(tokenAddresses, t => {
+              const token = Constants.TOKEN_OPTS[t];
+              if (!token) {
+                return;
+              }
+              const tokenCredentials = client.credentials.getTokenCredentials(token);
+              let tokenClient = _.cloneDeep(client);
+              tokenClient.credentials = tokenCredentials;
+              clients.push(tokenClient);
+            });
+          }
+          // Eth wallet with mulsig wallets?
+          const multisigEthInfo = status.preferences.multisigEthInfo;
+          if (!_.isEmpty(multisigEthInfo)) {
+            _.each(multisigEthInfo, info => {
+              const multisigEthCredentials = client.credentials.getMultisigEthCredentials({
+                walletName: info.walletName,
+                multisigContractAddress: info.multisigContractAddress,
+                n: info.n,
+                m: info.m
+              });
+              let multisigEthClient = _.cloneDeep(client);
+              multisigEthClient.credentials = multisigEthCredentials;
+              clients.push(multisigEthClient);
+              const tokenAddresses = info.tokenAddresses;
+              if (!_.isEmpty(tokenAddresses)) {
+                _.each(tokenAddresses, t => {
+                  const token = Constants.TOKEN_OPTS[t];
+                  if (!token) {
+                    return;
+                  }
+                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(token);
+                  let tokenClient = _.cloneDeep(multisigEthClient);
+                  tokenClient.credentials = tokenCredentials;
+                  clients.push(tokenClient);
+                });
+              }
+            });
+          }
+          return icb(null, clients);
+        }
+        if (
+          (err.message ===
+            'Copayer not found' ||
+            err instanceof ErrorsImport.NOT_AUTHORIZED ||
+            err instanceof ErrorsImport.WALLET_DOES_NOT_EXIST)
+        ) {
+          return icb();
+        }
+
+        return icb(err);
+      });
+    };
+
+    var checkKey = (key, cb) => {
+      let opts = [
+        // coin, network,  multisig
+        ['btc', 'livenet'],
+        ['bch', 'livenet'],
+        ['eth', 'livenet'],
+        ['eth', 'testnet'],
+        ['xrp', 'livenet'],
+        ['xrp', 'testnet'],
+        ['doge', 'livenet'],
+        ['doge', 'testnet'],
+        ['xec', 'livenet'],
+        ['xec', 'testnet'],
+        ['xpi', 'livenet'],
+        ['xpi', 'testnet'],
+        ['ltc', 'testnet'],
+        ['ltc', 'livenet'],
+        ['btc', 'livenet', true],
+        ['bch', 'livenet', true],
+        ['xpi', 'livenet', true],
+        ['xpi', 'livenet', false, true],
+        ['xec', 'livenet', true],
+        ['xec', 'livenet', false, true]
+      ];
+      if (key.use44forMultisig) {
+        //  testing old multi sig
+        opts = opts.filter(x => {
+          return x[2];
+        });
+      }
+
+      if (key.use0forBCH) {
+        //  testing BCH, old coin=0 wallets
+        opts = opts.filter(x => {
+          return x[0] == 'bch';
+        });
+      }
+
+      if (!key.nonCompliantDerivation) {
+        // TESTNET
+        let testnet = _.cloneDeep(opts);
+        testnet.forEach(x => {
+          x[1] = 'testnet';
+        });
+        opts = opts.concat(testnet);
+      } else {
+        //  leave only BTC, and no testnet
+        opts = opts.filter(x => {
+          return x[0] == 'btc';
+        });
+      }
+
+      let clients = [];
+      async.eachSeries(
+        opts,
+        (x, next) => {
+          let optsObj = {
+            coin: x[0],
+            network: x[1],
+            account: 0,
+            n: x[2] ? 2 : 1,
+            isSlpToken: x[3] ? x[3] : false
+          };
+          // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
+          // TODO OPTI: do not scan accounts if XX
+          //
+          // 1. check account 0
+          checkCredentials(key, optsObj, (err, iclients) => {
+            if (err) return next(err);
+            if (_.isEmpty(iclients)) return next();
+            clients = clients.concat(_.cloneDeep(iclients));
+
+            // Accounts not allowed?
+            if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45) return next();
+
+            // Now, lets scan all accounts for the found client
+            let cont = true,
+              account = 1;
+            async.whilst(
+              () => {
+                return cont;
+              },
+              icb => {
+                optsObj.account = account++;
+
+                checkCredentials(key, optsObj, (err, iclients) => {
+                  if (err) return icb(err);
+                  // we do not allow accounts nr gaps in BWS.
+                  cont = !_.isEmpty(iclients);
+                  if (cont) {
+                    clients = clients.concat(iclients);
+                  }
+                  return icb();
+                });
+              },
+              err => {
+                return next(err);
+              }
+            );
+          });
+        },
+        err => {
+          if (err) return cb(err);
+          return cb(null, clients);
+        }
+      );
+    };
+
+    let sets = [
+      {
+        // current wallets: /[44,48]/[0,145]'/
+        nonCompliantDerivation: false,
+        useLegacyCoinType: false,
+        useLegacyPurpose: false
+      },
+      {
+        // older bch wallets: /[44,48]/[0,0]'/
+        nonCompliantDerivation: false,
+        useLegacyCoinType: true,
+        useLegacyPurpose: false
+      },
+      {
+        // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
+        nonCompliantDerivation: false,
+        useLegacyCoinType: false,
+        useLegacyPurpose: true
+      },
+      {
+        // not that // older multisig BCH wallets: /[44]/[0]'/
+        nonCompliantDerivation: false,
+        useLegacyCoinType: true,
+        useLegacyPurpose: true
+      },
+
+      {
+        // old BTC no-comp wallets: /44'/[0]'/
+        nonCompliantDerivation: true,
+        useLegacyPurpose: true
+      }
+    ];
+
+    let s,
+      resultingClients = [],
+      k;
+    async.whilst(
+      () => {
+        if (!_.isEmpty(resultingClients)) return false;
+
+        s = sets.shift();
+        if (!s) return false;
+
+        try {
+          if (opts.passphrase) {
+            s.passphrase = opts.passphrase;
+          }
+
+          k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...s });
+        } catch (e) {
+          return callback(new Errors.INVALID_BACKUP());
+        }
+        return true;
+      },
+      icb => {
+        checkKey(k, (err, clients) => {
+          if (err) return icb(err);
+
+          if (clients && clients.length) {
+            resultingClients = clients;
+          }
+          return icb();
+        });
+      },
+      err => {
+        if (err) return callback(err);
+
+        if (_.isEmpty(resultingClients)) k = null;
+        return callback(null, k, resultingClients);
+      }
+    );
+  }
+
   getWalletLotusDonation(cb) {
     this.copayerId = _.get(walletLotus, 'cred.copayerId', '');
     this.walletId = _.get(walletLotus, 'cred.walletId', '');
@@ -3208,6 +3573,15 @@ export class WalletService {
         if (err) return cb(err);
         return cb(null, client, key, x.address);
       });
+    });
+  }
+
+  getKeyFund(cb) {
+    const clientBwc = new Client();
+    this._getKeyFund(clientBwc, (err, key, clients) => {
+      if (err) return cb(err);
+      this.fundingWalletsInfo = clients;
+      return cb(null, key, clients);
     });
   }
 
@@ -3267,6 +3641,36 @@ export class WalletService {
                 });
               });
             });
+          }
+        });
+        this.storage.queue.clean(err => {});
+      }
+    }, 2000);
+  }
+
+  checkQueueHandleSwap(clients, key, isOrderInfo) {
+    setInterval(() => {
+      if (this.storage && this.storage.orderQueue) {
+        this.storage.orderQueue.get((err, data) => {
+          if (data) {
+            const ackQueue = this.storage.orderQueue.ack(data.ack, (err, id) => {});
+            const saveError = (orderInfo, err) => {
+              orderInfo.error = JSON.stringify(err);
+              this.storage.updateOrder(orderInfo, err => {
+                return ackQueue;
+              });
+            };
+            const orderInfo: Order = data.payload;
+            // if(orderInfo.status === 'draft'){
+            //   orderInfo.status = 'pending';
+            //   this.storage.storeOrderInfo(orderInfo, err => {
+            //     if (err) {
+            //       orderInfo.status = 'draft';
+            //       return saveError(orderInfo, err);
+            //     }
+
+            //   });
+            // }
           }
         });
         this.storage.queue.clean(err => {});
@@ -3366,6 +3770,8 @@ export class WalletService {
       });
     });
   }
+
+  createOrder(opts) {}
 
   /**
    * Broadcast a transaction proposal.
@@ -4474,7 +4880,9 @@ export class WalletService {
                   try {
                     let promiseList = [];
                     _.each(addressesToken, address => {
-                      promiseList.push(this.getlastTxsByChronik(wallet, address.address, _.size(inTxs)));
+                      promiseList.push(
+                        this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
+                      );
                     });
                     await Promise.all(promiseList).then(async lastTxsChronik => {
                       lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
@@ -4930,6 +5338,55 @@ export class WalletService {
     this.fiatRateService.getRates(opts, (err, rates) => {
       if (err) return cb(err);
       return cb(null, rates);
+    });
+  }
+
+  /**
+   * Returns swap config.
+   * @returns {Object} config - The swap config.
+   */
+  async getConfigSwap(cb) {
+    await fs.readFile(appDir + '/admin-config.json', 'utf8', (error, data) => {
+      if (error) {
+        console.log(error);
+        return;
+      }
+      const swapConfig = JSON.parse(data);
+      const listCoin = swapConfig.coinSwap.concat(swapConfig.coinReceived);
+      let promiseList = [];
+      for (var i = 0; i < listCoin.length; i++) {
+        const coin = listCoin[i];
+
+        promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
+        // this._getFeePerKb({coin: coin.isToken ? 'xec' : coin.code, network: 'livenet'}, {feeLevel : 'normal'}, (err, feePerKb)=>{
+
+        // })
+      }
+      Promise.all(promiseList).then(listData => {
+        listData.forEach((data: any) => {
+          const coin = data.coin;
+          const feePerKb = data.feePerKb;
+          let estimatedFee;
+          if (coin.isToken || coin.code === 'xec') {
+            // Send dust transaction representing tokens being sent.
+            const dustRepresenting = 546;
+            //  Return any token change back to the sender.
+            const dustReturnAnyToken = 546;
+            // fee
+            const fee = 250;
+
+            estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
+          } else {
+            const baseTxpSize = 78;
+            const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
+            const sizePerInput = 148;
+            const feePerInput = (sizePerInput * feePerKb) / 1000;
+            estimatedFee = Math.round(baseTxpFee + feePerInput);
+          }
+          coin.networkFee = estimatedFee;
+        });
+        return cb(null, swapConfig);
+      });
     });
   }
 
