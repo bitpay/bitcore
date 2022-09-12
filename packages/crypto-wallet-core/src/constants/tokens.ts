@@ -12,8 +12,8 @@ export let TOKEN_OPTS = {
     address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   },
   '0x8e870d67f660d95d5be530380d0ec0bd388289e1': {
-    name: 'Paxos Standard',
-    symbol: 'PAX',
+    name: 'Paxos Dollar',
+    symbol: 'USDP',
     decimal: 18,
     address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1'
   },
@@ -40,5 +40,17 @@ export let TOKEN_OPTS = {
     decimal: 18,
     name: 'SHIBA INU',
     symbol: 'SHIB'
+  },
+  '0x4d224452801ACEd8B2F0aebE155379bb5D594381': {
+    address: '0x4d224452801ACEd8B2F0aebE155379bb5D594381',
+    decimal: 18,
+    name: 'ApeCoin',
+    symbol: 'APE'
+  },
+  '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c': {
+    address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c',
+    decimal: 18,
+    name: 'Euro Coin',
+    symbol: 'EUROC'
   }
 };

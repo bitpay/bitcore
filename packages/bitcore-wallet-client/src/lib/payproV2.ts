@@ -207,6 +207,7 @@ export class PayProV2 {
     payload,
     unsafeBypassValidation = false
   }) {
+    if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -217,8 +218,8 @@ export class PayProV2 {
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
-        chain,
-        currency,
+        chain: chain?.toUpperCase(),
+        currency: currency?.toUpperCase(),
         payload
       })
     });
@@ -248,6 +249,7 @@ export class PayProV2 {
     unsignedTransactions,
     unsafeBypassValidation = false
   }) {
+    if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -258,8 +260,8 @@ export class PayProV2 {
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
-        chain,
-        currency,
+        chain: chain?.toUpperCase(),
+        currency: currency?.toUpperCase(),
         transactions: unsignedTransactions
       })
     });
@@ -290,6 +292,7 @@ export class PayProV2 {
     unsafeBypassValidation = false,
     bpPartner
   }) {
+    if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await this._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -302,8 +305,8 @@ export class PayProV2 {
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
-        chain,
-        currency,
+        chain: chain?.toUpperCase(),
+        currency: currency?.toUpperCase(),
         transactions: signedTransactions
       })
     });
@@ -460,7 +463,8 @@ export class PayProV2 {
     }
 
     if (responseData.chain) {
-      payProDetails.coin = responseData.chain.toLowerCase();
+      payProDetails.coin = responseData.chain?.toLowerCase(); // TODO responseData.coin ???
+      payProDetails.chain = responseData.chain?.toLowerCase();
     }
 
     if (responseData.expires) {
@@ -483,7 +487,7 @@ export class PayProV2 {
 
       if (payProDetails.requiredFeeRate) {
         if (
-          payProDetails.requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]
+          payProDetails.requiredFeeRate > MAX_FEE_PER_KB[payProDetails.chain]
         ) {
           throw new Error('Fee rate too high:' + payProDetails.requiredFeeRate);
         }

@@ -596,7 +596,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       signatures = [];
       for (const rawTx of tx) {
         const signed = CWC.Transactions.getSignature({
-          chain,
+          chain: chain.toUpperCase(),
           tx: rawTx,
           key: { privKey: privKey.toString('hex') },
         });

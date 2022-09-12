@@ -243,7 +243,7 @@ describe('ETH Chain State Provider', function() {
         await ETH.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'provider\' of undefined');
+        expect(err.message).to.equal('Cannot read property \'providers\' of undefined');
       }
     });
 

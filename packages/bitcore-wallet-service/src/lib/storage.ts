@@ -834,7 +834,7 @@ export class Storage {
       });
   }
 
-  fetchAddressByCoin(coin, address, cb) {
+  fetchAddressByChain(chain, address, cb) {
     if (!this.db) return cb();
 
     this.db
@@ -847,7 +847,7 @@ export class Storage {
         if (!result || _.isEmpty(result)) return cb();
         if (result.length > 1) {
           result = _.find(result, address => {
-            return coin == (address.coin || 'btc');
+            return chain == (address.chain || address.coin || 'btc');
           });
         } else {
           result = _.head(result);
@@ -1571,7 +1571,7 @@ export class Storage {
 
   storeGlobalCache(key, values, cb) {
     const now = Date.now();
-    this.db.collection(collections.CACHE).replaceOne(
+    this.db.collection(collections.CACHE).updateOne(
       {
         key,
         walletId: null,

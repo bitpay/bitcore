@@ -397,7 +397,14 @@ describe('Fiat rate service', function() {
       }, {
         code: 'EUR',
         rate: 0.00003276
-      }]
+      }];
+      var ape = [{
+        code: 'USD',
+        rate: 6.66
+      }, {
+        code: 'EUR',
+        rate: 6.64
+      }];
 
       request.get.withArgs({
         url: 'https://bitpay.com/api/rates/BTC',
@@ -427,6 +434,10 @@ describe('Fiat rate service', function() {
         url: 'https://bitpay.com/api/rates/SHIB',
         json: true
       }).yields(null, null, shib);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/APE',
+        json: true
+      }).yields(null, null, ape);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -483,9 +494,17 @@ describe('Fiat rate service', function() {
                       }, function(err, res) {
                         should.not.exist(err);
                         res.fetchedOn.should.equal(100);
-                        res.rate.should.equal(0.00003678);  
-                        clock.restore();
-                        done();
+                        res.rate.should.equal(0.00003678);
+                        service.getRate({
+                          code: 'USD',
+                          coin: 'ape'
+                        }, function(err, res) {
+                          should.not.exist(err);
+                          res.fetchedOn.should.equal(100);
+                          res.rate.should.equal(6.66);
+                          clock.restore();
+                          done();
+                        });
                       })
                     });
                   });
@@ -511,7 +530,7 @@ describe('Fiat rate service', function() {
     it('should get the rates of all coins supported', function(done) {
       service.getRates({}, function(err, res) {
         should.not.exist(err);
-        Object.keys(res).length.should.equal( Object.keys(Constants.COINS).length)
+        Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length)
         done();
       });
     });
@@ -520,7 +539,7 @@ describe('Fiat rate service', function() {
           code: 'EUR'
         }, function(err, res) {
           should.not.exist(err);
-          Object.keys(res).length.should.equal( Object.keys(Constants.COINS).length)
+          Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length)
           Object.keys(res).forEach(key=>{
             res[key].length.should.equal(1);
           })

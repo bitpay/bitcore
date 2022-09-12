@@ -445,12 +445,12 @@ export class API extends EventEmitter {
     return cb(null, privateKeyWif);
   }
 
-  getBalanceFromPrivateKey(privateKey, coin, cb) {
-    if (_.isFunction(coin)) {
-      cb = coin;
-      coin = 'btc';
+  getBalanceFromPrivateKey(privateKey, chain, cb) {
+    if (_.isFunction(chain)) {
+      cb = chain;
+      chain = 'btc';
     }
-    var B = Bitcore_[coin];
+    var B = Bitcore_[chain];
 
     var privateKey = new B.PrivateKey(privateKey);
     var address = privateKey.publicKey.toAddress().toString(true);
@@ -469,16 +469,16 @@ export class API extends EventEmitter {
   buildTxFromPrivateKey(privateKey, destinationAddress, opts, cb) {
     opts = opts || {};
 
-    var coin = opts.coin || 'btc';
+    var chain = opts.chain?.toLowerCase() || Utils.getChain(opts.coin); // getChain -> backwards compatibility
     var signingMethod = opts.signingMethod || 'ecdsa';
 
-    if (!_.includes(Constants.COINS, coin))
-      return cb(new Error('Invalid coin'));
+    if (!_.includes(Constants.CHAINS, chain))
+      return cb(new Error('Invalid chain'));
 
-    if (coin == 'eth')
-      return cb(new Error('ETH not supported for this action'));
+    if (Constants.EVM_CHAINS.includes(chain))
+      return cb(new Error('EVM based chains not supported for this action'));
 
-    var B = Bitcore_[coin];
+    var B = Bitcore_[chain];
     var privateKey = B.PrivateKey(privateKey);
     var address = privateKey.publicKey.toAddress().toString(true);
 
@@ -676,7 +676,9 @@ export class API extends EventEmitter {
       txp.signingMethod,
       'Failed state: txp.signingMethod undefined at _addSignaturesToBitcoreTxBitcoin'
     );
-    const bitcore = Bitcore_[txp.coin];
+
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+    const bitcore = Bitcore_[chain];
     if (signatures.length != txp.inputs.length)
       throw new Error('Number of signatures does not match number of inputs');
 
@@ -705,23 +707,26 @@ export class API extends EventEmitter {
   }
 
   _addSignaturesToBitcoreTx(txp, t, signatures, xpub) {
-    const { coin, network } = txp;
-    const chain = Utils.getChain(coin);
-    switch (chain) {
-      case 'XRP':
-      case 'ETH':
+    const { chain, network } = txp;
+    switch (chain.toLowerCase()) {
+      case 'xrp':
+      case 'eth':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
           const signed = CWC.Transactions.applySignature({
-            chain,
+            chain: chain.toUpperCase(),
             tx: unsignedTxs[index],
             signature: signatures[index]
           });
           signedTxs.push(signed);
 
           // bitcore users id for txid...
-          t.id = CWC.Transactions.getHash({ tx: signed, chain, network });
+          t.id = CWC.Transactions.getHash({
+            tx: signed,
+            chain: chain.toUpperCase(),
+            network
+          });
         }
         t.uncheckedSerialize = () => signedTxs;
         t.serialize = () => signedTxs;
@@ -828,16 +833,14 @@ export class API extends EventEmitter {
   // /**
   // * Get current fee levels for the specified network
   // *
-  // * @param {string} coin - 'btc' (default) or 'bch'
+  // * @param {string} chain - 'btc' (default) or 'bch'
   // * @param {string} network - 'livenet' (default) or 'testnet'
   // * @param {Callback} cb
   // * @returns {Callback} cb - Returns error or an object with status information
   // */
-  getFeeLevels(coin, network, cb) {
-    $.checkArgument(coin || _.includes(Constants.COINS, coin));
+  getFeeLevels(chain, network, cb) {
+    $.checkArgument(chain || _.includes(Constants.CHAINS, chain));
     $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
-
-    const chain = Utils.getChain(coin).toLowerCase();
 
     this.request.get(
       '/v2/feelevels/?coin=' +
@@ -899,7 +902,9 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    if (!_.includes(Constants.COINS, coin))
+
+    // checking in chains for simplicity
+    if (!_.includes(Constants.CHAINS, coin))
       return cb(new Error('Invalid coin'));
 
     var network = opts.network || 'livenet';
@@ -992,7 +997,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    if (!_.includes(Constants.COINS, coin))
+    // checking in chains for simplicity
+    if (!_.includes(Constants.CHAINS, coin))
       return cb(new Error('Invalid coin'));
 
     try {
@@ -1723,8 +1729,8 @@ export class API extends EventEmitter {
   getPayProV2(txp) {
     if (!txp.payProUrl || this.doNotVerifyPayPro) return Promise.resolve();
 
-    const chain = Utils.getChain(txp.coin);
-    const currency = txp.coin.toUpperCase();
+    const chain = txp.chain || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+    const currency = txp.coin;
     const payload = {
       address: txp.from
     };
@@ -1961,7 +1967,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    if (!_.includes(Constants.COINS, coin))
+    // checking in chains for simplicity
+    if (!_.includes(Constants.CHAINS, coin))
       return cb(new Error('Invalid coin'));
 
     var publicKeyRing = JSON.parse(unencryptedPkr);
@@ -2087,8 +2094,8 @@ export class API extends EventEmitter {
 
           this._applyAllSignatures(txp, t);
 
-          const chain = Utils.getChain(txp.coin);
-          const currency = txp.coin.toUpperCase();
+          const chain = txp.chain || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+          const currency = txp.coin;
           const rawTxUnsigned = t_unsigned.uncheckedSerialize();
           const serializedTx = t.serialize({
             disableSmallFees: true,
@@ -2521,14 +2528,18 @@ export class API extends EventEmitter {
 
   // /**
   // * Returns nonce.
-  // * @param {Object} opts - coin, network
+  // * @param {Object} opts - chain, coin, network
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
   getNonce(opts, cb) {
-    $.checkArgument(opts.coin == 'eth', 'Invalid coin: must be "eth"');
+    $.checkArgument(
+      Constants.EVM_CHAINS.includes(opts.chain),
+      'Invalid chain: must be EVM based'
+    );
 
     var qs = [];
     qs.push(`coin=${opts.coin}`);
+    qs.push(`chain=${opts.chain}`);
     qs.push(`network=${opts.network}`);
 
     const url = `/v1/nonce/${opts.address}?${qs.join('&')}`;
@@ -2570,6 +2581,7 @@ export class API extends EventEmitter {
   // /**
   // * Returns contract info. (name symbol precision)
   // * @param {string} opts.tokenAddress - token contract address
+  // * @param {string} opts.chain - chain name, defaults to 'eth'
   // * @return {Callback} cb - Return error (if exists) instantiation info
   // */
   getTokenContractInfo(opts, cb) {
@@ -2809,6 +2821,7 @@ export class API extends EventEmitter {
     var checkCredentials = (key, opts, icb) => {
       let c = key.createCredentials(null, {
         coin: opts.coin,
+        chain: opts.coin, // chain === coin for stored clients
         network: opts.network,
         account: opts.account,
         n: opts.n
@@ -2875,8 +2888,10 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials =
-                client.credentials.getTokenCredentials(token);
+              const tokenCredentials = client.credentials.getTokenCredentials(
+                token,
+                'eth'
+              );
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2909,7 +2924,10 @@ export class API extends EventEmitter {
                   }
                   log.info(`Importing multisig token: ${token.name}`);
                   const tokenCredentials =
-                    multisigEthClient.credentials.getTokenCredentials(token);
+                    multisigEthClient.credentials.getTokenCredentials(
+                      token,
+                      'eth'
+                    );
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);

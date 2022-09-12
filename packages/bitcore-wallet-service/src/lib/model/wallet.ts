@@ -35,6 +35,7 @@ export interface IWallet {
   copayers: string[];
   pubKey: string;
   coin: string;
+  chain: string;
   network: string;
   derivationStrategy: string;
   addressType: string;
@@ -62,6 +63,7 @@ export class Wallet {
   copayers: Array<Copayer>;
   pubKey: string;
   coin: string;
+  chain: string;
   network: string;
   derivationStrategy: string;
   addressType: string;
@@ -84,7 +86,7 @@ export class Wallet {
 
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
+    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.CHAINS)); // checking in chains for simplicity
     $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
 
     x.version = '1.0.0';
@@ -100,6 +102,7 @@ export class Wallet {
     x.copayers = [];
     x.pubKey = opts.pubKey;
     x.coin = opts.coin;
+    x.chain = opts.chain || ChainService.getChain(x.coin);
     x.network = opts.network;
     x.derivationStrategy = opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = opts.addressType || Constants.SCRIPT_TYPES.P2SH;
@@ -117,7 +120,7 @@ export class Wallet {
     x.beAuthPublicKey2 = null;
 
     // x.nativeCashAddr opts is only for testing
-    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.coin == 'bch' ? true : null) : opts.nativeCashAddr;
+    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
 
     return x;
   }
@@ -142,6 +145,7 @@ export class Wallet {
     });
     x.pubKey = obj.pubKey;
     x.coin = obj.coin || Defaults.COIN;
+    x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
     x.network = obj.network;
     if (!x.network) {
       x.network = obj.isTestnet ? 'testnet' : 'livenet';
@@ -184,14 +188,14 @@ export class Wallet {
     return this.n > 1;
   }
 
-  isUTXOCoin() {
-    return !!Constants.UTXO_COINS[this.coin.toUpperCase()];
+  isUTXOChain() {
+    return !!Constants.UTXO_CHAINS[this.chain.toUpperCase()];
   }
 
   updateBEKeys() {
     $.checkState(this.isComplete(), 'Failed state: wallet incomplete at <updateBEKeys()>');
 
-    const chain = ChainService.getChain(this.coin).toLowerCase();
+    const chain = this.chain || ChainService.getChain(this.coin); // getChain -> backwards compatibility
     const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
@@ -275,6 +279,7 @@ export class Wallet {
       this.coin,
       this.network,
       isChange,
+      this.chain,
       !this.nativeCashAddr,
       escrowInputs
     );
@@ -295,7 +300,8 @@ export class Wallet {
       this.m,
       this.coin,
       this.network,
-      next.isChange
+      next.isChange,
+      this.chain
     );
     return address;
   }
