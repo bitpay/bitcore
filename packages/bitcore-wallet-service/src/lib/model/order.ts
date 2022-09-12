@@ -27,6 +27,7 @@ export class Order {
   amountTo: string;
   isToToken: boolean;
   addressUserReceive: string;
+  adddressUserDeposit: string;
   status: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
@@ -51,7 +52,8 @@ export class Order {
     x.amountTo = opts.amountTo;
     x.isToToken = opts.isToToken;
     x.addressUserReceive = opts.addressUserReceive;
-    x.status = 'draft';
+    x.adddressUserDeposit = null;
+    x.status = 'pending';
     x.isSentToFund = false;
     x.isSentToUser = false;
     x.endedOn = null;

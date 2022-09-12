@@ -30,7 +30,7 @@ const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
-const keyFund = require('../../../../key-store.json');
+// const keyFund = require('../../../../key-store.json');
 const fs = require('fs');
 const { dirname } = require('path');
 const appDir = dirname(require.main.filename);
@@ -49,8 +49,8 @@ import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
 import { CurrencyRateService } from './currencyrate';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
-import { Order } from './model/order';
 import { TokenInfo } from './model/tokenInfo';
+import { Order } from './model/order';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -69,7 +69,6 @@ const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 
 const Errors = require('./errors/errordefinitions');
-const ErrorsImport = require('./errors-import');
 
 const shell = require('shelljs');
 
@@ -137,7 +136,8 @@ export class WalletService {
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
   request;
-  fundingWalletsInfo: any;
+  fundingWalletClients: any;
+  receivingWalletClients: any;
 
   constructor() {
     if (!initialized) {
@@ -623,35 +623,6 @@ export class WalletService {
    * @returns {Object} wallet
    */
   getWallet(opts, cb) {
-    this.storage.fetchWallet(this.walletId, (err, wallet) => {
-      if (err) return cb(err);
-      if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
-
-      // cashAddress migration
-      if (wallet.coin != 'bch' || wallet.nativeCashAddr) return cb(null, wallet);
-
-      // only for testing
-      if (opts.doNotMigrate) return cb(null, wallet);
-
-      // remove someday...
-      logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
-      this.storage.migrateToCashAddr(this.walletId, e => {
-        if (e) return cb(e);
-        wallet.nativeCashAddr = true;
-        return this.storage.storeWallet(wallet, e => {
-          if (e) return cb(e);
-          return cb(e, wallet);
-        });
-      });
-    });
-  }
-
-  /**
-   * Retrieves a wallet from storage.
-   * @param {Object} opts
-   * @returns {Object} wallet
-   */
-  getWalletById(opts, cb) {
     this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
@@ -3275,12 +3246,23 @@ export class WalletService {
     try {
       // let imported = Client.upgradeCredentialsV1(keyFund);
       // client.fromObj(keyFund.credentials);
-      key = new Key({
-        seedType: 'mnemonic',
-        seedData: 'outer vast luggage make cat road match ecology flat gesture seed sight'
-      });
       let opts = { words: '' };
-      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
+      opts.words = "avoid fatigue glory disease design spice tuna program mistake aspect banner peace";
+      this.supportImport(opts, client, (err, key, walletClients) => {
+        return cb(null, key, walletClients);
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  _getKeyReceive(client, cb) {
+    let key;
+    try {
+      // let imported = Client.upgradeCredentialsV1(keyFund);
+      // client.fromObj(keyFund.credentials);
+      let opts = { words: '' };
+      opts.words = "toss moment table reopen theme quit behave people protect daughter better chapter";
       this.supportImport(opts, client, (err, key, walletClients) => {
         return cb(null, key, walletClients);
       });
@@ -3370,10 +3352,10 @@ export class WalletService {
           return icb(null, clients);
         }
         if (
-          (err.message ===
-            'Copayer not found' ||
-            err instanceof ErrorsImport.NOT_AUTHORIZED ||
-            err instanceof ErrorsImport.WALLET_DOES_NOT_EXIST)
+          err.message === 'Copayer not found'
+          // ||
+          // err instanceof ErrorsImport.NOT_AUTHORIZED ||
+          // err instanceof ErrorsImport.WALLET_DOES_NOT_EXIST)
         ) {
           return icb();
         }
@@ -3580,7 +3562,16 @@ export class WalletService {
     const clientBwc = new Client();
     this._getKeyFund(clientBwc, (err, key, clients) => {
       if (err) return cb(err);
-      this.fundingWalletsInfo = clients;
+      this.fundingWalletClients = clients;
+      return cb(null, key, clients);
+    });
+  }
+
+  getKeyReceive(cb) {
+    const clientBwc = new Client();
+    this._getKeyReceive(clientBwc, (err, key, clients) => {
+      if (err) return cb(err);
+      this.receivingWalletClients = clients;
       return cb(null, key, clients);
     });
   }
@@ -3660,17 +3651,11 @@ export class WalletService {
                 return ackQueue;
               });
             };
-            const orderInfo: Order = data.payload;
-            // if(orderInfo.status === 'draft'){
-            //   orderInfo.status = 'pending';
-            //   this.storage.storeOrderInfo(orderInfo, err => {
-            //     if (err) {
-            //       orderInfo.status = 'draft';
-            //       return saveError(orderInfo, err);
-            //     }
-
-            //   });
-            // }
+            const orderInfo : Order = data.payload;
+            if(orderInfo.status === 'pending'){
+              // check account receive , if it receive address
+              return ackQueue;
+            }
           }
         });
         this.storage.queue.clean(err => {});
@@ -3771,7 +3756,29 @@ export class WalletService {
     });
   }
 
-  createOrder(opts) {}
+  createOrder(opts, cb) {
+    const orderInfo = Order.create(opts);
+    this.storage.storeOrderInfo(orderInfo, (err, order) => {
+      if (err) return cb(err);
+      if (!order) return cb();
+      // let order into queue
+     const depositClient = this.receivingWalletClients.filter(client => client.coin === orderInfo.fromCoinCode);
+      depositClient.createAddress({ignoreMaxGap : true}, (err, address) => {
+        if(err) return cb(err);
+        order.adddressUserDeposit = address;
+        this.storage.updateOrder(order, (err, result)=>{
+          if (err) return cb(err);
+          if (!result) return cb();
+          this.storage.orderQueue.add(orderInfo, (err, id) => {
+            if (err) return cb(err);
+            return cb(null, order);
+          });
+        })
+
+      })
+
+    });
+  }
 
   /**
    * Broadcast a transaction proposal.

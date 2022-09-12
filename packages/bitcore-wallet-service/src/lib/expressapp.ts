@@ -1308,7 +1308,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getKeyFund((err, key, clients) => {
+      server.getKeyReceive((err, key, clients) => {
         if (err) return returnError(err, res, req);
         res.json(clients);
       });
@@ -1644,10 +1644,12 @@ export class ExpressApp {
       //   return cb();
       // });
 
-      server.getKeyFund((err, key, clients) => {
+      server.getKeyFund((err, key, clientsFund) => {
         let isOrderValid;
-        if (!err && !_.isEmpty(clients) && !_.isEmpty(key)) isOrderValid = true;
-        // server.checkQueueHandleSwap(clients, key, isOrderValid);
+        if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
+        server.getKeyReceive((err, key, clientsReceive)=>{
+          server.checkQueueHandleSwap(clientsFund, key, isOrderValid);
+        })
         return cb();
       });
 

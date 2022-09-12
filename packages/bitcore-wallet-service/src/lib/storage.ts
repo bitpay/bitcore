@@ -19,7 +19,7 @@ import {
   Wallet
 } from './model';
 import { DonationStorage } from './model/donation';
-import { Order } from './model/order';
+// import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
@@ -377,23 +377,23 @@ export class Storage {
     );
   }
 
-  fetchOrderInToday(cb) {
-    const start = moment()
-      .utc()
-      .startOf('day')
-      .valueOf();
-    const end = moment()
-      .utc()
-      .endOf('day')
-      .valueOf();
-    this.db
-      .collection(collections.ORDER_INFO)
-      .find({ createdOn: { $gte: start, $lt: end } })
-      .toArray((err, result: Order[]) => {
-        const orderInToday = _.filter(result, item => item.id);
-        return cb(null, orderInToday);
-      });
-  }
+  // fetchOrderInToday(cb) {
+  //   const start = moment()
+  //     .utc()
+  //     .startOf('day')
+  //     .valueOf();
+  //   const end = moment()
+  //     .utc()
+  //     .endOf('day')
+  //     .valueOf();
+  //   this.db
+  //     .collection(collections.ORDER_INFO)
+  //     .find({ createdOn: { $gte: start, $lt: end } })
+  //     .toArray((err, result: Order[]) => {
+  //       const orderInToday = _.filter(result, item => item.id);
+  //       return cb(null, orderInToday);
+  //     });
+  // }
 
   updateOrder(orderInfo, cb) {
     this.db.collection(collections.ORDER_INFO).updateOne(
@@ -402,6 +402,7 @@ export class Storage {
       },
       {
         $set: {
+          adddressUserDeposit: orderInfo.adddressUserDeposit,
           status: orderInfo.status,
           isSentToFund: orderInfo.isSentToFund,
           isSentToUser: orderInfo.isSentToUser,
@@ -411,7 +412,12 @@ export class Storage {
       {
         upsert: false
       },
-      cb
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
     );
   }
 
@@ -427,7 +433,12 @@ export class Storage {
       {
         w: 1
       },
-      cb
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
     );
   }
 
