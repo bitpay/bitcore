@@ -1308,7 +1308,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getKeyReceive((err, key, clients) => {
+      server.getKeyFund((err, key, clients) => {
         if (err) return returnError(err, res, req);
         res.json(clients);
       });
@@ -1363,7 +1363,8 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.createOrder(req.body, (err, order) => {
+      const client = this.app.get('clientsReceive');
+      server.createOrder(client , req.body, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
@@ -1647,8 +1648,13 @@ export class ExpressApp {
       server.getKeyFund((err, key, clientsFund) => {
         let isOrderValid;
         if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
+        logger.debug('clients Fund 1: ', clientsFund);
+
         server.getKeyReceive((err, key, clientsReceive)=>{
-          server.checkQueueHandleSwap(clientsFund, key, isOrderValid);
+          this.app.set('clientsReceive', clientsReceive);
+          const result = this.app.get('clientsFund');
+          logger.debug('clients Fund: ', result);
+          server.checkQueueHandleSwap(clientsFund, clientsReceive, key, isOrderValid);
         })
         return cb();
       });

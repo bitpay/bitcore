@@ -7,7 +7,7 @@ interface IOrder {
   amountFrom: number;
   isFromToken: boolean;
   toCoinCode: boolean;
-  amountTo: string;
+  amountSentToUser: number;
   isToToken: boolean;
   addressUserReceive: string;
   status: string;
@@ -23,12 +23,16 @@ export class Order {
   fromCoinCode: string;
   amountFrom: number;
   isFromToken: boolean;
-  toCoinCode: boolean;
-  amountTo: string;
+  toCoinCode: string;
   isToToken: boolean;
+  amountSentToUser: number;
+  amountUserDeposit: number;
+  createdRate: number;
+  updatedRate: number;
   addressUserReceive: string;
   adddressUserDeposit: string;
-  status: string;
+  txId?: string;
+  status?: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
   endedOn?: number;
@@ -49,15 +53,44 @@ export class Order {
     x.amountFrom = opts.amountFrom;
     x.isFromToken = opts.isFromToken;
     x.toCoinCode = opts.toCoinCode;
-    x.amountTo = opts.amountTo;
+    x.amountSentToUser = opts.amountSentToUser;
+    x.amountUserDeposit = 0;
     x.isToToken = opts.isToToken;
     x.addressUserReceive = opts.addressUserReceive;
     x.adddressUserDeposit = null;
+    x.createdRate = opts.createdRate;
     x.status = 'pending';
+    x.txId = null;
     x.isSentToFund = false;
     x.isSentToUser = false;
     x.endedOn = null;
     x.error = null;
+    return x;
+  }
+
+  static fromObj(obj) {
+    const x = new Order();
+
+    x.version = obj.version;
+    x.createdOn = obj.createdOn;
+    x.id = obj.id;
+    x.priority = obj.priority;
+    x.fromCoinCode = obj.fromCoinCode;
+    x.amountFrom = obj.amountFrom;
+    x.isFromToken = obj.isFromToken;
+    x.toCoinCode = obj.toCoinCode;
+    x.isToToken = obj.isToToken;
+    x.addressUserReceive = obj.addressUserReceive;
+    x.adddressUserDeposit = obj.adddressUserDeposit;
+    x.amountUserDeposit = obj.amountUserDeposit;
+    x.status = obj.status;
+    x.isSentToFund = obj.isSentToFund;
+    x.isSentToUser = obj.isSentToUser;
+    x.createdRate = obj.createdRate;
+    x.txId = obj.txId;
+    x.createdOn = obj.createOn;
+    x.error = obj.error;
+
     return x;
   }
 }

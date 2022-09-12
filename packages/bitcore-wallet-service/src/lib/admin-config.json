@@ -1,0 +1,16 @@
+{
+    "coinSwap":[
+        {
+            "code": "xpi",
+            "isToken": false,
+            "networkFee": 0 
+        }
+    ],
+    "coinReceived":[
+        {
+            "code": "eat",
+            "isToken": true,
+            "networkFee": 0 
+        }
+    ]
+}

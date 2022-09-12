@@ -84,7 +84,8 @@ let messageBroker;
 let fiatRateService;
 let currencyRateService;
 let serviceVersion;
-
+let fundingWalletClients: any;
+let receivingWalletClients: any;
 interface IAddress {
   coin: string;
   network: string;
@@ -136,8 +137,6 @@ export class WalletService {
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
   request;
-  fundingWalletClients: any;
-  receivingWalletClients: any;
 
   constructor() {
     if (!initialized) {
@@ -623,7 +622,11 @@ export class WalletService {
    * @returns {Object} wallet
    */
   getWallet(opts, cb) {
-    this.storage.fetchWallet(this.walletId, (err, wallet) => {
+    let walletId = this.walletId;
+    if (opts.walletId) {
+      walletId = opts.walletId;
+    }
+    this.storage.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
@@ -1777,6 +1780,58 @@ export class WalletService {
     }
   }
 
+  getUtxosForSelectedAddressAndWallet(opts, cb) {
+    opts = opts || {};
+
+    if (opts.addresses) {
+      if (opts.addresses.length > 1) return cb(new ClientError('Addresses option only support 1 address'));
+
+      let wallet = opts;
+
+      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      if (!bc) {
+        return cb(new Error('Could not get blockchain explorer instance'));
+      }
+
+      const address = opts.addresses[0];
+      const A = Bitcore_[wallet.coin].Address;
+      let addrObj: { network?: { name?: string } } = {};
+      try {
+        addrObj = new A(address);
+      } catch (ex) {
+        return cb(null, []);
+      }
+      if (addrObj.network.name != wallet.network) {
+        return cb(null, []);
+      }
+
+      this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+        if (err) return cb(err);
+        bc.getAddressUtxos(address, height, wallet.coin, async (err, allUtxos) => {
+          if (err) return cb(err);
+          let promiseList = [];
+          if (wallet.isTokenSupport) {
+            _.each(wallet.addresses, address => {
+              promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+            });
+            await Promise.all(promiseList)
+              .then(async utxos => {
+                utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
+                const utxoNonSlpChronik = _.filter(utxos, item => item.isNonSLP);
+                allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
+                return cb(null, allUtxos);
+              })
+              .catch(err => {
+                return cb(err);
+              });
+          } else {
+            return cb(null, allUtxos);
+          }
+        });
+      });
+    }
+  }
+
   /**
    * Returns list of Coins for TX
    * @param {Object} opts
@@ -2576,6 +2631,7 @@ export class WalletService {
   /**
    * Creates a new transaction proposal.
    * @param {Object} opts
+   * @param {String} opts.walletId - Select wallet to create tx.
    * @param {string} opts.txProposalId - Optional. If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet.
    * @param {String} opts.coin - tx coin.
    * @param {Array} opts.outputs - List of outputs.
@@ -2604,17 +2660,18 @@ export class WalletService {
    */
   createTx(opts, cb) {
     opts = opts ? _.clone(opts) : {};
-
+    const walletId = opts.walletId ? opts.walletId : this.walletId;
+    const copayerId = opts.copayerId ? opts.copayerId : this.copayerId;
     const checkTxpAlreadyExists = (txProposalId, cb) => {
       if (!txProposalId) return cb();
-      this.storage.fetchTx(this.walletId, txProposalId, cb);
+      this.storage.fetchTx(walletId, txProposalId, cb);
     };
 
     this._runLocked(
       cb,
       cb => {
         let changeAddress, feePerKb, gasPrice, gasLimit, fee;
-        this.getWallet({}, (err, wallet) => {
+        this.getWallet(walletId, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
@@ -2707,8 +2764,8 @@ export class WalletService {
 
                   const txOpts = {
                     id: opts.txProposalId,
-                    walletId: this.walletId,
-                    creatorId: this.copayerId,
+                    walletId: walletId,
+                    creatorId: copayerId,
                     coin: opts.coin,
                     chain: opts.chain ? opts.chain : ChainService.getChain(opts.coin),
                     network: wallet.network,
@@ -2791,6 +2848,9 @@ export class WalletService {
    * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
    */
   publishTx(opts, cb) {
+    const walletId = opts.walletId ? opts.walletId : this.walletId;
+    const copayerId = opts.copayerId ? opts.copayerId : this.copayerId;
+
     if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
     this._runLocked(cb, cb => {
@@ -2803,12 +2863,12 @@ export class WalletService {
           return cb(Err);
         }
 
-        this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+        this.storage.fetchTx(walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
           if (!txp.isTemporary()) return cb(null, txp);
 
-          const copayer = wallet.getCopayer(this.copayerId);
+          const copayer = wallet.getCopayer(copayerId);
 
           let raw;
           try {
@@ -2831,7 +2891,7 @@ export class WalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
-            this.storage.storeTx(this.walletId, txp, err => {
+            this.storage.storeTx(walletId, txp, err => {
               if (err) return cb(err);
 
               this._notifyTxProposalAction('NewTxProposal', txp, () => {
@@ -3222,6 +3282,50 @@ export class WalletService {
     });
   }
 
+  _sendSwap(client, key, txSwap, cb) {
+    this.createTx(txSwap, (err, txp) => {
+      if (err) return cb(err);
+      let proposalSignature;
+      try {
+        const t = commonBWC.Utils.buildTx(txp);
+        const hash = t.uncheckedSerialize();
+        proposalSignature = commonBWC.Utils.signMessage(hash, client.credentials.requestPrivKey);
+      } catch (error) {
+        return cb(error);
+      }
+
+      const optPublish = {
+        proposalSignature,
+        txProposalId: txp.id,
+        walletId: txSwap.walletId,
+        copayerId: txSwap.copayerId
+      };
+      this.publishTx(optPublish, (err, txp) => {
+        if (err) return cb(err);
+        let signatures;
+        try {
+          signatures = key.sign(client.getRootPath(), txp);
+        } catch (error) {
+          return cb(error);
+        }
+
+        const optSigh = {
+          maxTxpVersion: 3,
+          signatures,
+          supportBchSchnorr: true,
+          txProposalId: txp.id
+        };
+        this.signTx(optSigh, (err, txp) => {
+          if (err) return cb(err);
+          this.broadcastTx({ txProposalId: txp.id }, (err, txp) => {
+            if (err) return cb(err);
+            return cb(null, txp.txid);
+          });
+        });
+      });
+    });
+  }
+
   _getKeyLotus(client, cb) {
     let key;
     const walletData = walletLotus;
@@ -3247,7 +3351,7 @@ export class WalletService {
       // let imported = Client.upgradeCredentialsV1(keyFund);
       // client.fromObj(keyFund.credentials);
       let opts = { words: '' };
-      opts.words = "avoid fatigue glory disease design spice tuna program mistake aspect banner peace";
+      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
       this.supportImport(opts, client, (err, key, walletClients) => {
         return cb(null, key, walletClients);
       });
@@ -3262,7 +3366,7 @@ export class WalletService {
       // let imported = Client.upgradeCredentialsV1(keyFund);
       // client.fromObj(keyFund.credentials);
       let opts = { words: '' };
-      opts.words = "toss moment table reopen theme quit behave people protect daughter better chapter";
+      opts.words = 'flee actress wealth renew sibling hunt taste guess leaf cancel speak scheme';
       this.supportImport(opts, client, (err, key, walletClients) => {
         return cb(null, key, walletClients);
       });
@@ -3562,16 +3666,15 @@ export class WalletService {
     const clientBwc = new Client();
     this._getKeyFund(clientBwc, (err, key, clients) => {
       if (err) return cb(err);
-      this.fundingWalletClients = clients;
       return cb(null, key, clients);
     });
   }
 
   getKeyReceive(cb) {
     const clientBwc = new Client();
+    const _that = this;
     this._getKeyReceive(clientBwc, (err, key, clients) => {
       if (err) return cb(err);
-      this.receivingWalletClients = clients;
       return cb(null, key, clients);
     });
   }
@@ -3590,6 +3693,29 @@ export class WalletService {
           amount: receiveAmountLotus,
           message: null,
           toAddress: receiveLotusAddress
+        }
+      ],
+      payProUrl: null,
+      txpVersion: 3
+    };
+    return tx;
+  }
+
+  _createOtpTxSwap(walletId, copayerId, coinCode, addressUserReceive, amountTo) {
+    const tx = {
+      walletId: walletId,
+      copayerId: copayerId,
+      coin: coinCode,
+      dryRun: false,
+      excludeUnconfirmedUtxos: false,
+      feeLevel: 'normal',
+      isTokenSwap: null,
+      message: null,
+      outputs: [
+        {
+          amount: amountTo,
+          message: null,
+          toAddress: addressUserReceive
         }
       ],
       payProUrl: null,
@@ -3639,23 +3765,93 @@ export class WalletService {
     }, 2000);
   }
 
-  checkQueueHandleSwap(clients, key, isOrderInfo) {
+  checkQueueHandleSwap(clientsFund, clientsReceive, key, isOrderInfo) {
     setInterval(() => {
       if (this.storage && this.storage.orderQueue) {
         this.storage.orderQueue.get((err, data) => {
+          console.log('orderinfo created: ', data);
           if (data) {
-            const ackQueue = this.storage.orderQueue.ack(data.ack, (err, id) => {});
-            const saveError = (orderInfo, err) => {
-              orderInfo.error = JSON.stringify(err);
-              this.storage.updateOrder(orderInfo, err => {
-                return ackQueue;
-              });
-            };
-            const orderInfo : Order = data.payload;
-            if(orderInfo.status === 'pending'){
-              // check account receive , if it receive address
-              return ackQueue;
-            }
+            this.getKeyFund((err, key, clientsFund) => {
+              logger.debug('clientsFund: ', clientsFund);
+              console.log('orderinfo in queue detected: ', data);
+              // const ackQueue = (data) => this.storage.orderQueue.ack(data.ack, (err, id) => {});
+              // const saveError = (orderInfo, data, err) => {
+              //   orderInfo.error = JSON.stringify(err);
+              //   this.storage.updateOrder(orderInfo, err => {
+              //     return ackQueue(data);
+              //   });
+              // };
+              const orderInfo: Order = data.payload;
+              if (orderInfo.status === 'pending') {
+                // this.getAmountToWithCurrentRate(orderInfo, (err, amountToCalculatedWithCurrentRate) => {
+                //   // if()
+                // })
+                // get utxos for deposit address => checking amount user sent to deposit address
+                this.getUtxosForSelectedAddressAndWallet(
+                  {
+                    coin: orderInfo.fromCoinCode,
+                    network: 'livenet',
+                    addresses: [orderInfo.adddressUserDeposit],
+                    isTokenSupport: orderInfo.isFromToken
+                  },
+                  (err, utxos) => {
+                    let amountDepositDetect = 0;
+                    if (utxos.length > 0) {
+                      _.each(utxos, utxo => {
+                        amountDepositDetect += utxo.satoshis;
+                      });
+                    }
+                    if (amountDepositDetect > 0) {
+                      if (amountDepositDetect > orderInfo.amountFrom) {
+                        orderInfo.amountUserDeposit = amountDepositDetect;
+                        orderInfo.status = 'suspend';
+                        this.storage.updateOrder(orderInfo, (err, result) => {
+                          // if(err) saveError(orderInfo,data,err);
+                          // return ackQueue(data);
+                        });
+                      } else {
+                        // calculate again amount swap ?
+                        const fundingWallet = clientsFund.find(s => s.credentials.coin === orderInfo.toCoinCode);
+                        // checking rate again before creating tx
+                        this.getCurrentRate(orderInfo, (err, rate) => {
+                          // calculate updated rate compare with created rate , if more than 20% (later dynamic) , suspend transaction
+                          if ((Math.abs(rate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 20) {
+                            orderInfo.updatedRate = rate;
+                            orderInfo.status = 'suspend';
+                            this.storage.updateOrder(orderInfo, (err, result) => {
+                              // if(err) saveError(orderInfo, data, err);
+                              // return ackQueue(data);
+                            });
+                          } else {
+                            const txOptsSwap = this._createOtpTxSwap(
+                              fundingWallet.credentials.walletId,
+                              fundingWallet.credentials.copayerId,
+                              orderInfo.toCoinCode,
+                              orderInfo.addressUserReceive,
+                              amountDepositDetect * rate
+                            );
+                            this.walletId = fundingWallet.credentials.walletId,
+                            this.copayerId = fundingWallet.credentials.copayerId,
+                            this._sendSwap(fundingWallet, key, txOptsSwap, (err, txid) => {
+                              // if(err) saveError(orderInfo, data, err);
+                              orderInfo.status = 'success';
+                              // orderInfo.amountSentToUser = orderInfo.amountFrom * rate;
+                              orderInfo.txId = txid;
+                              orderInfo.isSentToUser = true;
+                              this.storage.updateOrder(orderInfo, (err, result) => {
+                                // if(err) saveError(orderInfo, data, err);
+                                // return ackQueue(data);
+                              });
+                            });
+                          }
+                        });
+                      }
+                    }
+                  }
+                );
+              } else if (orderInfo.status === 'processing') {
+              }
+            });
           }
         });
         this.storage.queue.clean(err => {});
@@ -3756,27 +3952,54 @@ export class WalletService {
     });
   }
 
-  createOrder(opts, cb) {
-    const orderInfo = Order.create(opts);
-    this.storage.storeOrderInfo(orderInfo, (err, order) => {
-      if (err) return cb(err);
-      if (!order) return cb();
-      // let order into queue
-     const depositClient = this.receivingWalletClients.filter(client => client.coin === orderInfo.fromCoinCode);
-      depositClient.createAddress({ignoreMaxGap : true}, (err, address) => {
-        if(err) return cb(err);
-        order.adddressUserDeposit = address;
-        this.storage.updateOrder(order, (err, result)=>{
-          if (err) return cb(err);
-          if (!result) return cb();
-          this.storage.orderQueue.add(orderInfo, (err, id) => {
-            if (err) return cb(err);
-            return cb(null, order);
+  getCurrentRate(orderInfo: Order, cb) {
+    // checking rate again before sending txp
+    this._getRatesWithCustomFormat((err, rateList) => {
+      const rate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
+      return cb(null, rate);
+    });
+  }
+
+  _getRatesWithCustomFormat(cb) {
+    let rateList = [];
+    // for (const coin of this.currencyProvider.getAvailableCoins()) {
+    //   rateList[coin.toLowerCase()] = { USD: 0 };
+    // }
+    this.getFiatRates({}, (err, fiatRates) => {
+      try {
+        _.map(fiatRates, (rates, coin) => {
+          const coinRates = {};
+          _.each(rates, r => {
+            const rate = { [r.code]: r.rate };
+            Object.assign(coinRates, rate);
           });
-        })
+          rateList[coin.toLowerCase()] = !_.isEmpty(coinRates) ? coinRates : { USD: 0 };
+        });
+        return cb(null, rateList);
+      } catch (error) {
+        return cb(error);
+      }
+    });
+  }
 
-      })
+  createOrder(clientsReceive, opts, cb) {
+    const _that = this;
+    const orderInfo = Order.create(opts);
+    const depositClient = clientsReceive.find(client => client.credentials.coin === orderInfo.fromCoinCode);
+    this.walletId = depositClient.credentials.walletId;
+    this.createAddress({ ignoreMaxGap: true }, (err, address) => {
+      if (err) return cb(err);
+      orderInfo.adddressUserDeposit = address.address;
+      this.storage.storeOrderInfo(orderInfo, (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
 
+        // let order into queue
+        this.storage.orderQueue.add(Order.fromObj(result.ops[0]), (err, id) => {
+          if (err) return cb(err);
+          return cb(null, result);
+        });
+      });
     });
   }
 
