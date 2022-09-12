@@ -43,7 +43,8 @@
     "lint:style": "prettier --check 'src/**/*.ts'",
     "fix": "npm run fix:style && npm run fix:lint",
     "fix:lint": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "fix:style": "prettier --write 'src/**/*.ts'"
+    "fix:style": "prettier --write 'src/**/*.ts'",
+    "migration": "cd migrations && node fixUnspentInputs.js --network regtest --dryrun false"
   },
   "nyc": {
     "reporter": [
@@ -103,7 +104,7 @@
     "bitcore-wallet-client": "^8.25.31",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
-    "crypto-rpc": "^1.1.0",
+    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#e8106ed18740b0257a90365e830726cd66e912f6",
     "crypto-wallet-core": "^8.25.31",
     "heapdump": "0.3.15",
     "http": "0.0.0",
