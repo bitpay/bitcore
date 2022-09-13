@@ -485,6 +485,7 @@ export class Utils {
         : isERC20
         ? chainName + 'ERC20'
         : chainName;
+
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,

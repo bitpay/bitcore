@@ -623,6 +623,7 @@ describe('Fiat rate service', function() {
         })
         .yields(null, null, ape);
 
+
       service._fetch(function(err) {
         should.not.exist(err);
         service.getRate(

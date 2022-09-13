@@ -19,7 +19,7 @@ export class XrpChain implements IChain {
   private convertBitcoreBalance(bitcoreBalance, locked) {
     const { unconfirmed, confirmed, balance } = bitcoreBalance;
     let activatedLocked = locked;
-    // If XRP address has a min balance of 20 XRP, subtract activation fee for true spendable balance.
+    // If XRP address has a min balance of 10 XRP, subtract activation fee for true spendable balance.
     if (balance > 0) {
       activatedLocked = locked + Defaults.MIN_XRP_BALANCE;
     }
@@ -189,7 +189,7 @@ export class XrpChain implements IChain {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      const minXrpBalance = 20000000; // 20 XRP * 1e6
+      const minXrpBalance = Defaults.MIN_XRP_BALANCE;
       if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
