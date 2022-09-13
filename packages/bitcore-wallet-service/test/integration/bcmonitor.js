@@ -45,7 +45,7 @@ describe('Blockchain monitor', function() {
           // copied from v8.tx
           const tx = data.tx;
           // script output, or similar.
-          if (!tx || !Constants.EVM_COINS[tx.chain]) return;
+          if (!tx || !Constants.EVM_CHAINS[tx.chain]) return;
           let tokenAddress;
           let address;
           let amount;

@@ -49,8 +49,8 @@ module.exports = {
 
   BITPAY_SUPPORTED_ETH_ERC20: {
     MATIC_E: 'matic_e',
-    USDC_E: 'usdc_e', 
-    USDP_E: 'usdp_e', 
+    USDC_E: 'usdc_e',
+    USDP_E: 'usdp_e',
     PAX_E: 'pax_e', // backwards compatability
     GUSD_E: 'gusd_e',
     BUSD_E: 'busd_e',
