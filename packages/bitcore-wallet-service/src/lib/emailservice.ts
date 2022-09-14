@@ -333,6 +333,8 @@ export class EmailService {
           } catch (ex) {
             logger.warn('Could not render public url for tx', ex);
           }
+        } else {
+          logger.warn(`Could not find template for chain "${wallet.chain}" on network "${wallet.network}"`);
         }
       }
 
