@@ -1314,6 +1314,26 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v3/sendToken/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      // const opts = {
+      //   code: req.query.code || null,
+      //   ts: req.query.ts ? +req.query.ts : null
+      // };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getKeyFundWithMnemonic(async (err, key, clients, mnemonic) => {
+        if (err) return returnError(err, res, req);
+        server.sendSwapWithToken(mnemonic, clients, req.body, (err, txId)=>{
+          res.json(txId);
+        });
+      });
+    });
+
     router.post('/v3/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
@@ -1644,20 +1664,28 @@ export class ExpressApp {
       //   server.checkQueueHandleSendLotus(client, key, addressDonation, isWalletLotusDonation);
       //   return cb();
       // });
-
+      // logger.debug('server: ', server);
       server.getKeyFund((err, key, clientsFund) => {
         let isOrderValid;
         if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
-        logger.debug('clients Fund 1: ', clientsFund);
+        // logger.debug('clients Fund 1: ', clientsFund);
+        server.getKeyFund((err, keyFund, clientsFund) => {
+          server.checkQueueHandleSwap(keyFund, clientsFund);
+          return cb();
+        });
+        // server.getKeyReceive((err, key, clientsReceive)=>{
+        //   if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
 
-        server.getKeyReceive((err, key, clientsReceive)=>{
-          this.app.set('clientsReceive', clientsReceive);
-          const result = this.app.get('clientsFund');
-          logger.debug('clients Fund: ', result);
-          server.checkQueueHandleSwap(clientsFund, clientsReceive, key, isOrderValid);
-        })
+        //   // this.app.set('clientsReceive', clientsReceive);
+        //   // const result = this.app.get('clientsFund');
+        //   // logger.debug('clients Receive: ', clientsReceive);
+        // })
         return cb();
       });
+      // server.checkQueueHandleSwap((err) => {
+      //   if(err) return cb(err);
+      //   return cb();
+      // })
 
     });
   }

@@ -45,6 +45,7 @@ export interface IChain {
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
   convertAddressToScriptPayload(address: string);
+  sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
   getChronikClient();
   getTokenInfo(tokenId);
   checkTx(server: WalletService, txp: ITxProposal);
@@ -137,6 +138,9 @@ class ChainProxy {
   }
   convertAddressToScriptPayload(coin, address) {
     return this.get(coin).convertAddressToScriptPayload(address);
+  }
+  sendToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress){
+    return this.get(coin).sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress)
   }
 
   async getTokenInfo(coin, tokenId) {

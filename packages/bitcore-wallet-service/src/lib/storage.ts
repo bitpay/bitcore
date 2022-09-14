@@ -406,6 +406,7 @@ export class Storage {
           status: orderInfo.status,
           isSentToFund: orderInfo.isSentToFund,
           isSentToUser: orderInfo.isSentToUser,
+          txId: orderInfo.txId,
           error: orderInfo.error
         }
       },
