@@ -41,11 +41,14 @@ export class Utils {
     try {
       // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (Constants.BITPAY_SUPPORTED_ETH_ERC20.includes(coin.toLowerCase())) {
-        normalizedChain = 'eth';
-      }
-      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20.includes(coin.toLowerCase())) {
+      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20.includes(normalizedChain)) {
         normalizedChain = 'matic';
+      } else if (
+        Constants.BITPAY_SUPPORTED_ETH_ERC20.includes(normalizedChain) ||
+        !Constants.CHAINS.includes(normalizedChain)
+      ) {
+        // default to eth if it's an ETH ERC20 or if we don't know the chain
+        normalizedChain = 'eth';
       }
       return normalizedChain;
     } catch (_) {

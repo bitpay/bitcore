@@ -398,7 +398,7 @@ export class Key {
     } else if (opts.coin == 'eth') {
       coinCode = '60';
     } else if (opts.coin == 'matic') {
-      coinCode = '966';
+      coinCode = '60'; // actual matic derivation path is 966 but users will expect address to be same as ETH
     } else if (opts.coin == 'xrp') {
       coinCode = '144';
     } else if (opts.coin == 'doge') {

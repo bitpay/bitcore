@@ -605,7 +605,7 @@ describe('client API', function() {
       it('should build a matic txp correctly', () => {
         const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
         const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        const path = "m/44'/966'/0'";
+        const path = "m/44'/60'/0'";
         const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString()

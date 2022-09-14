@@ -91,11 +91,11 @@ class ChainProxy {
     try {
       // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (Constants.BITPAY_SUPPORTED_ETH_ERC20[coin.toUpperCase()]) {
-        normalizedChain = 'eth';
-      }
-      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20[coin.toUpperCase()]) {
+      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20[normalizedChain]) {
         normalizedChain = 'matic';
+      } else if (Constants.BITPAY_SUPPORTED_ETH_ERC20[normalizedChain] || !Constants.CHAINS[normalizedChain]) {
+        // default to eth if it's an ETH ERC20 or if we don't know the chain
+        normalizedChain = 'eth';
       }
       return normalizedChain;
     } catch (err) {
