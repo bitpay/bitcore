@@ -21,6 +21,7 @@ export class Order {
   version: number;
   priority: number;
   fromCoinCode: string;
+  fromTokenId?: string;
   amountFrom: number;
   isFromToken: boolean;
   toCoinCode: string;
@@ -31,7 +32,7 @@ export class Order {
   updatedRate: number;
   addressUserReceive: string;
   adddressUserDeposit: string;
-  tokenId?: string;
+  toTokenId?: string;
   txId?: string;
   status?: string;
   isSentToFund?: boolean;
@@ -61,7 +62,8 @@ export class Order {
     x.adddressUserDeposit = null;
     x.createdRate = opts.createdRate;
     x.status = 'waiting';
-    x.tokenId = opts.tokenId || null;
+    x.toTokenId = opts.toTokenId || null;
+    x.fromTokenId = opts.fromTokenId || null;
     x.txId = null;
     x.isSentToFund = false;
     x.isSentToUser = false;
@@ -89,7 +91,8 @@ export class Order {
     x.isSentToFund = obj.isSentToFund;
     x.isSentToUser = obj.isSentToUser;
     x.createdRate = obj.createdRate;
-    x.tokenId = obj.tokenId;
+    x.toTokenId = obj.toTokenId;
+    x.fromTokenId = obj.fromTokenId;
     x.txId = obj.txId;
     x.createdOn = obj.createOn;
     x.error = obj.error;

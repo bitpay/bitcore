@@ -1,6 +1,6 @@
 import { BitcoreLibXec } from '@abcpros/crypto-wallet-core';
 import { ChronikClient } from 'chronik-client';
-import _ from 'lodash';
+import _, { toSafeInteger } from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 const config = require('../../../config');
@@ -89,111 +89,117 @@ export class XecChain extends BtcChain implements IChain {
     const keyPair = bchjs.HDNode.toKeyPair(change);
 
     // Get a UTXO
-    const utxos = await this.getUtxosToken(wallet);
-      if (utxos.length === 0) throw new Error('No UTXOs to spend! Exiting.');
+   await this.getUtxosToken(wallet).then(async utxos => {
+    if (utxos.length === 0) throw new Error('No UTXOs to spend! Exiting.');
 
-      const bchUtxos = _.filter(utxos, item => item.isNonSLP);
+    const bchUtxos = _.filter(utxos, item => item.isNonSLP);
 
-      if (bchUtxos.length === 0) {
-        throw new Error('Wallet does not have a BCH UTXO to pay miner fees.');
-      }
-      const tokenUtxos = await this.getTokenUtxos(utxos, tokenInfo);
+    if (bchUtxos.length === 0) {
+      throw new Error('Wallet does not have a BCH UTXO to pay miner fees.');
+    }
+    const tokenUtxos = await this.getTokenUtxos(utxos, tokenInfo);
 
-      if (tokenUtxos.length === 0) {
-        throw new Error('No token UTXOs for the specified token could be found.');
-      }
+    if (tokenUtxos.length === 0) {
+      throw new Error('No token UTXOs for the specified token could be found.');
+    }
 
-        // Choose a UTXO to pay for the transaction.
-        const bchUtxo = this.findBiggestUtxo(bchUtxos);
-        TOKENQTY = TOKENQTY / Math.pow(10, tokenInfo.decimals);
-        // Generate the OP_RETURN code.
-      const slpSendObj = bchjs.SLP.TokenType1.generateSendOpReturn(
-        tokenUtxos,
-        TOKENQTY
-      )
-      const slpData = slpSendObj.script;
+      // Choose a UTXO to pay for the transaction.
+      const bchUtxo = this.findBiggestUtxo(bchUtxos);
+      
+      // TOKENQTY = _.toSafeInteger(TOKENQTY / Math.pow(10, tokenInfo.decimals));
+      TOKENQTY = _.toSafeInteger(TOKENQTY);
+      TOKENQTY = TOKENQTY / Math.pow(10, tokenInfo.decimals);
+      // Generate the OP_RETURN code.
+    const slpSendObj = bchjs.SLP.TokenType1.generateSendOpReturn(
+      tokenUtxos,
+      TOKENQTY
+    )
+    const slpData = slpSendObj.script;
 
-      // BEGIN transaction construction.
+    // BEGIN transaction construction.
 
-      // instance of transaction builder
-      let transactionBuilder;
-      transactionBuilder = new bchjs.TransactionBuilder();
-      // Add the BCH UTXO as input to pay for the transaction.
-      const originalAmount = bchUtxo.value;
-      transactionBuilder.addInput(bchUtxo.txid, bchUtxo.outIdx);
+    // instance of transaction builder
+    let transactionBuilder;
+    transactionBuilder = new bchjs.TransactionBuilder();
+    // Add the BCH UTXO as input to pay for the transaction.
+    const originalAmount = bchUtxo.value;
+    transactionBuilder.addInput(bchUtxo.txid, bchUtxo.outIdx);
 
-      // add each token UTXO as an input.
-      for (let i = 0; i < tokenUtxos.length; i++) {
-        transactionBuilder.addInput(tokenUtxos[i].txid, tokenUtxos[i].outIdx);
-      }
+    // add each token UTXO as an input.
+    for (let i = 0; i < tokenUtxos.length; i++) {
+      transactionBuilder.addInput(tokenUtxos[i].txid, tokenUtxos[i].outIdx);
+    }
 
-      const txFee = 250;
+    const txFee = 250;
 
-      // amount to send back to the sending address. It's the original amount - 1 sat/byte for tx size
-      const remainder = originalAmount - txFee - 546 * 2;
-      if (remainder < 1) {
-        throw new Error('Selected UTXO does not have enough satoshis')
-      }
+    // amount to send back to the sending address. It's the original amount - 1 sat/byte for tx size
+    const remainder = originalAmount - txFee - 546 * 2;
+    if (remainder < 1) {
+      throw new Error('Selected UTXO does not have enough satoshis')
+    }
 
-      // Add OP_RETURN as first output.
-      transactionBuilder.addOutput(slpData, 0);
+    // Add OP_RETURN as first output.
+    transactionBuilder.addOutput(slpData, 0);
 
-      // Send the token back to the same wallet if the user hasn't specified a
-      // different address.
+    // Send the token back to the same wallet if the user hasn't specified a
+    // different address.
 
-      // Send dust transaction representing tokens being sent.
-      const { prefix, type, hash } = ecashaddr.decode(etokenAddress);
-      const cashAdr = ecashaddr.encode('bitcoincash', type, hash);
-      // const cashAdress = ecashaddr.encodeAddress('bitcoincash', type, hash, etokenAddress);
+    // Send dust transaction representing tokens being sent.
+    const { prefix, type, hash } = ecashaddr.decode(etokenAddress);
+    const cashAdr = ecashaddr.encode('bitcoincash', type, hash);
+    // const cashAdress = ecashaddr.encodeAddress('bitcoincash', type, hash, etokenAddress);
+    transactionBuilder.addOutput(
+      bchjs.SLP.Address.toLegacyAddress(cashAdr),
+      546
+    )
+
+    // Return any token change back to the sender.
+    if (slpSendObj.outputs > 1) {
       transactionBuilder.addOutput(
-        bchjs.SLP.Address.toLegacyAddress(cashAdr),
+        bchjs.SLP.Address.toLegacyAddress(slpAddress),
         546
       )
+    }
 
-      // Return any token change back to the sender.
-      if (slpSendObj.outputs > 1) {
-        transactionBuilder.addOutput(
-          bchjs.SLP.Address.toLegacyAddress(slpAddress),
-          546
-        )
-      }
+    // Last output: send the BCH change back to the wallet.
+    transactionBuilder.addOutput(
+      bchjs.Address.toLegacyAddress(cashAddress),
+      remainder
+    )
 
-      // Last output: send the BCH change back to the wallet.
-      transactionBuilder.addOutput(
-        bchjs.Address.toLegacyAddress(cashAddress),
-        remainder
-      )
+    // Sign the transaction with the private key for the BCH UTXO paying the fees.
+    let redeemScript;
+    transactionBuilder.sign(
+      0,
+      keyPair,
+      redeemScript,
+      transactionBuilder.hashTypes.SIGHASH_ALL,
+      originalAmount
+    )
 
-      // Sign the transaction with the private key for the BCH UTXO paying the fees.
-      let redeemScript;
+    // Sign each token UTXO being consumed.
+    for (let i = 0; i < tokenUtxos.length; i++) {
+      const thisUtxo = tokenUtxos[i];
+
       transactionBuilder.sign(
-        0,
+        1 + i,
         keyPair,
         redeemScript,
         transactionBuilder.hashTypes.SIGHASH_ALL,
-        originalAmount
+        thisUtxo.value
       )
+    }
 
-      // Sign each token UTXO being consumed.
-      for (let i = 0; i < tokenUtxos.length; i++) {
-        const thisUtxo = tokenUtxos[i];
+    // build tx
+    const tx = transactionBuilder.build();
 
-        transactionBuilder.sign(
-          1 + i,
-          keyPair,
-          redeemScript,
-          transactionBuilder.hashTypes.SIGHASH_ALL,
-          thisUtxo.value
-        )
-      }
-
-      // build tx
-      const tx = transactionBuilder.build();
-
-      // output rawhex
-      const hex = tx.toHex();
-      const txid = await this.broadcast_raw(wallet, hex, true);
-      return txid;
+    // output rawhex
+    const hex = tx.toHex();
+    const txid = await this.broadcast_raw(wallet, hex, true);
+    return txid;
+   }).catch(e => {
+     console.log(e);
+   })
   }
 
   private findBiggestUtxo(utxos: UtxoToken[]) {
@@ -258,8 +264,8 @@ export class XecChain extends BtcChain implements IChain {
         },
         (err, resp) => {
           if (err || !resp || !resp.length)
-          return reject(err ? err : 'No UTXOs');
-          return resolve(resp);
+          reject(err ? err : 'No UTXOs');
+          resolve(resp);
         }
       );
     })

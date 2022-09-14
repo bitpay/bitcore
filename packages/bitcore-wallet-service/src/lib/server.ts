@@ -74,6 +74,13 @@ const Errors = require('./errors/errordefinitions');
 
 const shell = require('shelljs');
 
+const BCHJS = require('@abcpros/xpi-js');
+const bchURL = config.supportToken.xec.bchUrl;
+const bchjs = new BCHJS({ restURL: bchURL });
+
+const ecashaddr = require('ecashaddrjs');
+
+
 let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
@@ -1813,16 +1820,18 @@ export class WalletService {
           if (err) return cb(err);
           let promiseList = [];
           if (wallet.isTokenSupport) {
-            _.each(wallet.addresses, address => {
-              promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
-            });
-            await Promise.all(promiseList)
-              .then(async utxos => {
-                utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
-                const utxoNonSlpChronik = _.filter(utxos, item => item.isNonSLP);
-                allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
-                return cb(null, allUtxos);
-              })
+            this._getUxtosByChronik(wallet.coin, address).then(
+              utxos => {
+                // utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
+                // const utxoNonSlpChronik = _.filter(utxos, item => !item.isNonSLP && item.slpMeta.tokenId === wallet.tokenId);
+                // allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
+                const filteredUtxos = _.filter(utxos, item => !item.isNonSLP && item.slpMeta.tokenId === wallet.tokenId);
+                return cb(null, filteredUtxos);
+              }
+            )
+            // await Promise.all(promiseList)
+            //   .then(async 
+            //   })
               .catch(err => {
                 return cb(err);
               });
@@ -1987,6 +1996,9 @@ export class WalletService {
   _getUxtosByChronik(coin, address) {
     let chronikClient;
     let scriptPayload;
+    if(address.includes('ecash:')){
+      address = address.replace(/ecash:/,'');
+    }
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
       chronikClient = ChainService.getChronikClient(coin);
@@ -3293,7 +3305,7 @@ export class WalletService {
       message: null,
       outputs: [
         {
-          amount: amountTo,
+          amount: _.toSafeInteger(amountTo),
           message: null,
           toAddress: addressUserReceive
         }
@@ -3355,7 +3367,7 @@ export class WalletService {
     await this._sendSwapWithToken('xec',
     clientFundSelectedToSendToUser,
     mnemonic,
-    orderInfo.tokenId,
+    orderInfo.toTokenId,
     null,
     orderInfo.amountFrom * orderInfo.createdRate,
     orderInfo.addressUserReceive,
@@ -3396,13 +3408,12 @@ export class WalletService {
   _getKeyFund(client, cb) {
     let key;
     try {
-      logger.debug("client: ", client);
       let opts = { words: '' };
-      opts.words = 'term unveil hen deputy woman spot excess satoshi wage praise merit cruise';
-      this.supportImport(opts, client, (err, key, walletClients) => {
-        logger.debug('Inside function _getKeyFund: ', walletClients);
-        return cb(null, key, walletClients);
-      });
+      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
+      client.serverAssistedImport
+      // this.supportImport(opts, client, (err, key, walletClients) => {
+      //   return cb(null, key, walletClients);
+      // });
     } catch (e) {
       return cb(e);
     }
@@ -3413,11 +3424,18 @@ export class WalletService {
     try {
       logger.debug("client: ", client);
       let opts = { words: '' };
-      opts.words = 'term unveil hen deputy woman spot excess satoshi wage praise merit cruise';
-      this.supportImport(opts, client, (err, key, walletClients) => {
-        logger.debug('Inside function _getKeyFund: ', walletClients);
-        return cb(null, key, walletClients, opts.words);
-      });
+      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
+      // this.supportImport(opts, client, (err, key, walletClients) => {
+      //   logger.debug('Inside function _getKeyFund: ', walletClients);
+      //   return cb(null, key, walletClients, opts.words);
+      // });
+      Client.serverAssistedImport(opts,
+        {
+          baseUrl: client.request.baseUrl
+        },  (err, key, walletClients) => {
+            logger.debug('Inside function _getKeyFund: ', walletClients);
+            return cb(null, key, walletClients, opts.words);
+          })
     } catch (e) {
       return cb(e);
     }
@@ -3427,290 +3445,299 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'hand drink pig donkey raise weasel convince crazy jaguar ecology junk affair';
-      this.supportImport(opts, client, (err, key, walletClients) => {
-        return cb(null, key, walletClients);
-      });
+      opts.words = 'wet embark miracle scissors appear mean fall fetch age frown pledge artist';
+      Client.serverAssistedImport(opts,
+        {
+          baseUrl: client.request.baseUrl
+        },  (err, key, walletClients) => {
+            return cb(null, key, walletClients, opts.words);
+          })
     } catch (e) {
       return cb(e);
     }
   }
 
-  supportImport(opts, clientOpts, callback) {
-    $.checkArgument(opts.words, 'provide opts.words');
+  // supportImport(opts, clientOpts, callback) {
+  //   $.checkArgument(opts.words, 'provide opts.words');
 
-    let copayerIdAlreadyTested = {};
-    var checkCredentials = (key, opts, icb) => {
-      let c = key.createCredentials(null, {
-        coin: opts.coin,
-        network: opts.network,
-        account: opts.account,
-        n: opts.n,
-        isSlpToken: opts.isSlpToken
-      });
+  //   let copayerIdAlreadyTested = {};
+  //   var checkCredentials = (key, opts, icb) => {
+  //     let c = key.createCredentials(null, {
+  //       coin: opts.coin,
+  //       network: opts.network,
+  //       account: opts.account,
+  //       n: opts.n,
+  //       isSlpToken: opts.isSlpToken
+  //     });
 
-      if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
-        // console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
-        return icb();
-      } else {
-        copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
-      }
+  //     if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
+  //       // console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
+  //       return icb();
+  //     } else {
+  //       copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
+  //     }
 
-      let client = clientOpts;
-      logger.debug('before open wallet');
-      client.fromString(c);
-      client.openWallet({}, (err, status) => {
-        //        console.log(
-        //          `PATH: ${c.rootPath} n: ${c.n}:`,
-        //          err && err.message ? err.message : 'FOUND!'
-        //        );
+  //     let client = clientOpts;
+  //     logger.debug('before open wallet');
+  //     client.fromString(c);
+  //     client.openWallet({}, (err, status) => {
+  //       //        console.log(
+  //       //          `PATH: ${c.rootPath} n: ${c.n}:`,
+  //       //          err && err.message ? err.message : 'FOUND!'
+  //       //        );
 
-        // Exists
-      logger.debug('inside open wallet');
+  //       // Exists
+  //     logger.debug('inside open wallet');
 
-        if (!err) {
-          if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
-            client.credentials.addressType =
-              status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
-          }
-          let clients = [client];
-          // Eth wallet with tokens?
-          const tokenAddresses = status.preferences.tokenAddresses;
-          if (!_.isEmpty(tokenAddresses)) {
-            _.each(tokenAddresses, t => {
-              const token = Constants.TOKEN_OPTS[t];
-              if (!token) {
-                return;
-              }
-              const tokenCredentials = client.credentials.getTokenCredentials(token);
-              let tokenClient = _.cloneDeep(client);
-              tokenClient.credentials = tokenCredentials;
-              clients.push(tokenClient);
-            });
-          }
-          // Eth wallet with mulsig wallets?
-          const multisigEthInfo = status.preferences.multisigEthInfo;
-          if (!_.isEmpty(multisigEthInfo)) {
-            _.each(multisigEthInfo, info => {
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials({
-                walletName: info.walletName,
-                multisigContractAddress: info.multisigContractAddress,
-                n: info.n,
-                m: info.m
-              });
-              let multisigEthClient = _.cloneDeep(client);
-              multisigEthClient.credentials = multisigEthCredentials;
-              clients.push(multisigEthClient);
-              const tokenAddresses = info.tokenAddresses;
-              if (!_.isEmpty(tokenAddresses)) {
-                _.each(tokenAddresses, t => {
-                  const token = Constants.TOKEN_OPTS[t];
-                  if (!token) {
-                    return;
-                  }
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(token);
-                  let tokenClient = _.cloneDeep(multisigEthClient);
-                  tokenClient.credentials = tokenCredentials;
-                  clients.push(tokenClient);
-                });
-              }
-            });
-          }
-          return icb(null, clients);
-        }
-        if (
-          err.message === 'Copayer not found'
-          // ||
-          // err instanceof ErrorsImport.NOT_AUTHORIZED ||
-          // err instanceof ErrorsImport.WALLET_DOES_NOT_EXIST)
-        ) {
-          return icb();
-        }
+  //       if (!err) {
+  //         if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
+  //           client.credentials.addressType =
+  //             status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+  //         }
+  //         let clients = [client];
+  //         // Eth wallet with tokens?
+  //         const tokenAddresses = status.preferences.tokenAddresses;
+  //         if (!_.isEmpty(tokenAddresses)) {
+  //           _.each(tokenAddresses, t => {
+  //             const token = Constants.TOKEN_OPTS[t];
+  //             if (!token) {
+  //               return;
+  //             }
+  //             const tokenCredentials = client.credentials.getTokenCredentials(token);
+  //             let tokenClient = _.cloneDeep(client);
+  //             tokenClient.credentials = tokenCredentials;
+  //             clients.push(tokenClient);
+  //           });
+  //         }
+  //         // Eth wallet with mulsig wallets?
+  //         const multisigEthInfo = status.preferences.multisigEthInfo;
+  //         if (!_.isEmpty(multisigEthInfo)) {
+  //           _.each(multisigEthInfo, info => {
+  //             const multisigEthCredentials = client.credentials.getMultisigEthCredentials({
+  //               walletName: info.walletName,
+  //               multisigContractAddress: info.multisigContractAddress,
+  //               n: info.n,
+  //               m: info.m
+  //             });
+  //             let multisigEthClient = _.cloneDeep(client);
+  //             multisigEthClient.credentials = multisigEthCredentials;
+  //             clients.push(multisigEthClient);
+  //             const tokenAddresses = info.tokenAddresses;
+  //             if (!_.isEmpty(tokenAddresses)) {
+  //               _.each(tokenAddresses, t => {
+  //                 const token = Constants.TOKEN_OPTS[t];
+  //                 if (!token) {
+  //                   return;
+  //                 }
+  //                 const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(token);
+  //                 let tokenClient = _.cloneDeep(multisigEthClient);
+  //                 tokenClient.credentials = tokenCredentials;
+  //                 clients.push(tokenClient);
+  //               });
+  //             }
+  //           });
+  //         }
+  //         return icb(null, clients);
+  //       }
+  //       if (
+  //         err.message === 'Copayer not found'
+  //         // ||
+  //         // err instanceof ErrorsImport.NOT_AUTHORIZED ||
+  //         // err instanceof ErrorsImport.WALLET_DOES_NOT_EXIST)
+  //       ) {
+  //         return icb();
+  //       }
 
-        return icb(err);
-      });
-    };
+  //       return icb(err);
+  //     });
+  //   };
 
-    var checkKey = (key, cb) => {
-      let opts = [
-        // coin, network,  multisig
-        ['btc', 'livenet'],
-        ['bch', 'livenet'],
-        ['eth', 'livenet'],
-        ['eth', 'testnet'],
-        ['xrp', 'livenet'],
-        ['xrp', 'testnet'],
-        ['doge', 'livenet'],
-        ['doge', 'testnet'],
-        ['xec', 'livenet'],
-        ['xec', 'testnet'],
-        ['xpi', 'livenet'],
-        ['xpi', 'testnet'],
-        ['ltc', 'testnet'],
-        ['ltc', 'livenet'],
-        ['btc', 'livenet', true],
-        ['bch', 'livenet', true],
-        ['xpi', 'livenet', true],
-        ['xpi', 'livenet', false, true],
-        ['xec', 'livenet', true],
-        ['xec', 'livenet', false, true]
-      ];
-      if (key.use44forMultisig) {
-        //  testing old multi sig
-        opts = opts.filter(x => {
-          return x[2];
-        });
-      }
+  //   var checkKey = (key, cb) => {
+  //     logger.debug('checking key');
+  //     let opts = [
+  //       // coin, network,  multisig
+  //       ['btc', 'livenet'],
+  //       ['bch', 'livenet'],
+  //       ['eth', 'livenet'],
+  //       ['eth', 'testnet'],
+  //       ['xrp', 'livenet'],
+  //       ['xrp', 'testnet'],
+  //       ['doge', 'livenet'],
+  //       ['doge', 'testnet'],
+  //       ['xec', 'livenet'],
+  //       ['xec', 'testnet'],
+  //       ['xpi', 'livenet'],
+  //       ['xpi', 'testnet'],
+  //       ['ltc', 'testnet'],
+  //       ['ltc', 'livenet'],
+  //       ['btc', 'livenet', true],
+  //       ['bch', 'livenet', true],
+  //       ['xpi', 'livenet', true],
+  //       ['xpi', 'livenet', false, true],
+  //       ['xec', 'livenet', true],
+  //       ['xec', 'livenet', false, true]
+  //     ];
+  //     if (key.use44forMultisig) {
+  //       //  testing old multi sig
+  //       opts = opts.filter(x => {
+  //         return x[2];
+  //       });
+  //     }
 
-      if (key.use0forBCH) {
-        //  testing BCH, old coin=0 wallets
-        opts = opts.filter(x => {
-          return x[0] == 'bch';
-        });
-      }
+  //     if (key.use0forBCH) {
+  //       //  testing BCH, old coin=0 wallets
+  //       opts = opts.filter(x => {
+  //         return x[0] == 'bch';
+  //       });
+  //     }
 
-      if (!key.nonCompliantDerivation) {
-        // TESTNET
-        let testnet = _.cloneDeep(opts);
-        testnet.forEach(x => {
-          x[1] = 'testnet';
-        });
-        opts = opts.concat(testnet);
-      } else {
-        //  leave only BTC, and no testnet
-        opts = opts.filter(x => {
-          return x[0] == 'btc';
-        });
-      }
+  //     if (!key.nonCompliantDerivation) {
+  //       // TESTNET
+  //       let testnet = _.cloneDeep(opts);
+  //       testnet.forEach(x => {
+  //         x[1] = 'testnet';
+  //       });
+  //       opts = opts.concat(testnet);
+  //     } else {
+  //       //  leave only BTC, and no testnet
+  //       opts = opts.filter(x => {
+  //         return x[0] == 'btc';
+  //       });
+  //     }
 
-      let clients = [];
-      async.eachSeries(
-        opts,
-        (x, next) => {
-          let optsObj = {
-            coin: x[0],
-            network: x[1],
-            account: 0,
-            n: x[2] ? 2 : 1,
-            isSlpToken: x[3] ? x[3] : false
-          };
-          // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
-          // TODO OPTI: do not scan accounts if XX
-          //
-          // 1. check account 0
-          checkCredentials(key, optsObj, (err, iclients) => {
-            if (err) return next(err);
-            if (_.isEmpty(iclients)) return next();
-            clients = clients.concat(_.cloneDeep(iclients));
+  //     let clients = [];
+  //     async.eachSeries(
+  //       opts,
+  //       (x, next) => {
+  //         let optsObj = {
+  //           coin: x[0],
+  //           network: x[1],
+  //           account: 0,
+  //           n: x[2] ? 2 : 1,
+  //           isSlpToken: x[3] ? x[3] : false
+  //         };
+  //         // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
+  //         // TODO OPTI: do not scan accounts if XX
+  //         //
+  //         // 1. check account 0
+  //         checkCredentials(key, optsObj, (err, iclients) => {
+  //           logger.debug('checking credentials: ', iclients);
 
-            // Accounts not allowed?
-            if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45) return next();
+  //           if (err) return next(err);
+  //           if (_.isEmpty(iclients)) return next();
+  //           clients = clients.concat(_.cloneDeep(iclients));
 
-            // Now, lets scan all accounts for the found client
-            let cont = true,
-              account = 1;
-            async.whilst(
-              () => {
-                return cont;
-              },
-              icb => {
-                optsObj.account = account++;
+  //           // Accounts not allowed?
+  //           if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45) return next();
+  //           logger.debug('checking key: ', key);
 
-                checkCredentials(key, optsObj, (err, iclients) => {
-                  if (err) return icb(err);
-                  // we do not allow accounts nr gaps in BWS.
-                  cont = !_.isEmpty(iclients);
-                  if (cont) {
-                    clients = clients.concat(iclients);
-                  }
-                  return icb();
-                });
-              },
-              err => {
-                return next(err);
-              }
-            );
-          });
-        },
-        err => {
-          if (err) return cb(err);
-          return cb(null, clients);
-        }
-      );
-    };
+  //           // Now, lets scan all accounts for the found client
+  //           let cont = true,
+  //             account = 1;
+  //           async.whilst(
+  //             () => {
+  //               return cont;
+  //             },
+  //             icb => {
+  //               optsObj.account = account++;
 
-    let sets = [
-      {
-        // current wallets: /[44,48]/[0,145]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: false,
-        useLegacyPurpose: false
-      },
-      {
-        // older bch wallets: /[44,48]/[0,0]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: true,
-        useLegacyPurpose: false
-      },
-      {
-        // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: false,
-        useLegacyPurpose: true
-      },
-      {
-        // not that // older multisig BCH wallets: /[44]/[0]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: true,
-        useLegacyPurpose: true
-      },
+  //               checkCredentials(key, optsObj, (err, iclients) => {
+  //                 logger.debug('checking iclient: ', iclients);
+  //                 if (err) return icb(err);
+  //                 // we do not allow accounts nr gaps in BWS.
+  //                 cont = !_.isEmpty(iclients);
+  //                 if (cont) {
+  //                   clients = clients.concat(iclients);
+  //                 }
+  //                 return icb();
+  //               });
+  //             },
+  //             err => {
+  //               return next(err);
+  //             }
+  //           );
+  //         });
+  //       },
+  //       err => {
+  //         if (err) return cb(err);
+  //         return cb(null, clients);
+  //       }
+  //     );
+  //   };
 
-      {
-        // old BTC no-comp wallets: /44'/[0]'/
-        nonCompliantDerivation: true,
-        useLegacyPurpose: true
-      }
-    ];
+  //   let sets = [
+  //     {
+  //       // current wallets: /[44,48]/[0,145]'/
+  //       nonCompliantDerivation: false,
+  //       useLegacyCoinType: false,
+  //       useLegacyPurpose: false
+  //     },
+  //     {
+  //       // older bch wallets: /[44,48]/[0,0]'/
+  //       nonCompliantDerivation: false,
+  //       useLegacyCoinType: true,
+  //       useLegacyPurpose: false
+  //     },
+  //     {
+  //       // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
+  //       nonCompliantDerivation: false,
+  //       useLegacyCoinType: false,
+  //       useLegacyPurpose: true
+  //     },
+  //     {
+  //       // not that // older multisig BCH wallets: /[44]/[0]'/
+  //       nonCompliantDerivation: false,
+  //       useLegacyCoinType: true,
+  //       useLegacyPurpose: true
+  //     },
 
-    let s,
-      resultingClients = [],
-      k;
-    async.whilst(
-      () => {
-        if (!_.isEmpty(resultingClients)) return false;
+  //     {
+  //       // old BTC no-comp wallets: /44'/[0]'/
+  //       nonCompliantDerivation: true,
+  //       useLegacyPurpose: true
+  //     }
+  //   ];
 
-        s = sets.shift();
-        if (!s) return false;
+  //   let s,
+  //     resultingClients = [],
+  //     k;
+  //   async.whilst(
+  //     () => {
+  //       if (!_.isEmpty(resultingClients)) return false;
 
-        try {
-          if (opts.passphrase) {
-            s.passphrase = opts.passphrase;
-          }
+  //       s = sets.shift();
+  //       if (!s) return false;
 
-          k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...s });
-        } catch (e) {
-          return callback(new Errors.INVALID_BACKUP());
-        }
-        return true;
-      },
-      icb => {
-        checkKey(k, (err, clients) => {
-          if (err) return icb(err);
+  //       try {
+  //         if (opts.passphrase) {
+  //           s.passphrase = opts.passphrase;
+  //         }
 
-          if (clients && clients.length) {
-            resultingClients = clients;
-          }
-          return icb();
-        });
-      },
-      err => {
-        if (err) return callback(err);
+  //         k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...s });
+  //       } catch (e) {
+  //         return callback(new Errors.INVALID_BACKUP());
+  //       }
+  //       return true;
+  //     },
+  //     icb => {
+  //       checkKey(k, (err, clients) => {
+  //         logger.debug('checking client: ', clients);
+  //         if (err) return icb(err);
 
-        if (_.isEmpty(resultingClients)) k = null;
-        return callback(null, k, resultingClients);
-      }
-    );
-  }
+  //         if (clients && clients.length) {
+  //           resultingClients = clients;
+  //         }
+  //         return icb();
+  //       });
+  //     },
+  //     err => {
+  //       if (err) return callback(err);
+
+  //       if (_.isEmpty(resultingClients)) k = null;
+  //       return callback(null, k, resultingClients);
+  //     }
+  //   );
+  // }
 
   getWalletLotusDonation(cb) {
     this.copayerId = _.get(walletLotus, 'cred.copayerId', '');
@@ -3734,18 +3761,19 @@ export class WalletService {
     });
   }
 
-  getKeyFundWithMnemonic(cb) {
+  getKeyFundAndReceiveWithFundMnemonic(cb) {
     const clientBwc = new Client();
-    this._getKeyFundWithMnemonic(clientBwc, (err, key, clients, mnemonic) => {
-      logger.debug('function _getKeyFund: ', clients);
+    this._getKeyFundWithMnemonic(clientBwc, (err, keyFund, clientsFund, mnemonic) => {
       if (err) return cb(err);
-      return cb(null, key, clients, mnemonic);
+      this._getKeyReceive(clientBwc, (err, keyReceive, clientsReceive) => {
+        if (err) return cb(err);
+        return cb(null, keyFund, clientsFund, clientsReceive, mnemonic);
+      })
     });
   }
 
   getKeyReceive(cb) {
     const clientBwc = new Client();
-    const _that = this;
     this._getKeyReceive(clientBwc, (err, key, clients) => {
       if (err) return cb(err);
       return cb(null, key, clients);
@@ -3812,10 +3840,10 @@ export class WalletService {
         });
         this.storage.queue.clean(err => {});
       }
-    }, 2000);
+    }, 300000);
   }
 
-  checkQueueHandleSwap(key, clientsFund ) {
+  checkQueueHandleSwap(key, clientsFund, mnemonic ) {
     // this.getKeyFund((err, key, clientsFund) => {
       // if(err) return cb(err);
       setInterval(() => {
@@ -3825,12 +3853,12 @@ export class WalletService {
             if (data) {
                 console.log('orderinfo in queue detected: ', data);
                 // const ackQueue = (data) => this.storage.orderQueue.ack(data.ack, (err, id) => {});
-                // const saveError = (orderInfo, data, err) => {
-                //   orderInfo.error = JSON.stringify(err);
-                //   this.storage.updateOrder(orderInfo, err => {
-                //     return this.storage.orderQueue.ack(data.ack, (err, id) => {})
-                //   });
-                // };
+                const saveError = (orderInfo, data, err) => {
+                  orderInfo.error = JSON.stringify(err);
+                  this.storage.updateOrder(orderInfo, err => {
+                    return this.storage.orderQueue.ack(data.ack, (err, id) => {})
+                  });
+                };
                 const orderInfo: Order = data.payload;
                 if (orderInfo.status === 'waiting') {
                   // this.getAmountToWithCurrentRate(orderInfo, (err, amountToCalculatedWithCurrentRate) => {
@@ -3839,16 +3867,21 @@ export class WalletService {
                   // get utxos for deposit address => checking amount user sent to deposit address
                   this.getUtxosForSelectedAddressAndWallet(
                     {
-                      coin: orderInfo.fromCoinCode,
+                      coin: orderInfo.fromCoinCode ? 'xec' :  orderInfo.fromCoinCode,
                       network: 'livenet',
-                      addresses: [orderInfo.adddressUserDeposit],
-                      isTokenSupport: orderInfo.isFromToken
+                      addresses: orderInfo.isFromToken ? [this._convertEtokenAddressToEcashAddress(orderInfo.adddressUserDeposit)] : [orderInfo.adddressUserDeposit],
+                      isTokenSupport: orderInfo.isFromToken,
+                      tokenId: orderInfo.fromTokenId
                     },
                     (err, utxos) => {
                       let amountDepositDetect = 0;
                       if (utxos.length > 0) {
                         _.each(utxos, utxo => {
-                          amountDepositDetect += utxo.satoshis;
+                          if(orderInfo.isFromToken){
+                            amountDepositDetect += utxo.amountToken
+                          } else{
+                            amountDepositDetect += utxo.satoshis;
+                          }
                         });
                       }
                       if (amountDepositDetect > 0) {
@@ -3856,40 +3889,47 @@ export class WalletService {
                           orderInfo.amountUserDeposit = amountDepositDetect;
                           orderInfo.status = 'pending';
                           this.storage.updateOrder(orderInfo, (err, result) => {
-                            // if(err) saveError(orderInfo,data,err);
+                            if(err) saveError(orderInfo , data, err);
                             // return ackQueue(data);
                           });
                         } else {
-                          // calculate again amount swap ?
-                          const fundingWallet = clientsFund.find(s => s.credentials.coin === orderInfo.toCoinCode);
+                          const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
+                          const fundingWallet = clientsFund.find(s => s.credentials.coin === coinCode );
                           // checking rate again before creating tx
-                          this.getCurrentRate(orderInfo, (err, rate) => {
+                          this.getCurrentRate(orderInfo, async (err, rate) => {
+                            orderInfo.updatedRate = rate;
                             // calculate updated rate compare with created rate , if more than 20% (later dynamic) , suspend transaction
                             if ((Math.abs(rate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 20) {
-                              orderInfo.updatedRate = rate;
                               orderInfo.status = 'pending';
                               this.storage.updateOrder(orderInfo, (err, result) => {
-                                // if(err) saveError(orderInfo, data, err);
+                                if(err) saveError(orderInfo, data, err);
+                                // return this.storage.orderQueue.ack(data.ack, (err, id) => {});
                                 // return ackQueue(data);
                               });
                             } else {
                               this.walletId = fundingWallet.credentials.walletId;
                               this.copayerId = fundingWallet.credentials.copayerId;
                               if(orderInfo.isToToken){
-                                // this._sendSwapWithToken('xec', fundingWallet.credentials, fundingWallet.mnemonic, orderInfo.toCoinCode, null, orderInfo.amountFrom * rate, orderInfo.addressUserReceive, (txId) =>{
-                                //   this.storage.orderQueue.ack(data.ack, (err, id) => {});
-                                // });
+                                await this._sendSwapWithToken('xec', fundingWallet, mnemonic, orderInfo.toTokenId, null, amountDepositDetect * rate, orderInfo.addressUserReceive, (err, txId) => {
+                                  orderInfo.status = 'success';
+                                  orderInfo.txId = txId;
+                                  orderInfo.isSentToUser = true;
+                                  this.storage.updateOrder(orderInfo, (err, result) => {
+                                    // if(err) saveError(orderInfo, data, err);
+                                    this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                  });
+                                })
                               } else{
                                 const txOptsSwap = this._createOtpTxSwap(
-                                  orderInfo.toCoinCode,
+                                  orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode,
                                   orderInfo.addressUserReceive,
                                   amountDepositDetect * rate
                                 );
-                                this._sendSwap(fundingWallet, key, txOptsSwap, (err, txid) => {
-                                  // if(err) saveError(orderInfo, data, err);
+                                this._sendSwap(fundingWallet, key, txOptsSwap, (err, txId) => {
+                                  if(err) saveError(orderInfo, data, err);
                                   orderInfo.status = 'success';
                                   // orderInfo.amountSentToUser = orderInfo.amountFrom * rate;
-                                  orderInfo.txId = txid;
+                                  orderInfo.txId = txId;
                                   orderInfo.isSentToUser = true;
                                   this.storage.updateOrder(orderInfo, (err, result) => {
                                     // if(err) saveError(orderInfo, data, err);
@@ -3904,14 +3944,14 @@ export class WalletService {
                       }
                     }
                   );
-                } else if (orderInfo.status === 'processing') {
-
+                } else if (orderInfo.status === 'pending') {
+                  return this.storage.orderQueue.ack(data.ack, (err, id) => {})
                 }
             }
           });
           this.storage.queue.clean(err => {});
         }
-      }, 30000);
+      }, 2000);
   // });
 
   }
@@ -4042,11 +4082,16 @@ export class WalletService {
   createOrder(clientsReceive, opts, cb) {
     const _that = this;
     const orderInfo = Order.create(opts);
-    const depositClient = clientsReceive.find(client => client.credentials.coin === orderInfo.fromCoinCode);
+    const fromCoinCode = orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode;
+    const depositClient = clientsReceive.find(client => client.credentials.coin === fromCoinCode);
     this.walletId = depositClient.credentials.walletId;
     this.createAddress({ ignoreMaxGap: true }, (err, address) => {
       if (err) return cb(err);
-      orderInfo.adddressUserDeposit = address.address;
+      if(orderInfo.isFromToken){
+        address = this._convertAddressToEtoken(address.address);
+        // const slpAddress = bchjs.HDNode.toSLPAddress(change);
+      }
+      orderInfo.adddressUserDeposit = address;
       this.storage.storeOrderInfo(orderInfo, (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
@@ -4058,6 +4103,32 @@ export class WalletService {
         });
       });
     });
+  }
+
+  _convertAddressToEtoken(address) {
+    try {
+      const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
+      const protoXEC = protocolPrefix.livenet; // only support livenet
+      const protoAddr: string = protoXEC + ':' + address;
+      const { prefix, type, hash } = ecashaddr.decode(protoAddr);
+      const cashAddress = ecashaddr.encode('etoken', type, hash);
+      return cashAddress;
+    } catch {
+      return '';
+    }
+  }
+
+  _convertEtokenAddressToEcashAddress(address) {
+    try {
+      // const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
+      // const protoXEC = protocolPrefix.livenet; // only support livenet
+      // const protoAddr: string = protoXEC + ':' + address;
+      const { prefix, type, hash } = ecashaddr.decode(address);
+      const addressConverted = ecashaddr.encode('ecash', type, hash);
+      return addressConverted;
+    } catch {
+      return '';
+    }
   }
 
   /**

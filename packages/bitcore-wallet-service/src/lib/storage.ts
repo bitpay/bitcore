@@ -19,6 +19,7 @@ import {
   Wallet
 } from './model';
 import { DonationStorage } from './model/donation';
+import { Order } from './model/order';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -395,7 +396,7 @@ export class Storage {
   //     });
   // }
 
-  updateOrder(orderInfo, cb) {
+  updateOrder(orderInfo: Order, cb) {
     this.db.collection(collections.ORDER_INFO).updateOne(
       {
         id: orderInfo.id
@@ -403,6 +404,7 @@ export class Storage {
       {
         $set: {
           adddressUserDeposit: orderInfo.adddressUserDeposit,
+          updatedRate: orderInfo.updatedRate,
           status: orderInfo.status,
           isSentToFund: orderInfo.isSentToFund,
           isSentToUser: orderInfo.isSentToUser,

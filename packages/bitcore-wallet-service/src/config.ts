@@ -179,6 +179,10 @@ module.exports = {
       {
         coin: 'bcProStar',
         rate: 1000000 // USD
+      },
+      {
+        coin: 'ABCSLP',
+        rate: 0.0001 // USD
       }
     ]
   }
