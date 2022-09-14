@@ -93,7 +93,10 @@ class ChainProxy {
       let normalizedChain = coin.toLowerCase();
       if (Constants.BITPAY_SUPPORTED_MATIC_ERC20[normalizedChain.toUpperCase()]) {
         normalizedChain = 'matic';
-      } else if (Constants.BITPAY_SUPPORTED_ETH_ERC20[normalizedChain.toUpperCase()] || !Constants.CHAINS[normalizedChain.toUpperCase()]) {
+      } else if (
+        Constants.BITPAY_SUPPORTED_ETH_ERC20[normalizedChain.toUpperCase()] ||
+        !Constants.CHAINS[normalizedChain.toUpperCase()]
+      ) {
         // default to eth if it's an ETH ERC20 or if we don't know the chain
         normalizedChain = 'eth';
       }
