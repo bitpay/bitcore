@@ -44,8 +44,7 @@
     "lint:style": "prettier --check 'src/**/*.ts'",
     "fix": "npm run fix:style && npm run fix:lint",
     "fix:lint": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "fix:style": "prettier --write 'src/**/*.ts'",
-    "migration": "cd migrations && node fixUnspentInputs.js --network regtest --dryrun false"
+    "fix:style": "prettier --write 'src/**/*.ts'"
   },
   "nyc": {
     "reporter": [

@@ -21,15 +21,13 @@ const { Storage } = require('../build/src/services/storage');
 const { wait } = require('../build/src/utils/wait');
 const Config = require('../build/src/config');
 
-const RBFEnabledUTXOChains = ['BTC', 'LTC', 'DOGE'];
-const networks = ['regtest', 'testnet', 'mainnet'];
-
 class Migration {
   constructor({ transactionModel = TransactionStorage, coinModel = CoinStorage } = {}) {
     this.transactionModel = transactionModel;
     this.coinModel = coinModel;
   }
   async connect() {
+    console.log("Attempting connection to the database...")
     try {
       if (!Storage.connected) {
         await Storage.start();
@@ -41,31 +39,45 @@ class Migration {
   }
 
   processArgs(argv) {
-    let defaults = {
+    let retArgs = {
       dryrun: true,
-      chain: 'BTC',
-      network: 'testnet'
+      chain: '',
+      network: ''
     };
     let args = argv.slice(2);
+
+    const helpIdx = args.findIndex(i => i == '--help');
+    if (helpIdx >= 0) {
+      console.log("Usage: node fixUnspentInputs.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]");
+      process.exit();
+    }
+
     const dryRunIdx = args.findIndex(i => i == '--dryrun');
     if (dryRunIdx >= 0) {
-      defaults.dryrun =
+      retArgs.dryrun =
         args[dryRunIdx + 1] == undefined || args[dryRunIdx + 1] == 'true'
           ? true
           : args[dryRunIdx + 1] == 'false'
           ? false
           : true;
     }
+
     const chainIdx = args.findIndex(i => i == '--chain');
     if (chainIdx >= 0) {
-      defaults.chain = args[chainIdx + 1] == undefined ? 'BTC' : args[chainIdx + 1].toUpperCase();
+      retArgs.chain = args[chainIdx + 1] == undefined ? '' : args[chainIdx + 1].toUpperCase();
     }
 
     const networkIdx = args.findIndex(i => i == '--network');
     if (networkIdx >= 0) {
-      defaults.network = args[networkIdx + 1] == undefined ? 'testnet' : args[networkIdx + 1].toLowerCase();
+      retArgs.network = args[networkIdx + 1] == undefined ? '' : args[networkIdx + 1].toLowerCase();
     }
-    return defaults;
+
+    if (!retArgs.chain || !retArgs.network) {
+      console.log("You must specify a chain and network for the script to run on. Use --help for more info.");
+      process.exit();
+    }
+
+    return retArgs;
   }
 
   async runScript(args) {
@@ -82,12 +94,12 @@ class Migration {
 
     // Initialize RPC connection
     if (!Config.default.chains[chain]) {
-      console.error(`There is no config for chain '${chain}'`);
-      return;
+      console.error(`There is no RPC config for chain '${chain}'`);
+      process.exit(1);
     }
     if (!Config.default.chains[chain][network]) {
-      console.error(`There is no config for chain '${chain}' with network '${network}'`);
-      return;
+      console.error(`There is no RPC config for chain '${chain}' with network '${network}'`);
+      process.exit(1);
     }
     const rpcConfig = Config.default.chains[chain][network].rpc;
     const rpc = new CryptoRpc(
@@ -137,22 +149,28 @@ class Migration {
       }
     };
     // Handle incoming stream data
-    handleStream(await stream.next());
+    const data = await stream.next();
+    if (data) {
+      handleStream(data);
+    } else {
+      console.log("No records found");
+      process.exit();
+    }
 
     const endProcess = async () => {
       console.log(`Finished updating records for ${chain}-${network}`);
       const date = new Date().getTime();
       const filename = `output-${chain}-${network}-${date}.log`;
-      console.log(`writing output to ${filename}`);
+      console.log(`Writing output to ${filename}`);
       try {
         await fsPromises.writeFile(filename, JSON.stringify(output));
       } catch (e) {
         // write to stdout
-        console.log('failed to write output to file. Writing to stdout instead.');
+        console.log('Failed to write output to file. Writing to stdout instead.');
         console.log(output);
       }
       if (args.dryrun) {
-        console.log('run the script with "--dryrun false" to execute this operation on the returned results.');
+        console.log('Run the script with "--dryrun false" to execute this operation on the returned results.');
       }
       process.exit();
     };
@@ -161,10 +179,10 @@ class Migration {
 
 const migration = new Migration({ transactionModel: TransactionStorage, coinModel: CoinStorage });
 
+const args = migration.processArgs(process.argv);
 migration
   .connect()
   .then(() => {
-    const args = migration.processArgs(process.argv);
     migration.runScript(args);
   })
   .catch(err => {
