@@ -326,7 +326,7 @@ export class EmailService {
       }
 
       if (_.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) && data.txid) {
-        const urlTemplate = this.publicTxUrlTemplate[wallet.chain][wallet.network];
+        const urlTemplate = this.publicTxUrlTemplate[wallet.chain]?.[wallet.network];
         if (urlTemplate) {
           try {
             data.urlForTx = Mustache.render(urlTemplate, data);
