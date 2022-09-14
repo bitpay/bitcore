@@ -7,7 +7,7 @@ import { Storage } from '../../../services/storage';
 import { valueOrDefault } from '../../../utils/check';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
-import { ErigonBlock, ErigonTransaction, IEthBlock, IEthTransaction } from '../types';
+import { AnyBlock, ErigonTransaction, GethTransaction, IEthBlock, IEthTransaction } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 
 class SyncWorker {
@@ -17,14 +17,15 @@ class SyncWorker {
   private chainConfig: any;
   private web3?: Web3;
   private rpc?: IRpc;
+  private client?: 'erigon' | 'geth';
   private stopping: boolean = false;
 
   constructor() {
     this.chainConfig = Config.get().chains[this.chain][this.network];
-    this.connect();
   }
 
   async start() {
+    await this.connect();
     await Storage.start();
     this.parentPort!.on('message', this.messageHandler.bind(this));
   }
@@ -48,7 +49,7 @@ class SyncWorker {
         process.exit(0);
       }
 
-      const block = ((await this.rpc!.getBlock(blockNum)) as unknown) as ErigonBlock;
+      const block = await this.rpc!.getBlock(blockNum);
       if (!block) {
         worker.parentPort!.postMessage({ message: 'sync', notFound: true, blockNum, threadId: worker.threadId });
         return;
@@ -73,18 +74,24 @@ class SyncWorker {
       if (error.includes('connect')) {
         error = null;
         logger.info(`Syncing thread ${worker.threadId} lost connection to the node. Reconnecting.`);
-        this.connect();
+        await this.connect();
       }
       worker.parentPort!.postMessage({ message: 'sync', notFound: true, blockNum, threadId: worker.threadId, error });
     }
   }
 
-  connect() {
+  async getClient() {
+    const nodeVersion = await this.web3!.eth.getNodeInfo();
+    return nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
+  }
+
+  async connect() {
     const providerIdx = worker.threadId % (this.chainConfig.providers || []).length;
     const providerConfig = this.chainConfig.provider || this.chainConfig.providers[providerIdx];
     const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
     this.web3 = new CryptoRpc(rpcConfig).get(this.chain).web3;
-    this.rpc = new Rpcs[this.chainConfig.client || 'erigon'](this.web3!);
+    this.client = await this.getClient();
+    this.rpc = new Rpcs[this.client](this.web3!);
     return { web3: this.web3, rpc: this.rpc };
   }
 
@@ -100,7 +107,7 @@ class SyncWorker {
     });
   }
 
-  async convertBlock(block: ErigonBlock) {
+  async convertBlock(block: AnyBlock) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -110,10 +117,10 @@ class SyncWorker {
       Constantinople: 7280000
     };
 
-    if (height > ForkHeights.Byzantium) {
-      reward = 3;
-    } else if (height > ForkHeights.Constantinople) {
+    if (height > ForkHeights.Constantinople) {
       reward = 2;
+    } else if (height > ForkHeights.Byzantium) {
+      reward = 3;
     }
 
     const convertedBlock: IEthBlock = {
@@ -143,43 +150,14 @@ class SyncWorker {
     };
     const transactions = block.transactions as Array<ErigonTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
-    const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
-    for (const tx of internalTxs) {
-      if (tx.type === 'reward') {
-        if (tx.action.rewardType && tx.action.rewardType === 'block') {
-          const gasSum = convertedTxs.reduce((sum, e) => sum + e.fee, 0);
-          const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
-          convertedBlock.reward = totalReward;
-        }
-        if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
-          const uncles = convertedBlock.uncleReward || [];
-          const uncleValue = Number.parseInt(tx.action.value, 16);
-          Object.assign(convertedBlock, { uncleReward: uncles.concat([uncleValue]) });
-        }
-      }
-      if (tx && tx.action) {
-        const foundIndex = convertedTxs.findIndex(
-          t =>
-            t.txid === tx.transactionHash &&
-            t.from !== tx.action.from &&
-            t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
-        );
-        if (foundIndex > -1) {
-          convertedTxs[foundIndex].internal.push(tx);
-        }
-        if (tx.error) {
-          const errorIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
-          if (errorIndex && errorIndex > -1) {
-            convertedTxs[errorIndex].error = tx.error;
-          }
-        }
-      }
-    }
+    const traceTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
+
+    this.rpc!.reconcileTraces(convertedBlock, convertedTxs, traceTxs);
 
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ErigonTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEthBlock): IEthTransaction {
     const txid = tx.hash || '';
     const to = tx.to || '';
     const from = tx.from || '';
@@ -206,7 +184,8 @@ class SyncWorker {
       gasPrice: Number(tx.gasPrice),
       // gasUsed: Number(tx.gasUsed),
       nonce,
-      internal: []
+      internal: [],
+      calls: []
     };
 
     if (abiType) {

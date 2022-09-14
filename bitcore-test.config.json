@@ -27,19 +27,24 @@
         }
       },
       "ETH": {
-        "testnet": {
+        "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "parity",
+              "host": "erigon",
               "port": 30303
             }
           ],
-          "provider": {
-            "host": "parity",
+          "providers": [{
+            "host": "erigon",
             "protocol": "ws",
-            "port": 8546
-          }
+            "port": 8545
+          }, {
+            "host": "geth",
+            "protocol": "ws",
+            "port": 8556
+          }],
+          "threads": 0
         }
       },
       "XRP": {
