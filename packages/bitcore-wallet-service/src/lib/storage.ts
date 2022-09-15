@@ -20,6 +20,7 @@ import {
 } from './model';
 import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
+import { TokenInfo } from './chain/xec';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -309,6 +310,16 @@ export class Storage {
     );
   }
 
+  fetchTokenInfo(cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.TOKEN_INFO).find({}).toArray((err, result: TokenInfo[]) => {
+      if(err) return cb(err);
+      return cb(null, result);
+    });
+  }
+
+
   fetchDonationByTxid(txidDonation, cb) {
     if (!this.db) return cb();
 
@@ -443,6 +454,20 @@ export class Storage {
         return cb(null, result);
       }
     );
+  }
+
+  fetchOrderinfoById(orderId: string, cb){
+    this.db.collection(collections.ORDER_INFO).findOne(
+      {
+        id: orderId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    )
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {

@@ -1314,6 +1314,20 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/tokenInfo/', (req, res)=>{
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      try{
+        server = getServer(req, res);
+      } catch(err){
+        if (err) return returnError(err, res, req);
+      }
+      server.getAllTokenInfo((err, tokenInfoList) => {
+        if(err) returnError(err, res, req);
+        res.json(tokenInfoList);
+      })
+    })
+
     router.post('/v3/sendToken/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
@@ -1328,7 +1342,7 @@ export class ExpressApp {
       }
       server.getKeyFundWithMnemonic(async (err, key, clients, mnemonic) => {
         if (err) return returnError(err, res, req);
-        server.sendSwapWithToken(mnemonic, clients, req.body, (err, txId)=>{
+        server.sendSwapWithToken(mnemonic, clients, req.body, (err, txId) => {
           res.json(txId);
         });
       });
@@ -1376,6 +1390,23 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/order/:id', (req, res) => {
+      // SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      const opts = {
+        id: req.params['id']
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getOrderInfo(opts, (err, orderInfo) => {
+        if (err) return returnError(err, res, req);
+        res.json(orderInfo);
+      });
+    });
+
     router.post('/v3/order/create', (req, res) => {
       let server;
       try {
@@ -1384,7 +1415,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
       const client = this.app.get('clientsReceive');
-      server.createOrder(client , req.body, (err, order) => {
+      server.createOrder(client, req.body, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
@@ -1665,18 +1696,21 @@ export class ExpressApp {
       //   return cb();
       // });
       // logger.debug('server: ', server);
-      server.getKeyFund((err, key, clientsFund) => {
-        let isOrderValid;
-        if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
-        // logger.debug('clients Fund 1: ', clientsFund);
-        server.getKeyFund((err, keyFund, clientsFund) => {
-          server.checkQueueHandleSwap(keyFund, clientsFund);
+      setTimeout(() => {
+        server.getKeyFundAndReceiveWithFundMnemonic((err, keyFund, clientsFund, clientsReceive, mnemonic) => {
+          let isOrderValid;
+          // if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
+          // logger.debug('clients Fund 1: ', clientsFund);
+          this.app.set('clientsReceive', clientsReceive);
+
+          server.checkQueueHandleSwap(keyFund, clientsFund, mnemonic);
           return cb();
-        });
+      })
+      }, 10000);
+
         // server.getKeyReceive((err, key, clientsReceive)=>{
         //   if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
 
-        //   // this.app.set('clientsReceive', clientsReceive);
         //   // const result = this.app.get('clientsFund');
         //   // logger.debug('clients Receive: ', clientsReceive);
         // })
@@ -1686,7 +1720,5 @@ export class ExpressApp {
       //   if(err) return cb(err);
       //   return cb();
       // })
-
-    });
   }
 }

@@ -2,18 +2,31 @@ import _ from 'lodash';
 const Uuid = require('uuid');
 
 interface IOrder {
-  orderCode: number;
+  id: string | number;
+  version: number;
+  priority: number;
   fromCoinCode: string;
+  fromTokenId?: string;
   amountFrom: number;
+  fromSatUnit: number;
   isFromToken: boolean;
-  toCoinCode: boolean;
-  amountSentToUser: number;
+  toCoinCode: string;
   isToToken: boolean;
+  toSatUnit: number;
+  amountSentToUser: number;
+  amountUserDeposit: number;
+  createdRate: number;
+  updatedRate: number;
   addressUserReceive: string;
-  status: string;
-  attempts: number;
-  lastAttemptOn?: number;
+  adddressUserDeposit: string;
+  toTokenId?: string;
+  txId?: string;
+  status?: string;
+  isSentToFund?: boolean;
+  isSentToUser?: boolean;
+  endedOn?: number;
   createdOn?: number;
+  error?: string;
 }
 
 export class Order {
@@ -23,9 +36,11 @@ export class Order {
   fromCoinCode: string;
   fromTokenId?: string;
   amountFrom: number;
+  fromSatUnit: number;
   isFromToken: boolean;
   toCoinCode: string;
   isToToken: boolean;
+  toSatUnit: number;
   amountSentToUser: number;
   amountUserDeposit: number;
   createdRate: number;
@@ -53,6 +68,8 @@ export class Order {
     x.id = _.padStart(now.toString(), 14, '0') + Uuid.v4();
     x.fromCoinCode = opts.fromCoinCode;
     x.amountFrom = opts.amountFrom;
+    x.fromSatUnit = opts.fromSatUnit;
+    x.toSatUnit = opts.toSatUnit;
     x.isFromToken = opts.isFromToken;
     x.toCoinCode = opts.toCoinCode;
     x.amountSentToUser = opts.amountSentToUser;
@@ -96,7 +113,9 @@ export class Order {
     x.txId = obj.txId;
     x.createdOn = obj.createOn;
     x.error = obj.error;
-
+    x.amountFrom = obj.amountFrom;
+    x.fromSatUnit = obj.fromSatUnit;
+    x.toSatUnit = obj.toSatUnit;
     return x;
   }
 }

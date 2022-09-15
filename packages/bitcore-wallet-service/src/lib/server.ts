@@ -1830,7 +1830,7 @@ export class WalletService {
               }
             )
             // await Promise.all(promiseList)
-            //   .then(async 
+            //   .then(async
             //   })
               .catch(err => {
                 return cb(err);
@@ -2122,6 +2122,15 @@ export class WalletService {
           });
       });
     });
+  }
+
+  getAllTokenInfo(cb){
+    // return new Promise((resolve, reject) => {
+      this.storage.fetchTokenInfo((err, tokenInfoList)=>{
+        if(err) return cb(err);
+        return cb(null, tokenInfoList);
+      })
+    // })
   }
 
   getRemainingInfo(opts, cb) {
@@ -3409,7 +3418,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
+      opts.words = 'decline wreck three urge shoulder animal diary bird hurt spot smoke manual';
       client.serverAssistedImport
       // this.supportImport(opts, client, (err, key, walletClients) => {
       //   return cb(null, key, walletClients);
@@ -3424,7 +3433,7 @@ export class WalletService {
     try {
       logger.debug("client: ", client);
       let opts = { words: '' };
-      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
+      opts.words = 'decline wreck three urge shoulder animal diary bird hurt spot smoke manual';
       // this.supportImport(opts, client, (err, key, walletClients) => {
       //   logger.debug('Inside function _getKeyFund: ', walletClients);
       //   return cb(null, key, walletClients, opts.words);
@@ -3445,7 +3454,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'wet embark miracle scissors appear mean fall fetch age frown pledge artist';
+      opts.words = 'priority correct culture suspect pigeon negative issue practice start height trophy print';
       Client.serverAssistedImport(opts,
         {
           baseUrl: client.request.baseUrl
@@ -3867,7 +3876,7 @@ export class WalletService {
                   // get utxos for deposit address => checking amount user sent to deposit address
                   this.getUtxosForSelectedAddressAndWallet(
                     {
-                      coin: orderInfo.fromCoinCode ? 'xec' :  orderInfo.fromCoinCode,
+                      coin: orderInfo.isFromToken ? 'xec' :  orderInfo.fromCoinCode,
                       network: 'livenet',
                       addresses: orderInfo.isFromToken ? [this._convertEtokenAddressToEcashAddress(orderInfo.adddressUserDeposit)] : [orderInfo.adddressUserDeposit],
                       isTokenSupport: orderInfo.isFromToken,
@@ -3910,7 +3919,7 @@ export class WalletService {
                               this.walletId = fundingWallet.credentials.walletId;
                               this.copayerId = fundingWallet.credentials.copayerId;
                               if(orderInfo.isToToken){
-                                await this._sendSwapWithToken('xec', fundingWallet, mnemonic, orderInfo.toTokenId, null, amountDepositDetect * rate, orderInfo.addressUserReceive, (err, txId) => {
+                                await this._sendSwapWithToken('xec', fundingWallet, mnemonic, orderInfo.toTokenId, null,  (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate, orderInfo.addressUserReceive, (err, txId) => {
                                   orderInfo.status = 'success';
                                   orderInfo.txId = txId;
                                   orderInfo.isSentToUser = true;
@@ -3923,7 +3932,7 @@ export class WalletService {
                                 const txOptsSwap = this._createOtpTxSwap(
                                   orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode,
                                   orderInfo.addressUserReceive,
-                                  amountDepositDetect * rate
+                                  (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate
                                 );
                                 this._sendSwap(fundingWallet, key, txOptsSwap, (err, txId) => {
                                   if(err) saveError(orderInfo, data, err);
@@ -4090,6 +4099,8 @@ export class WalletService {
       if(orderInfo.isFromToken){
         address = this._convertAddressToEtoken(address.address);
         // const slpAddress = bchjs.HDNode.toSLPAddress(change);
+      } else {
+        address = address.address;
       }
       orderInfo.adddressUserDeposit = address;
       this.storage.storeOrderInfo(orderInfo, (err, result) => {
@@ -4099,7 +4110,7 @@ export class WalletService {
         // let order into queue
         this.storage.orderQueue.add(Order.fromObj(result.ops[0]), (err, id) => {
           if (err) return cb(err);
-          return cb(null, result);
+          return cb(null, Order.fromObj(result.ops[0]));
         });
       });
     });
@@ -5700,8 +5711,7 @@ export class WalletService {
   }
 
   /**
-   * Returns swap config.
-   * @returns {Object} config - The swap config.
+   * Returns swap configetOrderInfog.
    */
   async getConfigSwap(cb) {
     await fs.readFile(appDir + '/admin-config.json', 'utf8', (error, data) => {
@@ -5746,6 +5756,19 @@ export class WalletService {
         return cb(null, swapConfig);
       });
     });
+  }
+
+   /**
+   * Returns exchange rates of the supported fiat currencies for the specified coin.
+   * @param {Object} opts
+   * @param {String} opts.id - The order info id requested.
+   * @returns {Array} rates - The exchange rate.
+   */
+  getOrderInfo(opts, cb){
+    this.storage.fetchOrderinfoById(opts.id, (err, result)=>{
+      if(err) return cb(err);
+      return cb(null, Order.fromObj(result));
+    })
   }
 
   /**

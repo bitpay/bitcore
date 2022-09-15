@@ -139,8 +139,8 @@ class ChainProxy {
   convertAddressToScriptPayload(coin, address) {
     return this.get(coin).convertAddressToScriptPayload(address);
   }
-  sendToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress){
-    return this.get(coin).sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress)
+  async sendToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {
+    return await this.get(coin).sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
   }
 
   async getTokenInfo(coin, tokenId) {
