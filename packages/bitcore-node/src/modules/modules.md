@@ -12,6 +12,7 @@ The modules in this table will automatically register with `bitcore-node` if you
 | LTC            | litecoin       | ./litecoin     |
 | DOGE           | dogecoin       | ./dogecoin     |
 | XRP            | ripple         | ./ripple       |
+| RSK            | rsk            | ./rsk          |
 
 If there is a custom or third-party module you'd like to use, follow the example below.
 

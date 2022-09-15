@@ -51,6 +51,7 @@ export class BlockchainMonitor {
             btc: {},
             bch: {},
             eth: {},
+            rsk: {},
             xrp: {},
             doge: {},
             ltc: {}

@@ -397,6 +397,8 @@ export class Key {
       coinCode = '0';
     } else if (opts.coin == 'eth') {
       coinCode = '60';
+    } else if (opts.coin == 'rsk' || opts.coin == 'rbtc') {
+        coinCode = '137';
     } else if (opts.coin == 'xrp') {
       coinCode = '144';
     } else if (opts.coin == 'doge') {

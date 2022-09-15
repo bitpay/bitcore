@@ -3,6 +3,7 @@ import { BTCTxProvider } from './btc';
 import { DOGETxProvider } from './doge';
 import { ERC20TxProvider } from './erc20';
 import { ETHTxProvider } from './eth';
+import { RSKTxProvider } from './rsk';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { LTCTxProvider } from './ltc';
 import { XRPTxProvider } from './xrp';
@@ -11,6 +12,7 @@ const providers = {
   BTC: new BTCTxProvider(),
   BCH: new BCHTxProvider(),
   ETH: new ETHTxProvider(),
+  RSK: new RSKTxProvider(), // TODO: add multisig support
   ERC20: new ERC20TxProvider(),
   ETHMULTISIG: new ETHMULTISIGTxProvider(),
   XRP: new XRPTxProvider(),

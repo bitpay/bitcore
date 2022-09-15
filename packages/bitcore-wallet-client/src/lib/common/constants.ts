@@ -25,6 +25,7 @@ export const Constants = {
     'btc',
     'bch',
     'eth',
+    'rsk',
     'xrp',
     'doge',
     'ltc',
@@ -45,6 +46,7 @@ export const Constants = {
     'pax', // backwards compatibility
     'gusd',
     'busd',
+    'xusd', // Sovryn token
     'dai',
     'wbtc',
     'shib',
@@ -52,9 +54,9 @@ export const Constants = {
     'euroc'
   ],
   UTXO_COINS: ['btc', 'bch', 'doge', 'ltc'],
-  CHAINS: ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc'],
+  CHAINS: ['btc', 'bch', 'eth', 'xrp', 'doge', 'ltc', 'rsk'],
   UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
-  EVM_CHAINS: ['eth'],
+  EVM_CHAINS: ['eth', 'rsk'],
   TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS
 };

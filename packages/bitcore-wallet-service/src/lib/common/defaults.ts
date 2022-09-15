@@ -83,6 +83,33 @@ module.exports = {
         defaultValue: 1000000000
       }
     ],
+    rsk: [
+      {
+        name: 'urgent',
+        nbBlocks: 1,
+        defaultValue: 59240000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 1,
+        defaultValue: 59240000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 1,
+        defaultValue: 59240000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 1,
+        defaultValue: 59240000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 1,
+        defaultValue: 59240000
+      }
+    ],
     xrp: [
       {
         name: 'normal',
@@ -239,6 +266,7 @@ module.exports = {
     btc: 10000 * 1000, // 10k sat/b
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
+    rsk: 1000000000000,
     xrp: 1000000000000,
     doge: 100000000 * 100,
     ltc: 10000 * 1000 // 10k sat/b
@@ -248,6 +276,7 @@ module.exports = {
     btc: 0,
     bch: 0,
     eth: 0,
+    rsk: 59240000, // minGasPrice
     xrp: 0,
     doge: 0,
     ltc: 0
@@ -257,6 +286,7 @@ module.exports = {
     btc: 0.05 * 1e8,
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
+    rsk: 1 * 1e18, // 1 rbtc
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
     ltc: 0.05 * 1e8
