@@ -330,13 +330,15 @@ export class EmailService {
       }
 
       if (_.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) && data.txid) {
-        const urlTemplate = this.publicTxUrlTemplate[wallet.chain][wallet.network];
+        const urlTemplate = this.publicTxUrlTemplate[wallet.chain]?.[wallet.network];
         if (urlTemplate) {
           try {
             data.urlForTx = Mustache.render(urlTemplate, data);
           } catch (ex) {
             logger.warn('Could not render public url for tx', ex);
           }
+        } else {
+          logger.warn(`Could not find template for chain "${wallet.chain}" on network "${wallet.network}"`);
         }
       }
 
