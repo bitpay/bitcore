@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import 'source-map-support/register';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
+import { UNITS } from '@abcpros/crypto-wallet-core/ts_build/src/constants/units';
 import { ChainService } from './chain/index';
 import { ClientError } from './errors/clienterror';
 import { FiatRateService } from './fiatrateservice';
@@ -52,7 +53,7 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { TokenInfo } from './model/tokenInfo';
 import { Order } from './model/order';
 import { countBy } from 'lodash';
-import { isToken } from 'typescript';
+import { isToken, Token } from 'typescript';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -1550,7 +1551,10 @@ export class WalletService {
 
   getUtxosForCurrentWallet(opts, cb) {
     opts = opts || {};
-
+    let walletId = this.walletId;
+    if(opts.walletId){
+      walletId = opts.walletId;
+    }
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
@@ -1559,7 +1563,7 @@ export class WalletService {
     async.series(
       [
         next => {
-          this.getWallet({}, (err, w) => {
+          this.getWallet({walletId: walletId}, (err, w) => {
             if (err) return next(err);
 
             wallet = w;
@@ -1580,7 +1584,7 @@ export class WalletService {
           }
 
           // even with Grouping we need address for pubkeys and path (see last step)
-          this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+          this.storage.fetchAddresses(walletId, (err, addresses) => {
             _.each(addresses, x => {
               ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
             });
@@ -1636,7 +1640,7 @@ export class WalletService {
           // effects between broadcasting a tx and getting the list of UTXOs.
           // This is especially true in the case of having multiple instances of the block explorer.
           this.storage.fetchBroadcastedTxs(
-            this.walletId,
+            walletId,
             {
               minTs: now - 24 * 3600,
               limit: 100
@@ -1672,7 +1676,7 @@ export class WalletService {
         },
         next => {
           if (this._isSupportToken(wallet)) {
-            this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
+            this.storage.fetchAddresses(walletId, async (err, addresses) => {
               if (err) return next(err);
               if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
               let promiseList = [];
@@ -1919,7 +1923,11 @@ export class WalletService {
 
     const setWallet = cb1 => {
       if (wallet) return cb1();
-      this.getWallet({}, (err, ret) => {
+      let optsReturn = {};
+      if(opts.walletId){
+        optsReturn = opts;
+      }
+      this.getWallet(optsReturn, (err, ret) => {
         if (err) return cb(err);
         wallet = ret;
         return cb1(null, wallet);
@@ -1944,6 +1952,15 @@ export class WalletService {
         return ChainService.getWalletBalance(this, wallet, opts, cb);
       });
     });
+  }
+
+  getBalanceWithPromise(opts){
+    return new Promise((resolve, reject) => {
+      this.getBalance(opts, (err, balance) => {
+        if(err) return reject(err);
+        else return resolve(balance);
+      })
+    })
   }
 
   getBalanceDonation(opts, cb) {
@@ -3433,7 +3450,7 @@ export class WalletService {
     try {
       logger.debug("client: ", client);
       let opts = { words: '' };
-      opts.words = 'decline wreck three urge shoulder animal diary bird hurt spot smoke manual';
+      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
       // this.supportImport(opts, client, (err, key, walletClients) => {
       //   logger.debug('Inside function _getKeyFund: ', walletClients);
       //   return cb(null, key, walletClients, opts.words);
@@ -3454,7 +3471,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'priority correct culture suspect pigeon negative issue practice start height trophy print';
+      opts.words = 'wet embark miracle scissors appear mean fall fetch age frown pledge artist';
       Client.serverAssistedImport(opts,
         {
           baseUrl: client.request.baseUrl
@@ -5713,7 +5730,7 @@ export class WalletService {
   /**
    * Returns swap configetOrderInfog.
    */
-  async getConfigSwap(cb) {
+   async getConfigSwap(clientsFund, cb) {
     await fs.readFile(appDir + '/admin-config.json', 'utf8', (error, data) => {
       if (error) {
         console.log(error);
@@ -5722,41 +5739,68 @@ export class WalletService {
       const swapConfig = JSON.parse(data);
       const listCoin = swapConfig.coinSwap.concat(swapConfig.coinReceived);
       let promiseList = [];
-      for (var i = 0; i < listCoin.length; i++) {
-        const coin = listCoin[i];
-
-        promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
-        // this._getFeePerKb({coin: coin.isToken ? 'xec' : coin.code, network: 'livenet'}, {feeLevel : 'normal'}, (err, feePerKb)=>{
-
-        // })
-      }
-      Promise.all(promiseList).then(listData => {
-        listData.forEach((data: any) => {
-          const coin = data.coin;
-          const feePerKb = data.feePerKb;
-          let estimatedFee;
-          if (coin.isToken || coin.code === 'xec') {
-            // Send dust transaction representing tokens being sent.
-            const dustRepresenting = 546;
-            //  Return any token change back to the sender.
-            const dustReturnAnyToken = 546;
-            // fee
-            const fee = 250;
-
-            estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
-          } else {
-            const baseTxpSize = 78;
-            const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
-            const sizePerInput = 148;
-            const feePerInput = (sizePerInput * feePerKb) / 1000;
-            estimatedFee = Math.round(baseTxpFee + feePerInput);
-          }
-          coin.networkFee = estimatedFee;
-        });
-        return cb(null, swapConfig);
+      let promiseList2 = [];
+      // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
+      clientsFund.forEach(clientFund => {
+        promiseList2.push(this.getBalanceWithPromise({walletId: clientFund.credentials.walletId}));
       });
+      Promise.all(promiseList2).then(balance => {
+        logger.debug('balance: ', balance);
+        this.getAllTokenInfo((err, tokenInfoList : TokenInfo[]) => {
+          this._getRatesWithCustomFormat((err, fiatRates) => {
+            try{
+              
+              for (var i = 0; i < listCoin.length; i++) {
+                const coin = listCoin[i];
+                const coinQuantityFromUSDMin = coin.min * fiatRates[coin.code.toLowerCase()].USD;
+                if(coin.isToken){
+                  const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase()).decimals;
+                  coin.minConvertToSat = coin.min * Math.pow(10, tokenDecimals);
+                }else{
+                  coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+                }
+                promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
+  
+              }
+              Promise.all(promiseList).then(listData => {
+                listData.forEach((data: any) => {
+                  const coin = data.coin;
+                  const feePerKb = data.feePerKb;
+                  let estimatedFee;
+                  if (coin.isToken || coin.code === 'xec') {
+                    // Send dust transaction representing tokens being sent.
+                    const dustRepresenting = 546;
+                    //  Return any token change back to the sender.
+                    const dustReturnAnyToken = 546;
+                    // fee
+                    const fee = 250;
+        
+                    estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
+                  } else {
+                    const baseTxpSize = 78;
+                    const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
+                    const sizePerInput = 148;
+                    const feePerInput = (sizePerInput * feePerKb) / 1000;
+                    estimatedFee = Math.round(baseTxpFee + feePerInput);
+                  }
+                  coin.networkFee = estimatedFee;
+                });
+                return cb(null, swapConfig);
+              });
+             
+            }catch(e){
+                logger.debug(e);
+            }
+            
+          })
+        })
+       }).catch(e =>{
+         logger.debug(e);
+       });
+     
     });
   }
+
 
    /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.

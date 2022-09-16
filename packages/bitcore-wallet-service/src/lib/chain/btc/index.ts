@@ -40,7 +40,8 @@ export class BtcChain implements IChain {
     server.getUtxosForCurrentWallet(
       {
         coin: opts.coin,
-        addresses: opts.addresses
+        addresses: opts.addresses,
+        walletId: wallet.id
       },
       (err, utxos) => {
         if (err) return cb(err);
@@ -848,7 +849,7 @@ export class BtcChain implements IChain {
     return false;
   }
   convertAddressToScriptPayload(address) {}
-  sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress){};
+  sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {}
 
   getChronikClient() {}
   getTokenInfo(tokenId) {}

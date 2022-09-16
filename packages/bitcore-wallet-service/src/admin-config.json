@@ -1,16 +1,60 @@
 {
-    "coinSwap":[
-        {
-            "code": "xpi",
-            "isToken": false,
-            "networkFee": 0 
-        }
-    ],
-    "coinReceived":[
-        {
-            "code": "eat",
-            "isToken": true,
-            "networkFee": 0 
-        }
-    ]
+    "coinSwap": [
+    {
+      "code": "xpi",
+      "isToken": false,
+      "networkFee": 226,
+      "rate": {},
+      "min": 0,
+      "minConvertToSat": 0,
+      "tokenInfo": {}
+    },
+    {
+      "code": "xec",
+      "isToken": false,
+      "networkFee": 226,
+      "rate": {},
+      "min": 0,
+      "minConvertToSat": 0,
+      "tokenInfo": {}
+    },
+    {
+      "code": "abcslp",
+      "isToken": true,
+      "networkFee": 1342,
+      "rate": {},
+      "min": 0,
+      "minConvertToSat": 0,
+      "tokenInfo": {}
+    }
+  ],
+  "coinReceived": [
+    {
+        "code": "xpi",
+        "isToken": false,
+        "networkFee": 226,
+        "rate": {},
+        "min": 0,
+        "minConvertToSat": 0,
+        "tokenInfo": {}
+      },
+      {
+        "code": "xec",
+        "isToken": false,
+        "networkFee": 226,
+        "rate": {},
+        "min": 0,
+        "minConvertToSat": 0,
+        "tokenInfo": {}
+      },
+      {
+        "code": "abcslp",
+        "isToken": true,
+        "networkFee": 1342,
+        "rate": {},
+        "min": 0,
+        "minConvertToSat": 0,
+        "tokenInfo": {}
+      }
+  ]
 }

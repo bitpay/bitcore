@@ -1384,7 +1384,8 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getConfigSwap((err, config) => {
+      const clientFunds = this.app.get('clientsFund');
+      server.getConfigSwap(clientFunds, (err, config) => {
         if (err) return returnError(err, res, req);
         res.json(config);
       });
@@ -1700,9 +1701,10 @@ export class ExpressApp {
         server.getKeyFundAndReceiveWithFundMnemonic((err, keyFund, clientsFund, clientsReceive, mnemonic) => {
           let isOrderValid;
           // if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
-          // logger.debug('clients Fund 1: ', clientsFund);
           this.app.set('clientsReceive', clientsReceive);
-
+          this.app.set('clientsFund', clientsFund);
+          logger.debug('clients Fund 1: ', clientsFund);
+          logger.debug('clients fund global: ', this.app.get('clientsFund'));
           server.checkQueueHandleSwap(keyFund, clientsFund, mnemonic);
           return cb();
       })
