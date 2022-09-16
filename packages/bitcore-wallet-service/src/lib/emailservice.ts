@@ -252,6 +252,7 @@ export class EmailService {
       bit: 'bits',
       bch: 'BCH',
       eth: 'ETH',
+      matic: 'MATIC',
       xrp: 'XRP',
       doge: 'DOGE',
       ltc: 'LTC',

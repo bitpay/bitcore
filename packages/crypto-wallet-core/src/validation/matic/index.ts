@@ -1,18 +1,14 @@
-import { IValidation } from '..';
+import { EthValidation } from '../eth';
 const utils = require('web3-utils');
 
-export class EthValidation implements IValidation {
-  validateAddress(_network: string, address: string): boolean {
-    return utils.isAddress(address);
-  }
-
+export class MaticValidation extends EthValidation {
   validateUri(addressUri: string): boolean {
     if (!addressUri) {
       return false;
     }
     const address = this.extractAddress(addressUri);
-    const ethereumPrefix = /ethereum/i.exec(addressUri);
-    return !!ethereumPrefix && utils.isAddress(address);
+    const maticPrefix = /matic/i.exec(addressUri);
+    return !!maticPrefix && utils.isAddress(address);
   }
 
   protected extractAddress(data) {

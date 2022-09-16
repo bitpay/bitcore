@@ -5,6 +5,7 @@ import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
 import { LtcChain } from './ltc';
+import { MaticChain } from './matic';
 import { XrpChain } from './xrp';
 
 const Common = require('../common');
@@ -71,6 +72,7 @@ const chains: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
   ETH: new EthChain(),
+  MATIC: new MaticChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
   LTC: new LtcChain()
@@ -89,10 +91,13 @@ class ChainProxy {
     try {
       // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (
-        Constants.BITPAY_SUPPORTED_ERC20[coin.toUpperCase()] ||
-        !Constants.BITPAY_SUPPORTED_COINS[coin.toUpperCase()]
+      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20[normalizedChain.toUpperCase()]) {
+        normalizedChain = 'matic';
+      } else if (
+        Constants.BITPAY_SUPPORTED_ETH_ERC20[normalizedChain.toUpperCase()] ||
+        !Constants.CHAINS[normalizedChain.toUpperCase()]
       ) {
+        // default to eth if it's an ETH ERC20 or if we don't know the chain
         normalizedChain = 'eth';
       }
       return normalizedChain;

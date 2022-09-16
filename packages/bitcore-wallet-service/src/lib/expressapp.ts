@@ -923,6 +923,7 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/ethmultisig/', (req, res) => {
       getServerWithAuth(req, res, async server => {
         try {
@@ -934,7 +935,30 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/ethmultisig/info', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInfo = await server.getMultisigContractInfo(req.body);
+          res.json(multisigContractInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/multisig/', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInstantiationInfo = await server.getMultisigContractInstantiationInfo(req.body);
+          res.json(multisigContractInstantiationInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/multisig/info', (req, res) => {
       getServerWithAuth(req, res, async server => {
         try {
           const multisigContractInfo = await server.getMultisigContractInfo(req.body);
@@ -1629,7 +1653,7 @@ export class ExpressApp {
         });
     });
 
-    router.post('/v1/service/oneInch/getSwap', (req, res) => {
+    router.post('/v1/service/oneInch/getSwap/:chain?', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
           .oneInchGetSwap(req)
@@ -1642,7 +1666,7 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v1/service/oneInch/getTokens', (req, res) => {
+    router.get('/v1/service/oneInch/getTokens/:chain?', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
