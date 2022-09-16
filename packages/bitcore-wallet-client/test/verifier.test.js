@@ -42,9 +42,9 @@ describe('Verifier', function() {
       cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
 
       Verifier.checkAddress(cred, {
-        address: '0x841b1de89b7a8014d01B0fc73e7a21479a94899A',
+        address: '0x9858EfFD232B4033E47d90003D41EC34EcaEda94',
         path: 'm/0/0',
-        publicKeys: ['032b94ccd92aa3cc0db87fc24ca0782584e7543abb8c67594f70a2b25e0deb683f']
+        publicKeys: ['0237b0bb7a8288d38ed49a524b5dc98cff3eb5ca824c9f9dc0dfdb3d9cd600f299']
       }).should.be.true;
     });
   });

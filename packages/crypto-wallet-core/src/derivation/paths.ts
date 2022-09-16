@@ -32,9 +32,9 @@ export const Paths = {
     regtest: "m/44'/2'/"
   },
   MATIC: {
-    mainnet: "m/44'/966'/",
-    livenet: "m/44'/966'/",
-    testnet: "m/44'/966'/"
+    mainnet: "m/44'/60'/", // the official matic derivation path is 966 but users will expect address to be same as ETH
+    livenet: "m/44'/60'/",
+    testnet: "m/44'/60'/"
   },
   default: {
     testnet: "m/44'/1'/"

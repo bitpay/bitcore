@@ -211,7 +211,7 @@ describe('Transaction Creation', () => {
     const recipients = [{ address: to, amount: value }];
     const cryptoTx = Transactions.create({
       ...rawEthTx,
-      chain: 'ERC20',
+      chain: 'ETHERC20',
       recipients,
       nonce: 0
     });

@@ -79,7 +79,7 @@ describe('Address Derivation', () => {
     // 'select scout crash enforce riot rival spring whale hollow radar rule sentence';
 
     const path = Deriver.pathFor('MATIC', 'mainnet');
-    expect(path).to.equal("m/44'/966'/0'");
+    expect(path).to.equal("m/44'/60'/0'");
 
     const address = Deriver.deriveAddress('MATIC', 'mainnet', xPub, 0, false);
     const expectedAddress = '0x9dbfE221A6EEa27a0e2f52961B339e95426931F9';
@@ -124,7 +124,7 @@ describe('Address Derivation', () => {
     const privKey = 'xprv9ypBjKErGMqCdzd44hfSdy1Vk6PGtU3si8ogZcow7rA23HTxMi9XfT99EKmiNdLMr9BAZ9S8ZKCYfN1eCmzYSmXYHje1jnYQseV1VJDDfdS';
 
     const path = Deriver.pathFor('MATIC', 'mainnet');
-    expect(path).to.equal("m/44'/966'/0'");
+    expect(path).to.equal("m/44'/60'/0'");
 
     const result = Deriver.derivePrivateKey('MATIC', 'mainnet', privKey, 0, false);
     const expectedResult = {
