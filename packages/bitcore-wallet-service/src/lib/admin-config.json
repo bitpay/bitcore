@@ -28,7 +28,7 @@
       "tokenInfo": {}
     }
   ],
-  "coinReceived": [
+  "coinReceive": [
     {
         "code": "xpi",
         "isToken": false,

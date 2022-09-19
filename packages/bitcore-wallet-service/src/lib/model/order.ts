@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { CoinConfig } from './config-swap';
 const Uuid = require('uuid');
 
 interface IOrder {
@@ -55,6 +56,7 @@ export class Order {
   endedOn?: number;
   createdOn?: number;
   error?: string;
+  coinConfig?: CoinConfig;
 
   static create(opts) {
     opts = opts || {};
@@ -86,6 +88,7 @@ export class Order {
     x.isSentToUser = false;
     x.endedOn = null;
     x.error = null;
+    x.coinConfig = null;
     return x;
   }
 
@@ -116,6 +119,7 @@ export class Order {
     x.amountFrom = obj.amountFrom;
     x.fromSatUnit = obj.fromSatUnit;
     x.toSatUnit = obj.toSatUnit;
+    x.coinConfig = obj.coinConfig;
     return x;
   }
 }

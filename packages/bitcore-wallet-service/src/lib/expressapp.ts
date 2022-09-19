@@ -1415,8 +1415,9 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      const client = this.app.get('clientsReceive');
-      server.createOrder(client, req.body, (err, order) => {
+      const clientsReceive = this.app.get('clientsReceive');
+      const clientsFund = this.app.get('clientsFund');
+      server.createOrder(clientsFund, clientsReceive, req.body, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
