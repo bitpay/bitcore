@@ -76,7 +76,7 @@ describe('XRP Chain State Provider', () => {
         await XRP.getBlockBeforeTime({ chain: 'XRP', network: 'testnet' });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'ledger_hash\' of undefined')
+        expect(err.message).to.equal('Cannot read properties of undefined (reading \'ledger_hash\')')
       }
     });
 
@@ -87,7 +87,7 @@ describe('XRP Chain State Provider', () => {
         await XRP.getBlockBeforeTime({ chain: 'XRP', network: 'testnet' });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'provider\' of undefined')
+        expect(err.message).to.equal('Cannot read properties of undefined (reading \'provider\')')
       }
     });
   });

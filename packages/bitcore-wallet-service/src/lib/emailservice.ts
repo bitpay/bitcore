@@ -276,13 +276,16 @@ export class EmailService {
         let opts = {} as any;
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
-          if (Constants.TOKEN_OPTS[tokenAddress]) {
-            unit = Constants.TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+          if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ETH_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
             try {
-              customTokensData = await this.getTokenData();
+              customTokensData = await this.getTokenData(data.address.coin);
             } catch (error) {
               return cb(new Error('Could not get custom tokens data'));
             }
@@ -504,11 +507,16 @@ export class EmailService {
     });
   }
 
-  getTokenData() {
+  getTokenData(chain) {
     return new Promise((resolve, reject) => {
+      const chainIdMap = {
+        eth: 1,
+        matic: 137
+      };
+      // Get tokens
       this.request(
         {
-          url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/1/tokens',
+          url: `https://bitpay.api.enterprise.1inch.exchange/v3.0/${chainIdMap[chain]}/tokens`,
           method: 'GET',
           json: true,
           headers: {

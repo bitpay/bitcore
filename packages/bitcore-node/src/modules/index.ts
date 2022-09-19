@@ -50,6 +50,7 @@ class ModuleManager extends BaseModule {
   KNOWN_MODULE_PATHS = {
     BTC: './bitcoin',
     ETH: './ethereum',
+    MATIC: './matic',
     BCH: './bitcoin-cash',
     DOGE: './dogecoin',
     LTC: './litecoin',

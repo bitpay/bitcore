@@ -221,6 +221,28 @@ describe('Transaction Creation', () => {
     expect(cryptoTx).to.equal(expectedTx);
   });
 
+  it('should be able to create a goerli ERC20 tx', () => {
+    const rawEthTx = {
+      network: 'goerli',
+      value: 3896000000000000,
+      to: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+      gasPrice: 20000000000,
+      tokenAddress: '0x692a70d2e424a56d2c6c27aa97d1a86395877b3a'
+    };
+    const { value, to } = rawEthTx;
+    const recipients = [{ address: to, amount: value }];
+    const cryptoTx = Transactions.create({
+      ...rawEthTx,
+      chain: 'ERC20',
+      recipients,
+      nonce: 0
+    });
+    const expectedTx =
+      '0xf867808504a817c8008094692a70d2e424a56d2c6c27aa97d1a86395877b3a80b844a9059cbb00000000000000000000000037d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a000000000000000000000000000000000000000000000000000dd764300b8000058080';
+
+    expect(cryptoTx).to.equal(expectedTx);
+  });
+
   it('should be able to create a kovan ERC20 tx', () => {
     const rawEthTx = {
       network: 'kovan',

@@ -3,19 +3,19 @@ import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
-import { ETH, ETHStateProvider } from '../../../../src/modules/ethereum/api/csp';
 import { IEthBlock, IEthTransaction } from '../../../../src/modules/ethereum/types';
+import { MATIC, MATICStateProvider } from '../../../../src/modules/matic/api/csp';
 import { mockModel } from '../../../helpers';
 
-describe('ETH Chain State Provider', function() {
-  const chain = 'ETH';
+describe('MATIC Chain State Provider', function() {
+  const chain = 'MATIC';
   const network = 'regtest';
 
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
-    const { web3 } = await ETH.getWeb3(network);
+    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    const { web3 } = await MATIC.getWeb3(network);
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
     expect(stub.callCount).to.eq(2);
@@ -26,8 +26,8 @@ describe('ETH Chain State Provider', function() {
   it('should make a new web3 if getBlockNumber fails', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
-    const { web3 } = await ETH.getWeb3(network);
+    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    const { web3 } = await MATIC.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
     expect(stub.callCount).to.not.exist;
     sandbox.restore();
@@ -47,15 +47,15 @@ describe('ETH Chain State Provider', function() {
         symbol: () => ({ call: sandbox.stub().resolves(expected.symbol) })
       }
     };
-    sandbox.stub(ETH, 'erc20For').resolves(tokenStub);
-    const token = await ETH.getERC20TokenInfo(network, '0x123');
+    sandbox.stub(MATIC, 'erc20For').resolves(tokenStub);
+    const token = await MATIC.getERC20TokenInfo(network, '0x123');
     expect(token.name).to.eq(expected.name);
     expect(token.symbol).to.eq(expected.symbol);
     expect(token.decimals).to.eq(expected.decimals);
     sandbox.restore();
   });
 
-  it('should be able to find an ETH transaction', async () => {
+  it('should be able to find an MATIC transaction', async () => {
     const sandbox = sinon.createSandbox();
     const mockTx = {
       _id: new ObjectId(),
@@ -64,10 +64,10 @@ describe('ETH Chain State Provider', function() {
       gasPrice: 10,
       data: Buffer.from('')
     } as MongoBound<IEthTransaction>;
-    sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
-    sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
+    sandbox.stub(MATIC, 'getReceipt').resolves({ gasUsed: 21000 });
+    sandbox.stub(MATIC, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
-    const found = await ETH.getTransaction({ chain: 'ETH', network: 'testnet', txId: '123' });
+    const found = await MATIC.getTransaction({ chain: 'MATIC', network: 'testnet', txId: '123' });
     expect(found).to.exist;
     expect(found!.fee).to.eq(21000 * 10);
     expect(found!.confirmations).to.eq(1);
@@ -89,8 +89,8 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
-    const txids = await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
+    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    const txids = await MATIC.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(true);
     expect(txids).to.deep.eq(['123', '456']);
@@ -112,8 +112,8 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
-    const txid = await ETH.broadcastTransaction({ chain, network, rawTx: '123' });
+    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    const txid = await MATIC.broadcastTransaction({ chain, network, rawTx: '123' });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(txid).to.eq('123');
     sandbox.restore();
@@ -143,10 +143,10 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
     let thrown = false;
     try {
-      await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
+      await MATIC.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
     } catch (e) {
       thrown = true;
     }
@@ -156,7 +156,7 @@ describe('ETH Chain State Provider', function() {
     sandbox.restore();
   });
 
-  it('should be able to find an ETH block', async () => {
+  it('should be able to find an MATIC block', async () => {
     const sandbox = sinon.createSandbox();
     const mockBlock = {
       _id: new ObjectId(),
@@ -164,7 +164,7 @@ describe('ETH Chain State Provider', function() {
       height: 1
     } as MongoBound<IEthBlock>;
     mockModel('blocks', mockBlock);
-    const found = await ETH.getBlocks({ chain, network, blockId: mockBlock.hash });
+    const found = await MATIC.getBlocks({ chain, network, blockId: mockBlock.hash });
     expect(found).to.exist;
     expect(found[0]).to.exist;
     expect(found[0].hash).to.eq(mockBlock.hash);
@@ -187,7 +187,7 @@ describe('ETH Chain State Provider', function() {
     };
 
     beforeEach(() => {
-      sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+      sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
     });
 
     afterEach(() => {
@@ -196,14 +196,14 @@ describe('ETH Chain State Provider', function() {
 
     it('it should return gas', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
-      const gas = await ETH.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
+      const gas = await MATIC.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
       expect(gas).to.equal(12345);
     });
 
     it('should return gas for optional params', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, { result: '1234' });
       
-      const gas = await ETH.estimateGas({ network });
+      const gas = await MATIC.estimateGas({ network });
       expect(gas).to.equal(1234);
     });
 
@@ -211,7 +211,7 @@ describe('ETH Chain State Provider', function() {
       web3Stub.currentProvider.send.callsArgWith(1, 'Unavailable server', null); // body is null
   
       try {
-        await ETH.estimateGas({ network });
+        await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
         expect(err).to.equal('Unavailable server');
@@ -222,7 +222,7 @@ describe('ETH Chain State Provider', function() {
       web3Stub.currentProvider.send.callsArgWith(1, null, { message: 'need some param' });
   
       try {
-        await ETH.estimateGas({ network });
+        await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
         expect(err).to.equal('need some param');
@@ -233,7 +233,7 @@ describe('ETH Chain State Provider', function() {
       web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
   
       try {
-        await ETH.estimateGas({ network: 'unexpected' });
+        await MATIC.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
       } catch (err) {
         expect(err.message).to.equal('Cannot read properties of undefined (reading \'providers\')');
@@ -244,7 +244,7 @@ describe('ETH Chain State Provider', function() {
       web3Stub.currentProvider.send.callsArgWith(1, null, null); // body is null
   
       try {
-        await ETH.estimateGas({ network });
+        await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
         expect(err.message).to.equal('Cannot read properties of null (reading \'result\')');

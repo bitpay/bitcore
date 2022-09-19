@@ -25,6 +25,7 @@ module.exports = {
     LTC: 'ltc',
     MATIC_E: 'matic_e',
     USDC_E: 'usdc_e',
+    USDP_E: 'usdp_e',
     PAX_E: 'pax_e',
     GUSD_E: 'gusd_e',
     BUSD_E: 'busd_e',
@@ -35,6 +36,7 @@ module.exports = {
     EUROC_E: 'euroc_e',
     ETH_M: 'eth_m',
     USDC_M: 'usdc_m',
+    USDP_M: 'usdp_m',
     PAX_M: 'pax_m',
     GUSD_M: 'gusd_m',
     BUSD_M: 'busd_m',
@@ -48,7 +50,8 @@ module.exports = {
   BITPAY_SUPPORTED_ETH_ERC20: {
     MATIC_E: 'matic_e',
     USDC_E: 'usdc_e',
-    PAX_E: 'pax_e',
+    USDP_E: 'usdp_e',
+    PAX_E: 'pax_e', // backwards compatability
     GUSD_E: 'gusd_e',
     BUSD_E: 'busd_e',
     DAI_E: 'dai_e',
@@ -61,6 +64,7 @@ module.exports = {
   BITPAY_SUPPORTED_MATIC_ERC20: {
     ETH_M: 'eth_m',
     USDC_M: 'usdc_m',
+    USDP_M: 'usdp_m',
     PAX_M: 'pax_m',
     GUSD_M: 'gusd_m',
     BUSD_M: 'busd_m',
@@ -73,11 +77,13 @@ module.exports = {
 
   BITPAY_USD_STABLECOINS: {
     USDC_E: 'usdc_e',
+    USDP_E: 'usdp_e',
     PAX_E: 'pax_e',
     GUSD_E: 'gusd_e',
     BUSD_E: 'busd_e',
     DAI_E: 'dai_e',
     USDC_M: 'usdc_m',
+    USDP_M: 'usdp_m',
     PAX_M: 'pax_m',
     GUSD_M: 'gusd_m',
     BUSD_M: 'busd_m',
