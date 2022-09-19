@@ -190,7 +190,7 @@ export class CoinModel extends BaseModel<ICoin> {
 
   _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean }): any {
     // try to parse coin.address if its 'false' and script exists
-    if (coin.address == 'false' && coin.script != undefined && coin.script != Buffer.alloc(0)) {
+    if (coin.address == 'false' && coin.script != undefined && coin.script.toString() != '') {
       try {
         const lib = Libs.get(coin.chain).lib;
         const address = lib
@@ -200,7 +200,7 @@ export class CoinModel extends BaseModel<ICoin> {
 
         if (lib.Address.isValid(address, coin.network)) {
           coin.address = address;
-          // update coin record in db - do it synchronously as we don't need to wait for result
+          // update coin record in db - do it asynchronously as we don't need to wait for result
           CoinStorage.collection.updateOne({ _id: coin._id }, { $set: { address: coin.address } });
         }
       } catch (e) {
