@@ -41,10 +41,21 @@ export class Storage {
     }
   }
 
+  async verifyDbs(dbs) {
+    // test mongo connection
+    const mongoDbIdx = dbs.findIndex(d => d instanceof Mongo);
+    if (!(await (dbs[mongoDbIdx] as Mongo).testConnection())) {
+      // remove mongo from array of dbs
+      dbs.splice(mongoDbIdx, 1);
+    }
+
+    return dbs;
+  }
+
   async loadWallet(params: { name: string }) {
     const { name } = params;
     let wallet;
-    for (let db of this.db) {
+    for (let db of await this.verifyDbs(this.db)) {
       try {
         wallet = await db.loadWallet({ name });
         if (wallet) {
@@ -62,7 +73,7 @@ export class Storage {
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    for (let db of this.db) {
+    for (let db of await this.verifyDbs(this.db)) {
       try {
         await db.deleteWallet({ name });
       } catch (e) {
@@ -73,20 +84,22 @@ export class Storage {
 
   async listWallets() {
     let passThrough = new PassThrough();
-    for (let db of this.db) {
+    const dbs = await this.verifyDbs(this.db);
+    for (let db of dbs) {
       const listWalletStream = await db.listWallets();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => this.db.length-- === 0 && passThrough.end());
+      listWalletStream.once('end', () => dbs.length-- === 0 && passThrough.end());
     }
     return passThrough;
   }
 
   async listKeys() {
     let passThrough = new PassThrough();
-    for (let db of this.db) {
+    const dbs = await this.verifyDbs(this.db);
+    for (let db of dbs) {
       const listWalletStream = await db.listKeys();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => --this.db.length === 0 && passThrough.end());
+      listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
     }
     return passThrough;
   }
