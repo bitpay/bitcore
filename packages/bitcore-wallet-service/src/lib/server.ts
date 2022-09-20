@@ -53,7 +53,7 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { Order } from './model/order';
 import { countBy } from 'lodash';
-import { isToken, Token } from 'typescript';
+import { isIfStatement, isToken, Token } from 'typescript';
 import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { CoinConfig, ConfigSwap } from './model/config-swap';
 import { Config } from './model/config-model';
@@ -3452,7 +3452,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'decline wreck three urge shoulder animal diary bird hurt spot smoke manual';
+      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
       client.serverAssistedImport
       // this.supportImport(opts, client, (err, key, walletClients) => {
       //   return cb(null, key, walletClients);
@@ -3467,7 +3467,7 @@ export class WalletService {
     try {
       logger.debug("client: ", client);
       let opts = { words: '' };
-      opts.words = 'decline wreck three urge shoulder animal diary bird hurt spot smoke manual';
+      opts.words = 'final major brother expire hazard palace match stadium carpet tomato develop guess';
       // this.supportImport(opts, client, (err, key, walletClients) => {
       //   logger.debug('Inside function _getKeyFund: ', walletClients);
       //   return cb(null, key, walletClients, opts.words);
@@ -3488,7 +3488,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'hand drink pig donkey raise weasel convince crazy jaguar ecology junk affair';
+      opts.words = 'embark good rotate outside youth original razor know fantasy wool perfect reason';
       Client.serverAssistedImport(opts,
         {
           baseUrl: client.request.baseUrl
@@ -3886,7 +3886,7 @@ export class WalletService {
     }, 300000);
   }
 
-  checkQueueHandleSwap(key, clientsFund, mnemonic ) {
+  checkQueueHandleSwap(key, clientsFund, clientsReceive, mnemonic ) {
     // this.getKeyFund((err, key, clientsFund) => {
       // if(err) return cb(err);
       setInterval(() => {
@@ -3895,7 +3895,11 @@ export class WalletService {
             console.log('orderinfo created: ', data);
             const saveError = (orderInfo, data, err) => {
               orderInfo.status = 'pending';
-              orderInfo.error = JSON.stringify(err);
+              if(err.message){
+                orderInfo.error = err.message;
+              } else{
+                orderInfo.error = JSON.stringify(err);
+              }
               this.storage.updateOrder(orderInfo, err => {
                 return this.storage.orderQueue.ack(data.ack, (err, id) => {})
               });
@@ -3907,7 +3911,7 @@ export class WalletService {
                 console.log('orderinfo in queue detected: ', data);
                 // const ackQueue = (data) => this.storage.orderQueue.ack(data.ack, (err, id) => {});
                 const configSwap : ConfigSwap = await this.getConfigSwapWithPromise(clientsFund);
-                const isValidOrder = this.checkRequiremenBeforeQueueExcetue(configSwap, orderInfo);
+                const isValidOrder = await this.checkRequiremenBeforeQueueExcetue(configSwap, orderInfo);
                   if (isValidOrder && orderInfo.status === 'waiting') {
                     // get utxos for deposit address => checking amount user sent to deposit address
                     this.getUtxosForSelectedAddressAndWallet(
@@ -3927,6 +3931,7 @@ export class WalletService {
                             } else{
                               amountDepositDetect += utxo.satoshis;
                             }
+                            orderInfo.txIdUserDeposit = utxo.txid;
                           });
                         }
                         if (amountDepositDetect > 0) {
@@ -3948,7 +3953,7 @@ export class WalletService {
                                 if(orderInfo.isToToken){
                                   await this._sendSwapWithToken('xec', fundingWallet, mnemonic, orderInfo.toTokenId, null,  (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate, orderInfo.addressUserReceive, (err, txId) => {
                                     orderInfo.status = 'success';
-                                    orderInfo.txId = txId;
+                                    orderInfo.txIdUserReceive = txId;
                                     orderInfo.isSentToUser = true;
                                     this.storage.updateOrder(orderInfo, (err, result) => {
                                       this.storage.orderQueue.ack(data.ack, (err, id) => {});
@@ -3961,15 +3966,20 @@ export class WalletService {
                                     (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate
                                   );
                                   this._sendSwap(fundingWallet, key, txOptsSwap, (err, txId) => {
-                                    if(err) throw err;
-                                    orderInfo.status = 'success';
-                                    // orderInfo.amountSentToUser = orderInfo.amountFrom * rate;
-                                    orderInfo.txId = txId;
-                                    orderInfo.isSentToUser = true;
-                                    this.storage.updateOrder(orderInfo, (err, result) => {
-                                      if(err) throw err;
-                                      this.storage.orderQueue.ack(data.ack, (err, id) => {});
-                                    });
+                                    if(err) saveError(orderInfo, data, err);
+                                    else{
+                                      orderInfo.status = 'success';
+                                      // orderInfo.amountSentToUser = orderInfo.amountFrom * rate;
+                                      orderInfo.txIdUserReceive = txId;
+                                      orderInfo.isSentToUser = true;
+                                      this.storage.updateOrder(orderInfo, (err, result) => {
+                                        if(err) saveError(orderInfo, data, err);
+                                        else{
+                                          this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                        }
+                                      });
+                                    }
+                                   
                                   });
                                 }
                               }
@@ -3996,16 +4006,109 @@ export class WalletService {
 
   }
 
-  checkRequiremenBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order){
+  checkRequireInfoForOrderInfo(configSwap: ConfigSwap, orderInfo: Order){
+    
+  }
+
+  async checkRequiremenBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order){
+    let listCoinReceiveCode = [];
+    let convertedListTokenReceiveFound = [];
+    let listCoinSwapCode = [];
+    let convertedListTokenSwapFound = [];
+    const availabeCoinSupportExchange = ['xec', 'bch', 'xpi'];
+    const availabeTokenSupportExchange = ['abcslp', 'eat', 'bcpro'];
     let isValidOrder = false;
+    if(orderInfo){
+      if(!(orderInfo.fromCoinCode
+        && orderInfo.toCoinCode
+        && orderInfo.createdRate
+        && orderInfo.addressUserReceive)){
+          throw new Error('missing requiremnet field in order info');
+      }
+
+      // if (!checkRequired(orderInfo, ['fromCoinCode', 'amountFrom'])) {
+      //   throw new Error('adId is missing');
+      // }
+
+      if(typeof(orderInfo.amountFrom) !== 'number' || orderInfo.amountFrom === 0){
+        throw new Error('Amount deposit must be greater than 0');
+      }
+
+      if(orderInfo.isFromToken && ( !orderInfo.fromTokenId || !(orderInfo.fromTokenInfo && orderInfo.fromTokenInfo.decimals))){
+        throw new Error('Missing token info from');
+      }
+
+      if(orderInfo.isToToken && (!orderInfo.toTokenId || !(orderInfo.toTokenInfo && orderInfo.toTokenInfo.decimals))){
+        throw new Error('Missing token info to');
+      }
+
+      
+     
+    }
+
+
     if(configSwap){
+
+      // checking required coin , token for receive 
+      const listCoinReceive = configSwap.coinReceive.filter(config => config.isEnable);
+      if(listCoinReceive && listCoinReceive.length > 0){
+        listCoinReceiveCode = listCoinReceive.map(item => item.code.toLowerCase());
+      }
+      // const supportReceiveToken = configSwap.coinReceive.find(config => config.isToken);
+      // if(supportReceiveToken){
+      //   const walletXECFound = clientsFund.find(client => client.credentials.coin.toLowerCase() === 'xec');
+      //   let listTokenReceiveFound = null;
+      //   listTokenReceiveFound = await this.getTokensWithPromise({walletId: walletXECFound.credentials.walletId});
+      //   if(listTokenReceiveFound && listTokenReceiveFound.length > 0){
+      //     convertedListTokenReceiveFound = _.map(listTokenReceiveFound, item => item.tokenInfo.symbol.toLowerCase());
+      //   }
+      // }
+      // const coinAndTokenReceiveSupport = listCoinReceiveCode.concat(convertedListTokenReceiveFound);
+      if(!listCoinReceiveCode.includes(orderInfo.toCoinCode)){
+        throw new Error('Not found this receive coin or token on server');
+      }
+
+      const listCoinSwap = configSwap.coinReceive.filter(config => config.isEnable);
+      if(listCoinSwap && listCoinSwap.length > 0){
+        listCoinSwapCode = listCoinSwap.map(item => item.code.toLowerCase());
+      }
+      // const supportSwapToken = configSwap.coinSwap.find(config => config.isToken);
+      // if(supportSwapToken){
+      //   const walletXECFound = clientsFund.find(client => client.credentials.coin.toLowerCase() === 'xec');
+      //   let listTokenSwapFound = null;
+      //   let convertedListTokenReceiveFound = [];
+      //   listTokenSwapFound = await this.getTokensWithPromise({walletId: walletXECFound.credentials.walletId});
+      //   if(listTokenSwapFound && listTokenSwapFound.length > 0){
+      //     convertedListTokenSwapFound = _.map(listTokenSwapFound, item => item.tokenInfo.symbol.toLowerCase());
+      //   }
+      // }
+      // const coinAndTokenSwapSupport = listCoinSwapCode.concat(convertedListTokenSwapFound);
+      if(!listCoinSwapCode.includes(orderInfo.fromCoinCode)){
+        throw new Error('Not found this swap coin or token on server');
+      }
+      if(typeof(orderInfo.fromSatUnit) !== 'number' || orderInfo.fromSatUnit === 0){
+        if(orderInfo.isFromToken){
+          orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
+        } else{
+          orderInfo.fromSatUnit = UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
+        }
+      } 
+
+      if(typeof(orderInfo.toSatUnit) !== 'number' || orderInfo.toSatUnit === 0){
+        if(orderInfo.isToToken){
+          orderInfo.toSatUnit = Math.pow(10, orderInfo.toTokenInfo.decimals);
+        } else{
+          orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+        }
+      }
+
       const coinReceiveSelected = configSwap.coinReceive.find(coin => coin.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase());
       if(coinReceiveSelected){
         // checking balance
         if( coinReceiveSelected.max && coinReceiveSelected.maxConvertToSat ) {
           if(coinReceiveSelected.max > 0 && coinReceiveSelected.max > coinReceiveSelected.min && orderInfo.amountFrom && orderInfo.amountFrom > 0){
-            const balanceOfOrder = orderInfo.amountFrom * ( (orderInfo.updatedRate && orderInfo.updatedRate > 0) ? orderInfo.updatedRate : orderInfo.createdRate );
-            if( coinReceiveSelected.max > balanceOfOrder ){
+            const balanceOfOrder = orderInfo.amountFrom / orderInfo.fromSatUnit * orderInfo.toSatUnit * ( (orderInfo.updatedRate && orderInfo.updatedRate > 0) ? orderInfo.updatedRate : orderInfo.createdRate );
+            if( coinReceiveSelected.maxConvertToSat > balanceOfOrder ){
               if(balanceOfOrder > coinReceiveSelected.min){
                 isValidOrder = true;
               }
@@ -4035,6 +4138,7 @@ export class WalletService {
     }
     return isValidOrder;
   }
+  
 
   confirmationAndBroadcastRawTx(wallet, txp, sub, cb) {
     this.storage.storeTxConfirmationSub(sub, err => {
@@ -4169,11 +4273,11 @@ export class WalletService {
       }
       const orderInfo = Order.create(opts);
       const fromCoinCode = orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode;
-      const depositClient = clientsReceive.find(client => client.credentials.coin === fromCoinCode);
-      this.walletId = depositClient.credentials.walletId;
       const configSwap = await this.getConfigSwapWithPromise(clientsFund);
-      const isValidOrder = this.checkRequiremenBeforeQueueExcetue(configSwap, orderInfo);
-      if(isValidOrder){
+      const isValidOrder = await this.checkRequiremenBeforeQueueExcetue(configSwap, orderInfo);
+      if(isValidOrder === true){
+        const depositClient = clientsReceive.find(client => client.credentials.coin === fromCoinCode);
+        this.walletId = depositClient.credentials.walletId;
         const coinConfigSelected = configSwap.coinReceive.find(coin => coin.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase());
         this.createAddress({ ignoreMaxGap: true }, (err, address) => {
           if (err) return cb(err);
@@ -4183,6 +4287,7 @@ export class WalletService {
           } else {
             address = address.address;
           }
+      
           orderInfo.adddressUserDeposit = address;
           this.storage.storeOrderInfo(orderInfo, (err, result) => {
             if (err) return cb(err);
@@ -5846,7 +5951,7 @@ export class WalletService {
                   const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase()).decimals;
                   coin.minConvertToSat = coin.min * Math.pow(10, tokenDecimals);
                   coin.max = maxWeightBalanceOfFund * balanceSelected.amountToken * rateCoinUsd;
-                  coin.maxConvertToSat = ( maxWeightBalanceOfFund * balanceSelected.amountToken * rateCoinUsd ) * Math.pow(10, tokenDecimals);
+                  coin.maxConvertToSat = ( maxWeightBalanceOfFund * balanceSelected.amountToken ) * Math.pow(10, tokenDecimals);
                   coin.tokenInfo = balanceSelected.tokenInfo;
                 }else{
                   const balanceSelected = balance.find( s => s.coin.toLowerCase() === coin.code.toLowerCase()).balance.totalAmount;
@@ -5854,6 +5959,7 @@ export class WalletService {
                   coin.max = ( balanceSelected / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd * maxWeightBalanceOfFund;
                   coin.maxConvertToSat = balanceSelected * maxWeightBalanceOfFund;
                 }
+                coin.rate = fiatRates[coin.code.toLowerCase()];
                 promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
               }
               Promise.all(promiseList).then(listData => {

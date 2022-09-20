@@ -1377,7 +1377,6 @@ export class ExpressApp {
     });
 
     router.get('/v3/configswap/', (req, res) => {
-      SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       try {
         server = getServer(req, res);
@@ -1706,7 +1705,7 @@ export class ExpressApp {
           this.app.set('clientsFund', clientsFund);
           logger.debug('clients Fund 1: ', clientsFund);
           logger.debug('clients fund global: ', this.app.get('clientsFund'));
-          server.checkQueueHandleSwap(keyFund, clientsFund, mnemonic);
+          server.checkQueueHandleSwap(keyFund, clientsFund, clientsReceive, mnemonic);
           return cb();
       })
       }, 10000);

@@ -4,6 +4,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import { TokenInfo } from './chain/xec';
 import logger from './logger';
 import {
   Address,
@@ -20,7 +21,6 @@ import {
 } from './model';
 import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
-import { TokenInfo } from './chain/xec';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -313,12 +313,14 @@ export class Storage {
   fetchTokenInfo(cb) {
     if (!this.db) return cb();
 
-    this.db.collection(collections.TOKEN_INFO).find({}).toArray((err, result: TokenInfo[]) => {
-      if(err) return cb(err);
-      return cb(null, result);
-    });
+    this.db
+      .collection(collections.TOKEN_INFO)
+      .find({})
+      .toArray((err, result: TokenInfo[]) => {
+        if (err) return cb(err);
+        return cb(null, result);
+      });
   }
-
 
   fetchDonationByTxid(txidDonation, cb) {
     if (!this.db) return cb();
@@ -419,7 +421,8 @@ export class Storage {
           status: orderInfo.status,
           isSentToFund: orderInfo.isSentToFund,
           isSentToUser: orderInfo.isSentToUser,
-          txId: orderInfo.txId,
+          txIdUserDeposit: orderInfo.txIdUserDeposit,
+          txIdUserReceive : orderInfo.txIdUserReceive,
           error: orderInfo.error
         }
       },
@@ -456,7 +459,7 @@ export class Storage {
     );
   }
 
-  fetchOrderinfoById(orderId: string, cb){
+  fetchOrderinfoById(orderId: string, cb) {
     this.db.collection(collections.ORDER_INFO).findOne(
       {
         id: orderId
@@ -467,7 +470,7 @@ export class Storage {
 
         return cb(null, result);
       }
-    )
+    );
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {

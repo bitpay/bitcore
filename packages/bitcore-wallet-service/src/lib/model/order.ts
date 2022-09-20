@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { TokenInfo } from '../chain/xec';
 import { CoinConfig } from './config-swap';
 const Uuid = require('uuid');
 
@@ -21,13 +22,16 @@ interface IOrder {
   addressUserReceive: string;
   adddressUserDeposit: string;
   toTokenId?: string;
-  txId?: string;
+  txIdUserDeposit?: string;
+  txIdUserReceive?: string;
   status?: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
   endedOn?: number;
   createdOn?: number;
   error?: string;
+  toTokenInfo? : TokenInfo;
+  fromTokenInfo?: TokenInfo;
 }
 
 export class Order {
@@ -49,7 +53,8 @@ export class Order {
   addressUserReceive: string;
   adddressUserDeposit: string;
   toTokenId?: string;
-  txId?: string;
+  txIdUserDeposit?: string;
+  txIdUserReceive?: string;
   status?: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
@@ -57,6 +62,8 @@ export class Order {
   createdOn?: number;
   error?: string;
   coinConfig?: CoinConfig;
+  toTokenInfo?: TokenInfo;
+  fromTokenInfo?: TokenInfo;
 
   static create(opts) {
     opts = opts || {};
@@ -83,12 +90,15 @@ export class Order {
     x.status = 'waiting';
     x.toTokenId = opts.toTokenId || null;
     x.fromTokenId = opts.fromTokenId || null;
-    x.txId = null;
+    x.txIdUserDeposit = null;
+    x.txIdUserReceive = null;
     x.isSentToFund = false;
     x.isSentToUser = false;
     x.endedOn = null;
     x.error = null;
     x.coinConfig = null;
+    x.toTokenInfo = opts.toTokenInfo || null;
+    x.fromTokenInfo = opts.fromTokenInfo || null;
     return x;
   }
 
@@ -113,13 +123,16 @@ export class Order {
     x.createdRate = obj.createdRate;
     x.toTokenId = obj.toTokenId;
     x.fromTokenId = obj.fromTokenId;
-    x.txId = obj.txId;
+    x.txIdUserDeposit = obj.txIdUserDeposit;
+    x.txIdUserReceive = obj.txIdUserReceive;
     x.createdOn = obj.createOn;
     x.error = obj.error;
     x.amountFrom = obj.amountFrom;
     x.fromSatUnit = obj.fromSatUnit;
     x.toSatUnit = obj.toSatUnit;
     x.coinConfig = obj.coinConfig;
+    x.toTokenInfo = obj.toTokenInfo;
+    x.fromTokenInfo = obj.fromTokenInfo;
     return x;
   }
 }
