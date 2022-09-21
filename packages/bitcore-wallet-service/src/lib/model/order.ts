@@ -22,15 +22,13 @@ interface IOrder {
   addressUserReceive: string;
   adddressUserDeposit: string;
   toTokenId?: string;
-  txIdUserDeposit?: string;
-  txIdUserReceive?: string;
   status?: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
   endedOn?: number;
   createdOn?: number;
   error?: string;
-  toTokenInfo? : TokenInfo;
+  toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
 }
 
@@ -53,8 +51,8 @@ export class Order {
   addressUserReceive: string;
   adddressUserDeposit: string;
   toTokenId?: string;
-  txIdUserDeposit?: string;
-  txIdUserReceive?: string;
+  listTxIdUserDeposit?: string[];
+  listTxIdUserReceive?: string[];
   status?: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
@@ -73,7 +71,7 @@ export class Order {
     const now = Date.now();
     x.version = 2;
     x.priority = opts.priority;
-    x.createdOn = Math.floor(now / 1000);
+    x.createdOn = now;
     x.id = _.padStart(now.toString(), 14, '0') + Uuid.v4();
     x.fromCoinCode = opts.fromCoinCode;
     x.amountFrom = opts.amountFrom;
@@ -90,8 +88,8 @@ export class Order {
     x.status = 'waiting';
     x.toTokenId = opts.toTokenId || null;
     x.fromTokenId = opts.fromTokenId || null;
-    x.txIdUserDeposit = null;
-    x.txIdUserReceive = null;
+    x.listTxIdUserDeposit = [];
+    x.listTxIdUserReceive = [];
     x.isSentToFund = false;
     x.isSentToUser = false;
     x.endedOn = null;
@@ -123,9 +121,8 @@ export class Order {
     x.createdRate = obj.createdRate;
     x.toTokenId = obj.toTokenId;
     x.fromTokenId = obj.fromTokenId;
-    x.txIdUserDeposit = obj.txIdUserDeposit;
-    x.txIdUserReceive = obj.txIdUserReceive;
-    x.createdOn = obj.createOn;
+    x.listTxIdUserDeposit = obj.listTxIdUserDeposit || [];
+    x.listTxIdUserReceive = obj.listTxIdUserReceive || [];
     x.error = obj.error;
     x.amountFrom = obj.amountFrom;
     x.fromSatUnit = obj.fromSatUnit;

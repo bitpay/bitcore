@@ -129,7 +129,7 @@ export class ExpressApp {
           message = err.message || err.body;
         }
 
-        const m = message || err.toString();
+        const m = message || err.message || err.toString();
 
         if (!opts.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
 
@@ -1314,19 +1314,19 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/tokenInfo/', (req, res)=>{
+    router.get('/v3/tokenInfo/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
-      try{
+      try {
         server = getServer(req, res);
-      } catch(err){
+      } catch (err) {
         if (err) return returnError(err, res, req);
       }
       server.getAllTokenInfo((err, tokenInfoList) => {
-        if(err) returnError(err, res, req);
+        if (err) returnError(err, res, req);
         res.json(tokenInfoList);
-      })
-    })
+      });
+    });
 
     router.post('/v3/sendToken/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
@@ -1394,13 +1394,15 @@ export class ExpressApp {
       // SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       const opts = {
-        id: req.params['id']
+        id: req.params['id'],
+        clientsFund: this.app.get('clientsFund')
       };
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
+      
       server.getOrderInfo(opts, (err, orderInfo) => {
         if (err) return returnError(err, res, req);
         res.json(orderInfo);
@@ -1707,20 +1709,20 @@ export class ExpressApp {
           logger.debug('clients fund global: ', this.app.get('clientsFund'));
           server.checkQueueHandleSwap(keyFund, clientsFund, clientsReceive, mnemonic);
           return cb();
-      })
+        });
       }, 10000);
 
-        // server.getKeyReceive((err, key, clientsReceive)=>{
-        //   if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
+      // server.getKeyReceive((err, key, clientsReceive)=>{
+      //   if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
 
-        //   // const result = this.app.get('clientsFund');
-        //   // logger.debug('clients Receive: ', clientsReceive);
-        // })
-        return cb();
-      });
-      // server.checkQueueHandleSwap((err) => {
-      //   if(err) return cb(err);
-      //   return cb();
+      //   // const result = this.app.get('clientsFund');
+      //   // logger.debug('clients Receive: ', clientsReceive);
       // })
+      return cb();
+    });
+    // server.checkQueueHandleSwap((err) => {
+    //   if(err) return cb(err);
+    //   return cb();
+    // })
   }
 }

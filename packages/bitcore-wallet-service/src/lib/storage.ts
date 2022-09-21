@@ -421,8 +421,8 @@ export class Storage {
           status: orderInfo.status,
           isSentToFund: orderInfo.isSentToFund,
           isSentToUser: orderInfo.isSentToUser,
-          txIdUserDeposit: orderInfo.txIdUserDeposit,
-          txIdUserReceive : orderInfo.txIdUserReceive,
+          listTxIdUserDeposit: orderInfo.listTxIdUserDeposit,
+          listTxIdUserReceive: orderInfo.listTxIdUserReceive,
           error: orderInfo.error
         }
       },
