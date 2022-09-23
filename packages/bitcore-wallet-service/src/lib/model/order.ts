@@ -2,7 +2,8 @@ import _ from 'lodash';
 import { TokenInfo } from '../chain/xec';
 import { CoinConfig } from './config-swap';
 const Uuid = require('uuid');
-
+import cuid from 'cuid';
+import { StringLiteral } from 'typescript';
 interface IOrder {
   id: string | number;
   version: number;
@@ -30,6 +31,7 @@ interface IOrder {
   error?: string;
   toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
+  note?: string;
 }
 
 export class Order {
@@ -62,6 +64,7 @@ export class Order {
   coinConfig?: CoinConfig;
   toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
+  note?: string;
 
   static create(opts) {
     opts = opts || {};
@@ -73,7 +76,7 @@ export class Order {
     x.version = 2;
     x.priority = opts.priority;
     x.createdOn = now;
-    x.id = _.padStart(now.toString(), 14, '0') + Uuid.v4();
+    x.id = cuid();
     x.fromCoinCode = opts.fromCoinCode;
     x.amountFrom = opts.amountFrom;
     x.fromSatUnit = opts.fromSatUnit;
@@ -98,6 +101,7 @@ export class Order {
     x.coinConfig = null;
     x.toTokenInfo = opts.toTokenInfo || null;
     x.fromTokenInfo = opts.fromTokenInfo || null;
+    x.note = '';
     return x;
   }
 
@@ -133,6 +137,7 @@ export class Order {
     x.fromTokenInfo = obj.fromTokenInfo;
     x.updatedRate = obj.updatedRate;
     x.endedOn = obj.endedOn;
+    x.note = obj.note;
     return x;
   }
 }
