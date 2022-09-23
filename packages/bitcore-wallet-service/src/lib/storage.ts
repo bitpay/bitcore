@@ -1,6 +1,6 @@
 import * as async from 'async';
 import { AnyRecordWithTtl } from 'dns';
-import _ from 'lodash';
+import _, { countBy } from 'lodash';
 import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
@@ -471,6 +471,14 @@ export class Storage {
         return cb(null, result);
       }
     );
+  }
+
+  fetchAllOrderInfo(opts, cb){
+    this.db.collection(collections.ORDER_INFO).find().sort(opts.query).limit(opts.limit).skip(opts.skip).toArray((err, listOrderInfo) => {
+      if(err) return cb(err);
+      if(listOrderInfo.length === 0) return cb(new Error('Not found any order'));
+      else return cb(null, listOrderInfo)
+    });
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {
@@ -1547,6 +1555,9 @@ export class Storage {
         code,
         ts: {
           $lte: ts
+        },
+        value:{
+          $gt: 0
         }
       })
       .sort({

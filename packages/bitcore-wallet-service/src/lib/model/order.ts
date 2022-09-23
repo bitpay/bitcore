@@ -69,6 +69,7 @@ export class Order {
     const x = new Order();
 
     const now = Date.now();
+    const end = new Date().setDate(new Date(now).getDate() + 1);
     x.version = 2;
     x.priority = opts.priority;
     x.createdOn = now;
@@ -92,7 +93,7 @@ export class Order {
     x.listTxIdUserReceive = [];
     x.isSentToFund = false;
     x.isSentToUser = false;
-    x.endedOn = null;
+    x.endedOn = end;
     x.error = null;
     x.coinConfig = null;
     x.toTokenInfo = opts.toTokenInfo || null;
@@ -130,6 +131,8 @@ export class Order {
     x.coinConfig = obj.coinConfig;
     x.toTokenInfo = obj.toTokenInfo;
     x.fromTokenInfo = obj.fromTokenInfo;
+    x.updatedRate = obj.updatedRate;
+    x.endedOn = obj.endedOn;
     return x;
   }
 }

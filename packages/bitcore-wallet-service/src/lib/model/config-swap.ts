@@ -1,15 +1,17 @@
-import { TokenInfo } from "./tokenInfo";
+import { TokenInfo } from './tokenInfo';
 
 export class ConfigSwap {
   coinSwap: CoinConfig[];
   coinReceive: CoinConfig[];
-  static create(opts){
+  weightedMaximumFund: number;
+
+  static create(opts) {
     const x = new ConfigSwap();
     x.coinReceive = opts.coinReceive;
     x.coinSwap = opts.coinSwap;
     return x;
   }
-  static fromObj(opts){
+  static fromObj(opts) {
     const x = new ConfigSwap();
     x.coinReceive = opts.coinReceive;
     x.coinSwap = opts.coinSwap;
@@ -24,7 +26,7 @@ export class ConfigSwap {
   //   return x
   // }
 
-  static from
+  static from;
   // static create(opts) {
   //   opts = opts || {};
 
@@ -89,7 +91,7 @@ export class ConfigSwap {
   // }
 }
 
-export class CoinConfig{
+export class CoinConfig {
   code: string;
   isToken: boolean;
   networkFee?: number;
@@ -101,7 +103,7 @@ export class CoinConfig{
   tokenInfo?: TokenInfo;
   isEnable?: boolean;
 
-  static create(opts){
+  static create(opts) {
     const x = new CoinConfig();
     x.code = opts.code;
     x.isToken = opts.isToken;
@@ -117,7 +119,7 @@ export class CoinConfig{
     return x;
   }
 
-  static fromObj(opts){
+  static fromObj(opts) {
     const x = new CoinConfig();
     x.code = opts.code;
     x.isToken = opts.isToken;

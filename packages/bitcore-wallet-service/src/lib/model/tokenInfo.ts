@@ -17,9 +17,9 @@ export interface TokenInfo {
   versionType: number;
 }
 
-export interface TokenItem{
-  tokenId : string;
-  tokenInfo: TokenInfo,
-  amountToken: number,
+export interface TokenItem {
+  tokenId: string;
+  tokenInfo: TokenInfo;
+  amountToken: number;
   utxoToken: any;
 }

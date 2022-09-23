@@ -1402,8 +1402,27 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      
+
       server.getOrderInfo(opts, (err, orderInfo) => {
+        if (err) return returnError(err, res, req);
+        res.json(orderInfo);
+      });
+    });
+
+    router.post('/v3/order/all', (req, res) => {
+      // SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      // const opts = {
+      //   id: req.params['id'],
+      //   clientsFund: this.app.get('clientsFund')
+      // };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      const opts = req.body;
+      server.getAllOrderInfo(opts, (err, orderInfo) => {
         if (err) return returnError(err, res, req);
         res.json(orderInfo);
       });

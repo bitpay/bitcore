@@ -3451,37 +3451,23 @@ export class WalletService {
     return cb(null, client, key);
   }
 
-  _getKeyFund(client, cb) {
-    let key;
-    try {
-      let opts = { words: '' };
-      opts.words = 'outer vast luggage make cat road match ecology flat gesture seed sight';
-      client.serverAssistedImport
-      // this.supportImport(opts, client, (err, key, walletClients) => {
-      //   return cb(null, key, walletClients);
-      // });
-    } catch (e) {
-      return cb(e);
-    }
-  }
-
   _getKeyFundWithMnemonic(client, cb) {
     let key;
     try {
-      logger.debug("client: ", client);
       let opts = { words: '' };
-      opts.words = 'final major brother expire hazard palace match stadium carpet tomato develop guess';
-      // this.supportImport(opts, client, (err, key, walletClients) => {
-      //   logger.debug('Inside function _getKeyFund: ', walletClients);
-      //   return cb(null, key, walletClients, opts.words);
-      // });
+      opts.words = 'decline wreck three urge shoulder animal diary bird hurt spot smoke manual';
       Client.serverAssistedImport(opts,
         {
           baseUrl: client.request.baseUrl
         },  (err, key, walletClients) => {
-            logger.debug('Inside function _getKeyFund: ', walletClients);
+          if(walletClients && walletClients.length > 0){
+            logger.debug('Get all wallets in key fund successfully: ', walletClients)
             return cb(null, key, walletClients, opts.words);
-          })
+          }else{
+            logger.error('Can not find any wallet in key fund');
+            return cb(new Error('Can not find any wallet in key fund'));
+          }
+          });
     } catch (e) {
       return cb(e);
     }
@@ -3491,299 +3477,23 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'embark good rotate outside youth original razor know fantasy wool perfect reason';
+      opts.words = 'hand drink pig donkey raise weasel convince crazy jaguar ecology junk affair';
       Client.serverAssistedImport(opts,
         {
           baseUrl: client.request.baseUrl
         },  (err, key, walletClients) => {
-            return cb(null, key, walletClients, opts.words);
+          if(walletClients && walletClients.length > 0){
+            logger.debug('Get all wallets in key receive successfully: ', walletClients)
+            return cb(null, key, walletClients);
+          }else{
+            logger.error('Can not find any wallet in key receive');
+            return cb(new Error('Can not find any wallet in key receive'));
+          }
           })
     } catch (e) {
       return cb(e);
     }
   }
-
-  // supportImport(opts, clientOpts, callback) {
-  //   $.checkArgument(opts.words, 'provide opts.words');
-
-  //   let copayerIdAlreadyTested = {};
-  //   var checkCredentials = (key, opts, icb) => {
-  //     let c = key.createCredentials(null, {
-  //       coin: opts.coin,
-  //       network: opts.network,
-  //       account: opts.account,
-  //       n: opts.n,
-  //       isSlpToken: opts.isSlpToken
-  //     });
-
-  //     if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
-  //       // console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
-  //       return icb();
-  //     } else {
-  //       copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
-  //     }
-
-  //     let client = clientOpts;
-  //     logger.debug('before open wallet');
-  //     client.fromString(c);
-  //     client.openWallet({}, (err, status) => {
-  //       //        console.log(
-  //       //          `PATH: ${c.rootPath} n: ${c.n}:`,
-  //       //          err && err.message ? err.message : 'FOUND!'
-  //       //        );
-
-  //       // Exists
-  //     logger.debug('inside open wallet');
-
-  //       if (!err) {
-  //         if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
-  //           client.credentials.addressType =
-  //             status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
-  //         }
-  //         let clients = [client];
-  //         // Eth wallet with tokens?
-  //         const tokenAddresses = status.preferences.tokenAddresses;
-  //         if (!_.isEmpty(tokenAddresses)) {
-  //           _.each(tokenAddresses, t => {
-  //             const token = Constants.TOKEN_OPTS[t];
-  //             if (!token) {
-  //               return;
-  //             }
-  //             const tokenCredentials = client.credentials.getTokenCredentials(token);
-  //             let tokenClient = _.cloneDeep(client);
-  //             tokenClient.credentials = tokenCredentials;
-  //             clients.push(tokenClient);
-  //           });
-  //         }
-  //         // Eth wallet with mulsig wallets?
-  //         const multisigEthInfo = status.preferences.multisigEthInfo;
-  //         if (!_.isEmpty(multisigEthInfo)) {
-  //           _.each(multisigEthInfo, info => {
-  //             const multisigEthCredentials = client.credentials.getMultisigEthCredentials({
-  //               walletName: info.walletName,
-  //               multisigContractAddress: info.multisigContractAddress,
-  //               n: info.n,
-  //               m: info.m
-  //             });
-  //             let multisigEthClient = _.cloneDeep(client);
-  //             multisigEthClient.credentials = multisigEthCredentials;
-  //             clients.push(multisigEthClient);
-  //             const tokenAddresses = info.tokenAddresses;
-  //             if (!_.isEmpty(tokenAddresses)) {
-  //               _.each(tokenAddresses, t => {
-  //                 const token = Constants.TOKEN_OPTS[t];
-  //                 if (!token) {
-  //                   return;
-  //                 }
-  //                 const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(token);
-  //                 let tokenClient = _.cloneDeep(multisigEthClient);
-  //                 tokenClient.credentials = tokenCredentials;
-  //                 clients.push(tokenClient);
-  //               });
-  //             }
-  //           });
-  //         }
-  //         return icb(null, clients);
-  //       }
-  //       if (
-  //         err.message === 'Copayer not found'
-  //         // ||
-  //         // err instanceof ErrorsImport.NOT_AUTHORIZED ||
-  //         // err instanceof ErrorsImport.WALLET_DOES_NOT_EXIST)
-  //       ) {
-  //         return icb();
-  //       }
-
-  //       return icb(err);
-  //     });
-  //   };
-
-  //   var checkKey = (key, cb) => {
-  //     logger.debug('checking key');
-  //     let opts = [
-  //       // coin, network,  multisig
-  //       ['btc', 'livenet'],
-  //       ['bch', 'livenet'],
-  //       ['eth', 'livenet'],
-  //       ['eth', 'testnet'],
-  //       ['xrp', 'livenet'],
-  //       ['xrp', 'testnet'],
-  //       ['doge', 'livenet'],
-  //       ['doge', 'testnet'],
-  //       ['xec', 'livenet'],
-  //       ['xec', 'testnet'],
-  //       ['xpi', 'livenet'],
-  //       ['xpi', 'testnet'],
-  //       ['ltc', 'testnet'],
-  //       ['ltc', 'livenet'],
-  //       ['btc', 'livenet', true],
-  //       ['bch', 'livenet', true],
-  //       ['xpi', 'livenet', true],
-  //       ['xpi', 'livenet', false, true],
-  //       ['xec', 'livenet', true],
-  //       ['xec', 'livenet', false, true]
-  //     ];
-  //     if (key.use44forMultisig) {
-  //       //  testing old multi sig
-  //       opts = opts.filter(x => {
-  //         return x[2];
-  //       });
-  //     }
-
-  //     if (key.use0forBCH) {
-  //       //  testing BCH, old coin=0 wallets
-  //       opts = opts.filter(x => {
-  //         return x[0] == 'bch';
-  //       });
-  //     }
-
-  //     if (!key.nonCompliantDerivation) {
-  //       // TESTNET
-  //       let testnet = _.cloneDeep(opts);
-  //       testnet.forEach(x => {
-  //         x[1] = 'testnet';
-  //       });
-  //       opts = opts.concat(testnet);
-  //     } else {
-  //       //  leave only BTC, and no testnet
-  //       opts = opts.filter(x => {
-  //         return x[0] == 'btc';
-  //       });
-  //     }
-
-  //     let clients = [];
-  //     async.eachSeries(
-  //       opts,
-  //       (x, next) => {
-  //         let optsObj = {
-  //           coin: x[0],
-  //           network: x[1],
-  //           account: 0,
-  //           n: x[2] ? 2 : 1,
-  //           isSlpToken: x[3] ? x[3] : false
-  //         };
-  //         // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
-  //         // TODO OPTI: do not scan accounts if XX
-  //         //
-  //         // 1. check account 0
-  //         checkCredentials(key, optsObj, (err, iclients) => {
-  //           logger.debug('checking credentials: ', iclients);
-
-  //           if (err) return next(err);
-  //           if (_.isEmpty(iclients)) return next();
-  //           clients = clients.concat(_.cloneDeep(iclients));
-
-  //           // Accounts not allowed?
-  //           if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45) return next();
-  //           logger.debug('checking key: ', key);
-
-  //           // Now, lets scan all accounts for the found client
-  //           let cont = true,
-  //             account = 1;
-  //           async.whilst(
-  //             () => {
-  //               return cont;
-  //             },
-  //             icb => {
-  //               optsObj.account = account++;
-
-  //               checkCredentials(key, optsObj, (err, iclients) => {
-  //                 logger.debug('checking iclient: ', iclients);
-  //                 if (err) return icb(err);
-  //                 // we do not allow accounts nr gaps in BWS.
-  //                 cont = !_.isEmpty(iclients);
-  //                 if (cont) {
-  //                   clients = clients.concat(iclients);
-  //                 }
-  //                 return icb();
-  //               });
-  //             },
-  //             err => {
-  //               return next(err);
-  //             }
-  //           );
-  //         });
-  //       },
-  //       err => {
-  //         if (err) return cb(err);
-  //         return cb(null, clients);
-  //       }
-  //     );
-  //   };
-
-  //   let sets = [
-  //     {
-  //       // current wallets: /[44,48]/[0,145]'/
-  //       nonCompliantDerivation: false,
-  //       useLegacyCoinType: false,
-  //       useLegacyPurpose: false
-  //     },
-  //     {
-  //       // older bch wallets: /[44,48]/[0,0]'/
-  //       nonCompliantDerivation: false,
-  //       useLegacyCoinType: true,
-  //       useLegacyPurpose: false
-  //     },
-  //     {
-  //       // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
-  //       nonCompliantDerivation: false,
-  //       useLegacyCoinType: false,
-  //       useLegacyPurpose: true
-  //     },
-  //     {
-  //       // not that // older multisig BCH wallets: /[44]/[0]'/
-  //       nonCompliantDerivation: false,
-  //       useLegacyCoinType: true,
-  //       useLegacyPurpose: true
-  //     },
-
-  //     {
-  //       // old BTC no-comp wallets: /44'/[0]'/
-  //       nonCompliantDerivation: true,
-  //       useLegacyPurpose: true
-  //     }
-  //   ];
-
-  //   let s,
-  //     resultingClients = [],
-  //     k;
-  //   async.whilst(
-  //     () => {
-  //       if (!_.isEmpty(resultingClients)) return false;
-
-  //       s = sets.shift();
-  //       if (!s) return false;
-
-  //       try {
-  //         if (opts.passphrase) {
-  //           s.passphrase = opts.passphrase;
-  //         }
-
-  //         k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...s });
-  //       } catch (e) {
-  //         return callback(new Errors.INVALID_BACKUP());
-  //       }
-  //       return true;
-  //     },
-  //     icb => {
-  //       checkKey(k, (err, clients) => {
-  //         logger.debug('checking client: ', clients);
-  //         if (err) return icb(err);
-
-  //         if (clients && clients.length) {
-  //           resultingClients = clients;
-  //         }
-  //         return icb();
-  //       });
-  //     },
-  //     err => {
-  //       if (err) return callback(err);
-
-  //       if (_.isEmpty(resultingClients)) k = null;
-  //       return callback(null, k, resultingClients);
-  //     }
-  //   );
-  // }
 
   getWalletLotusDonation(cb) {
     this.copayerId = _.get(walletLotus, 'cred.copayerId', '');
@@ -3798,15 +3508,6 @@ export class WalletService {
     });
   }
 
-  getKeyFund(cb) {
-    const clientBwc = new Client();
-    this._getKeyFund(clientBwc, (err, key, clients) => {
-      logger.debug('function _getKeyFund: ', clients);
-      if (err) return cb(err);
-      return cb(null, key, clients);
-    });
-  }
-
   getKeyFundAndReceiveWithFundMnemonic(cb) {
     const clientBwc = new Client();
     this._getKeyFundWithMnemonic(clientBwc, (err, keyFund, clientsFund, mnemonic) => {
@@ -3815,14 +3516,6 @@ export class WalletService {
         if (err) return cb(err);
         return cb(null, keyFund, clientsFund, clientsReceive, mnemonic);
       })
-    });
-  }
-
-  getKeyReceive(cb) {
-    const clientBwc = new Client();
-    this._getKeyReceive(clientBwc, (err, key, clients) => {
-      if (err) return cb(err);
-      return cb(null, key, clients);
     });
   }
 
@@ -3890,11 +3583,10 @@ export class WalletService {
   }
 
   checkQueueHandleSwap(key, clientsFund, clientsReceive, mnemonic) {
-    // this.getKeyFund((err, key, clientsFund) => {
-    // if(err) return cb(err);
     setInterval(() => {
       if (this.storage && this.storage.orderQueue) {
         this.storage.orderQueue.get(async (err, data) => {
+          logger.debug('orderinfo created: ', data);
           console.log('orderinfo created: ', data);
           const saveError = (orderInfo, data, err) => {
             orderInfo.status = 'pending';
@@ -3912,12 +3604,13 @@ export class WalletService {
           if (data) {
             const orderInfo = Order.fromObj(data.payload);
             try {
+              logger.debug('orderinfo in queue detected: ', data);
               console.log('orderinfo in queue detected: ', data);
-              // const ackQueue = (data) => this.storage.orderQueue.ack(data.ack, (err, id) => {});
               const configSwap: ConfigSwap = await this.getConfigSwapWithPromise(clientsFund);
               const isValidOrder = await this.checkRequiremenBeforeQueueExcetue(configSwap, orderInfo);
               if (isValidOrder && orderInfo.status === 'waiting') {
                 // get utxos for deposit address => checking amount user sent to deposit address
+                logger.debug('Order info is valid: ', orderInfo);
                 this.getUtxosForSelectedAddressAndWallet({
                     coin: orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode,
                     network: 'livenet',
@@ -3942,13 +3635,7 @@ export class WalletService {
                       });
                       }
                       if (amountDepositDetect > 0) {
-                        if (orderInfo.amountFrom && orderInfo.amountFrom > 0 && amountDepositDetect > orderInfo.amountFrom) {
-                          orderInfo.amountUserDeposit = amountDepositDetect;
-                          // throw new Error('Amount deposit detect is greater than amount from');
-                          saveError(orderInfo, data, new Error('Amount deposit detect is greater than amount from'));
-                        } 
-                        
-                        else {
+
                           const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
                           const fundingWallet = clientsFund.find(s => s.credentials.coin === coinCode);
                           // checking rate again before creating tx
@@ -3960,23 +3647,19 @@ export class WalletService {
                             }
                             // elseif((!orderInfo.amountFrom || orderInfo.amountFrom === 0)){
                             else {
-                              if((!orderInfo.amountFrom || orderInfo.amountFrom === 0)){
-                                const coinConfigSelected = configSwap.coinReceive.find(coinConfig => coinConfig.code == orderInfo.toCoinCode);
-                                if(coinConfigSelected){
-                                  const maxAmountSat = coinConfigSelected.maxConvertToSat;
-                                  const minAmountSat = coinConfigSelected.minConvertToSat;
-                                  const amountUserDepositConverted = amountDepositDetect / orderInfo.fromSatUnit * orderInfo.toSatUnit * ( orderInfo.updatedRate || orderInfo.createdRate);
-                                  if(amountUserDepositConverted < minAmountSat){
-                                    // throw new Error('Amount user deposit is less than minimum amount allowed');
-                                    saveError(orderInfo, data, new Error('Amount user deposit is less than minimum amount allowed'));
-                                  }
-                                  if(amountUserDepositConverted > maxAmountSat){
-                                    saveError(orderInfo, data, new Error('Amount user deposit is greater than maximum amount allowed'));
-                                  }
-                                } else{
-                                  saveError(orderInfo, data, new Error('Not found coin config user want to receive'));
-                                  // throw new Error('Not found coin config user want to receive');
+                              const coinConfigSelected = configSwap.coinReceive.find(coinConfig => coinConfig.code == orderInfo.toCoinCode);
+                              if(coinConfigSelected){
+                                const maxAmountSat = coinConfigSelected.maxConvertToSat;
+                                const minAmountSat = coinConfigSelected.minConvertToSat;
+                                const amountUserDepositConverted = amountDepositDetect / orderInfo.fromSatUnit * orderInfo.toSatUnit * ( orderInfo.updatedRate || orderInfo.createdRate);
+                                if(amountUserDepositConverted < minAmountSat){
+                                  saveError(orderInfo, data, new Error('Amount user deposit is less than minimum amount allowed'));
                                 }
+                                if(amountUserDepositConverted > maxAmountSat){
+                                  saveError(orderInfo, data, new Error('Amount user deposit is greater than maximum amount allowed'));
+                                }
+                              } else{
+                                saveError(orderInfo, data, new Error('Not found coin config user want to receive'));
                               }
                               this.walletId = fundingWallet.credentials.walletId;
                               this.copayerId = fundingWallet.credentials.copayerId;
@@ -4022,12 +3705,11 @@ export class WalletService {
                               }
                             }
                           });
-                        }
                       }
                       } catch(e){
                         saveError(orderInfo, data, e);
                       }
-                    
+
                   }
                 );
               } else if (orderInfo.status !== 'waiting') {
@@ -4052,21 +3734,11 @@ export class WalletService {
     let convertedListTokenReceiveFound = [];
     let listCoinSwapCode = [];
     let convertedListTokenSwapFound = [];
-    const availabeCoinSupportExchange = ['xec', 'bch', 'xpi'];
-    const availabeTokenSupportExchange = ['abcslp', 'eat', 'bcpro'];
     let isValidOrder = false;
     if (orderInfo) {
       if (!(orderInfo.fromCoinCode && orderInfo.toCoinCode && orderInfo.createdRate && orderInfo.addressUserReceive)) {
         throw new Error('missing requiremnet field in order info');
       }
-
-      // if (!checkRequired(orderInfo, ['fromCoinCode', 'amountFrom'])) {
-      //   throw new Error('adId is missing');
-      // }
-
-      // if (typeof orderInfo.amountFrom !== 'number' || orderInfo.amountFrom === 0) {
-      //   throw new Error('Amount deposit must be greater than 0');
-      // }
 
       if (
         orderInfo.isFromToken &&
@@ -4078,24 +3750,23 @@ export class WalletService {
       if (orderInfo.isToToken && (!orderInfo.toTokenId || !(orderInfo.toTokenInfo && orderInfo.toTokenInfo.decimals))) {
         throw new Error('Missing token info to');
       }
+
+      const now = Date.now();
+      if(orderInfo.createdOn && orderInfo.endedOn && orderInfo.endedOn < now){
+        throw new Error('Order is expired');
+      }
     }
 
     if (configSwap) {
       // checking required coin , token for receive
       const listCoinReceive = configSwap.coinReceive.filter(config => config.isEnable);
+
       if (listCoinReceive && listCoinReceive.length > 0) {
         listCoinReceiveCode = listCoinReceive.map(item => item.code.toLowerCase());
+      } else{
+        throw new Error('Not found available coin receive in fund');
       }
-      // const supportReceiveToken = configSwap.coinReceive.find(config => config.isToken);
-      // if(supportReceiveToken){
-      //   const walletXECFound = clientsFund.find(client => client.credentials.coin.toLowerCase() === 'xec');
-      //   let listTokenReceiveFound = null;
-      //   listTokenReceiveFound = await this.getTokensWithPromise({walletId: walletXECFound.credentials.walletId});
-      //   if(listTokenReceiveFound && listTokenReceiveFound.length > 0){
-      //     convertedListTokenReceiveFound = _.map(listTokenReceiveFound, item => item.tokenInfo.symbol.toLowerCase());
-      //   }
-      // }
-      // const coinAndTokenReceiveSupport = listCoinReceiveCode.concat(convertedListTokenReceiveFound);
+
       if (!listCoinReceiveCode.includes(orderInfo.toCoinCode)) {
         throw new Error('Not found this receive coin or token on server');
       }
@@ -4103,21 +3774,14 @@ export class WalletService {
       const listCoinSwap = configSwap.coinReceive.filter(config => config.isEnable);
       if (listCoinSwap && listCoinSwap.length > 0) {
         listCoinSwapCode = listCoinSwap.map(item => item.code.toLowerCase());
+      } else{
+        throw new Error('Not found available coin swap in fund');
       }
-      // const supportSwapToken = configSwap.coinSwap.find(config => config.isToken);
-      // if(supportSwapToken){
-      //   const walletXECFound = clientsFund.find(client => client.credentials.coin.toLowerCase() === 'xec');
-      //   let listTokenSwapFound = null;
-      //   let convertedListTokenReceiveFound = [];
-      //   listTokenSwapFound = await this.getTokensWithPromise({walletId: walletXECFound.credentials.walletId});
-      //   if(listTokenSwapFound && listTokenSwapFound.length > 0){
-      //     convertedListTokenSwapFound = _.map(listTokenSwapFound, item => item.tokenInfo.symbol.toLowerCase());
-      //   }
-      // }
-      // const coinAndTokenSwapSupport = listCoinSwapCode.concat(convertedListTokenSwapFound);
+
       if (!listCoinSwapCode.includes(orderInfo.fromCoinCode)) {
         throw new Error('Not found this swap coin or token on server');
       }
+
       if (typeof orderInfo.fromSatUnit !== 'number' || orderInfo.fromSatUnit === 0) {
         if (orderInfo.isFromToken) {
           orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
@@ -4141,19 +3805,17 @@ export class WalletService {
         // checking balance
         if (coinReceiveSelected.max && coinReceiveSelected.maxConvertToSat) {
           if (
-            coinReceiveSelected.max > 0 &&
             coinReceiveSelected.max > coinReceiveSelected.min
-
           ) {
             if (
               typeof (orderInfo.amountFrom) === 'number' &&
               orderInfo.amountFrom > 0) {
-              const balanceOfOrder =
+              const orderAmountInSat =
                 (orderInfo.amountFrom / orderInfo.fromSatUnit) *
                 orderInfo.toSatUnit *
-                (orderInfo.updatedRate && orderInfo.updatedRate > 0 ? orderInfo.updatedRate : orderInfo.createdRate);
-              if (coinReceiveSelected.maxConvertToSat > balanceOfOrder) {
-                if (balanceOfOrder > coinReceiveSelected.min) {
+                (orderInfo.updatedRate || orderInfo.createdRate);
+              if (coinReceiveSelected.maxConvertToSat > orderAmountInSat) {
+                if (orderAmountInSat > coinReceiveSelected.minConvertToSat) {
                   isValidOrder = true;
                 } else {
                   // handle error if balance order < min of coin config
@@ -4165,8 +3827,8 @@ export class WalletService {
               }
             } else{
               isValidOrder = true;
-            } 
-           
+            }
+
           } else {
             // handle error case if coin max < coin min
             throw new Error('Fund not enough');
@@ -4177,7 +3839,7 @@ export class WalletService {
         }
       } else {
         // handle error case if we don't have coin receive config
-        throw new Error('Can not find config for receive config');
+        throw new Error('Can not find config for receive coin');
       }
     } else {
       // handle error case if we don't have config swap
@@ -4185,7 +3847,7 @@ export class WalletService {
     }
     return isValidOrder;
   }
-  
+
 
   confirmationAndBroadcastRawTx(wallet, txp, sub, cb) {
     this.storage.storeTxConfirmationSub(sub, err => {
@@ -5963,7 +5625,7 @@ export class WalletService {
       if (error) {
         console.log(error);
         return;
-      } 
+      }
       const swapConfig = JSON.parse(data);
       const listCoin = swapConfig.coinSwap.concat(swapConfig.coinReceive);
       let promiseList = [];
@@ -6065,12 +5727,6 @@ export class WalletService {
     })
   }x
 
-  getBalanceForClientsFund(opts){
-    return new Promise((resolve, reject) => {
-      this.getBalanceWithPromise
-    })
-  }
-
 
    /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
@@ -6106,8 +5762,21 @@ export class WalletService {
     } catch(e){
       return cb(new Error(e));
     }
-    
+
   }
+
+     /**
+   * Returns exchange rates of the supported fiat currencies for the specified coin.
+   * @param {Object} opts
+   * @returns {Array} list order info - The list of order info.
+   */
+  async getAllOrderInfo(opts, cb){
+      this.storage.fetchAllOrderInfo(opts, (err, listOrderInfo) => {
+        if(err) return cb(err);
+       listOrderInfo = listOrderInfo.map(item => Order.fromObj(item));
+        return cb(null, listOrderInfo);
+      })
+    }
 
   /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
