@@ -484,9 +484,9 @@ export class Utils {
       const isMULTISIG = multisigContractAddress;
       const chainName = chain.toUpperCase();
       const _chain = isMULTISIG
-        ? chainName + 'MULTISIG'
+        ? chainName + 'ETHMULTISIG'
         : isERC20
-        ? chainName + 'ERC20'
+        ? chainName + 'ETHERC20'
         : chainName;
 
       for (let index = 0; index < recipients.length; index++) {
