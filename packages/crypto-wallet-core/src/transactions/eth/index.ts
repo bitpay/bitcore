@@ -7,7 +7,7 @@ const utils = require('web3-utils');
 const { toBN } = Web3.utils;
 export class ETHTxProvider {
   create(params: {
-    recipients: Array<{ address: string; amount: string }>;
+    recipients: Array<{ address: string; amount: number }>;
     nonce: number;
     gasPrice: number;
     data: string;
