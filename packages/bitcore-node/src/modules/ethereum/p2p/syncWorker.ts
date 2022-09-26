@@ -82,7 +82,13 @@ export class SyncWorker {
 
   async getClient() {
     const nodeVersion = await this.web3!.eth.getNodeInfo();
-    return nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
+    const client = nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
+    if (client !== 'erigon' && client !== 'geth') {
+      // assume it's a geth fork, or at least more like geth.
+      // this is helpful when using a dev solution like ganache.
+      return 'geth';
+    }
+    return client;
   }
 
   async connect() {
