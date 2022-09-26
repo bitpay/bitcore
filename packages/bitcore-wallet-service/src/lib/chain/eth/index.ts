@@ -377,6 +377,10 @@ export class EthChain implements IChain {
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
+    if (_.isString(output.amount)) {
+      // Convert a scientific notation as string to Number if necessary
+      output.amount = Number(output.amount);
+    }
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
       return false;
     }
