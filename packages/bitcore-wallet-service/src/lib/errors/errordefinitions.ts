@@ -41,7 +41,18 @@ const errors = {
   WALLET_NOT_COMPLETE: 'Wallet is not complete',
   WALLET_NOT_FOUND: 'Wallet not found',
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
-  WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network'
+  WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network',
+  OUT_OF_FUND: 'Out of fund',
+  BELOW_MIN_LIMIT: 'Below minimum allow',
+  EXCEED_MAX_LIMIT: 'Above maximum allow',
+  NOT_FOUND_KEY_FUND: 'Not found funding key',
+  NOT_FOUND_KEY_RECEIVE: 'Not found receiving key',
+  MISSING_REQUIRED_FIELD: 'Missing required field',
+  ORDER_EXPIRED: 'Order is expired',
+  NO_AVAILABLE_SWAP_COIN: 'Not found availabe coin user can swap',
+  NO_AVAILABLE_RECEIVE_COIN: 'Not found availbe coin user can receive',
+  NOT_FOUND_COIN_IN_CONFIG: 'This coin is not allowed to swap',
+  NOT_STABLE_RATE: 'Rate is not stable'
 };
 
 const errorObjects = _.fromPairs(

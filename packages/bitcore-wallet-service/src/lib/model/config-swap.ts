@@ -4,18 +4,20 @@ export class ConfigSwap {
   coinSwap: CoinConfig[];
   coinReceive: CoinConfig[];
   weightedMaximumFund: number;
+  fee: FeeType[];
 
   static create(opts) {
     const x = new ConfigSwap();
     x.coinReceive = opts.coinReceive;
     x.coinSwap = opts.coinSwap;
+    x.fee = opts.fee;
     return x;
   }
   static fromObj(opts) {
     const x = new ConfigSwap();
     x.coinReceive = opts.coinReceive;
     x.coinSwap = opts.coinSwap;
-
+    x.fee = opts.fee;
     return x;
   }
   // static fromJson(opts){
@@ -96,10 +98,13 @@ export class CoinConfig {
   isToken: boolean;
   networkFee?: number;
   rate?: any;
-  min?: number;
+  min: number;
   minConvertToSat?: number;
-  max?: number;
+  max: number;
   maxConvertToSat?: number;
+  fund: number;
+  fundConvertToSat?: number;
+  satUnit?: number;
   tokenInfo?: TokenInfo;
   isEnable?: boolean;
 
@@ -113,9 +118,11 @@ export class CoinConfig {
     x.minConvertToSat = opts.minConvertToSat || 0;
     x.max = opts.max || 0;
     x.maxConvertToSat = opts.maxConvertToSat || 0;
+    x.fund = opts.fund || 0;
+    x.fundConvertToSat = opts.fundConvertToSat || 0;
+    x.satUnit = opts.satUnit || 0;
     x.tokenInfo = opts.tokenInfo || null;
     x.isEnable = opts.isEnable || true;
-
     return x;
   }
 
@@ -130,8 +137,34 @@ export class CoinConfig {
     x.max = opts.max;
     x.maxConvertToSat = opts.maxConvertToSat;
     x.tokenInfo = opts.tokenInfo;
+    x.fund = opts.fund;
+    x.fundConvertToSat = opts.fundConvertToSat;
+    x.satUnit = opts.satUnit;
     x.isEnable = opts.isEnable;
-
     return x;
   }
+}
+
+export class FeeType {
+  code: string;
+  settleFee?: number;
+  networkFee?: number;
+  serviceFee?: number;
+
+  static create(opts){
+    const x = new FeeType();
+    x.code = opts.code;
+    x.networkFee = opts.networkFee || 0;
+    x.serviceFee = opts.serviceFee || 0;
+    x.settleFee = opts.settleFee || 0;
+  }
+
+  static fromObj(opts){
+    const x = new FeeType();
+    x.code = opts.code;
+    x.networkFee = opts.networkFee;
+    x.serviceFee = opts.serviceFee;
+    x.settleFee = opts.settleFee;
+  }
+
 }

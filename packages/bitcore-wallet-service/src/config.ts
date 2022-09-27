@@ -1,4 +1,4 @@
-import { http } from "winston";
+import { http } from 'winston';
 
 module.exports = {
   basePath: '/bws/api',

@@ -423,7 +423,11 @@ export class Storage {
           isSentToUser: orderInfo.isSentToUser,
           listTxIdUserDeposit: orderInfo.listTxIdUserDeposit,
           listTxIdUserReceive: orderInfo.listTxIdUserReceive,
-          error: orderInfo.error
+          error: orderInfo.error,
+          pendingReason: orderInfo.pendingReason,
+          lastModified: Date.now(),
+          isResolve: orderInfo.isResolve,
+          note: orderInfo.note
         }
       },
       {
@@ -431,7 +435,7 @@ export class Storage {
       },
       (err, result) => {
         if (err) return cb(err);
-        if (!result) return cb();
+        if (!result) return cb(new Error('Can not update order'));
 
         return cb(null, result);
       }
@@ -466,7 +470,7 @@ export class Storage {
       },
       (err, result) => {
         if (err) return cb(err);
-        if (!result) return cb();
+        if (!result) return cb(new Error("Can not find order info"));
 
         return cb(null, result);
       }
@@ -485,6 +489,14 @@ export class Storage {
         if (listOrderInfo.length === 0) return cb(new Error('Not found any order'));
         else return cb(null, listOrderInfo);
       });
+  }
+
+  countAllOrderInfo(opts) {
+    return this.db
+      .collection(collections.ORDER_INFO)
+      .find()
+      .sort(opts.query)
+      .count();
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {

@@ -1443,6 +1443,19 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v3/order/update', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.updateOrder(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
     // DEPRECATED
     router.delete('/v1/pushnotifications/subscriptions/', (req, res) => {
       logDeprecated(req);

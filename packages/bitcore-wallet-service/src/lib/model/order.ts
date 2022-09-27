@@ -23,15 +23,21 @@ interface IOrder {
   addressUserReceive: string;
   adddressUserDeposit: string;
   toTokenId?: string;
+  listTxIdUserDeposit?: string[];
+  listTxIdUserReceive?: string[];
   status?: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
   endedOn?: number;
   createdOn?: number;
   error?: string;
+  coinConfig?: CoinConfig;
   toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
   note?: string;
+  pendingReason?: string;
+  lastModified?: number;
+  isResolve?: boolean;
 }
 
 export class Order {
@@ -65,7 +71,10 @@ export class Order {
   toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
   note?: string;
-
+  isInQueue?: boolean;
+  pendingReason?: string;
+  lastModified?: number;
+  isResolve?: boolean;
   static create(opts) {
     opts = opts || {};
 
@@ -102,6 +111,10 @@ export class Order {
     x.toTokenInfo = opts.toTokenInfo || null;
     x.fromTokenInfo = opts.fromTokenInfo || null;
     x.note = '';
+    x.isInQueue = false;
+    x.pendingReason= opts.pendingReason || null;
+    x.lastModified= null;
+    x.isResolve= false;
     return x;
   }
 
@@ -138,6 +151,10 @@ export class Order {
     x.updatedRate = obj.updatedRate;
     x.endedOn = obj.endedOn;
     x.note = obj.note;
+    x.isInQueue = obj.isInQueue;
+    x.pendingReason= obj.pendingReason;
+    x.lastModified= obj.lastModified;
+    x.isResolve= obj.isResolve;
     return x;
   }
 }

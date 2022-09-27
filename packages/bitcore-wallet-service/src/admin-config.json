@@ -6,7 +6,6 @@
     "networkFee": 226,
     "rate": {},
     "min": 0,
-    "minConvertToSat": 0,
     "tokenInfo": {},
     "isEnable": true
   },
@@ -16,7 +15,6 @@
     "networkFee": 226,
     "rate": {},
     "min": 0,
-    "minConvertToSat": 0,
     "tokenInfo": {},
     "isEnable": true
   },
@@ -26,7 +24,6 @@
     "networkFee": 1342,
     "rate": {},
     "min": 0,
-    "minConvertToSat": 0,
     "tokenInfo": {},
     "isEnable": true
   }
@@ -37,9 +34,8 @@
       "isToken": false,
       "networkFee": 226,
       "rate": {},
-      "min": 0,
-      "minConvertToSat": 0,
-      "tokenInfo": {},
+      "min": 0.00001,
+      "max": 0.00003,
       "isEnable": true
     },
     {
@@ -48,8 +44,7 @@
       "networkFee": 226,
       "rate": {},
       "min": 0,
-      "minConvertToSat": 0,
-      "tokenInfo": {},
+      "max": 1000,
       "isEnable": true
     },
     {
@@ -58,9 +53,35 @@
       "networkFee": 1342,
       "rate": {},
       "min": 0,
-      "minConvertToSat": 0,
-      "tokenInfo": {},
+      "max": 1000,
       "isEnable": true
     }
+],
+"fee": [
+  {
+    "code": "xpi",
+    "settleFee": 0.000001,
+    "networkFee": 0.0002,
+    "serviceFee": 1.75,
+    "settleFeeInSat": 0
+  },
+  {
+    "code": "xec",
+    "settleFee": 0,
+    "networkFee": 0,
+    "serviceFee":  1.75
+  },
+  {
+    "code": "bch",
+    "settleFee": 0,
+    "networkFee": 0,
+    "serviceFee": 1.75
+  },
+  {
+    "code": "btc",
+    "settleFee": 0,
+    "networkFee": 0.00002103,
+    "serviceFee": 1
+  }
 ]
 }
