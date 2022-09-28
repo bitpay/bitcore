@@ -151,7 +151,7 @@ export class FeeType {
   networkFee?: number;
   serviceFee?: number;
 
-  static create(opts){
+  static create(opts) {
     const x = new FeeType();
     x.code = opts.code;
     x.networkFee = opts.networkFee || 0;
@@ -159,12 +159,11 @@ export class FeeType {
     x.settleFee = opts.settleFee || 0;
   }
 
-  static fromObj(opts){
+  static fromObj(opts) {
     const x = new FeeType();
     x.code = opts.code;
     x.networkFee = opts.networkFee;
     x.serviceFee = opts.serviceFee;
     x.settleFee = opts.settleFee;
   }
-
 }

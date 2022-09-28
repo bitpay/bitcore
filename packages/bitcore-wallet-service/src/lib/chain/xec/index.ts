@@ -22,8 +22,8 @@ export interface UtxoToken {
   slpMeta?: any;
   tokenId?: string;
   amountToken?: number;
-  tokenQty?: number,
-  decimals?: number,
+  tokenQty?: number;
+  decimals?: number;
 }
 
 export interface TokenInfo {
@@ -71,13 +71,13 @@ export class XecChain extends BtcChain implements IChain {
     return await bchjs.SLP.Utils.list(tokenId);
   }
 
-  async sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress){
+  async sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {
     const tokenInfo = await this.getTokenInfo(tokenId);
 
     const rootSeed = await bchjs.Mnemonic.toSeed(mnemonic);
     let masterHDNode;
     masterHDNode = bchjs.HDNode.fromSeed(rootSeed);
-    const rootPath = wallet.getRootPath() ?  wallet.getRootPath()  : "m/44'/1899'/0'";
+    const rootPath = wallet.getRootPath() ? wallet.getRootPath() : "m/44'/1899'/0'";
 
     // HDNode of BIP44 account
     const account = bchjs.HDNode.derivePath(masterHDNode, rootPath);
@@ -88,8 +88,8 @@ export class XecChain extends BtcChain implements IChain {
 
     const keyPair = bchjs.HDNode.toKeyPair(change);
 
-    try{
-      const  utxos = await this.getUtxosToken(wallet)
+    try {
+      const utxos = await this.getUtxosToken(wallet);
       if (utxos.length === 0) throw new Error('No UTXOs to spend! Exiting.');
 
       const bchUtxos = _.filter(utxos, item => item.isNonSLP);
@@ -103,18 +103,8 @@ export class XecChain extends BtcChain implements IChain {
         throw new Error('No token UTXOs for the specified token could be found.');
       }
 
-        // Choose a UTXO to pay for the transaction.
-        const bchUtxo = this.findBiggestUtxo(bchUtxos);
-
-        // TOKENQTY = _.toSafeInteger(TOKENQTY / Math.pow(10, tokenInfo.decimals));
-        TOKENQTY = _.toSafeInteger(TOKENQTY);
-        TOKENQTY = TOKENQTY / Math.pow(10, tokenInfo.decimals);
-        // Generate the OP_RETURN code.
-      const slpSendObj = bchjs.SLP.TokenType1.generateSendOpReturn(
-        tokenUtxos,
-        TOKENQTY
-      )
-      const slpData = slpSendObj.script;
+      // Choose a UTXO to pay for the transaction.
+      const bchUtxo = this.findBiggestUtxo(bchUtxos);
 
       // BEGIN transaction construction.
 
@@ -135,9 +125,13 @@ export class XecChain extends BtcChain implements IChain {
       // amount to send back to the sending address. It's the original amount - 1 sat/byte for tx size
       const remainder = originalAmount - txFee - 546 * 2;
       if (remainder < 1) {
-        throw new Error('Selected UTXO does not have enough satoshis')
+        throw new Error('Selected UTXO does not have enough satoshis');
       }
-
+      TOKENQTY = _.toSafeInteger(TOKENQTY);
+      TOKENQTY = (TOKENQTY - txFee - 546 * 2) / Math.pow(10, tokenInfo.decimals);
+      // Generate the OP_RETURN code.
+      const slpSendObj = bchjs.SLP.TokenType1.generateSendOpReturn(tokenUtxos, TOKENQTY);
+      const slpData = slpSendObj.script;
       // Add OP_RETURN as first output.
       transactionBuilder.addOutput(slpData, 0);
 
@@ -148,46 +142,25 @@ export class XecChain extends BtcChain implements IChain {
       const { prefix, type, hash } = ecashaddr.decode(etokenAddress);
       const cashAdr = ecashaddr.encode('bitcoincash', type, hash);
       // const cashAdress = ecashaddr.encodeAddress('bitcoincash', type, hash, etokenAddress);
-      transactionBuilder.addOutput(
-        bchjs.SLP.Address.toLegacyAddress(cashAdr),
-        546
-      )
+      transactionBuilder.addOutput(bchjs.SLP.Address.toLegacyAddress(cashAdr), 546);
 
       // Return any token change back to the sender.
       if (slpSendObj.outputs > 1) {
-        transactionBuilder.addOutput(
-          bchjs.SLP.Address.toLegacyAddress(slpAddress),
-          546
-        )
+        transactionBuilder.addOutput(bchjs.SLP.Address.toLegacyAddress(slpAddress), 546);
       }
 
       // Last output: send the BCH change back to the wallet.
-      transactionBuilder.addOutput(
-        bchjs.Address.toLegacyAddress(cashAddress),
-        remainder
-      )
+      transactionBuilder.addOutput(bchjs.Address.toLegacyAddress(cashAddress), remainder);
 
       // Sign the transaction with the private key for the BCH UTXO paying the fees.
       let redeemScript;
-      transactionBuilder.sign(
-        0,
-        keyPair,
-        redeemScript,
-        transactionBuilder.hashTypes.SIGHASH_ALL,
-        originalAmount
-      )
+      transactionBuilder.sign(0, keyPair, redeemScript, transactionBuilder.hashTypes.SIGHASH_ALL, originalAmount);
 
       // Sign each token UTXO being consumed.
       for (let i = 0; i < tokenUtxos.length; i++) {
         const thisUtxo = tokenUtxos[i];
 
-        transactionBuilder.sign(
-          1 + i,
-          keyPair,
-          redeemScript,
-          transactionBuilder.hashTypes.SIGHASH_ALL,
-          thisUtxo.value
-        )
+        transactionBuilder.sign(1 + i, keyPair, redeemScript, transactionBuilder.hashTypes.SIGHASH_ALL, thisUtxo.value);
       }
 
       // build tx
@@ -197,7 +170,7 @@ export class XecChain extends BtcChain implements IChain {
       const hex = tx.toHex();
       const txid = await this.broadcast_raw(wallet, hex, true);
       return txid;
-    }catch(e){
+    } catch (e) {
       return e;
     }
     // Get a UTXO
@@ -218,13 +191,13 @@ export class XecChain extends BtcChain implements IChain {
     return utxos[largestIndex];
   }
 
-  getTokenUtxos(utxos : UtxoToken[], tokenInfo : TokenInfo) : UtxoToken[] {
+  getTokenUtxos(utxos: UtxoToken[], tokenInfo: TokenInfo): UtxoToken[] {
     const tokenUtxos = [];
     _.forEach(utxos, item => {
       const slpMeta = _.get(item, 'slpMeta', undefined);
       // UTXO is not a minting baton.
-      if (item.amountToken && slpMeta.tokenId && slpMeta.tokenId === tokenInfo.id && slpMeta.txType != "MINT") {
-        const tokenUtxo  : UtxoToken = {
+      if (item.amountToken && slpMeta.tokenId && slpMeta.tokenId === tokenInfo.id && slpMeta.txType != 'MINT') {
+        const tokenUtxo: UtxoToken = {
           txid: item.txid,
           outIdx: item.outIdx,
           value: item.value,
@@ -232,10 +205,10 @@ export class XecChain extends BtcChain implements IChain {
           tokenId: tokenInfo.id,
           tokenQty: item.amountToken / Math.pow(10, tokenInfo.decimals),
           amountToken: item.amountToken
-        }
+        };
         tokenUtxos.push(tokenUtxo);
       }
-    })
+    });
     return tokenUtxos;
   }
 
@@ -246,30 +219,28 @@ export class XecChain extends BtcChain implements IChain {
           rawTx: raw,
           network: 'livenet',
           coin: wallet.credentials.coin,
-          ischronik: ischronik
+          ischronik
         },
         (err, txid) => {
-          if (err || !txid)
-            return reject(err ? err : 'No Tokens');
+          if (err || !txid) return reject(err ? err : 'No Tokens');
           return resolve(txid);
         }
       );
     });
   }
 
-   getUtxosToken(wallet): Promise<any>{
-    return new Promise((resolve, reject)=>{
+  getUtxosToken(wallet): Promise<any> {
+    return new Promise((resolve, reject) => {
       wallet.getUtxosToken(
         {
           coin: 'xec'
         },
         (err, resp) => {
-          if (err || !resp || !resp.length)
-          reject(err ? err : 'No UTXOs');
+          if (err || !resp || !resp.length) reject(err ? err : 'No UTXOs');
           resolve(resp);
         }
       );
-    })
+    });
   }
   convertFeePerKb(p, feePerKb) {
     return [p, Utils.strip(feePerKb * 1e2)];

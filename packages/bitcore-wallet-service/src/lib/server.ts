@@ -3457,7 +3457,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = "swing exhaust inform mass twist hybrid private begin quote heart keep share";
+      opts.words = 'assault husband flame unveil twelve curtain negative quiz decade anchor uncle shadow';
       Client.serverAssistedImport(
         opts,
         {
@@ -3482,7 +3482,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'whisper review pupil vote grant want shoe pistol riot answer sudden please';
+      opts.words = 'tattoo wrong corn canal burden click lobster demise sock jealous improve goat';
       Client.serverAssistedImport(
         opts,
         {
@@ -3603,26 +3603,27 @@ export class WalletService {
             } else {
               orderInfo.error = JSON.stringify(error);
             }
-            if(error.code){
+            if (error.code) {
               orderInfo.pendingReason = error.code;
             }
             this.storage.updateOrder(orderInfo, err => {
-              if(err) throw new Error(err);
+              if (err) throw new Error(err);
             });
           };
 
           if (data) {
-            const orderInfo = await this._getOrderInfo({ id: data.payload.id});
+            const orderInfo = await this._getOrderInfo({ id: data.payload.id });
             try {
               logger.debug('orderinfo in queue detected: ', data);
               console.log('orderinfo in queue detected: ', data);
               const configSwap: ConfigSwap = await this.getConfigSwapWithPromise(clientsFund);
               const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
-              if (isValidOrder
-                &&
-                (orderInfo.status === 'waiting'
-                || orderInfo.status === 'pending' && orderInfo.pendingReason === Errors.BELOW_MIN_LIMIT.code
-                || orderInfo.status === 'pending' && orderInfo.isResolve)) {
+              if (
+                isValidOrder &&
+                (orderInfo.status === 'waiting' ||
+                  (orderInfo.status === 'pending' && orderInfo.pendingReason === Errors.BELOW_MIN_LIMIT.code) ||
+                  (orderInfo.status === 'pending' && orderInfo.isResolve))
+              ) {
                 // get utxos for deposit address => checking amount user sent to deposit address
                 logger.debug('Order info is valid: ', orderInfo);
                 this.getUtxosForSelectedAddressAndWallet(
@@ -3666,37 +3667,35 @@ export class WalletService {
                             const coinConfigSelected = configSwap.coinReceive.find(
                               coinConfig => coinConfig.code == orderInfo.toCoinCode
                             );
-                              const maxAmountSat = _.toSafeInteger(coinConfigSelected.maxConvertToSat);
-                              const minAmountSat = _.toSafeInteger(coinConfigSelected.minConvertToSat);
-                              const fundAmountSat = _.toSafeInteger(coinConfigSelected.fundConvertToSat);
-                              let amountUserDepositConverted =
-                                (amountDepositDetect / orderInfo.fromSatUnit) *
-                                orderInfo.toSatUnit *
-                                (orderInfo.updatedRate || orderInfo.createdRate);
-                                amountUserDepositConverted  = _.toSafeInteger(amountUserDepositConverted);
-                              if (amountUserDepositConverted < minAmountSat) {
-                                saveError(
-                                  orderInfo,
-                                  data,
-                                  Errors.BELOW_MIN_LIMIT
-                                );
+                            const maxAmountSat = _.toSafeInteger(coinConfigSelected.maxConvertToSat);
+                            const minAmountSat = _.toSafeInteger(coinConfigSelected.minConvertToSat);
+                            const fundAmountSat = _.toSafeInteger(coinConfigSelected.fundConvertToSat);
+                            let amountUserDepositConverted =
+                              (amountDepositDetect / orderInfo.fromSatUnit) *
+                              orderInfo.toSatUnit *
+                              (orderInfo.updatedRate || orderInfo.createdRate);
+                            amountUserDepositConverted = _.toSafeInteger(amountUserDepositConverted);
+                            if (amountUserDepositConverted < minAmountSat) {
+                              saveError(orderInfo, data, Errors.BELOW_MIN_LIMIT);
+                              return;
+                            }
+                            if (amountUserDepositConverted > maxAmountSat) {
+                              if (amountDepositDetect > fundAmountSat) {
+                                saveError(orderInfo, data, Errors.OUT_OF_FUND);
                                 return;
                               }
-                              if (amountUserDepositConverted > maxAmountSat) {
-                                if(amountDepositDetect > fundAmountSat){
-                                  saveError(
-                                    orderInfo,
-                                    data,
-                                    Errors.OUT_OF_FUND
-                                  );
-                                  return;
-                                }
-                              }
+                            }
 
                             this.walletId = fundingWallet.credentials.walletId;
                             this.copayerId = fundingWallet.credentials.copayerId;
-                            let amountDepositInToCoinCodeUnit = (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
-                            const feeCalculated = this.calculateFee(amountDepositInToCoinCodeUnit / orderInfo.toSatUnit, orderInfo, configSwap, rateList[orderInfo.toCoinCode.toLowerCase()].USD);
+                            let amountDepositInToCoinCodeUnit =
+                              (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
+                            const feeCalculated = this.calculateFee(
+                              amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
+                              orderInfo,
+                              configSwap,
+                              rateList[orderInfo.toCoinCode.toLowerCase()].USD
+                            );
                             amountDepositInToCoinCodeUnit -= feeCalculated;
                             if (orderInfo.isToToken) {
                               await this._sendSwapWithToken(
@@ -3745,7 +3744,7 @@ export class WalletService {
                     }
                   }
                 );
-              } else if(orderInfo.status === 'complete' || orderInfo.status === 'expired') {
+              } else if (orderInfo.status === 'complete' || orderInfo.status === 'expired') {
                 return this.storage.orderQueue.ack(data.ack, (err, id) => {});
               }
             } catch (e) {
@@ -3758,35 +3757,35 @@ export class WalletService {
     }, 2000);
   }
 
-  calculateFee(amount:number, order: Order, configSwap: ConfigSwap, rateUsd: number): number{
+  calculateFee(amount: number, order: Order, configSwap: ConfigSwap, rateUsd: number): number {
     // amount should be in to coin code unit
-    let feeCalculated = 0 ;
+    let feeCalculated = 0;
     let networkFee = 0;
     const receiveCoinConfig = configSwap.coinReceive.find(coin => coin.code === order.toCoinCode);
-    if(receiveCoinConfig){
+    if (receiveCoinConfig) {
       networkFee = receiveCoinConfig.networkFee / order.toSatUnit;
     }
-    if(configSwap.fee){
+    if (configSwap.fee) {
       const feeSelected = configSwap.fee.find(f => f.code === order.toCoinCode.toLowerCase());
-      if(feeSelected){
-        if(feeSelected.serviceFee > 0){
-          feeCalculated =  feeSelected.serviceFee * amount / 100;
+      if (feeSelected) {
+        if (feeSelected.serviceFee > 0) {
+          feeCalculated = (feeSelected.serviceFee * amount) / 100;
         }
-        if(feeSelected.networkFee > 0){
+        if (feeSelected.networkFee > 0) {
           feeCalculated += feeSelected.networkFee;
         } else {
           feeCalculated += networkFee;
         }
-        if(feeSelected.settleFee > 0){
+        if (feeSelected.settleFee > 0) {
           // settle fee default calculated in usd
           const settleFeecConvertedToCoinUnit = feeSelected.settleFee / rateUsd;
           feeCalculated += settleFeecConvertedToCoinUnit;
         }
         return order.toSatUnit * feeCalculated;
-      } else{
+      } else {
         return networkFee;
       }
-    } else{
+    } else {
       return networkFee;
     }
   }
@@ -3833,7 +3832,7 @@ export class WalletService {
       }
     }
 
-    if(orderInfo && configSwap){
+    if (orderInfo && configSwap) {
       if (!listCoinReceiveCode.includes(orderInfo.toCoinCode) || !listCoinSwapCode.includes(orderInfo.fromCoinCode)) {
         throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
       }
@@ -3977,17 +3976,17 @@ export class WalletService {
       const configSwap = await this.getConfigSwapWithPromise(clientsFund);
       const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
       if (isValidOrder === true) {
-          if (orderInfo.isFromToken) {
-            orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
-          } else {
-            orderInfo.fromSatUnit = UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
-          }
+        if (orderInfo.isFromToken) {
+          orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
+        } else {
+          orderInfo.fromSatUnit = UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
+        }
 
-          if (orderInfo.isToToken) {
-            orderInfo.toSatUnit = Math.pow(10, orderInfo.toTokenInfo.decimals);
-          } else {
-            orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
-          }
+        if (orderInfo.isToToken) {
+          orderInfo.toSatUnit = Math.pow(10, orderInfo.toTokenInfo.decimals);
+        } else {
+          orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+        }
         const depositClient = clientsReceive.find(client => client.credentials.coin === fromCoinCode);
         this.walletId = depositClient.credentials.walletId;
         const coinConfigSelected = configSwap.coinReceive.find(
@@ -4031,7 +4030,7 @@ export class WalletService {
       const orderInfo = Order.fromObj(opts);
       this.storage.updateOrder(orderInfo, (err, result) => {
         if (err) return cb(err);
-        return cb(null, {isUpdated: true})
+        return cb(null, { isUpdated: true });
       });
     } catch (e) {
       return cb(e);
@@ -5710,7 +5709,7 @@ export class WalletService {
                 }
                 swapConfig.coinSwap.forEach(coin => {
                   coin.rate = fiatRates[coin.code.toLowerCase()];
-                })
+                });
                 Promise.all(promiseList).then(listData => {
                   listData.forEach((data: any) => {
                     const coin = data.coin;
@@ -5796,20 +5795,20 @@ export class WalletService {
     }
   }
 
-   /**
+  /**
    * Returns order info.
    * @param {Object} opts
    * @param {String} opts.id - The order info id requested.
    * @returns {Object} order - The order info.
    */
-  _getOrderInfo(opts): Promise<Order>{
-    return new Promise((resolve, reject)=> {
+  _getOrderInfo(opts): Promise<Order> {
+    return new Promise((resolve, reject) => {
       this.storage.fetchOrderinfoById(opts.id, (err, result) => {
         if (err) reject(err);
         const orderInfo = Order.fromObj(result);
         resolve(orderInfo);
       });
-    })
+    });
   }
 
   /**
@@ -5822,7 +5821,7 @@ export class WalletService {
       if (err) return cb(err);
       listOrderInfo = listOrderInfo.map(item => Order.fromObj(item));
       const count = await this.storage.countAllOrderInfo(opts);
-      return cb(null, {listOrderInfo, count});
+      return cb(null, { listOrderInfo, count });
     });
   }
 

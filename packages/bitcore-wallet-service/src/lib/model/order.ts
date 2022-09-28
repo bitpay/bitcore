@@ -112,9 +112,9 @@ export class Order {
     x.fromTokenInfo = opts.fromTokenInfo || null;
     x.note = '';
     x.isInQueue = false;
-    x.pendingReason= opts.pendingReason || null;
-    x.lastModified= null;
-    x.isResolve= false;
+    x.pendingReason = opts.pendingReason || null;
+    x.lastModified = null;
+    x.isResolve = false;
     return x;
   }
 
@@ -152,9 +152,9 @@ export class Order {
     x.endedOn = obj.endedOn;
     x.note = obj.note;
     x.isInQueue = obj.isInQueue;
-    x.pendingReason= obj.pendingReason;
-    x.lastModified= obj.lastModified;
-    x.isResolve= obj.isResolve;
+    x.pendingReason = obj.pendingReason;
+    x.lastModified = obj.lastModified;
+    x.isResolve = obj.isResolve;
     return x;
   }
 }
