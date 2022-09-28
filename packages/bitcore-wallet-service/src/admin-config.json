@@ -8,24 +8,6 @@
     "min": 0,
     "tokenInfo": {},
     "isEnable": true
-  },
-  {
-    "code": "xec",
-    "isToken": false,
-    "networkFee": 226,
-    "rate": {},
-    "min": 0,
-    "tokenInfo": {},
-    "isEnable": true
-  },
-  {
-    "code": "abcslp",
-    "isToken": true,
-    "networkFee": 1342,
-    "rate": {},
-    "min": 0,
-    "tokenInfo": {},
-    "isEnable": true
   }
 ],
 "coinReceive": [
@@ -36,24 +18,6 @@
       "rate": {},
       "min": 0.00001,
       "max": 0.00003,
-      "isEnable": true
-    },
-    {
-      "code": "xec",
-      "isToken": false,
-      "networkFee": 226,
-      "rate": {},
-      "min": 0,
-      "max": 1000,
-      "isEnable": true
-    },
-    {
-      "code": "abcslp",
-      "isToken": true,
-      "networkFee": 1342,
-      "rate": {},
-      "min": 0,
-      "max": 1000,
       "isEnable": true
     }
 ],

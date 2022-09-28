@@ -1,5 +1,3 @@
-import { http } from 'winston';
-
 module.exports = {
   basePath: '/bws/api',
   disableLogs: false,
@@ -53,7 +51,7 @@ module.exports = {
     },
     xec: {
       livenet: {
-        url: 'http://dev.abcpay.cash:3000'
+        url: 'http://127.0.0.1:3000'
       },
       testnet: {
         url: 'http://127.0.0.1:3000'
@@ -85,7 +83,7 @@ module.exports = {
     },
     xpi: {
       livenet: {
-        url: 'http://dev.abcpay.cash:3000'
+        url: 'http://127.0.0.1:3000'
       },
       testnet: {
         url: 'http://127.0.0.1:3000'
@@ -120,8 +118,7 @@ module.exports = {
   },
   currencyRateServiceOpts: {
     apiUrl: 'https://api.currencyapi.com/v3/latest',
-    fetchInterval: 180, // in minutes
-    apiKey: 'QJjwm0BtOmZyRQL6A91VETYY7R54izd53Qs2PaOy'
+    fetchInterval: 180 // in minutes
   },
   maintenanceOpts: {
     maintenanceMode: false
