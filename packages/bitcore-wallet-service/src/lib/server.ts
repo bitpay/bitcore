@@ -3350,7 +3350,7 @@ export class WalletService {
       feeLevel: 'normal',
       isTokenSwap: null,
       message: null,
-      network: network,
+      network,
       outputs: [
         {
           amount: _.toSafeInteger(amountTo),
@@ -3607,7 +3607,7 @@ export class WalletService {
             if (error.code) {
               orderInfo.pendingReason = error.code;
             }
-            if(error.code === 'ORDER_EXPIRED'){
+            if (error.code === 'ORDER_EXPIRED') {
               orderInfo.status = 'expired';
             }
             this.storage.updateOrder(orderInfo, err => {
@@ -3656,7 +3656,9 @@ export class WalletService {
                       }
                       if (amountDepositDetect > 0) {
                         const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
-                        const fundingWallet = clientsFund.find(s => s.credentials.coin === coinCode && s.credentials.network === orderInfo.toNetwork);
+                        const fundingWallet = clientsFund.find(
+                          s => s.credentials.coin === coinCode && s.credentials.network === orderInfo.toNetwork
+                        );
                         // checking rate again before creating tx
                         this._getRatesWithCustomFormat(async (err, rateList) => {
                           const rate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
@@ -3694,8 +3696,8 @@ export class WalletService {
                             this.copayerId = fundingWallet.credentials.copayerId;
                             let amountDepositInToCoinCodeUnit =
                               (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
-                              // TANTODO: in future remove for livenet , also apply for testnet
-                            if(orderInfo.toNetwork === 'livenet'){
+                            // TANTODO: in future remove for livenet , also apply for testnet
+                            if (orderInfo.toNetwork === 'livenet') {
                               const feeCalculated = this.calculateFee(
                                 amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
                                 orderInfo,
@@ -3769,7 +3771,9 @@ export class WalletService {
     // amount should be in to coin code unit
     let feeCalculated = 0;
     let networkFee = 0;
-    const receiveCoinConfig = configSwap.coinReceive.find(coin => coin.code === order.toCoinCode && coin.network === order.toNetwork);
+    const receiveCoinConfig = configSwap.coinReceive.find(
+      coin => coin.code === order.toCoinCode && coin.network === order.toNetwork
+    );
     if (receiveCoinConfig) {
       networkFee = receiveCoinConfig.networkFee / order.toSatUnit;
     }
@@ -3823,12 +3827,16 @@ export class WalletService {
     } else throw new Error('Not found Order info');
 
     if (configSwap) {
-      if(!configSwap.coinReceive || !configSwap.coinSwap){
+      if (!configSwap.coinReceive || !configSwap.coinSwap) {
         throw new Error('Not found coin config for exchange');
       }
-      const indexCoinReceiveFound = configSwap.coinReceive.findIndex(config => config.isEnable && config.network === orderInfo.toNetwork && config.code === orderInfo.toCoinCode);
-      const indexCoinSwapfound = configSwap.coinSwap.findIndex(config => config.isEnable && config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode);
-      if(indexCoinReceiveFound < 0 || indexCoinSwapfound < 0){
+      const indexCoinReceiveFound = configSwap.coinReceive.findIndex(
+        config => config.isEnable && config.network === orderInfo.toNetwork && config.code === orderInfo.toCoinCode
+      );
+      const indexCoinSwapfound = configSwap.coinSwap.findIndex(
+        config => config.isEnable && config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode
+      );
+      if (indexCoinReceiveFound < 0 || indexCoinSwapfound < 0) {
         throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
       }
     } else throw new Error('Not found config swap');
@@ -3982,7 +3990,9 @@ export class WalletService {
         } else {
           orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
         }
-        const depositClient = clientsReceive.find(client => client.credentials.coin === fromCoinCode && client.credentials.network === orderInfo.fromNetwork);
+        const depositClient = clientsReceive.find(
+          client => client.credentials.coin === fromCoinCode && client.credentials.network === orderInfo.fromNetwork
+        );
         this.walletId = depositClient.credentials.walletId;
         const coinConfigSelected = configSwap.coinReceive.find(
           coin => coin.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase()

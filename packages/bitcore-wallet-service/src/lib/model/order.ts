@@ -117,8 +117,7 @@ export class Order {
     x.pendingReason = opts.pendingReason || null;
     x.lastModified = null;
     x.isResolve = false;
-    x.toNetwork = opts.toNetwork,
-    x.fromNetwork = opts.fromNetwork
+    (x.toNetwork = opts.toNetwork), (x.fromNetwork = opts.fromNetwork);
     return x;
   }
 
@@ -159,8 +158,7 @@ export class Order {
     x.pendingReason = obj.pendingReason;
     x.lastModified = obj.lastModified;
     x.isResolve = obj.isResolve;
-    x.toNetwork = obj.toNetwork,
-    x.fromNetwork = obj.fromNetwork
+    (x.toNetwork = obj.toNetwork), (x.fromNetwork = obj.fromNetwork);
     return x;
   }
 }
