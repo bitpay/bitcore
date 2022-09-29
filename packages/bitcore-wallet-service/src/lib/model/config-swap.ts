@@ -95,6 +95,7 @@ export class ConfigSwap {
 
 export class CoinConfig {
   code: string;
+  network: string;
   isToken: boolean;
   networkFee?: number;
   rate?: any;
@@ -112,6 +113,7 @@ export class CoinConfig {
     const x = new CoinConfig();
     x.code = opts.code;
     x.isToken = opts.isToken;
+    x.network = opts.network;
     x.networkFee = opts.networkFee || 0;
     x.rate = null;
     x.min = opts.min || 0;
@@ -129,6 +131,7 @@ export class CoinConfig {
   static fromObj(opts) {
     const x = new CoinConfig();
     x.code = opts.code;
+    x.network = opts.network;
     x.isToken = opts.isToken;
     x.networkFee = opts.networkFee;
     x.rate = opts.rate;

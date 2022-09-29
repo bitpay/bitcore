@@ -49,7 +49,7 @@ const EmailValidator = require('email-validator');
 import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
-import { countBy } from 'lodash';
+import { countBy, findIndex } from 'lodash';
 import { isIfStatement, isToken, Token } from 'typescript';
 import { CurrencyRateService } from './currencyrate';
 import { Config } from './model/config-model';
@@ -3342,7 +3342,7 @@ export class WalletService {
       });
     });
   }
-  _createOtpTxSwap(coinCode, addressUserReceive, amountTo) {
+  _createOtpTxSwap(coinCode, network, addressUserReceive, amountTo) {
     const tx = {
       coin: coinCode,
       dryRun: false,
@@ -3350,6 +3350,7 @@ export class WalletService {
       feeLevel: 'normal',
       isTokenSwap: null,
       message: null,
+      network: network,
       outputs: [
         {
           amount: _.toSafeInteger(amountTo),
@@ -3457,7 +3458,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'assault husband flame unveil twelve curtain negative quiz decade anchor uncle shadow';
+      opts.words = 'swing exhaust inform mass twist hybrid private begin quote heart keep share';
       Client.serverAssistedImport(
         opts,
         {
@@ -3482,7 +3483,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'tattoo wrong corn canal burden click lobster demise sock jealous improve goat';
+      opts.words = 'whisper review pupil vote grant want shoe pistol riot answer sudden please';
       Client.serverAssistedImport(
         opts,
         {
@@ -3606,6 +3607,9 @@ export class WalletService {
             if (error.code) {
               orderInfo.pendingReason = error.code;
             }
+            if(error.code === 'ORDER_EXPIRED'){
+              orderInfo.status = 'expired';
+            }
             this.storage.updateOrder(orderInfo, err => {
               if (err) throw new Error(err);
             });
@@ -3629,7 +3633,7 @@ export class WalletService {
                 this.getUtxosForSelectedAddressAndWallet(
                   {
                     coin: orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode,
-                    network: 'livenet',
+                    network: orderInfo.fromNetwork,
                     addresses: orderInfo.isFromToken
                       ? [this._convertEtokenAddressToEcashAddress(orderInfo.adddressUserDeposit)]
                       : [orderInfo.adddressUserDeposit],
@@ -3639,7 +3643,7 @@ export class WalletService {
                   (err, utxos) => {
                     try {
                       let amountDepositDetect = 0;
-                      if (utxos.length > 0) {
+                      if (utxos && utxos.length > 0) {
                         orderInfo.listTxIdUserDeposit = [];
                         _.each(utxos, utxo => {
                           if (orderInfo.isFromToken) {
@@ -3652,7 +3656,7 @@ export class WalletService {
                       }
                       if (amountDepositDetect > 0) {
                         const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
-                        const fundingWallet = clientsFund.find(s => s.credentials.coin === coinCode);
+                        const fundingWallet = clientsFund.find(s => s.credentials.coin === coinCode && s.credentials.network === orderInfo.toNetwork);
                         // checking rate again before creating tx
                         this._getRatesWithCustomFormat(async (err, rateList) => {
                           const rate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
@@ -3690,13 +3694,16 @@ export class WalletService {
                             this.copayerId = fundingWallet.credentials.copayerId;
                             let amountDepositInToCoinCodeUnit =
                               (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
-                            const feeCalculated = this.calculateFee(
-                              amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
-                              orderInfo,
-                              configSwap,
-                              rateList[orderInfo.toCoinCode.toLowerCase()].USD
-                            );
-                            amountDepositInToCoinCodeUnit -= feeCalculated;
+                              // TANTODO: in future remove for livenet , also apply for testnet
+                            if(orderInfo.toNetwork === 'livenet'){
+                              const feeCalculated = this.calculateFee(
+                                amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
+                                orderInfo,
+                                configSwap,
+                                rateList[orderInfo.toCoinCode.toLowerCase()].USD
+                              );
+                              amountDepositInToCoinCodeUnit -= feeCalculated;
+                            }
                             if (orderInfo.isToToken) {
                               await this._sendSwapWithToken(
                                 'xec',
@@ -3718,6 +3725,7 @@ export class WalletService {
                             } else {
                               const txOptsSwap = this._createOtpTxSwap(
                                 orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode,
+                                orderInfo.toNetwork,
                                 orderInfo.addressUserReceive,
                                 amountDepositInToCoinCodeUnit
                               );
@@ -3761,7 +3769,7 @@ export class WalletService {
     // amount should be in to coin code unit
     let feeCalculated = 0;
     let networkFee = 0;
-    const receiveCoinConfig = configSwap.coinReceive.find(coin => coin.code === order.toCoinCode);
+    const receiveCoinConfig = configSwap.coinReceive.find(coin => coin.code === order.toCoinCode && coin.network === order.toNetwork);
     if (receiveCoinConfig) {
       networkFee = receiveCoinConfig.networkFee / order.toSatUnit;
     }
@@ -3783,10 +3791,10 @@ export class WalletService {
         }
         return order.toSatUnit * feeCalculated;
       } else {
-        return networkFee;
+        return order.isToToken ? 0 : networkFee;
       }
     } else {
-      return networkFee;
+      return order.isToToken ? 0 : networkFee;
     }
   }
   async checkRequirementBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order) {
@@ -3812,31 +3820,18 @@ export class WalletService {
       if (orderInfo.createdOn && orderInfo.endedOn && orderInfo.endedOn < now) {
         throw new Error(Errors.ORDER_EXPIRED);
       }
-    }
+    } else throw new Error('Not found Order info');
 
     if (configSwap) {
-      // checking required coin , token for receive
-      const listCoinReceiveEnabled = configSwap.coinReceive.filter(config => config.isEnable);
-
-      if (listCoinReceiveEnabled && listCoinReceiveEnabled.length > 0) {
-        listCoinReceiveCode = listCoinReceiveEnabled.map(item => item.code.toLowerCase());
-      } else {
-        throw new Error(Errors.NO_AVAILABLE_SWAP_COIN);
+      if(!configSwap.coinReceive || !configSwap.coinSwap){
+        throw new Error('Not found coin config for exchange');
       }
-
-      const listCoinSwapEnabled = configSwap.coinReceive.filter(config => config.isEnable);
-      if (listCoinSwapEnabled && listCoinSwapEnabled.length > 0) {
-        listCoinSwapCode = listCoinSwapEnabled.map(item => item.code.toLowerCase());
-      } else {
-        throw new Error(Errors.NO_AVAILABLE_RECEIVE_COIN);
-      }
-    }
-
-    if (orderInfo && configSwap) {
-      if (!listCoinReceiveCode.includes(orderInfo.toCoinCode) || !listCoinSwapCode.includes(orderInfo.fromCoinCode)) {
+      const indexCoinReceiveFound = configSwap.coinReceive.findIndex(config => config.isEnable && config.network === orderInfo.toNetwork && config.code === orderInfo.toCoinCode);
+      const indexCoinSwapfound = configSwap.coinSwap.findIndex(config => config.isEnable && config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode);
+      if(indexCoinReceiveFound < 0 || indexCoinSwapfound < 0){
         throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
       }
-    }
+    } else throw new Error('Not found config swap');
     return true;
   }
 
@@ -3987,7 +3982,7 @@ export class WalletService {
         } else {
           orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
         }
-        const depositClient = clientsReceive.find(client => client.credentials.coin === fromCoinCode);
+        const depositClient = clientsReceive.find(client => client.credentials.coin === fromCoinCode && client.credentials.network === orderInfo.fromNetwork);
         this.walletId = depositClient.credentials.walletId;
         const coinConfigSelected = configSwap.coinReceive.find(
           coin => coin.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase()

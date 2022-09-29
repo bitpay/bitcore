@@ -2,22 +2,64 @@
   "coinSwap": [
   {
     "code": "xpi",
+    "network": "livenet",
     "isToken": false,
     "networkFee": 226,
     "rate": {},
     "min": 0,
     "tokenInfo": {},
     "isEnable": true
+  },
+  {
+    "code": "bch",
+    "network": "testnet",
+    "isToken": false,
+    "networkFee": 226,
+    "rate": {},
+    "min": 0,
+    "tokenInfo": {},
+    "isEnable": true
+  },
+  {
+    "code": "btc",
+    "network": "testnet",
+    "isToken": false,
+    "networkFee": 226,
+    "rate": {},
+    "min":0,
+    "max": 0,
+    "isEnable": true
   }
 ],
 "coinReceive": [
   {
       "code": "xpi",
+      "network": "livenet",
+      "isToken": false,
+      "networkFee": 226,
+      "rate": {},
+      "min": 0.00001,
+      "max": 1000,
+      "isEnable": true
+    },
+    {
+      "code": "bch",
+      "network": "testnet",
       "isToken": false,
       "networkFee": 226,
       "rate": {},
       "min": 0.00001,
       "max": 0.00003,
+      "isEnable": true
+    },
+    {
+      "code": "btc",
+      "network": "testnet",
+      "isToken": false,
+      "networkFee": 226,
+      "rate": {},
+      "min":0,
+      "max": 1000,
       "isEnable": true
     }
 ],
@@ -44,8 +86,8 @@
   {
     "code": "btc",
     "settleFee": 0,
-    "networkFee": 0.00002103,
-    "serviceFee": 1
+    "networkFee": 0,
+    "serviceFee": 0
   }
 ]
 }

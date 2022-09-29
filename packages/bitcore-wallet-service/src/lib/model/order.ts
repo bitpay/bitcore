@@ -75,6 +75,8 @@ export class Order {
   pendingReason?: string;
   lastModified?: number;
   isResolve?: boolean;
+  toNetwork: string;
+  fromNetwork: string;
   static create(opts) {
     opts = opts || {};
 
@@ -115,6 +117,8 @@ export class Order {
     x.pendingReason = opts.pendingReason || null;
     x.lastModified = null;
     x.isResolve = false;
+    x.toNetwork = opts.toNetwork,
+    x.fromNetwork = opts.fromNetwork
     return x;
   }
 
@@ -155,6 +159,8 @@ export class Order {
     x.pendingReason = obj.pendingReason;
     x.lastModified = obj.lastModified;
     x.isResolve = obj.isResolve;
+    x.toNetwork = obj.toNetwork,
+    x.fromNetwork = obj.fromNetwork
     return x;
   }
 }
