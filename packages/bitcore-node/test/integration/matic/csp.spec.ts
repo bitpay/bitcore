@@ -9,9 +9,9 @@ import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
-import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
-import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
-import { IEthTransaction } from '../../../src/modules/ethereum/types';
+import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
+import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
+import { IEVMTransaction } from '../../../src/providers/chain-state/evm//types';
 import { MATIC } from '../../../src/modules/matic/api/csp';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
@@ -27,28 +27,28 @@ describe('Polygon/MATIC API', function() {
 
   it('should return undefined for garbage data', () => {
     const data = 'garbage';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.be.undefined;
   });
   it('should be able to classify ERC20 data', () => {
     const data =
       '0x095ea7b300000000000000000000000052de8d3febd3a06d3c627f59d56e6892b80dcf1200000000000000000000000000000000000000000000000000000000000f4240';
-    EthTransactionStorage.abiDecode(data);
-    const decoded = EthTransactionStorage.abiDecode(data);
+    EVMTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
     expect(decoded!.type).to.eq('ERC20');
   });
   it('should be able to classify ERC721 data', () => {
     const data =
       '0xa22cb465000000000000000000000000efc70a1b18c432bdc64b596838b4d138f6bc6cad0000000000000000000000000000000000000000000000000000000000000001';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
     expect(decoded!.type).to.eq('ERC721');
   });
   it('should be able to classify Invoice data', () => {
     const data =
       '0xb6b4af0500000000000000000000000000000000000000000000000000000000000f4240000000000000000000000000000000000000000000000000000000033ec500800000000000000000000000000000000000000000000000000000016e00f7b3d3c72c929edaf203cfabf7a0513cb8cee277a84ec3fd56bcf3f396b6d665c8abe6c4432f916bacafc94982b45050513de2ee5544aa855d9b5b60e8c1c94e71ffca000000000000000000000000000000000000000000000000000000000000001cfd9150848849c7aff74939535afe5e56dcac5f2f553467ae0e9181d14c0e49c9799433220e288e282376b86aae1bc1d683af4708b38999d59b5d65ff29a85705000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
     expect(decoded!.type).to.eq('INVOICE');
   });
@@ -56,14 +56,14 @@ describe('Polygon/MATIC API', function() {
   it('should handle multiple decodes', () => {
     const data =
       '0x095ea7b300000000000000000000000052de8d3febd3a06d3c627f59d56e6892b80dcf1200000000000000000000000000000000000000000000000000000000000f4240';
-    EthTransactionStorage.abiDecode(data);
-    const decoded = EthTransactionStorage.abiDecode(data);
+    EVMTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
     expect(decoded!.type).to.eq('ERC20');
     const data2 =
       '0xa22cb465000000000000000000000000efc70a1b18c432bdc64b596838b4d138f6bc6cad0000000000000000000000000000000000000000000000000000000000000001';
-    EthTransactionStorage.abiDecode(data);
-    const decoded2 = EthTransactionStorage.abiDecode(data2);
+    EVMTransactionStorage.abiDecode(data);
+    const decoded2 = EVMTransactionStorage.abiDecode(data2);
     expect(decoded2).to.exist;
     expect(decoded2!.type).to.eq('ERC721');
   });
@@ -71,7 +71,7 @@ describe('Polygon/MATIC API', function() {
   it('should not crash when called with almost correct data', () => {
     const data =
       '0xa9059cbb0000000000000000000000000797350000000000000000000000000000000000000000000005150ac4c39a6f3f0000';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.be.undefined;
   });
 
@@ -98,11 +98,11 @@ describe('Polygon/MATIC API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEthTransaction;
+      } as IEVMTransaction;
     });
     await CacheStorage.collection.remove({});
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
     const estimates = await Promise.all([1, 2, 3, 4].map(target => MATIC.getFee({ network, target })));
     for (const estimate of estimates) {
       expect(estimate.feerate).to.be.gt(0);
@@ -119,14 +119,14 @@ describe('Polygon/MATIC API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEthTransaction;
+      } as IEVMTransaction;
     });
     await CacheStorage.collection.remove({})
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
     let estimates = await Promise.all([1, 2, 3, 4].map(target => MATIC.getFee({ network, target })));
 
-    await EthTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.deleteMany({});
     estimates = await Promise.all([1, 2, 3, 4].map(target => MATIC.getFee({ network, target })));
     for (const estimate of estimates) {
       expect(estimate.feerate).to.be.gt(0);
@@ -174,10 +174,10 @@ describe('Polygon/MATIC API', function() {
         gasPrice: 10 * 1e9,
         data: Buffer.from(''),
         from: address
-      } as IEthTransaction;
+      } as IEVMTransaction;
     });
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
 
     const res = (new Transform({
       transform: (data, _, cb) => cb(null, data)
@@ -211,10 +211,10 @@ describe('Polygon/MATIC API', function() {
         blockHeight: 1,
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEthTransaction;
+      } as IEVMTransaction;
     });
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
 
     const res = (new Transform({
       transform: (data, _, cb) => {
@@ -256,10 +256,10 @@ describe('Polygon/MATIC API', function() {
         blockHash: '12345',
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEthTransaction;
+      } as IEVMTransaction;
     });
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
 
     const res = (new Transform({
       transform: (data, _, cb) => {
@@ -315,8 +315,8 @@ describe('Polygon/MATIC API', function() {
     });
 
     afterEach(async () => {
-      await EthBlockStorage.collection.deleteMany({});
-      await EthTransactionStorage.collection.deleteMany({});
+      await EVMBlockStorage.collection.deleteMany({});
+      await EVMTransactionStorage.collection.deleteMany({});
     });
 
     after(async () => { 
@@ -359,7 +359,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
       gasPrice: 10 * 1e9,
       data: Buffer.from(''),
       from: address
-    } as IEthTransaction;
+    } as IEVMTransaction;
   });
   // Invalid Transactions
   _.times(txCount, () => txs.push({
@@ -373,8 +373,8 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
   sandbox.stub(MATIC, 'getWalletAddresses').resolves([address]);
 
   // Test
-  await EthTransactionStorage.collection.deleteMany({});
-  await EthTransactionStorage.collection.insertMany(txs);
+  await EVMTransactionStorage.collection.deleteMany({});
+  await EVMTransactionStorage.collection.insertMany(txs);
 
   const res = (new Transform({
     transform: (data, _, cb) => cb(null, data)

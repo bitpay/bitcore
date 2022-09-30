@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
 import { ETH, ETHStateProvider } from '../../../../src/modules/ethereum/api/csp';
-import { IEthBlock, IEthTransaction } from '../../../../src/modules/ethereum/types';
+import { IEVMBlock, IEVMTransaction } from '../../../../src/providers/chain-state/evm/types';
 import { mockModel } from '../../../helpers';
 
 describe('ETH Chain State Provider', function() {
@@ -14,7 +14,7 @@ describe('ETH Chain State Provider', function() {
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
-    sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    sandbox.stub(ETHStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
     const { web3 } = await ETH.getWeb3(network);
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
@@ -63,7 +63,7 @@ describe('ETH Chain State Provider', function() {
       blockHeight: 1,
       gasPrice: 10,
       data: Buffer.from('')
-    } as MongoBound<IEthTransaction>;
+    } as MongoBound<IEVMTransaction>;
     sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
@@ -162,7 +162,7 @@ describe('ETH Chain State Provider', function() {
       _id: new ObjectId(),
       hash: '55555',
       height: 1
-    } as MongoBound<IEthBlock>;
+    } as MongoBound<IEVMBlock>;
     mockModel('blocks', mockBlock);
     const found = await ETH.getBlocks({ chain, network, blockId: mockBlock.hash });
     expect(found).to.exist;

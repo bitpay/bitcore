@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
-import { IEthBlock, IEthTransaction } from '../../../../src/modules/ethereum/types';
+import { IEVMBlock, IEVMTransaction } from '../../../../src/providers/chain-state/evm/types';
 import { MATIC, MATICStateProvider } from '../../../../src/modules/matic/api/csp';
 import { mockModel } from '../../../helpers';
 
@@ -63,7 +63,7 @@ describe('MATIC Chain State Provider', function() {
       blockHeight: 1,
       gasPrice: 10,
       data: Buffer.from('')
-    } as MongoBound<IEthTransaction>;
+    } as MongoBound<IEVMTransaction>;
     sandbox.stub(MATIC, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(MATIC, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
@@ -162,7 +162,7 @@ describe('MATIC Chain State Provider', function() {
       _id: new ObjectId(),
       hash: '55555',
       height: 1
-    } as MongoBound<IEthBlock>;
+    } as MongoBound<IEVMBlock>;
     mockModel('blocks', mockBlock);
     const found = await MATIC.getBlocks({ chain, network, blockId: mockBlock.hash });
     expect(found).to.exist;

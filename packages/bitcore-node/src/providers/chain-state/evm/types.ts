@@ -1,9 +1,9 @@
 import BN from 'bn.js';
 
-import { ITransaction } from '../../models/baseTransaction';
-import { IBlock } from '../../types/Block';
-import { ClassifiedTrace } from './../ethereum/p2p/rpcs/erigonRpc';
-import { IGethTxTraceFlat } from './../ethereum/p2p/rpcs/gethRpc';
+import { ITransaction } from '../../../models/baseTransaction';
+import { IBlock } from '../../../types/Block';
+import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
+import { IGethTxTraceFlat } from './p2p/rpcs/gethRpc';
 
 interface BaseBlock {
   difficulty: string;
@@ -95,15 +95,15 @@ export type AnyTransaction = GethTraceTransaction | ErigonTransaction;
 
 export type Networks = 'mainnet' | 'mumbai';
 
-export interface EthereumBlock {
-  header: EthereumHeader;
+export interface EVMBlock {
+  header: EVMHeader;
   transactions: Transaction[];
-  uncleHeaders: EthereumHeader[];
+  uncleHeaders: EVMHeader[];
   raw: Buffer[];
   txTrie: any;
 }
 
-export interface EthereumHeader {
+export interface EVMHeader {
   parentHash: Buffer;
   uncleHash: Buffer;
   coinbase: Buffer;
@@ -137,7 +137,7 @@ export interface Transaction {
   getUpfrontCost: () => BN;
 }
 
-export type IEthBlock = IBlock & {
+export type IEVMBlock = IBlock & {
   coinbase: Buffer;
   nonce: Buffer;
   gasLimit: number;
@@ -152,7 +152,7 @@ export type IEthBlock = IBlock & {
   totalDifficulty: string;
 };
 
-export type IEthTransaction = ITransaction & {
+export type IEVMTransaction = ITransaction & {
   data: Buffer;
   gasLimit: number;
   gasPrice: number;
@@ -177,7 +177,7 @@ export type IEthTransaction = ITransaction & {
   };
 };
 
-export type IEthTransactionTransformed = IEthTransaction & {
+export type IEVMTransactionTransformed = IEVMTransaction & {
   initialFrom?: string;
 };
 
@@ -205,7 +205,7 @@ export interface IAbiDecodedData extends IAbiDecodeResponse {
 export type DecodedTrace = ClassifiedTrace & {
   decodedData?: IAbiDecodedData;
 };
-export interface EthTransactionJSON {
+export interface EVMTransactionJSON {
   txid: string;
   chain: string;
   network: string;
@@ -224,5 +224,17 @@ export interface EthTransactionJSON {
   decodedData?: IAbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
-  receipt?: IEthTransaction['receipt'];
+  receipt?: IEVMTransaction['receipt'];
+}
+
+export interface EventLog<T> {
+  event: string;
+  address: string;
+  returnValues: T;
+  logIndex: number;
+  transactionIndex: number;
+  transactionHash: string;
+  blockHash: string;
+  blockNumber: number;
+  raw?: { data: string; topics: any[] };
 }

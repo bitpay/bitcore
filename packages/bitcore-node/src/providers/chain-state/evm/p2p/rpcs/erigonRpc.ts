@@ -7,11 +7,11 @@
 
 import AbiDecoder from 'abi-decoder';
 import Web3 from 'web3';
-import { LoggifyClass } from '../../../../decorators/Loggify';
+import { LoggifyClass } from '../../../../../decorators/Loggify';
 import { ERC20Abi } from '../../abi/erc20';
 import { ERC721Abi } from '../../abi/erc721';
-import { EthTransactionStorage } from '../../models/transaction';
-import { ErigonBlock, IAbiDecodedData, IEthBlock, IEthTransaction } from '../../types';
+import { EVMTransactionStorage } from '../../models/transaction';
+import { ErigonBlock, IAbiDecodedData, IEVMBlock, IEVMTransaction } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 AbiDecoder.addABI(ERC20Abi);
@@ -86,7 +86,7 @@ export class ErigonRPC implements IRpc {
   }
 
   private transactionFromErigonTrace(tx: ErigonTraceResponse): ClassifiedTrace {
-    const abiType = EthTransactionStorage.abiDecode(tx.action.input!);
+    const abiType = EVMTransactionStorage.abiDecode(tx.action.input!);
     const convertedTx: ClassifiedTrace = {
       ...tx
     };
@@ -96,7 +96,7 @@ export class ErigonRPC implements IRpc {
     return convertedTx;
   }
 
-  public reconcileTraces(block: IEthBlock, transactions: IEthTransaction[], traceTxs: ClassifiedTrace[]) {
+  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransaction[], traceTxs: ClassifiedTrace[]) {
     const gasSum = transactions.reduce((sum, e) => sum + e.fee, 0);
 
     for (const tx of traceTxs) {

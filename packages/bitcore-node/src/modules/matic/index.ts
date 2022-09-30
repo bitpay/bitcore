@@ -1,15 +1,15 @@
 import { BaseModule } from '..';
+import { EVMVerificationPeer } from '../../providers/chain-state/evm/p2p/EVMVerificationPeer';
+import { EVMP2pWorker } from '../../providers/chain-state/evm/p2p/p2p';
 import { MATICStateProvider } from './api/csp';
 import { MaticRoutes } from './api/matic-routes';
-import { MaticVerificationPeer } from './p2p/MaticVerificationPeer';
-import { MaticP2pWorker } from './p2p/p2p';
 
 export default class MATICModule extends BaseModule {
   constructor(services: BaseModule['bitcoreServices']) {
     super(services);
-    services.P2P.register('MATIC', MaticP2pWorker);
-    services.CSP.registerService('MATIC', new MATICStateProvider());
+    services.P2P.register('MATIC', EVMP2pWorker);
+    services.CSP.registerService('MATIC', new MATICStateProvider('MATIC'));
     services.Api.app.use(MaticRoutes);
-    services.Verification.register('MATIC', MaticVerificationPeer);
+    services.Verification.register('MATIC', EVMVerificationPeer);
   }
 }

@@ -1,26 +1,26 @@
 import { ObjectID } from 'bson';
 import * as _ from 'lodash';
-import { LoggifyClass } from '../../../decorators/Loggify';
-import logger from '../../../logger';
-import { MongoBound } from '../../../models/base';
-import { BaseTransaction } from '../../../models/baseTransaction';
-import { CacheStorage } from '../../../models/cache';
-import { EventStorage } from '../../../models/events';
-import { WalletAddressStorage } from '../../../models/walletAddress';
-import { Config } from '../../../services/config';
-import { Storage, StorageService } from '../../../services/storage';
-import { SpentHeightIndicators } from '../../../types/Coin';
-import { StreamingFindOptions } from '../../../types/Query';
-import { TransformOptions } from '../../../types/TransformOptions';
-import { valueOrDefault } from '../../../utils/check';
-import { partition } from '../../../utils/partition';
+import { LoggifyClass } from '../../../../decorators/Loggify';
+import logger from '../../../../logger';
+import { MongoBound } from '../../../../models/base';
+import { BaseTransaction } from '../../../../models/baseTransaction';
+import { CacheStorage } from '../../../../models/cache';
+import { EventStorage } from '../../../../models/events';
+import { WalletAddressStorage } from '../../../../models/walletAddress';
+import { Config } from '../../../../services/config';
+import { Storage, StorageService } from '../../../../services/storage';
+import { SpentHeightIndicators } from '../../../../types/Coin';
+import { StreamingFindOptions } from '../../../../types/Query';
+import { TransformOptions } from '../../../../types/TransformOptions';
+import { valueOrDefault } from '../../../../utils/check';
+import { partition } from '../../../../utils/partition';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
-import { ETH } from '../api/csp';
+import { BaseEVMStateProvider } from '../api/csp';
 
-import { EthTransactionJSON, IAbiDecodeResponse, IEthTransaction } from '../types';
+import { EVMTransactionJSON, IAbiDecodeResponse, IEVMTransaction } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -52,7 +52,7 @@ function getMultisigDecoder() {
 }
 
 @LoggifyClass
-export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
+export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   constructor(storage: StorageService = Storage) {
     super(storage);
   }
@@ -93,7 +93,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   async batchImport(params: {
-    txs: Array<IEthTransaction>;
+    txs: Array<IEVMTransaction>;
     height: number;
     mempoolTime?: Date;
     blockTime?: Date;
@@ -127,7 +127,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     if (params.height < SpentHeightIndicators.minimum) {
       for (let op of txOps) {
         const filter = op.updateOne.filter;
-        const tx = { ...op.updateOne.update.$set, ...filter } as IEthTransaction;
+        const tx = { ...op.updateOne.update.$set, ...filter } as IEVMTransaction;
         await EventStorage.signalTx(tx);
         await EventStorage.signalAddressCoin({
           address: tx.to,
@@ -172,7 +172,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   async addTransactions(params: {
-    txs: Array<IEthTransaction>;
+    txs: Array<IEVMTransaction>;
     height: number;
     blockTime?: Date;
     blockHash?: string;
@@ -186,7 +186,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }) {
     let { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height < forkHeight) {
-      const parentTxs = await EthTransactionStorage.collection
+      const parentTxs = await EVMTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
       return parentTxs.map(parentTx => {
@@ -206,12 +206,12 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       });
     } else {
       return Promise.all(
-        params.txs.map(async (tx: IEthTransaction) => {
+        params.txs.map(async (tx: IEVMTransaction) => {
           const { to, txid, from } = tx;
           const tos = [to];
           const froms = [from];
-
-          const { web3 } = await ETH.getWeb3(network);
+          const CSP = new BaseEVMStateProvider(chain);
+          const { web3 } = await CSP.getWeb3(network);
 
           // handle incoming ERC20 transactions
           if (tx.abiType && tx.abiType.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
@@ -282,7 +282,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   async pruneMempool(params: {
-    txs: Array<IEthTransaction>;
+    txs: Array<IEVMTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -311,7 +311,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     return;
   }
 
-  getTransactions(params: { query: any; options: StreamingFindOptions<IEthTransaction> }) {
+  getTransactions(params: { query: any; options: StreamingFindOptions<IEVMTransaction> }) {
     let originalQuery = params.query;
     const { query, options } = Storage.getFindOptions(this, params.options);
     const finalQuery = Object.assign({}, originalQuery, query);
@@ -362,13 +362,13 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
 
   _apiTransform(
-    tx: IEthTransaction | Partial<MongoBound<IEthTransaction>>,
+    tx: IEVMTransaction | Partial<MongoBound<IEVMTransaction>>,
     options?: TransformOptions
-  ): EthTransactionJSON | string {
+  ): EVMTransactionJSON | string {
     const dataStr = tx.data ? tx.data.toString() : '';
     const decodedData = this.abiDecode(dataStr);
 
-    const transaction: EthTransactionJSON = {
+    const transaction: EVMTransactionJSON = {
       txid: tx.txid || '',
       network: tx.network || '',
       chain: tx.chain || '',
@@ -397,4 +397,4 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let EthTransactionStorage = new EthTransactionModel();
+export let EVMTransactionStorage = new EVMTransactionModel();

@@ -1,16 +1,16 @@
-import { LoggifyClass } from '../../../decorators/Loggify';
-import logger from '../../../logger';
-import { MongoBound } from '../../../models/base';
-import { BaseBlock } from '../../../models/baseBlock';
-import { EventStorage } from '../../../models/events';
-import { StorageService } from '../../../services/storage';
-import { IBlock } from '../../../types/Block';
-import { TransformOptions } from '../../../types/TransformOptions';
-import { IEthBlock, IEthTransaction } from '../types';
-import { EthTransactionStorage } from './transaction';
+import { LoggifyClass } from '../../../../decorators/Loggify';
+import logger from '../../../../logger';
+import { MongoBound } from '../../../../models/base';
+import { BaseBlock } from '../../../../models/baseBlock';
+import { EventStorage } from '../../../../models/events';
+import { StorageService } from '../../../../services/storage';
+import { IBlock } from '../../../../types/Block';
+import { TransformOptions } from '../../../../types/TransformOptions';
+import { IEVMBlock, IEVMTransaction } from '../types';
+import { EVMTransactionStorage } from './transaction';
 
 @LoggifyClass
-export class EthBlockModel extends BaseBlock<IEthBlock> {
+export class EVMBlockModel extends BaseBlock<IEVMBlock> {
   constructor(storage?: StorageService) {
     super(storage);
   }
@@ -20,14 +20,15 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
   }
 
   async addBlock(params: {
-    block: IEthBlock;
-    transactions: IEthTransaction[];
+    block: IEVMBlock;
+    transactions: IEVMTransaction[];
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;
     chain: string;
     network: string;
   }) {
+    // TODO: add skipReorg to config for development purposes
     const { block, chain, network } = params;
 
     let reorg = false;
@@ -48,8 +49,8 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
   }
 
   async processBlock(params: {
-    block: IEthBlock;
-    transactions: IEthTransaction[];
+    block: IEVMBlock;
+    transactions: IEVMTransaction[];
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;
@@ -62,7 +63,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const { height, timeNormalized, time } = convertedBlock;
 
     // Put in the transactions first
-    await EthTransactionStorage.batchImport({
+    await EVMTransactionStorage.batchImport({
       txs: transactions,
       blockHash: convertedBlock.hash,
       blockTime: new Date(time),
@@ -93,7 +94,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
   }
 
-  async getBlockOp(params: { block: IEthBlock; chain: string; network: string }) {
+  async getBlockOp(params: { block: IEVMBlock; chain: string; network: string }) {
     const { block, chain, network } = params;
     const blockTime = block.time;
     const prevHash = block.previousBlockHash;
@@ -147,7 +148,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     }
     const reorgOps = [
       this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
-      EthTransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } })
+      EVMTransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } })
     ];
     await Promise.all(reorgOps);
 
@@ -155,7 +156,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     return localTip.hash !== prevHash;
   }
 
-  _apiTransform(block: Partial<MongoBound<IEthBlock>>, options?: TransformOptions): any {
+  _apiTransform(block: Partial<MongoBound<IEVMBlock>>, options?: TransformOptions): any {
     const transform = {
       _id: block._id,
       chain: block.chain,
@@ -218,8 +219,8 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
           .addCursorFlag('noCursorTimeout', true);
 
         const maxHeight = maxBlock.height;
-        let block = (await stream.next()) as IEthBlock;
-        let prevBlock: IEthBlock | undefined;
+        let block = (await stream.next()) as IEVMBlock;
+        let prevBlock: IEVMBlock | undefined;
         const outOfSync: number[] = [];
         timeout = setInterval(
           () => logger.info(`${chain}:${network} Block verification height: ${block.height}`),
@@ -240,7 +241,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
               }
             }
             prevBlock = block;
-            block = (await stream.next()) as IEthBlock;
+            block = (await stream.next()) as IEVMBlock;
           }
         }
         resolve(outOfSync);
@@ -253,4 +254,4 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
   }
 }
 
-export let EthBlockStorage = new EthBlockModel();
+export let EVMBlockStorage = new EVMBlockModel();
