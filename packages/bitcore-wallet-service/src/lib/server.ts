@@ -3458,7 +3458,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'swing exhaust inform mass twist hybrid private begin quote heart keep share';
+      opts.words = 'assault husband flame unveil twelve curtain negative quiz decade anchor uncle shadow';
       Client.serverAssistedImport(
         opts,
         {
@@ -3483,7 +3483,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'whisper review pupil vote grant want shoe pistol riot answer sudden please';
+      opts.words = 'tattoo wrong corn canal burden click lobster demise sock jealous improve goat';
       Client.serverAssistedImport(
         opts,
         {
@@ -3830,8 +3830,14 @@ export class WalletService {
       if (!configSwap.coinReceive || !configSwap.coinSwap) {
         throw new Error('Not found coin config for exchange');
       }
+      let coinCodeReceive = '';
+      if(orderInfo.isToToken){
+        coinCodeReceive = 'xec';
+      } else{
+        coinCodeReceive = orderInfo.toCoinCode;
+      }
       const indexCoinReceiveFound = configSwap.coinReceive.findIndex(
-        config => config.isEnable && config.network === orderInfo.toNetwork && config.code === orderInfo.toCoinCode
+        config => config.isEnable && config.network === orderInfo.toNetwork && config.code === coinCodeReceive
       );
       const indexCoinSwapfound = configSwap.coinSwap.findIndex(
         config => config.isEnable && config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode

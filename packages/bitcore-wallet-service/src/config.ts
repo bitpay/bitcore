@@ -180,6 +180,10 @@ module.exports = {
       {
         coin: 'ABCSLP',
         rate: 0.0001 // USD
+      },
+      {
+        coin: 'TYD',
+        rate: 1 // USD
       }
     ]
   }
