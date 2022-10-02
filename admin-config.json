@@ -1,0 +1,193 @@
+{
+  "coinSwap": [
+    {
+      "code": "xpi",
+      "network": "livenet",
+      "isToken": false,
+      "networkFee": 0,
+      "rate": {},
+      "min": 0.002,
+      "max": 100,
+      "isEnable": true
+  },
+  {
+    "code": "bch",
+    "network": "livenet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "xec",
+    "network": "livenet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.001,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "btc",
+    "network": "testnet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.001,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "bch",
+    "network": "testnet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "eat",
+    "network": "livenet",
+    "isToken": true,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "bcpro",
+    "network": "livenet",
+    "isToken": true,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "tyd",
+    "network": "livenet",
+    "isToken": true,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  }
+],
+"coinReceive": [
+  {
+      "code": "xpi",
+      "network": "livenet",
+      "isToken": false,
+      "networkFee": 0,
+      "rate": {},
+      "min": 0.002,
+      "max": 100,
+      "isEnable": true
+  },
+  {
+    "code": "bch",
+    "network": "livenet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "xec",
+    "network": "livenet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.001,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "btc",
+    "network": "testnet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.001,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "bch",
+    "network": "testnet",
+    "isToken": false,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "eat",
+    "network": "livenet",
+    "isToken": true,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "bcpro",
+    "network": "livenet",
+    "isToken": true,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  },
+  {
+    "code": "tyd",
+    "network": "livenet",
+    "isToken": true,
+    "networkFee": 0,
+    "rate": {},
+    "min": 0.1,
+    "max": 1000,
+    "isEnable": true
+  }
+],
+"fee": [
+  {
+    "code": "xpi",
+    "settleFee": 0.000001,
+    "networkFee": 0.0002,
+    "serviceFee": 1.75
+  },
+  {
+    "code": "xec",
+    "settleFee": 0,
+    "networkFee": 0,
+    "serviceFee":  1.75
+  },
+  {
+    "code": "bch",
+    "settleFee": 0,
+    "networkFee": 0,
+    "serviceFee": 1.75
+  },
+  {
+    "code": "btc",
+    "settleFee": 0,
+    "networkFee": 0,
+    "serviceFee": 1
+  }
+]
+}
+
