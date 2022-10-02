@@ -1742,7 +1742,7 @@ export class ExpressApp {
           server.checkQueueHandleSwap(keyFund, clientsFund, clientsReceive, mnemonic);
           return cb();
         });
-      }, 10000);
+      }, 30000);
 
       // server.getKeyReceive((err, key, clientsReceive)=>{
       //   if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
