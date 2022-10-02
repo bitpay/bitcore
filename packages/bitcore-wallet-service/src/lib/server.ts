@@ -31,6 +31,7 @@ const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
+const adminConfig = require('../../../../admin-config.json');
 // const keyFund = require('../../../../key-store.json');
 const fs = require('fs');
 const { dirname } = require('path');
@@ -3484,6 +3485,7 @@ export class WalletService {
     try {
       let opts = { words: '' };
       opts.words = 'tattoo wrong corn canal burden click lobster demise sock jealous improve goat';
+      logger.debug('baseUrl: ', client.request.baseUrl);
       Client.serverAssistedImport(
         opts,
         {
@@ -3831,9 +3833,9 @@ export class WalletService {
         throw new Error('Not found coin config for exchange');
       }
       let coinCodeReceive = '';
-      if(orderInfo.isToToken){
+      if (orderInfo.isToToken) {
         coinCodeReceive = 'xec';
-      } else{
+      } else {
         coinCodeReceive = orderInfo.toCoinCode;
       }
       const indexCoinReceiveFound = configSwap.coinReceive.findIndex(
@@ -5649,113 +5651,116 @@ export class WalletService {
     if (!clientsFund) {
       return cb(Errors.NOT_FOUND_KEY_FUND);
     }
-    await fs.readFile(appDir + '/admin-config.json', 'utf8', (error, data) => {
-      if (error) {
-        console.log(error);
-        return;
-      }
-      const swapConfig = ConfigSwap.fromObj(JSON.parse(data));
-      let promiseList = [];
-      let promiseList2 = [];
-      // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
-      let isFundClientXecFound = false;
-      let balanceTokenFound = null;
-      clientsFund.forEach(async clientFund => {
-        if (clientFund.credentials.coin === 'xec') {
-          isFundClientXecFound = true;
-        }
-        promiseList2.push(
-          this.getBalanceWithPromise({
-            walletId: clientFund.credentials.walletId,
-            coinCode: clientFund.credentials.coin
-          })
-        );
-        if (isFundClientXecFound && swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1) {
-          balanceTokenFound = await this.getTokensWithPromise({ walletId: clientFund.credentials.walletId });
-        }
-        isFundClientXecFound = false;
-      });
-      Promise.all(promiseList2)
-        .then(balance => {
-          logger.debug('balance: ', balance);
-          const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
-            return {
-              tokenId: item.tokenId,
-              tokenInfo: item.tokenInfo,
-              amountToken: item.amountToken,
-              utxoToken: item.utxoToken
-            } as TokenItem;
-          });
-          logger.debug('listBalanceTokenConverted: ', listBalanceTokenConverted);
-          this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
-            this._getRatesWithCustomFormat((err, fiatRates) => {
-              try {
-                for (var i = 0; i < swapConfig.coinReceive.length; i++) {
-                  const coin = swapConfig.coinReceive[i];
-                  const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
-                  const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
-                  const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
-                  if (coin.isToken) {
-                    const balanceSelected = listBalanceTokenConverted.find(
-                      s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
-                    );
-                    const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
-                      .decimals;
-                    coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
-                    coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
-                    coin.fund = balanceSelected.amountToken * rateCoinUsd;
-                    coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
-                    coin.satUnit = Math.pow(10, tokenDecimals);
-                    coin.tokenInfo = balanceSelected.tokenInfo;
-                  } else {
-                    const balanceSelected = balance.find(s => s.coin.toLowerCase() === coin.code.toLowerCase()).balance
-                      .totalAmount;
-                    coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-                    coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-                    coin.fund = (balanceSelected / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
-                    coin.fundConvertToSat = balanceSelected;
-                  }
-                  coin.rate = fiatRates[coin.code.toLowerCase()];
-                  promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
-                }
-                swapConfig.coinSwap.forEach(coin => {
-                  coin.rate = fiatRates[coin.code.toLowerCase()];
-                });
-                Promise.all(promiseList).then(listData => {
-                  listData.forEach((data: any) => {
-                    const coin = data.coin;
-                    const feePerKb = data.feePerKb;
-                    let estimatedFee;
-                    if (coin.isToken || coin.code === 'xec') {
-                      // Send dust transaction representing tokens being sent.
-                      const dustRepresenting = 546;
-                      //  Return any token change back to the sender.
-                      const dustReturnAnyToken = 546;
-                      // fee
-                      const fee = 250;
+    logger.debug('appDir: ', appDir);
+    // await fs.readFile(appDir + '/admin-config.json', 'utf8', (error, data) => {
 
-                      estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
-                    } else {
-                      const baseTxpSize = 78;
-                      const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
-                      const sizePerInput = 148;
-                      const feePerInput = (sizePerInput * feePerKb) / 1000;
-                      estimatedFee = Math.round(baseTxpFee + feePerInput);
-                    }
-                    coin.networkFee = estimatedFee;
-                  });
-                  return cb(null, swapConfig);
-                });
-              } catch (e) {
-                logger.debug(e);
-              }
-            });
-          });
+    // });
+
+    // if (error) {
+    //   console.log(error);
+    //   return;
+    // }
+    const swapConfig = ConfigSwap.fromObj(adminConfig);
+    let promiseList = [];
+    let promiseList2 = [];
+    // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
+    let isFundClientXecFound = false;
+    let balanceTokenFound = null;
+    clientsFund.forEach(async clientFund => {
+      if (clientFund.credentials.coin === 'xec') {
+        isFundClientXecFound = true;
+      }
+      promiseList2.push(
+        this.getBalanceWithPromise({
+          walletId: clientFund.credentials.walletId,
+          coinCode: clientFund.credentials.coin
         })
-        .catch(e => {
-          logger.debug(e);
-        });
+      );
+      if (isFundClientXecFound && swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1) {
+        balanceTokenFound = await this.getTokensWithPromise({ walletId: clientFund.credentials.walletId });
+      }
+      isFundClientXecFound = false;
     });
+    Promise.all(promiseList2)
+      .then(balance => {
+        logger.debug('balance: ', balance);
+        const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+          return {
+            tokenId: item.tokenId,
+            tokenInfo: item.tokenInfo,
+            amountToken: item.amountToken,
+            utxoToken: item.utxoToken
+          } as TokenItem;
+        });
+        logger.debug('listBalanceTokenConverted: ', listBalanceTokenConverted);
+        this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
+          this._getRatesWithCustomFormat((err, fiatRates) => {
+            try {
+              for (var i = 0; i < swapConfig.coinReceive.length; i++) {
+                const coin = swapConfig.coinReceive[i];
+                const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
+                const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
+                const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
+                if (coin.isToken) {
+                  const balanceSelected = listBalanceTokenConverted.find(
+                    s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
+                  );
+                  const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
+                    .decimals;
+                  coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
+                  coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
+                  coin.fund = balanceSelected.amountToken * rateCoinUsd;
+                  coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
+                  coin.satUnit = Math.pow(10, tokenDecimals);
+                  coin.tokenInfo = balanceSelected.tokenInfo;
+                } else {
+                  const balanceSelected = balance.find(s => s.coin.toLowerCase() === coin.code.toLowerCase()).balance
+                    .totalAmount;
+                  coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+                  coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
+                  coin.fund = (balanceSelected / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
+                  coin.fundConvertToSat = balanceSelected;
+                }
+                coin.rate = fiatRates[coin.code.toLowerCase()];
+                promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
+              }
+              swapConfig.coinSwap.forEach(coin => {
+                coin.rate = fiatRates[coin.code.toLowerCase()];
+              });
+              Promise.all(promiseList).then(listData => {
+                listData.forEach((data: any) => {
+                  const coin = data.coin;
+                  const feePerKb = data.feePerKb;
+                  let estimatedFee;
+                  if (coin.isToken || coin.code === 'xec') {
+                    // Send dust transaction representing tokens being sent.
+                    const dustRepresenting = 546;
+                    //  Return any token change back to the sender.
+                    const dustReturnAnyToken = 546;
+                    // fee
+                    const fee = 250;
+
+                    estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
+                  } else {
+                    const baseTxpSize = 78;
+                    const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
+                    const sizePerInput = 148;
+                    const feePerInput = (sizePerInput * feePerKb) / 1000;
+                    estimatedFee = Math.round(baseTxpFee + feePerInput);
+                  }
+                  coin.networkFee = estimatedFee;
+                });
+                return cb(null, swapConfig);
+              });
+            } catch (e) {
+              logger.debug(e);
+            }
+          });
+        });
+      })
+      .catch(e => {
+        logger.debug(e);
+      });
   }
 
   getConfigSwapWithPromise(clientsFund): Promise<ConfigSwap> {
