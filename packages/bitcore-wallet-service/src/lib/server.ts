@@ -1967,6 +1967,7 @@ export class WalletService {
           return resolve({
             walletId: opts.walletId,
             coin: opts.coinCode,
+            network: opts.network,
             balance
           });
       });
@@ -5673,7 +5674,8 @@ export class WalletService {
       promiseList2.push(
         this.getBalanceWithPromise({
           walletId: clientFund.credentials.walletId,
-          coinCode: clientFund.credentials.coin
+          coinCode: clientFund.credentials.coin,
+          network: clientFund.credentials.network
         })
       );
       if (isFundClientXecFound && swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1) {
@@ -5705,21 +5707,31 @@ export class WalletService {
                   const balanceSelected = listBalanceTokenConverted.find(
                     s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
                   );
-                  const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
+                  if(balanceSelected){
+                    const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
                     .decimals;
-                  coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
-                  coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
-                  coin.fund = balanceSelected.amountToken * rateCoinUsd;
-                  coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
-                  coin.satUnit = Math.pow(10, tokenDecimals);
-                  coin.tokenInfo = balanceSelected.tokenInfo;
+                    coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
+                    coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
+                    coin.fund = balanceSelected.amountToken * rateCoinUsd;
+                    coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
+                    coin.satUnit = Math.pow(10, tokenDecimals);
+                    coin.tokenInfo = balanceSelected.tokenInfo;
+                  } else{
+                    coin.isEnable = false;
+                  }
+                
                 } else {
-                  const balanceSelected = balance.find(s => s.coin.toLowerCase() === coin.code.toLowerCase()).balance
-                    .totalAmount;
-                  coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-                  coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-                  coin.fund = (balanceSelected / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
-                  coin.fundConvertToSat = balanceSelected;
+                  const balanceFound =  balance.find(s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network);
+                  if(balanceFound){
+                    const balanceTotal = balanceFound.balance.totalAmount;
+                    coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+                    coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
+                    coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
+                    coin.fundConvertToSat = balanceTotal;
+                  } 
+                  else{
+                    coin.isEnable = false;
+                  }
                 }
                 coin.rate = fiatRates[coin.code.toLowerCase()];
                 promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
@@ -5754,6 +5766,7 @@ export class WalletService {
               });
             } catch (e) {
               logger.debug(e);
+              return cb(e);
             }
           });
         });
