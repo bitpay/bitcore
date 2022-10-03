@@ -4,6 +4,7 @@ import { Readable } from 'stream';
 import Web3 from 'web3';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
+import * as worker from 'worker_threads';
 import Config from '../../../config';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
@@ -13,6 +14,7 @@ import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../services/storage';
 import { SpentHeightIndicators } from '../../../types/Coin';
+import { IChainConfig, IEthNetworkConfig } from '../../../types/Config';
 import {
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
@@ -53,12 +55,12 @@ interface ERC20Transfer
   }> {}
 
 export class ETHStateProvider extends InternalStateProvider implements IChainStateService {
-  config: any;
+  config: IChainConfig<IEthNetworkConfig>;
   static rpcs = {} as { [network: string]: { rpc: CryptoRpc; web3: Web3 } };
 
   constructor(public chain: string = 'ETH') {
     super(chain);
-    this.config = Config.chains[this.chain];
+    this.config = Config.chains[this.chain] as IChainConfig<IEthNetworkConfig>;
   }
 
   async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
@@ -70,8 +72,10 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       delete ETHStateProvider.rpcs[network];
     }
     if (!ETHStateProvider.rpcs[network]) {
-      console.log('making a new connection');
-      const rpcConfig = { ...this.config[network].provider, chain: this.chain, currencyConfig: {} };
+      logger.info(`Making a new connection for ${this.chain}:${network}`);
+      const providerIdx = worker.threadId % (this.config[network].providers || []).length;
+      const providerConfig = this.config[network].provider || this.config[network].providers![providerIdx];
+      const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
       ETHStateProvider.rpcs[network] = { rpc, web3: rpc.web3 };
     }
@@ -542,6 +546,15 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
             { chain, network, 'internal.action.to': { $in: addressBatchLC } },
+            { chain, network, 'calls.to': { $in: addressBatchLC } },
+            {
+              chain,
+              network,
+              'calls.abiType.type': 'ERC20',
+              'calls.abiType.name': { $in: ['transfer', 'transferFrom'] },
+              'calls.abiType.params.type': 'address',
+              'calls.abiType.params.value': { $in: addressBatchLC }
+            },
             {
               chain,
               network,

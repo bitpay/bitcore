@@ -13,7 +13,7 @@ let args = parseArgv([], ['DEBUG', 'CLUSTER']);
 const services: Array<any> = [];
 
 export const ClusteredApiWorker = async () => {
-  process.on('unhandledRejection', error => {
+  process.on('unhandledRejection', (error: any) => {
     console.error('Unhandled Rejection at:', error.stack || error);
     stop();
   });

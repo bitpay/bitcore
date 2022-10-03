@@ -4934,32 +4934,11 @@ describe('Wallet service', function() {
             ltc:0.5
           }
           helpers.stubUtxos(server, wallet, 2, { coin }, function() {
-            var cwcStub = sandbox.stub(CWC.Transactions, 'create');
-            cwcStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub;
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLib, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibCash, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibDoge, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibLtc, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
+            sandbox.stub(CWC.Transactions, 'create').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLib, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLibCash, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLibDoge, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.BitcoreLibLtc, 'Transaction').throws(new Error('dummy exception'));
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4971,8 +4950,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.message.should.equal('dummy exception');
-              if(bitcoreStub) bitcoreStub.restore();
-              cwcStub.restore();
+              sandbox.restore();
               done();
             });
           });
@@ -10499,7 +10477,7 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
           let txAmount = 1e6;
           var txOpts = {
-            coin: 'usdc',
+            coin: 'usdc_e',
             outputs: [{
               toAddress: addressStr,
               amount: txAmount
@@ -10537,7 +10515,7 @@ describe('Wallet service', function() {
       server.createAddress({}, from => {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
           var txOpts = {
-            coin: 'usdc',
+            coin: 'usdc_e',
             payProUrl: 'payProUrl',
             outputs: [{
               toAddress: addressStr,

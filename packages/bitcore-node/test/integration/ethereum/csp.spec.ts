@@ -14,13 +14,13 @@ import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
 import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
 import { IEthTransaction } from '../../../src/modules/ethereum/types';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
+import { ErigonEthBlocks } from '../../data/ETH/erigonDbBlocks';
+import { ErigonEthTransactions } from '../../data/ETH/erigonDbTransactions';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { EthTransactions } from '../../data/ETH/transactionsETH';
-import { EthBlocks } from '../../data/ETH/blocksETH';
 
 describe('Ethereum API', function() {
   const chain = 'ETH';
-  const network = 'testnet';
+  const network = 'regtest';
 
   const suite = this;
   this.timeout(30000);
@@ -38,21 +38,21 @@ describe('Ethereum API', function() {
     EthTransactionStorage.abiDecode(data);
     const decoded = EthTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('ERC20');
+    expect(decoded!.type).to.eq('ERC20');
   });
   it('should be able to classify ERC721 data', () => {
     const data =
       '0xa22cb465000000000000000000000000efc70a1b18c432bdc64b596838b4d138f6bc6cad0000000000000000000000000000000000000000000000000000000000000001';
     const decoded = EthTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('ERC721');
+    expect(decoded!.type).to.eq('ERC721');
   });
   it('should be able to classify Invoice data', () => {
     const data =
       '0xb6b4af0500000000000000000000000000000000000000000000000000000000000f4240000000000000000000000000000000000000000000000000000000033ec500800000000000000000000000000000000000000000000000000000016e00f7b3d3c72c929edaf203cfabf7a0513cb8cee277a84ec3fd56bcf3f396b6d665c8abe6c4432f916bacafc94982b45050513de2ee5544aa855d9b5b60e8c1c94e71ffca000000000000000000000000000000000000000000000000000000000000001cfd9150848849c7aff74939535afe5e56dcac5f2f553467ae0e9181d14c0e49c9799433220e288e282376b86aae1bc1d683af4708b38999d59b5d65ff29a85705000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
     const decoded = EthTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('INVOICE');
+    expect(decoded!.type).to.eq('INVOICE');
   });
 
   it('should handle multiple decodes', () => {
@@ -61,13 +61,13 @@ describe('Ethereum API', function() {
     EthTransactionStorage.abiDecode(data);
     const decoded = EthTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('ERC20');
+    expect(decoded!.type).to.eq('ERC20');
     const data2 =
       '0xa22cb465000000000000000000000000efc70a1b18c432bdc64b596838b4d138f6bc6cad0000000000000000000000000000000000000000000000000000000000000001';
     EthTransactionStorage.abiDecode(data);
     const decoded2 = EthTransactionStorage.abiDecode(data2);
     expect(decoded2).to.exist;
-    expect(decoded2.type).to.eq('ERC721');
+    expect(decoded2!.type).to.eq('ERC721');
   });
 
   it('should not crash when called with almost correct data', () => {
@@ -333,66 +333,11 @@ describe('Ethereum API', function() {
       await streamWalletTransactionsTest(chain, network, true)
     );
 
-    it('should stream DEX wallet transactions', async () => {
-      await EthBlockStorage.collection.insertMany(EthBlocks as any);
-      await EthTransactionStorage.collection.insertMany(EthTransactions as any);
+    it('should stream DEX wallet transactions with erigon trace blocks', async () => {
+      await EthBlockStorage.collection.insertMany(ErigonEthBlocks as any);
+      await EthTransactionStorage.collection.insertMany(ErigonEthTransactions as any);
 
-      await ETH.updateWallet({ chain, network, wallet, addresses: [address] });
-
-      const res = (new Transform({
-        transform: (data, _, cb) => {
-          cb(null, data);
-        }
-      }) as unknown) as Response;
-      res.type = () => res;
-  
-      const req = (new Transform({
-        transform: (_data, _, cb) => {
-          cb(null);
-        }
-      }) as unknown) as Request;
-
-      ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
-      let total = BigInt(0);
-      let totalRejected = BigInt(0);
-      let totalFee = BigInt(0);
-
-      await new Promise((resolve, reject) => {
-        res.on('data', (data) => {
-          try {
-            const doc = JSON.parse(data.toString())
-            if (doc.error) {
-              totalRejected += BigInt(doc.satoshis);
-            } else {
-              total += BigInt(doc.satoshis);
-            }
-
-            if (doc.category !== 'receive' || doc.initialFrom === address) {
-              totalFee += BigInt(doc.fee);
-            }
-          } catch (e) {
-            reject(e);
-          }
-        });
-
-        res.on('finish', () => {
-          try {
-            let totalETH = web3.utils.fromWei(total.toString());
-            let totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
-            let totalFeeETH = web3.utils.fromWei(totalFee.toString());
-            let balanceETH = web3.utils.fromWei((total - totalFee).toString());
-
-            // Need to slice b/c we're using Number rounding instead of BigInt
-            expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));
-            expect(totalETH.slice(0, -6)).to.equal('309.833211546562');
-            expect(totalFeeETH).to.equal('0.16692773559');
-            expect(totalRejectedETH.slice(0, -4)).to.equal('-3.99999999192707');
-            resolve(true);
-          } catch (e) {
-            reject(e);
-          }
-        });
-      });
+      await streamDexWalletTransactions(chain, network, wallet, address, web3);
     });
   });
 });
@@ -464,4 +409,63 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
 
   expect(counter).to.eq(includeInvalidTxs ? txCount * 2 : txCount);
   sandbox.restore();
+};
+
+const streamDexWalletTransactions = async (chain, network, wallet, address, web3) => {
+  await ETH.updateWallet({ chain, network, wallet, addresses: [address] });
+
+  const res = (new Transform({
+    transform: (data, _, cb) => {
+      cb(null, data);
+    }
+  }) as unknown) as Response;
+  res.type = () => res;
+
+  const req = (new Transform({
+    transform: (_data, _, cb) => {
+      cb(null);
+    }
+  }) as unknown) as Request;
+
+  ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
+  let total = BigInt(0);
+  let totalRejected = BigInt(0);
+  let totalFee = BigInt(0);
+
+  await new Promise((resolve, reject) => {
+    res.on('data', (data) => {
+      try {
+        const doc = JSON.parse(data.toString())
+        if (doc.error) {
+          totalRejected += BigInt(doc.satoshis);
+        } else {
+          total += BigInt(doc.satoshis);
+        }
+
+        if (doc.category !== 'receive' || doc.initialFrom === address) {
+          totalFee += BigInt(doc.fee);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    res.on('finish', () => {
+      try {
+        let totalETH = web3.utils.fromWei(total.toString());
+        let totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
+        let totalFeeETH = web3.utils.fromWei(totalFee.toString());
+        let balanceETH = web3.utils.fromWei((total - totalFee).toString());
+
+        // Need to slice b/c we're using Number rounding instead of BigInt
+        expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));
+        expect(totalETH.slice(0, -6)).to.equal('309.833211546562');
+        expect(totalFeeETH).to.equal('0.16692773559');
+        expect(totalRejectedETH.slice(0, -4)).to.equal('-3.99999999192707');
+        resolve(true);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
 };

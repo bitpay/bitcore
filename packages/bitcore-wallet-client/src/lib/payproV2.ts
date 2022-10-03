@@ -18,6 +18,7 @@ var MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b
   eth: 1000000000000, // 1000 Gwei
+  matic: 1000000000000, // 1000 Gwei
   xrp: 1000000000000,
   doge: 10000 * 1000, // 10k sat/b
   ltc: 10000 * 1000 // 10k sat/b
@@ -207,6 +208,7 @@ export class PayProV2 {
     payload,
     unsafeBypassValidation = false
   }) {
+    if (currency?.toLowerCase() === 'usdp') currency = 'pax'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -248,6 +250,7 @@ export class PayProV2 {
     unsignedTransactions,
     unsafeBypassValidation = false
   }) {
+    if (currency?.toLowerCase() === 'usdp') currency = 'pax'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -290,6 +293,7 @@ export class PayProV2 {
     unsafeBypassValidation = false,
     bpPartner
   }) {
+    if (currency?.toLowerCase() === 'usdp') currency = 'pax'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await this._asyncRequest({
       url: paymentUrl,
       method: 'post',

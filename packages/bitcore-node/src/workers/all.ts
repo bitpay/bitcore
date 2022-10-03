@@ -13,7 +13,7 @@ let args = parseArgv([], ['DEBUG']);
 const services: Array<any> = [];
 
 export const FullClusteredWorker = async () => {
-  process.on('unhandledRejection', error => {
+  process.on('unhandledRejection', (error: any) => {
     console.error('Unhandled Rejection at:', error.stack || error);
     stop();
   });

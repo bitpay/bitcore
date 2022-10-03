@@ -31,13 +31,15 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const { block, chain, network } = params;
 
     let reorg = false;
-    const headers = await this.validateLocatorHashes({ chain, network });
-    if (headers.length) {
-      const last = headers[headers.length - 1];
-      reorg = await this.handleReorg({ block: last, chain, network });
-    }
+    if (params.initialSyncComplete) {
+      const headers = await this.validateLocatorHashes({ chain, network });
+      if (headers.length) {
+        const last = headers[headers.length - 1];
+        reorg = await this.handleReorg({ block: last, chain, network });
+      }
 
-    reorg = reorg || (await this.handleReorg({ block, chain, network }));
+      reorg = reorg || (await this.handleReorg({ block, chain, network }));
+    }
 
     if (reorg) {
       return Promise.reject('reorg');
@@ -59,17 +61,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const convertedBlock = blockOp.updateOne.update.$set;
     const { height, timeNormalized, time } = convertedBlock;
 
-    const previousBlock = await this.collection.findOne({ hash: convertedBlock.previousBlockHash, chain, network });
-
-    await this.collection.bulkWrite([blockOp]);
-    if (previousBlock) {
-      await this.collection.updateOne(
-        { chain, network, hash: previousBlock.hash },
-        { $set: { nextBlockHash: convertedBlock.hash } }
-      );
-      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
-    }
-
+    // Put in the transactions first
     await EthTransactionStorage.batchImport({
       txs: transactions,
       blockHash: convertedBlock.hash,
@@ -82,6 +74,17 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       forkHeight,
       initialSyncComplete
     });
+
+    const previousBlock = await this.collection.findOne({ hash: convertedBlock.previousBlockHash, chain, network });
+
+    await this.collection.bulkWrite([blockOp]);
+    if (previousBlock) {
+      await this.collection.updateOne(
+        { chain, network, hash: previousBlock.hash },
+        { $set: { nextBlockHash: convertedBlock.hash } }
+      );
+      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+    }
 
     if (initialSyncComplete) {
       EventStorage.signalBlock(convertedBlock);
@@ -177,6 +180,76 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       return transform;
     }
     return JSON.stringify(transform);
+  }
+
+  async getBlockSyncGaps(params: { chain: string; network: string; startHeight?: number }): Promise<number[]> {
+    const { chain, network, startHeight = 0 } = params;
+    const self = this;
+    return new Promise(async (resolve, reject) => {
+      let timeout;
+      try {
+        const maxBlock = await self.collection.findOne(
+          {
+            chain,
+            network,
+            // height and processed are here to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
+            height: { $exists: true },
+            $or: [{ processed: { $exists: true } }, { processed: { $exists: false } }]
+          },
+          {
+            // height all that matters in the sort. The rest is there to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
+            sort: { height: -1, chain: 1, network: 1, processed: 1 },
+            projection: { height: 1 }
+          }
+        );
+        if (!maxBlock) {
+          return resolve([]);
+        }
+
+        const stream = self.collection
+          .find({
+            chain,
+            network,
+            height: { $gte: startHeight },
+            // processed is here to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
+            $or: [{ processed: { $exists: true } }, { processed: { $exists: false } }]
+          })
+          .sort({ chain: 1, network: 1, height: 1, processed: 1 }) // height is the only sort that matters
+          .addCursorFlag('noCursorTimeout', true);
+
+        const maxHeight = maxBlock.height;
+        let block = (await stream.next()) as IEthBlock;
+        let prevBlock: IEthBlock | undefined;
+        const outOfSync: number[] = [];
+        timeout = setInterval(
+          () => logger.info(`${chain}:${network} Block verification height: ${block.height}`),
+          1000 * 10
+        );
+
+        for (let syncHeight = startHeight; syncHeight <= maxHeight; syncHeight++) {
+          if (!block || block.height !== syncHeight) {
+            outOfSync.push(syncHeight);
+          } else {
+            if (prevBlock && !prevBlock.nextBlockHash && prevBlock.height === block.height - 1) {
+              const res = await self.collection.updateOne(
+                { chain, network, hash: prevBlock.hash },
+                { $set: { nextBlockHash: block.hash } }
+              );
+              if (res.modifiedCount === 1) {
+                prevBlock.nextBlockHash = block.hash;
+              }
+            }
+            prevBlock = block;
+            block = (await stream.next()) as IEthBlock;
+          }
+        }
+        resolve(outOfSync);
+      } catch (err) {
+        reject(err);
+      } finally {
+        clearTimeout(timeout);
+      }
+    });
   }
 }
 

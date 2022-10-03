@@ -362,7 +362,13 @@ export class PushNotificationsService {
 
       let unit;
       if (wallet.coin != Defaults.COIN) {
-        unit = wallet.coin;
+        switch (wallet.coin) {
+          case 'pax':
+            unit = 'usdp'; // backwards compatibility
+            break;
+          default:
+            unit = wallet.coin;
+        }
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
@@ -455,15 +461,16 @@ export class PushNotificationsService {
       bit: 'bits',
       bch: 'BCH',
       eth: 'ETH',
+      matic: 'MATIC',
       xrp: 'XRP',
       doge: 'DOGE',
       ltc: 'LTC',
       usdc: 'USDC',
-      pax: 'PAX',
+      usdp: 'USDP',
       gusd: 'GUSD',
       busd: 'BUSD',
-      wbtc: 'WBTC',
       dai: 'DAI',
+      wbtc: 'WBTC',
       shib: 'SHIB',
       ape: 'APE',
       euroc: 'EUROC'
@@ -477,17 +484,21 @@ export class PushNotificationsService {
         let opts = {} as any;
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
-          if (Constants.TOKEN_OPTS[tokenAddress]) {
-            unit = Constants.TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+          if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ETH_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
             try {
-              customTokensData = await this.getTokenData();
+              customTokensData = await this.getTokenData(data.address.coin);
             } catch (error) {
-              throw new Error('Could not get custom tokens data');
+              return cb(new Error('Could not get custom tokens data'));
             }
             if (customTokensData && customTokensData[tokenAddress]) {
+              // check for eth tokens
               unit = customTokensData[tokenAddress].symbol.toLowerCase();
               label = unit.toUpperCase();
               opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
@@ -496,7 +507,7 @@ export class PushNotificationsService {
                 minDecimals: 2
               };
             } else {
-              throw new Error('Notifications for unsupported token are not allowed');
+              return cb(new Error(`Push notifications for unsupported tokens are not allowed: ${tokenAddress}`));
             }
           }
         }
@@ -669,11 +680,16 @@ export class PushNotificationsService {
     );
   }
 
-  getTokenData() {
+  getTokenData(chain) {
     return new Promise((resolve, reject) => {
+      const chainIdMap = {
+        eth: 1,
+        matic: 137
+      };
+      // Get tokens
       this.request(
         {
-          url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/1/tokens',
+          url: `https://bitpay.api.enterprise.1inch.exchange/v3.0/${chainIdMap[chain]}/tokens`,
           method: 'GET',
           json: true,
           headers: {

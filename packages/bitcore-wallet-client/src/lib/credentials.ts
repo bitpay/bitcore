@@ -213,6 +213,8 @@ export class Credentials {
         coin = '0';
       } else if (this.coin == 'eth') {
         coin = '60';
+      } else if (this.coin == 'matic') {
+        coin = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
       } else if (this.coin == 'xrp') {
         coin = '144';
       } else if (this.coin == 'doge') {
