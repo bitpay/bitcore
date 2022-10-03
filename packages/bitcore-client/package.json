@@ -48,7 +48,7 @@
     "@types/bcryptjs": "2.4.2",
     "@types/elliptic": "6.4.3",
     "@types/ethereumjs-util": "5.2.0",
-    "@types/mongodb": "3.3.8",
+    "@types/mongodb": "3.6.0",
     "@types/node": "10.12.15",
     "@types/request": "2.48.1",
     "@types/request-promise-native": "1.0.15",

@@ -28,7 +28,7 @@ export class Storage {
     const dbMap = {
       Mongo,
       Level,
-      TextFile
+      TextFile,
     };
     this.db = [];
     if (dbMap[storageType]) {
@@ -42,13 +42,15 @@ export class Storage {
   }
 
   async verifyDbs(dbs) {
-    // test mongo connection
-    const mongoDbIdx = dbs.findIndex(d => d instanceof Mongo);
-    if (!(await (dbs[mongoDbIdx] as Mongo).testConnection())) {
-      // remove mongo from array of dbs
-      dbs.splice(mongoDbIdx, 1);
+    for await (let db of dbs) {
+      if (typeof db.testConnection === 'function') {
+        // test mongo connection
+        if (!(await db.testConnection())) {
+          // remove from dbs
+          dbs.splice(dbs.indexOf(db), 1);
+        }
+      }
     }
-
     return dbs;
   }
 
@@ -88,7 +90,7 @@ export class Storage {
     for (let db of dbs) {
       const listWalletStream = await db.listWallets();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => dbs.length-- === 0 && passThrough.end());
+      listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
     }
     return passThrough;
   }
@@ -143,7 +145,7 @@ export class Storage {
           address,
           encryptionKey,
           keepAlive,
-          open
+          open,
         });
         keys.push(key);
       } catch (err) {
