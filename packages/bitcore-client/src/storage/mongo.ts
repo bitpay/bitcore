@@ -58,7 +58,7 @@ export class Mongo {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         noDelay: true,
-        serverSelectionTimeoutMS: 300,
+        serverSelectionTimeoutMS: 300
       });
       await this.client.connect();
       await this.client.close();
@@ -75,7 +75,7 @@ export class Mongo {
       transform(data, enc, next) {
         this.push(JSON.stringify(data));
         next();
-      },
+      }
     });
     const cursor = this.collection
       .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 })
@@ -91,7 +91,7 @@ export class Mongo {
       transform(data, enc, next) {
         this.push(JSON.parse(JSON.stringify(data)));
         next();
-      },
+      }
     });
     const cursor = this.collection.find({}, { name: 1, key: 1, toStore: 1, storageType: 1 }).pipe(stream);
     stream.on('end', async () => await this.close());

@@ -28,7 +28,7 @@ export class Storage {
     const dbMap = {
       Mongo,
       Level,
-      TextFile,
+      TextFile
     };
     this.db = [];
     if (dbMap[storageType]) {
@@ -145,7 +145,7 @@ export class Storage {
           address,
           encryptionKey,
           keepAlive,
-          open,
+          open
         });
         keys.push(key);
       } catch (err) {
