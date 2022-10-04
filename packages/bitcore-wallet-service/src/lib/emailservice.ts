@@ -525,8 +525,14 @@ export class EmailService {
           }
         },
         (err, data: any) => {
-          if (err) return reject(err);
-          if (typeof data.body?.statusCode == 'number' && data.body?.statusCode != 200) return reject(data.body.message);
+          if (err) {
+            logger.error(err);
+            return reject(err);
+          }
+          if (typeof data.body?.statusCode == 'number' && data.body?.statusCode != 200) {
+            logger.error(data.body.message);
+            return reject(data.body.message);
+          }
           return resolve(data.body.tokens);
         }
       );
