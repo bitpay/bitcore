@@ -287,6 +287,7 @@ export class EmailService {
             try {
               customTokensData = await this.getTokenData(data.address.coin);
             } catch (error) {
+              logger.error(error);
               return cb(new Error('Could not get custom tokens data'));
             }
             if (customTokensData && customTokensData[tokenAddress]) {
@@ -525,6 +526,7 @@ export class EmailService {
         },
         (err, data: any) => {
           if (err) return reject(err);
+          if (typeof data.body?.statusCode == 'number' && data.body?.statusCode != 200) return reject(data.body.message);
           return resolve(data.body.tokens);
         }
       );

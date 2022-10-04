@@ -19,7 +19,7 @@ const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95
 const CUSTOM_TOKENS = ['0x0d8775f648430679a709e98d2b0cb6250d2887ef'];
 
 describe('Email notifications', function() {
-  this.timeout(15000);
+  this.timeout(5000);
   var storage, server, wallet, mailerStub, emailService;
 
   before(function(done) {
@@ -777,7 +777,7 @@ describe('Email notifications', function() {
                 unsent.should.be.empty;
                 done();
               });
-            }, 10000);
+            }, 3000);
           });
         });
     });
