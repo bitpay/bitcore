@@ -10,6 +10,7 @@ jobs:
     working_directory: ~/bitcore
     steps:
       - checkout
+      
       - run:
           name: Build service
           command: npm run test:ci:build
