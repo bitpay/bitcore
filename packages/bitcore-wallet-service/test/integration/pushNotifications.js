@@ -860,7 +860,7 @@ describe('Push notifications', function() {
               args[1].notification.body.should.contain('4.00');
               args[1].data.tokenAddress.should.equal('0x0d8775f648430679a709e98d2b0cb6250d2887ef');
               done();
-            }, 3000);
+            }, 4000);
           });
         });
       });
