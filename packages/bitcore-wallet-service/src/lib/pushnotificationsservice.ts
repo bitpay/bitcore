@@ -493,6 +493,7 @@ export class PushNotificationsService {
           } else {
             let customTokensData;
             try {
+              logger.error(data);
               customTokensData = await this.getTokenData(data.address.coin);
             } catch (error) {
               logger.error(error);
