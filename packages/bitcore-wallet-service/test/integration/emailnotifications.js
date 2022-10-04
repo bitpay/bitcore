@@ -760,6 +760,7 @@ describe('Email notifications', function() {
           }, {
             isGlobal: true
           }, (err) => {
+            should.not.exist(err);
             setTimeout(function() {
               var calls = mailerStub.send.getCalls();
               calls.length.should.equal(1);

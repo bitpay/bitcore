@@ -850,6 +850,7 @@ describe('Push notifications', function() {
           }, {
             isGlobal: true
           }, (err) => {
+            should.not.exist(err);
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
