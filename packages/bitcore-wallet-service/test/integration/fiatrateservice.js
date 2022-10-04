@@ -17,6 +17,7 @@ var helpers = require('./helpers');
 var { FiatRateService } = require('../../ts_build/lib/fiatrateservice');
 
 describe('Fiat rate service', function() {
+  this.timeout(5000);
   var service, request;
 
   before(function(done) {

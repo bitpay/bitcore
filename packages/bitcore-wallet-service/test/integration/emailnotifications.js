@@ -776,7 +776,7 @@ describe('Email notifications', function() {
                 unsent.should.be.empty;
                 done();
               });
-            }, 1000);
+            }, 3000);
           });
         });
     });

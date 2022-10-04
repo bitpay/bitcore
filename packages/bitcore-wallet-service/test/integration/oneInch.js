@@ -10,6 +10,8 @@ let config = require('../../ts_build/config.js');
 let server, wallet, fakeRequest, req;
 
 describe('OneInch integration', () => {
+  this.timeout(5000);
+  
   before((done) => {
     helpers.before((res) => {
       done();
