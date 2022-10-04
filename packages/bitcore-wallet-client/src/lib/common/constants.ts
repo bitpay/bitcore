@@ -55,16 +55,13 @@ export const Constants = {
   ],
 
   BITPAY_SUPPORTED_MATIC_ERC20: [
-    'eth_m',
     'usdc_m',
-    'pax_m',
-    'gusd_m',
     'busd_m',
     'dai_m',
     'wbtc_m',
     'shib_m',
     'ape_m',
-    'euroc_m'
+    'matic_m'
   ],
 
   CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],

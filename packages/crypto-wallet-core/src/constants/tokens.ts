@@ -32,7 +32,7 @@ export let ETH_TOKEN_OPTS = {
   '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599': {
     name: 'Wrapped Bitcoin',
     symbol: 'WBTC',
-    decimal: 9,
+    decimal: 8,
     address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599'
   },
   '0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce': {
@@ -62,64 +62,46 @@ export let ETH_TOKEN_OPTS = {
 };
 
 export let MATIC_TOKEN_OPTS = {
-  '0xdab529f40e671a1d4bf91361c21bf9f0c9712ab7': {
-    name: 'Binance USD Coin',
-    symbol: 'BUSD',
-    decimal: 18,
-    address: '0xdab529f40e671a1d4bf91361c21bf9f0c9712ab7'
-  },
-  '0x2791bca1f2de4661ed88a30c99a7a9449aa84174': {
-    name: 'USD Coin',
+  '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174': {
+    name: 'USD Coin (PoS)',
     symbol: 'USDC',
-    decimal: 6,
-    address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'
+    decimals: 6,
+    address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'
   },
-  '0x6F3B3286fd86d8b47EC737CEB3D0D354cc657B3e': {
-    name: 'Paxos Standard',
-    symbol: 'PAX',
-    decimal: 18,
-    address: '0x6F3B3286fd86d8b47EC737CEB3D0D354cc657B3e'
+  '0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7': {
+    name: 'binance-usd',
+    symbol: 'BUSD',
+    decimals: 18,
+    address: '0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7'
   },
-  '0xC8A94a3d3D2dabC3C1CaffFFDcA6A7543c3e3e65': {
-    name: 'Gemini Dollar',
-    symbol: 'GUSD',
-    decimal: 2,
-    address: '0xC8A94a3d3D2dabC3C1CaffFFDcA6A7543c3e3e65'
-  },
-  '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063': {
-    name: 'Dai',
+  '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063': {
+    name: '(PoS) Dai Stablecoin',
     symbol: 'DAI',
-    decimal: 18,
-    address: '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
+    decimals: 18,
+    address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'
   },
-  '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6': {
-    name: 'Wrapped Bitcoin',
+  '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6': {
+    name: '(PoS) Wrapped BTC',
     symbol: 'WBTC',
-    decimal: 9,
-    address: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6'
+    decimals: 8,
+    address: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6'
   },
   '0x6f8a06447Ff6FcF75d803135a7de15CE88C1d4ec': {
-    address: '0x6f8a06447Ff6FcF75d803135a7de15CE88C1d4ec',
-    decimal: 18,
-    name: 'SHIBA INU',
-    symbol: 'SHIB'
+    name: 'SHIBA INU (PoS)',
+    symbol: 'SHIB',
+    decimals: 18,
+    address: '0x6f8a06447Ff6FcF75d803135a7de15CE88C1d4ec'
   },
-  '0x8a037dbca8134ffc72c362e394e35e0cad618f85': {
-    name: 'Euro Coin',
-    symbol: 'EUROC',
-    decimal: 6,
-    address: '0x8a037dbca8134ffc72c362e394e35e0cad618f85'
-  },
-  '0xb7b31a6bc18e48888545ce79e83e06003be70930': {
-    name: 'ApeCoin',
+  '0xB7b31a6BC18e48888545CE79e83E06003bE70930': {
+    name: 'ApeCoin (PoS)',
     symbol: 'APE',
-    decimal: 18,
-    address: '0xb7b31a6bc18e48888545ce79e83e06003be70930'
+    decimals: 18,
+    address: '0xB7b31a6BC18e48888545CE79e83E06003bE70930'
   },
-  '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619': {
-    name: 'Wrapped Ethereum',
-    symbol: 'ETH',
-    decimal: 18,
-    address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'
+  '0x0000000000000000000000000000000000001010': {
+    name: 'Matic Token',
+    symbol: 'MATIC',
+    decimals: 18,
+    address: '0x0000000000000000000000000000000000001010'
   }
 };
