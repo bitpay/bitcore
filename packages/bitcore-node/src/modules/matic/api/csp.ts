@@ -1,5 +1,9 @@
 import { BaseEVMStateProvider } from '../../../providers/chain-state/evm/api/csp';
 
-export class MATICStateProvider extends BaseEVMStateProvider {}
+export class MATICStateProvider extends BaseEVMStateProvider {
+  constructor() {
+    super('MATIC');
+  }
+}
 
-export const MATIC = new MATICStateProvider('MATIC');
+export const MATIC = new MATICStateProvider();

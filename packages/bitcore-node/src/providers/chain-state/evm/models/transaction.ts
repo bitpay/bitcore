@@ -205,13 +205,13 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         };
       });
     } else {
+      const CSP = new BaseEVMStateProvider(chain);
+      const { web3 } = await CSP.getWeb3(network);
       return Promise.all(
         params.txs.map(async (tx: IEVMTransaction) => {
           const { to, txid, from } = tx;
           const tos = [to];
           const froms = [from];
-          const CSP = new BaseEVMStateProvider(chain);
-          const { web3 } = await CSP.getWeb3(network);
 
           // handle incoming ERC20 transactions
           if (tx.abiType && tx.abiType.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {

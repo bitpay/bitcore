@@ -33,26 +33,11 @@ import { StatsUtil } from '../../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
-import { EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
+import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
-export interface EventLog<T> {
-  event: string;
-  address: string;
-  returnValues: T;
-  logIndex: number;
-  transactionIndex: number;
-  transactionHash: string;
-  blockHash: string;
-  blockNumber: number;
-  raw?: { data: string; topics: any[] };
-}
-interface ERC20Transfer
-  extends EventLog<{
-    [key: string]: string;
-  }> {}
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;

@@ -93,7 +93,7 @@ export interface GethTraceCall {
 export type AnyBlock = GethBlock | ErigonBlock;
 export type AnyTransaction = GethTraceTransaction | ErigonTransaction;
 
-export type Networks = 'mainnet' | 'mumbai';
+export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan' | 'sepolia' | 'mumbai';
 
 export interface EVMBlock {
   header: EVMHeader;
@@ -238,3 +238,7 @@ export interface EventLog<T> {
   blockNumber: number;
   raw?: { data: string; topics: any[] };
 }
+export interface ERC20Transfer
+  extends EventLog<{
+    [key: string]: string;
+  }> {}

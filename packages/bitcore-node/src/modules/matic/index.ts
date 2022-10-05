@@ -8,7 +8,7 @@ export default class MATICModule extends BaseModule {
   constructor(services: BaseModule['bitcoreServices']) {
     super(services);
     services.P2P.register('MATIC', EVMP2pWorker);
-    services.CSP.registerService('MATIC', new MATICStateProvider('MATIC'));
+    services.CSP.registerService('MATIC', new MATICStateProvider());
     services.Api.app.use(MaticRoutes);
     services.Verification.register('MATIC', EVMVerificationPeer);
   }
