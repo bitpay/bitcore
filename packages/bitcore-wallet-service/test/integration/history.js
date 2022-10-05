@@ -31,6 +31,8 @@ var storage, blockchainExplorer, request;
 
 
 describe('History', function() {
+  this.timeout(5000);
+  
   before(function(done) {
     helpers.before((res) => {
       done();

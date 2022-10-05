@@ -20,7 +20,7 @@ const CUSTOM_TOKENS = ['0x0d8775f648430679a709e98d2b0cb6250d2887ef'];
 
 describe('Email notifications', function() {
   this.timeout(5000);
-  var storage, server, wallet, mailerStub, emailService;
+  var storage, server, wallet, mailerStub, getTokenDataStub, emailService;
 
   before(function(done) {
     helpers.before((res) => {
@@ -718,6 +718,7 @@ describe('Email notifications', function() {
           //mailerStub.returns(Promise.reject('err'));
 
           emailService = new EmailService();
+          getTokenDataStub = sinon.stub(emailService, 'getTokenData').callsFake(()=>TestData.OneInch_ETH_Tokens.tokens);
           emailService.start({
             lockOpts: {},
             messageBroker: server.messageBroker,
