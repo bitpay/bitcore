@@ -38,6 +38,13 @@ class Migration {
     }
   }
 
+  async endProcess() {
+    if (Storage.connected){
+      await Storage.stop();
+    }
+    process.exit();
+  }
+
   processArgs(argv) {
     let retArgs = {
       dryrun: true,
@@ -49,7 +56,7 @@ class Migration {
     const helpIdx = args.findIndex(i => i == '--help');
     if (helpIdx >= 0) {
       console.log("Usage: node fixUnspentInputs.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]");
-      process.exit();
+      this.endProcess();
     }
 
     const dryRunIdx = args.findIndex(i => i == '--dryrun');
@@ -74,7 +81,7 @@ class Migration {
 
     if (!retArgs.chain || !retArgs.network) {
       console.log("You must specify a chain and network for the script to run on. Use --help for more info.");
-      process.exit();
+      this.endProcess();
     }
 
     return retArgs;
@@ -95,11 +102,11 @@ class Migration {
     // Initialize RPC connection
     if (!Config.default.chains[chain]) {
       console.error(`There is no RPC config for chain '${chain}'`);
-      process.exit(1);
+      this.endProcess();
     }
     if (!Config.default.chains[chain][network]) {
       console.error(`There is no RPC config for chain '${chain}' with network '${network}'`);
-      process.exit(1);
+      this.endProcess();
     }
     const rpcConfig = Config.default.chains[chain][network].rpc;
     const rpc = new CryptoRpc(
@@ -114,7 +121,8 @@ class Migration {
       {}
     ).get(chain);
 
-    const handleStream = async data => {
+    let data = (await stream.next());
+    while (data != null) {
       let isUnspent = false;
       // If spent (or in mempool) then this returns null with an error otherwise returns data on unspent output
       try {
@@ -136,44 +144,30 @@ class Migration {
 
           if (!dryrun) {
             // Update record to be unspent (-2)
-            this.coinModel.collection.updateOne({ _id: data._id }, { $set: { spentHeight: -2 } }); // -2 is unspent status
+            await this.coinModel.collection.updateOne({ _id: data._id }, { $set: { spentHeight: -2 } }); // -2 is unspent status
           }
         }
-        const nextData = await stream.next();
-        if (nextData) {
-          handleStream(nextData);
-        } else {
-          // End of data -
-          endProcess();
-        }
       }
-    };
-    // Handle incoming stream data
-    const data = await stream.next();
-    if (data) {
-      handleStream(data);
-    } else {
-      console.log("No records found");
-      process.exit();
+      // get next record
+      data = (await stream.next());
     }
 
-    const endProcess = async () => {
-      console.log(`Finished updating records for ${chain}-${network}`);
-      const date = new Date().getTime();
-      const filename = `output-${chain}-${network}-${date}.log`;
-      console.log(`Writing output to ${filename}`);
-      try {
-        await fsPromises.writeFile(filename, JSON.stringify(output));
-      } catch (e) {
-        // write to stdout
-        console.log('Failed to write output to file. Writing to stdout instead.');
-        console.log(output);
-      }
-      if (args.dryrun) {
-        console.log('Run the script with "--dryrun false" to execute this operation on the returned results.');
-      }
-      process.exit();
-    };
+    console.log(`Finished ${dryrun ? 'scanning' : 'updating'} records for ${chain}-${network}`);
+    const date = new Date().getTime();
+    const filename = `output-${chain}-${network}-${date}.log`;
+    console.log(`Writing output to ${filename}`);
+    try {
+      await fsPromises.writeFile(filename, JSON.stringify(output));
+    } catch (e) {
+      // write to stdout
+      console.log('Failed to write output to file. Writing to stdout instead.');
+      console.log(output);
+    }
+    if (dryrun) {
+      console.log('Run the script with "--dryrun false" to execute this operation on the returned results.');
+    }
+
+    await this.endProcess();
   }
 }
 
@@ -187,5 +181,9 @@ migration
   })
   .catch(err => {
     console.error(err);
-    process.exit(1);
+    migration.endProcess()
+    .catch(err => { 
+      console.error(err);
+      process.exit(1);
+    });
   });
