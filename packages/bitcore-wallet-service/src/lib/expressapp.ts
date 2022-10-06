@@ -16,6 +16,9 @@ const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
+var GoogleTokenStrategy = require('passport-google-id-token');
+const passport = require('passport');
+
 export class ExpressApp {
   app: express.Express;
 
@@ -46,6 +49,38 @@ export class ExpressApp {
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
     });
+
+    // var GoogleTokenStrategy = require('passport-google-id-token');
+    // this.app.use(require('serve-static')(__dirname + '/../../public'));
+    // this.app.use(require('cookie-parser')());
+    this.app.use(require('body-parser').urlencoded({ extended: true }));
+    this.app.use(require('express-session')({ secret: 'keyboard cat', resave: true, saveUninitialized: true }));
+    this.app.use(passport.initialize());
+    this.app.use(passport.session());
+    passport.serializeUser(function(user, done) {
+      done(null, user);
+    });
+    
+    // passport.deserializeUser(function(id, done) {
+    //   // User.findById(id, function(err, user) {
+    //   //   done(err, id);
+    //   // });
+    //   done(null, id);
+    // });
+    passport.use(new GoogleTokenStrategy({
+        clientID: '287411092309-vovtceqbolmrn2krv8knpt0ovpa4u4ta.apps.googleusercontent.com'
+      },
+      function(parsedToken, googleId, done) {
+        // User.findOrCreate({ googleId: googleId }, function (err, user) {
+        //   return done(err, user);
+        // });
+        // logger.debug(parsedToken);
+        // logger.debug(googleId);
+        // passport.serializeUser(function(parsedToken, done) {
+          return done(null, parsedToken.payload.email);
+        // });
+      }
+    ));
     const allowCORS = (req, res, next) => {
       if ('OPTIONS' == req.method) {
         res.sendStatus(200);
@@ -1390,6 +1425,22 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v3/login/',  passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if(reqServer.user){
+        server.storage.fetchUserByEmail(reqServer.user, (err, user) => {
+          if(err) return returnError(err, res, reqServer);
+          res.json(true);
+        })
+      }
+    });
+
     router.get('/v3/order/:id', (req, res) => {
       // SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
@@ -1731,7 +1782,20 @@ export class ExpressApp {
       //   return cb();
       // });
       // logger.debug('server: ', server);
+      server.storage.countAlUserHasSameEmail('tan8651913@gmail.com').then(count => {
+        if(count === 0){
+          server.storage.storeUser({
+            email: 'tan8651913@gmail.com'
+          }, (err, user)=>{
+            if(err) logger.debug(err);
+          })
+        } else{
+          logger.debug('already init user');
+        }
+      })
+     
       setTimeout(() => {
+        
         server.getKeyFundAndReceiveWithFundMnemonic((err, keyFund, clientsFund, clientsReceive, mnemonic) => {
           let isOrderValid;
           // if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;

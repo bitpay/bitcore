@@ -3460,7 +3460,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'assault husband flame unveil twelve curtain negative quiz decade anchor uncle shadow';
+      opts.words = 'final major brother expire hazard palace match stadium carpet tomato develop guess';
       Client.serverAssistedImport(
         opts,
         {
@@ -3485,7 +3485,7 @@ export class WalletService {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'tattoo wrong corn canal burden click lobster demise sock jealous improve goat';
+      opts.words = 'wet embark miracle scissors appear mean fall fetch age frown pledge artist';
       logger.debug('baseUrl: ', client.request.baseUrl);
       Client.serverAssistedImport(
         opts,
@@ -5707,29 +5707,29 @@ export class WalletService {
                   const balanceSelected = listBalanceTokenConverted.find(
                     s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
                   );
-                  if(balanceSelected){
+                  if (balanceSelected) {
                     const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
-                    .decimals;
+                      .decimals;
                     coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
                     coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
                     coin.fund = balanceSelected.amountToken * rateCoinUsd;
                     coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
                     coin.satUnit = Math.pow(10, tokenDecimals);
                     coin.tokenInfo = balanceSelected.tokenInfo;
-                  } else{
+                  } else {
                     coin.isEnable = false;
                   }
-                
                 } else {
-                  const balanceFound =  balance.find(s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network);
-                  if(balanceFound){
+                  const balanceFound = balance.find(
+                    s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network
+                  );
+                  if (balanceFound) {
                     const balanceTotal = balanceFound.balance.totalAmount;
                     coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
                     coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
                     coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
                     coin.fundConvertToSat = balanceTotal;
-                  } 
-                  else{
+                  } else {
                     coin.isEnable = false;
                   }
                 }

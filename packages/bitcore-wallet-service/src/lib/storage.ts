@@ -30,6 +30,7 @@ const $ = require('preconditions').singleton();
 const collections = {
   // Duplciated in helpers.. TODO
   WALLETS: 'wallets',
+  USER: 'user',
   TXS: 'txs',
   ADDRESSES: 'addresses',
   ADVERTISEMENTS: 'advertisements',
@@ -78,6 +79,9 @@ export class Storage {
       logger.error('DB not ready');
       return;
     }
+    db.collection(collections.USER).createIndex({
+      id: 1
+    });
     db.collection(collections.WALLETS).createIndex({
       id: 1
     });
@@ -385,6 +389,68 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchUserByEmail(email, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.USER).findOne(
+      {
+        email
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb('Can not find user in db');
+
+        return cb(null, result);
+      }
+    );
+  }
+  countAlUserHasSameEmail(email) {
+    return this.db
+      .collection(collections.USER)
+      .find({
+        email: email
+      })
+      .count();
+  }
+
+  storeUser(user, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', user);
+      return;
+    }
+
+    this.db.collection(collections.USER).insertOne(
+      user,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+
+  UserByEmail(email, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.USER).findOne(
+      {
+        email
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb('Can not find user in db');
 
         return cb(null, result);
       }
