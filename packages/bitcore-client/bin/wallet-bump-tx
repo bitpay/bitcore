@@ -40,40 +40,16 @@ const main = async () => {
     }
 
     const networkFeeRate = await wallet.getNetworkFee();
-    const feeRate = JSON.parse(networkFeeRate).feerate;
+    const nFeeRate = JSON.parse(networkFeeRate).feerate;
 
-    if (feerate && feerate > existingTx.feeRate) {
-
+    if (feerate && feerate <= existingTx.feeRate) {
+      throw new Error('Provided fee rate is not greater than existing tx fee rate.');
+    } 
+    if (!feerate && nFeeRate <= existingTx.feeRate) {
+      throw new Error('Current network fee rate is not greater than existing tx fee rate. Tx should be included without bumping the fee.');
     }
-    // const chain = wallet.chain;
-    // const currency = token || chain;
-    // const { decimals } = currencies.data.find(element => element.code === currency);
-    // const scale = Math.pow(10, decimals);
-    // const lastAddress = await wallet.deriveAddress(0);
-    // const recipients = [{ address: to, amount: amount * scale }];
-    
-    // let nonce;
-    // if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
-    //   nonce = await wallet.getNonce();
-    // }
-    // const utxos = await wallet.getUtxosArray();
-    existingTx.feeRate = 
-    // const {
-    //   nonce,
-    //   utxos,
-    //   recipients,
-    //   from,
-    //   token
-    // } = existingTx;
-    // const params = {
-    //   feeRate,
-    //   nonce,
-    //   utxos,
-    //   recipients,
-    //   from,
-    //   token
-    // };
-    const tx = await wallet.newTx(params);
+    existingTx.feeRate = feerate || nFeeRate;
+    const tx = await wallet.newTx(existingTx);
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
