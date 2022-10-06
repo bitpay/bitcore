@@ -4,7 +4,8 @@ import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
 import { IEVMBlock, IEVMTransaction } from '../../../../src/providers/chain-state/evm/types';
-import { MATIC, MATICStateProvider } from '../../../../src/modules/matic/api/csp';
+import { MATIC } from '../../../../src/modules/matic/api/csp';
+import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
 import { mockModel } from '../../../helpers';
 
 describe('MATIC Chain State Provider', function() {
@@ -14,7 +15,7 @@ describe('MATIC Chain State Provider', function() {
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
-    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
     const { web3 } = await MATIC.getWeb3(network);
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
@@ -26,7 +27,7 @@ describe('MATIC Chain State Provider', function() {
   it('should make a new web3 if getBlockNumber fails', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
-    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
     const { web3 } = await MATIC.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
     expect(stub.callCount).to.not.exist;
@@ -89,7 +90,7 @@ describe('MATIC Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
     const txids = await MATIC.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(true);
@@ -112,7 +113,7 @@ describe('MATIC Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
     const txid = await MATIC.broadcastTransaction({ chain, network, rawTx: '123' });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(txid).to.eq('123');
@@ -143,7 +144,7 @@ describe('MATIC Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
     let thrown = false;
     try {
       await MATIC.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
@@ -187,7 +188,7 @@ describe('MATIC Chain State Provider', function() {
     };
 
     beforeEach(() => {
-      sandbox.stub(MATICStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
     });
 
     afterEach(() => {
