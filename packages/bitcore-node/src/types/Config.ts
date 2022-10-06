@@ -31,12 +31,12 @@ interface IProvider {
 
 export interface IEthNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
-  providers?: IProvider[]; // mulitple providers can be configured to load balance for the syncing threads
+  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
   provider?: IProvider;
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
   syncStartHeight?: number;
-  threads?: number; // defaults to your CPU's capabilities. Currently only available for ETH
+  threads?: number; // Defaults to your CPU's capabilities. Currently only available for ETH
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {

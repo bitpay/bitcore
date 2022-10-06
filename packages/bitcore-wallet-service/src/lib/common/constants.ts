@@ -6,6 +6,7 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    MATIC: 'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc'
@@ -18,45 +19,80 @@ module.exports = {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    MATIC: 'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
-    USDC: 'usdc',
-    USDP: 'usdp',
-    PAX: 'pax', // backwards compatibility
-    GUSD: 'gusd',
-    BUSD: 'busd',
-    DAI: 'dai',
-    WBTC: 'wbtc',
-    SHIB: 'shib',
-    APE: 'ape',
-    EUROC: 'euroc'
+    MATIC_E: 'matic_e',
+    USDC_E: 'usdc_e',
+    USDP_E: 'usdp_e',
+    PAX_E: 'pax_e',
+    GUSD_E: 'gusd_e',
+    BUSD_E: 'busd_e',
+    DAI_E: 'dai_e',
+    WBTC_E: 'wbtc_e',
+    SHIB_E: 'shib_e',
+    APE_E: 'ape_e',
+    EUROC_E: 'euroc_e',
+    ETH_M: 'eth_m',
+    USDC_M: 'usdc_m',
+    USDP_M: 'usdp_m',
+    PAX_M: 'pax_m',
+    GUSD_M: 'gusd_m',
+    BUSD_M: 'busd_m',
+    DAI_M: 'dai_m',
+    WBTC_M: 'wbtc_m',
+    SHIB_M: 'shib_m',
+    APE_M: 'ape_m',
+    EUROC_M: 'euroc_m'
   },
 
-  BITPAY_SUPPORTED_ERC20: {
-    USDC: 'usdc',
-    USDP: 'usdp',
-    PAX: 'pax', // backwards compatibility
-    GUSD: 'gusd',
-    BUSD: 'busd',
-    DAI: 'dai',
-    WBTC: 'wbtc',
-    SHIB: 'shib',
-    APE: 'ape',
-    EUROC: 'euroc'
+  BITPAY_SUPPORTED_ETH_ERC20: {
+    MATIC_E: 'matic_e',
+    USDC_E: 'usdc_e',
+    USDP_E: 'usdp_e',
+    PAX_E: 'pax_e', // backwards compatability
+    GUSD_E: 'gusd_e',
+    BUSD_E: 'busd_e',
+    DAI_E: 'dai_e',
+    WBTC_E: 'wbtc_e',
+    SHIB_E: 'shib_e',
+    APE_E: 'ape_e',
+    EUROC_E: 'euroc_e'
+  },
+
+  BITPAY_SUPPORTED_MATIC_ERC20: {
+    ETH_M: 'eth_m',
+    USDC_M: 'usdc_m',
+    USDP_M: 'usdp_m',
+    PAX_M: 'pax_m',
+    GUSD_M: 'gusd_m',
+    BUSD_M: 'busd_m',
+    DAI_M: 'dai_m',
+    WBTC_M: 'wbtc_m',
+    SHIB_M: 'shib_m',
+    APE_M: 'ape_m',
+    EUROC_M: 'euroc_m'
   },
 
   BITPAY_USD_STABLECOINS: {
-    USDC: 'usdc',
-    USDP: 'usdp',
-    PAX: 'pax', // backwards compatibility
-    GUSD: 'gusd',
-    BUSD: 'busd',
-    DAI: 'dai'
+    USDC_E: 'usdc_e',
+    USDP_E: 'usdp_e',
+    PAX_E: 'pax_e',
+    GUSD_E: 'gusd_e',
+    BUSD_E: 'busd_e',
+    DAI_E: 'dai_e',
+    USDC_M: 'usdc_m',
+    USDP_M: 'usdp_m',
+    PAX_M: 'pax_m',
+    GUSD_M: 'gusd_m',
+    BUSD_M: 'busd_m',
+    DAI_M: 'dai_m'
   },
 
   BITPAY_EUR_STABLECOINS: {
-    EUROC: 'euroc'
+    EUROC_E: 'euroc_e',
+    EUROC_M: 'euroc_m'
   },
 
   UTXO_CHAINS: {
@@ -67,7 +103,8 @@ module.exports = {
   },
 
   EVM_CHAINS: {
-    ETH: 'eth'
+    ETH: 'eth',
+    MATIC: 'matic'
   },
 
   NETWORKS: {
@@ -97,5 +134,6 @@ module.exports = {
 
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
-  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS
+  ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
+  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS
 };

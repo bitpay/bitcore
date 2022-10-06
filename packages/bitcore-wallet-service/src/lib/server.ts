@@ -41,6 +41,7 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
+  matic: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
@@ -1132,6 +1133,8 @@ export class WalletService {
    * @param {string} opts.unit - Bitcoin unit used to format amounts in notifications.
    * @param {string} opts.tokenAddresses - Linked token addresses
    * @param {string} opts.multisigEthInfo - Linked multisig eth wallet info
+   * @param {string} opts.maticTokenAddresses - Linked token addresses
+   * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
    */
   savePreferences(opts, cb) {
@@ -1170,6 +1173,21 @@ export class WalletService {
             value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress))
           );
         }
+      },
+      {
+        name: 'maticTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('matic', 'mainnet', x));
+        }
+      },
+      {
+        name: 'multisigMaticInfo',
+        isValid(value) {
+          return (
+            _.isArray(value) &&
+            value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress))
+          );
+        }
       }
     ];
 
@@ -1194,6 +1212,11 @@ export class WalletService {
         opts.multisigEthInfo = null;
       }
 
+      if (wallet.coin != 'matic') {
+        opts.maticMokenAddresses = null;
+        opts.multisigMaticInfo = null;
+      }
+
       this._runLocked(cb, cb => {
         this.storage.fetchPreferences(this.walletId, this.copayerId, (err, oldPref) => {
           if (err) return cb(err);
@@ -1204,14 +1227,14 @@ export class WalletService {
           });
           const preferences = Preferences.fromObj(_.defaults(newPref, opts, oldPref));
 
-          // merge tokenAddresses
+          // merge eth tokenAddresses
           if (opts.tokenAddresses) {
             oldPref = oldPref || {};
             oldPref.tokenAddresses = oldPref.tokenAddresses || [];
             preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
           }
 
-          // merge multisigEthInfo
+          // merge eth multisigEthInfo
           if (opts.multisigEthInfo) {
             oldPref = oldPref || {};
             oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
@@ -1233,6 +1256,34 @@ export class WalletService {
             );
           }
 
+          // merge matic tokenAddresses
+          if (opts.maticTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.maticTokenAddresses = oldPref.maticTokenAddresses || [];
+            preferences.maticTokenAddresses = _.uniq(oldPref.maticTokenAddresses.concat(opts.maticTokenAddresses));
+          }
+
+          // merge matic multisigMaticInfo
+          if (opts.multisigMaticInfo) {
+            oldPref = oldPref || {};
+            oldPref.multisigMaticInfo = oldPref.multisigMaticInfo || [];
+
+            preferences.multisigMaticInfo = _.uniq(
+              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x, y) => {
+                let exists = false;
+                x.forEach(e => {
+                  // add new token addresses linked to the multisig wallet
+                  if (e.multisigContractAddress === y.multisigContractAddress) {
+                    e.maticTokenAddresses = e.maticTokenAddresses || [];
+                    y.maticTokenAddresses = _.uniq(e.maticTokenAddresses.concat(y.maticTokenAddresses));
+                    e = Object.assign(e, y);
+                    exists = true;
+                  }
+                });
+                return exists ? x : [...x, y];
+              }, [])
+            );
+          }
           this.storage.storePreferences(preferences, err => {
             return cb(err);
           });
@@ -5063,7 +5114,14 @@ export class WalletService {
       if (credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
       if (credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
 
-      const URL: string = credentials.API + '/v3.0/1/swap/?' + qs.join('&');
+      const chainIdMap = {
+        eth: 1,
+        matic: 137
+      };
+
+      const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
+
+      const URL: string = `${credentials.API}/v3.0/${chainId}/swap/?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -5090,7 +5148,14 @@ export class WalletService {
         'Content-Type': 'application/json'
       };
 
-      const URL: string = credentials.API + '/v3.0/1/tokens';
+      const chainIdMap = {
+        eth: 1,
+        matic: 137
+      };
+
+      const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
+
+      const URL: string = `${credentials.API}/v3.0/${chainId}/tokens`;
 
       this.request.get(
         URL,

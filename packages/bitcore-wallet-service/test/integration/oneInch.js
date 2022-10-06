@@ -9,7 +9,9 @@ const helpers = require('./helpers');
 let config = require('../../ts_build/config.js');
 let server, wallet, fakeRequest, req;
 
-describe('OneInch integration', () => {
+describe('OneInch integration', function() {
+  this.timeout(5000);
+  
   before((done) => {
     helpers.before((res) => {
       done();

@@ -16,7 +16,8 @@ services:
     depends_on:
       - db
       - bitcoin
-      - parity
+      - erigon
+      - geth
       - rippled
 
   db:
@@ -40,22 +41,44 @@ services:
       -rpcuser=bitcorenodetest
       -rpcpassword=local321
 
-  parity:
-    image: parity/parity:v2.4.6
+  erigon:
+    image: thorax/erigon:v2022.08.01
     ports:
       - "8545:8545"
       - "8546:8546"
-    volumes:
-      - ./.docker/parity-password:/data/pw
     command:
-      --config=dev
-      --jsonrpc-interface=0.0.0.0
-      --ws-interface=0.0.0.0
-      --ws-port=8546
-      --jsonrpc-apis=all
-      --ws-apis=all
-      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
-      --password /data/pw
+      /usr/local/bin/erigon
+      --chain=dev
+      --datadir=/home/erigon/data
+      --private.api.addr=0.0.0.0:9090
+      --http.addr=0.0.0.0
+      --http.api=eth,erigon,web3,net,debug,trace,txpool
+      --mine
+      --ws
+
+  geth:
+    image: 0labs/geth:v1.10.21
+    volumes:
+      - ./.docker/geth-keystore:/keystore
+    ports:
+      - "8555:8555"
+      - "8556:8556"
+    command:
+      geth
+      --dev
+      --datadir=/home/kjoseph/nodes/dev/geth
+      --keystore=/keystore
+      --http
+      --http.api=web3,eth,debug,personal,net
+      --http.corsdomain='*'
+      --http.vhosts='*'
+      --http.addr=0.0.0.0
+      --http.port=8555
+      --ws
+      --ws.origins='*'
+      --ws.api=web3,eth,debug,personal,net
+      --ws.addr=0.0.0.0
+      --ws.port=8556
 
   rippled:
     build:

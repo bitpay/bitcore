@@ -22,6 +22,7 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash,
   eth: Bitcore,
+  matic: Bitcore,
   xrp: Bitcore,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc
@@ -38,12 +39,15 @@ export class Utils {
   // only used for backwards compatibility
   static getChain(coin: string): string {
     try {
-      // TODO add a warning that we are not uncluding chain
+      // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (
-        Constants.BITPAY_SUPPORTED_ERC20.includes(coin.toLowerCase()) ||
-        !Constants.BITPAY_SUPPORTED_COINS.includes(coin.toLowerCase())
+      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20.includes(normalizedChain)) {
+        normalizedChain = 'matic';
+      } else if (
+        Constants.BITPAY_SUPPORTED_ETH_ERC20.includes(normalizedChain) ||
+        !Constants.CHAINS.includes(normalizedChain)
       ) {
+        // default to eth if it's an ETH ERC20 or if we don't know the chain
         normalizedChain = 'eth';
       }
       return normalizedChain;
@@ -477,12 +481,13 @@ export class Utils {
       const unsignedTxs = [];
       // If it is a token swap its an already created ERC20 transaction so we skip it and go directly to ETH transaction create
       const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
-      const isETHMULTISIG = multisigContractAddress;
-      const _chain = isETHMULTISIG
-        ? 'ETHMULTISIG'
+      const isMULTISIG = multisigContractAddress;
+      const chainName = chain.toUpperCase();
+      const _chain = isMULTISIG
+        ? chainName + 'MULTISIG'
         : isERC20
-        ? 'ERC20'
-        : chain.toUpperCase();
+        ? chainName + 'ERC20'
+        : chainName;
 
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({

@@ -3,9 +3,9 @@ import BN from 'bn.js';
 import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../types/Block';
 import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
+import { IGethTxTraceFlat } from './p2p/rpcs/gethRpc';
 
-export interface ErigonBlock {
-  author: string;
+interface BaseBlock {
   difficulty: string;
   extraData: string;
   gasLimit: number;
@@ -18,40 +18,82 @@ export interface ErigonBlock {
   number: number;
   parentHash: string;
   receiptsRoot: string;
-  sealFields: Array<string>;
   sha3Uncles: string;
   size: number;
   stateRoot: string;
-  timestamp: number;
+  timestamp: number | string;
   totalDifficulty: string;
-  transactions: Array<ErigonTransaction>;
   transactionsRoot: string;
-  uncles: Array<string>;
+  uncles: string[];
 }
-export interface ErigonTransaction {
+
+interface BaseTransaction {
   blockHash: string;
   blockNumber: number;
-  chainId: number;
-  condition: number;
-  creates: number;
   from: string;
   gas: number;
   gasPrice: string;
   hash: string;
   input: string;
   nonce: number;
-  publicKey: string;
   r: string;
-  raw: string;
   s: string;
-  standardV: string;
   to: string;
   transactionIndex: number;
+  type: number;
   v: string;
   value: string;
 }
 
-export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan';
+/**
+ * ERIGON
+ */
+export interface ErigonBlock extends BaseBlock {
+  author: string;
+  sealFields: Array<string>;
+  transactions: ErigonTransaction[];
+}
+
+export interface ErigonTransaction extends BaseTransaction {
+  chainId: number;
+  condition: number;
+  creates: number;
+  publicKey: string;
+  raw: string;
+  standardV: string;
+}
+
+/**
+ * GETH
+ */
+export interface GethBlock extends BaseBlock {
+  transactions: GethTransaction[];
+}
+
+export interface GethTransaction extends BaseTransaction {
+  type: number;
+}
+
+export interface GethTraceTransaction extends GethTransaction {
+  calls: GethTraceCall[];
+}
+
+export interface GethTraceCall {
+  calls?: GethTraceCall[];
+  from: string;
+  gas: string;
+  gasUsed: string;
+  input: string;
+  output: string;
+  to: string;
+  type: 'CALL' | 'STATICALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT';
+  value?: string;
+}
+
+export type AnyBlock = GethBlock | ErigonBlock;
+export type AnyTransaction = GethTraceTransaction | ErigonTransaction;
+
+export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan' | 'sepolia';
 
 export interface EthereumBlock {
   header: EthereumHeader;
@@ -118,6 +160,7 @@ export type IEthTransaction = ITransaction & {
   to: string;
   from: string;
   internal: Array<ClassifiedTrace>;
+  calls: Array<IGethTxTraceFlat>;
   transactionIndex: number;
   abiType?: IAbiDecodedData;
   error?: string;

@@ -66,11 +66,25 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       { chain: 1, network: 1, 'abiType.params.0.value': 1, blockTimeNormalized: 1 },
       {
         background: true,
-        partialFilterExpression: { chain: 'ETH', 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
+        partialFilterExpression: { 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
+      }
+    );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'calls.abiType.params.value': 1, blockTimeNormalized: 1 },
+      {
+        background: true,
+        partialFilterExpression: { 'calls.abiType.type': 'ERC20', 'calls.abiType.params.type': 'address' }
       }
     );
     this.collection.createIndex(
       { chain: 1, network: 1, 'internal.action.to': 1 },
+      {
+        background: true,
+        sparse: true
+      }
+    );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'calls.to': 1 },
       {
         background: true,
         sparse: true
@@ -216,6 +230,18 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           if (tx.internal) {
             for (let internal of tx.internal) {
               const { to, from } = internal.action;
+              if (to) {
+                tos.push(web3.utils.toChecksumAddress(to));
+              }
+              if (from) {
+                froms.push(web3.utils.toChecksumAddress(from));
+              }
+            }
+          }
+
+          if (tx.calls) {
+            for (let call of tx.calls) {
+              const { to, from } = call;
               if (to) {
                 tos.push(web3.utils.toChecksumAddress(to));
               }
