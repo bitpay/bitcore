@@ -1,11 +1,11 @@
 import * as express from 'express';
 import request from 'request';
 import { Config } from '../../services/config';
-import { IEthNetworkConfig } from '../../types/Config';
+import { IEVMNetworkConfig } from '../../types/Config';
 
 export function Web3Proxy(req: express.Request, res: express.Response) {
   const { chain, network } = req.params;
-  const chainConfig: IEthNetworkConfig = Config.chainConfig({ chain, network });
+  const chainConfig: IEVMNetworkConfig = Config.chainConfig({ chain, network });
   const provider = chainConfig.provider || (chainConfig.providers && chainConfig.providers![0]);
   if (provider && chainConfig.publicWeb3) {
     const { host, port } = provider;

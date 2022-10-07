@@ -1,7 +1,7 @@
 import { BaseModule } from '..';
+import { EVMVerificationPeer } from '../,,/../../providers/chain-state/evm/p2p/EVMVerificationPeer';
 import { ETHStateProvider } from './api/csp';
 import { EthRoutes } from './api/eth-routes';
-import { EthVerificationPeer } from './p2p/EthVerificationPeer';
 import { EthP2pWorker } from './p2p/p2p';
 
 export default class ETHModule extends BaseModule {
@@ -10,6 +10,6 @@ export default class ETHModule extends BaseModule {
     services.P2P.register('ETH', EthP2pWorker);
     services.CSP.registerService('ETH', new ETHStateProvider());
     services.Api.app.use(EthRoutes);
-    services.Verification.register('ETH', EthVerificationPeer);
+    services.Verification.register('ETH', EVMVerificationPeer);
   }
 }
