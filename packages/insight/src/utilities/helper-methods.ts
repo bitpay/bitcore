@@ -75,6 +75,8 @@ export const aggregateItems = (items: any[]): any[] => {
     }
     tmp[address].isSpent = items[i].spentTxId;
 
+    items[i].uiConfirmations = items[i].spentHeight - items[i].mintHeight;
+
     tmp[address].doubleSpentTxID = tmp[address].doubleSpentTxID || items[i].doubleSpentTxID;
     tmp[address].doubleSpentIndex = tmp[address].doubleSpentIndex || items[i].doubleSpentIndex;
     tmp[address].dbError = tmp[address].dbError || items[i].dbError;
