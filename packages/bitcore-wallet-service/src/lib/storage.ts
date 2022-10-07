@@ -21,6 +21,7 @@ import {
 } from './model';
 import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
+import { IUser } from './model/user';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -31,6 +32,7 @@ const collections = {
   // Duplciated in helpers.. TODO
   WALLETS: 'wallets',
   USER: 'user',
+  KEYS: 'keys',
   TXS: 'txs',
   ADDRESSES: 'addresses',
   ADVERTISEMENTS: 'advertisements',
@@ -80,6 +82,9 @@ export class Storage {
       return;
     }
     db.collection(collections.USER).createIndex({
+      id: 1
+    });
+    db.collection(collections.KEYS).createIndex({
       id: 1
     });
     db.collection(collections.WALLETS).createIndex({
@@ -395,26 +400,11 @@ export class Storage {
     );
   }
 
-  fetchUserByEmail(email, cb) {
-    if (!this.db) return cb();
-
-    this.db.collection(collections.USER).findOne(
-      {
-        email
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb('Can not find user in db');
-
-        return cb(null, result);
-      }
-    );
-  }
-  countAlUserHasSameEmail(email) {
+  countAlUserByEmail(email) {
     return this.db
       .collection(collections.USER)
       .find({
-        email: email
+        email
       })
       .count();
   }
@@ -440,8 +430,7 @@ export class Storage {
     );
   }
 
-
-  UserByEmail(email, cb) {
+  fetchUserByEmail(email, cb) {
     if (!this.db) return cb();
 
     this.db.collection(collections.USER).findOne(
@@ -452,6 +441,83 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb('Can not find user in db');
 
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateUser(user: IUser, cb){
+    this.db.collection(collections.USER).updateOne(
+      {
+        email: user.email
+      },
+      {
+        $set: {
+          hashPassword : user.hashPassword,
+          recoveryKey: user.recoveryKey
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update user'));
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeKeys(keys, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', keys);
+      return;
+    }
+
+    this.db.collection(collections.KEYS).insertOne(
+      keys,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchKeys(cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.KEYS).findOne(
+     {},
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(null, null);
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updatKeys(keys, cb){
+    this.db.collection(collections.KEYS).findOneAndUpdate(
+      {},
+      {
+        $set: {
+          keyFund : keys.keyFund,
+          keyReceive: keys.keyReceive
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update keys'));
         return cb(null, result);
       }
     );

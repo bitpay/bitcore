@@ -47,17 +47,25 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+import cuid from 'cuid';
+import * as forge from 'node-forge';
+
 import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
 import { countBy, findIndex } from 'lodash';
-import { isIfStatement, isToken, Token } from 'typescript';
+import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
 import { CurrencyRateService } from './currencyrate';
 import { Config } from './model/config-model';
 import { CoinConfig, ConfigSwap } from './model/config-swap';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
+import { IUser } from './model/user';
+import { stringify } from 'querystring';
+import { openStdin } from 'process';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -1051,6 +1059,209 @@ export class WalletService {
         this._addKeyToCopayer(wallet, copayer, opts, cb);
       });
     });
+  }
+
+  /**
+   * Update user password and return recovery key
+   *
+   * @param {Object} opts
+   * @param {string} opts.email - User email
+   * @param {string} opts.password - User password
+   */
+  updateUserPassword(opts, cb){
+    if(!opts.email){
+      return cb(new Error('Missing required parameter email'));
+    }
+    if(!opts.password){
+      return cb(new Error('Missing required parameter password'));
+    }
+    const storage = this.storage;
+    bcrypt.hash(opts.password, saltRounds, function(err, hashPass) {
+      // Store hash in your password DB.
+      if(err) return cb(err);
+
+      const recoveryKey = cuid();
+
+      bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey){
+        const user = {
+          email: opts.email,
+          hashPassword: hashPass,
+          recoveryKey: hashKey
+        } as IUser;
+        storage.updateUser(user, (err, result) => {
+          if(err) return cb(err);
+          return cb(null, recoveryKey);
+        })
+      })
+    });
+   
+  }
+
+  /**
+   * Verify user password
+   *
+   * @param {Object} opts
+   * @param {string} opts.email - User email
+   * @param {string} opts.password - User password
+   */
+   verifyPassword(opts, cb){
+    if(!opts.email){
+      return cb(new Error('Missing required parameter email'));
+    }
+    if(!opts.password){
+      return cb(new Error('Missing required parameter password'));
+    }
+
+   this.storage.fetchUserByEmail(opts.email, (err, user: IUser)=>{
+    if(err) return cb(err);
+    bcrypt.compare(opts.password, user.hashPassword).then(result => {
+      if(err) return cb(err);
+      return cb(null, true);
+    }).catch(e => {
+      return cb(e);
+    })
+   });
+  }
+// return a Promise
+// sharedKey: Buffer, plainText: Uint8Array
+ encrypt  (sharedKey, plainText){
+  // Split shared key
+  const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
+  const key = forge.util.createBuffer(sharedKey.slice(16));
+  try{
+    const cipher = forge.cipher.createCipher('AES-CBC', key);
+    cipher.start({ iv });
+    const rawBuffer = forge.util.createBuffer(plainText);
+    cipher.update(rawBuffer);
+    cipher.finish();
+    const cipherText = Uint8Array.from(
+      Buffer.from(cipher.output.toHex(), 'hex'),
+    );
+  } catch(e){
+    logger.debug(e);
+  }
+  // Encrypt entries
+
+
+  return '';
+}
+
+// return a Promise
+// sharedKey: Buffer, plainText: Uint8Array
+decrypt(sharedKey, cipherText) {
+  // Split shared key
+  const iv = forge.util.createBuffer(sharedKey.slice(0, 16))
+  const key = forge.util.createBuffer(sharedKey.slice(16))
+
+  // Encrypt entries
+  const cipher = forge.cipher.createDecipher('AES-CBC', key)
+  cipher.start({ iv })
+  const rawBuffer = forge.util.createBuffer(cipherText)
+  cipher.update(rawBuffer)
+  cipher.finish()
+  const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'))
+  return plainText
+}
+ /**
+   * Update key for swap
+   *
+   * @param {Object} opts
+   * @param {string} opts.keyFund - key fund
+   * @param {string} opts.keyReceive - key receive
+   */
+  
+  importSeed(opts, cb){
+    if(!(opts.keyFund && opts.keyReceive)){
+      return cb(new Error('Missing required key'));
+    }
+
+    this.storage.fetchKeys((err, keys)=>{
+      if(!keys){
+        // create new KEYS
+        const keyOpts ={
+          keyFund: this.encrypt(config.sharedKey, opts.keyFund),
+          keyReceive: this.encrypt(config.sharedKey, opts.keyReceive)
+        }
+        this.storage.storeKeys(keyOpts, (err, result)=>{
+          if(err) return cb(err);
+          return cb(null, result);
+        })
+      } else{
+        if(opts.keyFund && opts.keyFund.length > 0){
+          keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
+        }
+        if(opts.keyReceive && opts.keyReceive.length > 0){
+          keys.keyReceive = this.encrypt(config.sharedKey, opts.keyReceive);
+        }
+        this.storage.updatKeys(keys, (err, result)=>{
+          if(err) return cb(err);
+          return cb(null, true);
+        })
+      }
+    })
+
+  //  this.storage.fetchUserByEmail(opts.email, (err, user: IUser)=>{
+  //   if(err) return cb(err);
+  //   bcrypt.compare(opts.password, user.hashPassword).then(result => {
+  //     if(err) return cb(err);
+  //     return cb(null, true);
+  //   }).catch(e => {
+  //     return cb(e);
+  //   })
+  //  });
+  }
+
+/**
+   * Renew password for user and return new recovery key
+   *
+   * @param {Object} opts
+   * @param {string} opts.email - User email
+   * @param {string} opts.oldPassword - User old password
+   * @param {string} opts.newPassword - User new password
+   * @param {string} opts.recoveryKey - User recovery key 
+   */
+  renewPassword(opts, cb){
+    if(!opts.email){
+      return cb(new Error('Missing required parameter email'));
+    }
+    if(!opts.newPassword){
+      return cb(new Error('Missing required parameter new password'))
+    }
+    if(!(opts.oldPassword || opts.recoveryKey)){
+      return cb(new Error('Missing requirement parameter password or recovery key to re new password'));
+    }
+
+    this.storage.fetchUserByEmail(opts.email, (err, user : IUser) => {
+      if(err) return cb(err);
+      const compareValue = {
+        text : '',
+        hash: ''
+      }
+      if(opts.oldPassword.length > 0){
+        compareValue.text = opts.oldPassword;
+        compareValue.hash = user.hashPassword
+      } else if (opts.recoveryKey.length > 0){
+        compareValue.text = opts.recoveryKey;
+        compareValue.hash = user.recoveryKey
+      }
+      bcrypt.compare(compareValue.text, compareValue.hash ).then(result => {
+        if(result){
+          const userOpts = {
+            email: user.email,
+            password: opts.newPassword
+          }
+          this.updateUserPassword(userOpts, (err, recoveryKey) =>{
+            if(err) return cb(err);
+            return cb(null, recoveryKey);
+          })
+        } else {
+          return cb(new Error('Invalid data. Please try again'))
+        }
+      }).catch(e => {
+        return cb(e);
+      })
+    })
+
   }
 
   _setClientVersion(version) {

@@ -1,3 +1,5 @@
+import { http } from 'winston';
+
 module.exports = {
   basePath: '/bws/api',
   disableLogs: false,
@@ -18,7 +20,7 @@ module.exports = {
   // CAinter1: '', // ex. 'COMODORSADomainValidationSecureServerCA.crt'
   // CAinter2: '', // ex. 'COMODORSAAddTrustCA.crt'
   // CAroot: '', // ex. 'AddTrustExternalCARoot.crt'
-
+  sharedKey: 'ajkhjgkloiuyrjkds',
   storageOpts: {
     mongoDb: {
       uri: process.env.DB_URI || 'mongodb://localhost:27017/bws',
@@ -51,7 +53,7 @@ module.exports = {
     },
     xec: {
       livenet: {
-        url: 'http://127.0.0.1:3000'
+        url: 'http://dev.abcpay.cash:3000'
       },
       testnet: {
         url: 'http://127.0.0.1:3000'
@@ -83,7 +85,7 @@ module.exports = {
     },
     xpi: {
       livenet: {
-        url: 'http://127.0.0.1:3000'
+        url: 'http://dev.abcpay.cash:3000'
       },
       testnet: {
         url: 'http://127.0.0.1:3000'
@@ -118,7 +120,8 @@ module.exports = {
   },
   currencyRateServiceOpts: {
     apiUrl: 'https://api.currencyapi.com/v3/latest',
-    fetchInterval: 180 // in minutes
+    fetchInterval: 180, // in minutes
+    apiKey: 'QJjwm0BtOmZyRQL6A91VETYY7R54izd53Qs2PaOy'
   },
   maintenanceOpts: {
     maintenanceMode: false

@@ -7,6 +7,7 @@ import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import { IUser } from './model/user';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -60,27 +61,30 @@ export class ExpressApp {
     passport.serializeUser(function(user, done) {
       done(null, user);
     });
-    
+
     // passport.deserializeUser(function(id, done) {
     //   // User.findById(id, function(err, user) {
     //   //   done(err, id);
     //   // });
     //   done(null, id);
     // });
-    passport.use(new GoogleTokenStrategy({
-        clientID: '287411092309-vovtceqbolmrn2krv8knpt0ovpa4u4ta.apps.googleusercontent.com'
-      },
-      function(parsedToken, googleId, done) {
-        // User.findOrCreate({ googleId: googleId }, function (err, user) {
-        //   return done(err, user);
-        // });
-        // logger.debug(parsedToken);
-        // logger.debug(googleId);
-        // passport.serializeUser(function(parsedToken, done) {
+    passport.use(
+      new GoogleTokenStrategy(
+        {
+          clientID: '287411092309-vovtceqbolmrn2krv8knpt0ovpa4u4ta.apps.googleusercontent.com'
+        },
+        function(parsedToken, googleId, done) {
+          // User.findOrCreate({ googleId: googleId }, function (err, user) {
+          //   return done(err, user);
+          // });
+          // logger.debug(parsedToken);
+          // logger.debug(googleId);
+          // passport.serializeUser(function(parsedToken, done) {
           return done(null, parsedToken.payload.email);
-        // });
-      }
-    ));
+          // });
+        }
+      )
+    );
     const allowCORS = (req, res, next) => {
       if ('OPTIONS' == req.method) {
         res.sendStatus(200);
@@ -1425,7 +1429,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/login/',  passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/login/', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1433,10 +1437,96 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      if(reqServer.user){
-        server.storage.fetchUserByEmail(reqServer.user, (err, user) => {
-          if(err) return returnError(err, res, reqServer);
-          res.json(true);
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user : IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json({
+            isVerified: true,
+            isCreatePassword: user.hashPassword !== undefined
+          });
+        });
+      }
+    });
+    
+    router.post('/v3/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        opts = {
+          email: reqServer.user,
+          password: reqServer.body.password
+        }
+        server.updateUserPassword(opts, (err, recoveryKey) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(recoveryKey);
+        })
+      }
+    });
+
+    router.post('/v3/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        opts = {
+          email: reqServer.user,
+          password: reqServer.body.password
+        }
+        server.verifyPassword(opts, (err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        })
+      }
+    });
+
+    router.post('/v3/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        opts = {
+         keyFund: reqServer.body.keyFund,
+         keyReceive: reqServer.body.keyReceive
+        }
+        server.importSeed(opts, (err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        })
+      }
+    });
+
+
+    router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        opts = {
+          email: reqServer.user,
+          newPassword: reqServer.body.newPassword,
+          oldPassword: reqServer.body.oldPassword,
+          recoveryKey: reqServer.body.recoveryKey
+        }
+        server.renewPassword(opts, (err, recoveryKey) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(recoveryKey);
         })
       }
     });
@@ -1782,20 +1872,22 @@ export class ExpressApp {
       //   return cb();
       // });
       // logger.debug('server: ', server);
-      server.storage.countAlUserHasSameEmail('tan8651913@gmail.com').then(count => {
-        if(count === 0){
-          server.storage.storeUser({
-            email: 'tan8651913@gmail.com'
-          }, (err, user)=>{
-            if(err) logger.debug(err);
-          })
-        } else{
+      server.storage.countAlUserByEmail('tan8651913@gmail.com').then(count => {
+        if (count === 0) {
+          server.storage.storeUser(
+            {
+              email: 'tan8651913@gmail.com'
+            },
+            (err, user) => {
+              if (err) logger.debug(err);
+            }
+          );
+        } else {
           logger.debug('already init user');
         }
-      })
-     
+      });
+
       setTimeout(() => {
-        
         server.getKeyFundAndReceiveWithFundMnemonic((err, keyFund, clientsFund, clientsReceive, mnemonic) => {
           let isOrderValid;
           // if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
