@@ -1422,8 +1422,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      const clientFunds = this.app.get('clientsFund');
-      server.getConfigSwap(clientFunds, (err, config) => {
+      server.getConfigSwap((err, config) => {
         if (err) return returnError(err, res, req);
         res.json(config);
       });
@@ -1447,7 +1446,7 @@ export class ExpressApp {
         });
       }
     });
-    
+
     router.post('/v3/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
@@ -1535,8 +1534,7 @@ export class ExpressApp {
       // SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       const opts = {
-        id: req.params['id'],
-        clientsFund: this.app.get('clientsFund')
+        id: req.params['id']
       };
       try {
         server = getServer(req, res);
@@ -1551,12 +1549,7 @@ export class ExpressApp {
     });
 
     router.post('/v3/order/all', (req, res) => {
-      // SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
-      // const opts = {
-      //   id: req.params['id'],
-      //   clientsFund: this.app.get('clientsFund')
-      // };
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1576,9 +1569,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      const clientsReceive = this.app.get('clientsReceive');
-      const clientsFund = this.app.get('clientsFund');
-      server.createOrder(clientsFund, clientsReceive, req.body, (err, order) => {
+      server.createOrder(req.body, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
@@ -1865,13 +1856,6 @@ export class ExpressApp {
 
     WalletService.initialize(opts, data => {
       const server = WalletService.getInstance(opts);
-      // server.getWalletLotusDonation((err, client, key, addressDonation) => {
-      //   let isWalletLotusDonation: boolean = false;
-      //   if (!err && !_.isEmpty(client) && !_.isEmpty(key)) isWalletLotusDonation = true;
-      //   server.checkQueueHandleSendLotus(client, key, addressDonation, isWalletLotusDonation);
-      //   return cb();
-      // });
-      // logger.debug('server: ', server);
       server.storage.countAlUserByEmail('tan8651913@gmail.com').then(count => {
         if (count === 0) {
           server.storage.storeUser(
@@ -1888,29 +1872,15 @@ export class ExpressApp {
       });
 
       setTimeout(() => {
-        server.getKeyFundAndReceiveWithFundMnemonic((err, keyFund, clientsFund, clientsReceive, mnemonic) => {
-          let isOrderValid;
-          // if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
-          this.app.set('clientsReceive', clientsReceive);
-          this.app.set('clientsFund', clientsFund);
-          logger.debug('clients Fund 1: ', clientsFund);
-          logger.debug('clients fund global: ', this.app.get('clientsFund'));
-          server.checkQueueHandleSwap(keyFund, clientsFund, clientsReceive, mnemonic);
+        server.getKeyFundAndReceiveWithFundMnemonic((err, result) => {
+          if(err) logger.error('Can not get key fund , key receive . Please try to import key again');
+          if(result){
+            server.checkQueueHandleSwap();
+          }
           return cb();
         });
       }, 30000);
-
-      // server.getKeyReceive((err, key, clientsReceive)=>{
-      //   if (!err && !_.isEmpty(clientsFund) && !_.isEmpty(key)) isOrderValid = true;
-
-      //   // const result = this.app.get('clientsFund');
-      //   // logger.debug('clients Receive: ', clientsReceive);
-      // })
       return cb();
     });
-    // server.checkQueueHandleSwap((err) => {
-    //   if(err) return cb(err);
-    //   return cb();
-    // })
   }
 }

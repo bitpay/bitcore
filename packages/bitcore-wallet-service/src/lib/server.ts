@@ -47,6 +47,13 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
+let swapQueueInterval = null;
+
+let clientsFund = null;
+let clientsReceive = null;
+let keyFund = null;
+let mnemonicKeyFund = null;
+
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 import cuid from 'cuid';
@@ -1094,7 +1101,7 @@ export class WalletService {
         })
       })
     });
-   
+
   }
 
   /**
@@ -1127,8 +1134,8 @@ export class WalletService {
  encrypt  (sharedKey, plainText){
   // Split shared key
   const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
-  const key = forge.util.createBuffer(sharedKey.slice(16));
-  try{
+  const key = forge.util.createBuffer(sharedKey.slice(0, 16));
+
     const cipher = forge.cipher.createCipher('AES-CBC', key);
     cipher.start({ iv });
     const rawBuffer = forge.util.createBuffer(plainText);
@@ -1137,30 +1144,24 @@ export class WalletService {
     const cipherText = Uint8Array.from(
       Buffer.from(cipher.output.toHex(), 'hex'),
     );
-  } catch(e){
-    logger.debug(e);
-  }
-  // Encrypt entries
-
-
-  return '';
+  return cipherText;
 }
 
 // return a Promise
 // sharedKey: Buffer, plainText: Uint8Array
 decrypt(sharedKey, cipherText) {
   // Split shared key
-  const iv = forge.util.createBuffer(sharedKey.slice(0, 16))
-  const key = forge.util.createBuffer(sharedKey.slice(16))
+  const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
+  const key = forge.util.createBuffer(sharedKey.slice(0, 16));
 
   // Encrypt entries
-  const cipher = forge.cipher.createDecipher('AES-CBC', key)
-  cipher.start({ iv })
-  const rawBuffer = forge.util.createBuffer(cipherText)
-  cipher.update(rawBuffer)
-  cipher.finish()
-  const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'))
-  return plainText
+  const cipher = forge.cipher.createDecipher('AES-CBC', key);
+  cipher.start({ iv });
+  const rawBuffer = forge.util.createBuffer(cipherText);
+  cipher.update(rawBuffer);
+  cipher.finish();
+  const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'));
+  return plainText;
 }
  /**
    * Update key for swap
@@ -1169,7 +1170,7 @@ decrypt(sharedKey, cipherText) {
    * @param {string} opts.keyFund - key fund
    * @param {string} opts.keyReceive - key receive
    */
-  
+
   importSeed(opts, cb){
     if(!(opts.keyFund && opts.keyReceive)){
       return cb(new Error('Missing required key'));
@@ -1195,6 +1196,9 @@ decrypt(sharedKey, cipherText) {
         }
         this.storage.updatKeys(keys, (err, result)=>{
           if(err) return cb(err);
+          const keyFund = this.decrypt(config.sharedKey, keys.keyFund);
+          const ctArray = Array.from(new Uint8Array(keyFund)); // ciphertext as byte array
+          const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
           return cb(null, true);
         })
       }
@@ -1218,7 +1222,7 @@ decrypt(sharedKey, cipherText) {
    * @param {string} opts.email - User email
    * @param {string} opts.oldPassword - User old password
    * @param {string} opts.newPassword - User new password
-   * @param {string} opts.recoveryKey - User recovery key 
+   * @param {string} opts.recoveryKey - User recovery key
    */
   renewPassword(opts, cb){
     if(!opts.email){
@@ -3620,7 +3624,7 @@ decrypt(sharedKey, cipherText) {
       });
     });
   }
-  async sendSwapWithToken(mnemonic, clientsFund, opts, cb) {
+  async sendSwapWithToken(mnemonic, opts, cb) {
     const orderInfo = Order.create(opts);
     const clientFundSelectedToSendToUser = clientsFund.find(s => s.credentials.coin === 'xec');
     this.walletId = clientFundSelectedToSendToUser.credentials.walletId;
@@ -3671,7 +3675,7 @@ decrypt(sharedKey, cipherText) {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'final major brother expire hazard palace match stadium carpet tomato develop guess';
+      opts.words = 'swing exhaust inform mass twist hybrid private begin quote heart keep share';
       Client.serverAssistedImport(
         opts,
         {
@@ -3680,6 +3684,9 @@ decrypt(sharedKey, cipherText) {
         (err, key, walletClients) => {
           if (walletClients && walletClients.length > 0) {
             logger.debug('Get all wallets in key fund successfully: ', walletClients);
+            clientsFund = walletClients;
+            mnemonicKeyFund = opts.words;
+            keyFund = key;
             return cb(null, key, walletClients, opts.words);
           } else {
             logger.error('Can not find any wallet in key fund');
@@ -3696,7 +3703,7 @@ decrypt(sharedKey, cipherText) {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'wet embark miracle scissors appear mean fall fetch age frown pledge artist';
+      opts.words = 'whisper review pupil vote grant want shoe pistol riot answer sudden please';
       logger.debug('baseUrl: ', client.request.baseUrl);
       Client.serverAssistedImport(
         opts,
@@ -3706,6 +3713,7 @@ decrypt(sharedKey, cipherText) {
         (err, key, walletClients) => {
           if (walletClients && walletClients.length > 0) {
             logger.debug('Get all wallets in key receive successfully: ', walletClients);
+            clientsReceive = walletClients;
             return cb(null, key, walletClients);
           } else {
             logger.error('Can not find any wallet in key receive');
@@ -3737,7 +3745,7 @@ decrypt(sharedKey, cipherText) {
       if (err) return cb(err);
       this._getKeyReceive(clientBwc, (err, keyReceive, clientsReceive) => {
         if (err) return cb(err);
-        return cb(null, keyFund, clientsFund, clientsReceive, mnemonic);
+        return cb(null, true);
       });
     });
   }
@@ -3805,8 +3813,8 @@ decrypt(sharedKey, cipherText) {
     }, 300000);
   }
 
-  checkQueueHandleSwap(key, clientsFund, clientsReceive, mnemonic) {
-    setInterval(() => {
+  checkQueueHandleSwap() {
+    swapQueueInterval = setInterval(() => {
       if (this.storage && this.storage.orderQueue) {
         this.storage.orderQueue.get(async (err, data) => {
           logger.debug('orderinfo created: ', data);
@@ -3834,7 +3842,7 @@ decrypt(sharedKey, cipherText) {
             try {
               logger.debug('orderinfo in queue detected: ', data);
               console.log('orderinfo in queue detected: ', data);
-              const configSwap: ConfigSwap = await this.getConfigSwapWithPromise(clientsFund);
+              const configSwap: ConfigSwap = await this.getConfigSwapWithPromise();
               const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
               if (
                 isValidOrder &&
@@ -3924,7 +3932,7 @@ decrypt(sharedKey, cipherText) {
                               await this._sendSwapWithToken(
                                 'xec',
                                 fundingWallet,
-                                mnemonic,
+                                mnemonicKeyFund,
                                 orderInfo.toTokenId,
                                 null,
                                 amountDepositInToCoinCodeUnit,
@@ -3945,7 +3953,7 @@ decrypt(sharedKey, cipherText) {
                                 orderInfo.addressUserReceive,
                                 amountDepositInToCoinCodeUnit
                               );
-                              this._sendSwap(fundingWallet, key, txOptsSwap, (err, txId) => {
+                              this._sendSwap(fundingWallet, keyFund, txOptsSwap, (err, txId) => {
                                 if (err) saveError(orderInfo, data, err);
                                 else {
                                   orderInfo.status = 'complete';
@@ -3979,6 +3987,20 @@ decrypt(sharedKey, cipherText) {
         this.storage.queue.clean(err => {});
       }
     }, 2000);
+  }
+
+  stopHandleSwapQueue(): boolean{
+    try{
+      clearInterval(swapQueueInterval);
+      return true;
+    } catch(e){
+      logger.debug(e);
+      return false;
+    }
+  }
+
+  restartHandleSwapQueue(){
+    this.getKeyFundAndReceiveWithFundMnemonic
   }
 
   calculateFee(amount: number, order: Order, configSwap: ConfigSwap, rateUsd: number): number {
@@ -4186,7 +4208,7 @@ decrypt(sharedKey, cipherText) {
     });
   }
 
-  async createOrder(clientsFund, clientsReceive, opts, cb) {
+  async createOrder(opts, cb) {
     try {
       if (!clientsFund) {
         throw new Error('Not found funding');
@@ -4196,7 +4218,7 @@ decrypt(sharedKey, cipherText) {
       }
       const orderInfo = Order.create(opts);
       const fromCoinCode = orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode;
-      const configSwap = await this.getConfigSwapWithPromise(clientsFund);
+      const configSwap = await this.getConfigSwapWithPromise();
       const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
       if (isValidOrder === true) {
         if (orderInfo.isFromToken) {
@@ -5859,7 +5881,7 @@ decrypt(sharedKey, cipherText) {
   /**
    * Returns swap configetOrderInfog.
    */
-  async getConfigSwap(clientsFund, cb) {
+  async getConfigSwap(cb) {
     if (!clientsFund) {
       return cb(Errors.NOT_FOUND_KEY_FUND);
     }
@@ -5987,9 +6009,9 @@ decrypt(sharedKey, cipherText) {
       });
   }
 
-  getConfigSwapWithPromise(clientsFund): Promise<ConfigSwap> {
+  getConfigSwapWithPromise(): Promise<ConfigSwap> {
     return new Promise((resolve, reject) => {
-      this.getConfigSwap(clientsFund, (err, configSwap) => {
+      this.getConfigSwap((err, configSwap) => {
         if (err) return reject(err);
         return resolve(ConfigSwap.fromObj(configSwap));
       });
@@ -6001,18 +6023,17 @@ decrypt(sharedKey, cipherText) {
    * Returns order info.
    * @param {Object} opts
    * @param {String} opts.id - The order info id requested.
-   * * @param {String} opts.clientsFund - Funding wallet
    * @returns {Array} rates - The exchange rate.
    */
   async getOrderInfo(opts, cb) {
     if (!opts.id) {
       return cb(new Error('Missing order id'));
     }
-    if (!opts.clientsFund) {
+    if (!clientsFund) {
       return cb(new Error('Can not find funding wallet'));
     }
     try {
-      const configSwap = await this.getConfigSwapWithPromise(opts.clientsFund);
+      const configSwap = await this.getConfigSwapWithPromise();
       if (configSwap) {
         this.storage.fetchOrderinfoById(opts.id, (err, result) => {
           if (err) return cb(err);
