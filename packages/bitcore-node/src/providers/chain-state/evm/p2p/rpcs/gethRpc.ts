@@ -1,4 +1,5 @@
 import Web3 from 'web3';
+import logger from '../../../../../logger';
 import { EVMTransactionStorage } from '../../models/transaction';
 import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransaction } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
@@ -35,7 +36,7 @@ export class GethRPC implements IRpc {
   }
 
   public getBlock(blockNumber: number): Promise<GethBlock> {
-    return (this.web3.eth.getBlock(blockNumber, true) as unknown) as Promise<GethBlock>;
+    return this.web3.eth.getBlock(blockNumber, true) as unknown as Promise<GethBlock>;
   }
 
   private async traceBlock(blockNumber: number): Promise<IGethTxTraceResponse[]> {
@@ -43,21 +44,30 @@ export class GethRPC implements IRpc {
       method: 'debug_traceBlockByNumber',
       params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
       jsonrpc: '2.0',
-      id: 1
+      id: 1,
+    }).catch((err) => {
+      if (err.message && err.message == 'The method debug_traceBlockByNumber does not exist/is not available') {
+        // Must not be an archive node
+        logger.debug(err.message);
+      } else {
+        logger.error(err.message || err);
+      }
+      return [];
     });
     return result;
   }
 
   public async getTransactionsFromBlock(blockNumber: number): Promise<IGethTxTrace[]> {
-    const txs = (await this.traceBlock(blockNumber)).filter(tx => tx.result) || [];
-    return txs.map(tx => this.transactionFromGethTrace(tx));
+    const tracedTxs = await this.traceBlock(blockNumber);
+    const txs = tracedTxs && tracedTxs.length > 0 ? tracedTxs.filter((tx) => tx.result) : [];
+    return txs.map((tx) => this.transactionFromGethTrace(tx));
   }
 
   public send<T>(data: IJsonRpcRequest) {
     return new Promise<T>((resolve, reject) => {
       const provider = this.web3.eth.currentProvider as any;
-      provider.send(data, function(err, data) {
-        if (err) return reject(err);
+      provider.send(data, function (err, data) {
+        if (err || data.error) return reject(err || data.error);
         resolve(data.result as T);
       } as Callback<IJsonRpcResponse>);
     });
