@@ -369,6 +369,11 @@ export class Wallet {
     return this.client.broadcast({ payload });
   }
 
+  async getTransactionByTxid(params: { txid: string }) {
+    const { txid } = params;
+    return this.client.getTransaction({ txid });
+  }
+
   async importKeys(params: { keys: KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;

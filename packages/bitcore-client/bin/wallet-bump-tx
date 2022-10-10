@@ -11,14 +11,15 @@ program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--txid <txid>', 'REQUIRED (or provide raw tx) - string transaction id')
-  .option('--rawtx <rawtx>', 'REQUIRED (or provide tx id) - string raw transaction')
-  .option('--feerate <feerate>', 'optional (defaults to current market rate) - number feerate (in btc/bch/eth/xrp)')
+  //.option('--rawtx <rawtx>', 'REQUIRED (or provide tx id) - string raw transaction')
+  .option('--fee [fee]', 'optional (defaults to current market rate) - number fee (in btc/bch/eth/xrp)')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--token [token]', 'optional - ERC-20 token to send')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, storageType, txid } = program;
+  const { name, path, storageType, txid, rawtx, token, fee } = program;
   let wallet;
   let data;
   try {
@@ -32,22 +33,23 @@ const main = async () => {
 
     let existingTx;
     if (txid) {
-      existingTx = await wallet.getTransactionByTxid({ txid });
+      existingTx = JSON.parse(await wallet.getTransactionByTxid({ txid }));
     } else if (rawtx) {
-      existingTx = await wallet.getTransactionByRawTx({ rawtx });
+      throw new Error('Not yet implemented.');
+      //existingTx = await wallet.getTransactionByRawTx({ rawtx });
     } else {
-      throw new Error('Must provide either raw transaction or transaction id.');
+      throw new Error('Must provide either a raw transaction or transaction id.');
     }
+    const chain = wallet.chain;
+    const currency = token || chain;
+    const { decimals } = currencies.data.find(element => element.code === currency);
+    const scale = Math.pow(10, decimals);
+    const networkFeeRate = JSON.parse(await wallet.getNetworkFee()).feerate;
 
-    const networkFeeRate = await wallet.getNetworkFee();
-    const nFeeRate = JSON.parse(networkFeeRate).feerate;
-
-    if (feerate && feerate <= existingTx.feeRate) {
+    if (fee && fee <= existingTx.fee) {
       throw new Error('Provided fee rate is not greater than existing tx fee rate.');
     } 
-    if (!feerate && nFeeRate <= existingTx.feeRate) {
-      throw new Error('Current network fee rate is not greater than existing tx fee rate. Tx should be included without bumping the fee.');
-    }
+
     existingTx.feeRate = feerate || nFeeRate;
     const tx = await wallet.newTx(existingTx);
     console.log('unsignedRawTx: ', tx);
