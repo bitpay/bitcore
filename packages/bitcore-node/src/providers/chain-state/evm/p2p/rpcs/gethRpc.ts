@@ -40,20 +40,22 @@ export class GethRPC implements IRpc {
   }
 
   private async traceBlock(blockNumber: number): Promise<IGethTxTraceResponse[]> {
-    const result = await this.send<IGethTxTraceResponse[]>({
-      method: 'debug_traceBlockByNumber',
-      params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
-      jsonrpc: '2.0',
-      id: 1
-    }).catch(err => {
-      if (err.message && err.message == 'The method debug_traceBlockByNumber does not exist/is not available') {
+    let result = [] as IGethTxTraceResponse[];
+    try {
+      result = await this.send<IGethTxTraceResponse[]>({
+        method: 'debug_traceBlockByNumber',
+        params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
+        jsonrpc: '2.0',
+        id: 1
+      });
+    } catch (e) {
+      if (e.message && e.message == 'The method debug_traceBlockByNumber does not exist/is not available') {
         // Must not be an archive node
-        logger.debug(err.message);
+        logger.debug(e.message);
       } else {
-        logger.error(err.message || err);
+        logger.error(e.message || e);
       }
-      return [];
-    });
+    }
     return result;
   }
 
