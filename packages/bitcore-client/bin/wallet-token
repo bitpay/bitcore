@@ -14,7 +14,7 @@ const main = async () => {
   const { name, path, contractAddress } = program;
   try {
     const wallet = await Wallet.loadWallet({ name, path });
-    if (wallet.chain !== 'ETH') {
+    if (!['MATIC', 'ETH'].includes(wallet.chain)) {
       throw new Error('Cannot add token to non-ETH wallet.');
     }
     const token = await wallet.getToken(contractAddress);
