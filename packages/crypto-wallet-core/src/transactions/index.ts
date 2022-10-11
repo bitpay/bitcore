@@ -21,7 +21,8 @@ const providers = {
   LTC: new LTCTxProvider(),
   MATIC: new MATICTxProvider(),
   MATICMULTISIG: new MATICMULTISIGTxProvider(),
-  MATICERC20: new MATICERC20TxProvider()
+  MATICERC20: new MATICERC20TxProvider(),
+  ERC20: new ERC20TxProvider()
 };
 
 export class TransactionsProxy {
