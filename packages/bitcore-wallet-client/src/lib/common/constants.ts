@@ -61,7 +61,6 @@ export const Constants = {
     'wbtc_m',
     'shib_m',
     'ape_m',
-    'matic_m'
   ],
 
   CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],

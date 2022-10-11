@@ -97,11 +97,5 @@ export let MATIC_TOKEN_OPTS = {
     symbol: 'APE',
     decimals: 18,
     address: '0xB7b31a6BC18e48888545CE79e83E06003bE70930'
-  },
-  '0x0000000000000000000000000000000000001010': {
-    name: 'Matic Token',
-    symbol: 'MATIC',
-    decimals: 18,
-    address: '0x0000000000000000000000000000000000001010'
   }
 };
