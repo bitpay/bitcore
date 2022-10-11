@@ -12,14 +12,14 @@ program
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--txid <txid>', 'REQUIRED (or provide raw tx) - string transaction id')
   //.option('--rawtx <rawtx>', 'REQUIRED (or provide tx id) - string raw transaction')
-  .option('--fee [fee]', 'optional (defaults to current market rate) - number fee (in btc/bch/eth/xrp)')
+  .option('--satsPerByte [satsPerByte]', 'optional (defaults to current market rate) for use with UTXO chains - number satsPerByte (in btc/ltc/doge)')
+  .option('--gwei [gwei]', 'optional  (defaults to current market rate) for use with EVM based chains - number gwei (in eth/matic)')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--token [token]', 'optional - ERC-20 token to send')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, storageType, txid, rawtx, token, fee } = program;
+  const { name, path, storageType, txid, rawtx, satsPerByte, gwei } = program;
   let wallet;
   let data;
   try {
@@ -40,17 +40,22 @@ const main = async () => {
     } else {
       throw new Error('Must provide either a raw transaction or transaction id.');
     }
-    const chain = wallet.chain;
-    const currency = token || chain;
-    const { decimals } = currencies.data.find(element => element.code === currency);
-    const scale = Math.pow(10, decimals);
-    const networkFeeRate = JSON.parse(await wallet.getNetworkFee()).feerate;
 
-    if (fee && fee <= existingTx.fee) {
+    let feeRate;
+    const networkFeeRate = JSON.parse(await wallet.getNetworkFee()).feerate;
+    if (['ETH','MATIC'].includes(wallet.chain) && gwei){
+      existingTx.gas = gwei;
+    }
+
+    if (['BTC', 'LTC', 'DOGE'].includes(wallet.chain)) {
+      feeRate = satsPerByte;
+    }
+
+    if (feeRate && feeRate <= existingTx.fee) {
       throw new Error('Provided fee rate is not greater than existing tx fee rate.');
     } 
 
-    existingTx.feeRate = feerate || nFeeRate;
+    existingTx.feeRate = feerate || networkFeeRate;
     const tx = await wallet.newTx(existingTx);
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
