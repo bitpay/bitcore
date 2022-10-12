@@ -140,14 +140,13 @@ router.get('/:txid/coins', (req: Request, res: Response, next) => {
 router.post('/send', async function(req: Request, res: Response) {
   try {
     let { chain, network } = req.params;
-    let { rawTx, ignoreUsedNonce } = req.body;
+    let { rawTx } = req.body;
     chain = chain.toUpperCase();
     network = network.toLowerCase();
     let txid = await ChainStateProvider.broadcastTransaction({
       chain,
       network,
-      rawTx,
-      ignoreUsedNonce
+      rawTx
     });
     return res.send({ txid });
   } catch (err) {
