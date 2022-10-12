@@ -60,7 +60,7 @@ export const Constants = {
     'dai_m',
     'wbtc_m',
     'shib_m',
-    'ape_m',
+    'ape_m'
   ],
 
   CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],

@@ -54,7 +54,7 @@ export let ETH_TOKEN_OPTS = {
     address: '0x4d224452801aced8b2f0aebe155379bb5d594381'
   },
   '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0': {
-    name: 'Polygon',
+    name: 'Matic Token',
     symbol: 'MATIC',
     decimals: 18,
     address: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0'
@@ -62,40 +62,40 @@ export let ETH_TOKEN_OPTS = {
 };
 
 export let MATIC_TOKEN_OPTS = {
-  '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174': {
+  '0x2791bca1f2de4661ed88a30c99a7a9449aa84174': {
     name: 'USD Coin (PoS)',
     symbol: 'USDC',
     decimals: 6,
-    address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'
+    address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'
   },
-  '0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7': {
+  '0xdab529f40e671a1d4bf91361c21bf9f0c9712ab7': {
     name: 'binance-usd',
     symbol: 'BUSD',
     decimals: 18,
-    address: '0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7'
+    address: '0xdab529f40e671a1d4bf91361c21bf9f0c9712ab7'
   },
-  '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063': {
+  '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063': {
     name: '(PoS) Dai Stablecoin',
     symbol: 'DAI',
     decimals: 18,
-    address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'
+    address: '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
   },
-  '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6': {
+  '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6': {
     name: '(PoS) Wrapped BTC',
     symbol: 'WBTC',
     decimals: 8,
-    address: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6'
+    address: '0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6'
   },
-  '0x6f8a06447Ff6FcF75d803135a7de15CE88C1d4ec': {
+  '0x6f8a06447ff6fcf75d803135a7de15ce88c1d4ec': {
     name: 'SHIBA INU (PoS)',
     symbol: 'SHIB',
     decimals: 18,
-    address: '0x6f8a06447Ff6FcF75d803135a7de15CE88C1d4ec'
+    address: '0x6f8a06447ff6fcf75d803135a7de15ce88c1d4ec'
   },
-  '0xB7b31a6BC18e48888545CE79e83E06003bE70930': {
+  '0xb7b31a6bc18e48888545ce79e83e06003be70930': {
     name: 'ApeCoin (PoS)',
     symbol: 'APE',
     decimals: 18,
-    address: '0xB7b31a6BC18e48888545CE79e83E06003bE70930'
+    address: '0xb7b31a6bc18e48888545ce79e83e06003be70930'
   }
 };

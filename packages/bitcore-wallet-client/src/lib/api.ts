@@ -2969,8 +2969,10 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials =
-                client.credentials.getTokenCredentials(token);
+              const tokenCredentials = client.credentials.getTokenCredentials(
+                token,
+                'matic'
+              );
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -3003,7 +3005,10 @@ export class API extends EventEmitter {
                   }
                   log.info(`Importing multisig token: ${token.name}`);
                   const tokenCredentials =
-                    multisigMaticClient.credentials.getTokenCredentials(token);
+                    multisigMaticClient.credentials.getTokenCredentials(
+                      token,
+                      'matic'
+                    );
                   let tokenClient = _.cloneDeep(multisigMaticClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);
