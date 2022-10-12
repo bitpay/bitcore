@@ -58,6 +58,7 @@ export type GetEstimateSmartFeeParams = ChainNetwork & {
 };
 export type BroadcastTransactionParams = ChainNetwork & {
   rawTx: string | Array<string>;
+  ignoreUsedNonce?: boolean;
 };
 export type CreateWalletParams = IWallet;
 export type GetWalletParams = ChainNetwork & PubKey;

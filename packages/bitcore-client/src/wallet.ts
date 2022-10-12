@@ -359,7 +359,7 @@ export class Wallet {
     return Transactions.create(payload);
   }
 
-  async broadcast(params: { tx: string }) {
+  async broadcast(params: { tx: string; ignoreUsedNonce?: boolean }) {
     const { tx } = params;
     const payload = {
       network: this.network,
