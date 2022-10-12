@@ -7,14 +7,18 @@ const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 const https = require('https');
 const ethers = require('ethers');
+const utils = require('web3-utils');
 
 program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--txid <txid>', 'REQUIRED (or provide raw tx) - string transaction id')
-  //.option('--rawtx <rawtx>', 'REQUIRED (or provide tx id) - string raw transaction')
-  .option('--satsPerByte [satsPerByte]', 'optional (defaults to current market rate) for use with UTXO chains - number satsPerByte (in btc/ltc/doge)')
-  .option('--gwei [gwei]', 'optional  (defaults to current market rate) for use with EVM based chains - number gwei (in eth/matic)')
+  .option('--txid [txid]', 'REQUIRED (or provide raw tx) - string transaction id')
+  .option('--rawtx [rawtx]', 'REQUIRED (or provide tx id) - string raw transaction')
+  //.option('--satsPerByte [satsPerByte]', 'optional (defaults to current market rate) for use with UTXO chains - number satsPerByte (in btc/ltc/doge)')
+  .option(
+    '--gwei [gwei]',
+    'optional  (defaults to current market rate) for use with EVM based chains - number gwei (in eth/matic)'
+  )
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
@@ -22,46 +26,54 @@ program
 const main = async () => {
   const { name, path, storageType, txid, rawtx, satsPerByte, gwei } = program;
   let wallet;
-  let data;
-  try {
-    data = await getCurrencies();
-  } catch (err) {
-    console.error(err);
-  }
-  const currencies = JSON.parse(data);
+
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
+
+    // if (satsPerByte) {
+    //   throw new Error('Not yet implemented.');
+    // }
 
     let existingTx;
     if (txid) {
       existingTx = JSON.parse(await wallet.getTransactionByTxid({ txid }));
+      // need to parse more... somehow
     } else if (rawtx) {
-      existingTx = ethers.utils.serializeTransaction
+      existingTx = ethers.utils.parseTransaction(rawtx);
     } else {
       throw new Error('Must provide either a raw transaction or transaction id.');
     }
-    let newFee;
+
+    const existingGasPriceInWei = Number(existingTx.gasPrice);
+    let newFeeInWei;
     if (gwei) {
-      const wei = Number(gwei) * 1000000000;
-      if (wei <= existingTx.gasPrice){
-        throw new Error(`Provided gwei is not greater than existing tx gwei. Existing Tx Gwei: ${existingTx.gasPrice / 1000000000}`);
+      newFeeInWei = Number(gwei) * 1000000000;
+      if (newFeeInWei <= existingGasPriceInWei) {
+        throw new Error(
+          `Provided gwei is not greater than existing tx gwei. Existing Tx Gwei: ${existingGasPriceInWei / 1000000000}`
+        );
       }
-      existingTx.gasPrice = wei;
-      existingTx.fee = wei * existingTx.gasLimit;
-    }
-    const networkFeeRate = JSON.parse(await wallet.getNetworkFee()).feerate;
-    if (['ETH','MATIC'].includes(wallet.chain) && gwei){
-      if (gwei <= existingTx.gas) {
-        throw new Error('Provided gwei is not greater than existing tx gwei.');
-      } 
-      existingTx.gas = gwei;
+      existingTx.gasPrice = ethers.BigNumber.from(newFeeInWei);
+    } else {
+      newFeeInWei = JSON.parse(await wallet.getNetworkFee()).feerate;
+      existingTx.gasPrice = ethers.BigNumber.from(newFeeInWei);
     }
 
-    // if (['BTC', 'LTC', 'DOGE'].includes(wallet.chain)) {
-    //   feeRate = satsPerByte;
-    // }
+    console.log(
+      `Bumping gas price from ${existingGasPriceInWei / 1000000000} GWei to ${newFeeInWei / 1000000000} GWei`
+    );
 
-    const tx = await wallet.newTx(existingTx);
+    const { nonce, gasLimit, gasPrice, to, data, value, chainId } = existingTx;
+
+    const tx = ethers.utils.serializeTransaction({
+      nonce,
+      gasLimit,
+      gasPrice,
+      to,
+      data,
+      value,
+      chainId
+    });
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
@@ -71,27 +83,12 @@ const main = async () => {
     if (!confirmed) {
       return;
     }
-    //const transaction = await wallet.broadcast({ tx:signedTx });
+    const transaction = await wallet.broadcast({ tx: signedTx, ignoreNonce: true });
     console.log('txid: ', transaction.txid);
     console.log('Transaction broadcasted');
   } catch (e) {
     console.error(e);
   }
 };
-
-function getCurrencies() {
-  return new Promise((resolve, reject) => {
-    https.get('https://bitpay.com/currencies', res => {
-      if (res.statusCode !== 200) {
-        reject(new Error('Request Failed'));
-      }
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      res.on('end', () => resolve(data.toString()));
-    });
-  });
-}
 
 main();
