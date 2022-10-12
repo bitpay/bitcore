@@ -108,7 +108,8 @@ export class CoinConfig {
   satUnit?: number;
   tokenInfo?: TokenInfo;
   isEnable?: boolean;
-
+  isSwap: boolean;
+  
   static create(opts) {
     const x = new CoinConfig();
     x.code = opts.code;

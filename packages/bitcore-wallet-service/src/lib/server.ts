@@ -1123,7 +1123,8 @@ export class WalletService {
     if(err) return cb(err);
     bcrypt.compare(opts.password, user.hashPassword).then(result => {
       if(err) return cb(err);
-      return cb(null, true);
+      if(!result) return cb(new Error('Invalid password'));
+      return cb(null, result);
     }).catch(e => {
       return cb(e);
     })
@@ -1141,27 +1142,31 @@ export class WalletService {
     const rawBuffer = forge.util.createBuffer(plainText);
     cipher.update(rawBuffer);
     cipher.finish();
-    const cipherText = Uint8Array.from(
-      Buffer.from(cipher.output.toHex(), 'hex'),
-    );
+    const cipherText = cipher.output.toHex();
   return cipherText;
 }
 
 // return a Promise
 // sharedKey: Buffer, plainText: Uint8Array
-decrypt(sharedKey, cipherText) {
-  // Split shared key
-  const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
-  const key = forge.util.createBuffer(sharedKey.slice(0, 16));
+decrypt(sharedKey: Buffer, cipherText: string) {
+  try{
+ // Split shared key
+ const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
+ const key = forge.util.createBuffer(sharedKey.slice(0, 16));
 
-  // Encrypt entries
-  const cipher = forge.cipher.createDecipher('AES-CBC', key);
-  cipher.start({ iv });
-  const rawBuffer = forge.util.createBuffer(cipherText);
-  cipher.update(rawBuffer);
-  cipher.finish();
-  const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'));
-  return plainText;
+ // Encrypt entries
+ const cipher = forge.cipher.createDecipher('AES-CBC', key);
+ cipher.start({ iv });
+ const convertedCiphertext = forge.util.hexToBytes(cipherText);
+ const rawBuffer = new forge.util.ByteBuffer(convertedCiphertext);
+ cipher.update(rawBuffer);
+ cipher.finish();
+ const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'));
+ return plainText;
+  } catch(e){
+    console.log(e);
+  }
+ 
 }
  /**
    * Update key for swap
@@ -1172,7 +1177,7 @@ decrypt(sharedKey, cipherText) {
    */
 
   importSeed(opts, cb){
-    if(!(opts.keyFund && opts.keyReceive)){
+    if(!opts.keyFund && !opts.keyReceive){
       return cb(new Error('Missing required key'));
     }
 
@@ -1196,10 +1201,19 @@ decrypt(sharedKey, cipherText) {
         }
         this.storage.updatKeys(keys, (err, result)=>{
           if(err) return cb(err);
+          console.log('imoprtseed: call decrypt function');
+          console.log('importseed: param config.sharedKey', config.sharedKey);
+          console.log('importseed: param keys.keyFund', keys.keyFund);
           const keyFund = this.decrypt(config.sharedKey, keys.keyFund);
+          console.log('importseed: keyFundDecrypted', keyFund);
           const ctArray = Array.from(new Uint8Array(keyFund)); // ciphertext as byte array
+          console.log('importseed: ctArray', ctArray);
           const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
-          return cb(null, true);
+          console.log('importseed: ctStr', ctStr);
+          this.restartHandleSwapQueue((err) => {
+            if(err) return cb(err);
+            return cb(null, true);
+          });
         })
       }
     })
@@ -3675,27 +3689,74 @@ decrypt(sharedKey, cipherText) {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'swing exhaust inform mass twist hybrid private begin quote heart keep share';
-      Client.serverAssistedImport(
-        opts,
-        {
-          baseUrl: client.request.baseUrl
-        },
-        (err, key, walletClients) => {
-          if (walletClients && walletClients.length > 0) {
-            logger.debug('Get all wallets in key fund successfully: ', walletClients);
-            clientsFund = walletClients;
-            mnemonicKeyFund = opts.words;
-            keyFund = key;
-            return cb(null, key, walletClients, opts.words);
-          } else {
-            logger.error('Can not find any wallet in key fund');
-            return cb(new Error('Can not find any wallet in key fund'));
+      this.storage.fetchKeys((err, result:Keys)=>{
+        if(err) return cb(err);
+        console.log('call decrypt function');
+        console.log('param config.sharedKey', config.sharedKey);
+        console.log('param result.keyFund', result.keyFund);
+        const keyFundDecrypted = this.decrypt(config.sharedKey, result.keyFund);
+        console.log('keyFundDecrypted', keyFundDecrypted);
+        const ctArray = Array.from(new Uint8Array(keyFundDecrypted)); // ciphertext as byte array\
+        console.log('ctArray', ctArray);
+        const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
+        console.log('ctStr', ctStr);
+         opts.words = ctStr;
+        Client.serverAssistedImport(
+          opts,
+          {
+            baseUrl: client.request.baseUrl
+          },
+          (err, key, walletClients) => {
+            if (walletClients && walletClients.length > 0) {
+              logger.debug('Get all wallets in key fund successfully: ', walletClients);
+              clientsFund = walletClients;
+              mnemonicKeyFund = opts.words;
+              keyFund = key;
+              return cb(null, key, walletClients, opts.words);
+            } else {
+              logger.error('Can not find any wallet in key fund');
+              return cb(new Error('Can not find any wallet in key fund'));
+            }
           }
-        }
-      );
+        );
+      })
+      
     } catch (e) {
       return cb(e);
+    }
+  }
+
+  async mappingWalletClientsToCoinConfig(walletClients : any[], isSwap: boolean) {
+    if(walletClients){
+      // get all wallets in walletClients 
+      const listCoinConfigOpts = walletClients.map( s => ({
+        code: s.credentials.coin,
+        network: s.credentials.network,
+        isToken: false,
+        isSwap      
+      }));
+      if(listCoinConfigOpts.findIndex(s => s.code === 'xec' && s.network === 'livenet') > -1){
+        // get list token inside
+        let listTokenFound = null;
+        listTokenFound = await this.getTokensWithPromise({ walletId: clientsFund.credentials.walletId });
+        if(listTokenFound){
+          const listTokenFoundConverted = _.map(listTokenFound, item => {
+            return {
+              tokenId: item.tokenId,
+              tokenInfo: item.tokenInfo,
+              amountToken: item.amountToken,
+              utxoToken: item.utxoToken
+            } as TokenItem;
+          });
+          const listTokenConfigOpts = listTokenFoundConverted.map(s => ({
+            code: s.tokenInfo.symbol.toLowerCase(),
+            network: 'livenet',
+            isToken: true,
+            tokenInfo: s.tokenInfo,
+            isSwap      
+          }))
+        }
+      }
     }
   }
 
@@ -3703,24 +3764,30 @@ decrypt(sharedKey, cipherText) {
     let key;
     try {
       let opts = { words: '' };
-      opts.words = 'whisper review pupil vote grant want shoe pistol riot answer sudden please';
-      logger.debug('baseUrl: ', client.request.baseUrl);
-      Client.serverAssistedImport(
-        opts,
-        {
-          baseUrl: client.request.baseUrl
-        },
-        (err, key, walletClients) => {
-          if (walletClients && walletClients.length > 0) {
-            logger.debug('Get all wallets in key receive successfully: ', walletClients);
-            clientsReceive = walletClients;
-            return cb(null, key, walletClients);
-          } else {
-            logger.error('Can not find any wallet in key receive');
-            return cb(new Error('Can not find any wallet in key receive'));
+      this.storage.fetchKeys((err, result:Keys)=>{
+        if(err) return cb(err);
+        const keyReceiveDecrypted = this.decrypt(config.sharedKey, result.keyReceive);
+        const ctArray = Array.from(new Uint8Array(keyReceiveDecrypted)); // ciphertext as byte array
+        const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
+        opts.words = ctStr;
+        Client.serverAssistedImport(
+          opts,
+          {
+            baseUrl: client.request.baseUrl
+          },
+          (err, key, walletClients) => {
+            if (walletClients && walletClients.length > 0) {
+              logger.debug('Get all wallets in key receive successfully: ', walletClients);
+              clientsReceive = walletClients;
+              return cb(null, key, walletClients);
+            } else {
+              logger.error('Can not find any wallet in key receive');
+              return cb(new Error('Can not find any wallet in key receive'));
+            }
           }
-        }
-      );
+        );
+      })
+     
     } catch (e) {
       return cb(e);
     }
@@ -3741,9 +3808,9 @@ decrypt(sharedKey, cipherText) {
 
   getKeyFundAndReceiveWithFundMnemonic(cb) {
     const clientBwc = new Client();
-    this._getKeyFundWithMnemonic(clientBwc, (err, keyFund, clientsFund, mnemonic) => {
+    this._getKeyFundWithMnemonic(clientBwc, (err) => {
       if (err) return cb(err);
-      this._getKeyReceive(clientBwc, (err, keyReceive, clientsReceive) => {
+      this._getKeyReceive(clientBwc, (err) => {
         if (err) return cb(err);
         return cb(null, true);
       });
@@ -3836,7 +3903,8 @@ decrypt(sharedKey, cipherText) {
               if (err) throw new Error(err);
             });
           };
-
+          console.log('clients fund in queue now: ', clientsFund);
+          console.log('clients receive in queue now: ', clientsReceive);
           if (data) {
             const orderInfo = await this._getOrderInfo({ id: data.payload.id });
             try {
@@ -3907,11 +3975,15 @@ decrypt(sharedKey, cipherText) {
                               saveError(orderInfo, data, Errors.BELOW_MIN_LIMIT);
                               return;
                             }
+
+                            if (amountDepositDetect > fundAmountSat) {
+                              saveError(orderInfo, data, Errors.OUT_OF_FUND);
+                              return;
+                            }
+
                             if (amountUserDepositConverted > maxAmountSat) {
-                              if (amountDepositDetect > fundAmountSat) {
-                                saveError(orderInfo, data, Errors.OUT_OF_FUND);
-                                return;
-                              }
+                              saveError(orderInfo, data, Errors.EXCEED_MAX_LIMIT);
+                              return;
                             }
 
                             this.walletId = fundingWallet.credentials.walletId;
@@ -3987,6 +4059,8 @@ decrypt(sharedKey, cipherText) {
         this.storage.queue.clean(err => {});
       }
     }, 2000);
+
+    logger.debug('swapQueueInterval', swapQueueInterval)
   }
 
   stopHandleSwapQueue(): boolean{
@@ -3999,8 +4073,18 @@ decrypt(sharedKey, cipherText) {
     }
   }
 
-  restartHandleSwapQueue(){
-    this.getKeyFundAndReceiveWithFundMnemonic
+  restartHandleSwapQueue(cb){
+    try{
+      clearInterval(swapQueueInterval);
+      this.getKeyFundAndReceiveWithFundMnemonic((err)=>{
+        if(err) return cb(err);
+        this.checkQueueHandleSwap();
+        return cb(null);
+      })
+    } catch(e){
+      logger.debug(e);
+      return cb(e);
+    }  
   }
 
   calculateFee(amount: number, order: Order, configSwap: ConfigSwap, rateUsd: number): number {
@@ -4097,12 +4181,12 @@ decrypt(sharedKey, cipherText) {
       }
       this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
         if (err || txid != txp.txid) {
+          if(err) return cb(err);
           if (!err || txp.txid != txid) {
             logger.warn(`Broadcast failed for: ${raw}`);
           } else {
             logger.warn(`Broadcast failed: ${err}`);
           }
-
           const broadcastErr = err;
           // Check if tx already in blockchain
           this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
@@ -5948,7 +6032,6 @@ decrypt(sharedKey, cipherText) {
                     coin.fund = balanceSelected.amountToken * rateCoinUsd;
                     coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
                     coin.satUnit = Math.pow(10, tokenDecimals);
-                    coin.tokenInfo = balanceSelected.tokenInfo;
                   } else {
                     coin.isEnable = false;
                   }

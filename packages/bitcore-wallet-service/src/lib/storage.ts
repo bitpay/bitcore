@@ -446,14 +446,14 @@ export class Storage {
     );
   }
 
-  updateUser(user: IUser, cb){
+  updateUser(user: IUser, cb) {
     this.db.collection(collections.USER).updateOne(
       {
         email: user.email
       },
       {
         $set: {
-          hashPassword : user.hashPassword,
+          hashPassword: user.hashPassword,
           recoveryKey: user.recoveryKey
         }
       },
@@ -492,23 +492,20 @@ export class Storage {
   fetchKeys(cb) {
     if (!this.db) return cb();
 
-    this.db.collection(collections.KEYS).findOne(
-     {},
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb(null, null);
+    this.db.collection(collections.KEYS).findOne({}, (err, result) => {
+      if (err) return cb(err);
+      if (!result) return cb(null, null);
 
-        return cb(null, result);
-      }
-    );
+      return cb(null, result);
+    });
   }
 
-  updatKeys(keys, cb){
+  updatKeys(keys, cb) {
     this.db.collection(collections.KEYS).findOneAndUpdate(
       {},
       {
         $set: {
-          keyFund : keys.keyFund,
+          keyFund: keys.keyFund,
           keyReceive: keys.keyReceive
         }
       },

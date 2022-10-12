@@ -123,12 +123,12 @@ export class XecChain extends BtcChain implements IChain {
       const txFee = 250;
 
       // amount to send back to the sending address. It's the original amount - 1 sat/byte for tx size
-      const remainder = originalAmount - txFee - 546 * 2;
+      const remainder = originalAmount - ((txFee + 546 * 2) * 2);
       if (remainder < 1) {
         throw new Error('Selected UTXO does not have enough satoshis');
       }
       TOKENQTY = _.toSafeInteger(TOKENQTY);
-      TOKENQTY = (TOKENQTY - txFee - 546 * 2) / Math.pow(10, tokenInfo.decimals);
+      TOKENQTY = TOKENQTY / Math.pow(10, tokenInfo.decimals);
       // Generate the OP_RETURN code.
       const slpSendObj = bchjs.SLP.TokenType1.generateSendOpReturn(tokenUtxos, TOKENQTY);
       const slpData = slpSendObj.script;
