@@ -1,7 +1,8 @@
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
-import config from '../../../src/config';
 import { Web3 } from 'crypto-wallet-core';
+import sinon from 'sinon';
+import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMP2pWorker } from '../../../src/providers/chain-state/evm/p2p/p2p';
@@ -10,13 +11,13 @@ import { IEVMNetworkConfig } from '../../../src/types/Config';
 import { wait } from '../../../src/utils/wait';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import sinon from 'sinon';
 
 const { StreamUtil } = BitcoreClient;
 const chain = 'MATIC';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
 const name = 'PolygonWallet-Ci';
+const storageType = 'Level';
 const baseUrl = 'http://localhost:3000/api';
 const password = '';
 const phrase = 'glimpse mystery poverty onion muffin twist live kidney unhappy sort frame muffin';
@@ -26,7 +27,7 @@ const privKeys = { geth: '0xf9ad2207e910cd649c9a32063dea3656380c32fa07d6bb9be853
 async function getWallet() {
   let wallet: BitcoreClient.Wallet;
   try {
-    wallet = await BitcoreClient.Wallet.loadWallet({ name });
+    wallet = await BitcoreClient.Wallet.loadWallet({ name, storageType });
     await wallet.register();
     await wallet.syncAddresses();
     return wallet;
@@ -38,7 +39,8 @@ async function getWallet() {
       network,
       baseUrl,
       password,
-      phrase
+      phrase,
+      storageType
     });
     await wallet.unlock(password);
     await wallet.nextAddressPair();
@@ -47,11 +49,13 @@ async function getWallet() {
   }
 }
 
-async function sendTransaction(from, to, amount, web3, wallet) {
+async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
   if (!wallet) {
     wallet = await getWallet();
   }
-  const nonce = await web3.eth.getTransactionCount(accounts[from]);
+  if (!nonce) {
+    nonce = await web3.eth.getTransactionCount(accounts[from]);
+  }
   const gasPrice = Number(await web3.eth.getGasPrice());
   const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
   const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
@@ -95,7 +99,10 @@ describe('Polygon', function() {
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const { web3 } = await worker.getWeb3();
-    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
+    const nonce = await web3.eth.getTransactionCount(accounts['geth']);
+    // sending multiple tx to entice geth to mine a block because sometimes it doesn't mine even with automine enabled
+    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce),
+    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1)
     await sawBlock;
     await worker.disconnect();
     await worker.stop();

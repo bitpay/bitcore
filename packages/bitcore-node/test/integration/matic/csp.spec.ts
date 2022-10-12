@@ -9,10 +9,10 @@ import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
+import { MATIC } from '../../../src/modules/matic/api/csp';
+import { IEVMTransaction } from '../../../src/providers/chain-state/evm//types';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
-import { IEVMTransaction } from '../../../src/providers/chain-state/evm//types';
-import { MATIC } from '../../../src/modules/matic/api/csp';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
