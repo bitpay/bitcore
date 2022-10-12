@@ -4,8 +4,8 @@ import { Web3 } from 'crypto-wallet-core';
 import sinon from 'sinon';
 import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
-import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
+import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { Api } from '../../../src/services/api';
 import { IEVMNetworkConfig } from '../../../src/types/Config';
 import { wait } from '../../../src/utils/wait';
@@ -17,6 +17,7 @@ const chain = 'ETH';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
 const name = 'EthereumWallet-Ci';
+const storageType = 'Level';
 const baseUrl = 'http://localhost:3000/api';
 const password = '';
 const phrase = 'kiss talent nerve fossil equip fault exile execute train wrist misery diet';
@@ -26,7 +27,7 @@ const privKeys = { erigon: '26e86e45f6fc45ec6e2ecd128cec80fa1d1505e5507dcd2ae58c
 async function getWallet() {
   let wallet: BitcoreClient.Wallet;
   try {
-    wallet = await BitcoreClient.Wallet.loadWallet({ name });
+    wallet = await BitcoreClient.Wallet.loadWallet({ name, storageType });
     await wallet.register();
     await wallet.syncAddresses();
     return wallet;
@@ -38,7 +39,8 @@ async function getWallet() {
       network,
       baseUrl,
       password,
-      phrase
+      phrase,
+      storageType
     });
     await wallet.unlock(password);
     await wallet.nextAddressPair();
@@ -47,11 +49,13 @@ async function getWallet() {
   }
 }
 
-async function sendTransaction(from, to, amount, web3, wallet) {
+async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
   if (!wallet) {
     wallet = await getWallet();
   }
-  const nonce = await web3.eth.getTransactionCount(accounts[from]);
+  if (!nonce) {
+    nonce = await web3.eth.getTransactionCount(accounts[from]);
+  }
   const gasPrice = Number(await web3.eth.getGasPrice());
   const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
   const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
@@ -111,7 +115,10 @@ describe('Ethereum', function() {
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const { web3 } = await worker.getWeb3();
-    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
+    const nonce = await web3.eth.getTransactionCount(accounts['geth']);
+    // sending multiple tx to entice geth to mine a block because sometimes it doesn't mine even with automine enabled
+    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce),
+    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1)
     await sawBlock;
     await worker.disconnect();
     await worker.stop();
