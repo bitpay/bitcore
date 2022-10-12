@@ -6,6 +6,7 @@ const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 const https = require('https');
+const ethers = require('ethers');
 
 program
   .version(require('../package.json').version)
@@ -35,27 +36,31 @@ const main = async () => {
     if (txid) {
       existingTx = JSON.parse(await wallet.getTransactionByTxid({ txid }));
     } else if (rawtx) {
-      throw new Error('Not yet implemented.');
-      //existingTx = await wallet.getTransactionByRawTx({ rawtx });
+      existingTx = ethers.utils.serializeTransaction
     } else {
       throw new Error('Must provide either a raw transaction or transaction id.');
     }
-
-    let feeRate;
+    let newFee;
+    if (gwei) {
+      const wei = Number(gwei) * 1000000000;
+      if (wei <= existingTx.gasPrice){
+        throw new Error(`Provided gwei is not greater than existing tx gwei. Existing Tx Gwei: ${existingTx.gasPrice / 1000000000}`);
+      }
+      existingTx.gasPrice = wei;
+      existingTx.fee = wei * existingTx.gasLimit;
+    }
     const networkFeeRate = JSON.parse(await wallet.getNetworkFee()).feerate;
     if (['ETH','MATIC'].includes(wallet.chain) && gwei){
+      if (gwei <= existingTx.gas) {
+        throw new Error('Provided gwei is not greater than existing tx gwei.');
+      } 
       existingTx.gas = gwei;
     }
 
-    if (['BTC', 'LTC', 'DOGE'].includes(wallet.chain)) {
-      feeRate = satsPerByte;
-    }
+    // if (['BTC', 'LTC', 'DOGE'].includes(wallet.chain)) {
+    //   feeRate = satsPerByte;
+    // }
 
-    if (feeRate && feeRate <= existingTx.fee) {
-      throw new Error('Provided fee rate is not greater than existing tx fee rate.');
-    } 
-
-    existingTx.feeRate = feerate || networkFeeRate;
     const tx = await wallet.newTx(existingTx);
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
