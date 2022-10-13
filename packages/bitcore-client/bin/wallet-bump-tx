@@ -7,7 +7,6 @@ const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 const https = require('https');
 const ethers = require('ethers');
-const utils = require('web3-utils');
 
 program
   .version(require('../package.json').version)
@@ -53,10 +52,10 @@ const main = async () => {
           `Provided gwei is not greater than existing tx gwei. Existing Tx Gwei: ${existingGasPriceInWei / 1000000000}`
         );
       }
-      existingTx.gasPrice = ethers.BigNumber.from(newFeeInWei);
+      existingTx.gasPrice = newFeeInWei;
     } else {
       newFeeInWei = JSON.parse(await wallet.getNetworkFee()).feerate;
-      existingTx.gasPrice = ethers.BigNumber.from(newFeeInWei);
+      existingTx.gasPrice = newFeeInWei;
     }
 
     console.log(
@@ -64,16 +63,9 @@ const main = async () => {
     );
 
     const { nonce, gasLimit, gasPrice, to, data, value, chainId } = existingTx;
+    const params = { nonce, gasLimit, gasPrice, data, chainId, recipients: [{ address: to, amount: value }] };
 
-    const tx = ethers.utils.serializeTransaction({
-      nonce,
-      gasLimit,
-      gasPrice,
-      to,
-      data,
-      value,
-      chainId
-    });
+    const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
