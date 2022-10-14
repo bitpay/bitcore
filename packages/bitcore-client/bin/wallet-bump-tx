@@ -5,7 +5,6 @@
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
-const https = require('https');
 const ethers = require('ethers');
 
 program
@@ -13,7 +12,6 @@ program
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--txid [txid]', 'REQUIRED (or provide raw tx) - string transaction id')
   .option('--rawtx [rawtx]', 'REQUIRED (or provide tx id) - string raw transaction')
-  //.option('--satsPerByte [satsPerByte]', 'optional (defaults to current market rate) for use with UTXO chains - number satsPerByte (in btc/ltc/doge)')
   .option(
     '--gwei [gwei]',
     'optional  (defaults to current market rate) for use with EVM based chains - number gwei (in eth/matic)'
@@ -23,15 +21,11 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, storageType, txid, rawtx, satsPerByte, gwei } = program;
+  const { name, path, storageType, txid, rawtx, gwei } = program;
   let wallet;
 
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
-
-    // if (satsPerByte) {
-    //   throw new Error('Not yet implemented.');
-    // }
 
     let existingTx;
     if (txid) {
@@ -48,7 +42,7 @@ const main = async () => {
       newFeeInWei = Number(gwei) * 1000000000;
       if (newFeeInWei <= existingGasPriceInWei) {
         throw new Error(
-          `Provided gwei is not greater than existing tx gwei. Existing Tx Gwei: ${existingGasPriceInWei / 1000000000}`
+          `Provided gwei is not greater than existing tx gwei. Existing Tx Gwei is ${existingGasPriceInWei / 1000000000}`
         );
       }
       existingTx.gasPrice = newFeeInWei;
@@ -62,7 +56,8 @@ const main = async () => {
     );
 
     const { nonce, gasLimit, gasPrice, to, data, value, chainId } = existingTx;
-    const params = { nonce, gasLimit, gasPrice, data, chainId, recipients: [{ address: to, amount: value }] };
+    // converting gasLimit and value with toString avoids a bigNumber warning
+    const params = { nonce, gasLimit: gasLimit.toString(), gasPrice, data, chainId, recipients: [{ address: to, amount: value.toString() }] };
 
     const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);
