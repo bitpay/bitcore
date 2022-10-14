@@ -49,8 +49,11 @@ export class GethRPC implements IRpc {
         id: 1
       });
     } catch (e) {
-      const debugOnlyErrors = ['The method debug_traceBlockByNumber does not exist/is not available', 'required historical state unavailable (reexec=128)'];
-      if ((typeof e == 'string' && debugOnlyErrors.includes(e)) || ( e.message && debugOnlyErrors.includes(e.message))) {
+      const debugOnlyErrors = [
+        'The method debug_traceBlockByNumber does not exist/is not available',
+        'required historical state unavailable (reexec=128)'
+      ];
+      if ((typeof e == 'string' && debugOnlyErrors.includes(e)) || (e.message && debugOnlyErrors.includes(e.message))) {
         // Must not be an archive node or has not enabled debug methods
         logger.debug(e.message || e);
       } else {
