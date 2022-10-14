@@ -189,5 +189,47 @@ module.exports = {
         rate: 1 // USD
       }
     ]
-  }
+  },
+  coinSupportForSwap: [
+    {
+      code: 'xpi',
+      network: 'livenet',
+      isToken: false
+    },
+    {
+      code: 'xec',
+      network: 'livenet',
+      isToken: false
+    },
+    {
+      code: 'btc',
+      network: 'livenet',
+      isToken: false
+    },
+    {
+      code: 'btc',
+      network: 'testnet',
+      isToken: false
+    },
+    {
+      code: 'bch',
+      network: 'livenet',
+      isToken: false
+    },
+    {
+      code: 'bch',
+      network: 'testnet',
+      isToken: false
+    },
+    {
+      code: 'eat',
+      network: 'livenet',
+      isToken: true
+    },
+    {
+      code: 'bcpro',
+      network: 'livenet',
+      isToken: true
+    }
+  ]
 };

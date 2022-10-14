@@ -63,6 +63,8 @@ import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
 import { countBy, findIndex } from 'lodash';
+import { openStdin } from 'process';
+import { stringify } from 'querystring';
 import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
 import { CurrencyRateService } from './currencyrate';
 import { Config } from './model/config-model';
@@ -71,8 +73,6 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
-import { stringify } from 'querystring';
-import { openStdin } from 'process';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -1075,33 +1075,32 @@ export class WalletService {
    * @param {string} opts.email - User email
    * @param {string} opts.password - User password
    */
-  updateUserPassword(opts, cb){
-    if(!opts.email){
+  updateUserPassword(opts, cb) {
+    if (!opts.email) {
       return cb(new Error('Missing required parameter email'));
     }
-    if(!opts.password){
+    if (!opts.password) {
       return cb(new Error('Missing required parameter password'));
     }
     const storage = this.storage;
     bcrypt.hash(opts.password, saltRounds, function(err, hashPass) {
       // Store hash in your password DB.
-      if(err) return cb(err);
+      if (err) return cb(err);
 
       const recoveryKey = cuid();
 
-      bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey){
+      bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey) {
         const user = {
           email: opts.email,
           hashPassword: hashPass,
           recoveryKey: hashKey
         } as IUser;
         storage.updateUser(user, (err, result) => {
-          if(err) return cb(err);
+          if (err) return cb(err);
           return cb(null, recoveryKey);
-        })
-      })
+        });
+      });
     });
-
   }
 
   /**
@@ -1111,31 +1110,34 @@ export class WalletService {
    * @param {string} opts.email - User email
    * @param {string} opts.password - User password
    */
-   verifyPassword(opts, cb){
-    if(!opts.email){
+  verifyPassword(opts, cb) {
+    if (!opts.email) {
       return cb(new Error('Missing required parameter email'));
     }
-    if(!opts.password){
+    if (!opts.password) {
       return cb(new Error('Missing required parameter password'));
     }
 
-   this.storage.fetchUserByEmail(opts.email, (err, user: IUser)=>{
-    if(err) return cb(err);
-    bcrypt.compare(opts.password, user.hashPassword).then(result => {
-      if(err) return cb(err);
-      if(!result) return cb(new Error('Invalid password'));
-      return cb(null, result);
-    }).catch(e => {
-      return cb(e);
-    })
-   });
+    this.storage.fetchUserByEmail(opts.email, (err, user: IUser) => {
+      if (err) return cb(err);
+      bcrypt
+        .compare(opts.password, user.hashPassword)
+        .then(result => {
+          if (err) return cb(err);
+          if (!result) return cb(new Error('Invalid password'));
+          return cb(null, result);
+        })
+        .catch(e => {
+          return cb(e);
+        });
+    });
   }
-// return a Promise
-// sharedKey: Buffer, plainText: Uint8Array
- encrypt  (sharedKey, plainText){
-  // Split shared key
-  const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
-  const key = forge.util.createBuffer(sharedKey.slice(0, 16));
+  // return a Promise
+  // sharedKey: Buffer, plainText: Uint8Array
+  encrypt(sharedKey, plainText) {
+    // Split shared key
+    const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
+    const key = forge.util.createBuffer(sharedKey.slice(0, 16));
 
     const cipher = forge.cipher.createCipher('AES-CBC', key);
     cipher.start({ iv });
@@ -1143,32 +1145,31 @@ export class WalletService {
     cipher.update(rawBuffer);
     cipher.finish();
     const cipherText = cipher.output.toHex();
-  return cipherText;
-}
-
-// return a Promise
-// sharedKey: Buffer, plainText: Uint8Array
-decrypt(sharedKey: Buffer, cipherText: string) {
-  try{
- // Split shared key
- const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
- const key = forge.util.createBuffer(sharedKey.slice(0, 16));
-
- // Encrypt entries
- const cipher = forge.cipher.createDecipher('AES-CBC', key);
- cipher.start({ iv });
- const convertedCiphertext = forge.util.hexToBytes(cipherText);
- const rawBuffer = new forge.util.ByteBuffer(convertedCiphertext);
- cipher.update(rawBuffer);
- cipher.finish();
- const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'));
- return plainText;
-  } catch(e){
-    console.log(e);
+    return cipherText;
   }
 
-}
- /**
+  // return a Promise
+  // sharedKey: Buffer, plainText: Uint8Array
+  decrypt(sharedKey: Buffer, cipherText: string) {
+    try {
+      // Split shared key
+      const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
+      const key = forge.util.createBuffer(sharedKey.slice(0, 16));
+
+      // Encrypt entries
+      const cipher = forge.cipher.createDecipher('AES-CBC', key);
+      cipher.start({ iv });
+      const convertedCiphertext = forge.util.hexToBytes(cipherText);
+      const rawBuffer = new forge.util.ByteBuffer(convertedCiphertext);
+      cipher.update(rawBuffer);
+      cipher.finish();
+      const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'));
+      return plainText;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  /**
    * Update key for swap
    *
    * @param {Object} opts
@@ -1176,31 +1177,31 @@ decrypt(sharedKey: Buffer, cipherText: string) {
    * @param {string} opts.keyReceive - key receive
    */
 
-  importSeed(opts, cb){
-    if(!opts.keyFund && !opts.keyReceive){
+  importSeed(opts, cb) {
+    if (!opts.keyFund && !opts.keyReceive) {
       return cb(new Error('Missing required key'));
     }
 
-    this.storage.fetchKeys((err, keys)=>{
-      if(!keys){
+    this.storage.fetchKeys((err, keys) => {
+      if (!keys) {
         // create new KEYS
-        const keyOpts ={
+        const keyOpts = {
           keyFund: this.encrypt(config.sharedKey, opts.keyFund),
           keyReceive: this.encrypt(config.sharedKey, opts.keyReceive)
-        }
-        this.storage.storeKeys(keyOpts, (err, result)=>{
-          if(err) return cb(err);
+        };
+        this.storage.storeKeys(keyOpts, (err, result) => {
+          if (err) return cb(err);
           return cb(null, result);
-        })
-      } else{
-        if(opts.keyFund && opts.keyFund.length > 0){
+        });
+      } else {
+        if (opts.keyFund && opts.keyFund.length > 0) {
           keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
         }
-        if(opts.keyReceive && opts.keyReceive.length > 0){
+        if (opts.keyReceive && opts.keyReceive.length > 0) {
           keys.keyReceive = this.encrypt(config.sharedKey, opts.keyReceive);
         }
-        this.storage.updatKeys(keys, (err, result)=>{
-          if(err) return cb(err);
+        this.storage.updatKeys(keys, (err, result) => {
+          if (err) return cb(err);
           console.log('imoprtseed: call decrypt function');
           console.log('importseed: param config.sharedKey', config.sharedKey);
           console.log('importseed: param keys.keyFund', keys.keyFund);
@@ -1210,26 +1211,26 @@ decrypt(sharedKey: Buffer, cipherText: string) {
           console.log('importseed: ctArray', ctArray);
           const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
           console.log('importseed: ctStr', ctStr);
-          this.restartHandleSwapQueue((err) => {
-            if(err) return cb(err);
+          this.restartHandleSwapQueue(err => {
+            if (err) return cb(err);
             return cb(null, true);
           });
-        })
+        });
       }
-    })
+    });
 
-  //  this.storage.fetchUserByEmail(opts.email, (err, user: IUser)=>{
-  //   if(err) return cb(err);
-  //   bcrypt.compare(opts.password, user.hashPassword).then(result => {
-  //     if(err) return cb(err);
-  //     return cb(null, true);
-  //   }).catch(e => {
-  //     return cb(e);
-  //   })
-  //  });
+    //  this.storage.fetchUserByEmail(opts.email, (err, user: IUser)=>{
+    //   if(err) return cb(err);
+    //   bcrypt.compare(opts.password, user.hashPassword).then(result => {
+    //     if(err) return cb(err);
+    //     return cb(null, true);
+    //   }).catch(e => {
+    //     return cb(e);
+    //   })
+    //  });
   }
 
-/**
+  /**
    * Renew password for user and return new recovery key
    *
    * @param {Object} opts
@@ -1238,48 +1239,50 @@ decrypt(sharedKey: Buffer, cipherText: string) {
    * @param {string} opts.newPassword - User new password
    * @param {string} opts.recoveryKey - User recovery key
    */
-  renewPassword(opts, cb){
-    if(!opts.email){
+  renewPassword(opts, cb) {
+    if (!opts.email) {
       return cb(new Error('Missing required parameter email'));
     }
-    if(!opts.newPassword){
-      return cb(new Error('Missing required parameter new password'))
+    if (!opts.newPassword) {
+      return cb(new Error('Missing required parameter new password'));
     }
-    if(!(opts.oldPassword || opts.recoveryKey)){
+    if (!(opts.oldPassword || opts.recoveryKey)) {
       return cb(new Error('Missing requirement parameter password or recovery key to re new password'));
     }
 
-    this.storage.fetchUserByEmail(opts.email, (err, user : IUser) => {
-      if(err) return cb(err);
+    this.storage.fetchUserByEmail(opts.email, (err, user: IUser) => {
+      if (err) return cb(err);
       const compareValue = {
-        text : '',
+        text: '',
         hash: ''
-      }
-      if(opts.oldPassword.length > 0){
+      };
+      if (opts.oldPassword.length > 0) {
         compareValue.text = opts.oldPassword;
-        compareValue.hash = user.hashPassword
-      } else if (opts.recoveryKey.length > 0){
+        compareValue.hash = user.hashPassword;
+      } else if (opts.recoveryKey.length > 0) {
         compareValue.text = opts.recoveryKey;
-        compareValue.hash = user.recoveryKey
+        compareValue.hash = user.recoveryKey;
       }
-      bcrypt.compare(compareValue.text, compareValue.hash ).then(result => {
-        if(result){
-          const userOpts = {
-            email: user.email,
-            password: opts.newPassword
+      bcrypt
+        .compare(compareValue.text, compareValue.hash)
+        .then(result => {
+          if (result) {
+            const userOpts = {
+              email: user.email,
+              password: opts.newPassword
+            };
+            this.updateUserPassword(userOpts, (err, recoveryKey) => {
+              if (err) return cb(err);
+              return cb(null, recoveryKey);
+            });
+          } else {
+            return cb(new Error('Invalid data. Please try again'));
           }
-          this.updateUserPassword(userOpts, (err, recoveryKey) =>{
-            if(err) return cb(err);
-            return cb(null, recoveryKey);
-          })
-        } else {
-          return cb(new Error('Invalid data. Please try again'))
-        }
-      }).catch(e => {
-        return cb(e);
-      })
-    })
-
+        })
+        .catch(e => {
+          return cb(e);
+        });
+    });
   }
 
   _setClientVersion(version) {
@@ -3689,8 +3692,8 @@ decrypt(sharedKey: Buffer, cipherText: string) {
     let key;
     try {
       let opts = { words: '' };
-      this.storage.fetchKeys((err, result:Keys)=>{
-        if(err) return cb(err);
+      this.storage.fetchKeys((err, result: Keys) => {
+        if (err) return cb(err);
         console.log('call decrypt function');
         console.log('param config.sharedKey', config.sharedKey);
         console.log('param result.keyFund', result.keyFund);
@@ -3700,7 +3703,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
         console.log('ctArray', ctArray);
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
         console.log('ctStr', ctStr);
-         opts.words = ctStr;
+        opts.words = ctStr;
         Client.serverAssistedImport(
           opts,
           {
@@ -3719,14 +3722,13 @@ decrypt(sharedKey: Buffer, cipherText: string) {
             }
           }
         );
-      })
-
+      });
     } catch (e) {
       return cb(e);
     }
   }
 
-  initializeCoinConfig(cb){
+  initializeCoinConfig(cb) {
     let listAvailableCoin = [];
     let listCoinConfig = [];
     // let listCoinConfigExistedInDb = [];
@@ -3734,17 +3736,27 @@ decrypt(sharedKey: Buffer, cipherText: string) {
     let listNewCoinConfigToUpdateInDb = [];
     let promiseList = [];
     listAvailableCoin = config.coinSupportForSwap;
-    this.storage.fetchAllCoinConfig(async (err, listCoinConfigExistedInDb)=>{
-      if(err) return cb(err);
-      if(listAvailableCoin && listAvailableCoin.length > 0){
+    this.storage.fetchAllCoinConfig(async (err, listCoinConfigExistedInDb) => {
+      if (err) return cb(err);
+      if (listAvailableCoin && listAvailableCoin.length > 0) {
         listAvailableCoin.forEach(coin => {
           // if coin config not exist in db => create new coin config
-          if(!listCoinConfigExistedInDb || listCoinConfigExistedInDb.length === 0 || listCoinConfigExistedInDb.findIndex(x => x.code === coin.code && x.network === coin.network) === -1 ){
+          if (
+            !listCoinConfigExistedInDb ||
+            listCoinConfigExistedInDb.length === 0 ||
+            listCoinConfigExistedInDb.findIndex(x => x.code === coin.code && x.network === coin.network) === -1
+          ) {
             listNewCoinConfigToStoreInDb.push(CoinConfig.create(coin));
           }
           // if coin config exist in db but no support before => enable again
-          else if(listCoinConfigExistedInDb.findIndex(x => x.code === coin.code && x.network === coin.network && !coin.isSupport) > -1){
-            const coinUpdateFound = listCoinConfigExistedInDb.find(x => x.code === coin.code && x.network === coin.network && !coin.isSupport);
+          else if (
+            listCoinConfigExistedInDb.findIndex(
+              x => x.code === coin.code && x.network === coin.network && !coin.isSupport
+            ) > -1
+          ) {
+            const coinUpdateFound = listCoinConfigExistedInDb.find(
+              x => x.code === coin.code && x.network === coin.network && !coin.isSupport
+            );
             coinUpdateFound.isSupport = true;
             listNewCoinConfigToUpdateInDb.push(coinUpdateFound);
           }
@@ -3753,65 +3765,68 @@ decrypt(sharedKey: Buffer, cipherText: string) {
         // checking if coin config existed in db but not found in available coin  => not show to user in config file
 
         const listCoinConfigExistedInDbEnableSupport = listCoinConfigExistedInDb.filter(coin => coin.isSupport);
-        if(listCoinConfigExistedInDbEnableSupport && listCoinConfigExistedInDbEnableSupport.length > 0){
+        if (listCoinConfigExistedInDbEnableSupport && listCoinConfigExistedInDbEnableSupport.length > 0) {
           listCoinConfigExistedInDbEnableSupport.forEach(coinConfigInDb => {
-            const avaialableCoinFound = listAvailableCoin.find(coin => coin.code === coinConfigInDb.code && coin.network === coinConfigInDb.network);
-            if(!avaialableCoinFound){
+            const avaialableCoinFound = listAvailableCoin.find(
+              coin => coin.code === coinConfigInDb.code && coin.network === coinConfigInDb.network
+            );
+            if (!avaialableCoinFound) {
               coinConfigInDb.isSupport = false;
               listNewCoinConfigToUpdateInDb.push(coinConfigInDb);
             }
           });
         }
-        if(listNewCoinConfigToStoreInDb.length > 0){
+        if (listNewCoinConfigToStoreInDb.length > 0) {
           promiseList.push(this.storeListConfigWithPromie(listNewCoinConfigToStoreInDb));
         }
-        if(listNewCoinConfigToUpdateInDb.length > 0){
+        if (listNewCoinConfigToUpdateInDb.length > 0) {
           listNewCoinConfigToUpdateInDb.forEach(coinConfig => {
             promiseList.push(this.updateConfigWithPromie(coinConfig));
-          })
+          });
         }
-        await Promise.all(promiseList).then(async result => {
-          return cb(null);
-        }).catch(err => {
-          return cb(err);
-        });
+        await Promise.all(promiseList)
+          .then(async result => {
+            return cb(null);
+          })
+          .catch(err => {
+            return cb(err);
+          });
       }
     });
-
   }
 
-  storeListConfigWithPromie(listNewCoinConfigToStoreInDb) : Promise<any>{
+  storeListConfigWithPromie(listNewCoinConfigToStoreInDb): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.storage.storeListCoinConfig(listNewCoinConfigToStoreInDb, (err, result) =>{
-        if(err) return reject(err);
+      this.storage.storeListCoinConfig(listNewCoinConfigToStoreInDb, (err, result) => {
+        if (err) return reject(err);
         return resolve(result);
-      })
-    })
+      });
+    });
   }
 
-  updateConfigWithPromie(coinConfig) : Promise<any>{
+  updateConfigWithPromie(coinConfig): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.storage.updateCoinConfig(coinConfig, (err, result) =>{
-        if(err) return reject(err);
+      this.storage.updateCoinConfig(coinConfig, (err, result) => {
+        if (err) return reject(err);
         return resolve(result);
-      })
-    })
+      });
+    });
   }
 
-  async mappingWalletClientsToCoinConfig(walletClients : any[], isSwap: boolean) {
-    if(walletClients){
+  async mappingWalletClientsToCoinConfig(walletClients: any[], isSwap: boolean) {
+    if (walletClients) {
       // get all wallets in walletClients
-      const listCoinConfigOpts = walletClients.map( s => ({
+      const listCoinConfigOpts = walletClients.map(s => ({
         code: s.credentials.coin,
         network: s.credentials.network,
         isToken: false,
         isSwap
       }));
-      if(listCoinConfigOpts.findIndex(s => s.code === 'xec' && s.network === 'livenet') > -1){
+      if (listCoinConfigOpts.findIndex(s => s.code === 'xec' && s.network === 'livenet') > -1) {
         // get list token inside
         let listTokenFound = null;
         listTokenFound = await this.getTokensWithPromise({ walletId: clientsFund.credentials.walletId });
-        if(listTokenFound){
+        if (listTokenFound) {
           const listTokenFoundConverted = _.map(listTokenFound, item => {
             return {
               tokenId: item.tokenId,
@@ -3826,7 +3841,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
             isToken: true,
             tokenInfo: s.tokenInfo,
             isSwap
-          }))
+          }));
         }
       }
     }
@@ -3836,8 +3851,8 @@ decrypt(sharedKey: Buffer, cipherText: string) {
     let key;
     try {
       let opts = { words: '' };
-      this.storage.fetchKeys((err, result:Keys)=>{
-        if(err) return cb(err);
+      this.storage.fetchKeys((err, result: Keys) => {
+        if (err) return cb(err);
         const keyReceiveDecrypted = this.decrypt(config.sharedKey, result.keyReceive);
         const ctArray = Array.from(new Uint8Array(keyReceiveDecrypted)); // ciphertext as byte array
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
@@ -3858,8 +3873,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
             }
           }
         );
-      })
-
+      });
     } catch (e) {
       return cb(e);
     }
@@ -3880,9 +3894,9 @@ decrypt(sharedKey: Buffer, cipherText: string) {
 
   getKeyFundAndReceiveWithFundMnemonic(cb) {
     const clientBwc = new Client();
-    this._getKeyFundWithMnemonic(clientBwc, (err) => {
+    this._getKeyFundWithMnemonic(clientBwc, err => {
       if (err) return cb(err);
-      this._getKeyReceive(clientBwc, (err) => {
+      this._getKeyReceive(clientBwc, err => {
         if (err) return cb(err);
         return cb(null, true);
       });
@@ -4132,28 +4146,28 @@ decrypt(sharedKey: Buffer, cipherText: string) {
       }
     }, 2000);
 
-    logger.debug('swapQueueInterval', swapQueueInterval)
+    logger.debug('swapQueueInterval', swapQueueInterval);
   }
 
-  stopHandleSwapQueue(): boolean{
-    try{
+  stopHandleSwapQueue(): boolean {
+    try {
       clearInterval(swapQueueInterval);
       return true;
-    } catch(e){
+    } catch (e) {
       logger.debug(e);
       return false;
     }
   }
 
-  restartHandleSwapQueue(cb){
-    try{
+  restartHandleSwapQueue(cb) {
+    try {
       clearInterval(swapQueueInterval);
-      this.getKeyFundAndReceiveWithFundMnemonic((err)=>{
-        if(err) return cb(err);
+      this.getKeyFundAndReceiveWithFundMnemonic(err => {
+        if (err) return cb(err);
         this.checkQueueHandleSwap();
         return cb(null);
-      })
-    } catch(e){
+      });
+    } catch (e) {
       logger.debug(e);
       return cb(e);
     }
@@ -4253,7 +4267,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
       }
       this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
         if (err || txid != txp.txid) {
-          if(err) return cb(err);
+          if (err) return cb(err);
           if (!err || txp.txid != txid) {
             logger.warn(`Broadcast failed for: ${raw}`);
           } else {

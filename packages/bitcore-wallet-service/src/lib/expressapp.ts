@@ -1594,10 +1594,10 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.storage.fetchAllCoinConfig((err, listCoinConfig)=>{
-        if(err) return err;
+      server.storage.fetchAllCoinConfig((err, listCoinConfig) => {
+        if (err) return err;
         res.json(listCoinConfig);
-      })
+      });
     });
 
     // DEPRECATED
@@ -1882,8 +1882,8 @@ export class ExpressApp {
           logger.debug('already init user');
         }
       });
-      server.initializeCoinConfig((err)=>{
-        if(err) logger.error(err);
+      server.initializeCoinConfig(err => {
+        if (err) logger.error(err);
       });
       setTimeout(() => {
         server.getKeyFundAndReceiveWithFundMnemonic((err, result) => {

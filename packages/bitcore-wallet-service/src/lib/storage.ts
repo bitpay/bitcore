@@ -624,7 +624,6 @@ export class Storage {
       });
   }
 
-
   countAllOrderInfo(opts) {
     return this.db
       .collection(collections.ORDER_INFO)
@@ -632,7 +631,6 @@ export class Storage {
       .sort(opts.query)
       .count();
   }
-
 
   fetchAllCoinConfig(cb) {
     this.db
@@ -644,7 +642,7 @@ export class Storage {
       });
   }
 
-  storeListCoinConfig(listCoinConfig, cb){
+  storeListCoinConfig(listCoinConfig, cb) {
     if (!this.db) {
       logger.warn('Trying to store a notification with close DB', listCoinConfig);
       return;
