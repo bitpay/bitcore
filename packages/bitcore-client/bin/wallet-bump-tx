@@ -36,7 +36,6 @@ const main = async () => {
     let existingTx;
     if (txid) {
       existingTx = JSON.parse(await wallet.getTransactionByTxid({ txid }));
-      // need to parse more... somehow
     } else if (rawtx) {
       existingTx = ethers.utils.parseTransaction(rawtx);
     } else {
