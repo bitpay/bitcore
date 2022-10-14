@@ -4,21 +4,24 @@ import { TokenInfo } from './tokenInfo';
 export class ConfigSwap {
   coinSwap: CoinConfig[];
   coinReceive: CoinConfig[];
-  weightedMaximumFund: number;
-  fee: FeeType[];
-
+  // weightedMaximumFund: number;
+  // fee: FeeType[];
+  constructor(){
+    this.coinSwap = [];
+    this.coinReceive = [];
+  }
   static create(opts) {
     const x = new ConfigSwap();
     x.coinReceive = opts.coinReceive;
     x.coinSwap = opts.coinSwap;
-    x.fee = opts.fee;
+    // x.fee = opts.fee;
     return x;
   }
   static fromObj(opts) {
     const x = new ConfigSwap();
     x.coinReceive = opts.coinReceive;
     x.coinSwap = opts.coinSwap;
-    x.fee = opts.fee;
+    // x.fee = opts.fee;
     return x;
   }
   // static fromJson(opts){
@@ -95,6 +98,7 @@ export class ConfigSwap {
 }
 
 export class CoinConfig {
+  _id: string;
   code: string;
   network: string;
   isToken: boolean;
@@ -119,6 +123,7 @@ export class CoinConfig {
 
   static create(opts) {
     const x = new CoinConfig();
+    x._id = opts._id;
     x.code = opts.code;
     x.isToken = opts.isToken;
     x.network = opts.network;
@@ -145,6 +150,7 @@ export class CoinConfig {
 
   static fromObj(opts) {
     const x = new CoinConfig();
+    x._id = opts._id;
     x.code = opts.code;
     x.network = opts.network;
     x.isToken = opts.isToken;

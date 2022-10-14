@@ -52,7 +52,8 @@ const errors = {
   NO_AVAILABLE_SWAP_COIN: 'Not found availabe coin user can swap',
   NO_AVAILABLE_RECEIVE_COIN: 'Not found availbe coin user can receive',
   NOT_FOUND_COIN_IN_CONFIG: 'This coin is not allowed to swap',
-  NOT_STABLE_RATE: 'Rate is not stable'
+  NOT_STABLE_RATE: 'Rate is not stable',
+  INVALID_AMOUNT: 'Invalid amount'
 };
 
 const errorObjects = _.fromPairs(

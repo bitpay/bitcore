@@ -3813,21 +3813,50 @@ export class WalletService {
     });
   }
 
-  async mappingWalletClientsToCoinConfig(walletClients: any[], isSwap: boolean) {
-    if (walletClients) {
+  async rescanWalletsInKeys(cb) {
+    if(!clientsFund || !clientsReceive){
+      return cb(new Error('Can not find key fund and receive '));
+    }
+    let listCoinConfigMapped = [];
+    // let listCoinConfigReceiveFound = [];
+    this.storage.fetchAllCoinConfig(async (err, listCoinConfig : CoinConfig[]) => {
+      if(err) return cb(err);
+      if(clientsFund){
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfig);
+      }
+      if(clientsReceive && listCoinConfigMapped.length > 0){
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfigMapped);
+      }
+      if(listCoinConfigMapped.length > 0){
+        this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result)=>{
+          if(err) return cb(err);
+          return cb(null, result);
+        })
+      } else{
+        return cb(new Error('Can not rescan wallet'));
+      }
+    })
+   
+  }
+
+  async mappingWalletClientsToCoinConfig(walletClients, isSwap: boolean , listCoinConfig: CoinConfig[]) {
+    let listCoinFound = [];
+    let listTokenFound = [];
+  if (walletClients) {
       // get all wallets in walletClients
-      const listCoinConfigOpts = walletClients.map(s => ({
+      listCoinFound = walletClients.map(s => ({
         code: s.credentials.coin,
         network: s.credentials.network,
-        isToken: false,
-        isSwap
+        walletId: s.credentials.walletId
+        // isToken: false,
       }));
-      if (listCoinConfigOpts.findIndex(s => s.code === 'xec' && s.network === 'livenet') > -1) {
+      const xecWalletFound = listCoinFound.find(s => s.code === 'xec' && s.network === 'livenet');
+      if (xecWalletFound) {
         // get list token inside
-        let listTokenFound = null;
-        listTokenFound = await this.getTokensWithPromise({ walletId: clientsFund.credentials.walletId });
-        if (listTokenFound) {
-          const listTokenFoundConverted = _.map(listTokenFound, item => {
+        let listToken = null;
+        listToken = await this.getTokensWithPromise({ walletId: xecWalletFound.walletId });
+        if (listToken) {
+          const listTokenConverted = _.map(listToken, item => {
             return {
               tokenId: item.tokenId,
               tokenInfo: item.tokenInfo,
@@ -3835,16 +3864,25 @@ export class WalletService {
               utxoToken: item.utxoToken
             } as TokenItem;
           });
-          const listTokenConfigOpts = listTokenFoundConverted.map(s => ({
+          listTokenFound = listTokenConverted.map(s => ({
             code: s.tokenInfo.symbol.toLowerCase(),
             network: 'livenet',
-            isToken: true,
-            tokenInfo: s.tokenInfo,
-            isSwap
+            // isToken: true,
+            // tokenInfo: s.tokenInfo,
           }));
         }
       }
+      
+        const listFound = listCoinFound.concat(listTokenFound);
+        if(listFound.length > 0){
+          listCoinConfig.forEach(coinConfig => {
+            const isCoinConfigFound = listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;          
+            coinConfig.isSwap =  isSwap ? isCoinConfigFound : coinConfig.isSwap;
+            coinConfig.isReceive = !isSwap ? isCoinConfigFound : coinConfig.isReceive;
+            })
+        }
     }
+    return listCoinConfig;
   }
 
   _getKeyReceive(client, cb) {
@@ -4081,9 +4119,13 @@ export class WalletService {
                               const feeCalculated = this.calculateFee(
                                 amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
                                 orderInfo,
-                                configSwap,
-                                rateList[orderInfo.toCoinCode.toLowerCase()].USD
+                                rateList[orderInfo.toCoinCode.toLowerCase()].USD,
+                                configSwap.coinReceive.find(coin => coin.code === orderInfo.toCoinCode && coin.network === orderInfo.toNetwork)
                               );
+                              if(amountDepositInToCoinCodeUnit < feeCalculated){
+                                saveError(orderInfo, data, Errors.INVALID_AMOUNT);
+                                return;
+                              }
                               amountDepositInToCoinCodeUnit -= feeCalculated;
                             }
                             if (orderInfo.isToToken) {
@@ -4173,39 +4215,22 @@ export class WalletService {
     }
   }
 
-  calculateFee(amount: number, order: Order, configSwap: ConfigSwap, rateUsd: number): number {
+  calculateFee(amount: number, order: Order, rateUsd: number, coinConfig: CoinConfig): number {
     // amount should be in to coin code unit
     let feeCalculated = 0;
     let networkFee = 0;
-    const receiveCoinConfig = configSwap.coinReceive.find(
-      coin => coin.code === order.toCoinCode && coin.network === order.toNetwork
-    );
-    if (receiveCoinConfig) {
-      networkFee = receiveCoinConfig.networkFee / order.toSatUnit;
+    if (coinConfig.serviceFee > 0) {
+      feeCalculated = (coinConfig.serviceFee * amount) / 100;
     }
-    if (configSwap.fee) {
-      const feeSelected = configSwap.fee.find(f => f.code === order.toCoinCode.toLowerCase());
-      if (feeSelected) {
-        if (feeSelected.serviceFee > 0) {
-          feeCalculated = (feeSelected.serviceFee * amount) / 100;
-        }
-        if (feeSelected.networkFee > 0) {
-          feeCalculated += feeSelected.networkFee;
-        } else {
-          feeCalculated += networkFee;
-        }
-        if (feeSelected.settleFee > 0) {
-          // settle fee default calculated in usd
-          const settleFeecConvertedToCoinUnit = feeSelected.settleFee / rateUsd;
-          feeCalculated += settleFeecConvertedToCoinUnit;
-        }
-        return order.toSatUnit * feeCalculated;
-      } else {
-        return order.isToToken ? 0 : networkFee;
-      }
-    } else {
-      return order.isToToken ? 0 : networkFee;
+    if (coinConfig.networkFee > 0) {
+      feeCalculated += coinConfig.networkFee;
+    } 
+    if (coinConfig.settleFee > 0) {
+      // settle fee default calculated in usd
+      const settleFeecConvertedToCoinUnit = coinConfig.settleFee / rateUsd;
+      feeCalculated += settleFeecConvertedToCoinUnit;
     }
+    return order.toSatUnit * feeCalculated;
   }
   async checkRequirementBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order) {
     let listCoinReceiveCode = [];
@@ -4243,10 +4268,10 @@ export class WalletService {
         coinCodeReceive = orderInfo.toCoinCode;
       }
       const indexCoinReceiveFound = configSwap.coinReceive.findIndex(
-        config => config.isEnable && config.network === orderInfo.toNetwork && config.code === coinCodeReceive
+        config => config.network === orderInfo.toNetwork && config.code === coinCodeReceive
       );
       const indexCoinSwapfound = configSwap.coinSwap.findIndex(
-        config => config.isEnable && config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode
+        config => config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode
       );
       if (indexCoinReceiveFound < 0 || indexCoinSwapfound < 0) {
         throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
@@ -4446,6 +4471,17 @@ export class WalletService {
     try {
       const orderInfo = Order.fromObj(opts);
       this.storage.updateOrder(orderInfo, (err, result) => {
+        if (err) return cb(err);
+        return cb(null, { isUpdated: true });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  updateListCoinConfig(listCoinConfig, cb) {
+    try {
+      this.storage.updateListCoinConfig(listCoinConfig, (err, result) => {
         if (err) return cb(err);
         return cb(null, { isUpdated: true });
       });
@@ -6056,16 +6092,13 @@ export class WalletService {
       return cb(Errors.NOT_FOUND_KEY_FUND);
     }
     logger.debug('appDir: ', appDir);
-    // await fs.readFile(appDir + '/admin-config.json', 'utf8', (error, data) => {
-
-    // });
-
-    // if (error) {
-    //   console.log(error);
-    //   return;
-    // }
-    const swapConfig = ConfigSwap.fromObj(adminConfig);
-    let promiseList = [];
+    this.storage.fetchAllCoinConfig((err, listCoinConfig : CoinConfig[])=>{
+      if(err) return cb(err);
+      listCoinConfig = listCoinConfig.filter(s => s.isSupport);
+      const swapConfig = new ConfigSwap();
+      swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive);
+      swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap);
+      let promiseList = [];
     let promiseList2 = [];
     // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
     let isFundClientXecFound = false;
@@ -6162,7 +6195,10 @@ export class WalletService {
                     const feePerInput = (sizePerInput * feePerKb) / 1000;
                     estimatedFee = Math.round(baseTxpFee + feePerInput);
                   }
-                  coin.networkFee = estimatedFee;
+                  if(coin.networkFee === 0){
+                    const coinCode = coin.isToken ?  'xec' : coin.code.toLowerCase();
+                    coin.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+                  }
                 });
                 return cb(null, swapConfig);
               });
@@ -6176,6 +6212,9 @@ export class WalletService {
       .catch(e => {
         logger.debug(e);
       });
+    })
+    // const swapConfig = ConfigSwap.fromObj(adminConfig);
+    
   }
 
   getConfigSwapWithPromise(): Promise<ConfigSwap> {

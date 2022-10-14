@@ -22,6 +22,7 @@ import {
 import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
 import { IUser } from './model/user';
+import { CoinConfig } from './model/config-swap';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -573,6 +574,35 @@ export class Storage {
         return cb(null, result);
       }
     );
+  }
+
+  updateListCoinConfig(listCoinConfig: CoinConfig[], cb){
+    if (!this.db) {
+      logger.warn('Trying to update list coin config with close DB', listCoinConfig);
+      return;
+    }
+    var bulk = this.db.collection(collections.COIN_CONFIG).initializeUnorderedBulkOp();
+    for(var i = 0 ; i < listCoinConfig.length; i++){
+      const coinConfig = listCoinConfig[i];
+      var ObjectId = require('mongodb').ObjectId;
+
+      bulk.find( { _id: ObjectId(coinConfig._id) } )
+      .update( { 
+        $set: 
+        { 
+          isEnableSwap: coinConfig.isEnableSwap,
+          isEnableReceive: coinConfig.isEnableReceive,
+          min: coinConfig.min,
+          max: coinConfig.max,
+          serviceFee: coinConfig.serviceFee,
+          settleFee: coinConfig.settleFee,
+          networkFee: coinConfig.networkFee,
+          isSwap: coinConfig.isSwap,
+          isReceive: coinConfig.isReceive
+        } 
+      } )
+    }
+    bulk.execute().then(result => {return cb(null, result)}).catch(e => {return cb(e)});
   }
 
   storeOrderInfo(orderInfo, cb) {

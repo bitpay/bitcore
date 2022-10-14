@@ -1587,6 +1587,19 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v3/coinconfig/update/list', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.updateListCoinConfig(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
     router.get('/v3/coinconfig', (req, res) => {
       let server;
       try {
@@ -1595,7 +1608,20 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
       server.storage.fetchAllCoinConfig((err, listCoinConfig) => {
-        if (err) return err;
+        if (err) return returnError(err, res, req);
+        res.json(listCoinConfig);
+      });
+    });
+
+    router.get('/v3/coinconfig/refresh/wallet', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.rescanWalletsInKeys((err, listCoinConfig) => {
+        if (err) return returnError(err, res, req);
         res.json(listCoinConfig);
       });
     });
