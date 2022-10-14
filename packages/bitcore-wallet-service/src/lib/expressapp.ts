@@ -5,9 +5,9 @@ import { logger, transport } from './logger';
 
 import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
+import { IUser } from './model/user';
 import { WalletService } from './server';
 import { Stats } from './stats';
-import { IUser } from './model/user';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -1437,7 +1437,7 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        server.storage.fetchUserByEmail(reqServer.user, (err, user : IUser) => {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
           res.json({
             isVerified: true,
@@ -1459,11 +1459,11 @@ export class ExpressApp {
         opts = {
           email: reqServer.user,
           password: reqServer.body.password
-        }
+        };
         server.updateUserPassword(opts, (err, recoveryKey) => {
           if (err) return returnError(err, res, reqServer);
           res.json(recoveryKey);
-        })
+        });
       }
     });
 
@@ -1479,11 +1479,11 @@ export class ExpressApp {
         opts = {
           email: reqServer.user,
           password: reqServer.body.password
-        }
+        };
         server.verifyPassword(opts, (err, result) => {
           if (err) return returnError(err, res, reqServer);
           res.json(result);
-        })
+        });
       }
     });
 
@@ -1497,16 +1497,15 @@ export class ExpressApp {
       }
       if (reqServer.user) {
         opts = {
-         keyFund: reqServer.body.keyFund,
-         keyReceive: reqServer.body.keyReceive
-        }
+          keyFund: reqServer.body.keyFund,
+          keyReceive: reqServer.body.keyReceive
+        };
         server.importSeed(opts, (err, result) => {
           if (err) return returnError(err, res, reqServer);
           res.json(result);
-        })
+        });
       }
     });
-
 
     router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
@@ -1522,11 +1521,11 @@ export class ExpressApp {
           newPassword: reqServer.body.newPassword,
           oldPassword: reqServer.body.oldPassword,
           recoveryKey: reqServer.body.recoveryKey
-        }
+        };
         server.renewPassword(opts, (err, recoveryKey) => {
           if (err) return returnError(err, res, reqServer);
           res.json(recoveryKey);
-        })
+        });
       }
     });
 
@@ -1586,6 +1585,19 @@ export class ExpressApp {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
+    });
+
+    router.get('/v3/coinconfig', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.storage.fetchAllCoinConfig((err, listCoinConfig)=>{
+        if(err) return err;
+        res.json(listCoinConfig);
+      })
     });
 
     // DEPRECATED
@@ -1870,11 +1882,13 @@ export class ExpressApp {
           logger.debug('already init user');
         }
       });
-
+      server.initializeCoinConfig((err)=>{
+        if(err) logger.error(err);
+      });
       setTimeout(() => {
         server.getKeyFundAndReceiveWithFundMnemonic((err, result) => {
-          if(err) logger.error('Can not get key fund , key receive . Please try to import key again');
-          if(result){
+          if (err) logger.error('Can not get key fund , key receive . Please try to import key again');
+          if (result) {
             server.checkQueueHandleSwap();
           }
           return cb();

@@ -1166,7 +1166,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
   } catch(e){
     console.log(e);
   }
- 
+
 }
  /**
    * Update key for swap
@@ -3720,20 +3720,92 @@ decrypt(sharedKey: Buffer, cipherText: string) {
           }
         );
       })
-      
+
     } catch (e) {
       return cb(e);
     }
   }
 
+  initializeCoinConfig(cb){
+    let listAvailableCoin = [];
+    let listCoinConfig = [];
+    // let listCoinConfigExistedInDb = [];
+    let listNewCoinConfigToStoreInDb = [];
+    let listNewCoinConfigToUpdateInDb = [];
+    let promiseList = [];
+    listAvailableCoin = config.coinSupportForSwap;
+    this.storage.fetchAllCoinConfig(async (err, listCoinConfigExistedInDb)=>{
+      if(err) return cb(err);
+      if(listAvailableCoin && listAvailableCoin.length > 0){
+        listAvailableCoin.forEach(coin => {
+          // if coin config not exist in db => create new coin config
+          if(!listCoinConfigExistedInDb || listCoinConfigExistedInDb.length === 0 || listCoinConfigExistedInDb.findIndex(x => x.code === coin.code && x.network === coin.network) === -1 ){
+            listNewCoinConfigToStoreInDb.push(CoinConfig.create(coin));
+          }
+          // if coin config exist in db but no support before => enable again
+          else if(listCoinConfigExistedInDb.findIndex(x => x.code === coin.code && x.network === coin.network && !coin.isSupport) > -1){
+            const coinUpdateFound = listCoinConfigExistedInDb.find(x => x.code === coin.code && x.network === coin.network && !coin.isSupport);
+            coinUpdateFound.isSupport = true;
+            listNewCoinConfigToUpdateInDb.push(coinUpdateFound);
+          }
+        });
+
+        // checking if coin config existed in db but not found in available coin  => not show to user in config file
+
+        const listCoinConfigExistedInDbEnableSupport = listCoinConfigExistedInDb.filter(coin => coin.isSupport);
+        if(listCoinConfigExistedInDbEnableSupport && listCoinConfigExistedInDbEnableSupport.length > 0){
+          listCoinConfigExistedInDbEnableSupport.forEach(coinConfigInDb => {
+            const avaialableCoinFound = listAvailableCoin.find(coin => coin.code === coinConfigInDb.code && coin.network === coinConfigInDb.network);
+            if(!avaialableCoinFound){
+              coinConfigInDb.isSupport = false;
+              listNewCoinConfigToUpdateInDb.push(coinConfigInDb);
+            }
+          });
+        }
+        if(listNewCoinConfigToStoreInDb.length > 0){
+          promiseList.push(this.storeListConfigWithPromie(listNewCoinConfigToStoreInDb));
+        }
+        if(listNewCoinConfigToUpdateInDb.length > 0){
+          listNewCoinConfigToUpdateInDb.forEach(coinConfig => {
+            promiseList.push(this.updateConfigWithPromie(coinConfig));
+          })
+        }
+        await Promise.all(promiseList).then(async result => {
+          return cb(null);
+        }).catch(err => {
+          return cb(err);
+        });
+      }
+    });
+
+  }
+
+  storeListConfigWithPromie(listNewCoinConfigToStoreInDb) : Promise<any>{
+    return new Promise((resolve, reject) => {
+      this.storage.storeListCoinConfig(listNewCoinConfigToStoreInDb, (err, result) =>{
+        if(err) return reject(err);
+        return resolve(result);
+      })
+    })
+  }
+
+  updateConfigWithPromie(coinConfig) : Promise<any>{
+    return new Promise((resolve, reject) => {
+      this.storage.updateCoinConfig(coinConfig, (err, result) =>{
+        if(err) return reject(err);
+        return resolve(result);
+      })
+    })
+  }
+
   async mappingWalletClientsToCoinConfig(walletClients : any[], isSwap: boolean) {
     if(walletClients){
-      // get all wallets in walletClients 
+      // get all wallets in walletClients
       const listCoinConfigOpts = walletClients.map( s => ({
         code: s.credentials.coin,
         network: s.credentials.network,
         isToken: false,
-        isSwap      
+        isSwap
       }));
       if(listCoinConfigOpts.findIndex(s => s.code === 'xec' && s.network === 'livenet') > -1){
         // get list token inside
@@ -3753,7 +3825,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
             network: 'livenet',
             isToken: true,
             tokenInfo: s.tokenInfo,
-            isSwap      
+            isSwap
           }))
         }
       }
@@ -3787,7 +3859,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
           }
         );
       })
-     
+
     } catch (e) {
       return cb(e);
     }
@@ -4084,7 +4156,7 @@ decrypt(sharedKey: Buffer, cipherText: string) {
     } catch(e){
       logger.debug(e);
       return cb(e);
-    }  
+    }
   }
 
   calculateFee(amount: number, order: Order, configSwap: ConfigSwap, rateUsd: number): number {

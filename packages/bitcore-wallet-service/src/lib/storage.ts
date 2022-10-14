@@ -32,6 +32,7 @@ const collections = {
   // Duplciated in helpers.. TODO
   WALLETS: 'wallets',
   USER: 'user',
+  COIN_CONFIG: 'coin_config',
   KEYS: 'keys',
   TXS: 'txs',
   ADDRESSES: 'addresses',
@@ -82,6 +83,9 @@ export class Storage {
       return;
     }
     db.collection(collections.USER).createIndex({
+      id: 1
+    });
+    db.collection(collections.COIN_CONFIG).createIndex({
       id: 1
     });
     db.collection(collections.KEYS).createIndex({
@@ -620,12 +624,67 @@ export class Storage {
       });
   }
 
+
   countAllOrderInfo(opts) {
     return this.db
       .collection(collections.ORDER_INFO)
       .find()
       .sort(opts.query)
       .count();
+  }
+
+
+  fetchAllCoinConfig(cb) {
+    this.db
+      .collection(collections.COIN_CONFIG)
+      .find()
+      .toArray((err, listCoinConfig) => {
+        if (err) return cb(err);
+        else return cb(null, listCoinConfig);
+      });
+  }
+
+  storeListCoinConfig(listCoinConfig, cb){
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', listCoinConfig);
+      return;
+    }
+
+    this.db.collection(collections.COIN_CONFIG).insertMany(
+      listCoinConfig,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateCoinConfig(coinConfig, cb) {
+    this.db.collection(collections.COIN_CONFIG).updateOne(
+      {
+        code: coinConfig.code,
+        network: coinConfig.network
+      },
+      {
+        $set: {
+          isSupport: coinConfig.isSupport
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update coin config'));
+
+        return cb(null, result);
+      }
+    );
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {

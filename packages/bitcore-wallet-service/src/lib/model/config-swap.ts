@@ -1,3 +1,4 @@
+import { transpileModule } from 'typescript';
 import { TokenInfo } from './tokenInfo';
 
 export class ConfigSwap {
@@ -97,7 +98,9 @@ export class CoinConfig {
   code: string;
   network: string;
   isToken: boolean;
+  settleFee?: number;
   networkFee?: number;
+  serviceFee?: number;
   rate?: any;
   min: number;
   minConvertToSat?: number;
@@ -108,8 +111,12 @@ export class CoinConfig {
   satUnit?: number;
   tokenInfo?: TokenInfo;
   isEnable?: boolean;
+  isEnableSwap?: boolean;
+  isEnableReceive?: boolean;
   isSwap: boolean;
-  
+  isReceive: boolean;
+  isSupport:boolean;
+
   static create(opts) {
     const x = new CoinConfig();
     x.code = opts.code;
@@ -126,6 +133,13 @@ export class CoinConfig {
     x.satUnit = opts.satUnit || 0;
     x.tokenInfo = opts.tokenInfo || null;
     x.isEnable = opts.isEnable || true;
+    x.isEnableSwap = opts.isEnableSwap || true;
+    x.isEnableReceive = opts.isEnableReceive || true;
+    x.isSwap = opts.isSwap || false;
+    x.isReceive = opts.isReceive || false;
+    x.isSupport = opts.isSupport || true;
+    x.settleFee = opts.settleFee || 0;
+    x.serviceFee = opts.serviceFee || 0;
     return x;
   }
 
@@ -145,6 +159,11 @@ export class CoinConfig {
     x.fundConvertToSat = opts.fundConvertToSat;
     x.satUnit = opts.satUnit;
     x.isEnable = opts.isEnable;
+    x.isSwap = opts.isSwap;
+    x.isReceive = opts.isReceive;
+    x.isSupport = opts.isSupport;
+    x.settleFee = opts.settleFee;
+    x.serviceFee = opts.serviceFee;
     return x;
   }
 }
