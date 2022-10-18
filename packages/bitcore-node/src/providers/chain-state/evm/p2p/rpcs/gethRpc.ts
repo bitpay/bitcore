@@ -49,7 +49,7 @@ export class GethRPC implements IRpc {
         id: 1
       });
     } catch (e) {
-        logger.debug(e.message || e);
+      logger.debug(e.message || e);
     }
     return result;
   }
