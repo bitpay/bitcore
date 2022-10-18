@@ -328,7 +328,7 @@ export class Wallet {
     gasPrice?: number;
     contractAddress?: string;
   }) {
-    const chain = params.token ? 'ERC20' : this.chain;
+    const chain = params.token ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
     if (params.token) {
       const tokenObj = this.tokens.find(tok => tok.symbol === params.token);

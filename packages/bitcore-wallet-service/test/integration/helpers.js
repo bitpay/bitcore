@@ -591,7 +591,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       const privKey = priv.toString('hex');
       let tx = ChainService.getBitcoreTx(txp).uncheckedSerialize();
       const isERC20 = txp.tokenAddress && !txp.payProUrl;
-      const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
+      const chain = isERC20 ? ChainService.getChain(txp.coin) + 'ERC20' : ChainService.getChain(txp.coin);
       tx = typeof tx === 'string'? [tx] : tx;
       signatures = [];
       for (const rawTx of tx) {
