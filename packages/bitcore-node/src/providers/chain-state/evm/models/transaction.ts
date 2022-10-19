@@ -366,7 +366,6 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     options?: TransformOptions
   ): EVMTransactionJSON | string {
     const dataStr = tx.data ? tx.data.toString() : '';
-    const decodedData = this.abiDecode(dataStr);
 
     const transaction: EVMTransactionJSON = {
       txid: tx.txid || '',
@@ -388,7 +387,6 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
-      decodedData: valueOrDefault(decodedData, undefined),
       receipt: valueOrDefault(tx.receipt, undefined)
     };
     if (options && options.object) {
