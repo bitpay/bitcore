@@ -68,5 +68,9 @@ export const Constants = {
   EVM_CHAINS: ['eth', 'matic'],
   ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
-  UNITS: CWC.Constants.UNITS
+  UNITS: CWC.Constants.UNITS,
+  EVM_CHAINSUFFIXMAP: {
+    eth: 'e',
+    matic: 'm'
+  }
 };
