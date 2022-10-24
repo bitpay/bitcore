@@ -1607,7 +1607,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.storage.fetchAllCoinConfig((err, listCoinConfig) => {
+      server.getListCoinConfig((err, listCoinConfig) => {
         if (err) return returnError(err, res, req);
         res.json(listCoinConfig);
       });

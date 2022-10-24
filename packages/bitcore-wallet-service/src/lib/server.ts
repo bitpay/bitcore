@@ -3836,7 +3836,7 @@ export class WalletService {
         return cb(new Error('Can not rescan wallet'));
       }
     })
-   
+
   }
 
   async mappingWalletClientsToCoinConfig(walletClients, isSwap: boolean , listCoinConfig: CoinConfig[]) {
@@ -3872,11 +3872,11 @@ export class WalletService {
           }));
         }
       }
-      
+
         const listFound = listCoinFound.concat(listTokenFound);
         if(listFound.length > 0){
           listCoinConfig.forEach(coinConfig => {
-            const isCoinConfigFound = listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;          
+            const isCoinConfigFound = listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
             coinConfig.isSwap =  isSwap ? isCoinConfigFound : coinConfig.isSwap;
             coinConfig.isReceive = !isSwap ? isCoinConfigFound : coinConfig.isReceive;
             })
@@ -4224,7 +4224,7 @@ export class WalletService {
     }
     if (coinConfig.networkFee > 0) {
       feeCalculated += coinConfig.networkFee;
-    } 
+    }
     if (coinConfig.settleFee > 0) {
       // settle fee default calculated in usd
       const settleFeecConvertedToCoinUnit = coinConfig.settleFee / rateUsd;
@@ -6214,8 +6214,34 @@ export class WalletService {
       });
     })
     // const swapConfig = ConfigSwap.fromObj(adminConfig);
-    
+
   }
+
+   /**
+   * Returns swap configetOrderInfog.
+   */
+  getListCoinConfig(cb) {
+      if (!clientsFund) {
+        return cb(Errors.NOT_FOUND_KEY_FUND);
+      }
+      if(!clientsReceive){
+        return cb(Errors.NOT_FOUND_KEY_RECEIVE);
+      }
+      this.storage.fetchAllCoinConfig((err, listCoinConfig : CoinConfig[])=>{
+        if(err) return cb(err);
+        listCoinConfig = listCoinConfig.filter(s => s.isSupport);
+        this.getAllTokenInfo((err, tokenInfoList: TokenInfo[])=>{
+            if(err) return cb(err);
+            listCoinConfig.forEach(coin => {
+              if(coin.isToken){
+                coin.tokenInfo = tokenInfoList.find(tokenInfo => tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase());
+              }
+            })
+            return cb(null, listCoinConfig);
+        })
+      })
+    }
+
 
   getConfigSwapWithPromise(): Promise<ConfigSwap> {
     return new Promise((resolve, reject) => {
