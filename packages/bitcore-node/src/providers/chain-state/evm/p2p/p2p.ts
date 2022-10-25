@@ -82,10 +82,12 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
       this.txSubscription.subscribe(async (_err, txid) => {
         if (!this.isCachedInv('TX', txid)) {
           this.cacheInv('TX', txid);
-          const tx = (await this.web3!.eth.getTransaction(txid)) as ErigonTransaction;
-          if (tx) {
-            await this.processTransaction(tx);
-            this.events.emit('transaction', tx);
+          if (txid) {
+            const tx = (await this.web3!.eth.getTransaction(txid)) as ErigonTransaction;
+            if (tx) {
+              await this.processTransaction(tx);
+              this.events.emit('transaction', tx);
+            }
           }
         }
       });
@@ -125,13 +127,16 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
   async getClient() {
     try {
       const nodeVersion = await this.web3!.eth.getNodeInfo();
-      const client = nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
-      if (client !== 'erigon' && client !== 'geth') {
+      const client = nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth' | 'akula' | 'bor';
+      if (client == 'erigon' || client == 'akula') {
+        return 'erigon';
+      } else if (client == 'geth' || client == 'bor') {
+        return 'geth';
+      } else {
         // assume it's a geth fork, or at least more like geth.
         // this is helpful when using a dev solution like ganache.
         return 'geth';
       }
-      return client;
     } catch (e) {
       console.error(e);
       return 'geth';
