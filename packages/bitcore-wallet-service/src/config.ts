@@ -61,6 +61,14 @@ const Config = () => {
           url: 'https://api-eth.bitcore.io'
         }
       },
+      matic: {
+        livenet: {
+          url: 'https://api-matic.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-matic.bitcore.io'
+        }
+      },
       xrp: {
         livenet: {
           url: 'https://api-xrp.bitcore.io'
@@ -93,7 +101,9 @@ const Config = () => {
       defaultUnit: 'btc',
       subjectPrefix: '',
       pushServerUrl: 'https://fcm.googleapis.com/fcm',
-      authorizationKey: 'You_have_to_put_something_here'
+      pushServerUrlBraze: 'https://rest.iad-05.braze.com',
+      authorizationKey: 'You_have_to_put_something_here',
+      authorizationKeyBraze: 'You_have_to_put_something_here'
     },
     fiatRateServiceOpts: {
       defaultProvider: 'BitPay',

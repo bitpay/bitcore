@@ -17,11 +17,11 @@ const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 
-type throttledNewBlocksFnType = (that: any, coin: any, network: any, hash: any) => void;
+type throttledNewBlocksFnType = (that: any, chain: any, network: any, hash: any) => void;
 
-var throttledNewBlocks = _.throttle((that, coin, network, hash) => {
-  that._notifyNewBlock(coin, network, hash);
-  // that._handleTxConfirmations(coin, network, hash); // no need to throttledNewBlocks
+var throttledNewBlocks = _.throttle((that, chain, network, hash) => {
+  that._notifyNewBlock(chain, network, hash);
+  // that._handleTxConfirmations(chain, network, hash); // no need to throttledNewBlocks
 }, Defaults.NEW_BLOCK_THROTTLE_TIME_MIN * 60 * 1000) as throttledNewBlocksFnType;
 
 export class BlockchainMonitor {
@@ -51,43 +51,44 @@ export class BlockchainMonitor {
             btc: {},
             bch: {},
             eth: {},
+            matic: {},
             xrp: {},
             doge: {},
             ltc: {}
           };
 
-          const coinNetworkPairs = [];
-          _.each(_.values(Constants.COINS), coin => {
+          const chainNetworkPairs = [];
+          _.each(_.values(Constants.CHAINS), chain => {
             _.each(_.values(Constants.NETWORKS), network => {
-              coinNetworkPairs.push({
-                coin,
+              chainNetworkPairs.push({
+                chain,
                 network
               });
             });
           });
-          _.each(coinNetworkPairs, pair => {
+          _.each(chainNetworkPairs, pair => {
             let explorer;
             if (
               opts.blockchainExplorers &&
-              opts.blockchainExplorers[pair.coin] &&
-              opts.blockchainExplorers[pair.coin][pair.network]
+              opts.blockchainExplorers[pair.chain] &&
+              opts.blockchainExplorers[pair.chain][pair.network]
             ) {
-              explorer = opts.blockchainExplorers[pair.coin][pair.network];
+              explorer = opts.blockchainExplorers[pair.chain][pair.network];
             } else {
               let config: { url?: string; provider?: any } = {};
               if (
                 opts.blockchainExplorerOpts &&
-                opts.blockchainExplorerOpts[pair.coin] &&
-                opts.blockchainExplorerOpts[pair.coin][pair.network]
+                opts.blockchainExplorerOpts[pair.chain] &&
+                opts.blockchainExplorerOpts[pair.chain][pair.network]
               ) {
-                config = opts.blockchainExplorerOpts[pair.coin][pair.network];
+                config = opts.blockchainExplorerOpts[pair.chain][pair.network];
               } else {
                 return;
               }
 
               explorer = BlockChainExplorer({
                 provider: config.provider,
-                coin: pair.coin,
+                chain: pair.chain,
                 network: pair.network,
                 url: config.url,
                 userAgent: WalletService.getServiceVersion()
@@ -95,8 +96,8 @@ export class BlockchainMonitor {
             }
             $.checkState(explorer, 'Failed State: explorer undefined at <start()>');
 
-            this._initExplorer(pair.coin, pair.network, explorer);
-            this.explorers[pair.coin][pair.network] = explorer;
+            this._initExplorer(pair.chain, pair.network, explorer);
+            this.explorers[pair.chain][pair.network] = explorer;
           });
           done();
         },
@@ -133,14 +134,14 @@ export class BlockchainMonitor {
     );
   }
 
-  _initExplorer(coin, network, explorer) {
+  _initExplorer(chain, network, explorer) {
     explorer.initSocket({
-      onBlock: _.bind(this._handleNewBlock, this, coin, network),
-      onIncomingPayments: _.bind(this._handleIncomingPayments, this, coin, network)
+      onBlock: _.bind(this._handleNewBlock, this, chain, network),
+      onIncomingPayments: _.bind(this._handleIncomingPayments, this, chain, network)
     });
   }
 
-  _handleThirdPartyBroadcasts(coin, network, data, processIt) {
+  _handleThirdPartyBroadcasts(chain, network, data, processIt) {
     if (!data || !data.txid) return;
 
     if (!processIt) {
@@ -151,7 +152,7 @@ export class BlockchainMonitor {
       this.lastTx[this.Nix++] = data.txid;
       if (this.Nix >= this.N) this.Nix = 0;
 
-      logger.debug(`\tChecking ${coin}/${network} txid: ${data.txid}`);
+      logger.debug(`\tChecking ${chain}/${network} txid: ${data.txid}`);
     }
 
     this.storage.fetchTxByHash(data.txid, (err, txp) => {
@@ -175,7 +176,7 @@ export class BlockchainMonitor {
             txp.amount +
             'sat ]'
         );
-        return setTimeout(this._handleThirdPartyBroadcasts.bind(this, coin, network, data, true), 20 * 1000);
+        return setTimeout(this._handleThirdPartyBroadcasts.bind(this, chain, network, data, true), 20 * 1000);
       }
 
       logger.debug('Processing accepted txp [' + txp.id + '] for wallet ' + walletId + ' [' + txp.amount + 'sat ]');
@@ -201,13 +202,13 @@ export class BlockchainMonitor {
     });
   }
 
-  _handleIncomingPayments(coin, network, data) {
+  _handleIncomingPayments(chain, network, data) {
     if (!data) return;
     let out = data.out;
     if (!out || !out.address || out.address.length < 10) return;
 
-    // For eth, amount = 0 is ok, repeating addr payments are ok (no change).
-    if (coin != 'eth') {
+    // For evm chains, amount = 0 is ok, repeating addr payments are ok (no change).
+    if (!Constants.EVM_CHAINS[chain.toUpperCase()]) {
       if (!(out.amount > 0)) return;
       if (this.last.indexOf(out.address) >= 0) {
         logger.debug('The incoming tx"s out ' + out.address + ' was already processed');
@@ -215,7 +216,7 @@ export class BlockchainMonitor {
       }
       this.last[this.Ni++] = out.address;
       if (this.Ni >= this.N) this.Ni = 0;
-    } else if (coin == 'eth') {
+    } else {
       if (this.lastTx.indexOf(data.txid) >= 0) {
         logger.debug('The incoming tx ' + data.txid + ' was already processed');
         return;
@@ -225,15 +226,15 @@ export class BlockchainMonitor {
       if (this.Nix >= this.N) this.Nix = 0;
     }
 
-    logger.debug(`Checking ${coin}:${network}:${out.address} ${out.amount}`);
-    this.storage.fetchAddressByCoin(coin, out.address, (err, address) => {
+    logger.debug(`Checking ${chain}:${network}:${out.address} ${out.amount}`);
+    this.storage.fetchAddressByChain(chain, out.address, (err, address) => {
       if (err) {
         logger.error('Could not fetch addresses from the db');
         return;
       }
       if (!address || address.isChange) {
         // no incomming payment
-        return this._handleThirdPartyBroadcasts(coin, network, data, null);
+        return this._handleThirdPartyBroadcasts(chain, network, data, null);
       }
 
       const walletId = address.walletId;
@@ -290,14 +291,14 @@ export class BlockchainMonitor {
     });
   }
 
-  _notifyNewBlock(coin, network, hash) {
-    logger.debug(` ** NOTIFY New ${coin}/${network} block ${hash}`);
+  _notifyNewBlock(chain, network, hash) {
+    logger.debug(` ** NOTIFY New ${chain}/${network} block ${hash}`);
     const notification = Notification.create({
       type: 'NewBlock',
-      walletId: `${coin}:${network}`, // use coin:network name as wallet id for global notifications
+      walletId: `${chain}:${network}`, // use chain:network name as wallet id for global notifications
       data: {
         hash,
-        coin,
+        chain,
         network
       }
     });
@@ -305,8 +306,8 @@ export class BlockchainMonitor {
     this._storeAndBroadcastNotification(notification, () => {});
   }
 
-  _handleTxConfirmations(coin, network, hash) {
-    if (!ChainService.notifyConfirmations(coin, network)) return;
+  _handleTxConfirmations(chain, network, hash) {
+    if (!ChainService.notifyConfirmations(chain, network)) return;
 
     const processTriggeredSubs = (subs, cb) => {
       async.mapSeries(
@@ -326,7 +327,7 @@ export class BlockchainMonitor {
                     isCreator: sub.isCreator,
                     data: {
                       txid: sub.txid,
-                      coin,
+                      chain,
                       network,
                       amount: sub.amount
                     }
@@ -344,7 +345,7 @@ export class BlockchainMonitor {
         cb
       );
     };
-    const explorer = this.explorers[coin][network];
+    const explorer = this.explorers[chain][network];
     if (!explorer) return;
 
     explorer.getTxidsInBlock(hash, (err, txids) => {
@@ -375,20 +376,20 @@ export class BlockchainMonitor {
     });
   }
 
-  _handleNewBlock(coin, network, hash) {
+  _handleNewBlock(chain, network, hash) {
     // clear height cache.
-    const cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
+    const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
     this.storage.clearGlobalCache(cacheKey, () => {});
 
-    if (coin == 'xrp') {
+    if (chain == 'xrp') {
       return;
     }
 
     if (network == 'testnet') {
-      throttledNewBlocks(this, coin, network, hash);
+      throttledNewBlocks(this, chain, network, hash);
     } else {
-      this._notifyNewBlock(coin, network, hash);
-      this._handleTxConfirmations(coin, network, hash);
+      this._notifyNewBlock(chain, network, hash);
+      this._handleTxConfirmations(chain, network, hash);
     }
   }
 

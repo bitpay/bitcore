@@ -23,6 +23,8 @@ npm install
 
 ### 1. Setup Bitcore config
 
+The definition for all the chain configuration can be found in `src/types/Config.ts`
+
 <details>
 <summary>Example bitcore.config.json</summary>
 <br>

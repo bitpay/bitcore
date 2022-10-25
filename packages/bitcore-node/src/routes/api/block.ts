@@ -8,7 +8,7 @@ const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
-  let { sinceBlock, date, limit, since, direction, paging } = req.query;
+  let { sinceBlock, date, limit, since, direction, paging } = req.query as any;
   if (limit) {
     limit = parseInt(limit);
   }

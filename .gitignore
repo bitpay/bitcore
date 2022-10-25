@@ -3,6 +3,7 @@ node_modules/
 .env
 *bitcore.config.*
 .vscode
+.idea
 .DS_Store
 *.swp
 
@@ -15,3 +16,4 @@ Session.vim
 *~
 ts_build
 bitcore-lib.js
+

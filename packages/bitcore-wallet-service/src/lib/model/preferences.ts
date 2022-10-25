@@ -8,6 +8,8 @@ export interface IPreferences {
   unit: number;
   tokenAddresses?: string[];
   multisigEthInfo: object[];
+  maticTokenAddresses?: string[];
+  multisigMaticInfo: object[];
 }
 export class Preferences {
   version: string;
@@ -19,6 +21,8 @@ export class Preferences {
   unit: number;
   tokenAddresses: string[];
   multisigEthInfo: object[];
+  maticTokenAddresses: string[];
+  multisigMaticInfo: object[];
 
   static create(opts) {
     opts = opts || {};
@@ -34,6 +38,8 @@ export class Preferences {
     x.unit = opts.unit;
     x.tokenAddresses = opts.tokenAddresses;
     x.multisigEthInfo = opts.multisigEthInfo;
+    x.maticTokenAddresses = opts.maticTokenAddresses;
+    x.multisigMaticInfo = opts.multisigMaticInfo;
     // you can't put useDust here since this is copayer's specific.
     return x;
   }
@@ -50,6 +56,8 @@ export class Preferences {
     x.unit = obj.unit;
     x.tokenAddresses = obj.tokenAddresses;
     x.multisigEthInfo = obj.multisigEthInfo;
+    x.maticTokenAddresses = obj.maticTokenAddresses;
+    x.multisigMaticInfo = obj.multisigMaticInfo;
     return x;
   }
 }

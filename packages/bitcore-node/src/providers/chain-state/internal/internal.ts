@@ -18,6 +18,7 @@ import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
 import { CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
+import { IUtxoNetworkConfig } from '../../../types/Config';
 import {
   BroadcastTransactionParams,
   CreateWalletParams,
@@ -51,7 +52,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   getRPC(chain: string, network: string) {
-    const RPC_PEER = Config.get().chains[chain][network].rpc;
+    const RPC_PEER = (Config.chainConfig({ chain, network }) as IUtxoNetworkConfig).rpc;
     if (!RPC_PEER) {
       throw new Error(`RPC not configured for ${chain} ${network}`);
     }

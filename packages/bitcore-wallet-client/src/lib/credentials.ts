@@ -12,6 +12,7 @@ const sjcl = require('sjcl');
 export class Credentials {
   static FIELDS = [
     'coin',
+    'chain',
     'network',
     'xPrivKey', // obsolete
     'xPrivKeyEncrypted', // obsolte
@@ -62,6 +63,7 @@ export class Credentials {
   derivationStrategy: any;
   network: string;
   coin: string;
+  chain: string;
   use145forBCH: any;
 
   addressType: string;
@@ -81,6 +83,7 @@ export class Credentials {
 
   static fromDerivedKey(opts) {
     $.shouldBeString(opts.coin);
+    $.shouldBeString(opts.chain);
     $.shouldBeString(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeString(opts.xPubKey, 'Invalid xPubKey');
@@ -92,6 +95,7 @@ export class Credentials {
 
     var x: any = new Credentials();
     x.coin = opts.coin;
+    x.chain = opts.chain;
     x.network = opts.network;
     x.account = opts.account;
     x.n = opts.n;
@@ -126,7 +130,7 @@ export class Credentials {
     const b = Buffer.from(entropySource, 'hex');
     const b2 = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
     x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
-    x.copayerId = Utils.xPubToCopayerId(x.coin, x.xPubKey);
+    x.copayerId = Utils.xPubToCopayerId(x.chain, x.xPubKey);
     x.publicKeyRing = [
       {
         xPubKey: x.xPubKey,
@@ -140,14 +144,18 @@ export class Credentials {
   /*
    * creates an ERC20 wallet from a ETH wallet
    */
-  getTokenCredentials(token: {
-    name: string;
-    symbol: string;
-    address: string;
-  }) {
+  getTokenCredentials(
+    token: {
+      name: string;
+      symbol: string;
+      address: string;
+    },
+    chain: string
+  ) {
     const ret = _.cloneDeep(this);
     ret.walletId = `${ret.walletId}-${token.address}`;
     ret.coin = token.symbol.toLowerCase();
+    ret.chain = chain;
     ret.walletName = token.name;
     ret.token = token;
 
@@ -189,9 +197,10 @@ export class Credentials {
       }
 
       var coin = '0';
+      // checking in chains for simplicity
       if (
         this.network != 'livenet' &&
-        Constants.UTXO_COINS.includes(this.coin)
+        Constants.UTXO_CHAINS.includes(this.coin)
       ) {
         coin = '1';
       } else if (this.coin == 'bch') {
@@ -204,6 +213,8 @@ export class Credentials {
         coin = '0';
       } else if (this.coin == 'eth') {
         coin = '60';
+      } else if (this.coin == 'matic') {
+        coin = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
       } else if (this.coin == 'xrp') {
         coin = '144';
       } else if (this.coin == 'doge') {
@@ -242,6 +253,7 @@ export class Credentials {
     }
 
     x.coin = x.coin || 'btc';
+    x.chain = x.chain || Utils.getChain(x.coin); // getChain -> backwards compatibility
     x.addressType = x.addressType || Constants.SCRIPT_TYPES.P2SH;
     x.account = x.account || 0;
 
@@ -311,10 +323,10 @@ export class Credentials {
   isComplete() {
     if (!this.m || !this.n) return false;
     if (
-      (this.coin === 'btc' ||
-        this.coin === 'bch' ||
-        this.coin === 'doge' ||
-        this.coin === 'ltc') &&
+      (this.chain === 'btc' ||
+        this.chain === 'bch' ||
+        this.chain === 'doge' ||
+        this.chain === 'ltc') &&
       (!this.publicKeyRing || this.publicKeyRing.length != this.n)
     )
       return false;

@@ -133,14 +133,6 @@ function indexNetworkBy(network, keys) {
   }
 }
 
-function unindexNetworkBy(network, values) {
-  for(var index = 0; index < values.length; index++){
-    var value = values[index];
-    if(networkMaps[value] === network) {
-      delete networkMaps[value];
-    }
-  }
-}
 
 /**
  * @function
@@ -149,12 +141,27 @@ function unindexNetworkBy(network, values) {
  * @param {Network} network
  */
 function removeNetwork(network) {
+  if (typeof network !== 'object') {
+    network = get(network);
+  }
   for (var i = 0; i < networks.length; i++) {
     if (networks[i] === network) {
       networks.splice(i, 1);
     }
   }
-  unindexNetworkBy(network, Object.keys(networkMaps));
+  for (var key in networkMaps) {
+    if (networkMaps[key].length) {
+      const index = networkMaps[key].indexOf(network);
+      if (index >= 0) {
+        networkMaps[key].splice(index, 1);
+      }
+      if (networkMaps[key].length === 0) {
+        delete networkMaps[key];
+      }
+    } else if (networkMaps[key] === network) {
+      delete networkMaps[key];
+    }
+  }
 }
 
 // from https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/src/chainparams.cpp#L212

@@ -13,6 +13,7 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
+  matic: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
@@ -32,7 +33,6 @@ function v8network(bwsNetwork) {
 
 export class V8 {
   chain: string;
-  coin: string;
   network: string;
   v8network: string;
   // v8 is always cashaddr
@@ -51,17 +51,14 @@ export class V8 {
     $.checkArgument(opts.url);
 
     this.apiPrefix = _.isUndefined(opts.apiPrefix) ? '/api' : opts.apiPrefix;
-    this.chain = opts.chain.toUpperCase();
-    // This class treats `coin` as merely a lowerCase `chain` which is confusing
-    // TODO refactor to not be confusing.
-    this.coin = this.chain.toLowerCase();
+    this.chain = opts.chain;
 
     this.network = opts.network || 'livenet';
     this.v8network = v8network(this.network);
 
     // v8 is always cashaddr
-    this.addressFormat = this.coin == 'bch' ? 'cashaddr' : null;
-    this.apiPrefix += `/${this.chain}/${this.v8network}`;
+    this.addressFormat = this.chain == 'bch' ? 'cashaddr' : null;
+    this.apiPrefix += `/${this.chain.toUpperCase()}/${this.v8network}`;
 
     this.host = opts.url;
     this.userAgent = opts.userAgent || 'bws';
@@ -84,7 +81,7 @@ export class V8 {
     $.checkState(wallet.beAuthPrivateKey2, 'Failed state: wallet.beAuthPrivateKey2 at <_getAuthClient()>');
     return new this.Client({
       baseUrl: this.baseUrl,
-      authKey: Bitcore_[this.coin].PrivateKey(wallet.beAuthPrivateKey2)
+      authKey: Bitcore_[this.chain].PrivateKey(wallet.beAuthPrivateKey2)
     });
   }
 
@@ -114,8 +111,8 @@ export class V8 {
   }
 
   register(wallet, cb) {
-    if (wallet.coin != this.coin || wallet.network != this.network) {
-      return cb(new Error('Network coin or network mismatch'));
+    if (wallet.chain != this.chain || wallet.network != this.network) {
+      return cb(new Error('Network chain or network mismatch'));
     }
 
     const client = this._getAuthClient(wallet);
@@ -146,7 +143,7 @@ export class V8 {
   }
 
   getConnectionInfo() {
-    return 'V8 (' + this.coin + '/' + this.v8network + ') @ ' + this.host;
+    return 'V8 (' + this.chain + '/' + this.v8network + ') @ ' + this.host;
   }
 
   _transformUtxos(utxos, bcheight) {
@@ -577,7 +574,7 @@ export class V8 {
     walletsSocket.on('coin', data => {
       if (!data || !data.coin) return;
 
-      const notification = ChainService.onCoin(this.coin, data.coin);
+      const notification = ChainService.onCoin(this.chain, data.coin);
       if (!notification) return;
 
       return callbacks.onIncomingPayments(notification);
@@ -586,7 +583,7 @@ export class V8 {
     walletsSocket.on('tx', data => {
       if (!data || !data.tx) return;
 
-      const notification = ChainService.onTx(this.coin, data.tx);
+      const notification = ChainService.onTx(this.chain, data.tx);
       if (!notification) return;
 
       return callbacks.onIncomingPayments(notification);

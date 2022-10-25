@@ -5,12 +5,12 @@ import 'source-map-support/register';
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
+import request from 'request';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { Email } from './model';
 import { Storage } from './storage';
-
 export interface Recipient {
   copayerId: string;
   emailAddress: string;
@@ -23,6 +23,8 @@ const fs = require('fs');
 const path = require('path');
 const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
+const Constants = require('./common/constants');
+const defaultRequest = require('request');
 
 const EMAIL_TYPES = {
   NewCopayer: {
@@ -74,10 +76,12 @@ export class EmailService {
   messageBroker: MessageBroker;
   lock: Lock;
   mailer: any;
+  request: request.RequestAPI<any, any, any>;
   //  mailer: nodemailer.Transporter;
 
   start(opts, cb) {
     opts = opts || {};
+    this.request = opts.request || defaultRequest;
 
     const _readDirectories = (basePath, cb) => {
       fs.readdir(basePath, (err, files) => {
@@ -217,7 +221,13 @@ export class EmailService {
 
             let unit;
             if (wallet.coin != Defaults.COIN) {
-              unit = wallet.coin;
+              switch (wallet.coin) {
+                case 'pax':
+                  unit = 'usdp'; // backwards compatibility
+                  break;
+                default:
+                  unit = wallet.coin;
+              }
             } else {
               unit = p.unit || this.defaultUnit;
             }
@@ -236,24 +246,63 @@ export class EmailService {
     });
   }
 
-  _getDataForTemplate(notification, recipient, cb) {
-    // TODO: Declare these in BWU
+  async _getDataForTemplate(notification, recipient, cb) {
     const UNIT_LABELS = {
       btc: 'BTC',
       bit: 'bits',
       bch: 'BCH',
       eth: 'ETH',
+      matic: 'MATIC',
       xrp: 'XRP',
       doge: 'DOGE',
-      ltc: 'LTC'
+      ltc: 'LTC',
+      usdc: 'USDC',
+      usdp: 'USDP',
+      gusd: 'GUSD',
+      busd: 'BUSD',
+      wbtc: 'WBTC',
+      dai: 'DAI',
+      shib: 'SHIB',
+      ape: 'APE',
+      euroc: 'EUROC'
     };
 
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix) + ' ';
     if (data.amount) {
       try {
-        const unit = recipient.unit.toLowerCase();
-        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
+        let unit = recipient.unit.toLowerCase();
+        let label = UNIT_LABELS[unit];
+        let opts = {} as any;
+        if (data.tokenAddress) {
+          const tokenAddress = data.tokenAddress.toLowerCase();
+          if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ETH_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else {
+            let customTokensData;
+            try {
+              customTokensData = await this.getTokenData(data.address.coin);
+            } catch (error) {
+              return cb(new Error('Could not get custom tokens data'));
+            }
+            if (customTokensData && customTokensData[tokenAddress]) {
+              unit = customTokensData[tokenAddress].symbol.toLowerCase();
+              label = unit.toUpperCase();
+              opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
+              opts.decimals = {
+                maxDecimals: 6,
+                minDecimals: 2
+              };
+            } else {
+              return cb(new Error(`Email Notifications for unsupported tokens are not allowed: ${tokenAddress}`));
+            }
+          }
+        }
+        data.amount = Utils.formatAmount(+data.amount, unit, opts) + ' ' + label;
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }
@@ -281,13 +330,15 @@ export class EmailService {
       }
 
       if (_.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) && data.txid) {
-        const urlTemplate = this.publicTxUrlTemplate[wallet.coin][wallet.network];
+        const urlTemplate = this.publicTxUrlTemplate[wallet.chain]?.[wallet.network];
         if (urlTemplate) {
           try {
             data.urlForTx = Mustache.render(urlTemplate, data);
           } catch (ex) {
             logger.warn('Could not render public url for tx', ex);
           }
+        } else {
+          logger.warn(`Could not find template for chain "${wallet.chain}" on network "${wallet.network}"`);
         }
       }
 
@@ -453,6 +504,30 @@ export class EmailService {
           });
         });
       });
+    });
+  }
+
+  getTokenData(chain) {
+    return new Promise((resolve, reject) => {
+      const chainIdMap = {
+        eth: 1,
+        matic: 137
+      };
+      // Get tokens
+      this.request(
+        {
+          url: `https://bitpay.api.enterprise.1inch.exchange/v3.0/${chainIdMap[chain]}/tokens`,
+          method: 'GET',
+          json: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        },
+        (err, data: any) => {
+          if (err) return reject(err);
+          return resolve(data.body.tokens);
+        }
+      );
     });
   }
 }

@@ -1,43 +1,28 @@
-# Specifies intentionally untracked files to ignore when using Git
-# http://git-scm.com/docs/gitignore
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.idea
 
-*~
-*.sw[mnpcod]
-*.log
-*.tmp
-*.tmp.*
-log.txt
-*.sublime-project
-*.sublime-workspace
-.vscode/
-npm-debug.log*
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
 
-.sourcemaps/
+# testing
+/coverage
 
-.idea/
-.sass-cache/
-.tmp/
-.versions/
-coverage/
-dist/
-node_modules/
-tmp/
-temp/
-hooks/
-platforms/
-plugins/
-plugins/android.json
-plugins/ios.json
-www/
-$RECYCLE.BIN/
+# production
+/build
 
-# e2e
-/e2e/*.js
-/e2e/*.map
-
+# misc
 .DS_Store
-Thumbs.db
-UserInterfaceState.xcuserstate
+*.pem
 
-# .docker env
-.docker/env/*.env
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

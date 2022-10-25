@@ -32,6 +32,17 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  matic: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
   xrp: {
     toSatoshis: 1e6,
     full: {
@@ -87,6 +98,18 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  usdp: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  // backwards compatibility
   pax: {
     toSatoshis: 1e18,
     full: {
@@ -143,6 +166,28 @@ export let UNITS = {
     }
   },
   shib: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  ape: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  euroc: {
     toSatoshis: 1e18,
     full: {
       maxDecimals: 8,
