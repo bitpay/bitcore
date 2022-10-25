@@ -388,6 +388,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
+      calls: tx.calls ? tx.calls.map(t => ({ ...t, decodedData: this.abiDecode(t.input || '0x') })) : [],
       decodedData: valueOrDefault(decodedData, undefined),
       receipt: valueOrDefault(tx.receipt, undefined)
     };
