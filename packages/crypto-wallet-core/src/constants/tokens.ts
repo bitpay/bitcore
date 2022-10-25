@@ -97,5 +97,11 @@ export let MATIC_TOKEN_OPTS = {
     symbol: 'APE',
     decimals: 18,
     address: '0xb7b31a6bc18e48888545ce79e83e06003be70930'
+  },
+  '0x8a037dbca8134ffc72c362e394e35e0cad618f85': {
+    name: 'Euro Coin (PoS)',
+    symbol: 'EUROC',
+    decimals: 6,
+    address: '0x8a037dbca8134ffc72c362e394e35e0cad618f85'
   }
 };

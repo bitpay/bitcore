@@ -39,7 +39,8 @@ module.exports = {
     DAI_M: 'dai_m',
     WBTC_M: 'wbtc_m',
     SHIB_M: 'shib_m',
-    APE_M: 'ape_m'
+    APE_M: 'ape_m',
+    EUROC_M: 'euroc_m'
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
@@ -62,7 +63,8 @@ module.exports = {
     DAI_M: 'dai_m',
     WBTC_M: 'wbtc_m',
     SHIB_M: 'shib_m',
-    APE_M: 'ape_m'
+    APE_M: 'ape_m',
+    EUROC_M: 'euroc_m'
   },
 
   BITPAY_USD_STABLECOINS: {
