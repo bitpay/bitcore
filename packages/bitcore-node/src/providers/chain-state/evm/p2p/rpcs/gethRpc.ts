@@ -49,12 +49,7 @@ export class GethRPC implements IRpc {
         id: 1
       });
     } catch (e) {
-      if (e.message && e.message == 'The method debug_traceBlockByNumber does not exist/is not available') {
-        // Must not be an archive node
-        logger.debug(e.message);
-      } else {
-        logger.error(e.message || e);
-      }
+      logger.debug(e.message || e);
     }
     return result;
   }

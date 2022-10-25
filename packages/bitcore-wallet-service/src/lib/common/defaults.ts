@@ -87,27 +87,27 @@ module.exports = {
       {
         name: 'urgent',
         nbBlocks: 1,
-        defaultValue: 10000000000
+        defaultValue: 300000000000
       },
       {
         name: 'priority',
         nbBlocks: 2,
-        defaultValue: 5000000000
+        defaultValue: 250000000000
       },
       {
         name: 'normal',
         nbBlocks: 3,
-        defaultValue: 1000000000
+        defaultValue: 200000000000
       },
       {
         name: 'economy',
         nbBlocks: 4,
-        defaultValue: 1000000000
+        defaultValue: 200000000000
       },
       {
         name: 'superEconomy',
         nbBlocks: 4,
-        defaultValue: 1000000000
+        defaultValue: 200000000000
       }
     ],
     xrp: [
