@@ -1507,6 +1507,22 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v3/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.checkingSeedExist((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      }
+    });
+
     router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;

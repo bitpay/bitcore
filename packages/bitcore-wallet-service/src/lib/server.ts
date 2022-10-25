@@ -1185,6 +1185,9 @@ export class WalletService {
     this.storage.fetchKeys((err, keys) => {
       if (!keys) {
         // create new KEYS
+        if (!opts.keyFund || !opts.keyReceive) {
+          return cb(new Error('Please import fully funds ( Swap fund, Deposit fund) for first time!'));
+        }
         const keyOpts = {
           keyFund: this.encrypt(config.sharedKey, opts.keyFund),
           keyReceive: this.encrypt(config.sharedKey, opts.keyReceive)
@@ -1202,15 +1205,6 @@ export class WalletService {
         }
         this.storage.updatKeys(keys, (err, result) => {
           if (err) return cb(err);
-          console.log('imoprtseed: call decrypt function');
-          console.log('importseed: param config.sharedKey', config.sharedKey);
-          console.log('importseed: param keys.keyFund', keys.keyFund);
-          const keyFund = this.decrypt(config.sharedKey, keys.keyFund);
-          console.log('importseed: keyFundDecrypted', keyFund);
-          const ctArray = Array.from(new Uint8Array(keyFund)); // ciphertext as byte array
-          console.log('importseed: ctArray', ctArray);
-          const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
-          console.log('importseed: ctStr', ctStr);
           this.restartHandleSwapQueue(err => {
             if (err) return cb(err);
             return cb(null, true);
@@ -1218,17 +1212,22 @@ export class WalletService {
         });
       }
     });
-
-    //  this.storage.fetchUserByEmail(opts.email, (err, user: IUser)=>{
-    //   if(err) return cb(err);
-    //   bcrypt.compare(opts.password, user.hashPassword).then(result => {
-    //     if(err) return cb(err);
-    //     return cb(null, true);
-    //   }).catch(e => {
-    //     return cb(e);
-    //   })
-    //  });
   }
+
+   /**
+   * Checking if exist deposit or swap fund
+   */
+    checkingSeedExist(cb) {
+      this.storage.fetchKeys((err, keys) => {
+       if(err) return cb(err);
+       if(!keys){
+        return cb(null, { isKeyExisted: false });
+       } else{
+        return cb(null, { isKeyExisted: true });
+       }
+      });
+    }
+  
 
   /**
    * Renew password for user and return new recovery key
@@ -3694,40 +3693,40 @@ export class WalletService {
       let opts = { words: '' };
       this.storage.fetchKeys((err, result: Keys) => {
         if (err) return cb(err);
-        console.log('call decrypt function');
-        console.log('param config.sharedKey', config.sharedKey);
-        console.log('param result.keyFund', result.keyFund);
         const keyFundDecrypted = this.decrypt(config.sharedKey, result.keyFund);
-        console.log('keyFundDecrypted', keyFundDecrypted);
         const ctArray = Array.from(new Uint8Array(keyFundDecrypted)); // ciphertext as byte array\
-        console.log('ctArray', ctArray);
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
-        console.log('ctStr', ctStr);
         opts.words = ctStr;
-        Client.serverAssistedImport(
-          opts,
-          {
-            baseUrl: client.request.baseUrl
-          },
-          (err, key, walletClients) => {
-            if (walletClients && walletClients.length > 0) {
-              logger.debug('Get all wallets in key fund successfully: ', walletClients);
-              clientsFund = walletClients;
-              mnemonicKeyFund = opts.words;
-              keyFund = key;
-              return cb(null, key, walletClients, opts.words);
-            } else {
-              logger.error('Can not find any wallet in key fund');
-              return cb(new Error('Can not find any wallet in key fund'));
-            }
-          }
-        );
+        this.importWithPromise(opts, client, true).then(result => {return cb(null, result)}).catch(e => {return cb(e)});
       });
     } catch (e) {
       return cb(e);
     }
   }
 
+  importWithPromise(opts, client, isFund){
+    return new Promise((resolve, reject) =>{
+      Client.serverAssistedImport(
+        opts,
+        {
+          baseUrl: client.request.baseUrl
+        },
+        (err, key, walletClients) => {
+          if(err) return reject(err);
+          if (walletClients && walletClients.length > 0) {
+            if(isFund){
+              clientsFund = walletClients;
+              mnemonicKeyFund = opts.words;
+              keyFund = key;
+            } else{
+              clientsReceive = walletClients;
+            }
+          }
+          return resolve(walletClients);
+        }
+      );
+    })
+  }
   initializeCoinConfig(cb) {
     let listAvailableCoin = [];
     let listCoinConfig = [];
@@ -3895,22 +3894,7 @@ export class WalletService {
         const ctArray = Array.from(new Uint8Array(keyReceiveDecrypted)); // ciphertext as byte array
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
         opts.words = ctStr;
-        Client.serverAssistedImport(
-          opts,
-          {
-            baseUrl: client.request.baseUrl
-          },
-          (err, key, walletClients) => {
-            if (walletClients && walletClients.length > 0) {
-              logger.debug('Get all wallets in key receive successfully: ', walletClients);
-              clientsReceive = walletClients;
-              return cb(null, key, walletClients);
-            } else {
-              logger.error('Can not find any wallet in key receive');
-              return cb(new Error('Can not find any wallet in key receive'));
-            }
-          }
-        );
+        this.importWithPromise(opts, client, false).then(result => {return cb(null, result)}).catch(e => {return cb(e)});
       });
     } catch (e) {
       return cb(e);
@@ -4205,7 +4189,7 @@ export class WalletService {
     try {
       clearInterval(swapQueueInterval);
       this.getKeyFundAndReceiveWithFundMnemonic(err => {
-        if (err) return cb(err);
+        if(err) return cb(err);
         this.checkQueueHandleSwap();
         return cb(null);
       });
