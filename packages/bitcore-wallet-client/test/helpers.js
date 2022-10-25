@@ -111,6 +111,7 @@ const helpers = {
         keys[0] = opts.key || new Key(keyOpts);
         let cred = keys[0].createCredentials(null, {
             coin: coin,
+            chain: coin, // chain === coin for stored clients
             network: network,
             account: opts.account ? opts.account : 0,
             n: n,
@@ -148,6 +149,7 @@ const helpers = {
                                     clients[i].fromString(
                                         keys[i].createCredentials(null, {
                                             coin: coin,
+                                            chain: opts.coin, // chain === coin for stored clients
                                             network: network,
                                             account: 0,
                                             n: n,
