@@ -138,7 +138,7 @@ const TransactionHash: React.FC = () => {
                   </Tile>
 
                   <Tile withBorderBottom>
-                    <TileDescription margin='0 1rem 0 0'>Includes in block</TileDescription>
+                    <TileDescription margin='0 1rem 0 0'>Included in block</TileDescription>
                     <TileDescription value textAlign='right'>
                       <Link to={`/${currency}/${network}/block/${transaction.blockHash}`}>
                         {transaction.blockHash}
