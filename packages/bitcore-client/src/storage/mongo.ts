@@ -58,7 +58,7 @@ export class Mongo {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         noDelay: true,
-        serverSelectionTimeoutMS: 300
+        serverSelectionTimeoutMS: 5000
       });
       await this.client.connect();
       await this.client.close();
