@@ -1,14 +1,14 @@
 import { Transform } from 'stream';
 import Web3 from 'web3';
-import { MongoBound } from '../../../models/base';
-import { IEthTransaction } from '../types';
+import { MongoBound } from '../../../../models/base';
+import { IEVMTransaction } from '../types';
 
-export class EthMultisigRelatedFilterTransform extends Transform {
+export class MultisigRelatedFilterTransform extends Transform {
   constructor(private web3: Web3, private multisigContractAddress: string, private tokenAddress: string) {
     super({ objectMode: true });
   }
 
-  async _transform(tx: MongoBound<IEthTransaction>, _, done) {
+  async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
     if (tx.internal && tx.internal.length > 0 && !this.tokenAddress) {
       const walletRelatedIncomingInternalTxs = tx.internal.filter(
         (internalTx: any) => this.multisigContractAddress === this.web3.utils.toChecksumAddress(internalTx.action.to)

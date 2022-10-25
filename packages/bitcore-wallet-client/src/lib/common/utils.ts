@@ -503,4 +503,16 @@ export class Utils {
       return { uncheckedSerialize: () => unsignedTxs };
     }
   }
+
+  static getCurrencyCodeFromCoinAndChain(coin: string, chain: string): string {
+    if (coin.toLowerCase() === chain.toLowerCase()) {
+      return coin.toUpperCase();
+    }
+    const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
+    const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
+    if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
+      return `${coin.toUpperCase()}_${suffix}`;
+    }
+    return coin.toUpperCase();
+  }
 }

@@ -1,8 +1,8 @@
 import { Transform } from 'stream';
 import Web3 from 'web3';
-import { MongoBound } from '../../../models/base';
-import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
-import { IEthTransaction, IEthTransactionTransformed } from '../types';
+import { MongoBound } from '../../../../models/base';
+import { IWalletAddress, WalletAddressStorage } from '../../../../models/walletAddress';
+import { IEVMTransaction, IEVMTransactionTransformed } from '../types';
 
 export class InternalTxRelatedFilterTransform extends Transform {
   private walletAddresses: IWalletAddress[] = [];
@@ -18,7 +18,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
    * @param done Callback
    * @returns
    */
-  async _transform(tx: MongoBound<IEthTransaction>, _, done) {
+  async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
     const walletAddresses = await this.getWalletAddresses(tx);
     // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
 
@@ -47,7 +47,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
     return this.walletAddresses.map(walletAddress => walletAddress.address.toLowerCase());
   }
 
-  erigonTransform(tx: MongoBound<IEthTransaction>, walletAddresses: string[]) {
+  erigonTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {
     const walletRelatedInternalTxs = tx.internal.filter((internalTx: any) =>
       walletAddresses.includes(internalTx.action.to)
     );
@@ -58,7 +58,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
       if (isRefund) {
         tx.value -= internalValue;
       } else {
-        const _tx: IEthTransactionTransformed = Object.assign({}, tx);
+        const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
         _tx.value = internalValue;
         _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
         if (internalTx.action.from) {
@@ -71,7 +71,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
     return walletRelatedInternalTxs.length;
   }
 
-  gethTransform(tx: MongoBound<IEthTransaction>, walletAddresses: string[]) {
+  gethTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {
     const walletRelatedInternalTxs = tx.calls.filter((call: any) => walletAddresses.includes(call.to));
     for (let call of walletRelatedInternalTxs) {
       // Contract will refund the excess back to the sender
@@ -80,7 +80,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
       if (isRefund) {
         tx.value -= internalValue;
       } else {
-        const _tx: IEthTransactionTransformed = JSON.parse(JSON.stringify(tx));
+        const _tx: IEVMTransactionTransformed = JSON.parse(JSON.stringify(tx));
         _tx.value = internalValue;
         _tx.to = this.web3.utils.toChecksumAddress(call.to);
         if (call.from) {

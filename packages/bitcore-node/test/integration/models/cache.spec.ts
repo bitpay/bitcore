@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { CacheStorage } from '../../../src/models/cache';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
+import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { TEST_OP_ETH_TO_ETH1, TEST_OP_ETH_TO_ETH2, TEST_OP_ERC20_TO_ERC201, TEST_OP_ERC20_TO_ERC202, TEST_OP_ERC20Token_TO_ETH1, TEST_OP_ERC20Token_TO_ETH2, TEST_OP_ETH_TO_ERC201, TEST_OP_ETH_TO_ERC202, TEST_OP_TRANSFER_ERC20_TO_ERC201, TEST_OP_TRANSFER_ERC20_TO_ERC202 } from '../../data/test-ops';
 
 describe('Cache Model', function() {
@@ -99,8 +99,8 @@ describe('Cache Model', function() {
     await CacheStorage.setGlobal(key2, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EthTransactionStorage.expireBalanceCache(op1);
-    await  EthTransactionStorage.expireBalanceCache(op2);
+    await  EVMTransactionStorage.expireBalanceCache(op1);
+    await  EVMTransactionStorage.expireBalanceCache(op2);
 
     const got1 = await CacheStorage.getGlobal(key1);
     const got2 = await CacheStorage.getGlobal(key2);
@@ -137,8 +137,8 @@ describe('Cache Model', function() {
     await CacheStorage.setGlobal(key2, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EthTransactionStorage.expireBalanceCache(op1);
-    await  EthTransactionStorage.expireBalanceCache(op2);
+    await  EVMTransactionStorage.expireBalanceCache(op1);
+    await  EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken1 = await CacheStorage.getGlobal(keyToken1);
     const gotToken2 = await CacheStorage.getGlobal(keyToken2);
@@ -175,8 +175,8 @@ describe('Cache Model', function() {
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EthTransactionStorage.expireBalanceCache(op1);
-    await  EthTransactionStorage.expireBalanceCache(op2);
+    await  EVMTransactionStorage.expireBalanceCache(op1);
+    await  EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken1 = await CacheStorage.getGlobal(keyToken1);
     const gotToken2 = await CacheStorage.getGlobal(keyToken2);
@@ -205,8 +205,8 @@ describe('Cache Model', function() {
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EthTransactionStorage.expireBalanceCache(op1);
-    await  EthTransactionStorage.expireBalanceCache(op2);
+    await  EVMTransactionStorage.expireBalanceCache(op1);
+    await  EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken = await CacheStorage.getGlobal(keyToken);
     const got = await CacheStorage.getGlobal(key);
@@ -233,8 +233,8 @@ describe('Cache Model', function() {
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EthTransactionStorage.expireBalanceCache(op1);
-    await  EthTransactionStorage.expireBalanceCache(op2);
+    await  EVMTransactionStorage.expireBalanceCache(op1);
+    await  EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken = await CacheStorage.getGlobal(keyToken);
     const got = await CacheStorage.getGlobal(key);

@@ -233,7 +233,7 @@ describe('Transaction Creation', () => {
     const recipients = [{ address: to, amount: value }];
     const cryptoTx = Transactions.create({
       ...rawEthTx,
-      chain: 'ERC20',
+      chain: 'ETHERC20',
       recipients,
       nonce: 0
     });
@@ -835,7 +835,7 @@ describe('ETH Transaction getChainId', () => {
     expect(ropstenId).to.equal(3);
 
     const regtestId = Transactions.get({ chain: 'ETH' }).getChainId('regtest');
-    expect(regtestId).to.equal(17);
+    expect(regtestId).to.equal(1337);
   });
 });
 
@@ -854,6 +854,6 @@ describe('MATIC Transaction getChainId', () => {
     expect(testId).to.equal(80001);
 
     const regtestId = Transactions.get({ chain: 'MATIC' }).getChainId('regtest');
-    expect(regtestId).to.equal(17);
+    expect(regtestId).to.equal(1337);
   });
 });

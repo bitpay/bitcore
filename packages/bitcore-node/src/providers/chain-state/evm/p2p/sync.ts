@@ -2,13 +2,13 @@ import { CryptoRpc } from 'crypto-rpc';
 import { EventEmitter } from 'events';
 import * as os from 'os';
 import { threadId, Worker as Thread } from 'worker_threads';
-import Config from '../../../config';
-import logger, { timestamp } from '../../../logger';
-import { StateStorage } from '../../../models/state';
-import { ChainStateProvider } from '../../../providers/chain-state';
-import { IEthNetworkConfig } from '../../../types/Config';
-import { wait } from '../../../utils/wait';
-import { EthBlockStorage } from '../models/block';
+import { ChainStateProvider } from '../../';
+import Config from '../../../../config';
+import logger, { timestamp } from '../../../../logger';
+import { StateStorage } from '../../../../models/state';
+import { IEVMNetworkConfig } from '../../../../types/Config';
+import { wait } from '../../../../utils/wait';
+import { EVMBlockStorage } from '../models/block';
 
 export class MultiThreadSync extends EventEmitter {
   private chain: string;
@@ -21,7 +21,7 @@ export class MultiThreadSync extends EventEmitter {
   private stopping: boolean = false;
   private syncQueue: number[] = [];
   private syncing: boolean = false;
-  private config: IEthNetworkConfig;
+  private config: IEVMNetworkConfig;
   protected currentHeight: number = 0;
 
   constructor({ chain, network }) {
@@ -212,7 +212,7 @@ export class MultiThreadSync extends EventEmitter {
         this.network
       } blocks. This could take a while.`
     );
-    const gaps = await EthBlockStorage.getBlockSyncGaps({
+    const gaps = await EVMBlockStorage.getBlockSyncGaps({
       chain: this.chain,
       network: this.network,
       startHeight: verifiedBlockHeight

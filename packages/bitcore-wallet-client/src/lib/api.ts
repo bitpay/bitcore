@@ -1732,7 +1732,7 @@ export class API extends EventEmitter {
     if (!txp.payProUrl || this.doNotVerifyPayPro) return Promise.resolve();
 
     const chain = txp.chain || Utils.getChain(txp.coin); // getChain -> backwards compatibility
-    const currency = txp.coin;
+    const currency = Utils.getCurrencyCodeFromCoinAndChain(txp.coin, chain);
     const payload = {
       address: txp.from
     };
@@ -2097,7 +2097,10 @@ export class API extends EventEmitter {
           this._applyAllSignatures(txp, t);
 
           const chain = txp.chain || Utils.getChain(txp.coin); // getChain -> backwards compatibility
-          const currency = txp.coin;
+          const currency = Utils.getCurrencyCodeFromCoinAndChain(
+            txp.coin,
+            chain
+          );
           const rawTxUnsigned = t_unsigned.uncheckedSerialize();
           const serializedTx = t.serialize({
             disableSmallFees: true,
@@ -2969,8 +2972,10 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials =
-                client.credentials.getTokenCredentials(token);
+              const tokenCredentials = client.credentials.getTokenCredentials(
+                token,
+                'matic'
+              );
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -3003,7 +3008,10 @@ export class API extends EventEmitter {
                   }
                   log.info(`Importing multisig token: ${token.name}`);
                   const tokenCredentials =
-                    multisigMaticClient.credentials.getTokenCredentials(token);
+                    multisigMaticClient.credentials.getTokenCredentials(
+                      token,
+                      'matic'
+                    );
                   let tokenClient = _.cloneDeep(multisigMaticClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);

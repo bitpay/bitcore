@@ -4,7 +4,7 @@ import * as crypto from 'crypto';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/models/transaction';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
-import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
+import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { unprocessedEthBlocks } from '../../data/ETH/unprocessedBlocksETH';
 import { resetDatabase } from '../../helpers';
@@ -223,15 +223,15 @@ describe('Transaction Model', function() {
 
     it('should update eth transactions with related wallet id correctly (incoming)', async () => {
       const block = unprocessedEthBlocks[0] as any; // block containing an eth transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
-      await EthTransactionStorage.batchImport({...block});
-      const walletTxs = await EthTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      await EVMTransactionStorage.batchImport({...block});
+      const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
       expect(walletTxs.length).eq(1);
     });
 
     it('should update erc20 transactions with related wallet id correctly (incoming)', async () => {
       const block = unprocessedEthBlocks[1] as any; // block containing an ERC20 transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
-      await EthTransactionStorage.batchImport({...block});
-      const walletTxs = await EthTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      await EVMTransactionStorage.batchImport({...block});
+      const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
       expect(walletTxs.length).eq(1);
     });
   });
