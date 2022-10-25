@@ -41,9 +41,7 @@ export class Utils {
     try {
       // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20.includes(normalizedChain)) {
-        normalizedChain = 'matic';
-      } else if (
+      if (
         Constants.BITPAY_SUPPORTED_ETH_ERC20.includes(normalizedChain) ||
         !Constants.CHAINS.includes(normalizedChain)
       ) {

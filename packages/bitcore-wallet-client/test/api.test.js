@@ -618,6 +618,7 @@ describe('client API', function() {
           version: 3,
           from: from.address,
           coin: 'matic',
+          chain: 'matic',
           outputs: [
             {
               toAddress: toAddress,
@@ -2535,7 +2536,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve matic token addresses', done => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic'}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic', chain: 'matic'}, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -2559,7 +2560,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve matic multisig address', done => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic'}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic', chain: 'matic'}, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -5239,12 +5240,13 @@ describe('client API', function() {
     });
 
     it('Send and broadcast in 1-1 wallet MATIC', done => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, w => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, w => {
         clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           //blockchainExplorerMock.setUtxo(x0, 1, 1);
           var opts = {
+            chain: 'matic',
             outputs: [
               {
                 amount: 10000000,
@@ -6385,7 +6387,7 @@ describe('client API', function() {
       });
 
       it('should be able to gain access to matic tokens wallets from mnemonic', done => {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
@@ -6430,7 +6432,7 @@ describe('client API', function() {
       });
 
       it('should be able to gain access to matic tokens wallets from mnemonic (Case 2)', done => {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
@@ -6453,6 +6455,7 @@ describe('client API', function() {
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
                   recoveryClient.credentials.coin.should.equal('matic');
+                  recoveryClient.credentials.chain.should.equal('matic');
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
@@ -6467,7 +6470,7 @@ describe('client API', function() {
       });
 
       it('should not fail to gain access to matic wallet with unknown tokens addresses from mnemonic (Case 3)', done => {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic' }, () => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
@@ -6490,6 +6493,7 @@ describe('client API', function() {
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
                   recoveryClient.credentials.coin.should.equal('matic');
+                  recoveryClient.credentials.chain.should.equal('matic');
                   done();
                 });
               })
