@@ -188,7 +188,7 @@ export let UNITS = {
     }
   },
   euroc: {
-    toSatoshis: 1e18,
+    toSatoshis: 1e6,
     full: {
       maxDecimals: 8,
       minDecimals: 8
