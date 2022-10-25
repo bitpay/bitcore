@@ -29,7 +29,7 @@ interface IProvider {
   options?: object;
 }
 
-export interface IEthNetworkConfig extends INetworkConfig {
+export interface IEVMNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
   providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
   provider?: IProvider;
@@ -59,7 +59,7 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [currency: string]: IChainConfig<IUtxoNetworkConfig | IEthNetworkConfig | IXrpNetworkConfig>;
+    [currency: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
   };
   modules?: string[];
   services: {

@@ -1,16 +1,17 @@
 import { Readable } from 'stream';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
+import { MultisigAbi } from '../../../providers/chain-state/evm/abi/multisig';
+import { MultisigRelatedFilterTransform } from '../../../providers/chain-state/evm/api/multisigTransform';
+import { PopulateReceiptTransform } from '../../../providers/chain-state/evm/api/populateReceiptTransform';
+import { EVMListTransactionsStream } from '../../../providers/chain-state/evm/api/transform';
+import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
+import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
+import { EventLog } from '../../../providers/chain-state/evm/types';
 import { Config } from '../../../services/config';
-import { IEthNetworkConfig } from '../../../types/Config';
+import { IEVMNetworkConfig } from '../../../types/Config';
 import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
-import { MultisigAbi } from '../../ethereum/abi/multisig';
-import { EthMultisigRelatedFilterTransform } from '../../ethereum/api/ethMultisigTransform';
-import { PopulateReceiptTransform } from '../../ethereum/api/populateReceiptTransform';
-import { EthListTransactionsStream } from '../../ethereum/api/transform';
-import { EthBlockStorage } from '../../ethereum/models/block';
-import { EthTransactionStorage } from '../../ethereum/models/transaction';
-import { EventLog, MATIC } from './csp';
+import { MATIC } from './csp';
 
 interface MULTISIGInstantiation
   extends EventLog<{
@@ -41,10 +42,10 @@ export class GnosisApi {
     txId: string
   ): Promise<Partial<Transaction>[]> {
     const { web3 } = await MATIC.getWeb3(network);
-    const networkConfig: IEthNetworkConfig = Config.chainConfig({ chain: 'MATIC', network });
+    const networkConfig: IEVMNetworkConfig = Config.chainConfig({ chain: 'MATIC', network });
     const { gnosisFactory = this.gnosisFactories[network] } = networkConfig;
     let query = { chain: 'MATIC', network, txid: txId };
-    const found = await EthTransactionStorage.collection.findOne(query);
+    const found = await EVMTransactionStorage.collection.findOne(query);
     const blockHeight = found && found.blockHeight ? found.blockHeight : null;
     if (!blockHeight || blockHeight < 0) return Promise.resolve([]);
     const contract = await this.multisigFor(network, gnosisFactory);
@@ -77,7 +78,7 @@ export class GnosisApi {
   async getMultisigTxpsInfo(network: string, multisigContractAddress: string): Promise<Partial<Transaction>[]> {
     const contract = await this.multisigFor(network, multisigContractAddress);
     const time = Math.floor(Date.now()) - this.ETH_MULTISIG_TX_PROPOSAL_EXPIRE_TIME;
-    const [block] = await EthBlockStorage.collection
+    const [block] = await EVMBlockStorage.collection
       .find({
         chain: 'MATIC',
         network,
@@ -174,20 +175,16 @@ export class GnosisApi {
     }
 
     let transactionStream = new Readable({ objectMode: true });
-    const ethTransactionTransform = new EthListTransactionsStream([multisigContractAddress, args.tokenAddress]);
+    const ethTransactionTransform = new EVMListTransactionsStream([multisigContractAddress, args.tokenAddress]);
     const populateReceipt = new PopulateReceiptTransform();
 
-    transactionStream = EthTransactionStorage.collection
+    transactionStream = EVMTransactionStorage.collection
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
     if (multisigContractAddress) {
-      const ethMultisigTransform = new EthMultisigRelatedFilterTransform(
-        web3,
-        multisigContractAddress,
-        args.tokenAddress
-      );
+      const ethMultisigTransform = new MultisigRelatedFilterTransform(web3, multisigContractAddress, args.tokenAddress);
       transactionStream = transactionStream.pipe(ethMultisigTransform);
     }
 
