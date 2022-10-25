@@ -1,5 +1,6 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { ClientError } from '../../errors/clienterror';
 import { EthChain } from '../eth';
 
 const Common = require('../../common');
@@ -101,5 +102,25 @@ export class MaticChain extends EthChain {
       throw Errors.INVALID_ADDRESS;
     }
     return;
+  }
+
+  getInsuficientFeeError(txp) {
+    return new ClientError(
+      Errors.codes.INSUFFICIENT_MATIC_FEE,
+      `${Errors.INSUFFICIENT_MATIC_FEE.message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
+  }
+
+  getLockedFeeError(txp) {
+    return new ClientError(
+      Errors.codes.LOCKED_MATIC_FEE,
+      `${Errors.LOCKED_MATIC_FEE.message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
   }
 }
