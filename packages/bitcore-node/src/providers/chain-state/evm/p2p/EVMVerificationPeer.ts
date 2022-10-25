@@ -1,10 +1,10 @@
-import logger from '../../../logger';
-import { ITransaction } from '../../../models/baseTransaction';
-import { ErrorType } from '../../../services/verification';
-import { EthBlockStorage } from '../../ethereum/models/block';
-import { EthP2pWorker } from '../../ethereum/p2p/p2p';
+import logger from '../../../../logger';
+import { ITransaction } from '../../../../models/baseTransaction';
+import { ErrorType, IVerificationPeer } from '../../../../services/verification';
+import { EVMBlockStorage } from '../models/block';
+import { EVMP2pWorker } from './p2p';
 
-export class MaticVerificationPeer extends EthP2pWorker {
+export class EVMVerificationPeer extends EVMP2pWorker implements IVerificationPeer {
   prevBlockNum = 0;
   prevHash = '';
   nextBlockHash = '';
@@ -37,7 +37,7 @@ export class MaticVerificationPeer extends EthP2pWorker {
       const block = await this.getBlock(currentHeight);
       const { convertedBlock, convertedTxs } = await this.convertBlock(block);
 
-      const nextBlock = await EthBlockStorage.collection.findOne({ chain, network, previousBlockHash: block.hash });
+      const nextBlock = await EVMBlockStorage.collection.findOne({ chain, network, previousBlockHash: block.hash });
       if (nextBlock) {
         convertedBlock.nextBlockHash = nextBlock.hash;
       }

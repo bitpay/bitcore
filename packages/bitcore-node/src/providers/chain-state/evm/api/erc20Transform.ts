@@ -1,14 +1,14 @@
 import { Transform } from 'stream';
 import Web3 from 'web3';
-import { MongoBound } from '../../../models/base';
-import { IEthTransaction, IEthTransactionTransformed } from '../types';
+import { MongoBound } from '../../../../models/base';
+import { IEVMTransaction, IEVMTransactionTransformed } from '../types';
 
 export class Erc20RelatedFilterTransform extends Transform {
   constructor(private web3: Web3, private tokenAddress: string) {
     super({ objectMode: true });
   }
 
-  async _transform(tx: MongoBound<IEthTransaction>, _, done) {
+  async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
     if (
       tx.abiType &&
       tx.abiType.type === 'ERC20' &&
@@ -37,7 +37,7 @@ export class Erc20RelatedFilterTransform extends Transform {
     return done();
   }
 
-  erigonInternalTransform(tx: MongoBound<IEthTransaction>) {
+  erigonInternalTransform(tx: MongoBound<IEVMTransaction>) {
     try {
       const tokenRelatedIncomingInternalTxs = tx.internal.filter(
         (internalTx: any) =>
@@ -48,7 +48,7 @@ export class Erc20RelatedFilterTransform extends Transform {
           internalTx.abiType &&
           (internalTx.abiType.name === 'transfer' || internalTx.abiType.name === 'transferFrom')
         ) {
-          const _tx: IEthTransactionTransformed = Object.assign({}, tx);
+          const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
           for (const element of internalTx.abiType.params) {
             if (element.name === '_value') _tx.value = element.value as any;
             if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);
@@ -68,14 +68,14 @@ export class Erc20RelatedFilterTransform extends Transform {
     }
   }
 
-  gethInternalTransform(tx: MongoBound<IEthTransaction>) {
+  gethInternalTransform(tx: MongoBound<IEVMTransaction>) {
     try {
       const tokenRelatedIncomingCalls = tx.calls.filter(
         call => this.tokenAddress.toLowerCase() === call.to.toLowerCase()
       );
       for (const call of tokenRelatedIncomingCalls) {
         if (call.abiType && (call.abiType.name === 'transfer' || call.abiType.name === 'transferFrom')) {
-          const _tx: IEthTransactionTransformed = Object.assign({}, tx);
+          const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
           for (const element of call.abiType.params) {
             if (element.name === '_value') _tx.value = element.value as any;
             if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);

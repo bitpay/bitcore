@@ -7,7 +7,7 @@ import {
   hasUnconfirmedInputs,
   isRBF,
 } from '../utilities/helper-methods';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {
   TransactionBodyCol,
   TransactionTile,
@@ -23,19 +23,40 @@ import {
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
+import styled from 'styled-components';
+import {Slate, SlateDark} from '../assets/styles/colors';
+
+const TextElipsis = styled(ScriptText)`
+  overflow: hidden;
+  text-overflow: ellipsis; ;
+`;
+
+const SelectedPill = styled.div`
+  margin-top: 1rem;
+  width: 100px;
+  padding: 5px 10px;
+  border: 1px solid ${({theme: {dark}}) => (dark ? SlateDark : Slate)};
+  text-align: center;
+  border-radius: 50px;
+  color: ${({theme: {dark}}) => (dark ? Slate : SlateDark)};
+  font-weight: 500;
+  font-size: 16px;
+`;
 
 const TransactionDetails = ({
   transaction,
   currency,
   network,
+  mintIndex,
 }: {
   transaction: Transaction;
   currency: string;
   network: string;
+  mintIndex?: number;
 }) => {
   const navigate = useNavigate();
+  const [formattedInputs, setFormattedInputs] = useState<any[]>();
   const {outputs, txid, blockTime, coinbase, inputs, confirmations, fee, value} = transaction;
-
   const goToAddress = (address: any) => {
     return navigate(`/${currency}/${network}/address/${address}`);
   };
@@ -53,6 +74,13 @@ const TransactionDetails = ({
   const outputsLength = outputs.length;
 
   const [showDetails, setShowDetails] = useState(false);
+
+  useEffect(() => {
+    if (!inputs) {
+      return;
+    }
+    setFormattedInputs(aggregateItems(inputs));
+  }, [inputs]);
 
   return (
     <TransactionTile key={txid}>
@@ -75,56 +103,65 @@ const TransactionDetails = ({
 
           {!coinbase && (
             <>
-              {aggregateItems(inputs).map((vi: any, i: number, arr: any[]) => {
+              {formattedInputs?.map((vi: any, i: number, arr: any[]) => {
                 return (
-                  <Tile key={i} invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
-                    {showDetails && (
-                      <ArrowDiv margin='auto .5rem auto 0'>
-                        <img
-                          src={ArrowSvg}
-                          width={17}
-                          height={17}
-                          alt='arrow'
-                          onClick={() => goToTx(vi.items[0].mintTxid, i, false)}
-                        />
-                      </ArrowDiv>
-                    )}
+                  <div key={i}>
+                    {vi.items.map((item: any, itemIndex: number) => (
+                      <Tile
+                        key={item.mintTxid + itemIndex}
+                        invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
+                        {showDetails && (
+                          <ArrowDiv margin='auto .5rem auto 0'>
+                            <img
+                              src={ArrowSvg}
+                              width={17}
+                              height={17}
+                              alt='arrow'
+                              onClick={() => goToTx(item.mintTxid, item.mintIndex, false)}
+                            />
+                          </ArrowDiv>
+                        )}
 
-                    <TileDescription padding='0 1rem 0 0' value>
-                      {getAddress(vi) !== 'Unparsed address' ? (
-                        <SpanLink onClick={() => goToAddress(getAddress(vi))}>
-                          {getAddress(vi)}
-                        </SpanLink>
-                      ) : (
-                        <span>Unparsed address</span>
-                      )}
-
-                      {showDetails && (
-                        <div>
-                          {confirmations > 0 && (
-                            <ScriptText>
-                              <b>Confirmations</b> {confirmations}
-                            </ScriptText>
+                        <TileDescription padding='0 1rem 0 0' value>
+                          {getAddress(vi) !== 'Unparsed address' ? (
+                            <SpanLink onClick={() => goToAddress(getAddress(vi))}>
+                              {getAddress(vi)}
+                            </SpanLink>
+                          ) : (
+                            <span>Unparsed address</span>
                           )}
 
-                          <ScriptText>
-                            <b>Unlocking Script</b>
-                          </ScriptText>
+                          {showDetails && (
+                            <>
+                              {item.uiConfirmations && confirmations > 0 ? (
+                                <ScriptText>
+                                  <b>Confirmations</b> {item.uiConfirmations + confirmations}
+                                </ScriptText>
+                              ) : null}
 
-                          {vi.items.map(
-                            (item: any, index: number) =>
-                              item.scriptSig && (
-                                <ScriptText key={index}>{item.scriptSig.asm}</ScriptText>
-                              ),
+                              <TextElipsis>
+                                <b>Tx ID </b>
+                                <SpanLink
+                                  onClick={() => goToTx(item.mintTxid, item.mintIndex, false)}>
+                                  {item.mintTxid}
+                                </SpanLink>
+                              </TextElipsis>
+
+                              <TextElipsis>
+                                <b>Tx Index</b> {item.mintIndex}
+                              </TextElipsis>
+
+                              {item.scriptSig && <ScriptText>{item.scriptSig.asm}</ScriptText>}
+                            </>
                           )}
-                        </div>
-                      )}
-                    </TileDescription>
+                        </TileDescription>
 
-                    <TileDescription value textAlign='right'>
-                      {getConvertedValue(vi.value, currency)} {currency}
-                    </TileDescription>
-                  </Tile>
+                        <TileDescription value textAlign='right'>
+                          {getConvertedValue(item.value, currency)} {currency}
+                        </TileDescription>
+                      </Tile>
+                    ))}
+                  </div>
                 );
               })}
             </>
@@ -138,46 +175,55 @@ const TransactionDetails = ({
         <TransactionBodyCol type='Six' textAlign='right' padding='0 1rem'>
           {outputs.map((vo: any, i: number) => {
             return (
-              <Tile key={i} invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1}>
-                <TileDescription padding='0 1rem 0 0' value>
-                  {getAddress(vo) !== 'Unparsed address' ? (
-                    <SpanLink onClick={() => goToAddress(getAddress(vo))}>
-                      {getAddress(vo)}
-                    </SpanLink>
-                  ) : (
-                    <span>Unparsed address</span>
+              <div key={i}>
+                {vo.mintIndex === mintIndex ? <SelectedPill>Selected</SelectedPill> : null}
+                <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1}>
+                  <TileDescription padding='0 1rem 0 0' value>
+                    {getAddress(vo) !== 'Unparsed address' ? (
+                      <SpanLink onClick={() => goToAddress(getAddress(vo))}>
+                        {getAddress(vo)}
+                      </SpanLink>
+                    ) : (
+                      <span>Unparsed address</span>
+                    )}
+
+                    {showDetails && (
+                      <>
+                        {vo.script.type ? (
+                          <ScriptText>
+                            <b>Script Template</b>
+                            <i>{vo.script.type}</i>
+                          </ScriptText>
+                        ) : null}
+                        {vo.script.asm ? <ScriptText>{vo.script.asm}</ScriptText> : null}
+                        {showDetails && vo.spentTxid && vo.spentTxid !== '' ? (
+                          <TextElipsis>
+                            <b>Tx ID </b>
+                            <SpanLink onClick={() => goToTx(vo.spentTxid)}>{vo.spentTxid}</SpanLink>
+                          </TextElipsis>
+                        ) : null}
+                      </>
+                    )}
+                  </TileDescription>
+
+                  <TileDescription value textAlign='right'>
+                    {getConvertedValue(vo.value, currency)} {currency}{' '}
+                    {vo.spentTxid ? '(S)' : '(U)'}
+                  </TileDescription>
+
+                  {showDetails && vo.spentTxid && vo.spentTxid !== '' && (
+                    <ArrowDiv margin='auto 0 auto .5rem'>
+                      <img
+                        src={ArrowSvg}
+                        width={17}
+                        height={17}
+                        alt='arrow'
+                        onClick={() => goToTx(vo.spentTxid)}
+                      />
+                    </ArrowDiv>
                   )}
-
-                  {showDetails && (
-                    <>
-                      <ScriptText>
-                        <b>Script Template</b>
-                        <i>{vo.script.type}</i>
-                      </ScriptText>
-                      <ScriptText>
-                        <b>Locking Script</b>
-                      </ScriptText>
-                      <ScriptText>{vo.script.asm}</ScriptText>
-                    </>
-                  )}
-                </TileDescription>
-
-                <TileDescription value textAlign='right'>
-                  {getConvertedValue(vo.value, currency)} {currency} {vo.spentTxid ? '(S)' : '(U)'}
-                </TileDescription>
-
-                {showDetails && vo.spentTxid && vo.spentTxid !== '' && (
-                  <ArrowDiv margin='auto 0 auto .5rem'>
-                    <img
-                      src={ArrowSvg}
-                      width={17}
-                      height={17}
-                      alt='arrow'
-                      onClick={() => goToTx(vo.spentTxid, i, true)}
-                    />
-                  </ArrowDiv>
-                )}
-              </Tile>
+                </Tile>
+              </div>
             );
           })}
         </TransactionBodyCol>

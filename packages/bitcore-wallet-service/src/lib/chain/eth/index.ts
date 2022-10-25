@@ -377,10 +377,20 @@ export class EthChain implements IChain {
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
-    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
+    try {
+      if (
+        output.amount == null ||
+        output.amount < 0 ||
+        isNaN(output.amount) ||
+        Web3.utils.toBN(output.amount).toString() !== output.amount.toString()
+      ) {
+        throw new Error('output.amount is not a valid value: ' + output.amount);
+      }
+      return true;
+    } catch (err) {
+      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount. Err: ${err.message}`);
       return false;
     }
-    return true;
   }
 
   isUTXOChain() {

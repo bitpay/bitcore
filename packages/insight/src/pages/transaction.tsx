@@ -39,6 +39,15 @@ const TransactionHash: React.FC = () => {
   const dispatch = useAppDispatch();
   const [error, setError] = useState('');
   const {state} = useLocation();
+  const [inputMintIndex, setInputMintIndex] = useState<number | undefined>();
+
+  useEffect(() => {
+    if (detailsIdx !== undefined && fromVout === 'false') {
+      setInputMintIndex(Number(detailsIdx));
+    } else if (inputMintIndex !== undefined) {
+      setInputMintIndex(undefined);
+    }
+  }, [detailsIdx, fromVout]);
 
   useEffect(() => {
     if (!network || !currency || !tx) return;
@@ -89,11 +98,6 @@ const TransactionHash: React.FC = () => {
             <motion.div variants={routerFadeIn} animate='animate' initial='initial'>
               <MainTitle style={{marginBottom: 8}}>
                 Transaction
-                {detailsIdx && (
-                  <ConfirmationLabel greyed>
-                    {fromVout === 'true' ? ' Output' : ' Input'} {detailsIdx}
-                  </ConfirmationLabel>
-                )}
                 <SupCurrencyLogo currency={currency} />
               </MainTitle>
 
@@ -171,6 +175,7 @@ const TransactionHash: React.FC = () => {
                   transaction={transaction}
                   currency={currency}
                   network={network}
+                  mintIndex={inputMintIndex}
                 />
               )}
             </motion.div>

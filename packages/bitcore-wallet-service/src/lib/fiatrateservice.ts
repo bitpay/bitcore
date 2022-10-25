@@ -168,7 +168,7 @@ export class FiatRateService {
         async.map(
           currencies,
           (currency, cb) => {
-            let c = coin;
+            let c = coin.split('_')[0];
             if (coin === 'wbtc_e' || coin === 'wbtc_m') {
               logger.info('Using btc for wbtc rate.');
               c = 'btc';

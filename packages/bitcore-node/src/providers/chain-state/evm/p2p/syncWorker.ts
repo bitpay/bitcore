@@ -1,13 +1,13 @@
 import { CryptoRpc } from 'crypto-rpc';
 import Web3 from 'web3';
 import * as worker from 'worker_threads';
-import logger from '../../../logger';
-import { Config } from '../../../services/config';
-import { Storage } from '../../../services/storage';
-import { valueOrDefault } from '../../../utils/check';
-import { EthBlockStorage } from '../models/block';
-import { EthTransactionStorage } from '../models/transaction';
-import { AnyBlock, ErigonTransaction, GethTransaction, IEthBlock, IEthTransaction } from '../types';
+import logger from '../../../../logger';
+import { Config } from '../../../../services/config';
+import { Storage } from '../../../../services/storage';
+import { valueOrDefault } from '../../../../utils/check';
+import { EVMBlockStorage } from '../models/block';
+import { EVMTransactionStorage } from '../models/transaction';
+import { AnyBlock, ErigonTransaction, GethTransaction, IEVMBlock, IEVMTransaction } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 
 export class SyncWorker {
@@ -82,7 +82,13 @@ export class SyncWorker {
 
   async getClient() {
     const nodeVersion = await this.web3!.eth.getNodeInfo();
-    return nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
+    const client = nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
+    if (client !== 'erigon' && client !== 'geth') {
+      // assume it's a geth fork, or at least more like geth.
+      // this is helpful when using a dev solution like ganache.
+      return 'geth';
+    }
+    return client;
   }
 
   async connect() {
@@ -95,8 +101,8 @@ export class SyncWorker {
     return { web3: this.web3, rpc: this.rpc };
   }
 
-  async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
-    await EthBlockStorage.addBlock({
+  async processBlock(block: IEVMBlock, transactions: IEVMTransaction[]): Promise<any> {
+    await EVMBlockStorage.addBlock({
       chain: this.chain,
       network: this.network,
       forkHeight: this.chainConfig.forkHeight,
@@ -108,19 +114,8 @@ export class SyncWorker {
   }
 
   getBlockReward(block: AnyBlock): number {
-    let reward = 5;
-    const height = block.number;
-    const ForkHeights = {
-      Byzantium: 4370000,
-      Constantinople: 7280000
-    };
-
-    if (height > ForkHeights.Constantinople) {
-      reward = 2;
-    } else if (height > ForkHeights.Byzantium) {
-      reward = 3;
-    }
-    return reward;
+    block;
+    return 0;
   }
 
   async convertBlock(block: AnyBlock) {
@@ -129,7 +124,7 @@ export class SyncWorker {
     const height = block.number;
     const reward = this.getBlockReward(block);
 
-    const convertedBlock: IEthBlock = {
+    const convertedBlock: IEVMBlock = {
       chain: this.chain,
       network: this.network,
       height,
@@ -163,15 +158,15 @@ export class SyncWorker {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransaction {
     const txid = tx.hash || '';
     const to = tx.to || '';
     const from = tx.from || '';
     const value = Number(tx.value);
     const fee = Number(tx.gas) * Number(tx.gasPrice);
-    const abiType = EthTransactionStorage.abiDecode(tx.input!);
+    const abiType = EVMTransactionStorage.abiDecode(tx.input!);
     const nonce = tx.nonce || 0;
-    const convertedTx: IEthTransaction = {
+    const convertedTx: IEVMTransaction = {
       chain: this.chain,
       network: this.network,
       blockHeight: valueOrDefault(tx.blockNumber, -1),

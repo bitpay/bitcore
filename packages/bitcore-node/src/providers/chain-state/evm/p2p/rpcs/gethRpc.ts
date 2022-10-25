@@ -1,6 +1,7 @@
 import Web3 from 'web3';
-import { EthTransactionStorage } from '../../models/transaction';
-import { GethBlock, IAbiDecodedData, IEthBlock, IEthTransaction } from '../../types';
+import logger from '../../../../../logger';
+import { EVMTransactionStorage } from '../../models/transaction';
+import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransaction } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 interface IGethTxTraceResponse {
@@ -39,17 +40,23 @@ export class GethRPC implements IRpc {
   }
 
   private async traceBlock(blockNumber: number): Promise<IGethTxTraceResponse[]> {
-    const result = await this.send<IGethTxTraceResponse[]>({
-      method: 'debug_traceBlockByNumber',
-      params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
-      jsonrpc: '2.0',
-      id: 1
-    });
+    let result = [] as IGethTxTraceResponse[];
+    try {
+      result = await this.send<IGethTxTraceResponse[]>({
+        method: 'debug_traceBlockByNumber',
+        params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
+        jsonrpc: '2.0',
+        id: 1
+      });
+    } catch (e) {
+      logger.debug(e.message || e);
+    }
     return result;
   }
 
   public async getTransactionsFromBlock(blockNumber: number): Promise<IGethTxTrace[]> {
-    const txs = (await this.traceBlock(blockNumber)) || [];
+    const tracedTxs = await this.traceBlock(blockNumber);
+    const txs = tracedTxs && tracedTxs.length > 0 ? tracedTxs.filter(tx => tx.result) : [];
     return txs.map(tx => this.transactionFromGethTrace(tx));
   }
 
@@ -57,7 +64,7 @@ export class GethRPC implements IRpc {
     return new Promise<T>((resolve, reject) => {
       const provider = this.web3.eth.currentProvider as any;
       provider.send(data, function(err, data) {
-        if (err) return reject(err);
+        if (err || data.error) return reject(err || data.error);
         resolve(data.result as T);
       } as Callback<IJsonRpcResponse>);
     });
@@ -65,15 +72,15 @@ export class GethRPC implements IRpc {
 
   private transactionFromGethTrace(tx: IGethTxTraceResponse) {
     const convertedTx = tx.result;
-    convertedTx.abiType = EthTransactionStorage.abiDecode(tx.result.input);
+    convertedTx.abiType = EVMTransactionStorage.abiDecode(tx.result.input);
 
     for (let call of convertedTx.calls || []) {
-      call.abiType = EthTransactionStorage.abiDecode(tx.result.input);
+      call.abiType = EVMTransactionStorage.abiDecode(tx.result.input);
     }
     return convertedTx;
   }
 
-  public reconcileTraces(block: IEthBlock, transactions: IEthTransaction[], traces: IGethTxTrace[]) {
+  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransaction[], traces: IGethTxTrace[]) {
     // TODO calculate total block reward including fees
     block;
 
@@ -92,7 +99,7 @@ export class GethRPC implements IRpc {
     const calls = trace.calls;
 
     delete trace.calls;
-    trace.abiType = trace.input ? EthTransactionStorage.abiDecode(trace.input) : undefined;
+    trace.abiType = trace.input ? EVMTransactionStorage.abiDecode(trace.input) : undefined;
     (trace as IGethTxTraceFlat).depth = depth;
     retval.push(trace as IGethTxTraceFlat);
 

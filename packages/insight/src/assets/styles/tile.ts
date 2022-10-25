@@ -1,7 +1,7 @@
 import styled, {css} from 'styled-components';
 import {Truncate} from './global';
 import {size} from '../../utilities/constants';
-import {NeutralSlate, Slate30} from './colors';
+import {NeutralSlate, Slate30, SlateDark, Slate} from './colors';
 
 interface TileDescriptionProps {
   value?: any;
@@ -20,6 +20,11 @@ interface TileProps {
 }
 
 export const Tile = styled.div<TileProps>`
+  justify-content: space-between;
+  display: flex;
+  margin: ${({margin}) => margin || 0};
+  padding: ${({padding}) => padding || '10px 0'};
+
   ${({withBorderBottom, invertedBorderColor}: TileProps) => {
     if (withBorderBottom) {
       return css`
@@ -37,11 +42,6 @@ export const Tile = styled.div<TileProps>`
       `;
     }
   }};
-
-  justify-content: space-between;
-  display: flex;
-  margin: ${({margin}) => margin || 0};
-  padding: ${({padding}) => padding || '10px 0'};
 `;
 
 export const TileDescription = styled.div<TileDescriptionProps>`
