@@ -14,12 +14,12 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "bitcoin",
+              "host": "localhost",
               "port": 8332
             }
           ],
           "rpc": {
-            "host": "bitcoin",
+            "host": "localhost",
             "port": 8333,
             "username": "bitcorenodetest",
             "password": "local321"
@@ -31,18 +31,18 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "erigon",
-              "port": 30303
+              "host": "localhost",
+              "port": 40404
             }
           ],
           "providers": [{
-            "host": "erigon",
+            "host": "localhost",
             "protocol": "ws",
-            "port": 8545
+            "port": 9545
           }, {
-            "host": "geth",
+            "host": "localhost",
             "protocol": "ws",
-            "port": 8556
+            "port": 9556
           }],
           "threads": 0
         }
@@ -52,14 +52,14 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "geth",
-              "port": 30303
+              "host": "localhost",
+              "port": 40404
             }
           ],
           "providers": [{
-            "host": "geth",
+            "host": "localhost",
             "protocol": "ws",
-            "port": 8556
+            "port": 9556
           }],
           "threads": 0
         }
@@ -68,10 +68,10 @@
         "testnet": {
           "chainSource": "rpc",
           "provider": {
-            "host": "rippled",
+            "host": "localhost",
             "protocol": "ws",
-            "port": "6006",
-            "dataHost": "rippled"
+            "port": 6996,
+            "dataHost": "localhost"
           }
         }
       }
