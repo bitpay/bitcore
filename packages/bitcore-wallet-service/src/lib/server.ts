@@ -141,7 +141,7 @@ export interface IWalletService {
   copayerIsMarketingStaff: boolean;
 }
 
-export interface ICoinConfigFilter{
+export interface ICoinConfigFilter {
   fromDate?: number;
   toDate?: number;
   fromCoinCode?: string;
@@ -1222,20 +1222,19 @@ export class WalletService {
     });
   }
 
-   /**
+  /**
    * Checking if exist deposit or swap fund
    */
-    checkingSeedExist(cb) {
-      this.storage.fetchKeys((err, keys) => {
-       if(err) return cb(err);
-       if(!keys){
+  checkingSeedExist(cb) {
+    this.storage.fetchKeys((err, keys) => {
+      if (err) return cb(err);
+      if (!keys) {
         return cb(null, { isKeyExisted: false });
-       } else{
+      } else {
         return cb(null, { isKeyExisted: true });
-       }
-      });
-    }
-
+      }
+    });
+  }
 
   /**
    * Renew password for user and return new recovery key
@@ -3687,35 +3686,41 @@ export class WalletService {
         const ctArray = Array.from(new Uint8Array(keyFundDecrypted)); // ciphertext as byte array\
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
         opts.words = ctStr;
-        this.importWithPromise(opts, client, true).then(result => {return cb(null, result)}).catch(e => {return cb(e)});
+        this.importWithPromise(opts, client, true)
+          .then(result => {
+            return cb(null, result);
+          })
+          .catch(e => {
+            return cb(e);
+          });
       });
     } catch (e) {
       return cb(e);
     }
   }
 
-  importWithPromise(opts, client, isFund){
-    return new Promise((resolve, reject) =>{
+  importWithPromise(opts, client, isFund) {
+    return new Promise((resolve, reject) => {
       Client.serverAssistedImport(
         opts,
         {
           baseUrl: client.request.baseUrl
         },
         (err, key, walletClients) => {
-          if(err) return reject(err);
+          if (err) return reject(err);
           if (walletClients && walletClients.length > 0) {
-            if(isFund){
+            if (isFund) {
               clientsFund = walletClients;
               mnemonicKeyFund = opts.words;
               keyFund = key;
-            } else{
+            } else {
               clientsReceive = walletClients;
             }
           }
           return resolve(walletClients);
         }
       );
-    })
+    });
   }
   initializeCoinConfig(cb) {
     let listAvailableCoin = [];
@@ -3803,38 +3808,36 @@ export class WalletService {
   }
 
   async rescanWalletsInKeys(cb) {
-    if(!clientsFund || !clientsReceive){
+    if (!clientsFund || !clientsReceive) {
       return cb(new Error('Can not find key fund and receive '));
     }
     let listCoinConfigMapped = [];
     // let listCoinConfigReceiveFound = [];
-    this.storage.fetchAllCoinConfig(async (err, listCoinConfig : CoinConfig[]) => {
-      if(err) return cb(err);
-      if(clientsFund){
+    this.storage.fetchAllCoinConfig(async (err, listCoinConfig: CoinConfig[]) => {
+      if (err) return cb(err);
+      if (clientsFund) {
         listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfig);
       }
-      if(clientsReceive && listCoinConfigMapped.length > 0){
+      if (clientsReceive && listCoinConfigMapped.length > 0) {
         listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfigMapped);
       }
-      if(listCoinConfigMapped.length > 0){
-        this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result)=>{
-          if(err) return cb(err);
+      if (listCoinConfigMapped.length > 0) {
+        this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result) => {
+          if (err) return cb(err);
           return cb(null, result);
-        })
-      } else{
+        });
+      } else {
         return cb(new Error('Can not rescan wallet'));
       }
-    })
+    });
   }
 
-  filterCoinconfig(opts, cb){
+  filterCoinconfig(opts, cb) {}
 
-  }
-
-  async mappingWalletClientsToCoinConfig(walletClients, isSwap: boolean , listCoinConfig: CoinConfig[]) {
+  async mappingWalletClientsToCoinConfig(walletClients, isSwap: boolean, listCoinConfig: CoinConfig[]) {
     let listCoinFound = [];
     let listTokenFound = [];
-  if (walletClients) {
+    if (walletClients) {
       // get all wallets in walletClients
       listCoinFound = walletClients.map(s => ({
         code: s.credentials.coin,
@@ -3858,21 +3861,22 @@ export class WalletService {
           });
           listTokenFound = listTokenConverted.map(s => ({
             code: s.tokenInfo.symbol.toLowerCase(),
-            network: 'livenet',
+            network: 'livenet'
             // isToken: true,
             // tokenInfo: s.tokenInfo,
           }));
         }
       }
 
-        const listFound = listCoinFound.concat(listTokenFound);
-        if(listFound.length > 0){
-          listCoinConfig.forEach(coinConfig => {
-            const isCoinConfigFound = listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
-            coinConfig.isSwap =  isSwap ? isCoinConfigFound : coinConfig.isSwap;
-            coinConfig.isReceive = !isSwap ? isCoinConfigFound : coinConfig.isReceive;
-            })
-        }
+      const listFound = listCoinFound.concat(listTokenFound);
+      if (listFound.length > 0) {
+        listCoinConfig.forEach(coinConfig => {
+          const isCoinConfigFound =
+            listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
+          coinConfig.isSwap = isSwap ? isCoinConfigFound : coinConfig.isSwap;
+          coinConfig.isReceive = !isSwap ? isCoinConfigFound : coinConfig.isReceive;
+        });
+      }
     }
     return listCoinConfig;
   }
@@ -3887,7 +3891,13 @@ export class WalletService {
         const ctArray = Array.from(new Uint8Array(keyReceiveDecrypted)); // ciphertext as byte array
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
         opts.words = ctStr;
-        this.importWithPromise(opts, client, false).then(result => {return cb(null, result)}).catch(e => {return cb(e)});
+        this.importWithPromise(opts, client, false)
+          .then(result => {
+            return cb(null, result);
+          })
+          .catch(e => {
+            return cb(e);
+          });
       });
     } catch (e) {
       return cb(e);
@@ -4097,9 +4107,11 @@ export class WalletService {
                                 amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
                                 orderInfo,
                                 rateList[orderInfo.toCoinCode.toLowerCase()].USD,
-                                configSwap.coinReceive.find(coin => coin.code === orderInfo.toCoinCode && coin.network === orderInfo.toNetwork)
+                                configSwap.coinReceive.find(
+                                  coin => coin.code === orderInfo.toCoinCode && coin.network === orderInfo.toNetwork
+                                )
                               );
-                              if(amountDepositInToCoinCodeUnit < feeCalculated){
+                              if (amountDepositInToCoinCodeUnit < feeCalculated) {
                                 saveError(orderInfo, data, Errors.INVALID_AMOUNT);
                                 return;
                               }
@@ -4182,7 +4194,7 @@ export class WalletService {
     try {
       clearInterval(swapQueueInterval);
       this.getKeyFundAndReceiveWithFundMnemonic(err => {
-        if(err) return cb(err);
+        if (err) return cb(err);
         this.checkQueueHandleSwap();
         return cb(null);
       });
@@ -6069,156 +6081,156 @@ export class WalletService {
       return cb(Errors.NOT_FOUND_KEY_FUND);
     }
     logger.debug('appDir: ', appDir);
-    this.storage.fetchAllCoinConfig((err, listCoinConfig : CoinConfig[])=>{
-      if(err) return cb(err);
+    this.storage.fetchAllCoinConfig((err, listCoinConfig: CoinConfig[]) => {
+      if (err) return cb(err);
       listCoinConfig = listCoinConfig.filter(s => s.isSupport);
       const swapConfig = new ConfigSwap();
       swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive);
       swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap);
       let promiseList = [];
-    let promiseList2 = [];
-    // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
-    let isFundClientXecFound = false;
-    let balanceTokenFound = null;
-    clientsFund.forEach(async clientFund => {
-      if (clientFund.credentials.coin === 'xec') {
-        isFundClientXecFound = true;
-      }
-      promiseList2.push(
-        this.getBalanceWithPromise({
-          walletId: clientFund.credentials.walletId,
-          coinCode: clientFund.credentials.coin,
-          network: clientFund.credentials.network
-        })
-      );
-      if (isFundClientXecFound && swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1) {
-        balanceTokenFound = await this.getTokensWithPromise({ walletId: clientFund.credentials.walletId });
-      }
-      isFundClientXecFound = false;
-    });
-    Promise.all(promiseList2)
-      .then(balance => {
-        logger.debug('balance: ', balance);
-        const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
-          return {
-            tokenId: item.tokenId,
-            tokenInfo: item.tokenInfo,
-            amountToken: item.amountToken,
-            utxoToken: item.utxoToken
-          } as TokenItem;
-        });
-        logger.debug('listBalanceTokenConverted: ', listBalanceTokenConverted);
-        this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
-          this._getRatesWithCustomFormat((err, fiatRates) => {
-            try {
-              for (var i = 0; i < swapConfig.coinReceive.length; i++) {
-                const coin = swapConfig.coinReceive[i];
-                const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
-                const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
-                const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
-                if (coin.isToken) {
-                  const balanceSelected = listBalanceTokenConverted.find(
-                    s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
-                  );
-                  if (balanceSelected) {
-                    const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
-                      .decimals;
-                    coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
-                    coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
-                    coin.fund = balanceSelected.amountToken * rateCoinUsd;
-                    coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
-                    coin.satUnit = Math.pow(10, tokenDecimals);
-                  } else {
-                    coin.isEnable = false;
-                  }
-                } else {
-                  const balanceFound = balance.find(
-                    s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network
-                  );
-                  if (balanceFound) {
-                    const balanceTotal = balanceFound.balance.totalAmount;
-                    coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-                    coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-                    coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
-                    coin.fundConvertToSat = balanceTotal;
-                  } else {
-                    coin.isEnable = false;
-                  }
-                }
-                coin.rate = fiatRates[coin.code.toLowerCase()];
-                promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
-              }
-              swapConfig.coinSwap.forEach(coin => {
-                coin.rate = fiatRates[coin.code.toLowerCase()];
-              });
-              Promise.all(promiseList).then(listData => {
-                listData.forEach((data: any) => {
-                  const coin = data.coin;
-                  const feePerKb = data.feePerKb;
-                  let estimatedFee;
-                  if (coin.isToken || coin.code === 'xec') {
-                    // Send dust transaction representing tokens being sent.
-                    const dustRepresenting = 546;
-                    //  Return any token change back to the sender.
-                    const dustReturnAnyToken = 546;
-                    // fee
-                    const fee = 250;
-
-                    estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
-                  } else {
-                    const baseTxpSize = 78;
-                    const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
-                    const sizePerInput = 148;
-                    const feePerInput = (sizePerInput * feePerKb) / 1000;
-                    estimatedFee = Math.round(baseTxpFee + feePerInput);
-                  }
-                  if(coin.networkFee === 0){
-                    const coinCode = coin.isToken ?  'xec' : coin.code.toLowerCase();
-                    coin.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
-                  }
-                });
-                return cb(null, swapConfig);
-              });
-            } catch (e) {
-              logger.debug(e);
-              return cb(e);
-            }
-          });
-        });
-      })
-      .catch(e => {
-        logger.debug(e);
+      let promiseList2 = [];
+      // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
+      let isFundClientXecFound = false;
+      let balanceTokenFound = null;
+      clientsFund.forEach(async clientFund => {
+        if (clientFund.credentials.coin === 'xec') {
+          isFundClientXecFound = true;
+        }
+        promiseList2.push(
+          this.getBalanceWithPromise({
+            walletId: clientFund.credentials.walletId,
+            coinCode: clientFund.credentials.coin,
+            network: clientFund.credentials.network
+          })
+        );
+        if (isFundClientXecFound && swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1) {
+          balanceTokenFound = await this.getTokensWithPromise({ walletId: clientFund.credentials.walletId });
+        }
+        isFundClientXecFound = false;
       });
-    })
-    // const swapConfig = ConfigSwap.fromObj(adminConfig);
+      Promise.all(promiseList2)
+        .then(balance => {
+          logger.debug('balance: ', balance);
+          const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+            return {
+              tokenId: item.tokenId,
+              tokenInfo: item.tokenInfo,
+              amountToken: item.amountToken,
+              utxoToken: item.utxoToken
+            } as TokenItem;
+          });
+          logger.debug('listBalanceTokenConverted: ', listBalanceTokenConverted);
+          this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
+            this._getRatesWithCustomFormat((err, fiatRates) => {
+              try {
+                for (var i = 0; i < swapConfig.coinReceive.length; i++) {
+                  const coin = swapConfig.coinReceive[i];
+                  const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
+                  const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
+                  const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
+                  if (coin.isToken) {
+                    const balanceSelected = listBalanceTokenConverted.find(
+                      s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
+                    );
+                    if (balanceSelected) {
+                      const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
+                        .decimals;
+                      coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
+                      coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
+                      coin.fund = balanceSelected.amountToken * rateCoinUsd;
+                      coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
+                      coin.satUnit = Math.pow(10, tokenDecimals);
+                    } else {
+                      coin.isEnable = false;
+                    }
+                  } else {
+                    const balanceFound = balance.find(
+                      s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network
+                    );
+                    if (balanceFound) {
+                      const balanceTotal = balanceFound.balance.totalAmount;
+                      coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+                      coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
+                      coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
+                      coin.fundConvertToSat = balanceTotal;
+                    } else {
+                      coin.isEnable = false;
+                    }
+                  }
+                  coin.rate = fiatRates[coin.code.toLowerCase()];
+                  promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
+                }
+                swapConfig.coinSwap.forEach(coin => {
+                  coin.rate = fiatRates[coin.code.toLowerCase()];
+                });
+                Promise.all(promiseList).then(listData => {
+                  listData.forEach((data: any) => {
+                    const coin = data.coin;
+                    const feePerKb = data.feePerKb;
+                    let estimatedFee;
+                    if (coin.isToken || coin.code === 'xec') {
+                      // Send dust transaction representing tokens being sent.
+                      const dustRepresenting = 546;
+                      //  Return any token change back to the sender.
+                      const dustReturnAnyToken = 546;
+                      // fee
+                      const fee = 250;
 
+                      estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
+                    } else {
+                      const baseTxpSize = 78;
+                      const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
+                      const sizePerInput = 148;
+                      const feePerInput = (sizePerInput * feePerKb) / 1000;
+                      estimatedFee = Math.round(baseTxpFee + feePerInput);
+                    }
+                    if (coin.networkFee === 0) {
+                      const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
+                      coin.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+                    }
+                  });
+                  return cb(null, swapConfig);
+                });
+              } catch (e) {
+                logger.debug(e);
+                return cb(e);
+              }
+            });
+          });
+        })
+        .catch(e => {
+          logger.debug(e);
+        });
+    });
+    // const swapConfig = ConfigSwap.fromObj(adminConfig);
   }
 
-   /**
+  /**
    * Returns swap configetOrderInfog.
    */
   getListCoinConfig(cb) {
-      if (!clientsFund) {
-        return cb(Errors.NOT_FOUND_KEY_FUND);
-      }
-      if(!clientsReceive){
-        return cb(Errors.NOT_FOUND_KEY_RECEIVE);
-      }
-      this.storage.fetchAllCoinConfig((err, listCoinConfig : CoinConfig[])=>{
-        if(err) return cb(err);
-        listCoinConfig = listCoinConfig.filter(s => s.isSupport);
-        this.getAllTokenInfo((err, tokenInfoList: TokenInfo[])=>{
-            if(err) return cb(err);
-            listCoinConfig.forEach(coin => {
-              if(coin.isToken){
-                coin.tokenInfo = tokenInfoList.find(tokenInfo => tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase());
-              }
-            })
-            return cb(null, listCoinConfig);
-        })
-      })
+    if (!clientsFund) {
+      return cb(Errors.NOT_FOUND_KEY_FUND);
     }
-
+    if (!clientsReceive) {
+      return cb(Errors.NOT_FOUND_KEY_RECEIVE);
+    }
+    this.storage.fetchAllCoinConfig((err, listCoinConfig: CoinConfig[]) => {
+      if (err) return cb(err);
+      listCoinConfig = listCoinConfig.filter(s => s.isSupport);
+      this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
+        if (err) return cb(err);
+        listCoinConfig.forEach(coin => {
+          if (coin.isToken) {
+            coin.tokenInfo = tokenInfoList.find(
+              tokenInfo => tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
+            );
+          }
+        });
+        return cb(null, listCoinConfig);
+      });
+    });
+  }
 
   getConfigSwapWithPromise(): Promise<ConfigSwap> {
     return new Promise((resolve, reject) => {

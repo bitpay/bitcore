@@ -1,7 +1,7 @@
 import _ from 'lodash';
+import ShortUniqueId from 'short-unique-id';
 import { TokenInfo } from '../chain/xec';
 import { CoinConfig } from './config-swap';
-import ShortUniqueId from 'short-unique-id';
 interface IOrder {
   id: string;
   version: number;
