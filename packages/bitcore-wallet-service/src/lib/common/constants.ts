@@ -43,26 +43,17 @@ module.exports = {
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
-    MATIC_E: 'matic_e',
-    USDC_E: 'usdc_e',
-    USDP_E: 'usdp_e',
-    PAX_E: 'pax_e', // backwards compatability
-    GUSD_E: 'gusd_e',
-    BUSD_E: 'busd_e',
-    DAI_E: 'dai_e',
-    WBTC_E: 'wbtc_e',
-    SHIB_E: 'shib_e',
-    APE_E: 'ape_e',
-    EUROC_E: 'euroc_e'
-  },
-
-  BITPAY_SUPPORTED_MATIC_ERC20: {
-    USDC_M: 'usdc_m',
-    BUSD_M: 'busd_m',
-    DAI_M: 'dai_m',
-    WBTC_M: 'wbtc_m',
-    SHIB_M: 'shib_m',
-    APE_M: 'ape_m'
+    MATIC: 'matic',
+    USDC: 'usdc',
+    USDP: 'usdp',
+    PAX: 'pax', // backwards compatability
+    GUSD: 'gusd',
+    BUSD: 'busd',
+    DAI: 'dai',
+    WBTC: 'wbtc',
+    SHIB: 'shib',
+    APE: 'ape',
+    EUROC: 'euroc'
   },
 
   BITPAY_USD_STABLECOINS: {

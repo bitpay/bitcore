@@ -10452,7 +10452,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('ERC20 createTx', function() {
+  describe('ERC20 createTx (ETH)', function() {
     var server, wallet;
     let sandbox;
     let addressStr = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
@@ -10516,6 +10516,91 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
           var txOpts = {
             coin: 'usdc_e',
+            payProUrl: 'payProUrl',
+            outputs: [{
+              toAddress: addressStr,
+              amount: 0,
+              data: '0xb6b4af05000000000000000000000000000000000000000000000000000939f52e7b500000000000000000000000000000000000000000000000000000000006a5b66d80000000000000000000000000000000000000000000000000000001758d7da01d546ec66322bb962a8ba8c9c7c1b2ea37f0e4d5e92dfcd938796eeb41fb4aaa6efe746af63df9f38740a10c477b055f4f96fb26962d8d4050dac6d68280c28b60000000000000000000000000000000000000000000000000000000000000001cd7f7eb38ca6bd66b9006c66e42c1400f1921e5134adf77fcf577c267c9210a1d3230a734142b8810a7a7244f14da12fc052904fd68e885ce955f74ed57250bd50000000000000000000000000000000000000000000000000000000000000000'
+            }],
+            from,
+            tokenAddress: TOKENS[0]
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('INSUFFICIENT_FUNDS');
+            err.message.should.equal('Insufficient funds');
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  describe('ERC20 createTx (MATIC)', function() {
+    var server, wallet;
+    let sandbox;
+    let addressStr = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    beforeEach(function(done) {
+      sandbox = sinon.createSandbox();
+      helpers.createAndJoinWallet(1, 1, {
+        coin: 'matic',
+      }, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
+   it('should fail with different error for ERC20 txs with insufficient MATIC to cover miner fee', function(done) {
+      const ts = TO_SAT['usdc'];
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
+          let txAmount = 1e6;
+          var txOpts = {
+            coin: 'usdc_m',
+            outputs: [{
+              toAddress: addressStr,
+              amount: txAmount
+            }],
+            from,
+            fee: 4e18,
+            tokenAddress: TOKENS[0]
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('INSUFFICIENT_MATIC_FEE');
+            err.message.should.equal('Your linked POLYGON wallet does not have enough MATIC for fee. RequiredFee: 3999999999999990000');
+            err.messageData.should.deep.equal({ requiredFee: 3999999999999990000 });
+            server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, tokenBalance) {
+              should.not.exist(err);
+              tokenBalance.totalAmount.should.equal(2 * ts);
+              tokenBalance.lockedAmount.should.equal(0);
+              txOpts.outputs[0].amount = 1 * ts;
+              server.getBalance({}, function(err, ethBalance) {
+                should.not.exist(err);
+                ethBalance.should.not.equal(tokenBalance);
+                ethBalance.totalAmount.should.equal(2000000000000000000);
+                ethBalance.lockedAmount.should.equal(0);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should decode ouput data correctly to get invoice value when paypro', function(done) {
+      const ts = TO_SAT['usdc'];
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
+          var txOpts = {
+            coin: 'usdc_m',
             payProUrl: 'payProUrl',
             outputs: [{
               toAddress: addressStr,

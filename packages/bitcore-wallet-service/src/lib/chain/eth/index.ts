@@ -333,25 +333,9 @@ export class EthChain implements IChain {
               if (err) return cb(err);
               const { totalAmount, availableAmount } = ethBalance;
               if (totalAmount < txp.fee) {
-                return cb(
-                  new ClientError(
-                    Errors.codes.INSUFFICIENT_ETH_FEE,
-                    `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
-                    {
-                      requiredFee: txp.fee
-                    }
-                  )
-                );
+                return cb(this.getInsuficientFeeError(txp));
               } else if (availableAmount < txp.fee) {
-                return cb(
-                  new ClientError(
-                    Errors.codes.LOCKED_ETH_FEE,
-                    `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
-                    {
-                      requiredFee: txp.fee
-                    }
-                  )
-                );
+                return cb(this.getLockedFeeError(txp));
               } else {
                 return cb(this.checkTx(txp));
               }
@@ -372,6 +356,22 @@ export class EthChain implements IChain {
         }
       }
     );
+  }
+
+  getInsuficientFeeError(txp) {
+    return new ClientError(
+      Errors.codes.INSUFFICIENT_ETH_FEE,
+      `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
+  }
+
+  getLockedFeeError(txp) {
+    return new ClientError(Errors.codes.LOCKED_ETH_FEE, `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`, {
+      requiredFee: txp.fee
+    });
   }
 
   checkUtxos(opts) {}

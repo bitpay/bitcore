@@ -52,6 +52,22 @@ export class Mongo {
     await this.client.close();
   }
 
+  async testConnection() {
+    try {
+      this.client = new MongoClient(this.path, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        noDelay: true,
+        serverSelectionTimeoutMS: 5000
+      });
+      await this.client.connect();
+      await this.client.close();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   async listWallets() {
     await this.init({ wallet: 1 });
     const stream = new Transform({
