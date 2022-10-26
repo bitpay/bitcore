@@ -1,11 +1,9 @@
 import _ from 'lodash';
 import { TokenInfo } from '../chain/xec';
 import { CoinConfig } from './config-swap';
-const Uuid = require('uuid');
-import cuid from 'cuid';
-import { StringLiteral } from 'typescript';
+import ShortUniqueId from 'short-unique-id';
 interface IOrder {
-  id: string | number;
+  id: string;
   version: number;
   priority: number;
   fromCoinCode: string;
@@ -41,7 +39,7 @@ interface IOrder {
 }
 
 export class Order {
-  id: string | number;
+  id: string;
   version: number;
   priority: number;
   fromCoinCode: string;
@@ -84,10 +82,11 @@ export class Order {
 
     const now = Date.now();
     const end = new Date().setDate(new Date(now).getDate() + 1);
+    const uid = new ShortUniqueId({ length: 8 });
     x.version = 2;
     x.priority = opts.priority;
     x.createdOn = now;
-    x.id = cuid();
+    x.id = uid().toUpperCase();
     x.fromCoinCode = opts.fromCoinCode;
     x.amountFrom = opts.amountFrom;
     x.fromSatUnit = opts.fromSatUnit;
@@ -107,7 +106,7 @@ export class Order {
     x.listTxIdUserReceive = [];
     x.isSentToFund = false;
     x.isSentToUser = false;
-    x.endedOn = end;
+    x.endedOn = now;
     x.error = null;
     x.coinConfig = null;
     x.toTokenInfo = opts.toTokenInfo || null;

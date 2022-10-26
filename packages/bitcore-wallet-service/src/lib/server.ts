@@ -140,6 +140,14 @@ export interface IWalletService {
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
 }
+
+export interface ICoinConfigFilter{
+  fromDate?: number;
+  toDate?: number;
+  fromCoinCode?: string;
+  toCoinCode?: string;
+}
+
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
 }
@@ -1227,7 +1235,7 @@ export class WalletService {
        }
       });
     }
-  
+
 
   /**
    * Renew password for user and return new recovery key
@@ -3640,25 +3648,7 @@ export class WalletService {
       });
     });
   }
-  async sendSwapWithToken(mnemonic, opts, cb) {
-    const orderInfo = Order.create(opts);
-    const clientFundSelectedToSendToUser = clientsFund.find(s => s.credentials.coin === 'xec');
-    this.walletId = clientFundSelectedToSendToUser.credentials.walletId;
-    this.copayerId = clientFundSelectedToSendToUser.credentials.copayerId;
-    await this._sendSwapWithToken(
-      'xec',
-      clientFundSelectedToSendToUser,
-      mnemonic,
-      orderInfo.toTokenId,
-      null,
-      orderInfo.amountFrom * orderInfo.createdRate,
-      orderInfo.addressUserReceive,
-      (err, result) => {
-        if (err) return cb(err);
-        return cb(null, result);
-      }
-    );
-  }
+
   async _sendSwapWithToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress, cb) {
     try {
       const txId = await ChainService.sendToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
@@ -3835,6 +3825,9 @@ export class WalletService {
         return cb(new Error('Can not rescan wallet'));
       }
     })
+  }
+
+  filterCoinconfig(opts, cb){
 
   }
 
@@ -4206,7 +4199,7 @@ export class WalletService {
     if (coinConfig.serviceFee > 0) {
       feeCalculated = (coinConfig.serviceFee * amount) / 100;
     }
-    if (coinConfig.networkFee > 0) {
+    if (!coinConfig.isToken && coinConfig.networkFee > 0) {
       feeCalculated += coinConfig.networkFee;
     }
     if (coinConfig.settleFee > 0) {
@@ -4237,7 +4230,7 @@ export class WalletService {
 
       const now = Date.now();
       if (orderInfo.createdOn && orderInfo.endedOn && orderInfo.endedOn < now) {
-        throw new Error(Errors.ORDER_EXPIRED);
+        throw Errors.ORDER_EXPIRED;
       }
     } else throw new Error('Not found Order info');
 

@@ -1642,6 +1642,32 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/coinconfig/refresh/wallet', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.rescanWalletsInKeys((err, listCoinConfig) => {
+        if (err) return returnError(err, res, req);
+        res.json(listCoinConfig);
+      });
+    });
+
+    router.post('/v3/coinconfig/filter', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.rescanWalletsInKeys((err, listCoinConfig) => {
+        if (err) return returnError(err, res, req);
+        res.json(listCoinConfig);
+      });
+    });
+
     // DEPRECATED
     router.delete('/v1/pushnotifications/subscriptions/', (req, res) => {
       logDeprecated(req);
@@ -1910,20 +1936,20 @@ export class ExpressApp {
 
     WalletService.initialize(opts, data => {
       const server = WalletService.getInstance(opts);
-      server.storage.countAlUserByEmail('tan8651913@gmail.com').then(count => {
-        if (count === 0) {
-          server.storage.storeUser(
-            {
-              email: 'tan8651913@gmail.com'
-            },
-            (err, user) => {
-              if (err) logger.debug(err);
-            }
-          );
-        } else {
-          logger.debug('already init user');
-        }
-      });
+      // server.storage.countAlUserByEmail('tan8651913@gmail.com').then(count => {
+      //   if (count === 0) {
+      //     server.storage.storeUser(
+      //       {
+      //         email: 'tan8651913@gmail.com'
+      //       },
+      //       (err, user) => {
+      //         if (err) logger.debug(err);
+      //       }
+      //     );
+      //   } else {
+      //     logger.debug('already init user');
+      //   }
+      // });
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
       });
