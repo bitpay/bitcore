@@ -38,6 +38,7 @@ export class V8 {
   // v8 is always cashaddr
   addressFormat: string;
   apiPrefix: string;
+  chainNetwork: string;
   host: string;
   userAgent: string;
   baseUrl: string;
@@ -58,7 +59,8 @@ export class V8 {
 
     // v8 is always cashaddr
     this.addressFormat = this.chain == 'bch' ? 'cashaddr' : null;
-    this.apiPrefix += `/${this.chain.toUpperCase()}/${this.v8network}`;
+    this.chainNetwork = `/${this.chain.toUpperCase()}/${this.v8network}`;
+    this.apiPrefix += this.chainNetwork;
 
     this.host = opts.url;
     this.userAgent = opts.userAgent || 'bws';
@@ -231,7 +233,7 @@ export class V8 {
     const payload = {
       rawTx,
       network: this.v8network,
-      chain: this.chain
+      chain: this.chain.toUpperCase()
     };
 
     const client = this._getClient();
@@ -547,7 +549,7 @@ export class V8 {
 
     blockSocket.on('connect', () => {
       logger.info(`Connected to block ${this.getConnectionInfo()}`);
-      blockSocket.emit('room', `/${this.chain}/${this.v8network}/inv`);
+      blockSocket.emit('room', `${this.chainNetwork}/inv`);
     });
 
     blockSocket.on('connect_error', () => {
@@ -560,15 +562,15 @@ export class V8 {
 
     walletsSocket.on('connect', () => {
       logger.info(`Connected to wallets ${this.getConnectionInfo()}`);
-      walletsSocket.emit('room', `/${this.chain}/${this.v8network}/wallets`, getAuthPayload(this.host));
+      walletsSocket.emit('room', `${this.chainNetwork}/wallets`, getAuthPayload(this.host));
     });
 
     walletsSocket.on('connect_error', () => {
-      logger.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chain}/${this.v8network}`);
+      logger.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chainNetwork}`);
     });
 
     walletsSocket.on('failure', err => {
-      logger.error(`Error joining room ${err.message} ${this.chain}/${this.v8network}`);
+      logger.error(`Error joining room ${err.message} ${this.chainNetwork}`);
     });
 
     walletsSocket.on('coin', data => {
