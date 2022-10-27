@@ -10562,6 +10562,7 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
           let txAmount = 1e6;
           var txOpts = {
+            chain: 'matic',
             coin: 'usdc_m',
             outputs: [{
               toAddress: addressStr,
@@ -10600,6 +10601,7 @@ describe('Wallet service', function() {
       server.createAddress({}, from => {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
           var txOpts = {
+            chain: 'matic',
             coin: 'usdc_m',
             payProUrl: 'payProUrl',
             outputs: [{
