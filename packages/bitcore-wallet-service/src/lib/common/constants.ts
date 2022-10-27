@@ -123,5 +123,5 @@ module.exports = {
   CONFIRMATIONS_TO_START_CACHING: {
     eth: 100,
     matic: 150
-  },
+  }
 };

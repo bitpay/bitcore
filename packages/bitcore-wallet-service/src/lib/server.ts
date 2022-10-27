@@ -4021,13 +4021,13 @@ export class WalletService {
           // We have now TXs from 'tipHeight` to end in `lastTxs`.
           // Store hard confirmed TXs
           // confirmations here is bcHeight - tip + 1, so OK.
-          let CACHE_AT_CONFS = Defaults.CONFIRMATIONS_TO_START_CACHING;
+          let CONFIRMATIONS_TO_START_CACHING = Defaults.CONFIRMATIONS_TO_START_CACHING;
           if (Constants.CONFIRMATIONS_TO_START_CACHING[wallet.chain] != null) {
-            CACHE_AT_CONFS = Constants.CONFIRMATIONS_TO_START_CACHING[wallet.chain];
+            CONFIRMATIONS_TO_START_CACHING = Constants.CONFIRMATIONS_TO_START_CACHING[wallet.chain];
           }
 
           txsToCache = _.filter(lastTxs, i => {
-            if (i.confirmations < CACHE_AT_CONFS) {
+            if (i.confirmations < CONFIRMATIONS_TO_START_CACHING) {
               return false;
             }
             if (!cacheStatus.tipHeight) return true;
@@ -4040,7 +4040,7 @@ export class WalletService {
             return next();
           }
 
-          const updateHeight = bcHeight - CACHE_AT_CONFS;
+          const updateHeight = bcHeight - CONFIRMATIONS_TO_START_CACHING;
           this.storage.storeTxHistoryCacheV8(walletCacheKey, cacheStatus.tipIndex, txsToCache, updateHeight, next);
         }
       ],
