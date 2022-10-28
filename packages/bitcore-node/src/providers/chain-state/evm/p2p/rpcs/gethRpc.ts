@@ -90,7 +90,6 @@ export class GethRPC implements IRpc {
         tx.calls = traces[i].calls!.flatMap((call, idx) => this.flattenTraceCalls(call, idx.toString()));
       }
     }
-    return transactions;
   }
 
   private flattenTraceCalls(trace: IGethTxTrace, depth: string): IGethTxTraceFlat[] {

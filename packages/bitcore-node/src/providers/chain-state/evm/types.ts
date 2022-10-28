@@ -2,7 +2,7 @@ import BN from 'bn.js';
 
 import { ITransaction } from '../../../models/baseTransaction';
 import { IBlock } from '../../../types/Block';
-import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
+import { ErigonTxTrace } from './p2p/rpcs/erigonRpc';
 import { IGethTxTraceFlat } from './p2p/rpcs/gethRpc';
 
 interface BaseBlock {
@@ -90,6 +90,8 @@ export interface GethTraceCall {
   value?: string;
 }
 
+export type ClassifiedTrace = IGethTxTraceFlat;
+
 export type AnyBlock = GethBlock | ErigonBlock;
 export type AnyTransaction = GethTraceTransaction | ErigonTransaction;
 
@@ -132,7 +134,6 @@ export interface Transaction {
   from: Buffer;
   value: Buffer;
   data: Buffer;
-  // EIP 155 chainId - mainnet: 1, ropsten: 3
   chainId: number;
   getUpfrontCost: () => BN;
 }
@@ -159,8 +160,7 @@ export type IEVMTransaction = ITransaction & {
   nonce: number;
   to: string;
   from: string;
-  internal: Array<ClassifiedTrace>;
-  calls: Array<IGethTxTraceFlat>;
+  calls: Array<ClassifiedTrace>;
   transactionIndex: number;
   abiType?: IAbiDecodedData;
   error?: string;
@@ -175,6 +175,11 @@ export type IEVMTransaction = ITransaction & {
     gasUsed: number;
     logs: Array<any>;
   };
+};
+
+export type IEVMTransactionLegacyProps = IEVMTransaction & {
+  // Used just for reads from old db entries
+  internal: Array<ErigonTxTrace>;
 };
 
 export type IEVMTransactionTransformed = IEVMTransaction & {
@@ -202,9 +207,7 @@ export interface IAbiDecodeResponse {
 export interface IAbiDecodedData extends IAbiDecodeResponse {
   type: string;
 }
-export type DecodedTrace = ClassifiedTrace & {
-  decodedData?: IAbiDecodedData;
-};
+
 export interface EVMTransactionJSON {
   txid: string;
   chain: string;
@@ -222,7 +225,7 @@ export interface EVMTransactionJSON {
   from: string;
   abiType?: IAbiDecodedData;
   data: string;
-  internal: Array<DecodedTrace>;
+  calls: Array<ClassifiedTrace>;
   receipt?: IEVMTransaction['receipt'];
 }
 

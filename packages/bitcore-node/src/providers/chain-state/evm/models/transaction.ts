@@ -19,8 +19,14 @@ import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
 import { BaseEVMStateProvider } from '../api/csp';
-
-import { EVMTransactionJSON, IAbiDecodeResponse, IEVMTransaction } from '../types';
+import { ErigonTxTrace } from '../p2p/rpcs/erigonRpc';
+import {
+  ClassifiedTrace,
+  EVMTransactionJSON,
+  IAbiDecodeResponse,
+  IEVMTransaction,
+  IEVMTransactionLegacyProps
+} from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -227,18 +233,6 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           }
 
           // handle incoming internal transactions ( receiving a token swap from a different wallet )
-          if (tx.internal) {
-            for (let internal of tx.internal) {
-              const { to, from } = internal.action;
-              if (to) {
-                tos.push(web3.utils.toChecksumAddress(to));
-              }
-              if (from) {
-                froms.push(web3.utils.toChecksumAddress(from));
-              }
-            }
-          }
-
           if (tx.calls) {
             for (let call of tx.calls) {
               const { to, from } = call;
@@ -362,7 +356,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
 
   _apiTransform(
-    tx: IEVMTransaction | Partial<MongoBound<IEVMTransaction>>,
+    tx: IEVMTransactionLegacyProps | Partial<MongoBound<IEVMTransactionLegacyProps>>,
     options?: TransformOptions
   ): EVMTransactionJSON | string {
     const dataStr = tx.data ? tx.data.toString() : '';
@@ -384,9 +378,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       to: tx.to || '',
       from: tx.from || '',
       abiType: tx.abiType,
-      internal: tx.internal
-        ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
-        : [],
+      calls: tx.internal ? this.transformInternalToCalls(tx.internal) : [],
       receipt: valueOrDefault(tx.receipt, undefined)
     };
     if (options && options.object) {
@@ -394,5 +386,32 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     }
     return JSON.stringify(transaction);
   }
+
+  transformInternalToCalls(internalTxs: ErigonTxTrace[]): ClassifiedTrace[] {
+    let calls = [] as ClassifiedTrace[];
+    for (let tx of internalTxs) {
+      // if traceAddress is empty then the trace is the top level tx call - no need to store twice
+      if (tx.traceAddress.length) {
+        calls.push(this.transformToStandardClass(tx));
+      }
+    }
+    return calls;
+  }
+
+  transformToStandardClass(tx: ErigonTxTrace): ClassifiedTrace {
+    return {
+      from: tx.action.from,
+      gas: tx.action.gas,
+      gasUsed: tx.result ? tx.result.gasUsed : '0x0',
+      input: tx.action.input,
+      output: tx.result ? tx.result.output : '0x',
+      to: tx.action.to,
+      type: tx.type.toUpperCase(),
+      value: tx.action.value,
+      abiType: tx.abiType,
+      depth: tx.traceAddress.join('_')
+    } as ClassifiedTrace;
+  }
 }
+
 export let EVMTransactionStorage = new EVMTransactionModel();

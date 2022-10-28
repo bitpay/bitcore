@@ -23,9 +23,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
     // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
 
     let numInternalTxs = 0;
-    if (tx.internal && tx.internal.length > 0) {
-      numInternalTxs = this.erigonTransform(tx, walletAddresses);
-    } else if (tx.calls && tx.calls.length > 0) {
+    if (tx.calls && tx.calls.length > 0) {
       numInternalTxs = this.gethTransform(tx, walletAddresses);
     }
 
@@ -45,30 +43,6 @@ export class InternalTxRelatedFilterTransform extends Transform {
         .toArray();
     }
     return this.walletAddresses.map(walletAddress => walletAddress.address.toLowerCase());
-  }
-
-  erigonTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {
-    const walletRelatedInternalTxs = tx.internal.filter((internalTx: any) =>
-      walletAddresses.includes(internalTx.action.to)
-    );
-    for (let internalTx of walletRelatedInternalTxs) {
-      // Contract will refund the excess back to the sender
-      const isRefund = tx.value && internalTx.action.to === tx.from.toLowerCase();
-      const internalValue = Number(internalTx.action.value);
-      if (isRefund) {
-        tx.value -= internalValue;
-      } else {
-        const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
-        _tx.value = internalValue;
-        _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
-        if (internalTx.action.from) {
-          _tx.initialFrom = tx.from;
-          _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
-        }
-        this.push(_tx);
-      }
-    }
-    return walletRelatedInternalTxs.length;
   }
 
   gethTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {

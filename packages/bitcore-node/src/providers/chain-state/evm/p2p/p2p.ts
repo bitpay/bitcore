@@ -394,7 +394,6 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
         gasPrice: Number(tx.gasPrice),
         // gasUsed: Number(tx.gasUsed),
         nonce,
-        internal: [],
         calls: []
       };
       if (abiType) {

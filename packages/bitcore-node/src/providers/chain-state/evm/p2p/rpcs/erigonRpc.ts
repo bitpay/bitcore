@@ -43,7 +43,7 @@ export interface ErigonTraceResponse {
   type: 'reward' | 'call' | 'delegatecall' | 'create';
 }
 
-export interface ClassifiedTrace extends ErigonTraceResponse {
+export interface ErigonTxTrace extends ErigonTraceResponse {
   abiType?: IAbiDecodedData;
   to?: string;
 }
@@ -70,7 +70,7 @@ export class ErigonRPC implements IRpc {
     return txs;
   }
 
-  public async getTransactionsFromBlock(blockNumber: number): Promise<ClassifiedTrace[]> {
+  public async getTransactionsFromBlock(blockNumber: number): Promise<ErigonTxTrace[]> {
     const txs = (await this.traceBlock(blockNumber)) || [];
     return txs.map(tx => this.transactionFromErigonTrace(tx));
   }
@@ -85,9 +85,9 @@ export class ErigonRPC implements IRpc {
     });
   }
 
-  private transactionFromErigonTrace(tx: ErigonTraceResponse): ClassifiedTrace {
+  private transactionFromErigonTrace(tx: ErigonTraceResponse): ErigonTxTrace {
     const abiType = EVMTransactionStorage.abiDecode(tx.action.input!);
-    const convertedTx: ClassifiedTrace = {
+    const convertedTx: ErigonTxTrace = {
       ...tx
     };
     if (abiType) {
@@ -96,36 +96,18 @@ export class ErigonRPC implements IRpc {
     return convertedTx;
   }
 
-  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransaction[], traceTxs: ClassifiedTrace[]) {
-    const gasSum = transactions.reduce((sum, e) => sum + e.fee, 0);
+  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransaction[], traceTxs: ErigonTxTrace[]) {
+    // TODO calculate total block reward including fees
+    block;
 
     for (const tx of traceTxs) {
-      if (tx.type === 'reward') {
-        if (tx.action.rewardType && tx.action.rewardType === 'block') {
-          const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
-          block.reward = totalReward;
-        }
-        if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
-          const uncles = block.uncleReward || [];
-          const uncleValue = Number.parseInt(tx.action.value, 16);
-          uncles.push(uncleValue);
-          block.uncleReward = uncles;
-        }
-      }
-      if (tx && tx.action) {
-        const foundIndex = transactions.findIndex(
-          t =>
-            t.txid === tx.transactionHash &&
-            t.from !== tx.action.from &&
-            t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
-        );
+      // if traceAddress is empty then the trace is the top level tx call - no need to store twice
+      if (tx && tx.action && !!tx.traceAddress.length) {
+        const foundIndex = transactions.findIndex(t => t.txid === tx.transactionHash);
         if (foundIndex > -1) {
-          transactions[foundIndex].internal.push(tx);
-        }
-        if (tx.error) {
-          const errorIndex = transactions.findIndex(t => t.txid === tx.transactionHash);
-          if (errorIndex && errorIndex > -1) {
-            transactions[errorIndex].error = tx.error;
+          transactions[foundIndex].calls.push(EVMTransactionStorage.transformToStandardClass(tx));
+          if (tx.error) {
+            transactions[foundIndex].error = tx.error;
           }
         }
       }

@@ -81,14 +81,22 @@ export class SyncWorker {
   }
 
   async getClient() {
-    const nodeVersion = await this.web3!.eth.getNodeInfo();
-    const client = nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth';
-    if (client !== 'erigon' && client !== 'geth') {
-      // assume it's a geth fork, or at least more like geth.
-      // this is helpful when using a dev solution like ganache.
+    try {
+      const nodeVersion = await this.web3!.eth.getNodeInfo();
+      const client = nodeVersion.split('/')[0].toLowerCase() as 'erigon' | 'geth' | 'akula' | 'bor';
+      if (client == 'erigon' || client == 'akula') {
+        return 'erigon';
+      } else if (client == 'geth' || client == 'bor') {
+        return 'geth';
+      } else {
+        // assume it's a geth fork, or at least more like geth.
+        // this is helpful when using a dev solution like ganache.
+        return 'geth';
+      }
+    } catch (e) {
+      console.error(e);
       return 'geth';
     }
-    return client;
   }
 
   async connect() {
@@ -185,7 +193,6 @@ export class SyncWorker {
       gasPrice: Number(tx.gasPrice),
       // gasUsed: Number(tx.gasUsed),
       nonce,
-      internal: [],
       calls: []
     };
 
