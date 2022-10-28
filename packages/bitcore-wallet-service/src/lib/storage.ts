@@ -19,10 +19,11 @@ import {
   TxProposal,
   Wallet
 } from './model';
+import { CoinConfig } from './model/config-swap';
 import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
 import { IUser } from './model/user';
-import { CoinConfig } from './model/config-swap';
+import { ICoinConfigFilter } from './server';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -421,18 +422,33 @@ export class Storage {
       return;
     }
 
-    this.db.collection(collections.USER).insertOne(
-      user,
+    this.db.collection(collections.USER).update(
       {
-        w: 1
+        email : user.email
       },
+       {
+        $setOnInsert: user
+       },
+       {upsert: true},
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-
         return cb(null, result);
       }
-    );
+    )
+
+    // this.db.collection(collections.USER).insertOne(
+    //   user,
+    //   {
+    //     w: 1
+    //   },
+    //   (err, result) => {
+    //     if (err) return cb(err);
+    //     if (!result) return cb();
+
+    //     return cb(null, result);
+    //   }
+    // );
   }
 
   fetchUserByEmail(email, cb) {
@@ -472,6 +488,7 @@ export class Storage {
       }
     );
   }
+
 
   storeKeys(keys, cb) {
     // This should only happens in certain tests.
@@ -559,7 +576,7 @@ export class Storage {
           listTxIdUserReceive: orderInfo.listTxIdUserReceive,
           error: orderInfo.error,
           pendingReason: orderInfo.pendingReason,
-          lastModified: Date.now(),
+          lastModified: new Date(),
           isResolve: orderInfo.isResolve,
           note: orderInfo.note
         }
@@ -576,20 +593,18 @@ export class Storage {
     );
   }
 
-  updateListCoinConfig(listCoinConfig: CoinConfig[], cb){
+  updateListCoinConfig(listCoinConfig: CoinConfig[], cb) {
     if (!this.db) {
       logger.warn('Trying to update list coin config with close DB', listCoinConfig);
       return;
     }
     var bulk = this.db.collection(collections.COIN_CONFIG).initializeUnorderedBulkOp();
-    for(var i = 0 ; i < listCoinConfig.length; i++){
+    for (var i = 0; i < listCoinConfig.length; i++) {
       const coinConfig = listCoinConfig[i];
       var ObjectId = require('mongodb').ObjectId;
 
-      bulk.find( { _id: ObjectId(coinConfig._id) } )
-      .update( { 
-        $set: 
-        { 
+      bulk.find({ _id: ObjectId(coinConfig._id) }).update({
+        $set: {
           isEnableSwap: coinConfig.isEnableSwap,
           isEnableReceive: coinConfig.isEnableReceive,
           min: coinConfig.min,
@@ -599,10 +614,17 @@ export class Storage {
           networkFee: coinConfig.networkFee,
           isSwap: coinConfig.isSwap,
           isReceive: coinConfig.isReceive
-        } 
-      } )
+        }
+      });
     }
-    bulk.execute().then(result => {return cb(null, result)}).catch(e => {return cb(e)});
+    bulk
+      .execute()
+      .then(result => {
+        return cb(null, result);
+      })
+      .catch(e => {
+        return cb(e);
+      });
   }
 
   storeOrderInfo(orderInfo, cb) {
@@ -641,9 +663,47 @@ export class Storage {
   }
 
   fetchAllOrderInfo(opts, cb) {
+    const coinConfigFilter:ICoinConfigFilter = opts.coinConfigFilter || null;
+    let queryObject = {} ;
+    let queryDate = null ;
+    let queryFromCoin = null;
+    let queryFromNetwork = null;
+    let queryToNetwork = null;
+    let queryToCoin = null;
+    let queryStatus = null;
+
+    if(coinConfigFilter){
+      if(coinConfigFilter.fromDate && coinConfigFilter.toDate){
+        queryDate = {lastModified: { $gte: new Date(coinConfigFilter.fromDate)  , $lte: new Date(coinConfigFilter.toDate)}};
+      }
+      if(coinConfigFilter.fromCoinCode){
+        queryFromCoin = { fromCoinCode: coinConfigFilter.fromCoinCode };
+      }
+      if(coinConfigFilter.fromNetwork){
+        queryFromNetwork = { fromNetwork: coinConfigFilter.fromNetwork };
+      }
+      if(coinConfigFilter.toCoinCode){
+        queryToCoin = { toCoinCode : coinConfigFilter.toCoinCode };
+      }
+      if(coinConfigFilter.toNetwork){
+        queryToNetwork = { toNetwork: coinConfigFilter.toNetwork };
+      }
+      if(coinConfigFilter.status){
+        queryStatus = { status: coinConfigFilter.status};
+      }
+      queryObject = Object.assign({},
+        queryDate && {...queryDate},
+        queryFromCoin && {...queryFromCoin},
+        queryToCoin && {...queryToCoin},
+        queryStatus && {...queryStatus},
+        queryFromNetwork && {...queryFromNetwork},
+        queryToNetwork && {...queryToNetwork}
+        )
+    }
+
     this.db
       .collection(collections.ORDER_INFO)
-      .find()
+      .find(queryObject)
       .sort(opts.query)
       .limit(opts.limit)
       .skip(opts.skip)
@@ -655,9 +715,32 @@ export class Storage {
   }
 
   countAllOrderInfo(opts) {
+    const coinConfigFilter: ICoinConfigFilter = opts.coinConfigFilter || null;
+    let queryObject = {} ;
+    let queryDate = null ;
+    let queryFromCoin = null;
+    let queryToCoin = null;
+    let queryStatus = null;
+
+    if(coinConfigFilter){
+      if(coinConfigFilter.fromDate && coinConfigFilter.toDate){
+        queryDate = {lastModified: { $gte: new Date(coinConfigFilter.fromDate)  , $lte: new Date(coinConfigFilter.toDate)}};
+      }
+      if(coinConfigFilter.fromCoinCode){
+        queryFromCoin = { fromCoinCode: coinConfigFilter.fromCoinCode };
+      }
+      if(coinConfigFilter.toCoinCode){
+        queryToCoin = { toCoinCode : coinConfigFilter.toCoinCode };
+      }
+      if(coinConfigFilter.status){
+        queryStatus = { status: coinConfigFilter.status};
+      }
+      queryObject = Object.assign({}, queryDate && {...queryDate}, queryFromCoin && {...queryFromCoin}, queryToCoin && {...queryToCoin}, queryStatus && {...queryStatus})
+    }
+
     return this.db
       .collection(collections.ORDER_INFO)
-      .find()
+      .find(queryObject)
       .sort(opts.query)
       .count();
   }

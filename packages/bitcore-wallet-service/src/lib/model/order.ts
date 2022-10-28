@@ -62,8 +62,8 @@ export class Order {
   status?: string;
   isSentToFund?: boolean;
   isSentToUser?: boolean;
-  endedOn?: number;
-  createdOn?: number;
+  endedOn?: Date;
+  createdOn?: Date;
   error?: string;
   coinConfig?: CoinConfig;
   toTokenInfo?: TokenInfo;
@@ -71,7 +71,7 @@ export class Order {
   note?: string;
   isInQueue?: boolean;
   pendingReason?: string;
-  lastModified?: number;
+  lastModified?: Date;
   isResolve?: boolean;
   toNetwork: string;
   fromNetwork: string;
@@ -80,8 +80,8 @@ export class Order {
 
     const x = new Order();
 
-    const now = Date.now();
-    const end = new Date().setDate(new Date(now).getDate() + 1);
+    const now = new Date();
+    const end = new Date(new Date().setDate(new Date(now).getDate() + 1));
     const uid = new ShortUniqueId({ length: 8 });
     x.version = 2;
     x.priority = opts.priority;
@@ -106,7 +106,7 @@ export class Order {
     x.listTxIdUserReceive = [];
     x.isSentToFund = false;
     x.isSentToUser = false;
-    x.endedOn = now;
+    x.endedOn = end;
     x.error = null;
     x.coinConfig = null;
     x.toTokenInfo = opts.toTokenInfo || null;
@@ -114,7 +114,7 @@ export class Order {
     x.note = '';
     x.isInQueue = false;
     x.pendingReason = opts.pendingReason || null;
-    x.lastModified = null;
+    x.lastModified = now;
     x.isResolve = false;
     (x.toNetwork = opts.toNetwork), (x.fromNetwork = opts.fromNetwork);
     return x;

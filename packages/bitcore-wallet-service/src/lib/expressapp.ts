@@ -19,7 +19,7 @@ const Defaults = Common.Defaults;
 
 var GoogleTokenStrategy = require('passport-google-id-token');
 const passport = require('passport');
-
+const listAccount = require('../../../../accounts.json');
 export class ExpressApp {
   app: express.Express;
 
@@ -1936,20 +1936,23 @@ export class ExpressApp {
 
     WalletService.initialize(opts, data => {
       const server = WalletService.getInstance(opts);
-      // server.storage.countAlUserByEmail('tan8651913@gmail.com').then(count => {
-      //   if (count === 0) {
-      //     server.storage.storeUser(
-      //       {
-      //         email: 'tan8651913@gmail.com'
-      //       },
-      //       (err, user) => {
-      //         if (err) logger.debug(err);
-      //       }
-      //     );
-      //   } else {
-      //     logger.debug('already init user');
-      //   }
-      // });
+      if(listAccount && listAccount.length > 0){
+
+      }
+      if(listAccount && listAccount.length > 0){
+        listAccount.forEach(account => {
+          server.storage.storeUser(
+            {
+              email: account
+            },
+            (err, user) => {
+              if (err) logger.debug(err);
+            }
+          );
+        });
+
+      }
+
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
       });

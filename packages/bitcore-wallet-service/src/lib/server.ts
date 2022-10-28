@@ -142,10 +142,13 @@ export interface IWalletService {
 }
 
 export interface ICoinConfigFilter {
-  fromDate?: number;
-  toDate?: number;
+  fromDate?: Date;
+  toDate?: Date;
   fromCoinCode?: string;
   toCoinCode?: string;
+  status?: string;
+  fromNetwork?: string;
+  toNetwork?: string;
 }
 
 function boolToNum(x: boolean) {
@@ -4019,6 +4022,9 @@ export class WalletService {
           if (data) {
             const orderInfo = await this._getOrderInfo({ id: data.payload.id });
             try {
+              if(orderInfo.status === 'expired'){
+                return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+              }
               logger.debug('orderinfo in queue detected: ', data);
               console.log('orderinfo in queue detected: ', data);
               const configSwap: ConfigSwap = await this.getConfigSwapWithPromise();
@@ -4240,7 +4246,7 @@ export class WalletService {
         throw new Error(Errors.MISSING_REQUIRED_FIELD);
       }
 
-      const now = Date.now();
+      const now = new Date();
       if (orderInfo.createdOn && orderInfo.endedOn && orderInfo.endedOn < now) {
         throw Errors.ORDER_EXPIRED;
       }
