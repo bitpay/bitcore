@@ -962,4 +962,6 @@ export class BtcChain implements IChain {
   onTx(tx) {
     return null;
   }
+
+  decodeMethod() {}
 }

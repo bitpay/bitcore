@@ -3333,4 +3333,29 @@ export class API extends EventEmitter {
       });
     });
   }
+
+  // /**
+  // * Returns decoded data.
+  // * @param {Object} opts - chain, data
+  // * @param {string} [opts.chain] - wallet chain.
+  // * @param {string} [opts.data] - tx data.
+  // * @returns {Object} decoded data.
+  // * @return {Callback} cb - Return error (if exists) and decoded data
+  // */
+  decodeMethod(opts, cb) {
+    $.checkArgument(
+      Constants.EVM_CHAINS.includes(opts.chain),
+      'Invalid chain: must be EVM based'
+    );
+
+    var qs = [];
+    qs.push(`data=${opts.data}`);
+    qs.push(`chain=${opts.chain}`);
+
+    const url = `/v1/decodemethod/?${qs.join('&')}`;
+    this.request.get(url, (err, decodedData) => {
+      if (err) return cb(err);
+      return cb(null, decodedData);
+    });
+  }
 }

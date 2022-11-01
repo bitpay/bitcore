@@ -2,12 +2,22 @@ import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { ClientError } from '../../errors/clienterror';
 import { EthChain } from '../eth';
+import { MRC20Abi } from './abi-mrc20';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
+function requireUncached(module) {
+  delete require.cache[require.resolve(module)];
+  return require(module);
+}
+const Mrc20Decoder = requireUncached('abi-decoder');
+Mrc20Decoder.addABI(MRC20Abi);
+function getMrc20Decoder() {
+  return Mrc20Decoder;
+}
 export class MaticChain extends EthChain {
   /**
    * Converts Bitcore Balance Response.
@@ -122,5 +132,9 @@ export class MaticChain extends EthChain {
         requiredFee: txp.fee
       }
     );
+  }
+
+  decodeMethod(data) {
+    return getMrc20Decoder().decodeMethod(data);
   }
 }

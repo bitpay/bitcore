@@ -17,6 +17,7 @@ import { partition } from '../../../../utils/partition';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
+import { MRC20Abi } from '../abi/mrc20';
 import { MultisigAbi } from '../abi/multisig';
 import { BaseEVMStateProvider } from '../api/csp';
 
@@ -31,6 +32,12 @@ const Erc20Decoder = requireUncached('abi-decoder');
 Erc20Decoder.addABI(ERC20Abi);
 function getErc20Decoder() {
   return Erc20Decoder;
+}
+
+const Mrc20Decoder = requireUncached('abi-decoder');
+Mrc20Decoder.addABI(MRC20Abi);
+function getMrc20Decoder() {
+  return Mrc20Decoder;
 }
 
 const Erc721Decoder = requireUncached('abi-decoder');
@@ -318,6 +325,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
+  // TODO use polygonscan and etherscan api to get abi
+  // https://{apiurl}/api?module=contract&action=getabi&address=
   abiDecode(input: string) {
     try {
       const erc20Data: IAbiDecodeResponse = getErc20Decoder().decodeMethod(input);
@@ -352,6 +361,15 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         return {
           type: 'MULTISIG',
           ...multisigData
+        };
+      }
+    } catch (e) {}
+    try {
+      const mrc20Data: IAbiDecodeResponse = getMrc20Decoder().decodeMethod(input);
+      if (mrc20Data) {
+        return {
+          type: 'MRC20',
+          ...mrc20Data
         };
       }
     } catch (e) {}

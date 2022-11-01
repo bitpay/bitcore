@@ -21,6 +21,11 @@ export interface INotificationData {
   txid: any;
 }
 
+export interface IAbiDecodeResponse {
+  name: string;
+  params: Array<{ name: string; value: string; type: string }>;
+}
+
 export interface IChain {
   getWalletBalance(server: WalletService, wallet: IWallet, opts: { coin: string; addresses: string[] } & any, cb);
   getWalletSendMaxInfo(
@@ -66,6 +71,7 @@ export interface IChain {
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;
+  decodeMethod(data: string): IAbiDecodeResponse & any;
 }
 
 const chains: { [chain: string]: IChain } = {
@@ -198,6 +204,10 @@ class ChainProxy {
 
   onTx(chain: string, tx: any) {
     return this.get(chain).onTx(tx);
+  }
+
+  decodeMethod(chain: string, data: string) {
+    return this.get(chain).decodeMethod(data);
   }
 }
 

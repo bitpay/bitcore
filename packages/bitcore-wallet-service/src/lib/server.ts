@@ -5278,6 +5278,18 @@ export class WalletService {
       });
     });
   }
+
+  /**
+   * Return decoded data
+   * @param {Object} opts
+   * @param {string} [opts.chain] - wallet chain.
+   * @param {string} [opts.data] - tx data.
+   * @returns {Object} decoded data.
+   */
+  decodeMethod(opts) {
+    const { chain, data } = opts;
+    return ChainService.decodeMethod(chain, data);
+  }
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {

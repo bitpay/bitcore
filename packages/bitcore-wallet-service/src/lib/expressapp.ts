@@ -1720,6 +1720,22 @@ export class ExpressApp {
         });
     });
 
+    router.get('/v1/decodemethod/', (req, res) => {
+      const opts: { chain: string; data: string } = {
+        chain: req.query.chain as string,
+        data: req.query.data as string
+      };
+
+      getServerWithAuth(req, res, server => {
+        try {
+          const decodedData = server.decodeMethod(opts);
+          res.json(decodedData);
+        } catch (err) {
+          return returnError(err, res, req);
+        }
+      });
+    });
+
     // Set no-cache by default
     this.app.use((req, res, next) => {
       res.setHeader('Cache-Control', 'no-store');

@@ -278,4 +278,5 @@ export class XrpChain implements IChain {
     // {address, amount}
     return null;
   }
+  decodeMethod() {}
 }

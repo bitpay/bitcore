@@ -484,4 +484,8 @@ export class EthChain implements IChain {
       }
     };
   }
+
+  decodeMethod(data) {
+    return getErc20Decoder().decodeMethod(data);
+  }
 }
