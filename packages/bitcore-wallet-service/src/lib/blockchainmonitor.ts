@@ -14,15 +14,29 @@ import { Storage } from './storage';
 const $ = require('preconditions').singleton();
 const Common = require('./common');
 const Constants = Common.Constants;
-const Utils = Common.Utils;
-const Defaults = Common.Defaults;
 
-type throttledNewBlocksFnType = (that: any, chain: any, network: any, hash: any) => void;
+const throttle = (fn: (bcmContext: any, chain: string, network: string, hash: string) => void) => {
+  let lastCalled = 0;
+  return (...args) => {
+    const bcmContext = args[0],
+      chain = args[1],
+      network = args[2],
+      hash = args[3];
+    let msDelay = bcmContext.getChainThrottleSetting(chain, network) * 1000;
+    let now = new Date().getTime();
+    if (now - lastCalled < msDelay) {
+      return;
+    }
+    lastCalled = now;
+    return fn(bcmContext, chain, network, hash);
+  };
+};
 
-var throttledNewBlocks = _.throttle((that, chain, network, hash) => {
-  that._notifyNewBlock(chain, network, hash);
-  // that._handleTxConfirmations(chain, network, hash); // no need to throttledNewBlocks
-}, Defaults.NEW_BLOCK_THROTTLE_TIME_MIN * 60 * 1000) as throttledNewBlocksFnType;
+type throttledNewBlocksFnType = (bcmContext: any, chain: string, network: string, hash: string) => void;
+const throttledNewBlocks = throttle((bcmContext, chain, network, hash) => {
+  bcmContext._notifyNewBlock(chain, network, hash);
+  bcmContext._handleTxConfirmations(chain, network, hash);
+}) as throttledNewBlocksFnType;
 
 export class BlockchainMonitor {
   explorers: any;
@@ -30,6 +44,8 @@ export class BlockchainMonitor {
   messageBroker: MessageBroker;
   lock: Lock;
   walletId: string;
+  blockThrottleSettings: { [chain: string]: { [network: string]: number } } =
+    Constants.CHAIN_NEW_BLOCK_THROTTLE_TIME_SECONDS;
   last: Array<string>;
   Ni: number;
   N: number;
@@ -309,70 +325,56 @@ export class BlockchainMonitor {
   _handleTxConfirmations(chain, network, hash) {
     if (!ChainService.notifyConfirmations(chain, network)) return;
 
-    const processTriggeredSubs = (subs, cb) => {
-      async.mapSeries(
-        subs,
-        (sub: any, cb) => {
-          logger.debug('New tx confirmation ' + sub.txid);
-          sub.isActive = false;
-          async.waterfall(
-            [
-              next => {
-                this.storage.storeTxConfirmationSub(sub, err => {
-                  if (err) return cb(err);
-                  const notification = Notification.create({
-                    type: 'TxConfirmation',
-                    walletId: sub.walletId,
-                    creatorId: sub.copayerId,
-                    isCreator: sub.isCreator,
-                    data: {
-                      txid: sub.txid,
-                      chain,
-                      network,
-                      amount: sub.amount
-                    }
-                  });
-                  next(null, notification);
-                });
-              },
-              (notification, next) => {
-                this._storeAndBroadcastNotification(notification, next);
-              }
-            ],
-            cb
-          );
-        },
+    const processTriggeredSub = (sub, cb) => {
+      logger.debug('New tx confirmation ' + sub.txid);
+      sub.isActive = false;
+      async.waterfall(
+        [
+          next => {
+            this.storage.storeTxConfirmationSub(sub, err => {
+              if (err) return cb(err);
+              const notification = Notification.create({
+                type: 'TxConfirmation',
+                walletId: sub.walletId,
+                creatorId: sub.copayerId,
+                isCreator: sub.isCreator,
+                data: {
+                  txid: sub.txid,
+                  chain,
+                  network,
+                  amount: sub.amount
+                }
+              });
+              next(null, notification);
+            });
+          },
+          (notification, next) => {
+            this._storeAndBroadcastNotification(notification, next);
+          }
+        ],
         cb
       );
     };
     const explorer = this.explorers[chain][network];
     if (!explorer) return;
 
-    explorer.getTxidsInBlock(hash, (err, txids) => {
+    explorer.getTxidsInBlock(hash, async (err, txids) => {
       if (err) {
         logger.error('Could not fetch txids from block ' + hash, err);
         return;
       }
 
-      this.storage.fetchActiveTxConfirmationSubs(null, (err, subs) => {
-        if (err) return;
-        if (_.isEmpty(subs)) return;
-        const indexedSubs = _.groupBy(subs, 'txid');
-        const triggered = [];
-        _.each(txids, txid => {
-          if (indexedSubs[txid]) {
-            _.each(indexedSubs[txid], indexedSub => {
-              triggered.push(indexedSub);
-            });
-          }
-        });
-        processTriggeredSubs(_.uniqBy(triggered, 'walletId'), err => {
+      const stream = this.storage.streamActiveTxConfirmationSubs(null, txids);
+      let txSub = await stream.next();
+      while (txSub != null) {
+        processTriggeredSub(txSub, err => {
           if (err) {
-            logger.error('Could not process tx confirmations', err);
+            logger.error('Could not process tx confirmation', err);
           }
           return;
         });
-      });
+        txSub = await stream.next();
+      }
     });
   }
 
@@ -385,7 +387,7 @@ export class BlockchainMonitor {
       return;
     }
 
-    if (network == 'testnet') {
+    if (this.getChainThrottleSetting(chain, network) > 0) {
       throttledNewBlocks(this, chain, network, hash);
     } else {
       this._notifyNewBlock(chain, network, hash);
@@ -398,5 +400,16 @@ export class BlockchainMonitor {
       this.messageBroker.send(notification);
       if (cb) return cb();
     });
+  }
+
+  getChainThrottleSetting(chain, network) {
+    const config = this.blockThrottleSettings;
+    if (typeof config[chain] === 'object') {
+      if (typeof config[chain][network] === 'number') {
+        return config[chain][network];
+      }
+    }
+    // Defaults to no throttling
+    return 0;
   }
 }

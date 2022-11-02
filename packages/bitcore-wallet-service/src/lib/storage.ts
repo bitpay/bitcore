@@ -153,6 +153,7 @@ export class Storage {
     });
     db.collection(collections.TX_CONFIRMATION_SUBS).createIndex({
       isActive: 1,
+      txid: 1,
       copayerId: 1
     });
     db.collection(collections.SESSIONS).createIndex({
@@ -1469,32 +1470,24 @@ export class Storage {
     );
   }
 
-  fetchActiveTxConfirmationSubs(copayerId, cb) {
+  streamActiveTxConfirmationSubs(copayerId: string, txids: string[]) {
     // This should only happens in certain tests.
     if (!this.db) {
       logger.warn('Trying to fetch notifications with closed DB');
       return;
     }
 
-    const filter: { isActive: boolean; copayerId?: string } = {
-      isActive: true
+    const filter: { isActive: boolean; txid: { $in: string[] }; copayerId?: string } = {
+      isActive: true,
+      txid: { $in: txids }
     };
 
     if (copayerId) filter.copayerId = copayerId;
 
-    this.db
+    return this.db
       .collection(collections.TX_CONFIRMATION_SUBS)
       .find(filter)
-      .toArray((err, result) => {
-        if (err) return cb(err);
-
-        if (!result) return cb();
-
-        const subs = _.map([].concat(result), r => {
-          return TxConfirmationSub.fromObj(r);
-        });
-        return cb(null, subs);
-      });
+      .addCursorFlag('noCursorTimeout', true);
   }
 
   storeTxConfirmationSub(txConfirmationSub, cb) {
