@@ -38,7 +38,8 @@ export const Constants = {
     'wbtc',
     'shib',
     'ape',
-    'euroc'
+    'euroc',
+    'usdt'
   ],
 
   BITPAY_SUPPORTED_ETH_ERC20: [
@@ -51,7 +52,8 @@ export const Constants = {
     'wbtc',
     'shib',
     'ape',
-    'euroc'
+    'euroc',
+    'usdt'
   ],
 
   CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],

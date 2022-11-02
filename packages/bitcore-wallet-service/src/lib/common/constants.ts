@@ -12,10 +12,8 @@ module.exports = {
     LTC: 'ltc'
   },
 
-  // TODO rethink COINS. If we want to concatenate CHAINS + ERC20's, we can do that in the implementation.
-  // In the future, ERC20 "coins" may not be specific to ETH, so inferring that a USDC coin is on ETH (for example) may be incorrect.
-  // Perhaps, this should be a nested object, with there being coins nested inside smart chains.
   BITPAY_SUPPORTED_COINS: {
+    // used for rates
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
@@ -23,26 +21,21 @@ module.exports = {
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
-    MATIC_E: 'matic_e',
-    USDC_E: 'usdc_e',
-    USDP_E: 'usdp_e',
-    PAX_E: 'pax_e',
-    GUSD_E: 'gusd_e',
-    BUSD_E: 'busd_e',
-    DAI_E: 'dai_e',
-    WBTC_E: 'wbtc_e',
-    SHIB_E: 'shib_e',
-    APE_E: 'ape_e',
-    EUROC_E: 'euroc_e',
-    USDC_M: 'usdc_m',
-    BUSD_M: 'busd_m',
-    DAI_M: 'dai_m',
-    WBTC_M: 'wbtc_m',
-    SHIB_M: 'shib_m',
-    APE_M: 'ape_m'
+    SHIB: 'shib',
+    APE: 'ape',
+    USDC: 'usdc',
+    USDP: 'usdp',
+    PAX: 'pax',
+    GUSD: 'gusd',
+    BUSD: 'busd',
+    DAI: 'dai',
+    WBTC: 'wbtc',
+    EUROC: 'euroc',
+    USDT: 'usdt'
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
+    // backwards compatability
     MATIC: 'matic',
     USDC: 'usdc',
     USDP: 'usdp',
@@ -53,27 +46,24 @@ module.exports = {
     WBTC: 'wbtc',
     SHIB: 'shib',
     APE: 'ape',
-    EUROC: 'euroc'
+    EUROC: 'euroc',
+    USDT: 'usdt'
   },
 
   BITPAY_USD_STABLECOINS: {
-    USDC_E: 'usdc_e',
-    USDP_E: 'usdp_e',
-    PAX_E: 'pax_e',
-    GUSD_E: 'gusd_e',
-    BUSD_E: 'busd_e',
-    DAI_E: 'dai_e',
-    USDC_M: 'usdc_m',
-    USDP_M: 'usdp_m',
-    PAX_M: 'pax_m',
-    GUSD_M: 'gusd_m',
-    BUSD_M: 'busd_m',
-    DAI_M: 'dai_m'
+    // used for rates
+    USDC: 'usdc',
+    USDP: 'usdp',
+    PAX: 'pax',
+    GUSD: 'gusd',
+    BUSD: 'busd',
+    DAI: 'dai',
+    USDT: 'usdt'
   },
 
   BITPAY_EUR_STABLECOINS: {
-    EUROC_E: 'euroc_e',
-    EUROC_M: 'euroc_m'
+    // used for rates
+    EUROC: 'euroc'
   },
 
   UTXO_CHAINS: {
