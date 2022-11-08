@@ -1,4 +1,8 @@
 'use strict';
 
-var startGulp = require('bitcore-build');
-module.exports = startGulp('p2p', {skipBrowser: true})
+var gulp = require('gulp');
+var bitcoreTasks = require('bitcore-build');
+
+bitcoreTasks('p2p', {skipBrowser: true});
+
+gulp.task('default', ['lint', 'coverage']);
