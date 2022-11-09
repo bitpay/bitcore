@@ -117,6 +117,20 @@ const Config = () => {
     },
     suspendedChains: [],
     staticRoot: '/tmp/static'
+    // moonpay: {
+    //   sandbox: {
+    //     apiKey: 'moonpay_sandbox_api_key_here',
+    //     api: 'https://api.moonpay.com',
+    //     widgetApi: 'https://buy-sandbox.moonpay.com',
+    //     secretKey: 'moonpay_sandbox_secret_key_here',
+    //   },
+    //   production: {
+    //     apiKey: 'moonpay_production_api_key_here',
+    //     api: 'https://api.moonpay.com',
+    //     widgetApi: 'https://buy.moonpay.com',
+    //     secretKey: 'moonpay_production_secret_key_here',
+    //   }
+    // },
     // simplex: {
     //   sandbox: {
     //     apiKey: 'simplex_sandbox_api_key_here',

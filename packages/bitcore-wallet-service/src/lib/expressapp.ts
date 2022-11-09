@@ -1498,6 +1498,54 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/moonpay/quote', async(req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .moonpayGetQuote(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/moonpay/signedPaymentUrl', async(req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .moonpayGetSignedPaymentUrl(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/moonpay/transactionDetails', async(req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetTransactionDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/moonpay/accountDetails', async(req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetAccountDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
