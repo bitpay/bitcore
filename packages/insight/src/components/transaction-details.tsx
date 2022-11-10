@@ -196,7 +196,7 @@ const TransactionDetails = ({
                           </ScriptText>
                         ) : null}
                         {vo.script.asm ? <ScriptText>{vo.script.asm}</ScriptText> : null}
-                        {showDetails && vo.spentTxid && vo.spentTxid !== '' ? (
+                        {showDetails && vo.spentTxid && vo.spentTxid !== '' && vo.spentHeight >= 0 ? (
                           <TextElipsis>
                             <b>Tx ID </b>
                             <SpanLink onClick={() => goToTx(vo.spentTxid)}>{vo.spentTxid}</SpanLink>
@@ -208,10 +208,11 @@ const TransactionDetails = ({
 
                   <TileDescription value textAlign='right'>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
-                    {vo.spentTxid ? '(S)' : '(U)'}
+                    {vo.spentHeight >= 0 ? '(S)' : '(U)'}
                   </TileDescription>
 
-                  {showDetails && vo.spentTxid && vo.spentTxid !== '' && (
+                  {showDetails && vo.spentTxid && vo.spentTxid !== '' 
+                  && vo.spentHeight >= 0 && (
                     <ArrowDiv margin='auto 0 auto .5rem'>
                       <img
                         src={ArrowSvg}

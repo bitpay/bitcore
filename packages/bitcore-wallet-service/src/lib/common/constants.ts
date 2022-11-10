@@ -116,5 +116,12 @@ module.exports = {
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
   ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
-  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS
+  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
+
+  // Number of confirmations from which tx in history will be cached
+  // There is a default value in defaults.ts that applies to UTXOs
+  CONFIRMATIONS_TO_START_CACHING: {
+    eth: 100,
+    matic: 150
+  }
 };

@@ -104,7 +104,7 @@ export class MaticChain extends EthChain {
     return;
   }
 
-  getInsuficientFeeError(txp) {
+  getInsufficientFeeError(txp) {
     return new ClientError(
       Errors.codes.INSUFFICIENT_MATIC_FEE,
       `${Errors.INSUFFICIENT_MATIC_FEE.message}. RequiredFee: ${txp.fee}`,
