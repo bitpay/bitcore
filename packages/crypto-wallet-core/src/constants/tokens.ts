@@ -58,6 +58,12 @@ export let ETH_TOKEN_OPTS = {
     symbol: 'MATIC',
     decimals: 18,
     address: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0'
+  },
+  '0xdac17f958d2ee523a2206206994597c13d831ec7': {
+    name: 'Tether USD',
+    symbol: 'USDT',
+    decimals: 6,
+    address: '0xdac17f958d2ee523a2206206994597c13d831ec7'
   }
 };
 
@@ -97,5 +103,11 @@ export let MATIC_TOKEN_OPTS = {
     symbol: 'APE',
     decimals: 18,
     address: '0xb7b31a6bc18e48888545ce79e83e06003be70930'
+  },
+  '0xc2132d05d31c914a87c6611c10748aeb04b58e8f': {
+    name: 'Tether USD',
+    symbol: 'USDT',
+    decimals: 6,
+    address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f'
   }
 };
