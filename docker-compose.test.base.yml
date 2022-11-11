@@ -32,6 +32,7 @@ services:
       --private.api.addr=0.0.0.0:9090
       --http.addr=0.0.0.0
       --http.api=eth,erigon,web3,net,debug,trace,txpool
+      --http.port=8545
       --mine
       --ws
 

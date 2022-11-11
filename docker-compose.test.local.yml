@@ -13,7 +13,7 @@ services:
     environment:
       - DB_HOST=db
       - DB_NAME=bitcore-test
-      - BITCORE_CONFIG_PATH=/bitcore/bitcore-test.config.json
+      - BITCORE_CONFIG_PATH=../../../../bitcore-test.config.js
     depends_on:
       - db
       - bitcoin
