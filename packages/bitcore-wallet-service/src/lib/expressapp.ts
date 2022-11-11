@@ -1498,29 +1498,27 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v1/service/moonpay/quote', async(req, res) => {
-      getServerWithAuth(req, res, server => {
-        server
-          .moonpayGetQuote(req)
-          .then(response => {
-            res.json(response);
-          })
-          .catch(err => {
-            if (err) return returnError(err, res, req);
-          });
+    router.post('/v1/service/moonpay/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.moonpayGetQuote(req)
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
       });
     });
 
-    router.post('/v1/service/moonpay/signedPaymentUrl', async(req, res) => {
+    router.post('/v1/service/moonpay/signedPaymentUrl', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
-          .moonpayGetSignedPaymentUrl(req)
-          .then(response => {
-            res.json(response);
-          })
-          .catch(err => {
-            if (err) return returnError(err, res, req);
-          });
+        let response;
+        try {
+          response = server.moonpayGetSignedPaymentUrl(req)
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
       });
     });
 

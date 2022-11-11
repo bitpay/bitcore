@@ -10748,34 +10748,37 @@ describe('Wallet service', function() {
       });
 
       it('should get the paymentUrl properly if req is OK', () => {
-        server.moonpayGetSignedPaymentUrl(req).then(data => {
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
           should.exist(data.urlWithSignature);
           data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&signature=%2FDnbsboySgE%2FeAvMrwzROCLuuctkhgw5C2t2OofjOzo%3D');
-        }).catch(err => {
+        } catch (err) {
           should.not.exist(err);
-        });
+        }
       });
 
       it('should return error if there is some missing arguments', () => {
         delete req.body.currencyCode;
 
-        server.moonpayGetSignedPaymentUrl(req).then(data => {
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
           should.not.exist(data);
-        }).catch(err => {
+        } catch (err) {
           should.exist(err);
           err.message.should.equal('Moonpay\'s request missing arguments');
-        });
+        }
       });
 
       it('should return error if moonpay is commented in config', () => {
         config.moonpay = undefined;
 
-        server.moonpayGetSignedPaymentUrl(req).then(data => {
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
           should.not.exist(data);
-        }).catch(err => {
+        } catch (err) {
           should.exist(err);
           err.message.should.equal('Moonpay missing credentials');
-        });
+        }
       });
     });
 

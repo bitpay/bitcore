@@ -4534,7 +4534,7 @@ export class WalletService {
     return cb(null, data);
   }
 
-  moonpayGetKeys(req) {
+  private moonpayGetKeys(req) {
     if (!config.moonpay) throw new Error('Moonpay missing credentials');
 
     let env = 'sandbox';
@@ -4599,49 +4599,46 @@ export class WalletService {
           }
         }
       );
-
     });
   }
 
-  moonpayGetSignedPaymentUrl(req): Promise<{urlWithSignature: string}> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const SECRET_KEY = keys.SECRET_KEY;
-      const API_KEY = keys.API_KEY;
-      const WIDGET_API = keys.WIDGET_API;
+  moonpayGetSignedPaymentUrl(req): {urlWithSignature: string} {
+    const keys = this.moonpayGetKeys(req);
+    const SECRET_KEY = keys.SECRET_KEY;
+    const API_KEY = keys.API_KEY;
+    const WIDGET_API = keys.WIDGET_API;
 
-      if (
-        !checkRequired(req.body, ['currencyCode', 'walletAddress', 'baseCurrencyCode', 'baseCurrencyAmount', 'externalTransactionId', 'redirectURL'])
-      ) {
-        return reject(new ClientError("Moonpay's request missing arguments"));
-      }
+    if (
+      !checkRequired(req.body, ['currencyCode', 'walletAddress', 'baseCurrencyCode', 'baseCurrencyAmount', 'externalTransactionId', 'redirectURL'])
+    ) {
+      throw new ClientError("Moonpay's request missing arguments");
+    }
 
-      const headers = {
-        'Content-Type': 'application/json',
-      };
+    const headers = {
+      'Content-Type': 'application/json',
+    };
 
-      let qs = [];
-      qs.push('apiKey=' + API_KEY);
-      qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
-      qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
-      qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
-      qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));
-      qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
-      qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
-      if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
-      if (req.body.showWalletAddressForm) qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
-      
-      const URL_SEARCH: string = `?${qs.join('&')}`;
+    let qs = [];
+    qs.push('apiKey=' + API_KEY);
+    qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
+    qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
+    qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
+    qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));
+    qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
+    qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
+    if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
+    if (req.body.showWalletAddressForm) qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
+    
+    const URL_SEARCH: string = `?${qs.join('&')}`;
 
-      const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
-        Buffer.from(URL_SEARCH),
-        Buffer.from(SECRET_KEY)
-      ).toString('base64');
+    const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
+      Buffer.from(URL_SEARCH),
+      Buffer.from(SECRET_KEY)
+    ).toString('base64');
 
-      const urlWithSignature = `${WIDGET_API}${URL_SEARCH}&signature=${encodeURIComponent(URLSignatureHash)}`;
+    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}&signature=${encodeURIComponent(URLSignatureHash)}`;
 
-      return resolve({urlWithSignature});
-    });
+    return {urlWithSignature};
   }
 
   moonpayGetTransactionDetails(req): Promise<any> {
@@ -4683,7 +4680,6 @@ export class WalletService {
           }
         }
       );
-
     });
   }
 
@@ -4719,7 +4715,7 @@ export class WalletService {
     });
   }
 
-  simplexGetKeys(req) {
+  private simplexGetKeys(req) {
     if (!config.simplex) throw new Error('Simplex missing credentials');
 
     let env = 'sandbox';
@@ -4862,7 +4858,7 @@ export class WalletService {
     });
   }
 
-  wyreGetKeys(req) {
+  private wyreGetKeys(req) {
     if (!config.wyre) throw new Error('Wyre missing credentials');
 
     let env = 'sandbox';
@@ -4984,7 +4980,7 @@ export class WalletService {
     });
   }
 
-  changellyGetKeys(req) {
+  private changellyGetKeys(req) {
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
       throw new Error('ClientError: Service not configured.');
@@ -5250,7 +5246,7 @@ export class WalletService {
     });
   }
 
-  oneInchGetCredentials() {
+  private oneInchGetCredentials() {
     if (!config.oneInch) throw new Error('1Inch missing credentials');
 
     const credentials = {
