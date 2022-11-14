@@ -35,6 +35,7 @@ import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
+import { ErigonTxTransform } from './erigonTxTransform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
@@ -353,6 +354,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     let transactionStream = new Readable({ objectMode: true });
     const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+    const erigonTxTransform = new ErigonTxTransform();
     const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
     const populateReceipt = new PopulateReceiptTransform();
 
@@ -360,6 +362,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
+
+    // TODO: update old entries in db so we can remove the need for this transform
+    // transform old db entries to current class standard
+    transactionStream.pipe(erigonTxTransform);
 
     if (!args.tokenAddress && wallet._id) {
       const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);

@@ -378,7 +378,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       to: tx.to || '',
       from: tx.from || '',
       abiType: tx.abiType,
-      calls: tx.internal ? this.transformInternalToCalls(tx.internal) : [],
+      calls: tx.internal ? this.transformInternalToCalls(tx.internal) : tx.calls ? tx.calls: [],
       receipt: valueOrDefault(tx.receipt, undefined)
     };
     if (options && options.object) {

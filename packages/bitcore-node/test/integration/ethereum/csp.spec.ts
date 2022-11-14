@@ -336,7 +336,7 @@ describe('Ethereum API', function() {
     it('should stream DEX wallet transactions with erigon trace blocks', async () => {
       await EVMBlockStorage.collection.insertMany(ErigonEthBlocks as any);
       await EVMTransactionStorage.collection.insertMany(ErigonEthTransactions as any);
-
+      
       await streamDexWalletTransactions(chain, network, wallet, address, web3);
     });
   });
