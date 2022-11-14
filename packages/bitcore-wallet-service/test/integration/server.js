@@ -10624,6 +10624,294 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('Moonpay', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      transport.level= 'info';
+
+      config.moonpay = {
+        sandbox: {
+          apiKey: 'apiKey1',
+          api: 'api1',
+          widgetApi: 'widgetApi1',
+          secretKey: 'secretKey1'
+        },
+        production: {
+          apiKey: 'apiKey2',
+          api: 'api2',
+          widgetApi: 'widgetApi2',
+          secretKey: 'secretKey2'
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#moonpayGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            currencyAbbreviation: 'btc',
+            baseCurrencyAmount: 50,
+            extraFeePercentage: 5,
+            baseCurrencyCode: 'usd'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.baseCurrencyAmount;
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetSignedPaymentUrl', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'production',
+            currencyCode: 'btc',
+            walletAddress: 'bitcoin:123123',
+            baseCurrencyCode: 'usd',
+            baseCurrencyAmount: '500',
+            externalTransactionId: '123123',
+            redirectURL: 'bitpay://moonpay'
+          }
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK', () => {
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&signature=%2FDnbsboySgE%2FeAvMrwzROCLuuctkhgw5C2t2OofjOzo%3D');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        delete req.body.currencyCode;
+
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+
+      it('should return error if moonpay is commented in config', () => {
+        config.moonpay = undefined;
+
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetTransactionDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            transactionId: 'transactionId1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK with transactionId', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK with externalId', async() => {
+        delete req.body.transactionId;
+        req.body.externalId = 'externalId1';
+
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        }
+      });
+  
+      it('should return error if there is no transactionId or externalId', async() => {
+        delete req.body.transactionId;
+        delete req.body.externalId;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetAccountDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetAccountDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetAccountDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetAccountDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+  });
+
   describe('Simplex', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
