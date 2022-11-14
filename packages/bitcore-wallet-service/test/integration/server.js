@@ -10124,6 +10124,7 @@ describe('Wallet service', function() {
   });
 
   describe('Tx confirmation notifications', function() {
+    this.timeout(5000);
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -10138,20 +10139,18 @@ describe('Wallet service', function() {
         should.exist(server);
         server.txConfirmationSubscribe({
           txid: '123',
-        }, function(err) {
+        }, async function(err) {
           should.not.exist(err);
-          server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-            should.not.exist(err);
-            should.exist(subs);
-            subs.length.should.equal(1);
-            var s = subs[0];
-            s.txid.should.equal('123');
-            s.isActive.should.be.true;
-            done();
-          });
+          const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['123']);
+          let txSub = (await stream.next());
+          should.exist(txSub);
+          txSub.txid.should.equal('123');
+          txSub.isActive.should.be.true;
+          done();
         });
       });
     });
+
     it('should overwrite last subscription', function(done) {
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
@@ -10160,14 +10159,15 @@ describe('Wallet service', function() {
         }, function(err) {
           server.txConfirmationSubscribe({
             txid: '123',
-          }, function(err) {
+          }, async function(err) {
             should.not.exist(err);
-            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-              should.not.exist(err);
-              should.exist(subs);
-              subs.length.should.equal(1);
-              done();
-            });
+            const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['123']);
+            let txSub = (await stream.next());
+            should.exist(txSub);
+            txSub.txid.should.equal('123');
+            txSub = (await stream.next());
+            should.not.exist(txSub);
+            done();
           });
         });
       });
@@ -10193,15 +10193,12 @@ describe('Wallet service', function() {
               txid: '123',
             }, next);
           },
-          function(next) {
-            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-              should.not.exist(err);
-              should.exist(subs);
-              subs.length.should.equal(1);
-              var s = subs[0];
-              s.txid.should.equal('456');
-              next();
-            });
+          async function(next) {
+            const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['456']);
+            let txSub = (await stream.next());
+            should.exist(txSub);
+            txSub.txid.should.equal('456'); 
+            next();
           },
           function(next) {
             helpers.getAuthServer(wallet.copayers[1].id, function(server) {
@@ -10210,15 +10207,12 @@ describe('Wallet service', function() {
               }, next);
             });
           },
-          function(next) {
-            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-              should.not.exist(err);
-              should.exist(subs);
-              subs.length.should.equal(1);
-              var s = subs[0];
-              s.txid.should.equal('456');
-              next();
-            });
+          async function(next) {
+            const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['456']);
+            let txSub = (await stream.next());
+            should.exist(txSub);
+            txSub.txid.should.equal('456');
+            next();
           },
         ], function(err) {
           should.not.exist(err);

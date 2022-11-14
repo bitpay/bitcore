@@ -113,5 +113,16 @@ module.exports = {
   CONFIRMATIONS_TO_START_CACHING: {
     eth: 100,
     matic: 150
-  }
+  },
+
+  // Individual chain settings for block throttling
+  CHAIN_NEW_BLOCK_THROTTLE_TIME_SECONDS: {
+    btc: { testnet: 300, livenet: 0 },
+    bch: { testnet: 300, livenet: 0 },
+    eth: { testnet: 300, livenet: 0 },
+    matic: { testnet: 300, livenet: 12 }, // MATIC set to 12 because blocks normally occur every 1-2 seconds
+    xrp: { testnet: 300, livenet: 0 },
+    doge: { testnet: 300, livenet: 0 },
+    ltc: { testnet: 300, livenet: 0 }
+  } as { [chain: string]: { [network: string]: number } }
 };
