@@ -185,7 +185,7 @@ describe('Coin Model', function() {
     await addTx(mempoolTx, mempoolOutputs);
     
     // update existing outputs to be spent by mempool tx
-    CoinStorage.collection.updateMany(
+    await CoinStorage.collection.updateMany(
       { chain, network, mintTxid: tx1.hash },
       { $set: { spentTxid: mempoolTxid, spentHeight: SpentHeightIndicators.pending } }
     );
