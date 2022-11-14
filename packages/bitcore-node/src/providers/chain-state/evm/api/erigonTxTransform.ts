@@ -9,7 +9,7 @@ export class ErigonTxTransform extends Transform {
   }
 
   /**
-   * This takes a tx with the `internal` property and transforms it 
+   * This takes a tx with the `internal` property and transforms it
    * to use `calls` instead
    * @param tx Transaction object
    * @param _ Encoding (discarded)
@@ -17,8 +17,7 @@ export class ErigonTxTransform extends Transform {
    * @returns
    */
   async _transform(tx: MongoBound<IEVMTransactionLegacyProps>, _, done) {
-    
-    if (tx.internal && tx.internal.length > 0){
+    if (tx.internal && tx.internal.length > 0) {
       tx.calls = EVMTransactionStorage.transformInternalToCalls(tx.internal);
     }
 
