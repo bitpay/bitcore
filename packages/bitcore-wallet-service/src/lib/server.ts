@@ -4565,7 +4565,7 @@ export class WalletService {
       const API_KEY = keys.API_KEY;
 
       if (
-        !checkRequired(req.body, ['currencyAbbreviation', 'baseCurrencyAmount', 'extraFeePercentage', 'baseCurrencyCode'])
+        !checkRequired(req.body, ['currencyAbbreviation', 'baseCurrencyAmount', 'baseCurrencyCode'])
       ) {
         return reject(new ClientError("Moonpay's request missing arguments"));
       }
@@ -4577,9 +4577,9 @@ export class WalletService {
       let qs = [];
       qs.push('apiKey=' + API_KEY);
       qs.push('baseCurrencyAmount=' + req.body.baseCurrencyAmount);
-      qs.push('extraFeePercentage=' + req.body.extraFeePercentage);
       qs.push('baseCurrencyCode=' + req.body.baseCurrencyCode);
 
+      if (req.body.extraFeePercentage) qs.push('extraFeePercentage=' + req.body.extraFeePercentage);
       if (req.body.paymentMethod) qs.push('paymentMethod=' + req.body.paymentMethod);
       if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + req.body.areFeesIncluded);
 
