@@ -406,7 +406,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       input: tx.action.input,
       output: tx.result ? tx.result.output : '0x',
       to: tx.action.to,
-      type: tx.type.toUpperCase(),
+      type: tx.action && tx.action.callType ? tx.action.callType.toUpperCase() : tx.type.toUpperCase(),
       value: tx.action.value,
       abiType: tx.abiType,
       depth: tx.traceAddress.join('_')
