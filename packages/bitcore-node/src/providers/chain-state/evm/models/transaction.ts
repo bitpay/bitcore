@@ -360,7 +360,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     options?: TransformOptions
   ): EVMTransactionJSON | string {
     const dataStr = tx.data ? tx.data.toString() : '';
-    
+
     // TODO: update old entries in db so we can remove the need for this transform
     // transform old erigon db entries to current class standard
     if (tx.internal) {
