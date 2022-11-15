@@ -19,9 +19,9 @@ export class ErigonTxTransform extends Transform {
   async _transform(tx: MongoBound<IEVMTransactionLegacyProps>, _, done) {
     if (tx.internal && tx.internal.length > 0) {
       tx.calls = EVMTransactionStorage.transformInternalToCalls(tx.internal);
+      delete tx.internal;
     }
 
-    this.push(tx);
     return done();
   }
 }

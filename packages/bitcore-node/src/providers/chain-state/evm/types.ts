@@ -179,7 +179,7 @@ export type IEVMTransaction = ITransaction & {
 
 export type IEVMTransactionLegacyProps = IEVMTransaction & {
   // Used just for reads from old db entries
-  internal: Array<ErigonTxTrace>;
+  internal?: Array<ErigonTxTrace>;
 };
 
 export type IEVMTransactionTransformed = IEVMTransaction & {
