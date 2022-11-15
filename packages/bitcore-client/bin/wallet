@@ -13,6 +13,7 @@ program
   .command('utxos', 'get wallet utxos').alias('u')
   .command('broadcast', 'broadcast transaction')
   .command('tx', 'create transaction').alias('t')
+  .command('bump-tx', 'increase transaction fee')
   .command('derive', 'derive an address').alias('d')
   .command('check', 'check if wallet is registered and print last address').alias('h')
   .command('paypro', 'pay using payment protocol').alias('p')
