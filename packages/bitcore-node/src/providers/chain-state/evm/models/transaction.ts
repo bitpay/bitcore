@@ -360,6 +360,14 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     options?: TransformOptions
   ): EVMTransactionJSON | string {
     const dataStr = tx.data ? tx.data.toString() : '';
+    
+    // TODO: update old entries in db so we can remove the need for this transform
+    // transform old erigon db entries to current class standard
+    if (tx.internal) {
+      if (!tx.calls || tx.calls.length === 0) {
+        tx.calls = this.transformInternalToCalls(tx.internal);
+      }
+    }
 
     const transaction: EVMTransactionJSON = {
       txid: tx.txid || '',
@@ -378,7 +386,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       to: tx.to || '',
       from: tx.from || '',
       abiType: tx.abiType,
-      calls: tx.internal ? this.transformInternalToCalls(tx.internal) : tx.calls ? tx.calls : [],
+      calls: tx.calls || [],
       receipt: valueOrDefault(tx.receipt, undefined)
     };
     if (options && options.object) {

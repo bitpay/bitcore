@@ -54,7 +54,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
       if (isRefund) {
         tx.value -= internalValue;
       } else {
-        const _tx: IEVMTransactionTransformed = JSON.parse(JSON.stringify(tx));
+        const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
         _tx.value = internalValue;
         _tx.to = this.web3.utils.toChecksumAddress(call.to);
         if (call.from) {
