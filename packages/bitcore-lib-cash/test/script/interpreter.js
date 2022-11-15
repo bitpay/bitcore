@@ -30,10 +30,10 @@ Script.fromBitcoindString = function(str) {
     var tbuf;
     if (token[0] === '0' && token[1] === 'x') {
       var hex = token.slice(2);
-      bw.write(new Buffer(hex, 'hex'));
+      bw.write(Buffer.from(hex, 'hex'));
     } else if (token[0] === '\'') {
       var tstr = token.slice(1, token.length - 1);
-      var cbuf = new Buffer(tstr);
+      var cbuf = Buffer.from(tstr);
       tbuf = Script().add(cbuf).toBuffer();
       bw.write(tbuf);
     } else if (typeof Opcode['OP_' + token] !== 'undefined') {
@@ -79,7 +79,7 @@ describe('Interpreter', function() {
       Interpreter.castToBool(new BN(0).toSM({
         endian: 'little'
       })).should.equal(false);
-      Interpreter.castToBool(new Buffer('0080', 'hex')).should.equal(false); //negative 0
+      Interpreter.castToBool(Buffer.from('0080', 'hex')).should.equal(false); //negative 0
       Interpreter.castToBool(new BN(1).toSM({
         endian: 'little'
       })).should.equal(true);
@@ -87,7 +87,7 @@ describe('Interpreter', function() {
         endian: 'little'
       })).should.equal(true);
 
-      var buf = new Buffer('00', 'hex');
+      var buf = Buffer.from('00', 'hex');
       var bool = BN.fromSM(buf, {
         endian: 'little'
       }).cmp(BN.Zero) !== 0;
@@ -196,6 +196,10 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
 
+    if(flagstr.indexOf('DISALLOW_SEGWIT_RECOVERY') !== -1) {
+      flags = flags | Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY;
+    }
+
     if (flagstr.indexOf('FORKID') !== -1) {
       flags = flags | Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID;
     }
@@ -206,6 +210,10 @@ describe('Interpreter', function() {
 
     if (flagstr.indexOf('CHECKDATASIG') !== -1) {
       flags = flags | Interpreter.SCRIPT_ENABLE_CHECKDATASIG;
+    }
+
+    if (flagstr.indexOf('SCHNORR_MULTISIG') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG;
     }
 
     if (flagstr.indexOf('MINIMALIF') !== -1) {
@@ -221,6 +229,7 @@ describe('Interpreter', function() {
   };
 
   var testFixture = function(vector, expected, extraData) {
+  
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);
@@ -229,9 +238,10 @@ describe('Interpreter', function() {
       inputAmount = extraData[0] * 1e8;
     }
 
-    var hashbuf = new Buffer(32);
+    var hashbuf = Buffer.alloc(32);
     hashbuf.fill(0);
     var credtx = new Transaction();
+    credtx.setVersion(1);
     credtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
       outputIndex: 0xffffffff,
@@ -245,6 +255,7 @@ describe('Interpreter', function() {
     var idbuf = credtx.id;
 
     var spendtx = new Transaction();
+    spendtx.setVersion(1);
     spendtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: idbuf.toString('hex'),
       outputIndex: 0,
@@ -314,6 +325,7 @@ describe('Interpreter', function() {
           });
 
           var tx = new Transaction(txhex);
+          tx.setVersion(1);
           var allInputsVerified = true;
           tx.inputs.forEach(function(txin, j) {
             if (txin.isNull()) {

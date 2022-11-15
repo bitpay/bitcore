@@ -23,16 +23,27 @@ build/Release
 # Dependency directory
 # Commenting this out is preferred by some people, see
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git-
-node_modules
 
 # Users Environment Variables
 .lock-wscript
 
-*.swp
 out/
 db/*
 
 docs
+
+# OSX
+.AppleDouble
+.LSOverride
+
+
+*debug.log
+node_modules/
+.env
+*bitcore.config.*
+.vscode
+.DS_Store
+*.swp
 
 # VIM ignore
 [._]*.s[a-w][a-z]
@@ -41,9 +52,4 @@ docs
 Session.vim
 .netrwhist
 *~
-
-# OSX
-.DS_Store
-.AppleDouble
-.LSOverride
-
+ts_build

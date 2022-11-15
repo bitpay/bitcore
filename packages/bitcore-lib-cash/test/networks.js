@@ -37,7 +37,7 @@ describe('Networks', function() {
       if (key !== 'networkMagic') {
         customnet[key].should.equal(custom[key]);
       } else {
-        var expected = new Buffer('e7beb4d4', 'hex');
+        var expected = Buffer.from('e7beb4d4', 'hex');
         customnet[key].should.deep.equal(expected);
       }
     }
@@ -75,7 +75,14 @@ describe('Networks', function() {
     var somenet = networks.get('somenet');
     should.exist(somenet);
     somenet.name.should.equal('somenet');
-    networks.remove(somenet);
+  });
+
+  it('can remove a custom network by name', function() {
+    var net = networks.get('somenet');
+    should.exist(net);
+    networks.remove('somenet');
+    var net = networks.get('somenet');
+    should.equal(net, undefined);
   });
 
   var constants = ['name', 'alias', 'pubkeyhash', 'scripthash', 'xpubkey', 'xprivkey'];

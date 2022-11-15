@@ -1,0 +1,80 @@
+{
+  "bitcoreNode": {
+    "modules": ["./bitcoin", "./bitcoin-cash", "./ethereum", "./matic", "./ripple"],
+    "services": {
+      "api": {
+        "wallets": {
+          "allowCreationBeforeCompleteSync": true
+        }
+      }
+    },
+    "chains": {
+      "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 8332
+            }
+          ],
+          "rpc": {
+            "host": "localhost",
+            "port": 8333,
+            "username": "bitcorenodetest",
+            "password": "local321"
+          }
+        }
+      },
+      "ETH": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 40404
+            }
+          ],
+          "providers": [{
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 9545
+          }, {
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 9556
+          }],
+          "threads": 0
+        }
+      },
+      "MATIC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 40404
+            }
+          ],
+          "providers": [{
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 9556
+          }],
+          "threads": 0
+        }
+      },
+      "XRP": {
+        "testnet": {
+          "chainSource": "rpc",
+          "provider": {
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 6996,
+            "dataHost": "localhost"
+          }
+        }
+      }
+    }
+  }
+}

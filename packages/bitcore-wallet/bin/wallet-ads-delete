@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options] <adId>')
+  .parse(process.argv);
+
+var args = program.args;
+var host = 'https://bws.bitpay.com';
+
+var clientArgs = {
+  host
+}
+
+var adId = args[0];
+
+let adArgs = {
+  adId
+};
+
+// need to load credentials, like in ./wallet-ads
+utils.getClient(clientArgs, { 
+  mustExist: true
+}, function (client) {
+  client.deleteAdvertisement(adArgs, (err, result) => {
+    utils.die(err);
+    if(!result) {
+      console.log('Couldn\'t delete advertisement');
+    }
+    else {
+      console.log('Deleted advertisement ', result);
+    }
+  });
+});

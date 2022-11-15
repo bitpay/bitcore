@@ -155,7 +155,7 @@ describe("Output", function() {
   });
 
   it("#toObject roundtrip will handle an invalid (null) script", function() {
-    var invalidOutputScript = new Buffer("0100000000000000014c", "hex");
+    var invalidOutputScript = Buffer.from("0100000000000000014c", "hex");
     var br = new bitcore.encoding.BufferReader(invalidOutputScript);
     var output = Output.fromBufferReader(br);
     var output2 = new Output(output.toObject());
@@ -164,7 +164,7 @@ describe("Output", function() {
   });
 
   it("inspect will work with an invalid (null) script", function() {
-    var invalidOutputScript = new Buffer("0100000000000000014c", "hex");
+    var invalidOutputScript = Buffer.from("0100000000000000014c", "hex");
     var br = new bitcore.encoding.BufferReader(invalidOutputScript);
     var output = Output.fromBufferReader(br);
     output.inspect().should.equal("<Output (1 sats) 4c>");
@@ -184,7 +184,7 @@ describe("Output", function() {
   it("sets script to null if it is an InvalidBuffer", function() {
     var output = new Output({
       satoshis: 1000,
-      script: new Buffer("4c", "hex")
+      script: Buffer.from("4c", "hex")
     });
     should.equal(output.script, null);
   });

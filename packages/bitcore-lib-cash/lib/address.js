@@ -270,6 +270,20 @@ Address.createMultisig = function(publicKeys, threshold, network) {
   return Address.payingTo(Script.buildMultisigOut(publicKeys, threshold), network);
 };
 
+/**
+ * Creates a P2SH Zero-Confirmation Escrow (ZCE) address from a set of input public keys and a reclaim public key.
+ *
+ * @param {Array} inputPublicKeys - the set of public keys needed to sign all inputs in a ZCE transaction
+ * @param {PublicKey} reclaimPublicKey - the public key required to reclaim the escrow
+ * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
+ * @return {Address}
+ */
+ Address.createEscrow = function(inputPublicKeys, reclaimPublicKey, network) {
+  const zceRedeemScript = Script.buildEscrowOut(inputPublicKeys, reclaimPublicKey);
+  network = network || reclaimPublicKey.network || Networks.defaultNetwork;
+  return Address.payingTo(zceRedeemScript, network);
+};
+
 function decodeCashAddress(address) {
 
 
@@ -355,7 +369,7 @@ function decodeCashAddress(address) {
   //return { prefix, type, hash };
 //console.log('[address.js.339]', hash); //TODO
 
-  info.hashBuffer = new Buffer(hash);
+  info.hashBuffer = Buffer.from(hash);
   info.network = network;
   info.type = type;
   return info;
@@ -379,6 +393,11 @@ Address._transformString = function(data, network, type) {
   if (data.length < 34){
     throw new Error('Invalid Address string provided');
   }
+
+  if(data.length > 100) {
+    throw new TypeError('address string is too long');
+  }
+
   data = data.trim();
   var networkObj = Networks.get(network);
 
@@ -581,7 +600,7 @@ Address.prototype.isPayToScriptHash = function() {
  * @returns {Buffer} Bitcoin address buffer
  */
 Address.prototype.toBuffer = function() {
-  var version = new Buffer([this.network[this.type]]);
+  var version = Buffer.from([this.network[this.type]]);
   var buf = Buffer.concat([version, this.hashBuffer]);
   return buf;
 };
@@ -615,7 +634,7 @@ Address.prototype.inspect = function() {
  */
 
 Address.prototype.toCashBuffer = function() {
-  var version = new Buffer([this.network[this.type]]);
+  var version = Buffer.from([this.network[this.type]]);
   var buf = Buffer.concat([version, this.hashBuffer]);
   return buf;
 };

@@ -224,8 +224,8 @@ describe('BIP32 compliance', function() {
 
   it('should use full 32 bytes for private key data that is hashed (as per bip32)', function() {
     // https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
-    var privateKeyBuffer = new Buffer('00000055378cf5fafb56c711c674143f9b0ee82ab0ba2924f19b64f5ae7cdbfd', 'hex');
-    var chainCodeBuffer = new Buffer('9c8a5c863e5941f3d99453e6ba66b328bb17cf0b8dec89ed4fc5ace397a1c089', 'hex');
+    var privateKeyBuffer = Buffer.from('00000055378cf5fafb56c711c674143f9b0ee82ab0ba2924f19b64f5ae7cdbfd', 'hex');
+    var chainCodeBuffer = Buffer.from('9c8a5c863e5941f3d99453e6ba66b328bb17cf0b8dec89ed4fc5ace397a1c089', 'hex');
     var key = HDPrivateKey.fromObject({
       network: 'testnet',
       depth: 0,
@@ -240,8 +240,8 @@ describe('BIP32 compliance', function() {
 
   it('should NOT use full 32 bytes for private key data that is hashed with nonCompliant flag', function() {
     // This is to test that the previously implemented non-compliant to BIP32
-    var privateKeyBuffer = new Buffer('00000055378cf5fafb56c711c674143f9b0ee82ab0ba2924f19b64f5ae7cdbfd', 'hex');
-    var chainCodeBuffer = new Buffer('9c8a5c863e5941f3d99453e6ba66b328bb17cf0b8dec89ed4fc5ace397a1c089', 'hex');
+    var privateKeyBuffer = Buffer.from('00000055378cf5fafb56c711c674143f9b0ee82ab0ba2924f19b64f5ae7cdbfd', 'hex');
+    var chainCodeBuffer = Buffer.from('9c8a5c863e5941f3d99453e6ba66b328bb17cf0b8dec89ed4fc5ace397a1c089', 'hex');
     var key = HDPrivateKey.fromObject({
       network: 'testnet',
       depth: 0,
@@ -256,8 +256,8 @@ describe('BIP32 compliance', function() {
 
   it('should NOT use full 32 bytes for private key data that is hashed with the nonCompliant derive method', function() {
     // This is to test that the previously implemented non-compliant to BIP32
-    var privateKeyBuffer = new Buffer('00000055378cf5fafb56c711c674143f9b0ee82ab0ba2924f19b64f5ae7cdbfd', 'hex');
-    var chainCodeBuffer = new Buffer('9c8a5c863e5941f3d99453e6ba66b328bb17cf0b8dec89ed4fc5ace397a1c089', 'hex');
+    var privateKeyBuffer = Buffer.from('00000055378cf5fafb56c711c674143f9b0ee82ab0ba2924f19b64f5ae7cdbfd', 'hex');
+    var chainCodeBuffer = Buffer.from('9c8a5c863e5941f3d99453e6ba66b328bb17cf0b8dec89ed4fc5ace397a1c089', 'hex');
     var key = HDPrivateKey.fromObject({
       network: 'testnet',
       depth: 0,
@@ -271,14 +271,14 @@ describe('BIP32 compliance', function() {
   });
 
   describe('edge cases', function() {
-    var sandbox = sinon.sandbox.create();
+    var sandbox = sinon.createSandbox();
     afterEach(function() {
       sandbox.restore();
     });
     it('will handle edge case that derived private key is invalid', function() {
-      var invalid = new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
-      var privateKeyBuffer = new Buffer('5f72914c48581fc7ddeb944a9616389200a9560177d24f458258e5b04527bcd1', 'hex');
-      var chainCodeBuffer = new Buffer('39816057bba9d952fe87fe998b7fd4d690a1bb58c2ff69141469e4d1dffb4b91', 'hex');
+      var invalid =  Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
+      var privateKeyBuffer =  Buffer.from('5f72914c48581fc7ddeb944a9616389200a9560177d24f458258e5b04527bcd1', 'hex');
+      var chainCodeBuffer =  Buffer.from('39816057bba9d952fe87fe998b7fd4d690a1bb58c2ff69141469e4d1dffb4b91', 'hex');
       var unstubbed = bitcore.crypto.BN.prototype.toBuffer;
       var count = 0;
       var stub = sandbox.stub(bitcore.crypto.BN.prototype, 'toBuffer').callsFake(function (args) {
@@ -305,8 +305,8 @@ describe('BIP32 compliance', function() {
       bitcore.PrivateKey.isValid.callCount.should.equal(2);
     });
     it('will handle edge case that a derive public key is invalid', function() {
-      var publicKeyBuffer = new Buffer('029e58b241790284ef56502667b15157b3fc58c567f044ddc35653860f9455d099', 'hex');
-      var chainCodeBuffer = new Buffer('39816057bba9d952fe87fe998b7fd4d690a1bb58c2ff69141469e4d1dffb4b91', 'hex');
+      var publicKeyBuffer = Buffer.from('029e58b241790284ef56502667b15157b3fc58c567f044ddc35653860f9455d099', 'hex');
+      var chainCodeBuffer = Buffer.from('39816057bba9d952fe87fe998b7fd4d690a1bb58c2ff69141469e4d1dffb4b91', 'hex');
       var key = new HDPublicKey({
         network: 'testnet',
         depth: 0,

@@ -1,7 +1,7 @@
-import { homedir, cpus } from 'os';
-import parseArgv from './utils/parseArgv';
-import { ConfigType } from './types/Config';
 import * as _ from 'lodash';
+import { cpus, homedir } from 'os';
+import { ConfigType } from './types/Config';
+import parseArgv from './utils/parseArgv';
 let program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
@@ -41,8 +41,8 @@ function setTrustedPeers(config: ConfigType): ConfigType {
       if (env[envString]) {
         let peers = config.chains[chain][network].trustedPeers || [];
         peers.push({
-          host: env[envString],
-          port: env[`${envString}_PORT`]
+          host: env[envString] as string,
+          port: env[`${envString}_PORT`] as string
         });
         config.chains[chain][network].trustedPeers = peers;
       }
@@ -54,30 +54,40 @@ const Config = function(): ConfigType {
   let config: ConfigType = {
     maxPoolSize: 50,
     port: 3000,
+    dbUrl: process.env.DB_URL || '',
     dbHost: process.env.DB_HOST || '127.0.0.1',
     dbName: process.env.DB_NAME || 'bitcore',
     dbPort: process.env.DB_PORT || '27017',
+    dbUser: process.env.DB_USER || '',
+    dbPass: process.env.DB_PASS || '',
     numWorkers: cpus().length,
     chains: {},
+    modules: ['./bitcoin', './bitcoin-cash', './ethereum'],
     services: {
       api: {
         rateLimiter: {
-          whitelist: ['::ffff:127.0.0.1']
+          disabled: false,
+          whitelist: ['::ffff:127.0.0.1', '::1']
         },
         wallets: {
           allowCreationBeforeCompleteSync: false,
           allowUnauthenticatedCalls: false
         }
       },
-      event: {},
+      event: {
+        onlyWalletEvents: false
+      },
       p2p: {},
-      socket: {},
+      socket: {
+        bwsKeys: []
+      },
       storage: {}
     }
   };
 
   let foundConfig = findConfig();
-  config = _.merge(config, foundConfig, {});
+  const mergeCopyArray = (objVal, srcVal) => (objVal instanceof Array ? srcVal : undefined);
+  config = _.mergeWith(config, foundConfig, mergeCopyArray);
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
       BTC: {

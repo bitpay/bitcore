@@ -10,6 +10,7 @@ var BufferWriter = require('../encoding/bufferwriter');
 var BN = require('../crypto/bn');
 var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
+var Schnorr = require('../crypto/schnorr');
 var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var Interpreter = require('../script/interpreter');
@@ -159,7 +160,7 @@ function getHash (w) {
 var sighash = function sighash(transaction, sighashType, inputNumber, subscript, satoshisBN, flags) {
   var Transaction = require('./transaction');
   var Input = require('./input');
-
+  
   if (_.isUndefined(flags)){
     flags = DEFAULT_SIGN_FLAGS;
   }
@@ -220,12 +221,12 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript,
 
     for (i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
-        satoshis: BN.fromBuffer(new buffer.Buffer(BITS_64_ON, 'hex')),
+        satoshis: BN.fromBuffer(Buffer.from(BITS_64_ON, 'hex')),
         script: Script.empty()
       });
     }
   }
-
+  
   if (sighashType & Signature.SIGHASH_ANYONECANPAY) {
     txcopy.inputs = [txcopy.inputs[inputNumber]];
   }
@@ -249,17 +250,26 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript,
  * @param {number} inputIndex
  * @param {Script} subscript
  * @param {satoshisBN} input's amount
+ * @param {signingMethod} signingMethod "ecdsa" or "schnorr" to sign a tx
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, subscript, satoshisBN, flags) {
+function sign(transaction, privateKey, sighashType, inputIndex, subscript, satoshisBN, flags, signingMethod) {
   var hashbuf = sighash(transaction, sighashType, inputIndex, subscript, satoshisBN, flags);
 
+  signingMethod = signingMethod || "ecdsa";
+  let sig;
 
-
-  var sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
-  return sig;
+  if (signingMethod === "schnorr") {
+    sig = Schnorr.sign(hashbuf, privateKey, 'little').set({
+      nhashtype: sighashType
+    });
+    return sig;
+  } else if (signingMethod === "ecdsa") {
+    sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
+      nhashtype: sighashType
+    });
+    return sig;
+  }
 }
 
 /**
@@ -273,13 +283,21 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, satos
  * @param {Script} subscript
  * @param {satoshisBN} input's amount
  * @param {flags} verification flags
+ * @param {signingMethod} signingMethod "ecdsa" or "schnorr" to sign a tx
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, subscript, satoshisBN, flags) {
+function verify(transaction, signature, publicKey, inputIndex, subscript, satoshisBN, flags, signingMethod) {
   $.checkArgument(!_.isUndefined(transaction));
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
   var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript, satoshisBN, flags);
-  return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+  
+  signingMethod = signingMethod || "ecdsa";
+
+  if (signingMethod === "schnorr") {
+    return Schnorr.verify(hashbuf, signature, publicKey, 'little')
+  } else if(signingMethod === "ecdsa") {
+    return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+  }
 }
 
 /**

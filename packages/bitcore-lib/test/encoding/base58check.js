@@ -6,7 +6,7 @@ var Base58Check = bitcore.encoding.Base58Check;
 var Base58 = bitcore.encoding.Base58;
 
 describe('Base58Check', function() {
-  var buf = new Buffer([0, 1, 2, 3, 253, 254, 255]);
+  var buf = Buffer.from([0, 1, 2, 3, 253, 254, 255]);
   var enc = '14HV44ipwoaqfg';
 
   it('should make an instance with "new"', function() {

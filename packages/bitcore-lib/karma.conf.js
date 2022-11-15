@@ -4,22 +4,34 @@
 module.exports = function(config) {
 
   config.set({
-    browsers: ['ChromeHeadless'],
-    frameworks: ['mocha'],
-    singleRun: false,
-    reporters: ['progress'],
-    logLevel: config.LOG_INFO,
-//    port: 9876,  // karma web server port
-    autoWatch: false,
+    browsers: ['Firefox'],
+    frameworks: ['mocha', 'detectBrowsers'],
+    detectBrowsers: {
+      enabled: true,
+      usePhantomJS: false,
+      postDetection: function(availableBrowser) {
+        // modify to enable additional browsers if available
+        var runBrowsers = ['Firefox', 'Chrome'];
+        var browsers = [];
+        for(var i = 0; i < runBrowsers.length; i++) {
+          if(~availableBrowser.indexOf(runBrowsers[i])) {
+            browsers.push(runBrowsers[i]);
+          }
+        }
+        return browsers;
+      }
+    },
+    singleRun: true,
     files: [
-      '../../tests.js'
+      'tests.js'
     ],
     plugins: [
       'karma-mocha',
-      'karma-phantomjs-launcher',
       'karma-chrome-launcher',
-    ],
-    browsers: ['PhantomJS', 'Chrome']
+      'karma-firefox-launcher',
+      'karma-detect-browsers'
+    ]
+    browsers: ['Chrome', 'Firefox']
   });
 
 };

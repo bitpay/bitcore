@@ -1,7 +1,5 @@
 'use strict';
 
-var buffer = require('buffer');
-
 var Signature = require('../crypto/signature');
 var Script = require('../script');
 var Output = require('./output');
@@ -12,6 +10,7 @@ var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
 var $ = require('../util/preconditions');
 var _ = require('lodash');
+const schnorr = require('bip-schnorr');
 
 var SIGHASH_SINGLE_BUG = '0000000000000000000000000000000000000000000000000000000000000001';
 var BITS_64_ON = 'ffffffffffffffff';
@@ -70,7 +69,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
 
     for (i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
-        satoshis: BN.fromBuffer(new buffer.Buffer(BITS_64_ON, 'hex')),
+        satoshis: BN.fromBuffer(Buffer.from(BITS_64_ON, 'hex')),
         script: Script.empty()
       });
     }
@@ -98,13 +97,24 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
  * @param {number} sighash
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
-  var sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
+function sign(transaction, privateKey, sighashType, inputIndex, subscript, signingMethod) {
+  signingMethod = signingMethod || 'ecdsa';
+
+  let hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+  let sig; 
+  switch (signingMethod) {
+    case 'ecdsa':
+      sig = ECDSA.sign(hashbuf, privateKey, 'little').set({ nhashtype: sighashType });
+      break;
+    case 'schnorr':
+      sig = schnorr.sign(privateKey.toString(), hashbuf);
+      break;
+    default: 
+      throw new Error("signingMethod not supported ", signingMethod);
+  }
   return sig;
 }
 
@@ -117,13 +127,28 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
  * @param {PublicKey} publicKey
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, subscript) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
-  return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+function verify(transaction, signature, publicKey, inputIndex, subscript, signingMethod) {
+  $.checkArgument(!_.isUndefined(transaction), "Transaction Undefined");
+  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype), "Signature Undefined");
+
+  signingMethod = signingMethod || 'ecdsa';
+  let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
+  let verified = false;
+
+  switch (signingMethod) {
+    case 'ecdsa':
+      verified = ECDSA.verify(hashbuf, signature, publicKey, 'little');
+      break;
+    case 'schnorr':
+      verified = schnorr.verify(publicKey, hashbuf, signature);
+      break;
+    default:
+      throw new Error("signingMethod not supported ", signingMethod);
+  }
+  return verified;
 }
 
 /**

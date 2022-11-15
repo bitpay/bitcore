@@ -12,23 +12,23 @@ describe('buffer utils', function() {
 
   describe('equals', function() {
     it('recognizes these two equal buffers', function() {
-      var bufferA = new Buffer([1, 2, 3]);
-      var bufferB = new Buffer('010203', 'hex');
+      var bufferA = Buffer.from([1, 2, 3]);
+      var bufferB = Buffer.from('010203', 'hex');
       BufferUtil.equal(bufferA, bufferB).should.equal(true);
     });
     it('no false positive: returns false with two different buffers', function() {
-      var bufferA = new Buffer([1, 2, 3]);
-      var bufferB = new Buffer('010204', 'hex');
+      var bufferA = Buffer.from([1, 2, 3]);
+      var bufferB = Buffer.from('010204', 'hex');
       BufferUtil.equal(bufferA, bufferB).should.equal(false);
     });
     it('coverage: quickly realizes a difference in size and returns false', function() {
-      var bufferA = new Buffer([1, 2, 3]);
-      var bufferB = new Buffer([]);
+      var bufferA = Buffer.from([1, 2, 3]);
+      var bufferB = Buffer.from([]);
       BufferUtil.equal(bufferA, bufferB).should.equal(false);
     });
     it('"equals" is an an alias for "equal"', function() {
-      var bufferA = new Buffer([1, 2, 3]);
-      var bufferB = new Buffer([1, 2, 3]);
+      var bufferA = Buffer.from([1, 2, 3]);
+      var bufferB = Buffer.from([1, 2, 3]);
       BufferUtil.equal(bufferA, bufferB).should.equal(true);
       BufferUtil.equals(bufferA, bufferB).should.equal(true);
     });
@@ -40,11 +40,11 @@ describe('buffer utils', function() {
         BufferUtil.fill('something');
       }).to.throw(errors.InvalidArgumentType);
       expect(function() {
-        BufferUtil.fill(new Buffer([0, 0, 0]), 'invalid');
+        BufferUtil.fill(Buffer.from([0, 0, 0]), 'invalid');
       }).to.throw(errors.InvalidArgumentType);
     });
     it('works correctly for a small buffer', function() {
-      var buffer = BufferUtil.fill(new Buffer(10), 6);
+      var buffer = BufferUtil.fill(Buffer.alloc(10), 6);
       for (var i = 0; i < 10; i++) {
         buffer[i].should.equal(6);
       }
@@ -56,7 +56,7 @@ describe('buffer utils', function() {
       expect(BufferUtil.isBuffer(1)).to.equal(false);
     });
     it('has no false negative', function() {
-      expect(BufferUtil.isBuffer(new Buffer(0))).to.equal(true);
+      expect(BufferUtil.isBuffer(Buffer.alloc(0))).to.equal(true);
     });
   });
 
@@ -93,7 +93,7 @@ describe('buffer utils', function() {
     });
     it('does a round trip', function() {
       expect(BufferUtil.integerAsSingleByteBuffer(
-        BufferUtil.integerFromSingleByteBuffer(new Buffer([255]))
+        BufferUtil.integerFromSingleByteBuffer(Buffer.from([255]))
       )[0]).to.equal(255);
     });
   });
@@ -126,27 +126,10 @@ describe('buffer utils', function() {
     });
   });
 
-  describe('buffer to hex', function() {
-    it('returns an expected value in hexa', function() {
-      expect(BufferUtil.bufferToHex(new Buffer([255, 0, 128]))).to.equal('ff0080');
-    });
-    it('checks the argument type', function() {
-      expect(function() {
-        BufferUtil.bufferToHex('invalid');
-      }).to.throw(errors.InvalidArgumentType);
-    });
-    it('round trips', function() {
-      var original = new Buffer([255, 0, 128]);
-      var hexa = BufferUtil.bufferToHex(original);
-      var back = BufferUtil.hexToBuffer(hexa);
-      expect(BufferUtil.equal(original, back)).to.equal(true);
-    });
-  });
-
   describe('reverse', function() {
     it('reverses a buffer', function() {
       // http://bit.ly/1J2Ai4x
-      var original = new Buffer([255, 0, 128]);
+      var original = Buffer.from([255, 0, 128]);
       var reversed = BufferUtil.reverse(original);
       original[0].should.equal(reversed[2]);
       original[1].should.equal(reversed[1]);

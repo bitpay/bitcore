@@ -1,19 +1,19 @@
-import { BitcoinTransactionType } from "./Transaction";
-export type BlockHeaderObj = {
+import { BitcoinTransactionType } from './Transaction';
+export interface BlockHeaderObj {
   prevHash: string;
   hash: string;
   time: number;
-  version: string;
+  version: number;
   merkleRoot: string;
-  bits: string;
-  nonce: string;
+  bits: number;
+  nonce: number;
 }
-export type BlockHeader = {
+export interface BlockHeader {
   toObject: () => BlockHeaderObj;
-};
-export type BitcoinBlockType = {
+}
+export interface BitcoinBlockType {
   hash: string;
   transactions: BitcoinTransactionType[];
   header: BlockHeader;
   toBuffer: () => Buffer;
-};
+}
