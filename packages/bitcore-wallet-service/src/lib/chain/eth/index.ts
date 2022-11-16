@@ -333,7 +333,7 @@ export class EthChain implements IChain {
               if (err) return cb(err);
               const { totalAmount, availableAmount } = ethBalance;
               if (totalAmount < txp.fee) {
-                return cb(this.getInsuficientFeeError(txp));
+                return cb(this.getInsufficientFeeError(txp));
               } else if (availableAmount < txp.fee) {
                 return cb(this.getLockedFeeError(txp));
               } else {
@@ -358,7 +358,7 @@ export class EthChain implements IChain {
     );
   }
 
-  getInsuficientFeeError(txp) {
+  getInsufficientFeeError(txp) {
     return new ClientError(
       Errors.codes.INSUFFICIENT_ETH_FEE,
       `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
