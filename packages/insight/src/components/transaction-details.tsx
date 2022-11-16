@@ -199,7 +199,7 @@ const TransactionDetails = ({
                         {showDetails && vo.spentTxid && vo.spentTxid !== '' ? (
                           <TextElipsis>
                             <b>Tx ID </b>
-                            <SpanLink onClick={() => goToTx(vo.spentTxid)}>{vo.spentTxid}</SpanLink>
+                            <SpanLink onClick={() => goToTx(vo.spentTxid, undefined, true)}>{vo.spentTxid}</SpanLink>
                           </TextElipsis>
                         ) : null}
                       </>
@@ -218,7 +218,7 @@ const TransactionDetails = ({
                         width={17}
                         height={17}
                         alt='arrow'
-                        onClick={() => goToTx(vo.spentTxid)}
+                        onClick={() => goToTx(vo.spentTxid, undefined, true)}
                       />
                     </ArrowDiv>
                   )}
