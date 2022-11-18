@@ -467,11 +467,16 @@ export class EthChain implements IChain {
       address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
       amount = tx.abiType.params[1].value;
     } else if (tx.abiType && tx.abiType.type === 'MULTISIG' && tx.abiType.name === 'confirmTransaction') {
+      let amount = 0,
+        address = '0x0';
       multisigContractAddress = tx.to;
-      address = tx.internal
-        ? Web3.utils.toChecksumAddress(tx.internal[0].action.to)
-        : Web3.utils.toChecksumAddress(tx.calls[0].to);
-      amount = tx.internal ? tx.internal[0].action.value : tx.calls[0].value;
+      if (tx.internal) {
+        address = Web3.utils.toChecksumAddress(tx.internal[0].action.to);
+        amount = tx.internal[0].action.value;
+      } else if (tx.calls) {
+        address = Web3.utils.toChecksumAddress(tx.calls[0].to);
+        amount = tx.calls[0].value;
+      }
     } else {
       address = tx.to;
       amount = tx.value;
