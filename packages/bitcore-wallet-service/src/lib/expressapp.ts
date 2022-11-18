@@ -1502,7 +1502,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.moonpayGetQuote(req)
+          response = await server.moonpayGetQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1514,7 +1514,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, server => {
         let response;
         try {
-          response = server.moonpayGetSignedPaymentUrl(req)
+          response = server.moonpayGetSignedPaymentUrl(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1522,7 +1522,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v1/service/moonpay/transactionDetails', async(req, res) => {
+    router.post('/v1/service/moonpay/transactionDetails', async (req, res) => {
       let server, response;
       try {
         server = getServer(req, res);
@@ -1533,7 +1533,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v1/service/moonpay/accountDetails', async(req, res) => {
+    router.post('/v1/service/moonpay/accountDetails', async (req, res) => {
       let server, response;
       try {
         server = getServer(req, res);

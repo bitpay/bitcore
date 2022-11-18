@@ -4544,15 +4544,15 @@ export class WalletService {
     delete req.body.env;
 
     const keys: {
-      API: string,
-      WIDGET_API: string,
-      API_KEY: string,
-      SECRET_KEY: string,
+      API: string;
+      WIDGET_API: string;
+      API_KEY: string;
+      SECRET_KEY: string;
     } = {
       API: config.moonpay[env].api,
       WIDGET_API: config.moonpay[env].widgetApi,
       API_KEY: config.moonpay[env].apiKey,
-      SECRET_KEY: config.moonpay[env].secretKey,
+      SECRET_KEY: config.moonpay[env].secretKey
     };
 
     return keys;
@@ -4564,14 +4564,12 @@ export class WalletService {
       const API = keys.API;
       const API_KEY = keys.API_KEY;
 
-      if (
-        !checkRequired(req.body, ['currencyAbbreviation', 'baseCurrencyAmount', 'baseCurrencyCode'])
-      ) {
+      if (!checkRequired(req.body, ['currencyAbbreviation', 'baseCurrencyAmount', 'baseCurrencyCode'])) {
         return reject(new ClientError("Moonpay's request missing arguments"));
       }
 
       const headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       };
 
       let qs = [];
@@ -4602,20 +4600,27 @@ export class WalletService {
     });
   }
 
-  moonpayGetSignedPaymentUrl(req): {urlWithSignature: string} {
+  moonpayGetSignedPaymentUrl(req): { urlWithSignature: string } {
     const keys = this.moonpayGetKeys(req);
     const SECRET_KEY = keys.SECRET_KEY;
     const API_KEY = keys.API_KEY;
     const WIDGET_API = keys.WIDGET_API;
 
     if (
-      !checkRequired(req.body, ['currencyCode', 'walletAddress', 'baseCurrencyCode', 'baseCurrencyAmount', 'externalTransactionId', 'redirectURL'])
+      !checkRequired(req.body, [
+        'currencyCode',
+        'walletAddress',
+        'baseCurrencyCode',
+        'baseCurrencyAmount',
+        'externalTransactionId',
+        'redirectURL'
+      ])
     ) {
       throw new ClientError("Moonpay's request missing arguments");
     }
 
     const headers = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     };
 
     let qs = [];
@@ -4627,8 +4632,9 @@ export class WalletService {
     qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
     qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
     if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
-    if (req.body.showWalletAddressForm) qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
-    
+    if (req.body.showWalletAddressForm)
+      qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
+
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
     const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
@@ -4638,7 +4644,7 @@ export class WalletService {
 
     const urlWithSignature = `${WIDGET_API}${URL_SEARCH}&signature=${encodeURIComponent(URLSignatureHash)}`;
 
-    return {urlWithSignature};
+    return { urlWithSignature };
   }
 
   moonpayGetTransactionDetails(req): Promise<any> {
@@ -4647,23 +4653,21 @@ export class WalletService {
       const API = keys.API;
       const API_KEY = keys.API_KEY;
 
-      if (
-        !checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])
-      ) {
+      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
         return reject(new ClientError("Moonpay's request missing arguments"));
       }
 
       const headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       };
       let URL: string;
 
       let qs = [];
       qs.push('apiKey=' + API_KEY);
       if (req.body.transactionId) {
-      URL = API + `/v1/transactions/${req.body.transactionId}?${qs.join('&')}`;
+        URL = API + `/v1/transactions/${req.body.transactionId}?${qs.join('&')}`;
       } else if (req.body.externalId) {
-      URL = API + `/v1/transactions/ext/${req.body.externalId}?${qs.join('&')}`;
+        URL = API + `/v1/transactions/ext/${req.body.externalId}?${qs.join('&')}`;
       }
 
       this.request.get(
@@ -4690,7 +4694,7 @@ export class WalletService {
       const API_KEY = keys.API_KEY;
 
       const headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       };
 
       let qs = [];
