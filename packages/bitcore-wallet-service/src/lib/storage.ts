@@ -424,18 +424,18 @@ export class Storage {
 
     this.db.collection(collections.USER).update(
       {
-        email : user.email
+        email: user.email
       },
-       {
+      {
         $setOnInsert: user
-       },
-       {upsert: true},
+      },
+      { upsert: true },
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
         return cb(null, result);
       }
-    )
+    );
 
     // this.db.collection(collections.USER).insertOne(
     //   user,
@@ -466,29 +466,6 @@ export class Storage {
       }
     );
   }
-
-  updateUser(user: IUser, cb) {
-    this.db.collection(collections.USER).updateOne(
-      {
-        email: user.email
-      },
-      {
-        $set: {
-          hashPassword: user.hashPassword,
-          recoveryKey: user.recoveryKey
-        }
-      },
-      {
-        upsert: false
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb(new Error('Can not update user'));
-        return cb(null, result);
-      }
-    );
-  }
-
 
   storeKeys(keys, cb) {
     // This should only happens in certain tests.
@@ -522,13 +499,15 @@ export class Storage {
     });
   }
 
-  updatKeys(keys, cb) {
+  updateKeys(keys, cb) {
     this.db.collection(collections.KEYS).findOneAndUpdate(
       {},
       {
         $set: {
           keyFund: keys.keyFund,
-          keyReceive: keys.keyReceive
+          keyReceive: keys.keyReceive,
+          hashPassword: keys.hashPassword,
+          hashRecoveryKey: keys.hashRecoveryKey
         }
       },
       {
@@ -663,42 +642,45 @@ export class Storage {
   }
 
   fetchAllOrderInfo(opts, cb) {
-    const coinConfigFilter:ICoinConfigFilter = opts.coinConfigFilter || null;
-    let queryObject = {} ;
-    let queryDate = null ;
+    const coinConfigFilter: ICoinConfigFilter = opts.coinConfigFilter || null;
+    let queryObject = {};
+    let queryDate = null;
     let queryFromCoin = null;
     let queryFromNetwork = null;
     let queryToNetwork = null;
     let queryToCoin = null;
     let queryStatus = null;
 
-    if(coinConfigFilter){
-      if(coinConfigFilter.fromDate && coinConfigFilter.toDate){
-        queryDate = {lastModified: { $gte: new Date(coinConfigFilter.fromDate)  , $lte: new Date(coinConfigFilter.toDate)}};
+    if (coinConfigFilter) {
+      if (coinConfigFilter.fromDate && coinConfigFilter.toDate) {
+        queryDate = {
+          lastModified: { $gte: new Date(coinConfigFilter.fromDate), $lte: new Date(coinConfigFilter.toDate) }
+        };
       }
-      if(coinConfigFilter.fromCoinCode){
+      if (coinConfigFilter.fromCoinCode) {
         queryFromCoin = { fromCoinCode: coinConfigFilter.fromCoinCode };
       }
-      if(coinConfigFilter.fromNetwork){
+      if (coinConfigFilter.fromNetwork) {
         queryFromNetwork = { fromNetwork: coinConfigFilter.fromNetwork };
       }
-      if(coinConfigFilter.toCoinCode){
-        queryToCoin = { toCoinCode : coinConfigFilter.toCoinCode };
+      if (coinConfigFilter.toCoinCode) {
+        queryToCoin = { toCoinCode: coinConfigFilter.toCoinCode };
       }
-      if(coinConfigFilter.toNetwork){
+      if (coinConfigFilter.toNetwork) {
         queryToNetwork = { toNetwork: coinConfigFilter.toNetwork };
       }
-      if(coinConfigFilter.status){
-        queryStatus = { status: coinConfigFilter.status};
+      if (coinConfigFilter.status) {
+        queryStatus = { status: coinConfigFilter.status };
       }
-      queryObject = Object.assign({},
-        queryDate && {...queryDate},
-        queryFromCoin && {...queryFromCoin},
-        queryToCoin && {...queryToCoin},
-        queryStatus && {...queryStatus},
-        queryFromNetwork && {...queryFromNetwork},
-        queryToNetwork && {...queryToNetwork}
-        )
+      queryObject = Object.assign(
+        {},
+        queryDate && { ...queryDate },
+        queryFromCoin && { ...queryFromCoin },
+        queryToCoin && { ...queryToCoin },
+        queryStatus && { ...queryStatus },
+        queryFromNetwork && { ...queryFromNetwork },
+        queryToNetwork && { ...queryToNetwork }
+      );
     }
 
     this.db
@@ -716,26 +698,34 @@ export class Storage {
 
   countAllOrderInfo(opts) {
     const coinConfigFilter: ICoinConfigFilter = opts.coinConfigFilter || null;
-    let queryObject = {} ;
-    let queryDate = null ;
+    let queryObject = {};
+    let queryDate = null;
     let queryFromCoin = null;
     let queryToCoin = null;
     let queryStatus = null;
 
-    if(coinConfigFilter){
-      if(coinConfigFilter.fromDate && coinConfigFilter.toDate){
-        queryDate = {lastModified: { $gte: new Date(coinConfigFilter.fromDate)  , $lte: new Date(coinConfigFilter.toDate)}};
+    if (coinConfigFilter) {
+      if (coinConfigFilter.fromDate && coinConfigFilter.toDate) {
+        queryDate = {
+          lastModified: { $gte: new Date(coinConfigFilter.fromDate), $lte: new Date(coinConfigFilter.toDate) }
+        };
       }
-      if(coinConfigFilter.fromCoinCode){
+      if (coinConfigFilter.fromCoinCode) {
         queryFromCoin = { fromCoinCode: coinConfigFilter.fromCoinCode };
       }
-      if(coinConfigFilter.toCoinCode){
-        queryToCoin = { toCoinCode : coinConfigFilter.toCoinCode };
+      if (coinConfigFilter.toCoinCode) {
+        queryToCoin = { toCoinCode: coinConfigFilter.toCoinCode };
       }
-      if(coinConfigFilter.status){
-        queryStatus = { status: coinConfigFilter.status};
+      if (coinConfigFilter.status) {
+        queryStatus = { status: coinConfigFilter.status };
       }
-      queryObject = Object.assign({}, queryDate && {...queryDate}, queryFromCoin && {...queryFromCoin}, queryToCoin && {...queryToCoin}, queryStatus && {...queryStatus})
+      queryObject = Object.assign(
+        {},
+        queryDate && { ...queryDate },
+        queryFromCoin && { ...queryFromCoin },
+        queryToCoin && { ...queryToCoin },
+        queryStatus && { ...queryStatus }
+      );
     }
 
     return this.db

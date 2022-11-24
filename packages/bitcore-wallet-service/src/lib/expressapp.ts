@@ -1439,9 +1439,12 @@ export class ExpressApp {
       if (reqServer.user) {
         server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
-          res.json({
-            isVerified: true,
-            isCreatePassword: user.hashPassword !== undefined
+          server.storage.fetchKeys((err, keys: Keys) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json({
+              isVerified: true,
+              isCreatePassword: keys && keys.hashPassword && keys.hashPassword.length > 0
+            });
           });
         });
       }
@@ -1460,7 +1463,7 @@ export class ExpressApp {
           email: reqServer.user,
           password: reqServer.body.password
         };
-        server.updateUserPassword(opts, (err, recoveryKey) => {
+        server.updateKeysPassword(opts, (err, recoveryKey) => {
           if (err) return returnError(err, res, reqServer);
           res.json(recoveryKey);
         });
@@ -1936,10 +1939,9 @@ export class ExpressApp {
 
     WalletService.initialize(opts, data => {
       const server = WalletService.getInstance(opts);
-      if(listAccount && listAccount.length > 0){
-
+      if (listAccount && listAccount.length > 0) {
       }
-      if(listAccount && listAccount.length > 0){
+      if (listAccount && listAccount.length > 0) {
         listAccount.forEach(account => {
           server.storage.storeUser(
             {
@@ -1950,7 +1952,6 @@ export class ExpressApp {
             }
           );
         });
-
       }
 
       server.initializeCoinConfig(err => {

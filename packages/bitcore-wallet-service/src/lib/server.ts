@@ -1086,7 +1086,7 @@ export class WalletService {
    * @param {string} opts.email - User email
    * @param {string} opts.password - User password
    */
-  updateUserPassword(opts, cb) {
+  updateKeysPassword(opts, cb) {
     if (!opts.email) {
       return cb(new Error('Missing required parameter email'));
     }
@@ -1101,15 +1101,34 @@ export class WalletService {
       const recoveryKey = cuid();
 
       bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey) {
-        const user = {
-          email: opts.email,
-          hashPassword: hashPass,
-          recoveryKey: hashKey
-        } as IUser;
-        storage.updateUser(user, (err, result) => {
-          if (err) return cb(err);
-          return cb(null, recoveryKey);
-        });
+        // const user = {
+        //   email: opts.email,
+        //   hashPassword: hashPass,
+        //   recoveryKey: hashKey
+        // } as IUser;
+        storage.fetchKeys((err, result: Keys)=>{
+          if(err) return cb(err);
+          if(result){
+            result.hashPassword = hashPass;
+            storage.updateKeys(result, (err, result)=>{
+              if(err) return cb(err);
+              if(result) return cb(null, recoveryKey);
+            })
+          } else{
+            const keys = {
+              keyFund: null,
+              keyReceive: null,
+              hashPassword: hashPass,
+              hashRecoveryKey: recoveryKey
+            } as Keys
+            storage.storeKeys(keys, (err, result) => {
+              if (err) return cb(err);
+              return cb(null, recoveryKey);
+            });
+          }
+          
+        })
+       
       });
     });
   }
@@ -1129,10 +1148,10 @@ export class WalletService {
       return cb(new Error('Missing required parameter password'));
     }
 
-    this.storage.fetchUserByEmail(opts.email, (err, user: IUser) => {
+    this.storage.fetchKeys((err, keys: Keys) => {
       if (err) return cb(err);
       bcrypt
-        .compare(opts.password, user.hashPassword)
+        .compare(opts.password, keys.hashPassword)
         .then(result => {
           if (err) return cb(err);
           if (!result) return cb(new Error('Invalid password'));
@@ -1194,34 +1213,23 @@ export class WalletService {
     }
 
     this.storage.fetchKeys((err, keys) => {
-      if (!keys) {
-        // create new KEYS
-        if (!opts.keyFund || !opts.keyReceive) {
-          return cb(new Error('Please import fully funds ( Swap fund, Deposit fund) for first time!'));
-        }
-        const keyOpts = {
-          keyFund: this.encrypt(config.sharedKey, opts.keyFund),
-          keyReceive: this.encrypt(config.sharedKey, opts.keyReceive)
-        };
-        this.storage.storeKeys(keyOpts, (err, result) => {
-          if (err) return cb(err);
-          return cb(null, result);
-        });
-      } else {
-        if (opts.keyFund && opts.keyFund.length > 0) {
-          keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
-        }
-        if (opts.keyReceive && opts.keyReceive.length > 0) {
-          keys.keyReceive = this.encrypt(config.sharedKey, opts.keyReceive);
-        }
-        this.storage.updatKeys(keys, (err, result) => {
-          if (err) return cb(err);
-          this.restartHandleSwapQueue(err => {
+        if(keys){
+          if (opts.keyFund && opts.keyFund.length > 0) {
+            keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
+          }
+          if (opts.keyReceive && opts.keyReceive.length > 0) {
+            keys.keyReceive = this.encrypt(config.sharedKey, opts.keyReceive);
+          }
+          this.storage.updateKeys(keys, (err, result) => {
             if (err) return cb(err);
-            return cb(null, true);
+            this.restartHandleSwapQueue(err => {
+              if (err) return cb(err);
+              return cb(null, true);
+            });
           });
-        });
-      }
+        } else{
+          return cb(null, false);
+        }
     });
   }
 
@@ -1259,7 +1267,7 @@ export class WalletService {
       return cb(new Error('Missing requirement parameter password or recovery key to re new password'));
     }
 
-    this.storage.fetchUserByEmail(opts.email, (err, user: IUser) => {
+    this.storage.fetchKeys((err, keys: Keys) => {
       if (err) return cb(err);
       const compareValue = {
         text: '',
@@ -1267,20 +1275,17 @@ export class WalletService {
       };
       if (opts.oldPassword.length > 0) {
         compareValue.text = opts.oldPassword;
-        compareValue.hash = user.hashPassword;
+        compareValue.hash = keys.hashPassword;
       } else if (opts.recoveryKey.length > 0) {
         compareValue.text = opts.recoveryKey;
-        compareValue.hash = user.recoveryKey;
+        compareValue.hash = keys.hashRecoveryKey;
       }
       bcrypt
         .compare(compareValue.text, compareValue.hash)
         .then(result => {
           if (result) {
-            const userOpts = {
-              email: user.email,
-              password: opts.newPassword
-            };
-            this.updateUserPassword(userOpts, (err, recoveryKey) => {
+            keys.hashPassword = opts.newPassword;
+            this.updateKeysPassword(keys, (err, recoveryKey) => {
               if (err) return cb(err);
               return cb(null, recoveryKey);
             });
