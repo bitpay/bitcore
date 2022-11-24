@@ -6,7 +6,7 @@ export class ConfigSwap {
   coinReceive: CoinConfig[];
   // weightedMaximumFund: number;
   // fee: FeeType[];
-  constructor(){
+  constructor() {
     this.coinSwap = [];
     this.coinReceive = [];
   }
@@ -119,7 +119,7 @@ export class CoinConfig {
   isEnableReceive?: boolean;
   isSwap: boolean;
   isReceive: boolean;
-  isSupport:boolean;
+  isSupport: boolean;
 
   static create(opts) {
     const x = new CoinConfig();

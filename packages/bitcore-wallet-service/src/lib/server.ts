@@ -1106,29 +1106,27 @@ export class WalletService {
         //   hashPassword: hashPass,
         //   recoveryKey: hashKey
         // } as IUser;
-        storage.fetchKeys((err, result: Keys)=>{
-          if(err) return cb(err);
-          if(result){
+        storage.fetchKeys((err, result: Keys) => {
+          if (err) return cb(err);
+          if (result) {
             result.hashPassword = hashPass;
-            storage.updateKeys(result, (err, result)=>{
-              if(err) return cb(err);
-              if(result) return cb(null, recoveryKey);
-            })
-          } else{
+            storage.updateKeys(result, (err, result) => {
+              if (err) return cb(err);
+              if (result) return cb(null, recoveryKey);
+            });
+          } else {
             const keys = {
               keyFund: null,
               keyReceive: null,
               hashPassword: hashPass,
               hashRecoveryKey: recoveryKey
-            } as Keys
+            } as Keys;
             storage.storeKeys(keys, (err, result) => {
               if (err) return cb(err);
               return cb(null, recoveryKey);
             });
           }
-          
-        })
-       
+        });
       });
     });
   }
@@ -1213,23 +1211,23 @@ export class WalletService {
     }
 
     this.storage.fetchKeys((err, keys) => {
-        if(keys){
-          if (opts.keyFund && opts.keyFund.length > 0) {
-            keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
-          }
-          if (opts.keyReceive && opts.keyReceive.length > 0) {
-            keys.keyReceive = this.encrypt(config.sharedKey, opts.keyReceive);
-          }
-          this.storage.updateKeys(keys, (err, result) => {
-            if (err) return cb(err);
-            this.restartHandleSwapQueue(err => {
-              if (err) return cb(err);
-              return cb(null, true);
-            });
-          });
-        } else{
-          return cb(null, false);
+      if (keys) {
+        if (opts.keyFund && opts.keyFund.length > 0) {
+          keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
         }
+        if (opts.keyReceive && opts.keyReceive.length > 0) {
+          keys.keyReceive = this.encrypt(config.sharedKey, opts.keyReceive);
+        }
+        this.storage.updateKeys(keys, (err, result) => {
+          if (err) return cb(err);
+          this.restartHandleSwapQueue(err => {
+            if (err) return cb(err);
+            return cb(null, true);
+          });
+        });
+      } else {
+        return cb(null, false);
+      }
     });
   }
 
@@ -4027,7 +4025,7 @@ export class WalletService {
           if (data) {
             const orderInfo = await this._getOrderInfo({ id: data.payload.id });
             try {
-              if(orderInfo.status === 'expired'){
+              if (orderInfo.status === 'expired') {
                 return this.storage.orderQueue.ack(data.ack, (err, id) => {});
               }
               logger.debug('orderinfo in queue detected: ', data);
