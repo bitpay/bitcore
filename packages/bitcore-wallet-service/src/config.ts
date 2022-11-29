@@ -187,6 +187,10 @@ module.exports = {
       {
         coin: 'TYD',
         rate: 1 // USD
+      },
+      {
+        coin: 'eLPS',
+        rate: 2 // USD
       }
     ]
   },
