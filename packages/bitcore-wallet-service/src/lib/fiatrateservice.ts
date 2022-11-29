@@ -104,25 +104,25 @@ export class FiatRateService {
       const currencies: { code: string; name: string }[] = fiatFiltered.length
         ? fiatFiltered
         : Defaults.SUPPORT_FIAT_CURRENCIES;
-        const promiseList = [];
+      const promiseList = [];
       _.forEach(currencies, currency => {
         promiseList.push(this._getCurrencyRate(currency.code, ts));
       });
       Promise.all(promiseList).then(listRate => {
         return resolve(listRate);
-      })
+      });
     });
   }
 
-  _getCurrencyRate(code, ts) : Promise<any> {
-    return new Promise((resolve, reject)=>{
+  _getCurrencyRate(code, ts): Promise<any> {
+    return new Promise((resolve, reject) => {
       this.storage.fetchCurrencyRates(code, ts, async (err, res) => {
         if (err) {
           logger.warn('Error fetching data for ' + code, err);
         }
         return resolve(res);
       });
-    })
+    });
   }
   _getEtokenSupportPrice() {
     const etokenSupportPrice = _.get(config, 'etoken.etokenSupportPrice', undefined);
@@ -180,10 +180,14 @@ export class FiatRateService {
         const etokenSupportPrice: EtokenSupportPrice[] = _.get(config, 'etoken.etokenSupportPrice', []);
         if (!etokenSupportPrice) return cb('no etoken supported');
         let currencyRate = null;
-        if(coin.toLowerCase() === 'elps'){
-          currencyRate = await this.getLatestCurrencyRates({code: "HNL"});
-        } 
-        const body = await provider.getRate(coin, etokenSupportPrice, currencyRate && currencyRate[0] ? currencyRate[0] : null);
+        if (coin.toLowerCase() === 'elps') {
+          currencyRate = await this.getLatestCurrencyRates({ code: 'HNL' });
+        }
+        const body = await provider.getRate(
+          coin,
+          etokenSupportPrice,
+          currencyRate && currencyRate[0] ? currencyRate[0] : null
+        );
         const rates = _.filter(body, x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
         return cb(null, rates);
       } catch (e) {
