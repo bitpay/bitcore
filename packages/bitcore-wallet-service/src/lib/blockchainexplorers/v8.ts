@@ -343,7 +343,7 @@ export class V8 {
         if (tx.value) tx.amount = tx.satoshis / 1e8;
 
         if (tx.height >= 0) txs.push(tx);
-        else unconf.push(tx);
+        else if (tx.height >= -2) unconf.push(tx);
       });
       console.timeEnd('V8 getTxs');
       // blockTime on unconf is 'seenTime';
