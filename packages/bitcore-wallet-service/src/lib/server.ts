@@ -1274,8 +1274,7 @@ export class WalletService {
         .compare(compareValue.text, compareValue.hash)
         .then(result => {
           if (result) {
-            keys.hashPassword = opts.newPassword;
-            this.updateKeysPassword(keys, (err, recoveryKey) => {
+            this.updateKeysPassword({ password: opts.newPassword }, (err, recoveryKey) => {
               if (err) return cb(err);
               return cb(null, recoveryKey);
             });
