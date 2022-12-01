@@ -1083,13 +1083,9 @@ export class WalletService {
    * Update user password and return recovery key
    *
    * @param {Object} opts
-   * @param {string} opts.email - User email
    * @param {string} opts.password - User password
    */
   updateKeysPassword(opts, cb) {
-    if (!opts.email) {
-      return cb(new Error('Missing required parameter email'));
-    }
     if (!opts.password) {
       return cb(new Error('Missing required parameter password'));
     }
@@ -1249,15 +1245,11 @@ export class WalletService {
    * Renew password for user and return new recovery key
    *
    * @param {Object} opts
-   * @param {string} opts.email - User email
    * @param {string} opts.oldPassword - User old password
    * @param {string} opts.newPassword - User new password
    * @param {string} opts.recoveryKey - User recovery key
    */
   renewPassword(opts, cb) {
-    if (!opts.email) {
-      return cb(new Error('Missing required parameter email'));
-    }
     if (!opts.newPassword) {
       return cb(new Error('Missing required parameter new password'));
     }

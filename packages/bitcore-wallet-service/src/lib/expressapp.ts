@@ -1460,7 +1460,6 @@ export class ExpressApp {
       }
       if (reqServer.user) {
         opts = {
-          email: reqServer.user,
           password: reqServer.body.password
         };
         server.updateKeysPassword(opts, (err, recoveryKey) => {
@@ -1536,7 +1535,6 @@ export class ExpressApp {
       }
       if (reqServer.user) {
         opts = {
-          email: reqServer.user,
           newPassword: reqServer.body.newPassword,
           oldPassword: reqServer.body.oldPassword,
           recoveryKey: reqServer.body.recoveryKey
