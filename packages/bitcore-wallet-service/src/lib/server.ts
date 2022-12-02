@@ -54,6 +54,7 @@ let clientsFund = null;
 let clientsReceive = null;
 let keyFund = null;
 let mnemonicKeyFund = null;
+let mnemonicKeyFundConversion = null;
 
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
@@ -1367,7 +1368,7 @@ export class WalletService {
     });
   }
 
-   /**
+  /**
    * Renew password for user and return new recovery key
    *
    * @param {Object} opts
@@ -1375,44 +1376,44 @@ export class WalletService {
    * @param {string} opts.newPassword - User new password
    * @param {string} opts.recoveryKey - User recovery key
    */
-    renewPasswordConversion(opts, cb) {
-      if (!opts.newPassword) {
-        return cb(new Error('Missing required parameter new password'));
-      }
-      if (!(opts.oldPassword || opts.recoveryKey)) {
-        return cb(new Error('Missing requirement parameter password or recovery key to re new password'));
-      }
-  
-      this.storage.fetchKeysConversion((err, keys: KeysConversion) => {
-        if (err) return cb(err);
-        const compareValue = {
-          text: '',
-          hash: ''
-        };
-        if (opts.oldPassword.length > 0) {
-          compareValue.text = opts.oldPassword;
-          compareValue.hash = keys.hashPassword;
-        } else if (opts.recoveryKey.length > 0) {
-          compareValue.text = opts.recoveryKey;
-          compareValue.hash = keys.hashRecoveryKey;
-        }
-        bcrypt
-          .compare(compareValue.text, compareValue.hash)
-          .then(result => {
-            if (result) {
-              this.updateKeysPasswordConversion({ password: opts.newPassword }, (err, recoveryKey) => {
-                if (err) return cb(err);
-                return cb(null, recoveryKey);
-              });
-            } else {
-              return cb(new Error('Invalid data. Please try again'));
-            }
-          })
-          .catch(e => {
-            return cb(e);
-          });
-      });
+  renewPasswordConversion(opts, cb) {
+    if (!opts.newPassword) {
+      return cb(new Error('Missing required parameter new password'));
     }
+    if (!(opts.oldPassword || opts.recoveryKey)) {
+      return cb(new Error('Missing requirement parameter password or recovery key to re new password'));
+    }
+
+    this.storage.fetchKeysConversion((err, keys: KeysConversion) => {
+      if (err) return cb(err);
+      const compareValue = {
+        text: '',
+        hash: ''
+      };
+      if (opts.oldPassword.length > 0) {
+        compareValue.text = opts.oldPassword;
+        compareValue.hash = keys.hashPassword;
+      } else if (opts.recoveryKey.length > 0) {
+        compareValue.text = opts.recoveryKey;
+        compareValue.hash = keys.hashRecoveryKey;
+      }
+      bcrypt
+        .compare(compareValue.text, compareValue.hash)
+        .then(result => {
+          if (result) {
+            this.updateKeysPasswordConversion({ password: opts.newPassword }, (err, recoveryKey) => {
+              if (err) return cb(err);
+              return cb(null, recoveryKey);
+            });
+          } else {
+            return cb(new Error('Invalid data. Please try again'));
+          }
+        })
+        .catch(e => {
+          return cb(e);
+        });
+    });
+  }
 
   _setClientVersion(version) {
     delete this.parsedClientVersion;
@@ -3860,6 +3861,7 @@ export class WalletService {
             if (walletClients && walletClients.length > 0) {
               if (isConversion) {
                 clientsFundConversion = walletClients;
+                mnemonicKeyFundConversion = opts.words;
               } else {
                 if (isFund) {
                   clientsFund = walletClients;
@@ -4347,7 +4349,7 @@ export class WalletService {
     logger.debug('swapQueueInterval', swapQueueInterval);
   }
 
-   checkQueueHandleConversion() {
+  checkQueueHandleConversion() {
     conversionQueueInterval = setInterval(() => {
       if (this.storage && this.storage.conversionOrderQueue) {
         this.storage.conversionOrderQueue.get(async (err, data) => {
@@ -4388,7 +4390,7 @@ export class WalletService {
                     } as TokenItem;
                   });
                   const tokenElps = listBalanceTokenConverted.find(
-                    // TANTODO: replace with tyd token id 
+                    // TANTODO: replace with tyd token id
                     s => s.tokenId === '3ab9e31d5fab448aaa9db0c9fb4f02f46bae3452d7cdb40127a4b23bcafd8b31'
                   );
                   if (tokenElps) {
@@ -4415,7 +4417,7 @@ export class WalletService {
                             xecWallet.credentials.walletId,
                             accountTo.address.replace(/ecash:/, ''),
                             (err, wallet) => {
-                              if(err){
+                              if (err) {
                                 saveError(conversionOrderInfo, data, err);
                                 return;
                               }
@@ -4433,10 +4435,10 @@ export class WalletService {
                                     this._sendSwapWithToken(
                                       'xec',
                                       xecWallet,
-                                      '',
+                                      mnemonicKeyFundConversion,
                                       tokenElps.tokenId,
                                       tokenElps,
-                                      amountElps,
+                                      amountElpsSatoshis,
                                       result.inputAddresses[0],
                                       (err, txId) => {
                                         if (err) {
