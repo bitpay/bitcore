@@ -20,6 +20,7 @@ import {
   Wallet
 } from './model';
 import { CoinConfig } from './model/config-swap';
+import { ConversionOrder } from './model/conversionOrder';
 import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
 import { IUser } from './model/user';
@@ -34,8 +35,10 @@ const collections = {
   // Duplciated in helpers.. TODO
   WALLETS: 'wallets',
   USER: 'user',
+  USER_CONVERSION: 'user_conversion',
   COIN_CONFIG: 'coin_config',
   KEYS: 'keys',
+  KEYS_CONVERSION: 'keys_conversion',
   TXS: 'txs',
   ADDRESSES: 'addresses',
   ADVERTISEMENTS: 'advertisements',
@@ -52,7 +55,8 @@ const collections = {
   LOCKS: 'locks',
   DONATION: 'donation',
   TOKEN_INFO: 'token_info',
-  ORDER_INFO: 'order_info'
+  ORDER_INFO: 'order_info',
+  CONVERSION_ORDER_INFO: 'conversion_order_info'
 };
 
 const Common = require('./common');
@@ -70,6 +74,7 @@ export class Storage {
   db: Db;
   queue: any;
   orderQueue: any;
+  conversionOrderQueue: any;
   client: any;
 
   constructor(opts: { db?: Db } = {}) {
@@ -87,10 +92,16 @@ export class Storage {
     db.collection(collections.USER).createIndex({
       id: 1
     });
+    db.collection(collections.USER_CONVERSION).createIndex({
+      id: 1
+    });
     db.collection(collections.COIN_CONFIG).createIndex({
       id: 1
     });
     db.collection(collections.KEYS).createIndex({
+      id: 1
+    });
+    db.collection(collections.KEYS_CONVERSION).createIndex({
       id: 1
     });
     db.collection(collections.WALLETS).createIndex({
@@ -99,15 +110,15 @@ export class Storage {
     db.collection(collections.DONATION).createIndex({
       txidDonation: 1
     });
-
     db.collection(collections.TOKEN_INFO).createIndex({
       id: 1
     });
-
     db.collection(collections.ORDER_INFO).createIndex({
       id: 1
     });
-
+    db.collection(collections.CONVERSION_ORDER_INFO).createIndex({
+      id: 1
+    });
     db.collection(collections.COPAYERS_LOOKUP).createIndex({
       copayerId: 1
     });
@@ -228,6 +239,7 @@ export class Storage {
       this.client = client;
       this.queue = mongoDbQueue(this.db, 'donation_queue');
       this.orderQueue = mongoDbQueue(this.db, 'order_queue');
+      this.conversionOrderQueue = mongoDbQueue(this.db, 'conversion_order_queue');
       logger.info(`Connection established to db: ${config.uri}`);
 
       Storage.createIndexes(this.db);
@@ -450,6 +462,28 @@ export class Storage {
     //   }
     // );
   }
+  storeUserConversion(user, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', user);
+      return;
+    }
+
+    this.db.collection(collections.USER_CONVERSION).update(
+      {
+        email: user.email
+      },
+      {
+        $setOnInsert: user
+      },
+      { upsert: true },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result);
+      }
+    );
+  }
 
   fetchUserByEmail(email, cb) {
     if (!this.db) return cb();
@@ -488,10 +522,42 @@ export class Storage {
     );
   }
 
+  storeKeysConversion(keys, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', keys);
+      return;
+    }
+
+    this.db.collection(collections.KEYS_CONVERSION).insertOne(
+      keys,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
   fetchKeys(cb) {
     if (!this.db) return cb();
 
     this.db.collection(collections.KEYS).findOne({}, (err, result) => {
+      if (err) return cb(err);
+      if (!result) return cb(null, null);
+
+      return cb(null, result);
+    });
+  }
+
+  fetchKeysConversion(cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.KEYS_CONVERSION).findOne({}, (err, result) => {
       if (err) return cb(err);
       if (!result) return cb(null, null);
 
@@ -516,6 +582,28 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb(new Error('Can not update keys'));
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateKeysConversion(keys, cb) {
+    this.db.collection(collections.KEYS_CONVERSION).findOneAndUpdate(
+      {},
+      {
+        $set: {
+          keyFund: keys.keyFund,
+          hashPassword: keys.hashPassword,
+          hashRecoveryKey: keys.hashRecoveryKey,
+          lastModified: new Date()
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update key conversion'));
         return cb(null, result);
       }
     );
@@ -558,6 +646,32 @@ export class Storage {
           lastModified: new Date(),
           isResolve: orderInfo.isResolve,
           note: orderInfo.note
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateConversionOrder(orderInfo: ConversionOrder, cb) {
+    this.db.collection(collections.CONVERSION_ORDER_INFO).updateOne(
+      {
+        txIdFromUser: orderInfo.txIdFromUser
+      },
+      {
+        $set: {
+          txIdSentToUser: orderInfo.txIdSentToUser,
+          lastModified: new Date(),
+          error: orderInfo.error,
+          pendingReason: orderInfo.pendingReason,
+          status: orderInfo.status
         }
       },
       {
@@ -635,6 +749,39 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb(new Error('Can not find order info'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchConversionOrderInfoByTxIdFromUser(txIdFromUser: string, cb) {
+    this.db.collection(collections.CONVERSION_ORDER_INFO).findOne(
+      {
+        txIdFromUser
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeConversionOrderInfo(conversionOrderInfo, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', conversionOrderInfo);
+      return;
+    }
+
+    this.db.collection(collections.CONVERSION_ORDER_INFO).insertOne(
+      conversionOrderInfo,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
 
         return cb(null, result);
       }

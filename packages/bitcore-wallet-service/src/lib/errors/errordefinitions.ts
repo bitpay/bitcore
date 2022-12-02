@@ -47,6 +47,7 @@ const errors = {
   EXCEED_MAX_LIMIT: 'Above maximum allow',
   NOT_FOUND_KEY_FUND: 'Not found funding key',
   NOT_FOUND_KEY_RECEIVE: 'Not found receiving key',
+  NOT_FOUND_KEY_CONVERSION: 'Not found key conversion',
   MISSING_REQUIRED_FIELD: 'Missing required field',
   ORDER_EXPIRED: 'Order is expired',
   NO_AVAILABLE_SWAP_COIN: 'Not found availabe coin user can swap',

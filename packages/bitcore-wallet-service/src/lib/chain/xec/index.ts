@@ -168,10 +168,12 @@ export class XecChain extends BtcChain implements IChain {
 
       // output rawhex
       const hex = tx.toHex();
-      const txid = await this.broadcast_raw(wallet, hex, true);
+      const txid = await this.broadcast_raw(wallet, hex, true).catch(e => {
+        throw e;
+      });
       return txid;
     } catch (e) {
-      return e;
+      throw e;
     }
     // Get a UTXO
   }

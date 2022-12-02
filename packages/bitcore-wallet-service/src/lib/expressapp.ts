@@ -1468,6 +1468,40 @@ export class ExpressApp {
         });
       }
     });
+    
+    router.post('/v3/conversion/admin/password/renew', (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      opts = {
+        password: reqServer.body.password
+      };
+      server.renewPasswordConversion(opts, (err, recoveryKey) => {
+        if (err) return returnError(err, res, reqServer);
+        res.json(recoveryKey);
+      });
+    });
+
+    router.post('/v3/conversion/admin/password', (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      opts = {
+        password: reqServer.body.password
+      };
+      server.updateKeysPasswordConversion(opts, (err, recoveryKey) => {
+        if (err) return returnError(err, res, reqServer);
+        res.json(recoveryKey);
+      });
+    });
 
     router.post('/v3/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
@@ -1507,6 +1541,41 @@ export class ExpressApp {
           res.json(result);
         });
       }
+    });
+
+    router.post('/v3/conversion/admin/seed/import', (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      // if (reqServer.user) {
+
+      // }
+
+      opts = {
+        keyFund: reqServer.body.keyFund
+      };
+      server.importSeedConversion(opts, (err, result) => {
+        if (err) return returnError(err, res, reqServer);
+        res.json(result);
+      });
+    });
+
+    router.get('/v3/conversion/restart', (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.restartHandleConversionQueue((err, result) => {
+        if (err) return returnError(err, res, reqServer);
+        res.json(result);
+      });
     });
 
     router.post('/v3/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
@@ -1586,6 +1655,19 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
       server.createOrder(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.post('/v3/conversion/create', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.createConversionOrder(req.body, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
@@ -1942,6 +2024,15 @@ export class ExpressApp {
       if (listAccount && listAccount.length > 0) {
         listAccount.forEach(account => {
           server.storage.storeUser(
+            {
+              email: account
+            },
+            (err, user) => {
+              if (err) logger.debug(err);
+            }
+          );
+
+          server.storage.storeUserConversion(
             {
               email: account
             },
