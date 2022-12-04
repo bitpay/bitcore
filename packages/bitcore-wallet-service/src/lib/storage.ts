@@ -501,6 +501,22 @@ export class Storage {
     );
   }
 
+  fetchUserConversionByEmail(email, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.USER_CONVERSION).findOne(
+      {
+        email
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb('Can not find user conversion in db');
+
+        return cb(null, result);
+      }
+    );
+  }
+
   storeKeys(keys, cb) {
     // This should only happens in certain tests.
     if (!this.db) {

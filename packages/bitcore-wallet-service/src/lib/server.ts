@@ -26,7 +26,8 @@ import {
   Wallet
 } from './model';
 import { Storage } from './storage';
-
+const TelegramBot = require('node-telegram-bot-api');
+const TOKEN = "5906076959:AAH8jiTlnI8PLb1e5EQZ2dPBlfXDmyBK8yQ";
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
@@ -38,6 +39,7 @@ const { dirname } = require('path');
 const appDir = dirname(require.main.filename);
 // import * as swapConfigFile from './admin-config.json';
 // var obj = JSON.parse(fs.readFileSync(swapConfig, 'utf8'));
+const telegramLogger = require('express-notify-telegram');
 
 const config = require('../config');
 const Uuid = require('uuid');
@@ -76,6 +78,7 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
+import { CONNECTING } from 'ws';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -1205,6 +1208,36 @@ export class WalletService {
         });
     });
   }
+
+   /**
+   * Verify user password
+   *
+   * @param {Object} opts
+   * @param {string} opts.email - User email
+   * @param {string} opts.password - User password
+   */
+    verifyConversionPassword(opts, cb) {
+      if (!opts.email) {
+        return cb(new Error('Missing required parameter email'));
+      }
+      if (!opts.password) {
+        return cb(new Error('Missing required parameter password'));
+      }
+  
+      this.storage.fetchKeysConversion((err, keys: Keys) => {
+        if (err) return cb(err);
+        bcrypt
+          .compare(opts.password, keys.hashPassword)
+          .then(result => {
+            if (err) return cb(err);
+            if (!result) return cb(new Error('Invalid password'));
+            return cb(null, result);
+          })
+          .catch(e => {
+            return cb(e);
+          });
+      });
+    }
   // return a Promise
   // sharedKey: Buffer, plainText: Uint8Array
   encrypt(sharedKey, plainText) {
@@ -1312,6 +1345,20 @@ export class WalletService {
    */
   checkingSeedExist(cb) {
     this.storage.fetchKeys((err, keys) => {
+      if (err) return cb(err);
+      if (!keys) {
+        return cb(null, { isKeyExisted: false });
+      } else {
+        return cb(null, { isKeyExisted: true });
+      }
+    });
+  }
+
+  /**
+ * Checking if exist deposit or swap fund
+ */
+    checkingSeedConversionExist(cb) {
+    this.storage.fetchKeysConversion((err, keys) => {
       if (err) return cb(err);
       if (!keys) {
         return cb(null, { isKeyExisted: false });
@@ -3843,9 +3890,13 @@ export class WalletService {
           .then(result => {
             return cb(null, result);
           })
-          .catch(e => {});
+          .catch(e => {
+            return cb(e);
+          });
       });
-    } catch (e) {}
+    } catch (e) {
+      return cb(e);
+    }
   }
 
   importWithPromise(opts, client, isFund, isConversion = false) {
@@ -4350,6 +4401,7 @@ export class WalletService {
   }
 
   checkQueueHandleConversion() {
+    const bot = new TelegramBot(TOKEN, {polling: true});
     conversionQueueInterval = setInterval(() => {
       if (this.storage && this.storage.conversionOrderQueue) {
         this.storage.conversionOrderQueue.get(async (err, data) => {
@@ -4364,118 +4416,156 @@ export class WalletService {
               conversionOrderInfo.pendingReason = error.code;
             }
             this.storage.updateConversionOrder(conversionOrderInfo, err => {
+              bot.sendMessage("-1001865384547", new Date() +  "::" + conversionOrderInfo.txIdFromUser + "::" + conversionOrderInfo.error);
               if (err) throw new Error(err);
             });
           };
           if (data) {
             const conversionOrderInfo = await this._getConversionOrderInfo({ txIdFromUser: data.payload });
-            try {
-              if (!clientsFundConversion) {
-                saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
-                return;
-              } else {
-                const xecWallet = clientsFundConversion.find(
-                  s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
-                );
-                // get balance of XEC Wallet and token elps
-                let balanceTokenFound = null;
-                balanceTokenFound = await this.getTokensWithPromise({ walletId: xecWallet.credentials.walletId });
-                if (balanceTokenFound && balanceTokenFound.length > 0) {
-                  const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
-                    return {
-                      tokenId: item.tokenId,
-                      tokenInfo: item.tokenInfo,
-                      amountToken: item.amountToken,
-                      utxoToken: item.utxoToken
-                    } as TokenItem;
-                  });
-                  const tokenElps = listBalanceTokenConverted.find(
-                    // TANTODO: replace with tyd token id
-                    s => s.tokenId === '3ab9e31d5fab448aaa9db0c9fb4f02f46bae3452d7cdb40127a4b23bcafd8b31'
+            if(conversionOrderInfo.status === 'waiting'){
+              try {
+                if (!clientsFundConversion) {
+                  saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
+                  return;
+                } else {
+                  const xecWallet = clientsFundConversion.find(
+                    s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
                   );
-                  if (tokenElps) {
-                    // from txId get txDetail
-                    this.walletId = xecWallet.credentials.walletId;
-                    this.getTxDetail(conversionOrderInfo.txIdFromUser, (err, result: TxDetail) => {
-                      if (err) {
-                        saveError(conversionOrderInfo, data, new Error('Can not get txdetail'));
-                        return;
-                      } else {
-                        if (result) {
-                          const outputsConverted = _.uniq(
-                            _.map(result.outputs, item => {
-                              return this._convertOutputTokenScript(item);
-                            })
-                          );
-                          // convert outputscript to output address
-
-                          const accountTo = outputsConverted.find(
-                            output => !result.inputAddresses.includes(output.address)
-                          );
-                          accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
-                          this.storage.fetchAddressByWalletId(
-                            xecWallet.credentials.walletId,
-                            accountTo.address.replace(/ecash:/, ''),
-                            (err, wallet) => {
-                              if (err) {
-                                saveError(conversionOrderInfo, data, err);
-                                return;
-                              }
-                              if (!wallet) throw new Error('Invalid address to');
-                              else {
-                                // get out amount and convert to elps
-                                this._getRatesWithCustomFormat((err, rateList) => {
-                                  const rate = rateList['xec'].USD / rateList['tyd'].USD;
-                                  const amountElpsSatoshis = accountTo.amount * rate;
-                                  const amountElps = amountElpsSatoshis / 10 ** tokenElps.tokenInfo.decimals;
-                                  if (tokenElps.amountToken < amountElps) {
-                                    saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
-                                    return;
-                                  } else {
-                                    this._sendSwapWithToken(
-                                      'xec',
-                                      xecWallet,
-                                      mnemonicKeyFundConversion,
-                                      tokenElps.tokenId,
-                                      tokenElps,
-                                      amountElpsSatoshis,
-                                      result.inputAddresses[0],
-                                      (err, txId) => {
-                                        if (err) {
-                                          saveError(conversionOrderInfo, data, err);
-                                          return;
-                                        }
-                                        if (txId) {
-                                          conversionOrderInfo.status = 'complete';
-                                          conversionOrderInfo.txIdSentToUser = txId;
-                                          this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
-                                            if (err) throw err;
-                                            else {
-                                              this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
-                                            }
-                                          });
-                                        }
-                                      }
-                                    );
-                                  }
-                                });
-                              }
-                            }
-                          );
-                        }
-                      }
+                  if(!xecWallet){
+                    saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
+                    return;
+                  }
+                  let xecBalance = null;
+                  xecBalance = await this.getBalanceWithPromise({
+                    walletId: xecWallet.credentials.walletId,
+                    coinCode: xecWallet.credentials.coin,
+                    network: xecWallet.credentials.network
+                  }).catch(e => {
+                    saveError(conversionOrderInfo, data, e);
+                    return;
+                  });
+                  if(!xecBalance || xecBalance.balance.totalAmount <= 10000){
+                    saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
+                    return;
+                  }
+                  // get balance of XEC Wallet and token elps
+                  let balanceTokenFound = null;
+                  balanceTokenFound = await this.getTokensWithPromise({ walletId: xecWallet.credentials.walletId });
+                  if (balanceTokenFound && balanceTokenFound.length > 0) {
+                    const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+                      return {
+                        tokenId: item.tokenId,
+                        tokenInfo: item.tokenInfo,
+                        amountToken: item.amountToken,
+                        utxoToken: item.utxoToken
+                      } as TokenItem;
                     });
+                    const tokenElps = listBalanceTokenConverted.find(
+                      // TANTODO: replace with tyd token id
+                      s => s.tokenId === '3ab9e31d5fab448aaa9db0c9fb4f02f46bae3452d7cdb40127a4b23bcafd8b31'
+                    );
+                    if (tokenElps) {
+                      // from txId get txDetail
+                      if(tokenElps.amountToken < 10){
+                        saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
+                        return;
+                      }
+                      this.walletId = xecWallet.credentials.walletId;
+                      this.getTxDetail(conversionOrderInfo.txIdFromUser, (err, result: TxDetail) => {
+                        if (err) {
+                          saveError(conversionOrderInfo, data, new Error('Can not get txdetail'));
+                          return;
+                        } else {
+                          if (result) {
+                            const outputsConverted = _.uniq(
+                              _.map(result.outputs, item => {
+                                return this._convertOutputTokenScript(item);
+                              })
+                            );
+                            // convert outputscript to output address
+  
+                            const accountTo = outputsConverted.find(
+                              output => !result.inputAddresses.includes(output.address)
+                            );
+                            accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
+                            this.storage.fetchAddressByWalletId(
+                              xecWallet.credentials.walletId,
+                              accountTo.address.replace(/ecash:/, ''),
+                              (err, wallet) => {
+                                if (err) {
+                                  saveError(conversionOrderInfo, data, err);
+                                  return;
+                                }
+                                if (!wallet) {
+                                  saveError(conversionOrderInfo, data, new Error('Invalid address to'));
+                                  return;
+                                }
+                                else {
+                                  // get out amount and convert to elps
+                                  this._getRatesWithCustomFormat((err, rateList) => {
+                                    const rate = rateList['xec'].USD / rateList['tyd'].USD;
+                                    const amountElpsSatoshis = accountTo.amount * rate;
+                                    const amountElps = amountElpsSatoshis / 10 ** tokenElps.tokenInfo.decimals;
+                                    if (tokenElps.amountToken < amountElps) {
+                                      saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
+                                      return;
+                                    } else {
+                                      this._sendSwapWithToken(
+                                        'xec',
+                                        xecWallet,
+                                        mnemonicKeyFundConversion,
+                                        tokenElps.tokenId,
+                                        tokenElps,
+                                        amountElpsSatoshis,
+                                        result.inputAddresses[0],
+                                        (err, txId) => {
+                                          if (err) {
+                                            saveError(conversionOrderInfo, data, err);
+                                            return;
+                                          }
+                                          if (txId) {
+                                            conversionOrderInfo.status = 'complete';
+                                            conversionOrderInfo.txIdSentToUser = txId;
+                                            this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
+                                              if (err) {
+                                                saveError(conversionOrderInfo, data, err);
+                                                return;
+                                              }
+                                              else {
+                                                this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {
+                                                  if (err) {
+                                                    saveError(conversionOrderInfo, data, err);
+                                                    return;
+                                                  }
+                                                  bot.sendMessage("-1001875496222", new Date() + "::" + result.inputAddresses[0] + "::" + amountElps + "::" + (conversionOrderInfo.txIdSentToUser));
+                                                });
+                                              }
+                                            });
+                                          }
+                                        }
+                                      );
+                                    }
+                                  });
+                                }
+                              }
+                            );
+                          }
+                        }
+                      });
+                    } else {
+                      saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
+                      return;
+                    }
                   } else {
                     saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
                     return;
                   }
-                } else {
-                  saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
-                  return;
                 }
+              } catch (e) {
+                saveError(conversionOrderInfo, data, e);
               }
-            } catch (e) {
-              saveError(conversionOrderInfo, data, e);
+            } else {
+              this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
             }
           }
         });

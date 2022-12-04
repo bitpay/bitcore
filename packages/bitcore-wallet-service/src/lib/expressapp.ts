@@ -1450,6 +1450,26 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v3/conversion/login/', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.storage.fetchKeysConversion((err, keys: Keys) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json({
+            isVerified: true,
+            isCreatePassword: keys && keys.hashPassword && keys.hashPassword.length > 0
+          });
+        });
+      });
+    });
+
     router.post('/v3/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
@@ -1468,8 +1488,8 @@ export class ExpressApp {
         });
       }
     });
-    
-    router.post('/v3/conversion/admin/password/renew', (reqServer, res) => {
+
+    router.post('/v3/conversion/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1478,7 +1498,9 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       opts = {
-        password: reqServer.body.password
+        newPassword: reqServer.body.newPassword,
+        oldPassword: reqServer.body.oldPassword,
+        recoveryKey: reqServer.body.recoveryKey
       };
       server.renewPasswordConversion(opts, (err, recoveryKey) => {
         if (err) return returnError(err, res, reqServer);
@@ -1486,7 +1508,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/conversion/admin/password', (reqServer, res) => {
+    router.post('/v3/conversion/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1523,6 +1545,26 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v3/conversion/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        opts = {
+          email: reqServer.user,
+          password: reqServer.body.password
+        };
+        server.verifyConversionPassword(opts, (err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      }
+    });
+
     router.post('/v3/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
@@ -1543,7 +1585,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/conversion/admin/seed/import', (reqServer, res) => {
+    router.post('/v3/conversion/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1551,10 +1593,6 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      // if (reqServer.user) {
-
-      // }
-
       opts = {
         keyFund: reqServer.body.keyFund
       };
@@ -1592,6 +1630,20 @@ export class ExpressApp {
           res.json(result);
         });
       }
+    });
+
+    router.post('/v3/conversion/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+        server.checkingSeedExist((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
     });
 
     router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
