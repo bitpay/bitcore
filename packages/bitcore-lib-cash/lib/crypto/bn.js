@@ -187,4 +187,18 @@ BN.pad = function(buf, natlen, size) {
   return rbuf;
 };
 
+BN.prototype.getSize = function() {
+  const bin = this.toString(2).replace('-', '');
+  const numBits = bin.length + 1;
+  return numBits / 8;
+};
+
+BN.prototype.safeAdd = function(bigNumToAdd, maxSize) {
+  const sum = this.add(bigNumToAdd);
+  if (this.getSize() > maxSize || bigNumToAdd.getSize() > maxSize || sum.getSize() > 8) {
+    throw new Error('overflow');
+  }
+  return sum;
+};
+
 module.exports = BN;
