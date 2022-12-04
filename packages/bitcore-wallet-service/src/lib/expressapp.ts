@@ -1640,10 +1640,10 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-        server.checkingSeedExist((err, result) => {
-          if (err) return returnError(err, res, reqServer);
-          res.json(result);
-        });
+      server.checkingSeedExist((err, result) => {
+        if (err) return returnError(err, res, reqServer);
+        res.json(result);
+      });
     });
 
     router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {

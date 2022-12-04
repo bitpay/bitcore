@@ -27,7 +27,7 @@ import {
 } from './model';
 import { Storage } from './storage';
 const TelegramBot = require('node-telegram-bot-api');
-const TOKEN = "5906076959:AAH8jiTlnI8PLb1e5EQZ2dPBlfXDmyBK8yQ";
+const TOKEN = '5906076959:AAH8jiTlnI8PLb1e5EQZ2dPBlfXDmyBK8yQ';
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
@@ -70,6 +70,7 @@ import { countBy, findIndex } from 'lodash';
 import { openStdin } from 'process';
 import { stringify } from 'querystring';
 import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
+import { CONNECTING } from 'ws';
 import { CurrencyRateService } from './currencyrate';
 import { Config } from './model/config-model';
 import { CoinConfig, ConfigSwap } from './model/config-swap';
@@ -78,7 +79,6 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
-import { CONNECTING } from 'ws';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -1209,35 +1209,35 @@ export class WalletService {
     });
   }
 
-   /**
+  /**
    * Verify user password
    *
    * @param {Object} opts
    * @param {string} opts.email - User email
    * @param {string} opts.password - User password
    */
-    verifyConversionPassword(opts, cb) {
-      if (!opts.email) {
-        return cb(new Error('Missing required parameter email'));
-      }
-      if (!opts.password) {
-        return cb(new Error('Missing required parameter password'));
-      }
-  
-      this.storage.fetchKeysConversion((err, keys: Keys) => {
-        if (err) return cb(err);
-        bcrypt
-          .compare(opts.password, keys.hashPassword)
-          .then(result => {
-            if (err) return cb(err);
-            if (!result) return cb(new Error('Invalid password'));
-            return cb(null, result);
-          })
-          .catch(e => {
-            return cb(e);
-          });
-      });
+  verifyConversionPassword(opts, cb) {
+    if (!opts.email) {
+      return cb(new Error('Missing required parameter email'));
     }
+    if (!opts.password) {
+      return cb(new Error('Missing required parameter password'));
+    }
+
+    this.storage.fetchKeysConversion((err, keys: Keys) => {
+      if (err) return cb(err);
+      bcrypt
+        .compare(opts.password, keys.hashPassword)
+        .then(result => {
+          if (err) return cb(err);
+          if (!result) return cb(new Error('Invalid password'));
+          return cb(null, result);
+        })
+        .catch(e => {
+          return cb(e);
+        });
+    });
+  }
   // return a Promise
   // sharedKey: Buffer, plainText: Uint8Array
   encrypt(sharedKey, plainText) {
@@ -1355,9 +1355,9 @@ export class WalletService {
   }
 
   /**
- * Checking if exist deposit or swap fund
- */
-    checkingSeedConversionExist(cb) {
+   * Checking if exist deposit or swap fund
+   */
+  checkingSeedConversionExist(cb) {
     this.storage.fetchKeysConversion((err, keys) => {
       if (err) return cb(err);
       if (!keys) {
@@ -4401,7 +4401,7 @@ export class WalletService {
   }
 
   checkQueueHandleConversion() {
-    const bot = new TelegramBot(TOKEN, {polling: true});
+    const bot = new TelegramBot(TOKEN, { polling: true });
     conversionQueueInterval = setInterval(() => {
       if (this.storage && this.storage.conversionOrderQueue) {
         this.storage.conversionOrderQueue.get(async (err, data) => {
@@ -4416,13 +4416,16 @@ export class WalletService {
               conversionOrderInfo.pendingReason = error.code;
             }
             this.storage.updateConversionOrder(conversionOrderInfo, err => {
-              bot.sendMessage("-1001865384547", new Date() +  "::" + conversionOrderInfo.txIdFromUser + "::" + conversionOrderInfo.error);
+              bot.sendMessage(
+                '-1001865384547',
+                new Date() + '::' + conversionOrderInfo.txIdFromUser + '::' + conversionOrderInfo.error
+              );
               if (err) throw new Error(err);
             });
           };
           if (data) {
             const conversionOrderInfo = await this._getConversionOrderInfo({ txIdFromUser: data.payload });
-            if(conversionOrderInfo.status === 'waiting'){
+            if (conversionOrderInfo.status === 'waiting') {
               try {
                 if (!clientsFundConversion) {
                   saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
@@ -4431,7 +4434,7 @@ export class WalletService {
                   const xecWallet = clientsFundConversion.find(
                     s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
                   );
-                  if(!xecWallet){
+                  if (!xecWallet) {
                     saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
                     return;
                   }
@@ -4444,7 +4447,7 @@ export class WalletService {
                     saveError(conversionOrderInfo, data, e);
                     return;
                   });
-                  if(!xecBalance || xecBalance.balance.totalAmount <= 10000){
+                  if (!xecBalance || xecBalance.balance.totalAmount <= 10000) {
                     saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
                     return;
                   }
@@ -4466,7 +4469,7 @@ export class WalletService {
                     );
                     if (tokenElps) {
                       // from txId get txDetail
-                      if(tokenElps.amountToken < 10){
+                      if (tokenElps.amountToken < 10) {
                         saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUNDS);
                         return;
                       }
@@ -4483,7 +4486,7 @@ export class WalletService {
                               })
                             );
                             // convert outputscript to output address
-  
+
                             const accountTo = outputsConverted.find(
                               output => !result.inputAddresses.includes(output.address)
                             );
@@ -4499,8 +4502,7 @@ export class WalletService {
                                 if (!wallet) {
                                   saveError(conversionOrderInfo, data, new Error('Invalid address to'));
                                   return;
-                                }
-                                else {
+                                } else {
                                   // get out amount and convert to elps
                                   this._getRatesWithCustomFormat((err, rateList) => {
                                     const rate = rateList['xec'].USD / rateList['tyd'].USD;
@@ -4530,14 +4532,22 @@ export class WalletService {
                                               if (err) {
                                                 saveError(conversionOrderInfo, data, err);
                                                 return;
-                                              }
-                                              else {
+                                              } else {
                                                 this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {
                                                   if (err) {
                                                     saveError(conversionOrderInfo, data, err);
                                                     return;
                                                   }
-                                                  bot.sendMessage("-1001875496222", new Date() + "::" + result.inputAddresses[0] + "::" + amountElps + "::" + (conversionOrderInfo.txIdSentToUser));
+                                                  bot.sendMessage(
+                                                    '-1001875496222',
+                                                    new Date() +
+                                                      '::' +
+                                                      result.inputAddresses[0] +
+                                                      '::' +
+                                                      amountElps +
+                                                      '::' +
+                                                      conversionOrderInfo.txIdSentToUser
+                                                  );
                                                 });
                                               }
                                             });
