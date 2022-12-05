@@ -54,7 +54,12 @@ const errors = {
   NO_AVAILABLE_RECEIVE_COIN: 'Not found availbe coin user can receive',
   NOT_FOUND_COIN_IN_CONFIG: 'This coin is not allowed to swap',
   NOT_STABLE_RATE: 'Rate is not stable',
-  INVALID_AMOUNT: 'Invalid amount'
+  INVALID_AMOUNT: 'Invalid amount',
+  NOT_FOUND_TXDETAIL: 'Can not get txdetail',
+  INVALID_ADDRESS_TO: 'Invalid address to',
+  INSUFFICIENT_FUND_XEC: 'Insufficient fund for xec wallet',
+  INSUFFICIENT_FUND_TOKEN: 'Insufficient fund for token wallet',
+  NOT_FOUND_TOKEN_WALLET: 'Not found token wallet'
 };
 
 const errorObjects = _.fromPairs(

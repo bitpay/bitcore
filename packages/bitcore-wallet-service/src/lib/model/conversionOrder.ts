@@ -6,6 +6,8 @@ export interface IConversionOrder {
   lastModified: Date;
   error?: string;
   pendingReason?: string;
+  addressFrom?: string;
+  amountConverted?: number;
 }
 
 export class ConversionOrder {
@@ -16,6 +18,8 @@ export class ConversionOrder {
   lastModified: Date;
   error?: string;
   pendingReason?: string;
+  addressFrom?: string;
+  amountConverted?: number;
 
   static create(opts) {
     opts = opts || {};
@@ -28,6 +32,8 @@ export class ConversionOrder {
     x.lastModified = now;
     x.error = opts.error || null;
     x.pendingReason = opts.pendingReason || null;
+    x.addressFrom = opts.addressFrom || "";
+    x.amountConverted = opts.amountConverted || "";
     return x;
   }
 
@@ -40,6 +46,8 @@ export class ConversionOrder {
     x.lastModified = obj.lastModified;
     x.error = obj.error;
     x.pendingReason = obj.pendingReason;
+    x.addressFrom = obj.addressFrom;
+    x.amountConverted = obj.amountConverted;
     return x;
   }
 }
