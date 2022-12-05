@@ -32,8 +32,8 @@ export class ConversionOrder {
     x.lastModified = now;
     x.error = opts.error || null;
     x.pendingReason = opts.pendingReason || null;
-    x.addressFrom = opts.addressFrom || "";
-    x.amountConverted = opts.amountConverted || "";
+    x.addressFrom = opts.addressFrom || '';
+    x.amountConverted = opts.amountConverted || '';
     return x;
   }
 

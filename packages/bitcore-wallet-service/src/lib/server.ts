@@ -4596,17 +4596,15 @@ export class WalletService {
                                                 ' :: Converted amount: ' +
                                                 amountElps +
                                                 ' :: [ ' +
-                                                conversionOrderInfo.txIdSentToUser
-                                                + ' ]'
+                                                conversionOrderInfo.txIdSentToUser +
+                                                ' ]'
                                             );
                                             this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
                                               if (err) {
                                                 saveError(conversionOrderInfo, data, err);
                                                 return;
                                               } else {
-                                                
-                                                this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {
-                                                });
+                                                this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
                                               }
                                             });
                                           }
@@ -4989,24 +4987,21 @@ export class WalletService {
                   return cb(Errors.INVALID_ADDRESS_TO);
                   return;
                 } else {
-                  this.storage.fetchConversionOrderInfoByTxIdFromUser(
-                    conversionOrder.txIdFromUser,
-                    (err, result) => {
-                      if (err) return cb(err);
-                      if (result) {
-                        return cb(new Error('Duplicate conversion order info'));
-                      } else {
-                        this.storage.storeConversionOrderInfo(conversionOrder, (err, result) => {
+                  this.storage.fetchConversionOrderInfoByTxIdFromUser(conversionOrder.txIdFromUser, (err, result) => {
+                    if (err) return cb(err);
+                    if (result) {
+                      return cb(new Error('Duplicate conversion order info'));
+                    } else {
+                      this.storage.storeConversionOrderInfo(conversionOrder, (err, result) => {
+                        if (err) return cb(err);
+                        // let order into queue
+                        this.storage.conversionOrderQueue.add(conversionOrder.txIdFromUser, (err, id) => {
                           if (err) return cb(err);
-                          // let order into queue
-                          this.storage.conversionOrderQueue.add(conversionOrder.txIdFromUser, (err, id) => {
-                            if (err) return cb(err);
-                            return cb(null, true);
-                          });
+                          return cb(null, true);
                         });
-                      }
+                      });
                     }
-                  );
+                  });
                 }
               }
             );
