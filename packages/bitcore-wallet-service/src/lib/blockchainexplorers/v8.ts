@@ -152,7 +152,7 @@ export class V8 {
     $.checkState(bcheight > 0, 'Failed state: No BC height passed to _transformUtxos()');
     const ret = _.map(
       _.reject(utxos, x => {
-        return x.spentHeight && x.spentHeight <= -3;
+        return x.spentHeight && x.spentHeight <= -3; // -3 is conflicted status
       }),
       x => {
         const u = {
@@ -164,7 +164,7 @@ export class V8 {
           vout: x.mintIndex,
           locked: false,
           confirmations: x.mintHeight > 0 && bcheight >= x.mintHeight ? bcheight - x.mintHeight + 1 : 0,
-          spent: !!x.spentTxid
+          spent: x.spentHeight != -2 // -2 is unspent status
         };
 
         // v8 field name differences
@@ -343,7 +343,7 @@ export class V8 {
         if (tx.value) tx.amount = tx.satoshis / 1e8;
 
         if (tx.height >= 0) txs.push(tx);
-        else unconf.push(tx);
+        else if (tx.height >= -2) unconf.push(tx);
       });
       console.timeEnd('V8 getTxs');
       // blockTime on unconf is 'seenTime';

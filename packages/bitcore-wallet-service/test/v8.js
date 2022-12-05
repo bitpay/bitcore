@@ -22,32 +22,7 @@ const V8UTXOS2 = [
 
 var t = (new Date).toISOString();
 var external = '11234';
-var txs = [{
-  id: 1,
-  txid: 'txid1',
-  blockTime: t,
-  size: 226,
-  category: 'send',
-  toAddress: external,
-  satoshis: 0.5e8,
-},
-{
-  id: 2,
-  txid: 'txid2',
-  category: 'send',
-  blockTime: t,
-  satoshis: 0.3e8,
-  toAddress: external,
-},
-{
-  id: 3,
-  txid: 'txid3',
-  blockTime: t,
-  satoshis: 5460,
-  category: 'fee',
-},
-];
-
+var txsStr = '{"id":"63863c730c84018998d248f1","txid":"e7d7362ff5e917c751ca54edc5022930ecc28f521b74851028a723c02ce2ad37","fee":225000,"size":225,"category":"receive","satoshis":1025000000,"height":-1,"address":"mi4rc4nKmWHHeNY4693cHofQY6gRLZW48P","outputIndex":1,"blockTime":"2022-11-29T15:59:11.000Z"}\n{"id":"63863c740c84018998d24f51","txid":"17966f1c514679eb55ccdacaa66a8186e433a06372b06c689e5514ff9b4442cb","fee":372000,"size":372,"category":"receive","satoshis":1055000000,"height":5589,"address":"mgAFBzA2M1yqFuXHvkUBUFMGM7CTzoEZgN","outputIndex":1,"blockTime":"2022-11-29T16:00:24.000Z"}\n{"id":"63863c750c84018998d255b7","txid":"52e6aa1d231a9c79f08f69d48fc91c28e36f2100f4bcb2aae270d3656d80bd96","fee":1232128,"size":1219,"category":"receive","satoshis":10000000000,"height":5689,"address":"n2bmPmt2z5MJ8SA1QR2uViKofBJE9wg2Wf","outputIndex":0,"blockTime":"2022-11-29T16:57:01.000Z"}\n';
 
 describe('V8', () => {
   var wallet={};
@@ -61,11 +36,10 @@ describe('V8', () => {
           class MyReadable extends Readable {
             constructor(options) {
               super(options);
-              var txStr = JSON.stringify(txs);
-              this.push(txStr.substr(0,10));
-              this.push(txStr.substr(10));
-              this.push(null);
-              }
+                this.push(txsStr.substr(0,10));
+                this.push(txsStr.substr(10));
+                this.push(null);
+            }
           };
 
           return new MyReadable;
@@ -97,9 +71,9 @@ describe('V8', () => {
             constructor(options) {
               super(options);
               var txStr = '{ "id": 1, "txid": "txid1", "confirmations": 1, "blockTime": "'+
-                t + '", "size": 226, "category": "send", "toAddress": "'+
+                t + '", "size": 226, "category": "send", "height": 123, "toAddress": "'+
                 external +'", "satoshis": 0.5e8 } \n { "id": 2, "txid": "txid2", "confirmations": 1, "category": "send", "blockTime": "'+
-                t + '", "satoshis": 0.3e8, "toAddress": "'+external + '"}';
+                t + '", "satoshis": 0.3e8, "height": 123, "toAddress": "'+external + '"}';
               this.push(txStr.substr(0,10));
               this.push(txStr.substr(10));
               this.push(null);

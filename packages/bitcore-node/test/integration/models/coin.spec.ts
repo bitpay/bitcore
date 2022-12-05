@@ -221,7 +221,7 @@ describe('Coin Model', function() {
 
     const unspentCoins = tx1Outputs.filter(c => c.spentHeight < SpentHeightIndicators.minimum);
     expect(unspentCoins.length).to.equal(2);
-    expect(unspentCoins.filter(c => c.spentHeight === SpentHeightIndicators.unspent).length).to.equal(2);
+    expect(unspentCoins.filter(c => c.spentHeight === SpentHeightIndicators.unspent && !c.spentTxid).length).to.equal(2);
 
     const mempoolCoins = await CoinStorage.collection.find({ chain, network, mintTxid: mempoolTxid }).toArray();
     expect(mempoolCoins.length).to.equal(3);
