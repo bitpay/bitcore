@@ -1585,7 +1585,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/conversion/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/admin/seed/import', (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
       try {
