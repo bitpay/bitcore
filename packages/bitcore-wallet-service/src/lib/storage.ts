@@ -902,7 +902,7 @@ export class Storage {
     this.db
       .collection(collections.CONVERSION_ORDER_INFO)
       .find({})
-      .sort({_id: -1})
+      .sort({ _id: -1 })
       .toArray((err, listConversionOrderInfo) => {
         if (err) return cb(err);
         if (listConversionOrderInfo.length === 0) return cb(new Error('Not found any conversion order'));
@@ -914,7 +914,7 @@ export class Storage {
     return this.db
       .collection(collections.CONVERSION_ORDER_INFO)
       .find({})
-      .sort({_id: -1})
+      .sort({ _id: -1 })
       .count();
   }
 

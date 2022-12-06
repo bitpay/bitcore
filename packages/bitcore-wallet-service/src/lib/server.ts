@@ -4496,6 +4496,7 @@ export class WalletService {
                         output => !result.inputAddresses.includes(output.address)
                       );
                       accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
+                      accountTo.amount = accountTo.amount - 5000; 
                       this._getRatesWithCustomFormat((err, rateList) => {
                         const rate = rateList['xec'].USD / rateList['tyd'].USD;
                         const amountElpsSatoshis = accountTo.amount * rate;
@@ -5011,7 +5012,7 @@ export class WalletService {
     });
   }
 
-  async checkConversion(cb){
+  async checkConversion(cb) {
     if (!clientsFundConversion) {
       return cb(Errors.NOT_FOUND_KEY_CONVERSION);
     } else {
@@ -6938,21 +6939,20 @@ export class WalletService {
     });
   }
 
-
-   /**
+  /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
    * @param {Object} opts
    * @returns {Array} list order info - The list of order info.
    */
-    async getAllConversionOrderInfo(opts, cb) {
-      this.storage.fetchAllConversionOrderInfo(opts, async (err, listOrderInfo) => {
-        if (err) return cb(err);
-        listOrderInfo = listOrderInfo.map(item => ConversionOrder.fromObj(item));
-        const count = await this.storage.countAllConversionOrderInfo(opts);
-        return cb(null, { listOrderInfo, count });
-      });
-    }
-  
+  async getAllConversionOrderInfo(opts, cb) {
+    this.storage.fetchAllConversionOrderInfo(opts, async (err, listOrderInfo) => {
+      if (err) return cb(err);
+      listOrderInfo = listOrderInfo.map(item => ConversionOrder.fromObj(item));
+      const count = await this.storage.countAllConversionOrderInfo(opts);
+      return cb(null, { listOrderInfo, count });
+    });
+  }
+
   /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
    * @param {Object} opts
