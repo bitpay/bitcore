@@ -1616,6 +1616,22 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/conversion/order/all', (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      const opts = reqServer.body;
+      server.getAllConversionOrderInfo(opts, (err, result) => {
+        if (err) return returnError(err, res, reqServer);
+        res.json(result);
+      });
+    });
+
+
     router.post('/v3/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
       // console.log(reqServer.user);
       let server;
@@ -1720,6 +1736,19 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
       server.createConversionOrder(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.get('/v3/conversion/check', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.checkConversion((err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });

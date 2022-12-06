@@ -898,6 +898,26 @@ export class Storage {
       .count();
   }
 
+  fetchAllConversionOrderInfo(opts, cb) {
+    this.db
+      .collection(collections.CONVERSION_ORDER_INFO)
+      .find({})
+      .sort({_id: -1})
+      .toArray((err, listConversionOrderInfo) => {
+        if (err) return cb(err);
+        if (listConversionOrderInfo.length === 0) return cb(new Error('Not found any conversion order'));
+        else return cb(null, listConversionOrderInfo);
+      });
+  }
+
+  countAllConversionOrderInfo(opts) {
+    return this.db
+      .collection(collections.CONVERSION_ORDER_INFO)
+      .find({})
+      .sort({_id: -1})
+      .count();
+  }
+
   fetchAllCoinConfig(cb) {
     this.db
       .collection(collections.COIN_CONFIG)

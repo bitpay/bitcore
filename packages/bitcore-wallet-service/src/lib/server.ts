@@ -5011,6 +5011,67 @@ export class WalletService {
     });
   }
 
+  async checkConversion(cb){
+    if (!clientsFundConversion) {
+      return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+    } else {
+      const xecWallet = clientsFundConversion.find(
+        s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
+      );
+      if (!xecWallet) {
+        return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+      }
+      let xecBalance = null;
+      xecBalance = await this.getBalanceWithPromise({
+        walletId: xecWallet.credentials.walletId,
+        coinCode: xecWallet.credentials.coin,
+        network: xecWallet.credentials.network
+      }).catch(e => {
+        return cb(e);
+      });
+      if (
+        !xecBalance ||
+        !xecBalance.balance ||
+        !xecBalance.balance.totalAmount ||
+        xecBalance.balance.totalAmount < minXecSatConversion
+      ) {
+        return cb(Errors.INSUFFICIENT_FUND_XEC);
+        return;
+      }
+      // get balance of XEC Wallet and token elps
+      let balanceTokenFound = null;
+      balanceTokenFound = await this.getTokensWithPromise({
+        walletId: xecWallet.credentials.walletId
+      });
+      if (balanceTokenFound && balanceTokenFound.length > 0) {
+        const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+          return {
+            tokenId: item.tokenId,
+            tokenInfo: item.tokenInfo,
+            amountToken: item.amountToken,
+            utxoToken: item.utxoToken
+          } as TokenItem;
+        });
+        const tokenElps = listBalanceTokenConverted.find(
+          // TANTODO: replace with tyd token id
+          s => s.tokenId === tokenIdConversion
+        );
+        if (tokenElps) {
+          // from txId get txDetail
+          if (tokenElps.amountToken < minTokenConversion) {
+            return cb(Errors.INSUFFICIENT_FUND_TOKEN);
+          } else {
+            return cb(null, true);
+          }
+        } else {
+          return cb(Errors.NOT_FOUND_TOKEN_WALLET);
+        }
+      } else {
+        return cb(Errors.NOT_FOUND_TOKEN_WALLET);
+      }
+    }
+  }
+
   async updateOrder(opts, cb) {
     try {
       const orderInfo = Order.fromObj(opts);
@@ -6877,6 +6938,21 @@ export class WalletService {
     });
   }
 
+
+   /**
+   * Returns exchange rates of the supported fiat currencies for the specified coin.
+   * @param {Object} opts
+   * @returns {Array} list order info - The list of order info.
+   */
+    async getAllConversionOrderInfo(opts, cb) {
+      this.storage.fetchAllConversionOrderInfo(opts, async (err, listOrderInfo) => {
+        if (err) return cb(err);
+        listOrderInfo = listOrderInfo.map(item => ConversionOrder.fromObj(item));
+        const count = await this.storage.countAllConversionOrderInfo(opts);
+        return cb(null, { listOrderInfo, count });
+      });
+    }
+  
   /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
    * @param {Object} opts

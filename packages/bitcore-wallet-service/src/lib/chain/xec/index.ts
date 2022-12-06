@@ -123,7 +123,7 @@ export class XecChain extends BtcChain implements IChain {
       const txFee = 250;
 
       // amount to send back to the sending address. It's the original amount - 1 sat/byte for tx size
-      const remainder = originalAmount - (txFee + 546 * 2) * 2;
+      const remainder = originalAmount - txFee - 546 * 2;
       if (remainder < 1) {
         throw new Error('Selected UTXO does not have enough satoshis');
       }
