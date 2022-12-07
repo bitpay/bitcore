@@ -4431,8 +4431,6 @@ export class WalletService {
         this.storage.orderQueue.clean(err => {});
       }
     }, 2000);
-
-    logger.debug('swapQueueInterval', swapQueueInterval);
   }
 
   checkQueueHandleConversion() {
@@ -4497,9 +4495,15 @@ export class WalletService {
                       );
                       accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
                       this._getRatesWithCustomFormat((err, rateList) => {
+                        logger.debug('rateList xec: ' +rateList['xec'].USD);
+                        logger.debug('rateList tyd: '+ rateList['tyd'].USD);
                         const rate = rateList['xec'].USD / rateList['tyd'].USD;
+                        logger.debug('rate: '+ rate);
                         const amountElpsSatoshis = accountTo.amount * rate;
+                        logger.debug('accountTo.amount: '+ accountTo.amount);
+                        logger.debug('amountElpsSatoshis: '+ amountElpsSatoshis);
                         const amountElps = amountElpsSatoshis / 10 ** 2;
+                        logger.debug('amountElps: '+ amountElps);
                         conversionOrderInfo.addressFrom = result.inputAddresses[0];
                         conversionOrderInfo.amountConverted = amountElps;
 
