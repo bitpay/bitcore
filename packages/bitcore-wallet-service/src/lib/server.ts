@@ -4496,7 +4496,6 @@ export class WalletService {
                         output => !result.inputAddresses.includes(output.address)
                       );
                       accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
-                      accountTo.amount = accountTo.amount - 5000; 
                       this._getRatesWithCustomFormat((err, rateList) => {
                         const rate = rateList['xec'].USD / rateList['tyd'].USD;
                         const amountElpsSatoshis = accountTo.amount * rate;
