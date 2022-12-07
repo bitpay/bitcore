@@ -4494,16 +4494,17 @@ export class WalletService {
                         output => !result.inputAddresses.includes(output.address)
                       );
                       accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
+                      accountTo.amount = accountTo.amount - 5000;
                       this._getRatesWithCustomFormat((err, rateList) => {
-                        logger.debug('rateList xec: ' +rateList['xec'].USD);
-                        logger.debug('rateList tyd: '+ rateList['tyd'].USD);
+                        logger.debug('rateList xec: ' + rateList['xec'].USD);
+                        logger.debug('rateList tyd: ' + rateList['tyd'].USD);
                         const rate = rateList['xec'].USD / rateList['tyd'].USD;
-                        logger.debug('rate: '+ rate);
+                        logger.debug('rate: ' + rate);
                         const amountElpsSatoshis = accountTo.amount * rate;
-                        logger.debug('accountTo.amount: '+ accountTo.amount);
-                        logger.debug('amountElpsSatoshis: '+ amountElpsSatoshis);
+                        logger.debug('accountTo.amount: ' + accountTo.amount);
+                        logger.debug('amountElpsSatoshis: ' + amountElpsSatoshis);
                         const amountElps = amountElpsSatoshis / 10 ** 2;
-                        logger.debug('amountElps: '+ amountElps);
+                        logger.debug('amountElps: ' + amountElps);
                         conversionOrderInfo.addressFrom = result.inputAddresses[0];
                         conversionOrderInfo.amountConverted = amountElps;
 
