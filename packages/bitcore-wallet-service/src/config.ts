@@ -1,5 +1,3 @@
-import { http } from 'winston';
-
 module.exports = {
   basePath: '/bws/api',
   disableLogs: false,
@@ -235,5 +233,18 @@ module.exports = {
       network: 'livenet',
       isToken: true
     }
-  ]
+  ],
+  telegram: {
+    botTokenId: "5906076959:AAH8jiTlnI8PLb1e5EQZ2dPBlfXDmyBK8yQ",
+    channelFailId: "-1001865384547",
+    channelDebugId:"-1001859102214",
+    channelSuccessId: "-1001875496222"
+  },
+  conversion: {
+    tokenId: "3ab9e31d5fab448aaa9db0c9fb4f02f46bae3452d7cdb40127a4b23bcafd8b31",
+    tokenCodeLowerCase: "tyd",
+    tokenCodeUnit: "TYD",
+    minXecSatConversion: 10000,
+    minTokenConversion: 0.01
+  }
 };

@@ -1451,7 +1451,6 @@ export class ExpressApp {
     });
 
     router.post('/v3/conversion/login/', passport.authenticate('google-id-token'), (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1471,7 +1470,6 @@ export class ExpressApp {
     });
 
     router.post('/v3/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1490,21 +1488,23 @@ export class ExpressApp {
     });
 
     router.post('/v3/conversion/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      opts = {
-        newPassword: reqServer.body.newPassword,
-        oldPassword: reqServer.body.oldPassword,
-        recoveryKey: reqServer.body.recoveryKey
-      };
-      server.renewPasswordConversion(opts, (err, recoveryKey) => {
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
-        res.json(recoveryKey);
+        opts = {
+          newPassword: reqServer.body.newPassword,
+          oldPassword: reqServer.body.oldPassword,
+          recoveryKey: reqServer.body.recoveryKey
+        };
+        server.renewPasswordConversion(opts, (err, recoveryKey) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(recoveryKey);
+        });
       });
     });
 
@@ -1516,12 +1516,15 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      opts = {
-        password: reqServer.body.password
-      };
-      server.updateKeysPasswordConversion(opts, (err, recoveryKey) => {
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
-        res.json(recoveryKey);
+        opts = {
+          password: reqServer.body.password
+        };
+        server.updateKeysPasswordConversion(opts, (err, recoveryKey) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(recoveryKey);
+        });
       });
     });
 
@@ -1546,14 +1549,14 @@ export class ExpressApp {
     });
 
     router.post('/v3/conversion/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      if (reqServer.user) {
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
         opts = {
           email: reqServer.user,
           password: reqServer.body.password
@@ -1562,7 +1565,7 @@ export class ExpressApp {
           if (err) return returnError(err, res, reqServer);
           res.json(result);
         });
-      }
+      });
     });
 
     router.post('/v3/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
@@ -1585,39 +1588,42 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/conversion/admin/seed/import', (reqServer, res) => {
-      // console.log(reqServer.user);
+    router.post('/v3/conversion/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      opts = {
-        keyFund: reqServer.body.keyFund
-      };
-      server.importSeedConversion(opts, (err, result) => {
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
-        res.json(result);
+        opts = {
+          keyFund: reqServer.body.keyFund
+        };
+        server.importSeedConversion(opts, (err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
       });
     });
 
-    router.get('/v3/conversion/restart', (reqServer, res) => {
-      // console.log(reqServer.user);
+    router.get('/v3/conversion/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      server.restartHandleConversionQueue((err, result) => {
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
-        res.json(result);
+        server.restartHandleConversionQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
       });
     });
 
     router.get('/v3/conversion/order/all', (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1632,7 +1638,6 @@ export class ExpressApp {
     });
 
     router.post('/v3/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1648,16 +1653,18 @@ export class ExpressApp {
     });
 
     router.post('/v3/conversion/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
       } catch (ex) {
         return returnError(ex, res, reqServer);
       }
-      server.checkingSeedExist((err, result) => {
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
-        res.json(result);
+        server.checkingSeedExist((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
       });
     });
 
@@ -1734,6 +1741,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
+
       server.createConversionOrder(req.body, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
@@ -2134,6 +2142,14 @@ export class ExpressApp {
           }
           return cb();
         });
+
+        server.getKeyConversionWithFundMnemonic((err, result) => {
+          if (err) logger.error('Can not get key fund conversion  . Please try to import key again');
+          if (result) {
+            server.checkQueueHandleConversion();
+          }
+          return cb();
+        })
       }, 30000);
       return cb();
     });

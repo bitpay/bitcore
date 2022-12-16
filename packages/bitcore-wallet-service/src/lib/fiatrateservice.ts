@@ -49,7 +49,7 @@ export class FiatRateService {
   startCron(opts, cb) {
     opts = opts || {};
     this.providers = _.values(require('./fiatrateproviders'));
-    const interval = 0.5;
+    const interval = opts.fetchInterval || Defaults.FIAT_RATE_FETCH_INTERVAL;
     if (interval) {
       this._fetch();
       setInterval(() => {

@@ -27,7 +27,6 @@ import {
 } from './model';
 import { Storage } from './storage';
 const TelegramBot = require('node-telegram-bot-api');
-const TOKEN = '5906076959:AAH8jiTlnI8PLb1e5EQZ2dPBlfXDmyBK8yQ';
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
@@ -52,10 +51,7 @@ const EmailValidator = require('email-validator');
 let swapQueueInterval = null;
 let conversionQueueInterval = null;
 let clientsFundConversion = null;
-const bot = new TelegramBot(TOKEN, { polling: true });
-const tokenIdConversion = '3ab9e31d5fab448aaa9db0c9fb4f02f46bae3452d7cdb40127a4b23bcafd8b31';
-const minXecSatConversion = 10000;
-const minTokenConversion = 0.01;
+const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
 let clientsFund = null;
 let clientsReceive = null;
 let keyFund = null;
@@ -4450,20 +4446,20 @@ export class WalletService {
             this.storage.updateConversionOrder(conversionOrderInfo, err => {
               // send message to channel Failure Convert Alert
               bot.sendMessage(
-                '-1001865384547',
+                config.telegram.channelFailId,
                 new Date().toUTCString() +
                   ' :: ' +
                   conversionOrderInfo.addressFrom +
                   ' :: Converted amount: ' +
                   conversionOrderInfo.amountConverted +
-                  ' TYD :: [ ' +
+                  ' '+ config.conversion.tokenCodeUnit +' :: [ ' +
                   conversionOrderInfo.txIdFromUser +
                   ' ] '
               );
 
               // send message to channel Debug Convert Alert
               bot.sendMessage(
-                '-1001859102214',
+                config.telegram.channelDebugId,
                 new Date().toUTCString() +
                   ' :: txId from user: ' +
                   conversionOrderInfo.txIdFromUser +
@@ -4496,13 +4492,16 @@ export class WalletService {
                       accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
                       accountTo.amount = accountTo.amount - 5000;
                       this._getRatesWithCustomFormat((err, rateList) => {
-                        logger.debug('rateList xec: ' + rateList['xec'].USD);
-                        logger.debug('rateList tyd: ' + rateList['tyd'].USD);
-                        const rate = rateList['xec'].USD / rateList['tyd'].USD;
-                        logger.debug('rate: ' + rate);
+                        if(isNaN(rateList['xec'])){
+                          saveError(conversionOrderInfo, data, Errors.NOT_FOUND_RATE_XEC);
+                          return;
+                        }
+                        if(isNaN(rateList[config.conversion.tokenCodeLowerCase])){
+                          saveError(conversionOrderInfo, data, Errors.NOT_FOUND_RATE_TOKEN);
+                          return;
+                        }
+                        const rate = rateList['xec'].USD / rateList[config.conversion.tokenCodeLowerCase].USD;
                         const amountElpsSatoshis = accountTo.amount * rate;
-                        logger.debug('accountTo.amount: ' + accountTo.amount);
-                        logger.debug('amountElpsSatoshis: ' + amountElpsSatoshis);
                         const amountElps = amountElpsSatoshis / 10 ** 2;
                         logger.debug('amountElps: ' + amountElps);
                         conversionOrderInfo.addressFrom = result.inputAddresses[0];
@@ -4544,7 +4543,7 @@ export class WalletService {
                                   !xecBalance ||
                                   !xecBalance.balance ||
                                   !xecBalance.balance.totalAmount ||
-                                  xecBalance.balance.totalAmount < minXecSatConversion
+                                  xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
                                 ) {
                                   saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_XEC);
                                   return;
@@ -4565,11 +4564,11 @@ export class WalletService {
                                   });
                                   const tokenElps = listBalanceTokenConverted.find(
                                     // TANTODO: replace with tyd token id
-                                    s => s.tokenId === tokenIdConversion
+                                    s => s.tokenId === config.conversion.tokenId
                                   );
                                   if (tokenElps) {
                                     // from txId get txDetail
-                                    if (tokenElps.amountToken < minTokenConversion) {
+                                    if (tokenElps.amountToken < config.conversion.minTokenConversion) {
                                       saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_TOKEN);
                                       return;
                                     }
@@ -4594,12 +4593,13 @@ export class WalletService {
                                             conversionOrderInfo.status = 'complete';
                                             conversionOrderInfo.txIdSentToUser = txId;
                                             bot.sendMessage(
-                                              '-1001875496222',
+                                              config.telegram.channelSuccessId,
                                               new Date().toUTCString() +
                                                 ' :: ' +
                                                 result.inputAddresses[0] +
                                                 ' :: Converted amount: ' +
                                                 amountElps +
+                                                ' ' + config.conversion.tokenCodeUnit +
                                                 ' :: [ ' +
                                                 conversionOrderInfo.txIdSentToUser +
                                                 ' ]'
@@ -5038,7 +5038,7 @@ export class WalletService {
         !xecBalance ||
         !xecBalance.balance ||
         !xecBalance.balance.totalAmount ||
-        xecBalance.balance.totalAmount < minXecSatConversion
+        xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
       ) {
         return cb(Errors.INSUFFICIENT_FUND_XEC);
         return;
@@ -5059,11 +5059,11 @@ export class WalletService {
         });
         const tokenElps = listBalanceTokenConverted.find(
           // TANTODO: replace with tyd token id
-          s => s.tokenId === tokenIdConversion
+          s => s.tokenId === config.conversion.tokenId
         );
         if (tokenElps) {
           // from txId get txDetail
-          if (tokenElps.amountToken < minTokenConversion) {
+          if (tokenElps.amountToken < config.conversion.minTokenConversion) {
             return cb(Errors.INSUFFICIENT_FUND_TOKEN);
           } else {
             return cb(null, true);
