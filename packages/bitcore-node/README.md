@@ -1,6 +1,6 @@
 # Bitcore Node
 
-**A full node with extended capabilities using Bitcoin Core.**
+**A standardized API to interact with multiple blockchain networks. Currently supporting Bitcoin, Bitcoin Cash, Litecoin, Doge, Ripple, Ethereum and Polygon.**
 
 ## Getting Started
 
@@ -105,7 +105,7 @@ The definition for all the chain configuration can be found in `src/types/Config
 
 </details>
 
-### 2. Setup Bitcoin Node
+### 2. Setup Your Blockchain Nodes
 
 <details>
 <summary>Example Bitcoin Mainnet Config</summary>
@@ -134,7 +134,7 @@ rpcpassword=password
 
 </details>
 
-### 3. Run Bitcoin node
+### 3. Run Your Blockchain Nodes
 
 <details>
 <summary>Example Starting a Bitcoin Node</summary>
@@ -152,6 +152,7 @@ rpcpassword=password
 npm run node
 ```
 
+Bitcore will begin using your blockchain nodes to synchronize it's own database so that you can use standardized queries to get data from each of your supported blockchains.
 
 ## API Documentation
 
@@ -169,4 +170,4 @@ See [CONTRIBUTING.md](../../Contributing.md) on the main bitcore repo for inform
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-Copyright 2013-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+Copyright 2013-2023 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
