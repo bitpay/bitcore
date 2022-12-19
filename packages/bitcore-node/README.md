@@ -10,7 +10,7 @@ Currently supporting:
 
 ### Requirements
 
-- Trusted P2P Peer
+- Trusted P2P Client with an open RPC endpoint
 - MongoDB Server >= v3.4
 - make g++ gcc 
 
