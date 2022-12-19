@@ -1,6 +1,10 @@
 # Bitcore Node
 
-**A standardized API to interact with multiple blockchain networks. Currently supporting Bitcoin, Bitcoin Cash, Litecoin, Doge, Ripple, Ethereum and Polygon.**
+**A standardized API to interact with multiple blockchain networks**
+
+Currently supporting:
+**[Bitcoin](https://bitcoin.org/), [Bitcoin Cash](https://bitcoincash.org/), [Litecoin](https://litecoin.com/), [Dogecoin](https://dogecoin.com/), [Ripple](https://ripple.com/), [Ethereum](https://ethereum.org/) and [Polygon](https://polygon.technology/)**
+
 
 ## Getting Started
 
