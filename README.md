@@ -13,7 +13,7 @@
 
 ## Applications
 
-- [Bitcore Node](packages/bitcore-node) - A full node with extended capabilities using Bitcoin Core
+- [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
 - [Bitcore Wallet](packages/bitcore-wallet) - A command-line based wallet client
 - [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
 - [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
