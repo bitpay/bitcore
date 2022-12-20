@@ -4452,7 +4452,9 @@ export class WalletService {
                   conversionOrderInfo.addressFrom +
                   ' :: Converted amount: ' +
                   conversionOrderInfo.amountConverted +
-                  ' '+ config.conversion.tokenCodeUnit +' :: [ ' +
+                  ' ' +
+                  config.conversion.tokenCodeUnit +
+                  ' :: [ ' +
                   conversionOrderInfo.txIdFromUser +
                   ' ] '
               );
@@ -4492,11 +4494,11 @@ export class WalletService {
                       accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
                       accountTo.amount = accountTo.amount - 5000;
                       this._getRatesWithCustomFormat((err, rateList) => {
-                        if(isNaN(rateList['xec'])){
+                        if (isNaN(rateList['xec'].USD)) {
                           saveError(conversionOrderInfo, data, Errors.NOT_FOUND_RATE_XEC);
                           return;
                         }
-                        if(isNaN(rateList[config.conversion.tokenCodeLowerCase])){
+                        if (isNaN(rateList[config.conversion.tokenCodeLowerCase].USD)) {
                           saveError(conversionOrderInfo, data, Errors.NOT_FOUND_RATE_TOKEN);
                           return;
                         }
@@ -4598,8 +4600,9 @@ export class WalletService {
                                                 ' :: ' +
                                                 result.inputAddresses[0] +
                                                 ' :: Converted amount: ' +
-                                                amountElps +
-                                                ' ' + config.conversion.tokenCodeUnit +
+                                                amountElps.toFixed(3) +
+                                                ' ' +
+                                                config.conversion.tokenCodeUnit +
                                                 ' :: [ ' +
                                                 conversionOrderInfo.txIdSentToUser +
                                                 ' ]'
