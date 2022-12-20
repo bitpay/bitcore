@@ -67,6 +67,7 @@ import * as forge from 'node-forge';
 import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
+import { read } from 'fs';
 import { countBy, findIndex } from 'lodash';
 import { openStdin } from 'process';
 import { stringify } from 'querystring';
@@ -80,7 +81,6 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
-import { read } from 'fs';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
