@@ -2335,17 +2335,23 @@ export class WalletService {
     try {
       const chronikClient = ChainService.getChronikClient('xec');
       const txDetail: any = await chronikClient.tx(txId);
+      logger.debug("txDetail: ", txDetail);
       if (!txDetail) return cb('no txDetail');
       const inputAddresses = _.uniq(
         _.map(txDetail.inputs, item => {
           return this._convertAddressFormInputScript(item.inputScript, 'xec', true);
         })
       );
+      logger.debug("inputAddresses: ", inputAddresses);
+
       const outputAddresses = _.uniq(
         _.map(txDetail.outputs, item => {
           return this._convertAddressFormInputScript(item.outputScript, 'xec', true);
         })
       );
+
+      logger.debug("outputAddresses: ", outputAddresses);
+
       if (inputAddresses) {
         txDetail.inputAddresses = inputAddresses;
         txDetail.outputAddresses = outputAddresses;
@@ -4478,7 +4484,10 @@ export class WalletService {
               try {
                 this.getTxDetailForXecWallet(conversionOrderInfo.txIdFromUser, async (err, result: TxDetail) => {
                   if (err) {
-                    saveError(conversionOrderInfo, data, Errors.NOT_FOUND_TXDETAIL);
+                    logger.debug("conversion order info error: ", conversionOrderInfo)
+                    logger.debug("conversionOrder.txIdFromUser", conversionOrderInfo.txIdFromUser);
+                    logger.debug("err get txdetail conversion: ", err);
+                    saveError(conversionOrderInfo, data, err);
                     return;
                   } else {
                     if (result) {
