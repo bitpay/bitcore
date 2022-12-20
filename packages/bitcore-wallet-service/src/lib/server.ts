@@ -4699,6 +4699,16 @@ export class WalletService {
     }
   }
 
+  stopHandleConversionQueue(cb): boolean {
+    try {
+      clearInterval(conversionQueueInterval);
+      return cb(null, true);
+    } catch (e) {
+      logger.debug(e);
+      return cb(e);
+    }
+  }
+
   calculateFee(amount: number, order: Order, rateUsd: number, coinConfig: CoinConfig): number {
     // amount should be in to coin code unit
     let feeCalculated = 0;

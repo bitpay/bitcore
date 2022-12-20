@@ -1607,7 +1607,7 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/conversion/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1617,6 +1617,22 @@ export class ExpressApp {
       server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
         server.restartHandleConversionQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+    
+    router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.stopHandleConversionQueue((err, result) => {
           if (err) return returnError(err, res, reqServer);
           res.json(result);
         });
@@ -2134,23 +2150,23 @@ export class ExpressApp {
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
       });
-      setTimeout(() => {
-        server.getKeyFundAndReceiveWithFundMnemonic((err, result) => {
-          if (err) logger.error('Can not get key fund , key receive . Please try to import key again');
-          if (result) {
-            server.checkQueueHandleSwap();
-          }
-          return cb();
-        });
+      // setTimeout(() => {
+      //   server.getKeyFundAndReceiveWithFundMnemonic((err, result) => {
+      //     if (err) logger.error('Can not get key fund , key receive . Please try to import key again');
+      //     if (result) {
+      //       server.checkQueueHandleSwap();
+      //     }
+      //     return cb();
+      //   });
 
-        server.getKeyConversionWithFundMnemonic((err, result) => {
-          if (err) logger.error('Can not get key fund conversion  . Please try to import key again');
-          if (result) {
-            server.checkQueueHandleConversion();
-          }
-          return cb();
-        })
-      }, 30000);
+      //   server.getKeyConversionWithFundMnemonic((err, result) => {
+      //     if (err) logger.error('Can not get key fund conversion  . Please try to import key again');
+      //     if (result) {
+      //       server.checkQueueHandleConversion();
+      //     }
+      //     return cb();
+      //   })
+      // }, 30000);
       return cb();
     });
   }
