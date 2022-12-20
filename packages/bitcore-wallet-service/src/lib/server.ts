@@ -57,7 +57,8 @@ let clientsReceive = null;
 let keyFund = null;
 let mnemonicKeyFund = null;
 let mnemonicKeyFundConversion = null;
-
+let isSendFundXecErrorToTelegram = false;
+let isSendFundTokenErrorToTelegram = false;
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 import cuid from 'cuid';
@@ -79,6 +80,7 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
+import { read } from 'fs';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -2335,23 +2337,17 @@ export class WalletService {
     try {
       const chronikClient = ChainService.getChronikClient('xec');
       const txDetail: any = await chronikClient.tx(txId);
-      logger.debug('txDetail: ', txDetail);
       if (!txDetail) return cb('no txDetail');
       const inputAddresses = _.uniq(
         _.map(txDetail.inputs, item => {
           return this._convertAddressFormInputScript(item.inputScript, 'xec', true);
         })
       );
-      logger.debug('inputAddresses: ', inputAddresses);
-
       const outputAddresses = _.uniq(
         _.map(txDetail.outputs, item => {
           return this._convertAddressFormInputScript(item.outputScript, 'xec', true);
         })
       );
-
-      logger.debug('outputAddresses: ', outputAddresses);
-
       if (inputAddresses) {
         txDetail.inputAddresses = inputAddresses;
         txDetail.outputAddresses = outputAddresses;
@@ -4474,7 +4470,6 @@ export class WalletService {
                   ' ::  error: ' +
                   conversionOrderInfo.error
               );
-              // send message to Alex
               if (err) throw new Error(err);
             });
           };
@@ -4484,9 +4479,6 @@ export class WalletService {
               try {
                 this.getTxDetailForXecWallet(conversionOrderInfo.txIdFromUser, async (err, result: TxDetail) => {
                   if (err) {
-                    logger.debug('conversion order info error: ', conversionOrderInfo);
-                    logger.debug('conversionOrder.txIdFromUser', conversionOrderInfo.txIdFromUser);
-                    logger.debug('err get txdetail conversion: ', err);
                     saveError(conversionOrderInfo, data, err);
                     return;
                   } else {
@@ -4556,6 +4548,11 @@ export class WalletService {
                                   !xecBalance.balance.totalAmount ||
                                   xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
                                 ) {
+                                  this._handleWhenFundIsNotEnough(
+                                    Errors.INSUFFICIENT_FUND_XEC.code,
+                                    xecBalance.balance.totalAmount / 100,
+                                    accountTo.address
+                                  );
                                   saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_XEC);
                                   return;
                                 }
@@ -4584,6 +4581,11 @@ export class WalletService {
                                       return;
                                     }
                                     if (tokenElps.amountToken < amountElps) {
+                                      this._handleWhenFundIsNotEnough(
+                                        Errors.INSUFFICIENT_FUND_TOKEN.code,
+                                        tokenElps.amountToken,
+                                        accountTo.address
+                                      );
                                       saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_TOKEN);
                                       return;
                                     } else {
@@ -4621,6 +4623,9 @@ export class WalletService {
                                                 saveError(conversionOrderInfo, data, err);
                                                 return;
                                               } else {
+                                                this.checkConversion((err, result) => {
+                                                  if (err) logger.debug(err);
+                                                });
                                                 this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
                                               }
                                             });
@@ -4657,6 +4662,33 @@ export class WalletService {
     }, 2000);
   }
 
+  _handleWhenFundIsNotEnough(pendingReason: string, remaining: number, addressTopupEcash: string) {
+    const addressTopupEtoken = this._convertFromEcashWithPrefixToEtoken(addressTopupEcash);
+    if (!isSendFundXecErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_XEC.code) {
+      bot.sendMessage(
+        config.telegram.channelFailId,
+        'FUND XEC REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' + remaining + ' XEC - ' + addressTopupEcash
+      );
+      isSendFundXecErrorToTelegram = true;
+      setTimeout(() => {
+        isSendFundXecErrorToTelegram = false;
+      }, 1000 * 60 * 30);
+    } else if (!isSendFundTokenErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_TOKEN.code) {
+      bot.sendMessage(
+        config.telegram.channelFailId,
+        'FUND TOKEN REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
+          remaining +
+          ' ' +
+          config.conversion.tokenCodeUnit +
+          ' - ' +
+          addressTopupEtoken
+      );
+      isSendFundTokenErrorToTelegram = true;
+      setTimeout(() => {
+        isSendFundTokenErrorToTelegram = false;
+      }, 1000 * 60 * 30);
+    }
+  }
   /**
    * Returns order info.
    * @param {Object} opts
@@ -4980,9 +5012,6 @@ export class WalletService {
     }
     this.getTxDetailForXecWallet(conversionOrder.txIdFromUser, async (err, result: TxDetail) => {
       if (err) {
-        logger.debug('conversionOrder error: ', conversionOrder);
-        logger.debug('conversionOrder.txIdFromUser', conversionOrder.txIdFromUser);
-        logger.debug('err get txdetail conversionOrder: ', err);
         return cb(err);
       } else {
         if (result) {
@@ -5066,7 +5095,6 @@ export class WalletService {
         xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
       ) {
         return cb(Errors.INSUFFICIENT_FUND_XEC);
-        return;
       }
       // get balance of XEC Wallet and token elps
       let balanceTokenFound = null;
@@ -5138,11 +5166,18 @@ export class WalletService {
     }
   }
 
+  _convertFromEcashWithPrefixToEtoken(address) {
+    try {
+      const { prefix, type, hash } = ecashaddr.decode(address);
+      const cashAddress = ecashaddr.encode('etoken', type, hash);
+      return cashAddress;
+    } catch {
+      return '';
+    }
+  }
+
   _convertEtokenAddressToEcashAddress(address) {
     try {
-      // const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
-      // const protoXEC = protocolPrefix.livenet; // only support livenet
-      // const protoAddr: string = protoXEC + ':' + address;
       const { prefix, type, hash } = ecashaddr.decode(address);
       const addressConverted = ecashaddr.encode('ecash', type, hash);
       return addressConverted;
