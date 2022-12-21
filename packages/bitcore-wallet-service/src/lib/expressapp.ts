@@ -1367,26 +1367,6 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/sendToken/', (req, res) => {
-      SetPublicCache(res, 5 * ONE_MINUTE);
-      let server;
-      // const opts = {
-      //   code: req.query.code || null,
-      //   ts: req.query.ts ? +req.query.ts : null
-      // };
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.getKeyFundWithMnemonic(async (err, key, clients, mnemonic) => {
-        if (err) return returnError(err, res, req);
-        server.sendSwapWithToken(mnemonic, clients, req.body, (err, txId) => {
-          res.json(txId);
-        });
-      });
-    });
-
     router.post('/v3/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
@@ -1685,7 +1665,6 @@ export class ExpressApp {
     });
 
     router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
-      // console.log(reqServer.user);
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1706,7 +1685,6 @@ export class ExpressApp {
     });
 
     router.get('/v3/order/:id', (req, res) => {
-      // SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       const opts = {
         id: req.params['id']
@@ -1723,7 +1701,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/order/all', (req, res) => {
+    router.get('/v3/order/filter', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1777,14 +1755,14 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/order/update', (req, res) => {
+    router.put('/v3/order/:id', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.updateOrder(req.body, (err, order) => {
+      server.updateOrderById(req.params['id'], req.body, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
@@ -1817,32 +1795,6 @@ export class ExpressApp {
     });
 
     router.get('/v3/coinconfig/refresh/wallet', (req, res) => {
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.rescanWalletsInKeys((err, listCoinConfig) => {
-        if (err) return returnError(err, res, req);
-        res.json(listCoinConfig);
-      });
-    });
-
-    router.get('/v3/coinconfig/refresh/wallet', (req, res) => {
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.rescanWalletsInKeys((err, listCoinConfig) => {
-        if (err) return returnError(err, res, req);
-        res.json(listCoinConfig);
-      });
-    });
-
-    router.post('/v3/coinconfig/filter', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -2124,8 +2076,6 @@ export class ExpressApp {
     WalletService.initialize(opts, data => {
       const server = WalletService.getInstance(opts);
       if (listAccount && listAccount.length > 0) {
-      }
-      if (listAccount && listAccount.length > 0) {
         listAccount.forEach(account => {
           server.storage.storeUser(
             {
@@ -2150,23 +2100,6 @@ export class ExpressApp {
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
       });
-      // setTimeout(() => {
-      //   server.getKeyFundAndReceiveWithFundMnemonic((err, result) => {
-      //     if (err) logger.error('Can not get key fund , key receive . Please try to import key again');
-      //     if (result) {
-      //       server.checkQueueHandleSwap();
-      //     }
-      //     return cb();
-      //   });
-
-      //   server.getKeyConversionWithFundMnemonic((err, result) => {
-      //     if (err) logger.error('Can not get key fund conversion  . Please try to import key again');
-      //     if (result) {
-      //       server.checkQueueHandleConversion();
-      //     }
-      //     return cb();
-      //   })
-      // }, 30000);
       return cb();
     });
   }

@@ -402,31 +402,6 @@ export class Storage {
     );
   }
 
-  fetchDonationById(id, cb) {
-    if (!this.db) return cb();
-
-    this.db.collection(collections.ORDER_INFO).findOne(
-      {
-        id
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-
-        return cb(null, result);
-      }
-    );
-  }
-
-  countAlUserByEmail(email) {
-    return this.db
-      .collection(collections.USER)
-      .find({
-        email
-      })
-      .count();
-  }
-
   storeUser(user, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
@@ -448,19 +423,6 @@ export class Storage {
         return cb(null, result);
       }
     );
-
-    // this.db.collection(collections.USER).insertOne(
-    //   user,
-    //   {
-    //     w: 1
-    //   },
-    //   (err, result) => {
-    //     if (err) return cb(err);
-    //     if (!result) return cb();
-
-    //     return cb(null, result);
-    //   }
-    // );
   }
   storeUserConversion(user, cb) {
     // This should only happens in certain tests.
@@ -625,28 +587,43 @@ export class Storage {
     );
   }
 
-  // fetchOrderInToday(cb) {
-  //   const start = moment()
-  //     .utc()
-  //     .startOf('day')
-  //     .valueOf();
-  //   const end = moment()
-  //     .utc()
-  //     .endOf('day')
-  //     .valueOf();
-  //   this.db
-  //     .collection(collections.ORDER_INFO)
-  //     .find({ createdOn: { $gte: start, $lt: end } })
-  //     .toArray((err, result: Order[]) => {
-  //       const orderInToday = _.filter(result, item => item.id);
-  //       return cb(null, orderInToday);
-  //     });
-  // }
-
   updateOrder(orderInfo: Order, cb) {
     this.db.collection(collections.ORDER_INFO).updateOne(
       {
         id: orderInfo.id
+      },
+      {
+        $set: {
+          adddressUserDeposit: orderInfo.adddressUserDeposit,
+          updatedRate: orderInfo.updatedRate,
+          status: orderInfo.status,
+          isSentToFund: orderInfo.isSentToFund,
+          isSentToUser: orderInfo.isSentToUser,
+          listTxIdUserDeposit: orderInfo.listTxIdUserDeposit,
+          listTxIdUserReceive: orderInfo.listTxIdUserReceive,
+          error: orderInfo.error,
+          pendingReason: orderInfo.pendingReason,
+          lastModified: new Date(),
+          isResolve: orderInfo.isResolve,
+          note: orderInfo.note
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateOrderById(orderId: string, orderInfo: Order, cb) {
+    this.db.collection(collections.ORDER_INFO).updateOne(
+      {
+        id: orderId
       },
       {
         $set: {

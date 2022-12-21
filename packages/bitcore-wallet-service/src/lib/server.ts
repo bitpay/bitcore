@@ -26,6 +26,28 @@ import {
   Wallet
 } from './model';
 import { Storage } from './storage';
+
+import cuid from 'cuid';
+import * as forge from 'node-forge';
+
+import { Unit } from '@abcpros/bitcore-lib-xpi';
+import { Validation } from '@abcpros/crypto-wallet-core';
+import assert from 'assert';
+import { link, read } from 'fs';
+import { countBy, findIndex } from 'lodash';
+import { openStdin } from 'process';
+import { stringify } from 'querystring';
+import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
+import { CONNECTING } from 'ws';
+import { CurrencyRateService } from './currencyrate';
+import { Config } from './model/config-model';
+import { CoinConfig, ConfigSwap } from './model/config-swap';
+import { ConversionOrder, IConversionOrder, Output, TxDetail } from './model/conversionOrder';
+import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
+import { Order } from './model/order';
+import { TokenInfo, TokenItem } from './model/tokenInfo';
+import { IUser } from './model/user';
+
 const TelegramBot = require('node-telegram-bot-api');
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
@@ -61,26 +83,7 @@ let isSendFundXecErrorToTelegram = false;
 let isSendFundTokenErrorToTelegram = false;
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
-import cuid from 'cuid';
-import * as forge from 'node-forge';
 
-import { Unit } from '@abcpros/bitcore-lib-xpi';
-import { Validation } from '@abcpros/crypto-wallet-core';
-import assert from 'assert';
-import { read } from 'fs';
-import { countBy, findIndex } from 'lodash';
-import { openStdin } from 'process';
-import { stringify } from 'querystring';
-import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
-import { CONNECTING } from 'ws';
-import { CurrencyRateService } from './currencyrate';
-import { Config } from './model/config-model';
-import { CoinConfig, ConfigSwap } from './model/config-swap';
-import { ConversionOrder, IConversionOrder, Output, TxDetail } from './model/conversionOrder';
-import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
-import { Order } from './model/order';
-import { TokenInfo, TokenItem } from './model/tokenInfo';
-import { IUser } from './model/user';
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -4453,12 +4456,13 @@ export class WalletService {
                   ' :: ' +
                   conversionOrderInfo.addressFrom +
                   ' :: Converted amount: ' +
-                  conversionOrderInfo.amountConverted +
+                  conversionOrderInfo.amountConverted.toFixed(3) +
                   ' ' +
                   config.conversion.tokenCodeUnit +
                   ' :: [ ' +
-                  conversionOrderInfo.txIdFromUser +
-                  ' ] '
+                  this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdFromUser) +
+                  ' ] ',
+                { parse_mode: 'HTML' }
               );
 
               // send message to channel Debug Convert Alert
@@ -4466,9 +4470,10 @@ export class WalletService {
                 config.telegram.channelDebugId,
                 new Date().toUTCString() +
                   ' :: txId from user: ' +
-                  conversionOrderInfo.txIdFromUser +
+                  this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdFromUser) +
                   ' ::  error: ' +
-                  conversionOrderInfo.error
+                  conversionOrderInfo.error,
+                { parse_mode: 'HTML' }
               );
               if (err) throw new Error(err);
             });
@@ -4615,17 +4620,15 @@ export class WalletService {
                                                 ' ' +
                                                 config.conversion.tokenCodeUnit +
                                                 ' :: [ ' +
-                                                conversionOrderInfo.txIdSentToUser +
-                                                ' ]'
+                                                this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdSentToUser) +
+                                                ' ]',
+                                              { parse_mode: 'HTML' }
                                             );
                                             this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
                                               if (err) {
                                                 saveError(conversionOrderInfo, data, err);
                                                 return;
                                               } else {
-                                                this.checkConversion((err, result) => {
-                                                  if (err) logger.debug(err);
-                                                });
                                                 this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
                                               }
                                             });
@@ -4662,12 +4665,24 @@ export class WalletService {
     }, 2000);
   }
 
+  _addExplorerLinkIntoTxId(txId): string {
+    const linkBeCash = 'https://explorer.be.cash/tx/';
+    const linkBeCashWithTxid = linkBeCash + txId;
+
+    return `<a href=\"${linkBeCashWithTxid}\">${txId}</a>`;
+  }
+
   _handleWhenFundIsNotEnough(pendingReason: string, remaining: number, addressTopupEcash: string) {
     const addressTopupEtoken = this._convertFromEcashWithPrefixToEtoken(addressTopupEcash);
+    const moneyWithWingsIcon = '\u{1F4B8}';
     if (!isSendFundXecErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_XEC.code) {
       bot.sendMessage(
         config.telegram.channelFailId,
-        'FUND XEC REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' + remaining + ' XEC - ' + addressTopupEcash
+        moneyWithWingsIcon +
+          ' FUND XEC REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
+          remaining +
+          ' XEC - ' +
+          addressTopupEcash
       );
       isSendFundXecErrorToTelegram = true;
       setTimeout(() => {
@@ -4676,7 +4691,8 @@ export class WalletService {
     } else if (!isSendFundTokenErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_TOKEN.code) {
       bot.sendMessage(
         config.telegram.channelFailId,
-        'FUND TOKEN REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
+        moneyWithWingsIcon +
+          ' FUND TOKEN REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
           remaining +
           ' ' +
           config.conversion.tokenCodeUnit +
@@ -5134,6 +5150,21 @@ export class WalletService {
     try {
       const orderInfo = Order.fromObj(opts);
       this.storage.updateOrder(orderInfo, (err, result) => {
+        if (err) return cb(err);
+        return cb(null, { isUpdated: true });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  async updateOrderById(opts, cb) {
+    try {
+      if (!opts.orderId) {
+        return cb(new Error('Missing required parameter order Id'));
+      }
+      const orderInfo = Order.fromObj(opts);
+      this.storage.updateOrderById(opts.orderId, orderInfo, (err, result) => {
         if (err) return cb(err);
         return cb(null, { isUpdated: true });
       });

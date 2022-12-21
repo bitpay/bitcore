@@ -1,6 +1,6 @@
 import { BitcoreLibXec } from '@abcpros/crypto-wallet-core';
 import { ChronikClient } from 'chronik-client';
-import _, { toSafeInteger } from 'lodash';
+import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 const config = require('../../../config');
@@ -13,7 +13,6 @@ const bchURL = config.supportToken.xec.bchUrl;
 const bchjs = new BCHJS({ restURL: bchURL });
 const ecashaddr = require('ecashaddrjs');
 const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
-const chronikClient = new ChronikClient(config.supportToken.xec.chronikClientUrl);
 export interface UtxoToken {
   txid: string;
   outIdx: number;
@@ -45,10 +44,13 @@ export interface TokenInfo {
   versionType: number;
 }
 export class XecChain extends BtcChain implements IChain {
+  chronikClient: ChronikClient;
+
   constructor() {
     super(BitcoreLibXec);
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
+    this.chronikClient = new ChronikClient(config.supportToken.xec.chronikClientUrl);
   }
 
   convertAddressToScriptPayload(address) {
@@ -64,7 +66,7 @@ export class XecChain extends BtcChain implements IChain {
   }
 
   getChronikClient() {
-    return chronikClient;
+    return this.chronikClient;
   }
 
   async getTokenInfo(tokenId) {

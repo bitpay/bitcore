@@ -10,7 +10,7 @@ export interface IConversionOrder {
   amountConverted?: number;
 }
 
-export class ConversionOrder {
+export class ConversionOrder implements IConversionOrder {
   txIdFromUser: string;
   txIdSentToUser?: string;
   status: string;
@@ -79,14 +79,8 @@ export interface SlpBurn {
   tokenId: string;
 }
 
-export interface Amount2 {
-  low: number;
-  high: number;
-  unsigned: boolean;
-}
-
 export interface SlpToken {
-  amount: Amount2;
+  amount: Amount;
   isMintBaton: boolean;
 }
 
@@ -100,27 +94,10 @@ export interface Input {
   slpToken: SlpToken;
 }
 
-export interface Value2 {
-  low: number;
-  high: number;
-  unsigned: boolean;
-}
-
-export interface Amount3 {
-  low: number;
-  high: number;
-  unsigned: boolean;
-}
-
-export interface SlpToken2 {
-  amount: Amount3;
-  isMintBaton: boolean;
-}
-
 export interface Output {
-  value: Value2;
+  value: Value;
   outputScript: string;
-  slpToken: SlpToken2;
+  slpToken: SlpToken;
 }
 
 export interface SlpMeta {
