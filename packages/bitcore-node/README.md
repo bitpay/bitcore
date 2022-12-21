@@ -156,7 +156,7 @@ rpcpassword=password
 npm run node
 ```
 
-Bitcore will begin using your blockchain nodes to synchronize it's own database so that you can use standardized queries to get data from each of your supported blockchains.
+Bitcore will begin using your blockchain nodes to synchronize its own database so that you can use standardized queries to get data from each of your supported blockchains.
 
 ## API Documentation
 
