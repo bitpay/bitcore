@@ -1,3 +1,4 @@
+import { UNITS } from '@abcpros/crypto-wallet-core/ts_build/src/constants/units';
 import * as async from 'async';
 import * as _ from 'lodash';
 import 'source-map-support/register';
@@ -26,10 +27,41 @@ import {
 } from './model';
 import { Storage } from './storage';
 
+import cuid from 'cuid';
+import * as forge from 'node-forge';
+
+import { Unit } from '@abcpros/bitcore-lib-xpi';
+import { Validation } from '@abcpros/crypto-wallet-core';
+import assert from 'assert';
+import { link, read } from 'fs';
+import { countBy, findIndex } from 'lodash';
+import { openStdin } from 'process';
+import { stringify } from 'querystring';
+import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
+import { CONNECTING } from 'ws';
+import { CurrencyRateService } from './currencyrate';
+import { Config } from './model/config-model';
+import { CoinConfig, ConfigSwap } from './model/config-swap';
+import { ConversionOrder, IConversionOrder, Output, TxDetail } from './model/conversionOrder';
+import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
+import { Order } from './model/order';
+import { TokenInfo, TokenItem } from './model/tokenInfo';
+import { IUser } from './model/user';
+
+const TelegramBot = require('node-telegram-bot-api');
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
+const adminConfig = require('../../../../admin-config.json');
+// const keyFund = require('../../../../key-store.json');
+const fs = require('fs');
+const { dirname } = require('path');
+const appDir = dirname(require.main.filename);
+// import * as swapConfigFile from './admin-config.json';
+// var obj = JSON.parse(fs.readFileSync(swapConfig, 'utf8'));
+const telegramLogger = require('express-notify-telegram');
+
 const config = require('../config');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
@@ -38,10 +70,20 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from '@abcpros/crypto-wallet-core';
-import { CurrencyRateService } from './currencyrate';
-import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
-import { TokenInfo } from './model/tokenInfo';
+let swapQueueInterval = null;
+let conversionQueueInterval = null;
+let clientsFundConversion = null;
+const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
+let clientsFund = null;
+let clientsReceive = null;
+let keyFund = null;
+let mnemonicKeyFund = null;
+let mnemonicKeyFundConversion = null;
+let isSendFundXecErrorToTelegram = false;
+let isSendFundTokenErrorToTelegram = false;
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -63,6 +105,12 @@ const Errors = require('./errors/errordefinitions');
 
 const shell = require('shelljs');
 
+const BCHJS = require('@abcpros/xpi-js');
+const bchURL = config.supportToken.xec.bchUrl;
+const bchjs = new BCHJS({ restURL: bchURL });
+
+const ecashaddr = require('ecashaddrjs');
+
 let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
@@ -75,7 +123,8 @@ let messageBroker;
 let fiatRateService;
 let currencyRateService;
 let serviceVersion;
-
+let fundingWalletClients: any;
+let receivingWalletClients: any;
 interface IAddress {
   coin: string;
   network: string;
@@ -102,6 +151,17 @@ export interface IWalletService {
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
 }
+
+export interface ICoinConfigFilter {
+  fromDate?: Date;
+  toDate?: Date;
+  fromCoinCode?: string;
+  toCoinCode?: string;
+  status?: string;
+  fromNetwork?: string;
+  toNetwork?: string;
+}
+
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
 }
@@ -608,10 +668,15 @@ export class WalletService {
   /**
    * Retrieves a wallet from storage.
    * @param {Object} opts
+   * * @param {string} opts.walletId - The wallet id.
    * @returns {Object} wallet
    */
   getWallet(opts, cb) {
-    this.storage.fetchWallet(this.walletId, (err, wallet) => {
+    let walletId = this.walletId;
+    if (opts.walletId) {
+      walletId = opts.walletId;
+    }
+    this.storage.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
@@ -623,7 +688,7 @@ export class WalletService {
 
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
-      this.storage.migrateToCashAddr(this.walletId, e => {
+      this.storage.migrateToCashAddr(walletId, e => {
         if (e) return cb(e);
         wallet.nativeCashAddr = true;
         return this.storage.storeWallet(wallet, e => {
@@ -1022,6 +1087,383 @@ export class WalletService {
 
         this._addKeyToCopayer(wallet, copayer, opts, cb);
       });
+    });
+  }
+
+  /**
+   * Update user password and return recovery key
+   *
+   * @param {Object} opts
+   * @param {string} opts.password - User password
+   */
+  updateKeysPassword(opts, cb) {
+    if (!opts.password) {
+      return cb(new Error('Missing required parameter password'));
+    }
+    const storage = this.storage;
+    bcrypt.hash(opts.password, saltRounds, function(err, hashPass) {
+      // Store hash in your password DB.
+      if (err) return cb(err);
+
+      const recoveryKey = cuid();
+
+      bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey) {
+        // const user = {
+        //   email: opts.email,
+        //   hashPassword: hashPass,
+        //   recoveryKey: hashKey
+        // } as IUser;
+        storage.fetchKeys((err, result: Keys) => {
+          if (err) return cb(err);
+          if (result) {
+            result.hashPassword = hashPass;
+            storage.updateKeys(result, (err, result) => {
+              if (err) return cb(err);
+              if (result) return cb(null, recoveryKey);
+            });
+          } else {
+            const keys = {
+              keyFund: null,
+              keyReceive: null,
+              hashPassword: hashPass,
+              hashRecoveryKey: recoveryKey
+            } as Keys;
+            storage.storeKeys(keys, (err, result) => {
+              if (err) return cb(err);
+              return cb(null, recoveryKey);
+            });
+          }
+        });
+      });
+    });
+  }
+
+  /**
+   * Update user password and return recovery key
+   *
+   * @param {Object} opts
+   * @param {string} opts.password - User password
+   */
+  updateKeysPasswordConversion(opts, cb) {
+    if (!opts.password) {
+      return cb(new Error('Missing required parameter password'));
+    }
+    const storage = this.storage;
+    bcrypt.hash(opts.password, saltRounds, function(err, hashPass) {
+      // Store hash in your password DB.
+      if (err) return cb(err);
+
+      const recoveryKey = cuid();
+
+      bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey) {
+        // const user = {
+        //   email: opts.email,
+        //   hashPassword: hashPass,
+        //   recoveryKey: hashKey
+        // } as IUser;
+        storage.fetchKeysConversion((err, result: KeysConversion) => {
+          if (err) return cb(err);
+          if (result) {
+            result.hashPassword = hashPass;
+            storage.updateKeysConversion(result, (err, result) => {
+              if (err) return cb(err);
+              if (result) return cb(null, recoveryKey);
+            });
+          } else {
+            const keys = {
+              keyFund: null,
+              hashPassword: hashPass,
+              hashRecoveryKey: recoveryKey
+            } as Keys;
+            storage.storeKeysConversion(keys, (err, result) => {
+              if (err) return cb(err);
+              return cb(null, recoveryKey);
+            });
+          }
+        });
+      });
+    });
+  }
+  /**
+   * Verify user password
+   *
+   * @param {Object} opts
+   * @param {string} opts.email - User email
+   * @param {string} opts.password - User password
+   */
+  verifyPassword(opts, cb) {
+    if (!opts.email) {
+      return cb(new Error('Missing required parameter email'));
+    }
+    if (!opts.password) {
+      return cb(new Error('Missing required parameter password'));
+    }
+
+    this.storage.fetchKeys((err, keys: Keys) => {
+      if (err) return cb(err);
+      bcrypt
+        .compare(opts.password, keys.hashPassword)
+        .then(result => {
+          if (err) return cb(err);
+          if (!result) return cb(new Error('Invalid password'));
+          return cb(null, result);
+        })
+        .catch(e => {
+          return cb(e);
+        });
+    });
+  }
+
+  /**
+   * Verify user password
+   *
+   * @param {Object} opts
+   * @param {string} opts.email - User email
+   * @param {string} opts.password - User password
+   */
+  verifyConversionPassword(opts, cb) {
+    if (!opts.email) {
+      return cb(new Error('Missing required parameter email'));
+    }
+    if (!opts.password) {
+      return cb(new Error('Missing required parameter password'));
+    }
+
+    this.storage.fetchKeysConversion((err, keys: Keys) => {
+      if (err) return cb(err);
+      bcrypt
+        .compare(opts.password, keys.hashPassword)
+        .then(result => {
+          if (err) return cb(err);
+          if (!result) return cb(new Error('Invalid password'));
+          return cb(null, result);
+        })
+        .catch(e => {
+          return cb(e);
+        });
+    });
+  }
+  // return a Promise
+  // sharedKey: Buffer, plainText: Uint8Array
+  encrypt(sharedKey, plainText) {
+    // Split shared key
+    const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
+    const key = forge.util.createBuffer(sharedKey.slice(0, 16));
+
+    const cipher = forge.cipher.createCipher('AES-CBC', key);
+    cipher.start({ iv });
+    const rawBuffer = forge.util.createBuffer(plainText);
+    cipher.update(rawBuffer);
+    cipher.finish();
+    const cipherText = cipher.output.toHex();
+    return cipherText;
+  }
+
+  // return a Promise
+  // sharedKey: Buffer, plainText: Uint8Array
+  decrypt(sharedKey: Buffer, cipherText: string) {
+    try {
+      // Split shared key
+      const iv = forge.util.createBuffer(sharedKey.slice(0, 16));
+      const key = forge.util.createBuffer(sharedKey.slice(0, 16));
+
+      // Encrypt entries
+      const cipher = forge.cipher.createDecipher('AES-CBC', key);
+      cipher.start({ iv });
+      const convertedCiphertext = forge.util.hexToBytes(cipherText);
+      const rawBuffer = new forge.util.ByteBuffer(convertedCiphertext);
+      cipher.update(rawBuffer);
+      cipher.finish();
+      const plainText = Uint8Array.from(Buffer.from(cipher.output.toHex(), 'hex'));
+      return plainText;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  /**
+   * Update key for swap
+   *
+   * @param {Object} opts
+   * @param {string} opts.keyFund - key fund
+   * @param {string} opts.keyReceive - key receive
+   */
+
+  importSeed(opts, cb) {
+    if (!opts.keyFund && !opts.keyReceive) {
+      return cb(new Error('Missing required key'));
+    }
+
+    this.storage.fetchKeys((err, keys) => {
+      if (keys) {
+        if (opts.keyFund && opts.keyFund.length > 0) {
+          keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
+        }
+        if (opts.keyReceive && opts.keyReceive.length > 0) {
+          keys.keyReceive = this.encrypt(config.sharedKey, opts.keyReceive);
+        }
+        this.storage.updateKeys(keys, (err, result) => {
+          if (err) return cb(err);
+          this.restartHandleSwapQueue(err => {
+            if (err) return cb(err);
+            return cb(null, true);
+          });
+        });
+      } else {
+        return cb(null, false);
+      }
+    });
+  }
+
+  /**
+   * Update key for conversion
+   *
+   * @param {Object} opts
+   * @param {string} opts.keyFund - key fund
+   */
+
+  importSeedConversion(opts, cb) {
+    if (!opts.keyFund) {
+      return cb(new Error('Missing required key'));
+    }
+
+    this.storage.fetchKeysConversion((err, keys) => {
+      if (err) return cb(err);
+      if (keys) {
+        if (opts.keyFund && opts.keyFund.length > 0) {
+          keys.keyFund = this.encrypt(config.sharedKey, opts.keyFund);
+        }
+        this.storage.updateKeysConversion(keys, (err, result) => {
+          if (err) return cb(err);
+          this.restartHandleConversionQueue(err => {
+            if (err) return cb(err);
+            return cb(null, true);
+          });
+        });
+      } else {
+        return cb(null, false);
+      }
+    });
+  }
+
+  /**
+   * Checking if exist deposit or swap fund
+   */
+  checkingSeedExist(cb) {
+    this.storage.fetchKeys((err, keys) => {
+      if (err) return cb(err);
+      if (!keys) {
+        return cb(null, { isKeyExisted: false });
+      } else {
+        return cb(null, { isKeyExisted: true });
+      }
+    });
+  }
+
+  /**
+   * Checking if exist deposit or swap fund
+   */
+  checkingSeedConversionExist(cb) {
+    this.storage.fetchKeysConversion((err, keys) => {
+      if (err) return cb(err);
+      if (!keys) {
+        return cb(null, { isKeyExisted: false });
+      } else {
+        return cb(null, { isKeyExisted: true });
+      }
+    });
+  }
+
+  /**
+   * Renew password for user and return new recovery key
+   *
+   * @param {Object} opts
+   * @param {string} opts.oldPassword - User old password
+   * @param {string} opts.newPassword - User new password
+   * @param {string} opts.recoveryKey - User recovery key
+   */
+  renewPassword(opts, cb) {
+    if (!opts.newPassword) {
+      return cb(new Error('Missing required parameter new password'));
+    }
+    if (!(opts.oldPassword || opts.recoveryKey)) {
+      return cb(new Error('Missing requirement parameter password or recovery key to re new password'));
+    }
+
+    this.storage.fetchKeys((err, keys: Keys) => {
+      if (err) return cb(err);
+      const compareValue = {
+        text: '',
+        hash: ''
+      };
+      if (opts.oldPassword.length > 0) {
+        compareValue.text = opts.oldPassword;
+        compareValue.hash = keys.hashPassword;
+      } else if (opts.recoveryKey.length > 0) {
+        compareValue.text = opts.recoveryKey;
+        compareValue.hash = keys.hashRecoveryKey;
+      }
+      bcrypt
+        .compare(compareValue.text, compareValue.hash)
+        .then(result => {
+          if (result) {
+            this.updateKeysPassword({ password: opts.newPassword }, (err, recoveryKey) => {
+              if (err) return cb(err);
+              return cb(null, recoveryKey);
+            });
+          } else {
+            return cb(new Error('Invalid data. Please try again'));
+          }
+        })
+        .catch(e => {
+          return cb(e);
+        });
+    });
+  }
+
+  /**
+   * Renew password for user and return new recovery key
+   *
+   * @param {Object} opts
+   * @param {string} opts.oldPassword - User old password
+   * @param {string} opts.newPassword - User new password
+   * @param {string} opts.recoveryKey - User recovery key
+   */
+  renewPasswordConversion(opts, cb) {
+    if (!opts.newPassword) {
+      return cb(new Error('Missing required parameter new password'));
+    }
+    if (!(opts.oldPassword || opts.recoveryKey)) {
+      return cb(new Error('Missing requirement parameter password or recovery key to re new password'));
+    }
+
+    this.storage.fetchKeysConversion((err, keys: KeysConversion) => {
+      if (err) return cb(err);
+      const compareValue = {
+        text: '',
+        hash: ''
+      };
+      if (opts.oldPassword.length > 0) {
+        compareValue.text = opts.oldPassword;
+        compareValue.hash = keys.hashPassword;
+      } else if (opts.recoveryKey.length > 0) {
+        compareValue.text = opts.recoveryKey;
+        compareValue.hash = keys.hashRecoveryKey;
+      }
+      bcrypt
+        .compare(compareValue.text, compareValue.hash)
+        .then(result => {
+          if (result) {
+            this.updateKeysPasswordConversion({ password: opts.newPassword }, (err, recoveryKey) => {
+              if (err) return cb(err);
+              return cb(null, recoveryKey);
+            });
+          } else {
+            return cb(new Error('Invalid data. Please try again'));
+          }
+        })
+        .catch(e => {
+          return cb(e);
+        });
     });
   }
 
@@ -1526,7 +1968,10 @@ export class WalletService {
 
   getUtxosForCurrentWallet(opts, cb) {
     opts = opts || {};
-
+    let walletId = this.walletId;
+    if (opts.walletId) {
+      walletId = opts.walletId;
+    }
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
@@ -1535,7 +1980,7 @@ export class WalletService {
     async.series(
       [
         next => {
-          this.getWallet({}, (err, w) => {
+          this.getWallet({ walletId }, (err, w) => {
             if (err) return next(err);
 
             wallet = w;
@@ -1556,7 +2001,7 @@ export class WalletService {
           }
 
           // even with Grouping we need address for pubkeys and path (see last step)
-          this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+          this.storage.fetchAddresses(walletId, (err, addresses) => {
             _.each(addresses, x => {
               ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
             });
@@ -1612,7 +2057,7 @@ export class WalletService {
           // effects between broadcasting a tx and getting the list of UTXOs.
           // This is especially true in the case of having multiple instances of the block explorer.
           this.storage.fetchBroadcastedTxs(
-            this.walletId,
+            walletId,
             {
               minTs: now - 24 * 3600,
               limit: 100
@@ -1648,7 +2093,7 @@ export class WalletService {
         },
         next => {
           if (this._isSupportToken(wallet)) {
-            this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
+            this.storage.fetchAddresses(walletId, async (err, addresses) => {
               if (err) return next(err);
               if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
               let promiseList = [];
@@ -1765,6 +2210,62 @@ export class WalletService {
     }
   }
 
+  getUtxosForSelectedAddressAndWallet(opts, cb) {
+    opts = opts || {};
+
+    if (opts.addresses) {
+      if (opts.addresses.length > 1) return cb(new ClientError('Addresses option only support 1 address'));
+
+      let wallet = opts;
+
+      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      if (!bc) {
+        return cb(new Error('Could not get blockchain explorer instance'));
+      }
+
+      const address = opts.addresses[0];
+      const A = Bitcore_[wallet.coin].Address;
+      let addrObj: { network?: { name?: string } } = {};
+      try {
+        addrObj = new A(address);
+      } catch (ex) {
+        return cb(null, []);
+      }
+      if (addrObj.network.name != wallet.network) {
+        return cb(null, []);
+      }
+
+      this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+        if (err) return cb(err);
+        bc.getAddressUtxos(address, height, wallet.coin, async (err, allUtxos) => {
+          if (err) return cb(err);
+          let promiseList = [];
+          if (wallet.isTokenSupport) {
+            this._getUxtosByChronik(wallet.coin, address)
+              .then(utxos => {
+                // utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
+                // const utxoNonSlpChronik = _.filter(utxos, item => !item.isNonSLP && item.slpMeta.tokenId === wallet.tokenId);
+                // allUtxos = this._filterOutSlpUtxo(utxoNonSlpChronik, _.cloneDeep(allUtxos));
+                const filteredUtxos = _.filter(
+                  utxos,
+                  item => !item.isNonSLP && item.slpMeta.tokenId === wallet.tokenId
+                );
+                return cb(null, filteredUtxos);
+              })
+              // await Promise.all(promiseList)
+              //   .then(async
+              //   })
+              .catch(err => {
+                return cb(err);
+              });
+          } else {
+            return cb(null, allUtxos);
+          }
+        });
+      });
+    }
+  }
+
   /**
    * Returns list of Coins for TX
    * @param {Object} opts
@@ -1810,8 +2311,14 @@ export class WalletService {
             return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
           })
         );
+        const outputAddresses = _.uniq(
+          _.map(txDetail.outputs, item => {
+            return this._convertAddressFormInputScript(item.outputScript, wallet.coin, true);
+          })
+        );
         if (inputAddresses) {
           txDetail.inputAddresses = inputAddresses;
+          txDetail.outputAddresses = outputAddresses;
           this.storage.updateCacheTxHistoryByTxId(wallet.id, txId, inputAddresses, (err, result) => {
             if (err) return cb(err);
             return cb(null, txDetail);
@@ -1823,6 +2330,37 @@ export class WalletService {
         return cb(err);
       }
     });
+  }
+
+  /**
+   * @param {string} txId - the transaction id.
+   * @returns {Obejct} tx detail
+   */
+  async getTxDetailForXecWallet(txId, cb) {
+    try {
+      const chronikClient = ChainService.getChronikClient('xec');
+      const txDetail: any = await chronikClient.tx(txId);
+      if (!txDetail) return cb('no txDetail');
+      const inputAddresses = _.uniq(
+        _.map(txDetail.inputs, item => {
+          return this._convertAddressFormInputScript(item.inputScript, 'xec', true);
+        })
+      );
+      const outputAddresses = _.uniq(
+        _.map(txDetail.outputs, item => {
+          return this._convertAddressFormInputScript(item.outputScript, 'xec', true);
+        })
+      );
+      if (inputAddresses) {
+        txDetail.inputAddresses = inputAddresses;
+        txDetail.outputAddresses = outputAddresses;
+        return cb(null, txDetail);
+      } else {
+        return cb(null, txDetail);
+      }
+    } catch (err) {
+      return cb(err);
+    }
   }
 
   /**
@@ -1841,7 +2379,11 @@ export class WalletService {
 
     const setWallet = cb1 => {
       if (wallet) return cb1();
-      this.getWallet({}, (err, ret) => {
+      let optsReturn = {};
+      if (opts.walletId) {
+        optsReturn = opts;
+      }
+      this.getWallet(optsReturn, (err, ret) => {
         if (err) return cb(err);
         wallet = ret;
         return cb1(null, wallet);
@@ -1864,6 +2406,21 @@ export class WalletService {
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
         return ChainService.getWalletBalance(this, wallet, opts, cb);
+      });
+    });
+  }
+
+  getBalanceWithPromise(opts) {
+    return new Promise((resolve, reject) => {
+      this.getBalance(opts, (err, balance) => {
+        if (err) return reject(err);
+        else
+          return resolve({
+            walletId: opts.walletId,
+            coin: opts.coinCode,
+            network: opts.network,
+            balance
+          });
       });
     });
   }
@@ -1918,6 +2475,9 @@ export class WalletService {
   _getUxtosByChronik(coin, address) {
     let chronikClient;
     let scriptPayload;
+    if (address.includes('ecash:')) {
+      address = address.replace(/ecash:/, '');
+    }
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
       chronikClient = ChainService.getChronikClient(coin);
@@ -1994,16 +2554,26 @@ export class WalletService {
     });
   }
 
+  getTokensWithPromise(opts) {
+    return new Promise((resolve, reject) => {
+      this.getTokens(opts, (err, result) => {
+        if (err) return reject(err);
+        return resolve(result);
+      });
+    });
+  }
+
   getTokens(opts, cb) {
     opts = opts || {};
+    const walletId = opts && opts.walletId ? opts.walletId : this.walletId;
     const groupToken = [];
     const caculateAmountToken = (utxoToken, decimals) => {
       const totalAmount = _.sumBy(utxoToken, 'amountToken');
       return totalAmount / Math.pow(10, decimals);
     };
-    this.getWallet({}, (err, wallet) => {
+    this.getWallet({ walletId }, (err, wallet) => {
       if (err) return cb(err);
-      this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
+      this.storage.fetchAddresses(walletId, async (err, addresses) => {
         if (err) return cb(err);
 
         if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
@@ -2043,7 +2613,30 @@ export class WalletService {
     });
   }
 
+  getAllTokenInfo(cb) {
+    // return new Promise((resolve, reject) => {
+    this.storage.fetchTokenInfo((err, tokenInfoList) => {
+      if (err) return cb(err);
+      return cb(null, tokenInfoList);
+    });
+    // })
+  }
+
   getRemainingInfo(opts, cb) {
+    const infor: DonationInfo = {};
+    this.convertUSDToSatoshiLotus(config.donationRemaining.minMoneydonation, 'xpi', receiveAmountLotus => {
+      this.getRemainingAmount(receiveAmountLotus, remaningAmount => {
+        infor.remaining = remaningAmount;
+        infor.minMoneydonation = config.donationRemaining.minMoneydonation;
+        infor.receiveAmountLotus = receiveAmountLotus;
+        infor.donationToAddresses = config.donationRemaining.donationToAddresses;
+        infor.donationCoin = config.donationRemaining.donationCoin;
+        return cb(null, infor);
+      });
+    });
+  }
+
+  getWalletFundRemaining(opts, cb) {
     const infor: DonationInfo = {};
     this.convertUSDToSatoshiLotus(config.donationRemaining.minMoneydonation, 'xpi', receiveAmountLotus => {
       this.getRemainingAmount(receiveAmountLotus, remaningAmount => {
@@ -2138,7 +2731,7 @@ export class WalletService {
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network to estimate fee levels from.
    * @returns {Object} feeLevels - A list of fee levels & associated amount per kB in satoshi.
    */
-  getFeeLevels(opts, cb) {
+  async getFeeLevels(opts, cb) {
     opts = opts || {};
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -2434,6 +3027,23 @@ export class WalletService {
     );
   }
 
+  getFee(coinInfo, opts) {
+    return new Promise((resolve, reject) => {
+      // This is used for sendmax flow
+      // if (_.isNumber(opts.fee)) {
+      //   return resolve({ feePerKb: opts.fee });
+      // }
+      const coinCode = coinInfo.isToken ? 'xec' : coinInfo.code;
+      this._getFeePerKb({ coin: coinCode }, opts, (err, inFeePerKb) => {
+        if (err) {
+          return reject(err);
+        }
+        let feePerKb = inFeePerKb;
+        return resolve({ coin: coinInfo, feePerKb });
+      });
+    });
+  }
+
   _getTransactionCount(wallet, address, cb) {
     const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
@@ -2533,6 +3143,7 @@ export class WalletService {
   /**
    * Creates a new transaction proposal.
    * @param {Object} opts
+   * @param {String} opts.walletId - Select wallet to create tx.
    * @param {string} opts.txProposalId - Optional. If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet.
    * @param {String} opts.coin - tx coin.
    * @param {Array} opts.outputs - List of outputs.
@@ -2561,17 +3172,18 @@ export class WalletService {
    */
   createTx(opts, cb) {
     opts = opts ? _.clone(opts) : {};
-
+    const walletId = opts.walletId ? opts.walletId : this.walletId;
+    const copayerId = opts.copayerId ? opts.copayerId : this.copayerId;
     const checkTxpAlreadyExists = (txProposalId, cb) => {
       if (!txProposalId) return cb();
-      this.storage.fetchTx(this.walletId, txProposalId, cb);
+      this.storage.fetchTx(walletId, txProposalId, cb);
     };
 
     this._runLocked(
       cb,
       cb => {
         let changeAddress, feePerKb, gasPrice, gasLimit, fee;
-        this.getWallet({}, (err, wallet) => {
+        this.getWallet(walletId, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
@@ -2664,8 +3276,8 @@ export class WalletService {
 
                   const txOpts = {
                     id: opts.txProposalId,
-                    walletId: this.walletId,
-                    creatorId: this.copayerId,
+                    walletId,
+                    creatorId: copayerId,
                     coin: opts.coin,
                     chain: opts.chain ? opts.chain : ChainService.getChain(opts.coin),
                     network: wallet.network,
@@ -2748,6 +3360,9 @@ export class WalletService {
    * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
    */
   publishTx(opts, cb) {
+    const walletId = opts.walletId ? opts.walletId : this.walletId;
+    const copayerId = opts.copayerId ? opts.copayerId : this.copayerId;
+
     if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
     this._runLocked(cb, cb => {
@@ -2760,12 +3375,12 @@ export class WalletService {
           return cb(Err);
         }
 
-        this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+        this.storage.fetchTx(walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
           if (!txp.isTemporary()) return cb(null, txp);
 
-          const copayer = wallet.getCopayer(this.copayerId);
+          const copayer = wallet.getCopayer(copayerId);
 
           let raw;
           try {
@@ -2788,7 +3403,7 @@ export class WalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
-            this.storage.storeTx(this.walletId, txp, err => {
+            this.storage.storeTx(walletId, txp, err => {
               if (err) return cb(err);
 
               this._notifyTxProposalAction('NewTxProposal', txp, () => {
@@ -2982,6 +3597,8 @@ export class WalletService {
       this._broadcastRawTxByChronik(chronikClient, opts.rawTx, async (err, txid) => {
         if (err || !txid) {
           logger.warn(`Broadcast failed: ${err}`);
+          if (err) return cb(err);
+          else return cb(new Error('Can not find txId'));
         } else {
           const extraArgs = {};
 
@@ -3178,6 +3795,80 @@ export class WalletService {
       });
     });
   }
+  _createOtpTxSwap(coinCode, network, addressUserReceive, amountTo) {
+    const tx = {
+      coin: coinCode,
+      dryRun: false,
+      excludeUnconfirmedUtxos: false,
+      feeLevel: 'normal',
+      isTokenSwap: null,
+      message: null,
+      network,
+      outputs: [
+        {
+          amount: _.toSafeInteger(amountTo),
+          message: null,
+          toAddress: addressUserReceive
+        }
+      ],
+      payProUrl: null,
+      txpVersion: 3
+    };
+    return tx;
+  }
+
+  _sendSwap(client, key, txSwap, cb) {
+    this.createTx(txSwap, (err, txp) => {
+      if (err) return cb(err);
+      let proposalSignature;
+      try {
+        const t = commonBWC.Utils.buildTx(txp);
+        const hash = t.uncheckedSerialize();
+        proposalSignature = commonBWC.Utils.signMessage(hash, client.credentials.requestPrivKey);
+      } catch (error) {
+        return cb(error);
+      }
+
+      const optPublish = {
+        proposalSignature,
+        txProposalId: txp.id,
+        walletId: txSwap.walletId,
+        copayerId: txSwap.copayerId
+      };
+      this.publishTx(optPublish, (err, txp) => {
+        if (err) return cb(err);
+        let signatures;
+        try {
+          signatures = key.sign(client.getRootPath(), txp);
+        } catch (error) {
+          return cb(error);
+        }
+
+        const optSigh = {
+          maxTxpVersion: 3,
+          signatures,
+          supportBchSchnorr: true,
+          txProposalId: txp.id
+        };
+        this.signTx(optSigh, (err, txp) => {
+          if (err) return cb(err);
+          this.broadcastTx({ txProposalId: txp.id }, (err, txp) => {
+            if (err) return cb(err);
+            return cb(null, txp.txid);
+          });
+        });
+      });
+    });
+  }
+
+  async _sendSwapWithToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress, cb) {
+    try {
+      const txId = await ChainService.sendToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
+      return cb(null, txId);
+    } catch (e) {
+      return cb(e);
+    }
+  }
 
   _getKeyLotus(client, cb) {
     let key;
@@ -3198,6 +3889,266 @@ export class WalletService {
     return cb(null, client, key);
   }
 
+  _getKeyFundWithMnemonic(client, cb) {
+    let key;
+    try {
+      let opts = { words: '' };
+      this.storage.fetchKeys((err, result: Keys) => {
+        if (err) return cb(err);
+        const keyFundDecrypted = this.decrypt(config.sharedKey, result.keyFund);
+        const ctArray = Array.from(new Uint8Array(keyFundDecrypted)); // ciphertext as byte array\
+        const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
+        opts.words = ctStr;
+        this.importWithPromise(opts, client, true)
+          .then(result => {
+            return cb(null, result);
+          })
+          .catch(e => {
+            return cb(e);
+          });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  _getKeyFundConversionWithMnemonic(client, cb) {
+    let key;
+    try {
+      let opts = { words: '' };
+      this.storage.fetchKeysConversion((err, result: KeysConversion) => {
+        if (err) return cb(err);
+        const keyFundDecrypted = this.decrypt(config.sharedKey, result.keyFund);
+        const ctArray = Array.from(new Uint8Array(keyFundDecrypted)); // ciphertext as byte array\
+        const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
+        opts.words = ctStr;
+        this.importWithPromise(opts, client, true, true)
+          .then(result => {
+            return cb(null, result);
+          })
+          .catch(e => {
+            return cb(e);
+          });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  importWithPromise(opts, client, isFund, isConversion = false) {
+    return new Promise((resolve, reject) => {
+      try {
+        Client.serverAssistedImport(
+          opts,
+          {
+            baseUrl: client.request.baseUrl
+          },
+          (err, key, walletClients) => {
+            if (err) return reject(err);
+            if (walletClients && walletClients.length > 0) {
+              if (isConversion) {
+                clientsFundConversion = walletClients;
+                mnemonicKeyFundConversion = opts.words;
+              } else {
+                if (isFund) {
+                  clientsFund = walletClients;
+                  mnemonicKeyFund = opts.words;
+                  keyFund = key;
+                } else {
+                  clientsReceive = walletClients;
+                }
+              }
+            }
+            return resolve(walletClients);
+          }
+        );
+      } catch (e) {
+        return reject(e);
+      }
+    });
+  }
+  initializeCoinConfig(cb) {
+    let listAvailableCoin = [];
+    let listCoinConfig = [];
+    // let listCoinConfigExistedInDb = [];
+    let listNewCoinConfigToStoreInDb = [];
+    let listNewCoinConfigToUpdateInDb = [];
+    let promiseList = [];
+    listAvailableCoin = config.coinSupportForSwap;
+    this.storage.fetchAllCoinConfig(async (err, listCoinConfigExistedInDb) => {
+      if (err) return cb(err);
+      if (listAvailableCoin && listAvailableCoin.length > 0) {
+        listAvailableCoin.forEach(coin => {
+          // if coin config not exist in db => create new coin config
+          if (
+            !listCoinConfigExistedInDb ||
+            listCoinConfigExistedInDb.length === 0 ||
+            listCoinConfigExistedInDb.findIndex(x => x.code === coin.code && x.network === coin.network) === -1
+          ) {
+            listNewCoinConfigToStoreInDb.push(CoinConfig.create(coin));
+          }
+          // if coin config exist in db but no support before => enable again
+          else if (
+            listCoinConfigExistedInDb.findIndex(
+              x => x.code === coin.code && x.network === coin.network && !coin.isSupport
+            ) > -1
+          ) {
+            const coinUpdateFound = listCoinConfigExistedInDb.find(
+              x => x.code === coin.code && x.network === coin.network && !coin.isSupport
+            );
+            coinUpdateFound.isSupport = true;
+            listNewCoinConfigToUpdateInDb.push(coinUpdateFound);
+          }
+        });
+
+        // checking if coin config existed in db but not found in available coin  => not show to user in config file
+
+        const listCoinConfigExistedInDbEnableSupport = listCoinConfigExistedInDb.filter(coin => coin.isSupport);
+        if (listCoinConfigExistedInDbEnableSupport && listCoinConfigExistedInDbEnableSupport.length > 0) {
+          listCoinConfigExistedInDbEnableSupport.forEach(coinConfigInDb => {
+            const avaialableCoinFound = listAvailableCoin.find(
+              coin => coin.code === coinConfigInDb.code && coin.network === coinConfigInDb.network
+            );
+            if (!avaialableCoinFound) {
+              coinConfigInDb.isSupport = false;
+              listNewCoinConfigToUpdateInDb.push(coinConfigInDb);
+            }
+          });
+        }
+        if (listNewCoinConfigToStoreInDb.length > 0) {
+          promiseList.push(this.storeListConfigWithPromie(listNewCoinConfigToStoreInDb));
+        }
+        if (listNewCoinConfigToUpdateInDb.length > 0) {
+          listNewCoinConfigToUpdateInDb.forEach(coinConfig => {
+            promiseList.push(this.updateConfigWithPromie(coinConfig));
+          });
+        }
+        await Promise.all(promiseList)
+          .then(async result => {
+            return cb(null);
+          })
+          .catch(err => {
+            return cb(err);
+          });
+      }
+    });
+  }
+
+  storeListConfigWithPromie(listNewCoinConfigToStoreInDb): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.storage.storeListCoinConfig(listNewCoinConfigToStoreInDb, (err, result) => {
+        if (err) return reject(err);
+        return resolve(result);
+      });
+    });
+  }
+
+  updateConfigWithPromie(coinConfig): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.storage.updateCoinConfig(coinConfig, (err, result) => {
+        if (err) return reject(err);
+        return resolve(result);
+      });
+    });
+  }
+
+  async rescanWalletsInKeys(cb) {
+    if (!clientsFund || !clientsReceive) {
+      return cb(new Error('Can not find key fund and receive '));
+    }
+    let listCoinConfigMapped = [];
+    // let listCoinConfigReceiveFound = [];
+    this.storage.fetchAllCoinConfig(async (err, listCoinConfig: CoinConfig[]) => {
+      if (err) return cb(err);
+      if (clientsFund) {
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfig);
+      }
+      if (clientsReceive && listCoinConfigMapped.length > 0) {
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfigMapped);
+      }
+      if (listCoinConfigMapped.length > 0) {
+        this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result) => {
+          if (err) return cb(err);
+          return cb(null, result);
+        });
+      } else {
+        return cb(new Error('Can not rescan wallet'));
+      }
+    });
+  }
+
+  filterCoinconfig(opts, cb) {}
+
+  async mappingWalletClientsToCoinConfig(walletClients, isSwap: boolean, listCoinConfig: CoinConfig[]) {
+    let listCoinFound = [];
+    let listTokenFound = [];
+    if (walletClients) {
+      // get all wallets in walletClients
+      listCoinFound = walletClients.map(s => ({
+        code: s.credentials.coin,
+        network: s.credentials.network,
+        walletId: s.credentials.walletId
+        // isToken: false,
+      }));
+      const xecWalletFound = listCoinFound.find(s => s.code === 'xec' && s.network === 'livenet');
+      if (xecWalletFound) {
+        // get list token inside
+        let listToken = null;
+        listToken = await this.getTokensWithPromise({ walletId: xecWalletFound.walletId });
+        if (listToken) {
+          const listTokenConverted = _.map(listToken, item => {
+            return {
+              tokenId: item.tokenId,
+              tokenInfo: item.tokenInfo,
+              amountToken: item.amountToken,
+              utxoToken: item.utxoToken
+            } as TokenItem;
+          });
+          listTokenFound = listTokenConverted.map(s => ({
+            code: s.tokenInfo.symbol.toLowerCase(),
+            network: 'livenet'
+            // isToken: true,
+            // tokenInfo: s.tokenInfo,
+          }));
+        }
+      }
+
+      const listFound = listCoinFound.concat(listTokenFound);
+      if (listFound.length > 0) {
+        listCoinConfig.forEach(coinConfig => {
+          const isCoinConfigFound =
+            listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
+          coinConfig.isSwap = isSwap ? isCoinConfigFound : coinConfig.isSwap;
+          coinConfig.isReceive = !isSwap ? isCoinConfigFound : coinConfig.isReceive;
+        });
+      }
+    }
+    return listCoinConfig;
+  }
+
+  _getKeyReceive(client, cb) {
+    let key;
+    try {
+      let opts = { words: '' };
+      this.storage.fetchKeys((err, result: Keys) => {
+        if (err) return cb(err);
+        const keyReceiveDecrypted = this.decrypt(config.sharedKey, result.keyReceive);
+        const ctArray = Array.from(new Uint8Array(keyReceiveDecrypted)); // ciphertext as byte array
+        const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
+        opts.words = ctStr;
+        this.importWithPromise(opts, client, false)
+          .then(result => {
+            return cb(null, result);
+          })
+          .catch(e => {
+            return cb(e);
+          });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
   getWalletLotusDonation(cb) {
     this.copayerId = _.get(walletLotus, 'cred.copayerId', '');
     this.walletId = _.get(walletLotus, 'cred.walletId', '');
@@ -3208,6 +4159,25 @@ export class WalletService {
         if (err) return cb(err);
         return cb(null, client, key, x.address);
       });
+    });
+  }
+
+  getKeyFundAndReceiveWithFundMnemonic(cb) {
+    const clientBwc = new Client();
+    this._getKeyFundWithMnemonic(clientBwc, err => {
+      if (err) return cb(err);
+      this._getKeyReceive(clientBwc, err => {
+        if (err) return cb(err);
+        return cb(null, true);
+      });
+    });
+  }
+
+  getKeyConversionWithFundMnemonic(cb) {
+    const clientBwc = new Client();
+    this._getKeyFundConversionWithMnemonic(clientBwc, err => {
+      if (err) return cb(err);
+      return cb(null, true);
     });
   }
 
@@ -3271,7 +4241,597 @@ export class WalletService {
         });
         this.storage.queue.clean(err => {});
       }
+    }, 300000);
+  }
+
+  checkQueueHandleSwap() {
+    swapQueueInterval = setInterval(() => {
+      if (this.storage && this.storage.orderQueue) {
+        this.storage.orderQueue.get(async (err, data) => {
+          logger.debug('orderinfo created: ', data);
+          console.log('orderinfo created: ', data);
+          const saveError = (orderInfo, data, error, status?) => {
+            orderInfo.status = status || 'pending';
+            if (error.message) {
+              orderInfo.error = error.message;
+            } else {
+              orderInfo.error = JSON.stringify(error);
+            }
+            if (error.code) {
+              orderInfo.pendingReason = error.code;
+            }
+            if (error.code === 'ORDER_EXPIRED') {
+              orderInfo.status = 'expired';
+            }
+            this.storage.updateOrder(orderInfo, err => {
+              if (err) throw new Error(err);
+            });
+          };
+          console.log('clients fund in queue now: ', clientsFund);
+          console.log('clients receive in queue now: ', clientsReceive);
+          if (data) {
+            const orderInfo = await this._getOrderInfo({ id: data.payload.id });
+            try {
+              if (orderInfo.status === 'expired') {
+                return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+              }
+              logger.debug('orderinfo in queue detected: ', data);
+              console.log('orderinfo in queue detected: ', data);
+              const configSwap: ConfigSwap = await this.getConfigSwapWithPromise();
+              const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
+              if (
+                isValidOrder &&
+                (orderInfo.status === 'waiting' ||
+                  (orderInfo.status === 'pending' && orderInfo.pendingReason === Errors.BELOW_MIN_LIMIT.code) ||
+                  (orderInfo.status === 'pending' && orderInfo.isResolve))
+              ) {
+                // get utxos for deposit address => checking amount user sent to deposit address
+                logger.debug('Order info is valid: ', orderInfo);
+                this.getUtxosForSelectedAddressAndWallet(
+                  {
+                    coin: orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode,
+                    network: orderInfo.fromNetwork,
+                    addresses: orderInfo.isFromToken
+                      ? [this._convertEtokenAddressToEcashAddress(orderInfo.adddressUserDeposit)]
+                      : [orderInfo.adddressUserDeposit],
+                    isTokenSupport: orderInfo.isFromToken,
+                    tokenId: orderInfo.fromTokenId
+                  },
+                  (err, utxos) => {
+                    try {
+                      let amountDepositDetect = 0;
+                      if (utxos && utxos.length > 0) {
+                        orderInfo.listTxIdUserDeposit = [];
+                        _.each(utxos, utxo => {
+                          if (orderInfo.isFromToken) {
+                            amountDepositDetect += utxo.amountToken;
+                          } else {
+                            amountDepositDetect += utxo.satoshis;
+                          }
+                          orderInfo.listTxIdUserDeposit.push(utxo.txid);
+                        });
+                      }
+                      if (amountDepositDetect > 0) {
+                        const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
+                        const fundingWallet = clientsFund.find(
+                          s => s.credentials.coin === coinCode && s.credentials.network === orderInfo.toNetwork
+                        );
+                        // checking rate again before creating tx
+                        this._getRatesWithCustomFormat(async (err, rateList) => {
+                          const rate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
+                          orderInfo.updatedRate = rate;
+                          // calculate updated rate compare with created rate , if more than 20% (later dynamic) , suspend transaction
+                          if ((Math.abs(rate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 20) {
+                            saveError(orderInfo, data, Errors.NOT_STABLE_RATE, 'expired');
+                            return;
+                          }
+                          // elseif((!orderInfo.amountFrom || orderInfo.amountFrom === 0)){
+                          else {
+                            const coinConfigSelected = configSwap.coinReceive.find(
+                              coinConfig => coinConfig.code == orderInfo.toCoinCode
+                            );
+                            const maxAmountSat = _.toSafeInteger(coinConfigSelected.maxConvertToSat);
+                            const minAmountSat = _.toSafeInteger(coinConfigSelected.minConvertToSat);
+                            const fundAmountSat = _.toSafeInteger(coinConfigSelected.fundConvertToSat);
+                            let amountUserDepositConverted =
+                              (amountDepositDetect / orderInfo.fromSatUnit) *
+                              orderInfo.toSatUnit *
+                              (orderInfo.updatedRate || orderInfo.createdRate);
+                            amountUserDepositConverted = _.toSafeInteger(amountUserDepositConverted);
+                            if (amountUserDepositConverted < minAmountSat) {
+                              saveError(orderInfo, data, Errors.BELOW_MIN_LIMIT);
+                              return;
+                            }
+
+                            if (amountDepositDetect > fundAmountSat) {
+                              saveError(orderInfo, data, Errors.OUT_OF_FUND);
+                              return;
+                            }
+
+                            if (amountUserDepositConverted > maxAmountSat) {
+                              saveError(orderInfo, data, Errors.EXCEED_MAX_LIMIT);
+                              return;
+                            }
+
+                            this.walletId = fundingWallet.credentials.walletId;
+                            this.copayerId = fundingWallet.credentials.copayerId;
+                            let amountDepositInToCoinCodeUnit =
+                              (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
+                            // TANTODO: in future remove for livenet , also apply for testnet
+                            if (orderInfo.toNetwork === 'livenet') {
+                              const feeCalculated = this.calculateFee(
+                                amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
+                                orderInfo,
+                                rateList[orderInfo.toCoinCode.toLowerCase()].USD,
+                                configSwap.coinReceive.find(
+                                  coin => coin.code === orderInfo.toCoinCode && coin.network === orderInfo.toNetwork
+                                )
+                              );
+                              if (amountDepositInToCoinCodeUnit < feeCalculated) {
+                                saveError(orderInfo, data, Errors.INVALID_AMOUNT);
+                                return;
+                              }
+                              amountDepositInToCoinCodeUnit -= feeCalculated;
+                            }
+                            if (orderInfo.isToToken) {
+                              await this._sendSwapWithToken(
+                                'xec',
+                                fundingWallet,
+                                mnemonicKeyFund,
+                                orderInfo.toTokenId,
+                                null,
+                                amountDepositInToCoinCodeUnit,
+                                orderInfo.addressUserReceive,
+                                (err, txId) => {
+                                  orderInfo.status = 'complete';
+                                  orderInfo.listTxIdUserReceive.push(txId);
+                                  orderInfo.isSentToUser = true;
+                                  this.storage.updateOrder(orderInfo, (err, result) => {
+                                    this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                  });
+                                }
+                              );
+                            } else {
+                              const txOptsSwap = this._createOtpTxSwap(
+                                orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode,
+                                orderInfo.toNetwork,
+                                orderInfo.addressUserReceive,
+                                amountDepositInToCoinCodeUnit
+                              );
+                              this._sendSwap(fundingWallet, keyFund, txOptsSwap, (err, txId) => {
+                                if (err) saveError(orderInfo, data, err);
+                                else {
+                                  orderInfo.status = 'complete';
+                                  orderInfo.listTxIdUserReceive.push(txId);
+                                  orderInfo.isSentToUser = true;
+                                  this.storage.updateOrder(orderInfo, (err, result) => {
+                                    if (err) saveError(orderInfo, data, err);
+                                    else {
+                                      this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                    }
+                                  });
+                                }
+                              });
+                            }
+                          }
+                        });
+                      }
+                    } catch (e) {
+                      saveError(orderInfo, data, e);
+                    }
+                  }
+                );
+              } else if (orderInfo.status === 'complete' || orderInfo.status === 'expired') {
+                return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+              }
+            } catch (e) {
+              saveError(orderInfo, data, e);
+            }
+          }
+        });
+        this.storage.orderQueue.clean(err => {});
+      }
     }, 2000);
+  }
+
+  checkQueueHandleConversion() {
+    conversionQueueInterval = setInterval(() => {
+      if (this.storage && this.storage.conversionOrderQueue) {
+        this.storage.conversionOrderQueue.get(async (err, data) => {
+          const saveError = (conversionOrderInfo: IConversionOrder, data, error, status?) => {
+            conversionOrderInfo.status = status || 'pending';
+            if (error.message) {
+              conversionOrderInfo.error = error.message;
+            } else {
+              conversionOrderInfo.error = JSON.stringify(error);
+            }
+            if (error.code) {
+              conversionOrderInfo.pendingReason = error.code;
+            }
+            this.storage.updateConversionOrder(conversionOrderInfo, err => {
+              // send message to channel Failure Convert Alert
+              bot.sendMessage(
+                config.telegram.channelFailId,
+                new Date().toUTCString() +
+                  ' :: ' +
+                  conversionOrderInfo.addressFrom +
+                  ' :: Converted amount: ' +
+                  conversionOrderInfo.amountConverted.toFixed(3) +
+                  ' ' +
+                  config.conversion.tokenCodeUnit +
+                  ' :: [ ' +
+                  this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdFromUser) +
+                  ' ] ',
+                { parse_mode: 'HTML' }
+              );
+
+              // send message to channel Debug Convert Alert
+              bot.sendMessage(
+                config.telegram.channelDebugId,
+                new Date().toUTCString() +
+                  ' :: txId from user: ' +
+                  this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdFromUser) +
+                  ' ::  error: ' +
+                  conversionOrderInfo.error,
+                { parse_mode: 'HTML' }
+              );
+              if (err) throw new Error(err);
+            });
+          };
+          if (data) {
+            const conversionOrderInfo = await this._getConversionOrderInfo({ txIdFromUser: data.payload });
+            if (conversionOrderInfo.status === 'waiting') {
+              try {
+                this.getTxDetailForXecWallet(conversionOrderInfo.txIdFromUser, async (err, result: TxDetail) => {
+                  if (err) {
+                    saveError(conversionOrderInfo, data, err);
+                    return;
+                  } else {
+                    if (result) {
+                      const outputsConverted = _.uniq(
+                        _.map(result.outputs, item => {
+                          return this._convertOutputTokenScript(item);
+                        })
+                      );
+                      // convert outputscript to output address
+                      const accountTo = outputsConverted.find(
+                        output => !result.inputAddresses.includes(output.address)
+                      );
+                      accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
+                      accountTo.amount = accountTo.amount - 5000;
+                      this._getRatesWithCustomFormat((err, rateList) => {
+                        if (isNaN(rateList['xec'].USD)) {
+                          saveError(conversionOrderInfo, data, Errors.NOT_FOUND_RATE_XEC);
+                          return;
+                        }
+                        if (isNaN(rateList[config.conversion.tokenCodeLowerCase].USD)) {
+                          saveError(conversionOrderInfo, data, Errors.NOT_FOUND_RATE_TOKEN);
+                          return;
+                        }
+                        const rate = rateList['xec'].USD / rateList[config.conversion.tokenCodeLowerCase].USD;
+                        const amountElpsSatoshis = accountTo.amount * rate;
+                        const amountElps = amountElpsSatoshis / 10 ** 2;
+                        logger.debug('amountElps: ' + amountElps);
+                        conversionOrderInfo.addressFrom = result.inputAddresses[0];
+                        conversionOrderInfo.amountConverted = amountElps;
+
+                        if (!clientsFundConversion) {
+                          saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
+                          return;
+                        } else {
+                          const xecWallet = clientsFundConversion.find(
+                            s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
+                          );
+                          if (!xecWallet) {
+                            saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
+                            return;
+                          }
+                          this.storage.fetchAddressByWalletId(
+                            xecWallet.credentials.walletId,
+                            accountTo.address.replace(/ecash:/, ''),
+                            async (err, wallet) => {
+                              if (err) {
+                                saveError(conversionOrderInfo, data, err);
+                                return;
+                              }
+                              if (!wallet) {
+                                saveError(conversionOrderInfo, data, Errors.INVALID_ADDRESS_TO);
+                                return;
+                              } else {
+                                let xecBalance = null;
+                                xecBalance = await this.getBalanceWithPromise({
+                                  walletId: xecWallet.credentials.walletId,
+                                  coinCode: xecWallet.credentials.coin,
+                                  network: xecWallet.credentials.network
+                                }).catch(e => {
+                                  saveError(conversionOrderInfo, data, e);
+                                  return;
+                                });
+                                if (
+                                  !xecBalance ||
+                                  !xecBalance.balance ||
+                                  !xecBalance.balance.totalAmount ||
+                                  xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
+                                ) {
+                                  this._handleWhenFundIsNotEnough(
+                                    Errors.INSUFFICIENT_FUND_XEC.code,
+                                    xecBalance.balance.totalAmount / 100,
+                                    accountTo.address
+                                  );
+                                  saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_XEC);
+                                  return;
+                                }
+                                // get balance of XEC Wallet and token elps
+                                let balanceTokenFound = null;
+                                balanceTokenFound = await this.getTokensWithPromise({
+                                  walletId: xecWallet.credentials.walletId
+                                });
+                                if (balanceTokenFound && balanceTokenFound.length > 0) {
+                                  const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+                                    return {
+                                      tokenId: item.tokenId,
+                                      tokenInfo: item.tokenInfo,
+                                      amountToken: item.amountToken,
+                                      utxoToken: item.utxoToken
+                                    } as TokenItem;
+                                  });
+                                  const tokenElps = listBalanceTokenConverted.find(
+                                    // TANTODO: replace with tyd token id
+                                    s => s.tokenId === config.conversion.tokenId
+                                  );
+                                  if (tokenElps) {
+                                    // from txId get txDetail
+                                    if (tokenElps.amountToken < config.conversion.minTokenConversion) {
+                                      saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_TOKEN);
+                                      return;
+                                    }
+                                    if (tokenElps.amountToken < amountElps) {
+                                      this._handleWhenFundIsNotEnough(
+                                        Errors.INSUFFICIENT_FUND_TOKEN.code,
+                                        tokenElps.amountToken,
+                                        accountTo.address
+                                      );
+                                      saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_TOKEN);
+                                      return;
+                                    } else {
+                                      this._sendSwapWithToken(
+                                        'xec',
+                                        xecWallet,
+                                        mnemonicKeyFundConversion,
+                                        tokenElps.tokenId,
+                                        tokenElps,
+                                        amountElpsSatoshis,
+                                        result.inputAddresses[0],
+                                        (err, txId) => {
+                                          if (err) {
+                                            saveError(conversionOrderInfo, data, err);
+                                            return;
+                                          }
+                                          if (txId) {
+                                            conversionOrderInfo.status = 'complete';
+                                            conversionOrderInfo.txIdSentToUser = txId;
+                                            bot.sendMessage(
+                                              config.telegram.channelSuccessId,
+                                              new Date().toUTCString() +
+                                                ' :: ' +
+                                                result.inputAddresses[0] +
+                                                ' :: Converted amount: ' +
+                                                amountElps.toFixed(3) +
+                                                ' ' +
+                                                config.conversion.tokenCodeUnit +
+                                                ' :: [ ' +
+                                                this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdSentToUser) +
+                                                ' ]',
+                                              { parse_mode: 'HTML' }
+                                            );
+                                            this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
+                                              if (err) {
+                                                saveError(conversionOrderInfo, data, err);
+                                                return;
+                                              } else {
+                                                this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
+                                              }
+                                            });
+                                          }
+                                        }
+                                      );
+                                    }
+                                  } else {
+                                    saveError(conversionOrderInfo, data, Errors.NOT_FOUND_TOKEN_WALLET);
+                                    return;
+                                  }
+                                } else {
+                                  saveError(conversionOrderInfo, data, Errors.NOT_FOUND_TOKEN_WALLET);
+                                  return;
+                                }
+                              }
+                            }
+                          );
+                        }
+                      });
+                    }
+                  }
+                });
+              } catch (e) {
+                saveError(conversionOrderInfo, data, e);
+              }
+            } else {
+              this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
+            }
+          }
+        });
+        this.storage.conversionOrderQueue.clean(err => {});
+      }
+    }, 2000);
+  }
+
+  _addExplorerLinkIntoTxId(txId): string {
+    const linkBeCash = 'https://explorer.be.cash/tx/';
+    const linkBeCashWithTxid = linkBeCash + txId;
+
+    return `<a href=\"${linkBeCashWithTxid}\">${txId}</a>`;
+  }
+
+  _handleWhenFundIsNotEnough(pendingReason: string, remaining: number, addressTopupEcash: string) {
+    const addressTopupEtoken = this._convertFromEcashWithPrefixToEtoken(addressTopupEcash);
+    const moneyWithWingsIcon = '\u{1F4B8}';
+    if (!isSendFundXecErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_XEC.code) {
+      bot.sendMessage(
+        config.telegram.channelFailId,
+        moneyWithWingsIcon +
+          ' FUND XEC REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
+          remaining +
+          ' XEC - ' +
+          addressTopupEcash
+      );
+      isSendFundXecErrorToTelegram = true;
+      setTimeout(() => {
+        isSendFundXecErrorToTelegram = false;
+      }, 1000 * 60 * 30);
+    } else if (!isSendFundTokenErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_TOKEN.code) {
+      bot.sendMessage(
+        config.telegram.channelFailId,
+        moneyWithWingsIcon +
+          ' FUND TOKEN REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
+          remaining +
+          ' ' +
+          config.conversion.tokenCodeUnit +
+          ' - ' +
+          addressTopupEtoken
+      );
+      isSendFundTokenErrorToTelegram = true;
+      setTimeout(() => {
+        isSendFundTokenErrorToTelegram = false;
+      }, 1000 * 60 * 30);
+    }
+  }
+  /**
+   * Returns order info.
+   * @param {Object} opts
+   * @param {String} opts.txIdFromUser - The order info id requested.
+   * @returns {Object} order - The order info.
+   */
+  _getConversionOrderInfo(opts): Promise<ConversionOrder> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchConversionOrderInfoByTxIdFromUser(opts.txIdFromUser, (err, result) => {
+        if (err) reject(err);
+        const conversionOrderInfo = ConversionOrder.fromObj(result);
+        resolve(conversionOrderInfo);
+      });
+    });
+  }
+
+  stopHandleSwapQueue(): boolean {
+    try {
+      clearInterval(swapQueueInterval);
+      return true;
+    } catch (e) {
+      logger.debug(e);
+      return false;
+    }
+  }
+
+  restartHandleSwapQueue(cb) {
+    try {
+      clearInterval(swapQueueInterval);
+      this.getKeyFundAndReceiveWithFundMnemonic(err => {
+        if (err) return cb(err);
+        this.checkQueueHandleSwap();
+        return cb(null);
+      });
+    } catch (e) {
+      logger.debug(e);
+      return cb(e);
+    }
+  }
+
+  restartHandleConversionQueue(cb) {
+    try {
+      clearInterval(conversionQueueInterval);
+      this.getKeyConversionWithFundMnemonic(err => {
+        if (err) return cb(err);
+        this.checkQueueHandleConversion();
+        return cb(null, true);
+      });
+    } catch (e) {
+      logger.debug(e);
+      return cb(e);
+    }
+  }
+
+  stopHandleConversionQueue(cb): boolean {
+    try {
+      clearInterval(conversionQueueInterval);
+      return cb(null, true);
+    } catch (e) {
+      logger.debug(e);
+      return cb(e);
+    }
+  }
+
+  calculateFee(amount: number, order: Order, rateUsd: number, coinConfig: CoinConfig): number {
+    // amount should be in to coin code unit
+    let feeCalculated = 0;
+    let networkFee = 0;
+    if (coinConfig.serviceFee > 0) {
+      feeCalculated = (coinConfig.serviceFee * amount) / 100;
+    }
+    if (!coinConfig.isToken && coinConfig.networkFee > 0) {
+      feeCalculated += coinConfig.networkFee;
+    }
+    if (coinConfig.settleFee > 0) {
+      // settle fee default calculated in usd
+      const settleFeecConvertedToCoinUnit = coinConfig.settleFee / rateUsd;
+      feeCalculated += settleFeecConvertedToCoinUnit;
+    }
+    return order.toSatUnit * feeCalculated;
+  }
+  async checkRequirementBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order) {
+    let listCoinReceiveCode = [];
+    let listCoinSwapCode = [];
+    if (orderInfo) {
+      if (!(orderInfo.fromCoinCode && orderInfo.toCoinCode && orderInfo.createdRate && orderInfo.addressUserReceive)) {
+        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+      }
+
+      if (
+        orderInfo.isFromToken &&
+        (!orderInfo.fromTokenId || !(orderInfo.fromTokenInfo && orderInfo.fromTokenInfo.decimals))
+      ) {
+        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+      }
+
+      if (orderInfo.isToToken && (!orderInfo.toTokenId || !(orderInfo.toTokenInfo && orderInfo.toTokenInfo.decimals))) {
+        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+      }
+
+      const now = new Date();
+      if (orderInfo.createdOn && orderInfo.endedOn && orderInfo.endedOn < now) {
+        throw Errors.ORDER_EXPIRED;
+      }
+    } else throw new Error('Not found Order info');
+
+    if (configSwap) {
+      if (!configSwap.coinReceive || !configSwap.coinSwap) {
+        throw new Error('Not found coin config for exchange');
+      }
+      let coinCodeReceive = '';
+      if (orderInfo.isToToken) {
+        coinCodeReceive = 'xec';
+      } else {
+        coinCodeReceive = orderInfo.toCoinCode;
+      }
+      const indexCoinReceiveFound = configSwap.coinReceive.findIndex(
+        config => config.network === orderInfo.toNetwork && config.code === coinCodeReceive
+      );
+      const indexCoinSwapfound = configSwap.coinSwap.findIndex(
+        config => config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode
+      );
+      if (indexCoinReceiveFound < 0 || indexCoinSwapfound < 0) {
+        throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
+      }
+    } else throw new Error('Not found config swap');
+    return true;
   }
 
   confirmationAndBroadcastRawTx(wallet, txp, sub, cb) {
@@ -3286,12 +4846,12 @@ export class WalletService {
       }
       this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
         if (err || txid != txp.txid) {
+          if (err) return cb(err);
           if (!err || txp.txid != txid) {
             logger.warn(`Broadcast failed for: ${raw}`);
           } else {
             logger.warn(`Broadcast failed: ${err}`);
           }
-
           const broadcastErr = err;
           // Check if tx already in blockchain
           this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
@@ -3365,6 +4925,296 @@ export class WalletService {
         return cb(null, true);
       });
     });
+  }
+
+  getCurrentRate(orderInfo: Order, cb) {
+    // checking rate again before sending txp
+    this._getRatesWithCustomFormat((err, rateList) => {
+      const rate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
+      return cb(null, rate);
+    });
+  }
+
+  _getRatesWithCustomFormat(cb) {
+    let rateList = [];
+    // for (const coin of this.currencyProvider.getAvailableCoins()) {
+    //   rateList[coin.toLowerCase()] = { USD: 0 };
+    // }
+    this.getFiatRates({}, (err, fiatRates) => {
+      try {
+        _.map(fiatRates, (rates, coin) => {
+          const coinRates = {};
+          _.each(rates, r => {
+            const rate = { [r.code]: r.rate };
+            Object.assign(coinRates, rate);
+          });
+          rateList[coin.toLowerCase()] = !_.isEmpty(coinRates) ? coinRates : { USD: 0 };
+        });
+        return cb(null, rateList);
+      } catch (error) {
+        return cb(error);
+      }
+    });
+  }
+
+  async createOrder(opts, cb) {
+    try {
+      if (!clientsFund) {
+        throw new Error('Not found funding');
+      }
+      if (!clientsReceive) {
+        throw new Error('Not found funding');
+      }
+      const orderInfo = Order.create(opts);
+      const fromCoinCode = orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode;
+      const configSwap = await this.getConfigSwapWithPromise();
+      const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
+      if (isValidOrder === true) {
+        if (orderInfo.isFromToken) {
+          orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
+        } else {
+          orderInfo.fromSatUnit = UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
+        }
+
+        if (orderInfo.isToToken) {
+          orderInfo.toSatUnit = Math.pow(10, orderInfo.toTokenInfo.decimals);
+        } else {
+          orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+        }
+        const depositClient = clientsReceive.find(
+          client => client.credentials.coin === fromCoinCode && client.credentials.network === orderInfo.fromNetwork
+        );
+        this.walletId = depositClient.credentials.walletId;
+        const coinConfigSelected = configSwap.coinReceive.find(
+          coin => coin.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase()
+        );
+        this.createAddress(
+          {
+            ignoreMaxGap: true
+          },
+          (err, address) => {
+            if (err) return cb(err);
+            const addressReturn = address.address || address;
+            if (orderInfo.isFromToken) {
+              address = this._convertAddressToEtoken(addressReturn);
+              // const slpAddress = bchjs.HDNode.toSLPAddress(change);
+            } else {
+              address = addressReturn;
+            }
+
+            orderInfo.adddressUserDeposit = address;
+            this.storage.storeOrderInfo(orderInfo, (err, result) => {
+              if (err) return cb(err);
+              // let order into queue
+              this.storage.orderQueue.add(Order.fromObj(result.ops[0]), (err, id) => {
+                if (err) return cb(err);
+                const orderCreated = Order.fromObj(result.ops[0]);
+                orderCreated.coinConfig = coinConfigSelected;
+                return cb(null, orderCreated);
+              });
+            });
+          }
+        );
+      }
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  createConversionOrder(opts, cb) {
+    const conversionOrder = ConversionOrder.create(opts);
+    if (!conversionOrder.txIdFromUser) {
+      return cb(new Error('Missing required parameter'));
+    }
+    this.getTxDetailForXecWallet(conversionOrder.txIdFromUser, async (err, result: TxDetail) => {
+      if (err) {
+        return cb(err);
+      } else {
+        if (result) {
+          let outputsConverted = _.uniq(
+            _.map(result.outputs, item => {
+              return this._convertOutputTokenScript(item);
+            })
+          );
+          outputsConverted = _.compact(outputsConverted);
+          // convert outputscript to output address
+          const accountTo = outputsConverted.find(output => !result.inputAddresses.includes(output.address));
+          accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
+          if (!clientsFundConversion) {
+            return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+          } else {
+            const xecWallet = clientsFundConversion.find(
+              s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
+            );
+            if (!xecWallet) {
+              return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+              return;
+            }
+            this.storage.fetchAddressByWalletId(
+              xecWallet.credentials.walletId,
+              accountTo.address.replace(/ecash:/, ''),
+              async (err, wallet) => {
+                if (err) {
+                  return cb(err);
+                  return;
+                }
+                if (!wallet) {
+                  return cb(Errors.INVALID_ADDRESS_TO);
+                  return;
+                } else {
+                  this.storage.fetchConversionOrderInfoByTxIdFromUser(conversionOrder.txIdFromUser, (err, result) => {
+                    if (err) return cb(err);
+                    if (result) {
+                      return cb(new Error('Duplicate conversion order info'));
+                    } else {
+                      this.storage.storeConversionOrderInfo(conversionOrder, (err, result) => {
+                        if (err) return cb(err);
+                        // let order into queue
+                        this.storage.conversionOrderQueue.add(conversionOrder.txIdFromUser, (err, id) => {
+                          if (err) return cb(err);
+                          return cb(null, true);
+                        });
+                      });
+                    }
+                  });
+                }
+              }
+            );
+          }
+        }
+      }
+    });
+  }
+
+  async checkConversion(cb) {
+    if (!clientsFundConversion) {
+      return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+    } else {
+      const xecWallet = clientsFundConversion.find(
+        s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
+      );
+      if (!xecWallet) {
+        return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+      }
+      let xecBalance = null;
+      xecBalance = await this.getBalanceWithPromise({
+        walletId: xecWallet.credentials.walletId,
+        coinCode: xecWallet.credentials.coin,
+        network: xecWallet.credentials.network
+      }).catch(e => {
+        return cb(e);
+      });
+      if (
+        !xecBalance ||
+        !xecBalance.balance ||
+        !xecBalance.balance.totalAmount ||
+        xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
+      ) {
+        return cb(Errors.INSUFFICIENT_FUND_XEC);
+      }
+      // get balance of XEC Wallet and token elps
+      let balanceTokenFound = null;
+      balanceTokenFound = await this.getTokensWithPromise({
+        walletId: xecWallet.credentials.walletId
+      });
+      if (balanceTokenFound && balanceTokenFound.length > 0) {
+        const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+          return {
+            tokenId: item.tokenId,
+            tokenInfo: item.tokenInfo,
+            amountToken: item.amountToken,
+            utxoToken: item.utxoToken
+          } as TokenItem;
+        });
+        const tokenElps = listBalanceTokenConverted.find(
+          // TANTODO: replace with tyd token id
+          s => s.tokenId === config.conversion.tokenId
+        );
+        if (tokenElps) {
+          // from txId get txDetail
+          if (tokenElps.amountToken < config.conversion.minTokenConversion) {
+            return cb(Errors.INSUFFICIENT_FUND_TOKEN);
+          } else {
+            return cb(null, true);
+          }
+        } else {
+          return cb(Errors.NOT_FOUND_TOKEN_WALLET);
+        }
+      } else {
+        return cb(Errors.NOT_FOUND_TOKEN_WALLET);
+      }
+    }
+  }
+
+  async updateOrder(opts, cb) {
+    try {
+      const orderInfo = Order.fromObj(opts);
+      this.storage.updateOrder(orderInfo, (err, result) => {
+        if (err) return cb(err);
+        return cb(null, { isUpdated: true });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  async updateOrderById(opts, cb) {
+    try {
+      if (!opts.orderId) {
+        return cb(new Error('Missing required parameter order Id'));
+      }
+      const orderInfo = Order.fromObj(opts);
+      this.storage.updateOrderById(opts.orderId, orderInfo, (err, result) => {
+        if (err) return cb(err);
+        return cb(null, { isUpdated: true });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  updateListCoinConfig(listCoinConfig, cb) {
+    try {
+      this.storage.updateListCoinConfig(listCoinConfig, (err, result) => {
+        if (err) return cb(err);
+        return cb(null, { isUpdated: true });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  _convertAddressToEtoken(address) {
+    try {
+      const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
+      const protoXEC = protocolPrefix.livenet; // only support livenet
+      const protoAddr: string = protoXEC + ':' + address;
+      const { prefix, type, hash } = ecashaddr.decode(protoAddr);
+      const cashAddress = ecashaddr.encode('etoken', type, hash);
+      return cashAddress;
+    } catch {
+      return '';
+    }
+  }
+
+  _convertFromEcashWithPrefixToEtoken(address) {
+    try {
+      const { prefix, type, hash } = ecashaddr.decode(address);
+      const cashAddress = ecashaddr.encode('etoken', type, hash);
+      return cashAddress;
+    } catch {
+      return '';
+    }
+  }
+
+  _convertEtokenAddressToEcashAddress(address) {
+    try {
+      const { prefix, type, hash } = ecashaddr.decode(address);
+      const addressConverted = ecashaddr.encode('ecash', type, hash);
+      return addressConverted;
+    } catch {
+      return '';
+    }
   }
 
   /**
@@ -3643,6 +5493,19 @@ export class WalletService {
         break;
     }
     return address;
+  }
+
+  _convertOutputTokenScript(output: Output): { address: string; amount: number } {
+    let address: string;
+    const coin = 'xec';
+    const scriptBitcore = Bitcore_[coin].Script(output.outputScript);
+    const { hashBuffer, type } = scriptBitcore.getAddressInfo();
+    if (!hashBuffer || !type) return null;
+    const addressBitcore = Bitcore_[coin].Address(hashBuffer);
+    address = addressBitcore.encode('etoken', type, hashBuffer);
+    let amount = 0;
+    amount = output.value ? output.value.low : 0;
+    return { address, amount };
   }
 
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, includeImmatureStatus, wallet, cb) {
@@ -4474,7 +6337,9 @@ export class WalletService {
                   try {
                     let promiseList = [];
                     _.each(addressesToken, address => {
-                      promiseList.push(this.getlastTxsByChronik(wallet, address.address, _.size(inTxs)));
+                      promiseList.push(
+                        this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
+                      );
                     });
                     await Promise.all(promiseList).then(async lastTxsChronik => {
                       lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
@@ -4930,6 +6795,256 @@ export class WalletService {
     this.fiatRateService.getRates(opts, (err, rates) => {
       if (err) return cb(err);
       return cb(null, rates);
+    });
+  }
+
+  /**
+   * Returns swap configetOrderInfog.
+   */
+  async getConfigSwap(cb) {
+    if (!clientsFund) {
+      return cb(Errors.NOT_FOUND_KEY_FUND);
+    }
+    logger.debug('appDir: ', appDir);
+    this.storage.fetchAllCoinConfig((err, listCoinConfig: CoinConfig[]) => {
+      if (err) return cb(err);
+      listCoinConfig = listCoinConfig.filter(s => s.isSupport);
+      const swapConfig = new ConfigSwap();
+      swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive);
+      swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap);
+      let promiseList = [];
+      let promiseList2 = [];
+      // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
+      let isFundClientXecFound = false;
+      let balanceTokenFound = null;
+      clientsFund.forEach(async clientFund => {
+        if (clientFund.credentials.coin === 'xec') {
+          isFundClientXecFound = true;
+        }
+        promiseList2.push(
+          this.getBalanceWithPromise({
+            walletId: clientFund.credentials.walletId,
+            coinCode: clientFund.credentials.coin,
+            network: clientFund.credentials.network
+          })
+        );
+        if (isFundClientXecFound && swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1) {
+          balanceTokenFound = await this.getTokensWithPromise({ walletId: clientFund.credentials.walletId });
+        }
+        isFundClientXecFound = false;
+      });
+      Promise.all(promiseList2)
+        .then(balance => {
+          logger.debug('balance: ', balance);
+          const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+            return {
+              tokenId: item.tokenId,
+              tokenInfo: item.tokenInfo,
+              amountToken: item.amountToken,
+              utxoToken: item.utxoToken
+            } as TokenItem;
+          });
+          logger.debug('listBalanceTokenConverted: ', listBalanceTokenConverted);
+          this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
+            this._getRatesWithCustomFormat((err, fiatRates) => {
+              try {
+                for (var i = 0; i < swapConfig.coinReceive.length; i++) {
+                  const coin = swapConfig.coinReceive[i];
+                  const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
+                  const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
+                  const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
+                  if (coin.isToken) {
+                    const balanceSelected = listBalanceTokenConverted.find(
+                      s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
+                    );
+                    if (balanceSelected) {
+                      const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
+                        .decimals;
+                      coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
+                      coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
+                      coin.fund = balanceSelected.amountToken * rateCoinUsd;
+                      coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
+                      coin.satUnit = Math.pow(10, tokenDecimals);
+                    } else {
+                      coin.isEnable = false;
+                    }
+                  } else {
+                    const balanceFound = balance.find(
+                      s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network
+                    );
+                    if (balanceFound) {
+                      const balanceTotal = balanceFound.balance.totalAmount;
+                      coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+                      coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
+                      coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
+                      coin.fundConvertToSat = balanceTotal;
+                    } else {
+                      coin.isEnable = false;
+                    }
+                  }
+                  coin.rate = fiatRates[coin.code.toLowerCase()];
+                  promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
+                }
+                swapConfig.coinSwap.forEach(coin => {
+                  coin.rate = fiatRates[coin.code.toLowerCase()];
+                });
+                Promise.all(promiseList).then(listData => {
+                  listData.forEach((data: any) => {
+                    const coin = data.coin;
+                    const feePerKb = data.feePerKb;
+                    let estimatedFee;
+                    if (coin.isToken || coin.code === 'xec') {
+                      // Send dust transaction representing tokens being sent.
+                      const dustRepresenting = 546;
+                      //  Return any token change back to the sender.
+                      const dustReturnAnyToken = 546;
+                      // fee
+                      const fee = 250;
+
+                      estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
+                    } else {
+                      const baseTxpSize = 78;
+                      const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
+                      const sizePerInput = 148;
+                      const feePerInput = (sizePerInput * feePerKb) / 1000;
+                      estimatedFee = Math.round(baseTxpFee + feePerInput);
+                    }
+                    if (coin.networkFee === 0) {
+                      const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
+                      coin.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+                    }
+                  });
+                  return cb(null, swapConfig);
+                });
+              } catch (e) {
+                logger.debug(e);
+                return cb(e);
+              }
+            });
+          });
+        })
+        .catch(e => {
+          logger.debug(e);
+        });
+    });
+    // const swapConfig = ConfigSwap.fromObj(adminConfig);
+  }
+
+  /**
+   * Returns swap configetOrderInfog.
+   */
+  getListCoinConfig(cb) {
+    if (!clientsFund) {
+      return cb(Errors.NOT_FOUND_KEY_FUND);
+    }
+    if (!clientsReceive) {
+      return cb(Errors.NOT_FOUND_KEY_RECEIVE);
+    }
+    this.storage.fetchAllCoinConfig((err, listCoinConfig: CoinConfig[]) => {
+      if (err) return cb(err);
+      listCoinConfig = listCoinConfig.filter(s => s.isSupport);
+      this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
+        if (err) return cb(err);
+        listCoinConfig.forEach(coin => {
+          if (coin.isToken) {
+            coin.tokenInfo = tokenInfoList.find(
+              tokenInfo => tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
+            );
+          }
+        });
+        return cb(null, listCoinConfig);
+      });
+    });
+  }
+
+  getConfigSwapWithPromise(): Promise<ConfigSwap> {
+    return new Promise((resolve, reject) => {
+      this.getConfigSwap((err, configSwap) => {
+        if (err) return reject(err);
+        return resolve(ConfigSwap.fromObj(configSwap));
+      });
+    });
+  }
+  x;
+
+  /**
+   * Returns order info.
+   * @param {Object} opts
+   * @param {String} opts.id - The order info id requested.
+   * @returns {Array} rates - The exchange rate.
+   */
+  async getOrderInfo(opts, cb) {
+    if (!opts.id) {
+      return cb(new Error('Missing order id'));
+    }
+    if (!clientsFund) {
+      return cb(new Error('Can not find funding wallet'));
+    }
+    try {
+      const configSwap = await this.getConfigSwapWithPromise();
+      if (configSwap) {
+        this.storage.fetchOrderinfoById(opts.id, (err, result) => {
+          if (err) return cb(err);
+          const orderInfo = Order.fromObj(result);
+          const configCoinSelected = configSwap.coinReceive.find(
+            coinConfig => coinConfig.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase()
+          );
+          if (configCoinSelected) {
+            orderInfo.coinConfig = configCoinSelected;
+          } else {
+            return cb(new Error('Can not find coin config for this order'));
+          }
+          return cb(null, orderInfo);
+        });
+      } else {
+        return cb(new Error('Can not find funding wallet'));
+      }
+    } catch (e) {
+      return cb(new Error(e));
+    }
+  }
+
+  /**
+   * Returns order info.
+   * @param {Object} opts
+   * @param {String} opts.id - The order info id requested.
+   * @returns {Object} order - The order info.
+   */
+  _getOrderInfo(opts): Promise<Order> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchOrderinfoById(opts.id, (err, result) => {
+        if (err) reject(err);
+        const orderInfo = Order.fromObj(result);
+        resolve(orderInfo);
+      });
+    });
+  }
+
+  /**
+   * Returns exchange rates of the supported fiat currencies for the specified coin.
+   * @param {Object} opts
+   * @returns {Array} list order info - The list of order info.
+   */
+  async getAllOrderInfo(opts, cb) {
+    this.storage.fetchAllOrderInfo(opts, async (err, listOrderInfo) => {
+      if (err) return cb(err);
+      listOrderInfo = listOrderInfo.map(item => Order.fromObj(item));
+      const count = await this.storage.countAllOrderInfo(opts);
+      return cb(null, { listOrderInfo, count });
+    });
+  }
+
+  /**
+   * Returns exchange rates of the supported fiat currencies for the specified coin.
+   * @param {Object} opts
+   * @returns {Array} list order info - The list of order info.
+   */
+  async getAllConversionOrderInfo(opts, cb) {
+    this.storage.fetchAllConversionOrderInfo(opts, async (err, listOrderInfo) => {
+      if (err) return cb(err);
+      listOrderInfo = listOrderInfo.map(item => ConversionOrder.fromObj(item));
+      const count = await this.storage.countAllConversionOrderInfo(opts);
+      return cb(null, { listOrderInfo, count });
     });
   }
 

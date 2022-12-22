@@ -9,9 +9,9 @@ const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 const config = require('../config');
 
+import { resolve } from 'dns';
 import logger from './logger';
 import { EtokenSupportPrice } from './model/config-model';
-import { resolve } from 'dns';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -71,8 +71,8 @@ export class FiatRateService {
         newData.push({
           code: rate.code,
           value: valueUsd * rate.value
-        })
-      })
+        });
+      });
       return resolve(newData);
     });
   }
@@ -90,7 +90,7 @@ export class FiatRateService {
     return _.find(this.providers, provider => provider.name === nameProvider);
   }
 
-  getLatestCurrencyRates(opts): any {
+  getLatestCurrencyRates(opts): Promise<any> {
     return new Promise((resolve, reject) => {
       const now = Date.now();
       const ts = opts.ts ? opts.ts : now;
@@ -101,24 +101,29 @@ export class FiatRateService {
         fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
         if (!fiatFiltered.length) return reject(opts.code + ' is not supported');
       }
-      const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.SUPPORT_FIAT_CURRENCIES;
-      _.forEach(
-        currencies,
-        currency => {
-          this.storage.fetchCurrencyRates(currency.code, ts, async (err, res) => {
-            if (err) {
-              logger.warn('Error fetching data for ' + currency, err);
-
-            }
-            rates.push(res);
-          });
-        },
-      );
-      return resolve(rates);
+      const currencies: { code: string; name: string }[] = fiatFiltered.length
+        ? fiatFiltered
+        : Defaults.SUPPORT_FIAT_CURRENCIES;
+      const promiseList = [];
+      _.forEach(currencies, currency => {
+        promiseList.push(this._getCurrencyRate(currency.code, ts));
+      });
+      Promise.all(promiseList).then(listRate => {
+        return resolve(listRate);
+      });
     });
-
   }
 
+  _getCurrencyRate(code, ts): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchCurrencyRates(code, ts, async (err, res) => {
+        if (err) {
+          logger.warn('Error fetching data for ' + code, err);
+        }
+        return resolve(res);
+      });
+    });
+  }
   _getEtokenSupportPrice() {
     const etokenSupportPrice = _.get(config, 'etoken.etokenSupportPrice', undefined);
     if (!etokenSupportPrice) return [];
@@ -126,7 +131,7 @@ export class FiatRateService {
   }
 
   async _fetch(cb?) {
-    cb = cb || function () { };
+    cb = cb || function() {};
     let coinsData = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
     const etoken = this._getEtokenSupportPrice();
     const coins = _.concat(coinsData, etoken);
@@ -155,7 +160,7 @@ export class FiatRateService {
     }
   }
 
-  _retrieve(provider, coin, cb) {
+  async _retrieve(provider, coin, cb) {
     logger.debug(`Fetching data for ${provider.name} / ${coin} `);
     let params = [];
     let appendString = '';
@@ -174,7 +179,15 @@ export class FiatRateService {
       try {
         const etokenSupportPrice: EtokenSupportPrice[] = _.get(config, 'etoken.etokenSupportPrice', []);
         if (!etokenSupportPrice) return cb('no etoken supported');
-        const body = provider.getRate(coin, etokenSupportPrice);
+        let currencyRate = null;
+        if (coin.toLowerCase() === 'elps') {
+          currencyRate = await this.getLatestCurrencyRates({ code: 'HNL' });
+        }
+        const body = await provider.getRate(
+          coin,
+          etokenSupportPrice,
+          currencyRate && currencyRate[0] ? currencyRate[0] : null
+        );
         const rates = _.filter(body, x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
         return cb(null, rates);
       } catch (e) {
@@ -260,7 +273,9 @@ export class FiatRateService {
       fiatFiltered = _.filter(Defaults.FIAT_CURRENCIES, ['code', opts.code]);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
-    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.SUPPORT_FIAT_CURRENCIES;
+    const currencies: { code: string; name: string }[] = fiatFiltered.length
+      ? fiatFiltered
+      : Defaults.SUPPORT_FIAT_CURRENCIES;
     const etoken = this._getEtokenSupportPrice();
     const coins = _.concat(_.values(Constants.COINS), etoken);
     async.map(
@@ -302,7 +317,7 @@ export class FiatRateService {
     );
   }
 
-  getRatesByCoin(opts, cb) {
+  public getRatesByCoin(opts, cb) {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesByCoin()>');
 
     opts = opts || {};
