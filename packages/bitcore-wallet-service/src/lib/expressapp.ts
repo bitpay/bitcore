@@ -1749,6 +1749,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
+      // passing null data => only check for fund of wallet is enough for conversion , do not need to notify to user  
       server.checkConversion(null, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);

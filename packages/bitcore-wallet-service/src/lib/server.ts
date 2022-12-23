@@ -5090,7 +5090,11 @@ export class WalletService {
       }
     });
   }
-
+  /**
+   * checkConversion - Checking if fund is ready for conversion
+   *
+   * @param {string} addressTopupEcash - The top up ecash address , if pass this data => call notify to user in case of insufficient fund for XEC, or eToken
+   */
   async checkConversion(addressTopupEcash, cb) {
     if (!clientsFundConversion) {
       return cb(Errors.NOT_FOUND_KEY_CONVERSION);
