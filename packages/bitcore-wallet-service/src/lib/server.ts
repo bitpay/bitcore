@@ -4625,6 +4625,11 @@ export class WalletService {
                                               { parse_mode: 'HTML' }
                                             );
                                             this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
+                                              setTimeout(() => {
+                                                this.checkConversion(accountTo.address, (err, result) => {
+                                                  if (err) logger.debug('error for checking conversion: ', err);
+                                                });
+                                              }, 1000 * 10); // 10 seconds later recheck fund to notify if we don't have enough balance after transaction
                                               if (err) {
                                                 saveError(conversionOrderInfo, data, err);
                                                 return;
@@ -5085,8 +5090,12 @@ export class WalletService {
       }
     });
   }
-
-  async checkConversion(cb) {
+  /**
+   * checkConversion - Checking if fund is ready for conversion
+   *
+   * @param {string} addressTopupEcash - The top up ecash address , if pass this data => call notify to user in case of insufficient fund for XEC, or eToken
+   */
+  async checkConversion(addressTopupEcash, cb) {
     if (!clientsFundConversion) {
       return cb(Errors.NOT_FOUND_KEY_CONVERSION);
     } else {
@@ -5110,6 +5119,13 @@ export class WalletService {
         !xecBalance.balance.totalAmount ||
         xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
       ) {
+        if (addressTopupEcash) {
+          this._handleWhenFundIsNotEnough(
+            Errors.INSUFFICIENT_FUND_XEC.code,
+            xecBalance.balance.totalAmount / 100,
+            addressTopupEcash
+          );
+        }
         return cb(Errors.INSUFFICIENT_FUND_XEC);
       }
       // get balance of XEC Wallet and token elps
@@ -5132,7 +5148,14 @@ export class WalletService {
         );
         if (tokenElps) {
           // from txId get txDetail
-          if (tokenElps.amountToken < config.conversion.minTokenConversion) {
+          if (tokenElps.amountToken <= config.conversion.minTokenConversion) {
+            if (addressTopupEcash) {
+              this._handleWhenFundIsNotEnough(
+                Errors.INSUFFICIENT_FUND_TOKEN.code,
+                tokenElps.amountToken,
+                addressTopupEcash
+              );
+            }
             return cb(Errors.INSUFFICIENT_FUND_TOKEN);
           } else {
             return cb(null, true);
