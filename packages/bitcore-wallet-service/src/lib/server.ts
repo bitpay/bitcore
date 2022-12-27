@@ -5158,7 +5158,13 @@ export class WalletService {
             }
             return cb(Errors.INSUFFICIENT_FUND_TOKEN);
           } else {
-            return cb(null, true);
+            if (!addressTopupEcash) {
+              this.storage.fetchAddressWithWalletId(xecWallet.credentials.walletId, async (err, address) => {
+                return cb(null, address.address);
+              });
+            } else{
+              return cb(null, addressTopupEcash);
+            }
           }
         } else {
           return cb(Errors.NOT_FOUND_TOKEN_WALLET);
