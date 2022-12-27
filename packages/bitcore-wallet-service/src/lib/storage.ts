@@ -1513,6 +1513,19 @@ export class Storage {
     );
   }
 
+  fetchAddressWithWalletId(walletId, cb) {
+    this.db.collection(collections.ADDRESSES).findOne(
+      {
+        walletId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, Address.fromObj(result));
+      }
+    );
+  }
+
   fetchAddressByWalletId(walletId, address, cb) {
     this.db.collection(collections.ADDRESSES).findOne(
       {
