@@ -2831,7 +2831,8 @@ export class API extends EventEmitter {
         chain: opts.coin, // chain === coin for stored clients
         network: opts.network,
         account: opts.account,
-        n: opts.n
+        n: opts.n,
+        use0forBCH: opts.use0forBCH // only used for server assisted import
       });
 
       if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
@@ -3037,6 +3038,7 @@ export class API extends EventEmitter {
         // coin, network,  multisig
         ['btc', 'livenet'],
         ['bch', 'livenet'],
+        ['bch', 'livenet', false, true], // check for prefork bch wallet
         ['eth', 'livenet'],
         ['eth', 'testnet'],
         ['matic', 'livenet'],
@@ -3088,7 +3090,8 @@ export class API extends EventEmitter {
             coin: x[0],
             network: x[1],
             account: 0,
-            n: x[2] ? 2 : 1
+            n: x[2] ? 2 : 1,
+            use0forBCH: x[3]
           };
           // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
           // TODO OPTI: do not scan accounts if XX
