@@ -74,6 +74,7 @@ let swapQueueInterval = null;
 let conversionQueueInterval = null;
 let clientsFundConversion = null;
 const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
+const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
 let clientsFund = null;
 let clientsReceive = null;
 let keyFund = null;
@@ -83,7 +84,8 @@ let isSendFundXecErrorToTelegram = false;
 let isSendFundTokenErrorToTelegram = false;
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
-
+let txIdHandled = [];
+let listUserWebsocket: { [msgId: string]: any } = {};
 const Bitcore = require('@abcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -204,6 +206,20 @@ export class WalletService {
     //
     this.request = request;
   }
+
+  _checkingValidAddress(address): boolean {
+    try {
+      const { prefix, type, hash } = ecashaddr.decode(address);
+      if (prefix === 'ecash' || prefix === 'etoken') {
+        return true;
+      } else {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Gets the current version of BWS
    */
@@ -2343,12 +2359,12 @@ export class WalletService {
       if (!txDetail) return cb('no txDetail');
       const inputAddresses = _.uniq(
         _.map(txDetail.inputs, item => {
-          return this._convertAddressFormInputScript(item.inputScript, 'xec', true);
+          return this._convertAddressFormInputScript(item.inputScript, 'xec', !!item.slpToken);
         })
       );
       const outputAddresses = _.uniq(
         _.map(txDetail.outputs, item => {
-          return this._convertAddressFormInputScript(item.outputScript, 'xec', true);
+          return this._convertAddressFormInputScript(item.outputScript, 'xec', !!item.slpToken);
         })
       );
       if (inputAddresses) {
@@ -5038,13 +5054,17 @@ export class WalletService {
         if (result) {
           let outputsConverted = _.uniq(
             _.map(result.outputs, item => {
-              return this._convertOutputTokenScript(item);
+              return this._convertOutputScript(item);
             })
           );
           outputsConverted = _.compact(outputsConverted);
           // convert outputscript to output address
-          const accountTo = outputsConverted.find(output => !result.inputAddresses.includes(output.address));
-          accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
+          const accountTo = outputsConverted.find(
+            output =>
+              !result.inputAddresses.includes(output.address) &&
+              output.address.includes('ecash:') &&
+              output.amount > 546
+          );
           if (!clientsFundConversion) {
             return cb(Errors.NOT_FOUND_KEY_CONVERSION);
           } else {
@@ -5162,7 +5182,7 @@ export class WalletService {
               this.storage.fetchAddressWithWalletId(xecWallet.credentials.walletId, async (err, address) => {
                 return cb(null, address.address);
               });
-            } else{
+            } else {
               return cb(null, addressTopupEcash);
             }
           }
@@ -5173,6 +5193,139 @@ export class WalletService {
         return cb(Errors.NOT_FOUND_TOKEN_WALLET);
       }
     }
+  }
+
+  initializeBot() {
+    // if user click start => if not , store user into db , if yes, checking user address
+    botNotification.onText(/\/start/, msg => {
+      this.storage.fetchUserWatchAddressByMsgId(msg.chat.id, (err, userInfo) => {
+        if (!err) {
+          if (userInfo) {
+            const listAddress = this._convertToListAddressForUser(userInfo.address);
+            if (listAddress.length > 0) {
+              if (!!listUserWebsocket[msg.chat.id]) {
+                botNotification.sendMessage(msg.chat.id, 'Watching address service is running');
+              } else {
+                this.starBotNotificationForUser(msg.chat.id, (err, result) => {
+                  if (!err) {
+                    botNotification.sendMessage(msg.chat.id, 'Chronik watcher started successfully');
+                  }
+                });
+              }
+            } else {
+              botNotification.sendMessage(
+                msg.chat.id,
+                'Welcome to Chronik watcher, please use /help to display general and other commands.'
+              );
+            }
+          }
+        } else {
+        }
+      });
+    });
+
+    botNotification.onText(/\/stop/, msg => {
+      if (!listUserWebsocket[msg.chat.id]) {
+        botNotification.sendMessage(msg.chat.id, 'Chronik watcher service has been stopped!');
+      } else {
+        try {
+          listUserWebsocket[msg.chat.id]._manuallyClosed = true;
+          listUserWebsocket[msg.chat.id]._ws.close();
+        } catch (e) {
+          logger.debug(e);
+        }
+        listUserWebsocket[msg.chat.id] = null;
+        botNotification.sendMessage(msg.chat.id, 'Chronik watcher service has been stopped!');
+      }
+    });
+
+    botNotification.onText(/\/status/, msg => {
+      if (!!listUserWebsocket[msg.chat.id]) {
+        botNotification.sendMessage(msg.chat.id, 'Chronik watcher service has been started!');
+      } else {
+        botNotification.sendMessage(msg.chat.id, 'Chronik watcher service has been stopped!');
+      }
+    });
+
+    botNotification.onText(/\/list/, msg => {
+      this.storage.fetchUserWatchAddressByMsgId(msg.chat.id, (err, userInfo) => {
+        if (!err) {
+          if (userInfo) {
+            const listAddress = this._convertToListAddressForUser(userInfo.address);
+            if (listAddress && listAddress.length > 0) {
+              let count = 0;
+              let message = '';
+              listAddress.forEach(address => {
+                count++;
+                message += count + '. ' + address + '\n';
+              });
+              botNotification.sendMessage(msg.chat.id, message, { parse_mode: 'HTML' });
+            } else {
+              botNotification.sendMessage(
+                msg.chat.id,
+                'Your addresses are empty. Please add new address by using command /add [ecash address]!'
+              );
+            }
+          } else {
+            botNotification.sendMessage(
+              msg.chat.id,
+              'Your addresses are empty. Please add new address by using command /add [ecash address]!'
+            );
+          }
+        } else {
+          botNotification.sendMessage(msg.chat.id, 'Errors occured on Chronik watcher, please try again.');
+        }
+      });
+    });
+
+    botNotification.onText(/\/help/, msg => {
+      let message =
+        '/start - Enable Chronik watcher service \n' +
+        '/stop - Disable Chronik watcher service \n' +
+        '/add - Add watching address i.e. /add ecash:qq2ml325qrc3t2dxhtkjaq3qyr0rrjs43sgs7n1234 \n' +
+        '/remove - Remove watched address i.e /remove ecash:qq2ml325qrc3t2dxhtkjaq3qyr0rrjs43sgs7n1234 \n' +
+        '/list - Display all watched addresses \n' +
+        '/status - Display status of Chronik watcher service \n';
+      botNotification.sendMessage(msg.chat.id, message, { parse_mode: 'HTML' });
+    });
+
+    botNotification.onText(/\/add\secash:\w+/, msg => {
+      const address = msg.text.toString().replace(/\/add\s/, '');
+      if (this._checkingValidAddress(address)) {
+        this.addAddressToUser(msg.chat.id, address);
+      } else {
+        botNotification.sendMessage(msg.chat.id, 'Invalid address format, please check and try again!');
+      }
+    });
+
+    botNotification.onText(/\/remove\secash:\w+/, msg => {
+      this.storage.fetchUserWatchAddressByMsgId(msg.chat.id, (err, userInfo) => {
+        const address = msg.text.toString().replace(/\/remove\s/, '');
+        if (this._checkingValidAddress(address)) {
+          if (!userInfo.address.includes(address)) {
+            botNotification.sendMessage(msg.chat.id, 'Address is not existed!');
+          } else if (!!listUserWebsocket[msg.chat.id]) {
+            const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
+            listUserWebsocket[msg.chat.id].unsubscribe('p2pkh', scriptPayload);
+            const user = {
+              msgId: msg.chat.id,
+              address: userInfo.address.replace(address, '').replace(';;', ';')
+            };
+
+            this.storage.updateUserWatchAddress(user, (err, result) => {
+              if (!err) {
+                botNotification.sendMessage(
+                  msg.chat.id,
+                  '[ ' + address.substr(address.length - 8) + ' ] has been removed!'
+                );
+              }
+            });
+          }
+        } else {
+          botNotification.sendMessage(msg.chat.id, 'Invalid address format, please check and try again!');
+        }
+      });
+    });
   }
 
   async updateOrder(opts, cb) {
@@ -5534,6 +5687,24 @@ export class WalletService {
     address = addressBitcore.encode('etoken', type, hashBuffer);
     let amount = 0;
     amount = output.value ? output.value.low : 0;
+    return { address, amount };
+  }
+
+  _convertOutputScript(output: Output): { address: string; amount: number } {
+    let address: string;
+    const coin = 'xec';
+    const scriptBitcore = Bitcore_[coin].Script(output.outputScript);
+    const { hashBuffer, type } = scriptBitcore.getAddressInfo();
+    if (!hashBuffer || !type) return null;
+    const addressBitcore = Bitcore_[coin].Address(hashBuffer);
+    let amount = 0;
+    if (output.slpToken) {
+      address = addressBitcore.encode('etoken', type, hashBuffer);
+      amount = output.slpToken.amount.low;
+    } else {
+      address = addressBitcore.encode('ecash', type, hashBuffer);
+      amount = output.value ? output.value.low : 0;
+    }
     return { address, amount };
   }
 
@@ -7850,6 +8021,170 @@ export class WalletService {
         resolve(true);
       });
     });
+  }
+
+  addAddressToUser(msgId, address) {
+    this.storage.fetchUserWatchAddressByMsgId(msgId, (err, userInfo) => {
+      let listAddressToSubcribe = [];
+      if (userInfo) {
+        // handle case address is already in db , does not need to add any more
+        if (userInfo.address.includes(address)) {
+          botNotification.sendMessage(msgId, 'Address has already registered!');
+        } else {
+          // handle case user already exist, update new address into db
+          const user = {
+            msgId,
+            address: userInfo.address + ';' + address
+          };
+          this.storage.updateUserWatchAddress(user, (err, result) => {
+            if (!err) {
+              botNotification.sendMessage(msgId, '[ ' + address.substr(address.length - 8) + ' ] is registered!');
+              this.handleSubcribeNewAddress(msgId, address);
+            }
+          });
+        }
+      } else {
+        const user = {
+          msgId,
+          address
+        };
+        this.storage.storeUserWatchAddress(user, (err, result) => {
+          if (!err) {
+            botNotification.sendMessage(msgId, 'Address has registered!');
+            this.handleSubcribeNewAddress(msgId, address);
+          }
+        });
+      }
+    });
+  }
+
+  handleSubcribeNewAddress(msgId, address) {
+    const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
+    if (!!listUserWebsocket[msgId]) {
+      const ws = listUserWebsocket[msgId];
+      ws.subscribe('p2pkh', scriptPayload);
+    } else {
+      this.starBotNotificationForUser(msgId, (err, result) => {});
+    }
+  }
+
+  async starBotNotificationForUser(msgId, cb) {
+    logger.debug('start connect websocke');
+    const chronikClient = ChainService.getChronikClient('xec');
+
+    let ws = chronikClient.ws({
+      onMessage: msg => {
+        if (msg.txid && !txIdHandled.includes(msg.txid) && msg.type === 'AddedToMempool') {
+          txIdHandled.push(msg.txid);
+          this.getTxDetailForXecWallet(msg.txid, (err, result: TxDetail) => {
+            if (err) {
+              return cb(err);
+            } else {
+              if (result) {
+                let outputsConverted = _.uniq(
+                  _.map(result.outputs, item => {
+                    return this._convertOutputScript(item);
+                  })
+                );
+                outputsConverted = _.compact(outputsConverted);
+                this.storage.fetchUserWatchAddressByMsgId(msgId, (err, userInfo) => {
+                  if (userInfo) {
+                    let addressFoundInOutput = null;
+                    if (result.slpTxData) {
+                      const listUserAddress = this._convertToListAddressForUser(userInfo.address);
+                      const userAddressStringConvertedToEtoken = listUserAddress
+                        .map(address => this._convertFromEcashWithPrefixToEtoken(address))
+                        .join(';');
+                      addressFoundInOutput = outputsConverted.filter(
+                        output =>
+                          userAddressStringConvertedToEtoken.includes(output.address) &&
+                          !result.inputAddresses.includes(output.address)
+                      );
+                    } else {
+                      addressFoundInOutput = outputsConverted.filter(
+                        output =>
+                          userInfo.address.includes(output.address) && !result.inputAddresses.includes(output.address)
+                      );
+                    }
+
+                    if (addressFoundInOutput && addressFoundInOutput.length > 0) {
+                      const isSentToEcash = outputsConverted.every(output => !output.address.includes('etoken:'));
+                      if (isSentToEcash) {
+                        // ecash case
+                        const outputSelected = outputsConverted.find(s => !result.inputAddresses.includes(s.address));
+                        if (outputSelected) {
+                          botNotification.sendMessage(
+                            msgId,
+                            '[ ' +
+                              addressFoundInOutput[0].address.substr(addressFoundInOutput[0].address.length - 8) +
+                              ' ] have received a payment of ' +
+                              outputSelected.amount / 100 +
+                              'XEC from ' +
+                              result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
+                              ' :: Tx detail :' +
+                              result.txid
+                          );
+                          txIdHandled.push(msg.txid);
+                        }
+                      } else {
+                        // etoken case
+                        const outputSelected = outputsConverted.find(
+                          s => !result.inputAddresses.includes(s.address) && s.address.includes('etoken:')
+                        );
+                        const tokenInfo = this._getAndStoreTokenInfo('xec', result.slpTxData.slpMeta.tokenId);
+                        tokenInfo.then((tokenInfoReturn: TokenInfo) => {
+                          botNotification.sendMessage(
+                            msgId,
+                            '[ ' +
+                              this._convertEtokenAddressToEcashAddress(addressFoundInOutput[0].address).substr(
+                                addressFoundInOutput[0].address.length - 8
+                              ) +
+                              ' ] have received a payment of ' +
+                              outputSelected.amount / 10 ** tokenInfoReturn.decimals +
+                              ' ' +
+                              tokenInfoReturn.symbol +
+                              ' from ' +
+                              result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
+                              ' :: Tx detail :' +
+                              result.txid
+                          );
+                          txIdHandled.push(msg.txid);
+                        });
+                      }
+                    }
+                  }
+                });
+              }
+            }
+          });
+        }
+      },
+      onReconnect: e => {},
+      onConnect: e => {},
+      onError: e => {
+        logger.debug('error', e);
+        bot.sendMessage(msgId, 'Error while registering. Please contact admin to support');
+      }
+    });
+    await ws.waitForOpen();
+    listUserWebsocket[msgId] = ws;
+    this.storage.fetchUserWatchAddressByMsgId(msgId, (err, userInfo) => {
+      let listAddressToSubcribe = [];
+      if (userInfo) {
+        const listAddress = this._convertToListAddressForUser(userInfo.address);
+        listAddress.forEach(address => {
+          const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
+          ws.subscribe('p2pkh', scriptPayload);
+        });
+      }
+      return cb(null, true);
+    });
+  }
+
+  _convertToListAddressForUser(address: string): string[] {
+    let listAddress = address.split(';');
+    listAddress = _.compact(listAddress);
+    return listAddress;
   }
 }
 

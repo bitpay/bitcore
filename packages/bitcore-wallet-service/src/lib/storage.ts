@@ -56,7 +56,8 @@ const collections = {
   DONATION: 'donation',
   TOKEN_INFO: 'token_info',
   ORDER_INFO: 'order_info',
-  CONVERSION_ORDER_INFO: 'conversion_order_info'
+  CONVERSION_ORDER_INFO: 'conversion_order_info',
+  USER_WATCH_ADDRESS: 'user_watch_address'
 };
 
 const Common = require('./common');
@@ -117,6 +118,9 @@ export class Storage {
       id: 1
     });
     db.collection(collections.CONVERSION_ORDER_INFO).createIndex({
+      id: 1
+    });
+    db.collection(collections.USER_WATCH_ADDRESS).createIndex({
       id: 1
     });
     db.collection(collections.COPAYERS_LOOKUP).createIndex({
@@ -776,6 +780,79 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
 
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeUserWatchAddress(user, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', user);
+      return;
+    }
+
+    this.db.collection(collections.USER_WATCH_ADDRESS).insertOne(
+      user,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateUserWatchAddress(user, cb) {
+    this.db.collection(collections.USER_WATCH_ADDRESS).updateOne(
+      {
+        msgId: user.msgId
+      },
+      {
+        $set: {
+          address: user.address
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+        return cb(null, result);
+      }
+    );
+  }
+
+  removeUserWatchAddress(msgId, cb) {
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', msgId);
+      return;
+    }
+
+    this.db.collection(collections.USER_WATCH_ADDRESS).deleteOne(
+      msgId,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchUserWatchAddressByMsgId(msgId: string, cb) {
+    this.db.collection(collections.USER_WATCH_ADDRESS).findOne(
+      {
+        msgId
+      },
+      (err, result) => {
+        if (err) return cb(err);
         return cb(null, result);
       }
     );

@@ -61,7 +61,8 @@ const errors = {
   INSUFFICIENT_FUND_TOKEN: 'Insufficient fund for token wallet',
   NOT_FOUND_TOKEN_WALLET: 'Not found token wallet',
   NOT_FOUND_RATE_XEC: 'Not found rate for xec wallet',
-  NOT_FOUND_RATE_TOKEN: 'Not found rate for token wallet'
+  NOT_FOUND_RATE_TOKEN: 'Not found rate for token wallet',
+  INVALID_TX_ID: 'Invalid txid'
 };
 
 const errorObjects = _.fromPairs(
