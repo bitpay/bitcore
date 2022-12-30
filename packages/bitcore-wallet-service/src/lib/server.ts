@@ -5200,7 +5200,7 @@ export class WalletService {
   initializeBot() {
     // if user click start => if not , store user into db , if yes, checking user address
     botNotification.onText(/\/start/, msg => {
-      logger.debug("listUserWebsocket: ", listUserWebsocket);
+      logger.debug('listUserWebsocket: ', listUserWebsocket);
       this.storage.fetchAllAddressByMsgId(msg.chat.id, (err, listAddress) => {
         if (!err) {
           if (listAddress && listAddress.length > 0) {
@@ -5309,6 +5309,7 @@ export class WalletService {
     });
 
     botNotification.onText(/\/remove\secash:\w+/, msg => {
+      logger.debug('listUserWebsocket in remove: ', listUserWebsocket);
       this.storage.fetchAllAddressByMsgId(msg.chat.id, (err, listAddress) => {
         const address = msg.text.toString().replace(/\/remove\s/, '');
         if (this._checkingValidAddress(address)) {
@@ -5316,7 +5317,6 @@ export class WalletService {
             botNotification.sendMessage(msg.chat.id, 'Address is not existed!');
           } else if (!!listUserWebsocket[msg.chat.id]) {
             const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
-            logger.debug("listUserWebsocket in remove: ", listUserWebsocket);
             listUserWebsocket[msg.chat.id].unsubscribe('p2pkh', scriptPayload);
             const user = {
               msgId: msg.chat.id,
@@ -8163,15 +8163,22 @@ export class WalletService {
           });
         }
       },
-      onReconnect: e => {},
-      onConnect: e => {},
+      onReconnect: e => {
+        logger.debug('error while onReconnect: ', e);
+      },
+      onConnect: e => {
+        logger.debug('error while onConnect: ', e);
+      },
       onError: e => {
-        logger.debug('error', e);
+        logger.debug('error while connect: ', e);
         bot.sendMessage(msgId, 'Error while registering. Please contact admin to support');
       }
     });
     await ws.waitForOpen();
+    logger.debug('before assign ws to global var');
+    logger.debug('ws', ws);
     listUserWebsocket[msgId] = ws;
+    logger.debug('after assign ws to global var');
     this.storage.fetchAllAddressByMsgId(msgId, (err, listAddress) => {
       let listAddressToSubcribe = [];
       if (listAddress && listAddress.length > 0) {
