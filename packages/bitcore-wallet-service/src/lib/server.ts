@@ -8100,7 +8100,7 @@ export class WalletService {
                     } else {
                       addressFoundInOutput = outputsConverted.filter(
                         output =>
-                        listAddress.includes(output.address) && !result.inputAddresses.includes(output.address)
+                          listAddress.includes(output.address) && !result.inputAddresses.includes(output.address)
                       );
                     }
 
