@@ -8118,7 +8118,7 @@ export class WalletService {
                               outputSelected.amount / 100 +
                               'XEC from ' +
                               result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
-                              ' :: Tx detail :' +
+                              ' :: Tx detail : ' +
                               result.txid
                           );
                           txIdHandled.push(msg.txid);
@@ -8142,7 +8142,7 @@ export class WalletService {
                               tokenInfoReturn.symbol +
                               ' from ' +
                               result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
-                              ' :: Tx detail :' +
+                              ' :: Tx detail : ' +
                               result.txid
                           );
                           txIdHandled.push(msg.txid);
