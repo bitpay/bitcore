@@ -70,8 +70,8 @@ const EmailValidator = require('email-validator');
 let swapQueueInterval = null;
 let conversionQueueInterval = null;
 let clientsFundConversion = null;
-const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
-const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
+let bot = null;
+let botNotification = null;
 let clientsFund = null;
 let clientsReceive = null;
 let keyFund = null;
@@ -191,6 +191,7 @@ export class WalletService {
     if (!initialized) {
       throw new Error('Server not initialized');
     }
+    bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
     botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
     this.lock = lock;
     this.storage = storage;
