@@ -5200,6 +5200,7 @@ export class WalletService {
   initializeBot() {
     // if user click start => if not , store user into db , if yes, checking user address
     botNotification.onText(/\/start/, msg => {
+      logger.debug("listUserWebsocket: ", listUserWebsocket);
       this.storage.fetchAllAddressByMsgId(msg.chat.id, (err, listAddress) => {
         if (!err) {
           if (listAddress && listAddress.length > 0) {
@@ -5315,6 +5316,7 @@ export class WalletService {
             botNotification.sendMessage(msg.chat.id, 'Address is not existed!');
           } else if (!!listUserWebsocket[msg.chat.id]) {
             const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
+            logger.debug("listUserWebsocket in remove: ", listUserWebsocket);
             listUserWebsocket[msg.chat.id].unsubscribe('p2pkh', scriptPayload);
             const user = {
               msgId: msg.chat.id,
