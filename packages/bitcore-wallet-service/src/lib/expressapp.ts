@@ -16,6 +16,7 @@ const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
+const TelegramBot = require('node-telegram-bot-api');
 
 var GoogleTokenStrategy = require('passport-google-id-token');
 const passport = require('passport');
@@ -2075,6 +2076,8 @@ export class ExpressApp {
     }
 
     WalletService.initialize(opts, data => {
+      const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
+      const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
       const server = WalletService.getInstance(opts);
       if (listAccount && listAccount.length > 0) {
         listAccount.forEach(account => {
@@ -2097,9 +2100,10 @@ export class ExpressApp {
           );
         });
       }
-      setTimeout(() => {
+
+      server.createBot({ bot, botNotification }, finish => {
         server.initializeBot();
-      }, 100);
+      });
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
       });

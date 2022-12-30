@@ -48,7 +48,6 @@ import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
 
-const TelegramBot = require('node-telegram-bot-api');
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
@@ -191,8 +190,7 @@ export class WalletService {
     if (!initialized) {
       throw new Error('Server not initialized');
     }
-    bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
-    botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
+
     this.lock = lock;
     this.storage = storage;
     this.blockchainExplorer = blockchainExplorer;
@@ -5191,6 +5189,12 @@ export class WalletService {
         return cb(Errors.NOT_FOUND_TOKEN_WALLET);
       }
     }
+  }
+
+  createBot(opts, cb) {
+    bot = opts.bot;
+    botNotification = opts.botNotification;
+    return cb(true);
   }
 
   initializeBot() {
