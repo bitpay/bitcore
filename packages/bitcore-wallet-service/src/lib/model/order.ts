@@ -33,9 +33,12 @@ interface IOrder {
   toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
   note?: string;
+  isInQueue?: boolean;
   pendingReason?: string;
   lastModified?: Date;
   isResolve?: boolean;
+  toNetwork: string;
+  fromNetwork: string;
 }
 
 export class Order implements IOrder {
