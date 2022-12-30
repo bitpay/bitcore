@@ -827,14 +827,14 @@ export class Storage {
     );
   }
 
-  removeUserWatchAddress(msgId, cb) {
+  removeUserWatchAddress(userInfo, cb) {
     if (!this.db) {
-      logger.warn('Trying to store a notification with close DB', msgId);
+      logger.warn('Trying to store a notification with close DB', userInfo);
       return;
     }
 
     this.db.collection(collections.USER_WATCH_ADDRESS).deleteOne(
-      msgId,
+      userInfo,
       {
         w: 1
       },
@@ -846,16 +846,16 @@ export class Storage {
     );
   }
 
-  fetchUserWatchAddressByMsgId(msgId: string, cb) {
-    this.db.collection(collections.USER_WATCH_ADDRESS).findOne(
-      {
+  fetchAllAddressByMsgId(msgId: string, cb) {
+    this.db
+      .collection(collections.USER_WATCH_ADDRESS)
+      .find({
         msgId
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        return cb(null, result);
-      }
-    );
+      })
+      .toArray((err, listUserInfo) => {
+        const listAddress = _.map(listUserInfo, user => user.address);
+        return cb(null, listAddress);
+      });
   }
 
   fetchAllOrderInfo(opts, cb) {

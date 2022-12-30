@@ -53,14 +53,11 @@ const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
-const adminConfig = require('../../../../admin-config.json');
 // const keyFund = require('../../../../key-store.json');
-const fs = require('fs');
 const { dirname } = require('path');
 const appDir = dirname(require.main.filename);
 // import * as swapConfigFile from './admin-config.json';
 // var obj = JSON.parse(fs.readFileSync(swapConfig, 'utf8'));
-const telegramLogger = require('express-notify-telegram');
 
 const config = require('../config');
 const Uuid = require('uuid');
@@ -194,7 +191,7 @@ export class WalletService {
     if (!initialized) {
       throw new Error('Server not initialized');
     }
-
+    botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
     this.lock = lock;
     this.storage = storage;
     this.blockchainExplorer = blockchainExplorer;
@@ -5198,10 +5195,9 @@ export class WalletService {
   initializeBot() {
     // if user click start => if not , store user into db , if yes, checking user address
     botNotification.onText(/\/start/, msg => {
-      this.storage.fetchUserWatchAddressByMsgId(msg.chat.id, (err, userInfo) => {
+      this.storage.fetchAllAddressByMsgId(msg.chat.id, (err, listAddress) => {
         if (!err) {
-          if (userInfo) {
-            const listAddress = this._convertToListAddressForUser(userInfo.address);
+          if (listAddress && listAddress.length > 0) {
             if (listAddress.length > 0) {
               if (!!listUserWebsocket[msg.chat.id]) {
                 botNotification.sendMessage(msg.chat.id, 'Watching address service is running');
@@ -5218,8 +5214,17 @@ export class WalletService {
                 'Welcome to Chronik watcher, please use /help to display general and other commands.'
               );
             }
+          } else {
+            botNotification.sendMessage(
+              msg.chat.id,
+              'Welcome to Chronik watcher, please use /help to display general and other commands.'
+            );
           }
         } else {
+          botNotification.sendMessage(
+            msg.chat.id,
+            'Welcome to Chronik watcher, please use /help to display general and other commands.'
+          );
         }
       });
     });
@@ -5248,10 +5253,9 @@ export class WalletService {
     });
 
     botNotification.onText(/\/list/, msg => {
-      this.storage.fetchUserWatchAddressByMsgId(msg.chat.id, (err, userInfo) => {
+      this.storage.fetchAllAddressByMsgId(msg.chat.id, (err, listAddress) => {
         if (!err) {
-          if (userInfo) {
-            const listAddress = this._convertToListAddressForUser(userInfo.address);
+          if (listAddress && listAddress.length > 0) {
             if (listAddress && listAddress.length > 0) {
               let count = 0;
               let message = '';
@@ -5299,20 +5303,20 @@ export class WalletService {
     });
 
     botNotification.onText(/\/remove\secash:\w+/, msg => {
-      this.storage.fetchUserWatchAddressByMsgId(msg.chat.id, (err, userInfo) => {
+      this.storage.fetchAllAddressByMsgId(msg.chat.id, (err, listAddress) => {
         const address = msg.text.toString().replace(/\/remove\s/, '');
         if (this._checkingValidAddress(address)) {
-          if (!userInfo.address.includes(address)) {
+          if (!listAddress.includes(address)) {
             botNotification.sendMessage(msg.chat.id, 'Address is not existed!');
           } else if (!!listUserWebsocket[msg.chat.id]) {
             const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
             listUserWebsocket[msg.chat.id].unsubscribe('p2pkh', scriptPayload);
             const user = {
               msgId: msg.chat.id,
-              address: userInfo.address.replace(address, '').replace(';;', ';')
+              address
             };
 
-            this.storage.updateUserWatchAddress(user, (err, result) => {
+            this.storage.removeUserWatchAddress(user, (err, result) => {
               if (!err) {
                 botNotification.sendMessage(
                   msg.chat.id,
@@ -8024,36 +8028,30 @@ export class WalletService {
   }
 
   addAddressToUser(msgId, address) {
-    this.storage.fetchUserWatchAddressByMsgId(msgId, (err, userInfo) => {
+    this.storage.fetchAllAddressByMsgId(msgId, (err, listAddress) => {
       let listAddressToSubcribe = [];
-      if (userInfo) {
+      if (listAddress && listAddress.length > 0) {
         // handle case address is already in db , does not need to add any more
-        if (userInfo.address.includes(address)) {
+        if (listAddress.includes(address)) {
           botNotification.sendMessage(msgId, 'Address has already registered!');
         } else {
-          // handle case user already exist, update new address into db
-          const user = {
-            msgId,
-            address: userInfo.address + ';' + address
-          };
-          this.storage.updateUserWatchAddress(user, (err, result) => {
-            if (!err) {
-              botNotification.sendMessage(msgId, '[ ' + address.substr(address.length - 8) + ' ] is registered!');
-              this.handleSubcribeNewAddress(msgId, address);
-            }
-          });
+          this._storeUserWatchAddress(msgId, address);
         }
       } else {
-        const user = {
-          msgId,
-          address
-        };
-        this.storage.storeUserWatchAddress(user, (err, result) => {
-          if (!err) {
-            botNotification.sendMessage(msgId, 'Address has registered!');
-            this.handleSubcribeNewAddress(msgId, address);
-          }
-        });
+        this._storeUserWatchAddress(msgId, address);
+      }
+    });
+  }
+
+  _storeUserWatchAddress(msgId, address) {
+    const user = {
+      msgId,
+      address
+    };
+    this.storage.storeUserWatchAddress(user, (err, result) => {
+      if (!err) {
+        botNotification.sendMessage(msgId, '[ ' + address.substr(address.length - 8) + ' ] is registered!');
+        this.handleSubcribeNewAddress(msgId, address);
       }
     });
   }
@@ -8087,12 +8085,11 @@ export class WalletService {
                   })
                 );
                 outputsConverted = _.compact(outputsConverted);
-                this.storage.fetchUserWatchAddressByMsgId(msgId, (err, userInfo) => {
-                  if (userInfo) {
+                this.storage.fetchAllAddressByMsgId(msgId, (err, listAddress) => {
+                  if (listAddress && listAddress.length > 0) {
                     let addressFoundInOutput = null;
                     if (result.slpTxData) {
-                      const listUserAddress = this._convertToListAddressForUser(userInfo.address);
-                      const userAddressStringConvertedToEtoken = listUserAddress
+                      const userAddressStringConvertedToEtoken = listAddress
                         .map(address => this._convertFromEcashWithPrefixToEtoken(address))
                         .join(';');
                       addressFoundInOutput = outputsConverted.filter(
@@ -8103,7 +8100,7 @@ export class WalletService {
                     } else {
                       addressFoundInOutput = outputsConverted.filter(
                         output =>
-                          userInfo.address.includes(output.address) && !result.inputAddresses.includes(output.address)
+                        listAddress.includes(output.address) && !result.inputAddresses.includes(output.address)
                       );
                     }
 
@@ -8168,10 +8165,9 @@ export class WalletService {
     });
     await ws.waitForOpen();
     listUserWebsocket[msgId] = ws;
-    this.storage.fetchUserWatchAddressByMsgId(msgId, (err, userInfo) => {
+    this.storage.fetchAllAddressByMsgId(msgId, (err, listAddress) => {
       let listAddressToSubcribe = [];
-      if (userInfo) {
-        const listAddress = this._convertToListAddressForUser(userInfo.address);
+      if (listAddress && listAddress.length > 0) {
         listAddress.forEach(address => {
           const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
           ws.subscribe('p2pkh', scriptPayload);
@@ -8179,12 +8175,6 @@ export class WalletService {
       }
       return cb(null, true);
     });
-  }
-
-  _convertToListAddressForUser(address: string): string[] {
-    let listAddress = address.split(';');
-    listAddress = _.compact(listAddress);
-    return listAddress;
   }
 }
 
