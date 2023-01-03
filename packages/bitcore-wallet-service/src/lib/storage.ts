@@ -858,6 +858,18 @@ export class Storage {
       });
   }
 
+  fetchAllMsgIdByAddress(address: string, cb) {
+    this.db
+      .collection(collections.USER_WATCH_ADDRESS)
+      .find({
+        address
+      })
+      .toArray((err, listUserInfo) => {
+        const listMsgId = _.map(listUserInfo, user => user.msgId);
+        return cb(null, listMsgId);
+      });
+  }
+
   fetchAllOrderInfo(opts, cb) {
     const coinConfigFilter: ICoinConfigFilter = opts.coinConfigFilter || null;
     let queryObject = {};
@@ -1087,6 +1099,18 @@ export class Storage {
         return cb(null, result);
       }
     );
+  }
+
+  fetchAllAddressInUserWatchAddress(cb) {
+    this.db
+      .collection(collections.USER_WATCH_ADDRESS)
+      .distinct('address')
+      .then(listAddress => {
+        return cb(null, listAddress);
+      })
+      .catch(e => {
+        return cb(e);
+      });
   }
 
   // TODO: should be done client-side
