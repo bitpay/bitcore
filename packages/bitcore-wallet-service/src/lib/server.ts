@@ -76,8 +76,8 @@ let clientsReceive = null;
 let keyFund = null;
 let mnemonicKeyFund = null;
 let mnemonicKeyFundConversion = null;
-let isNotiFundXecBelowMInimumToTelegram = false;
-let isNotiFundTokenBelowMInimumToTelegram = false;
+let isNotiFundXecBelowMinimumToTelegram = false;
+let isNotiFundTokenBelowMinimumToTelegram = false;
 let isNotiFundXecInsufficientMinimumToTelegram = false;
 let isNotiFundTokenInsufficientMinimumToTelegram = false;
 const bcrypt = require('bcrypt');
@@ -4708,7 +4708,7 @@ export class WalletService {
   _handleWhenFundIsNotEnough(pendingReason: string, remaining: number, addressTopupEcash: string) {
     const addressTopupEtoken = this._convertFromEcashWithPrefixToEtoken(addressTopupEcash);
     const moneyWithWingsIcon = '\u{1F4B8}';
-    if (!isNotiFundXecBelowMInimumToTelegram && pendingReason === Errors.BELOW_MINIMUM_XEC.code) {
+    if (!isNotiFundXecBelowMinimumToTelegram && pendingReason === Errors.BELOW_MINIMUM_XEC.code) {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
@@ -4717,11 +4717,11 @@ export class WalletService {
           ' XEC - ' +
           addressTopupEcash
       );
-      isNotiFundXecBelowMInimumToTelegram = true;
+      isNotiFundXecBelowMinimumToTelegram = true;
       setTimeout(() => {
-        isNotiFundXecBelowMInimumToTelegram = false;
+        isNotiFundXecBelowMinimumToTelegram = false;
       }, 1000 * 60 * 30);
-    } else if (!isNotiFundTokenBelowMInimumToTelegram && pendingReason === Errors.BELOW_MINIMUM_TOKEN.code) {
+    } else if (!isNotiFundTokenBelowMinimumToTelegram && pendingReason === Errors.BELOW_MINIMUM_TOKEN.code) {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
@@ -4732,9 +4732,9 @@ export class WalletService {
           ' - ' +
           addressTopupEtoken
       );
-      isNotiFundTokenBelowMInimumToTelegram = true;
+      isNotiFundTokenBelowMinimumToTelegram = true;
       setTimeout(() => {
-        isNotiFundTokenBelowMInimumToTelegram = false;
+        isNotiFundTokenBelowMinimumToTelegram = false;
       }, 1000 * 60 * 30);
     }
     if (!isNotiFundXecInsufficientMinimumToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_XEC.code) {
