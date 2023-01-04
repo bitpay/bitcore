@@ -1702,7 +1702,7 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/order/filter', (req, res) => {
+    router.post('/v3/order/filter', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1764,7 +1764,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.updateOrderById(req.params['id'], req.body, (err, order) => {
+      server.updateOrderById({ orderId: req.params['id'], order: req.body }, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
@@ -2107,6 +2107,9 @@ export class ExpressApp {
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
       });
+      setTimeout(() => {
+        server.restartHandleSwapQueue((err, finish) => {});
+      }, 10000);
       return cb();
     });
   }

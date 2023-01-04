@@ -47,6 +47,7 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
+import { resolve } from 'dns';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
@@ -3039,7 +3040,7 @@ export class WalletService {
     );
   }
 
-  getFee(coinInfo, opts) {
+  getFee(coinInfo, opts): Promise<any> {
     return new Promise((resolve, reject) => {
       // This is used for sendmax flow
       // if (_.isNumber(opts.fee)) {
@@ -4072,12 +4073,15 @@ export class WalletService {
     // let listCoinConfigReceiveFound = [];
     this.storage.fetchAllCoinConfig(async (err, listCoinConfig: CoinConfig[]) => {
       if (err) return cb(err);
+
+      if (clientsReceive && listCoinConfig.length > 0) {
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfig);
+      }
+
       if (clientsFund) {
-        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfig);
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfigMapped);
       }
-      if (clientsReceive && listCoinConfigMapped.length > 0) {
-        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfigMapped);
-      }
+
       if (listCoinConfigMapped.length > 0) {
         this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result) => {
           if (err) return cb(err);
@@ -4130,8 +4134,16 @@ export class WalletService {
         listCoinConfig.forEach(coinConfig => {
           const isCoinConfigFound =
             listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
-          coinConfig.isSwap = isSwap ? isCoinConfigFound : coinConfig.isSwap;
-          coinConfig.isReceive = !isSwap ? isCoinConfigFound : coinConfig.isReceive;
+          if (isSwap) {
+            coinConfig.isSwap = isCoinConfigFound;
+            const isTokenFoundOnFundWallet =
+              listTokenFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
+            if (isTokenFoundOnFundWallet) {
+              coinConfig.isReceive = true;
+            }
+          } else {
+            coinConfig.isReceive = isCoinConfigFound;
+          }
         });
       }
     }
@@ -4355,12 +4367,12 @@ export class WalletService {
                               return;
                             }
 
-                            if (amountDepositDetect > fundAmountSat) {
+                            if (amountUserDepositConverted > fundAmountSat) {
                               saveError(orderInfo, data, Errors.OUT_OF_FUND);
                               return;
                             }
 
-                            if (amountUserDepositConverted > maxAmountSat) {
+                            if (maxAmountSat > 0 && amountUserDepositConverted > maxAmountSat) {
                               saveError(orderInfo, data, Errors.EXCEED_MAX_LIMIT);
                               return;
                             }
@@ -4371,7 +4383,7 @@ export class WalletService {
                               (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
                             // TANTODO: in future remove for livenet , also apply for testnet
                             if (orderInfo.toNetwork === 'livenet') {
-                              const feeCalculated = this.calculateFee(
+                              const feeCalculated = await this.calculateFee(
                                 amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
                                 orderInfo,
                                 rateList[orderInfo.toCoinCode.toLowerCase()].USD,
@@ -4395,6 +4407,10 @@ export class WalletService {
                                 amountDepositInToCoinCodeUnit,
                                 orderInfo.addressUserReceive,
                                 (err, txId) => {
+                                  if (err) {
+                                    saveError(orderInfo, data, err);
+                                    return;
+                                  }
                                   orderInfo.status = 'complete';
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
@@ -4786,22 +4802,26 @@ export class WalletService {
     }
   }
 
-  calculateFee(amount: number, order: Order, rateUsd: number, coinConfig: CoinConfig): number {
-    // amount should be in to coin code unit
-    let feeCalculated = 0;
-    let networkFee = 0;
-    if (coinConfig.serviceFee > 0) {
-      feeCalculated = (coinConfig.serviceFee * amount) / 100;
-    }
-    if (!coinConfig.isToken && coinConfig.networkFee > 0) {
-      feeCalculated += coinConfig.networkFee;
-    }
-    if (coinConfig.settleFee > 0) {
-      // settle fee default calculated in usd
-      const settleFeecConvertedToCoinUnit = coinConfig.settleFee / rateUsd;
-      feeCalculated += settleFeecConvertedToCoinUnit;
-    }
-    return order.toSatUnit * feeCalculated;
+  calculateFee(amount: number, order: Order, rateUsd: number, coinConfig: CoinConfig): Promise<number> {
+    return new Promise(async (resolve, reject) => {
+      // amount should be in to coin code unit
+      let feeCalculated = 0;
+      let networkFee = 0;
+      if (coinConfig.serviceFee > 0) {
+        feeCalculated = (coinConfig.serviceFee * amount) / 100;
+      }
+      if (!coinConfig.isToken) {
+        if (coinConfig.networkFee > 0) {
+          feeCalculated += coinConfig.networkFee;
+        }
+      }
+      if (coinConfig.settleFee > 0) {
+        // settle fee default calculated in usd
+        const settleFeecConvertedToCoinUnit = coinConfig.settleFee / rateUsd;
+        feeCalculated += settleFeecConvertedToCoinUnit;
+      }
+      resolve(order.toSatUnit * feeCalculated);
+    });
   }
   async checkRequirementBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order) {
     let listCoinReceiveCode = [];
@@ -5356,7 +5376,7 @@ export class WalletService {
       if (!opts.orderId) {
         return cb(new Error('Missing required parameter order Id'));
       }
-      const orderInfo = Order.fromObj(opts);
+      const orderInfo = Order.fromObj(opts.order);
       this.storage.updateOrderById(opts.orderId, orderInfo, (err, result) => {
         if (err) return cb(err);
         return cb(null, { isUpdated: true });
@@ -7198,7 +7218,7 @@ export class WalletService {
           if (err) return cb(err);
           const orderInfo = Order.fromObj(result);
           const configCoinSelected = configSwap.coinReceive.find(
-            coinConfig => coinConfig.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase()
+            coinConfig => coinConfig.code.toLowerCase() === orderInfo.fromCoinCode.toLowerCase()
           );
           if (configCoinSelected) {
             orderInfo.coinConfig = configCoinSelected;
@@ -8174,21 +8194,30 @@ export class WalletService {
         bot.sendMessage(msgId, 'Error while registering. Please contact admin to support');
       }
     });
-    await ws.waitForOpen();
-    logger.debug('before assign ws to global var');
-    logger.debug('ws', ws);
-    listUserWebsocket[msgId] = ws;
-    logger.debug('after assign ws to global var');
-    this.storage.fetchAllAddressByMsgId(msgId, (err, listAddress) => {
-      let listAddressToSubcribe = [];
-      if (listAddress && listAddress.length > 0) {
-        listAddress.forEach(address => {
-          const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
-          ws.subscribe('p2pkh', scriptPayload);
+    try {
+      ws.waitForOpen()
+        .catch(e => {
+          console.log(e);
+        })
+        .then(() => {
+          logger.debug('before assign ws to global var');
+          logger.debug('ws', ws);
+          listUserWebsocket[msgId] = ws;
+          logger.debug('after assign ws to global var');
+          this.storage.fetchAllAddressByMsgId(msgId, (err, listAddress) => {
+            let listAddressToSubcribe = [];
+            if (listAddress && listAddress.length > 0) {
+              listAddress.forEach(address => {
+                const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
+                ws.subscribe('p2pkh', scriptPayload);
+              });
+            }
+            return cb(null, true);
+          });
         });
-      }
-      return cb(null, true);
-    });
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
 
