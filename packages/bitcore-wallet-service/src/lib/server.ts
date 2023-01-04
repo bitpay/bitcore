@@ -76,8 +76,10 @@ let clientsReceive = null;
 let keyFund = null;
 let mnemonicKeyFund = null;
 let mnemonicKeyFundConversion = null;
-let isSendFundXecErrorToTelegram = false;
-let isSendFundTokenErrorToTelegram = false;
+let isNotiFundXecBelowMInimumToTelegram = false;
+let isNotiFundTokenBelowMInimumToTelegram = false;
+let isNotiFundXecInsufficientMinimumToTelegram = false;
+let isNotiFundTokenInsufficientMinimumToTelegram = false;
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 let txIdHandled = [];
@@ -4559,18 +4561,29 @@ export class WalletService {
                                   saveError(conversionOrderInfo, data, e);
                                   return;
                                 });
-                                if (
-                                  !xecBalance ||
-                                  !xecBalance.balance ||
-                                  !xecBalance.balance.totalAmount ||
-                                  xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
-                                ) {
+                                if (xecBalance && xecBalance.balance && _.isNumber(xecBalance.balance.totalAmount)) {
+                                  if (xecBalance.balance.totalAmount <= 546) {
+                                    saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_XEC);
+                                    this._handleWhenFundIsNotEnough(
+                                      Errors.INSUFFICIENT_FUND_XEC.code,
+                                      xecBalance.balance.totalAmount / 100,
+                                      accountTo.address
+                                    );
+                                    return;
+                                  }
+                                  if (xecBalance.balance.totalAmount < config.conversion.minXecSatConversion) {
+                                    this._handleWhenFundIsNotEnough(
+                                      Errors.BELOW_MINIMUM_XEC.code,
+                                      xecBalance.balance.totalAmount / 100,
+                                      accountTo.address
+                                    );
+                                  }
+                                } else {
                                   this._handleWhenFundIsNotEnough(
                                     Errors.INSUFFICIENT_FUND_XEC.code,
-                                    xecBalance.balance.totalAmount / 100,
+                                    0,
                                     accountTo.address
                                   );
-                                  saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_XEC);
                                   return;
                                 }
                                 // get balance of XEC Wallet and token elps
@@ -4592,12 +4605,7 @@ export class WalletService {
                                     s => s.tokenId === config.conversion.tokenId
                                   );
                                   if (tokenElps) {
-                                    // from txId get txDetail
-                                    if (tokenElps.amountToken < config.conversion.minTokenConversion) {
-                                      saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_TOKEN);
-                                      return;
-                                    }
-                                    if (tokenElps.amountToken < amountElps) {
+                                    if (tokenElps.amountToken < amountElps || tokenElps.amountToken < 1) {
                                       this._handleWhenFundIsNotEnough(
                                         Errors.INSUFFICIENT_FUND_TOKEN.code,
                                         tokenElps.amountToken,
@@ -4605,6 +4613,14 @@ export class WalletService {
                                       );
                                       saveError(conversionOrderInfo, data, Errors.INSUFFICIENT_FUND_TOKEN);
                                       return;
+                                    }
+                                    // from txId get txDetail
+                                    if (tokenElps.amountToken < config.conversion.minTokenConversion) {
+                                      this._handleWhenFundIsNotEnough(
+                                        Errors.BELOW_MINIMUM_TOKEN.code,
+                                        tokenElps.amountToken,
+                                        accountTo.address
+                                      );
                                     } else {
                                       this._sendSwapWithToken(
                                         'xec',
@@ -4683,7 +4699,7 @@ export class WalletService {
   }
 
   _addExplorerLinkIntoTxId(txId): string {
-    const linkBeCash = 'https://explorer.be.cash/tx/';
+    const linkBeCash = 'https://explorer.e.cash/tx/';
     const linkBeCashWithTxid = linkBeCash + txId;
 
     return `<a href=\"${linkBeCashWithTxid}\">${txId}</a>`;
@@ -4692,7 +4708,7 @@ export class WalletService {
   _handleWhenFundIsNotEnough(pendingReason: string, remaining: number, addressTopupEcash: string) {
     const addressTopupEtoken = this._convertFromEcashWithPrefixToEtoken(addressTopupEcash);
     const moneyWithWingsIcon = '\u{1F4B8}';
-    if (!isSendFundXecErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_XEC.code) {
+    if (!isNotiFundXecBelowMInimumToTelegram && pendingReason === Errors.BELOW_MINIMUM_XEC.code) {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
@@ -4701,11 +4717,11 @@ export class WalletService {
           ' XEC - ' +
           addressTopupEcash
       );
-      isSendFundXecErrorToTelegram = true;
+      isNotiFundXecBelowMInimumToTelegram = true;
       setTimeout(() => {
-        isSendFundXecErrorToTelegram = false;
+        isNotiFundXecBelowMInimumToTelegram = false;
       }, 1000 * 60 * 30);
-    } else if (!isSendFundTokenErrorToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_TOKEN.code) {
+    } else if (!isNotiFundTokenBelowMInimumToTelegram && pendingReason === Errors.BELOW_MINIMUM_TOKEN.code) {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
@@ -4716,9 +4732,38 @@ export class WalletService {
           ' - ' +
           addressTopupEtoken
       );
-      isSendFundTokenErrorToTelegram = true;
+      isNotiFundTokenBelowMInimumToTelegram = true;
       setTimeout(() => {
-        isSendFundTokenErrorToTelegram = false;
+        isNotiFundTokenBelowMInimumToTelegram = false;
+      }, 1000 * 60 * 30);
+    }
+    if (!isNotiFundXecInsufficientMinimumToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_XEC.code) {
+      bot.sendMessage(
+        config.telegram.channelFailId,
+        moneyWithWingsIcon +
+          ' INSUFFICIENT XEC FUND. SWAP SERVICE IS PENDING PLEASE TOP UP! - Remaining: ' +
+          remaining +
+          ' XEC - ' +
+          addressTopupEcash
+      );
+      isNotiFundXecInsufficientMinimumToTelegram = true;
+      setTimeout(() => {
+        isNotiFundXecInsufficientMinimumToTelegram = false;
+      }, 1000 * 60 * 30);
+    } else if (!isNotiFundTokenInsufficientMinimumToTelegram && pendingReason === Errors.INSUFFICIENT_FUND_TOKEN.code) {
+      bot.sendMessage(
+        config.telegram.channelFailId,
+        moneyWithWingsIcon +
+          ' INSUFFICIENT TOKEN FUND. SWAP SERVICE IS PENDING PLEASE TOP UP! - Remaining: ' +
+          remaining +
+          ' ' +
+          config.conversion.tokenCodeUnit +
+          ' - ' +
+          addressTopupEtoken
+      );
+      isNotiFundTokenInsufficientMinimumToTelegram = true;
+      setTimeout(() => {
+        isNotiFundTokenInsufficientMinimumToTelegram = false;
       }, 1000 * 60 * 30);
     }
   }
@@ -5129,20 +5174,31 @@ export class WalletService {
       }).catch(e => {
         return cb(e);
       });
-      if (
-        !xecBalance ||
-        !xecBalance.balance ||
-        !xecBalance.balance.totalAmount ||
-        xecBalance.balance.totalAmount < config.conversion.minXecSatConversion
-      ) {
-        if (addressTopupEcash) {
-          this._handleWhenFundIsNotEnough(
-            Errors.INSUFFICIENT_FUND_XEC.code,
-            xecBalance.balance.totalAmount / 100,
-            addressTopupEcash
-          );
+      if (xecBalance && xecBalance.balance && _.isNumber(xecBalance.balance.totalAmount)) {
+        if (xecBalance.balance.totalAmount <= 546) {
+          if (addressTopupEcash) {
+            this._handleWhenFundIsNotEnough(
+              Errors.INSUFFICIENT_FUND_XEC.code,
+              xecBalance.balance.totalAmount / 100,
+              addressTopupEcash
+            );
+          }
+          return cb(Errors.INSUFFICIENT_FUND_XEC);
         }
-        return cb(Errors.INSUFFICIENT_FUND_XEC);
+        if (xecBalance.balance.totalAmount < config.conversion.minXecSatConversion) {
+          if (addressTopupEcash) {
+            this._handleWhenFundIsNotEnough(
+              Errors.BELOW_MINIMUM_XEC.code,
+              xecBalance.balance.totalAmount / 100,
+              addressTopupEcash
+            );
+          }
+        }
+      } else {
+        if (addressTopupEcash) {
+          this._handleWhenFundIsNotEnough(Errors.INSUFFICIENT_FUND_XEC.code, 0, addressTopupEcash);
+          return cb(Errors.INSUFFICIENT_FUND_XEC);
+        }
       }
       // get balance of XEC Wallet and token elps
       let balanceTokenFound = null;
@@ -5162,9 +5218,9 @@ export class WalletService {
           // TANTODO: replace with tyd token id
           s => s.tokenId === config.conversion.tokenId
         );
+
         if (tokenElps) {
-          // from txId get txDetail
-          if (tokenElps.amountToken <= config.conversion.minTokenConversion) {
+          if (tokenElps.amountToken < 1) {
             if (addressTopupEcash) {
               this._handleWhenFundIsNotEnough(
                 Errors.INSUFFICIENT_FUND_TOKEN.code,
@@ -5173,14 +5229,22 @@ export class WalletService {
               );
             }
             return cb(Errors.INSUFFICIENT_FUND_TOKEN);
-          } else {
-            if (!addressTopupEcash) {
-              this.storage.fetchAddressWithWalletId(xecWallet.credentials.walletId, async (err, address) => {
-                return cb(null, address.address);
-              });
-            } else {
-              return cb(null, addressTopupEcash);
+          }
+          if (tokenElps.amountToken < config.conversion.minTokenConversion) {
+            if (addressTopupEcash) {
+              this._handleWhenFundIsNotEnough(
+                Errors.BELOW_MINIMUM_TOKEN.code,
+                tokenElps.amountToken,
+                addressTopupEcash
+              );
             }
+          }
+          if (!addressTopupEcash) {
+            this.storage.fetchAddressWithWalletId(xecWallet.credentials.walletId, async (err, address) => {
+              return cb(null, address.address);
+            });
+          } else {
+            return cb(null, addressTopupEcash);
           }
         } else {
           return cb(Errors.NOT_FOUND_TOKEN_WALLET);
