@@ -33,6 +33,7 @@ import * as forge from 'node-forge';
 import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
+import { resolve } from 'dns';
 import { link, read } from 'fs';
 import { countBy, findIndex } from 'lodash';
 import { openStdin } from 'process';
@@ -3041,7 +3042,7 @@ export class WalletService {
     );
   }
 
-  getFee(coinInfo, opts) {
+  getFee(coinInfo, opts): Promise<any> {
     return new Promise((resolve, reject) => {
       // This is used for sendmax flow
       // if (_.isNumber(opts.fee)) {
@@ -4074,12 +4075,15 @@ export class WalletService {
     // let listCoinConfigReceiveFound = [];
     this.storage.fetchAllCoinConfig(async (err, listCoinConfig: CoinConfig[]) => {
       if (err) return cb(err);
+
+      if (clientsReceive && listCoinConfig.length > 0) {
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfig);
+      }
+
       if (clientsFund) {
-        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfig);
+        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfigMapped);
       }
-      if (clientsReceive && listCoinConfigMapped.length > 0) {
-        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfigMapped);
-      }
+
       if (listCoinConfigMapped.length > 0) {
         this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result) => {
           if (err) return cb(err);
@@ -4132,8 +4136,16 @@ export class WalletService {
         listCoinConfig.forEach(coinConfig => {
           const isCoinConfigFound =
             listFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
-          coinConfig.isSwap = isSwap ? isCoinConfigFound : coinConfig.isSwap;
-          coinConfig.isReceive = !isSwap ? isCoinConfigFound : coinConfig.isReceive;
+          if (isSwap) {
+            coinConfig.isSwap = isCoinConfigFound;
+            const isTokenFoundOnFundWallet =
+              listTokenFound.findIndex(s => s.code === coinConfig.code && s.network === coinConfig.network) > -1;
+            if (isTokenFoundOnFundWallet) {
+              coinConfig.isReceive = true;
+            }
+          } else {
+            coinConfig.isReceive = isCoinConfigFound;
+          }
         });
       }
     }
@@ -4357,12 +4369,12 @@ export class WalletService {
                               return;
                             }
 
-                            if (amountDepositDetect > fundAmountSat) {
+                            if (amountUserDepositConverted > fundAmountSat) {
                               saveError(orderInfo, data, Errors.OUT_OF_FUND);
                               return;
                             }
 
-                            if (amountUserDepositConverted > maxAmountSat) {
+                            if (maxAmountSat > 0 && amountUserDepositConverted > maxAmountSat) {
                               saveError(orderInfo, data, Errors.EXCEED_MAX_LIMIT);
                               return;
                             }
@@ -4373,7 +4385,7 @@ export class WalletService {
                               (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
                             // TANTODO: in future remove for livenet , also apply for testnet
                             if (orderInfo.toNetwork === 'livenet') {
-                              const feeCalculated = this.calculateFee(
+                              const feeCalculated = await this.calculateFee(
                                 amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
                                 orderInfo,
                                 rateList[orderInfo.toCoinCode.toLowerCase()].USD,
@@ -4397,6 +4409,10 @@ export class WalletService {
                                 amountDepositInToCoinCodeUnit,
                                 orderInfo.addressUserReceive,
                                 (err, txId) => {
+                                  if (err) {
+                                    saveError(orderInfo, data, err);
+                                    return;
+                                  }
                                   orderInfo.status = 'complete';
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
@@ -4831,22 +4847,26 @@ export class WalletService {
     }
   }
 
-  calculateFee(amount: number, order: Order, rateUsd: number, coinConfig: CoinConfig): number {
-    // amount should be in to coin code unit
-    let feeCalculated = 0;
-    let networkFee = 0;
-    if (coinConfig.serviceFee > 0) {
-      feeCalculated = (coinConfig.serviceFee * amount) / 100;
-    }
-    if (!coinConfig.isToken && coinConfig.networkFee > 0) {
-      feeCalculated += coinConfig.networkFee;
-    }
-    if (coinConfig.settleFee > 0) {
-      // settle fee default calculated in usd
-      const settleFeecConvertedToCoinUnit = coinConfig.settleFee / rateUsd;
-      feeCalculated += settleFeecConvertedToCoinUnit;
-    }
-    return order.toSatUnit * feeCalculated;
+  calculateFee(amount: number, order: Order, rateUsd: number, coinConfig: CoinConfig): Promise<number> {
+    return new Promise(async (resolve, reject) => {
+      // amount should be in to coin code unit
+      let feeCalculated = 0;
+      let networkFee = 0;
+      if (coinConfig.serviceFee > 0) {
+        feeCalculated = (coinConfig.serviceFee * amount) / 100;
+      }
+      if (!coinConfig.isToken) {
+        if (coinConfig.networkFee > 0) {
+          feeCalculated += coinConfig.networkFee;
+        }
+      }
+      if (coinConfig.settleFee > 0) {
+        // settle fee default calculated in usd
+        const settleFeecConvertedToCoinUnit = coinConfig.settleFee / rateUsd;
+        feeCalculated += settleFeecConvertedToCoinUnit;
+      }
+      resolve(order.toSatUnit * feeCalculated);
+    });
   }
   async checkRequirementBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order) {
     let listCoinReceiveCode = [];
@@ -5368,7 +5388,7 @@ export class WalletService {
       if (!opts.orderId) {
         return cb(new Error('Missing required parameter order Id'));
       }
-      const orderInfo = Order.fromObj(opts);
+      const orderInfo = Order.fromObj(opts.order);
       this.storage.updateOrderById(opts.orderId, orderInfo, (err, result) => {
         if (err) return cb(err);
         return cb(null, { isUpdated: true });
@@ -7033,8 +7053,8 @@ export class WalletService {
       if (err) return cb(err);
       listCoinConfig = listCoinConfig.filter(s => s.isSupport);
       const swapConfig = new ConfigSwap();
-      swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive);
-      swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap);
+      swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive && s.isSupport);
+      swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap && s.isSupport);
       let promiseList = [];
       let promiseList2 = [];
       // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
@@ -7087,7 +7107,7 @@ export class WalletService {
                       coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
                       coin.fund = balanceSelected.amountToken * rateCoinUsd;
                       coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
-                      coin.satUnit = Math.pow(10, tokenDecimals);
+                      coin.decimals = tokenDecimals;
                     } else {
                       coin.isEnable = false;
                     }
@@ -7101,6 +7121,7 @@ export class WalletService {
                       coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
                       coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
                       coin.fundConvertToSat = balanceTotal;
+                      coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
                     } else {
                       coin.isEnable = false;
                     }
@@ -7209,8 +7230,8 @@ export class WalletService {
         this.storage.fetchOrderinfoById(opts.id, (err, result) => {
           if (err) return cb(err);
           const orderInfo = Order.fromObj(result);
-          const configCoinSelected = configSwap.coinReceive.find(
-            coinConfig => coinConfig.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase()
+          const configCoinSelected = configSwap.coinSwap.find(
+            coinConfig => coinConfig.code.toLowerCase() === orderInfo.fromCoinCode.toLowerCase()
           );
           if (configCoinSelected) {
             orderInfo.coinConfig = configCoinSelected;

@@ -1458,13 +1458,18 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        opts = {
-          password: reqServer.body.password
-        };
-        server.updateKeysPassword(opts, (err, recoveryKey) => {
+        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
-          res.json(recoveryKey);
+          opts = {
+            password: reqServer.body.password
+          };
+          server.updateKeysPassword(opts, (err, recoveryKey) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(recoveryKey);
+          });
         });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
       }
     });
 
@@ -1518,14 +1523,19 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        opts = {
-          email: reqServer.user,
-          password: reqServer.body.password
-        };
-        server.verifyPassword(opts, (err, result) => {
+        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
-          res.json(result);
+          opts = {
+            email: reqServer.user,
+            password: reqServer.body.password
+          };
+          server.verifyPassword(opts, (err, result) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(result);
+          });
         });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
       }
     });
 
@@ -1558,14 +1568,19 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        opts = {
-          keyFund: reqServer.body.keyFund,
-          keyReceive: reqServer.body.keyReceive
-        };
-        server.importSeed(opts, (err, result) => {
+        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
-          res.json(result);
+          opts = {
+            keyFund: reqServer.body.keyFund,
+            keyReceive: reqServer.body.keyReceive
+          };
+          server.importSeed(opts, (err, result) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(result);
+          });
         });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
       }
     });
 
@@ -1642,10 +1657,15 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        server.checkingSeedExist((err, result) => {
+        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
-          res.json(result);
+          server.checkingSeedExist((err, result) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(result);
+          });
         });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
       }
     });
 
@@ -1673,15 +1693,20 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        opts = {
-          newPassword: reqServer.body.newPassword,
-          oldPassword: reqServer.body.oldPassword,
-          recoveryKey: reqServer.body.recoveryKey
-        };
-        server.renewPassword(opts, (err, recoveryKey) => {
+        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
-          res.json(recoveryKey);
+          opts = {
+            newPassword: reqServer.body.newPassword,
+            oldPassword: reqServer.body.oldPassword,
+            recoveryKey: reqServer.body.recoveryKey
+          };
+          server.renewPassword(opts, (err, recoveryKey) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(recoveryKey);
+          });
         });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
       }
     });
 
@@ -1702,7 +1727,7 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/order/filter', (req, res) => {
+    router.post('/v3/order/filter', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1764,7 +1789,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.updateOrderById(req.params['id'], req.body, (err, order) => {
+      server.updateOrderById({ orderId: req.params['id'], order: req.body }, (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
       });
@@ -2107,6 +2132,9 @@ export class ExpressApp {
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
       });
+      setTimeout(() => {
+        server.restartHandleSwapQueue((err, finish) => {});
+      }, 10000);
       return cb();
     });
   }

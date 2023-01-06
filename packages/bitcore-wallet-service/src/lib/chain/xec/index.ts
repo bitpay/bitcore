@@ -129,8 +129,8 @@ export class XecChain extends BtcChain implements IChain {
       if (remainder < 1) {
         throw new Error('Selected UTXO does not have enough satoshis');
       }
-      TOKENQTY = _.toSafeInteger(TOKENQTY);
       TOKENQTY = TOKENQTY / Math.pow(10, tokenInfo.decimals);
+      TOKENQTY = _.floor(TOKENQTY, tokenInfo.decimals);
       // Generate the OP_RETURN code.
       const slpSendObj = bchjs.SLP.TokenType1.generateSendOpReturn(tokenUtxos, TOKENQTY);
       const slpData = slpSendObj.script;
