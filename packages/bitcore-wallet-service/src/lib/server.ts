@@ -7041,8 +7041,8 @@ export class WalletService {
       if (err) return cb(err);
       listCoinConfig = listCoinConfig.filter(s => s.isSupport);
       const swapConfig = new ConfigSwap();
-      swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive);
-      swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap);
+      swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive && s.isSupport);
+      swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap && s.isSupport);
       let promiseList = [];
       let promiseList2 = [];
       // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
@@ -7095,7 +7095,7 @@ export class WalletService {
                       coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
                       coin.fund = balanceSelected.amountToken * rateCoinUsd;
                       coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
-                      coin.satUnit = Math.pow(10, tokenDecimals);
+                      coin.decimals = tokenDecimals;
                     } else {
                       coin.isEnable = false;
                     }
@@ -7109,6 +7109,7 @@ export class WalletService {
                       coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
                       coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
                       coin.fundConvertToSat = balanceTotal;
+                      coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
                     } else {
                       coin.isEnable = false;
                     }
@@ -7217,7 +7218,7 @@ export class WalletService {
         this.storage.fetchOrderinfoById(opts.id, (err, result) => {
           if (err) return cb(err);
           const orderInfo = Order.fromObj(result);
-          const configCoinSelected = configSwap.coinReceive.find(
+          const configCoinSelected = configSwap.coinSwap.find(
             coinConfig => coinConfig.code.toLowerCase() === orderInfo.fromCoinCode.toLowerCase()
           );
           if (configCoinSelected) {

@@ -1,5 +1,6 @@
 import { TokenInfo } from './tokenInfo';
 
+
 export class ConfigSwap {
   coinSwap: CoinConfig[];
   coinReceive: CoinConfig[];
@@ -36,7 +37,7 @@ export class CoinConfig {
   maxConvertToSat?: number;
   fund: number;
   fundConvertToSat?: number;
-  satUnit?: number;
+  decimals?: number;
   tokenInfo?: TokenInfo;
   isEnable?: boolean;
   isEnableSwap?: boolean;
@@ -59,7 +60,7 @@ export class CoinConfig {
     x.maxConvertToSat = opts.maxConvertToSat || 0;
     x.fund = opts.fund || 0;
     x.fundConvertToSat = opts.fundConvertToSat || 0;
-    x.satUnit = opts.satUnit || 0;
+    x.decimals = opts.decimals || 0;
     x.tokenInfo = opts.tokenInfo || null;
     x.isEnable = opts.isEnable || true;
     x.isEnableSwap = opts.isEnableSwap || true;
@@ -87,7 +88,7 @@ export class CoinConfig {
     x.tokenInfo = opts.tokenInfo;
     x.fund = opts.fund;
     x.fundConvertToSat = opts.fundConvertToSat;
-    x.satUnit = opts.satUnit;
+    x.decimals = opts.decimals;
     x.isEnable = opts.isEnable;
     x.isSwap = opts.isSwap;
     x.isReceive = opts.isReceive;
