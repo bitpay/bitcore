@@ -59,10 +59,13 @@ const errors = {
   INVALID_ADDRESS_TO: 'Invalid address to',
   INSUFFICIENT_FUND_XEC: 'Insufficient fund for xec wallet',
   INSUFFICIENT_FUND_TOKEN: 'Insufficient fund for token wallet',
+  NOT_FOUND_XEC_WALLET_BALANCE: 'Not found xec wallet balance',
   NOT_FOUND_TOKEN_WALLET: 'Not found token wallet',
   NOT_FOUND_RATE_XEC: 'Not found rate for xec wallet',
   NOT_FOUND_RATE_TOKEN: 'Not found rate for token wallet',
-  INVALID_TX_ID: 'Invalid txid'
+  INVALID_TX_ID: 'Invalid txid',
+  BELOW_MINIMUM_XEC: 'FUND XEC REACHED THRESHOLD LIMIT',
+  BELOW_MINIMUM_TOKEN: 'FUND TOKEN REACHED THRESHOLD LIMIT'
 };
 
 const errorObjects = _.fromPairs(
