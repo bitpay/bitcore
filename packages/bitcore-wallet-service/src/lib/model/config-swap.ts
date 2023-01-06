@@ -1,6 +1,5 @@
 import { TokenInfo } from './tokenInfo';
 
-
 export class ConfigSwap {
   coinSwap: CoinConfig[];
   coinReceive: CoinConfig[];

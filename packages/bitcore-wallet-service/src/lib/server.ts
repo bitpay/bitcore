@@ -33,6 +33,7 @@ import * as forge from 'node-forge';
 import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
+import { resolve } from 'dns';
 import { link, read } from 'fs';
 import { countBy, findIndex } from 'lodash';
 import { openStdin } from 'process';
@@ -47,7 +48,6 @@ import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/do
 import { Order } from './model/order';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
-import { resolve } from 'dns';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
