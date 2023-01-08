@@ -30,7 +30,7 @@ Signature.prototype.set = function(obj) {
   this.i = typeof obj.i !== 'undefined' ? obj.i : this.i; //public key recovery parameter in range [0, 3]
   this.compressed = typeof obj.compressed !== 'undefined' ?
     obj.compressed : this.compressed; // whether the recovered pubkey is compressed
-  this.isSchnorr = obj.isSchnorr;
+  this.isSchnorr = obj.isSchnorr || this.isSchnorr || undefined;
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;
 };
@@ -207,14 +207,12 @@ Signature.prototype.toCompact = function(i, compressed) {
   return Buffer.concat([b1, b2, b3]);
 };
 
-Signature.prototype.toBuffer = Signature.prototype.toDER = function(signingMethod) {
+Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
 
   // Schnorr signatures use a 64 byte r,s format, where as ECDSA takes the form decribed
   // below, above the isDER function signature.
 
-  signingMethod = signingMethod || "ecdsa";
-
-  if(signingMethod === "schnorr") {
+  if(this.isSchnorr) {
     return Buffer.concat([this.r.toBuffer({size: 32}), this.s.toBuffer({size: 32})]);
   }
 

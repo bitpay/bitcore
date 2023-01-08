@@ -43,7 +43,7 @@ describe("#Schnorr", function() {
         let x = new Signature();
         x.isSchnorr = true;
         x.set(schnorr.sig);
-        let str = x.toBuffer("schnorr").toString('hex');
+        let str = x.toBuffer().toString('hex');
         str.should.equal("005e7ab0906a0164306975916350214a69fb80210cf7e37533f197c3d18b23d1b794262dc663d9e99605784b14ee1ecfca27b602e88dbc87af85f9907c214ea3");
     });
 
