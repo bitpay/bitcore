@@ -4901,7 +4901,7 @@ export class WalletService {
       // Needed to temporarily disable Wyre implementation in bitpay app.
       return resolve({
         exceptionId: "disabled",
-        message: "This exchange is temporarily out of service."
+        message: "Wyre is no longer available."
       });
 
       const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
