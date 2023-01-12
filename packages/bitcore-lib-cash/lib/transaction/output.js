@@ -99,6 +99,7 @@ Object.defineProperty(Output.prototype, 'tokenData', {
       $.checkState(categoryBuf.length === 32, 'tokenData must have a 32-byte category');
       const category = categoryBuf.toString('hex');
       $.checkState(typeof tokenData.amount !== "undefined", 'tokenData must have an amount (from 0 to 9223372036854775807)');
+      $.checkState(typeof tokenData.amount !== "number" || tokenData.amount <= Number.MAX_SAFE_INTEGER, 'to avoid precision loss, tokenData amount must provided as a string for values greater than 9007199254740991.');
       const amount = new BN(tokenData.amount);
       $.checkState(amount.gten(0), 'tokenData amount must be greater than or equal to 0');
       $.checkState(amount.lte(maximumAmount), 'tokenData amount must be less than or equal to 9223372036854775807.');
@@ -106,7 +107,7 @@ Object.defineProperty(Output.prototype, 'tokenData', {
         const nft = {};
         nft.capability = tokenData.nft.capability === undefined ? 'none' : String(tokenData.nft.capability);
         $.checkState(nftCapabilityNumberToLabel.includes(nft.capability), 'nft capability must be "none", "mutable", or "minting".');
-        const commitment = typeof tokenData.nft.commitment === 'string' ? Buffer.from(tokenData.nft.commitment, 'hex') : Buffer.from(tokenData.nft.commitment);
+        const commitment = tokenData.nft.commitment === undefined ? Buffer.of() : typeof tokenData.nft.commitment === 'string' ? Buffer.from(tokenData.nft.commitment, 'hex') : Buffer.from(tokenData.nft.commitment);
         $.checkState(commitment.length <= 40, 'nft commitment length must be less than or equal to 40 bytes.');
         nft.commitment = commitment.toString('hex');
         this._tokenData = { category, amount, nft };
@@ -193,6 +194,7 @@ Output.prototype.setScript = function(script) {
   } else {
     throw new TypeError('Invalid argument type: script');
   }
+  $.checkState(this._scriptBuffer[0] !== PREFIX_TOKEN, 'Invalid output script: output script may not begin with PREFIX_TOKEN (239).');
   return this;
 };
 

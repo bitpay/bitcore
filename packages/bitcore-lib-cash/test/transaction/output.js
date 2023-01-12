@@ -181,6 +181,27 @@ describe("Output", function() {
     out.setScript.bind(out, 45).should.throw("Invalid argument type: script");
   });
 
+  it('output token data must be valid', function() {
+    expect(() => new Output({ satoshis: 0, script: '51', tokenData: {} })).to.throw('Invalid state: tokenData must have a category (a hex-encoded string or buffer)');
+    expect(() => new Output({ satoshis: 0, script: '51', tokenData: { category: '', amount: 1 } })).to.throw('Invalid state: tokenData must have a 32-byte category');
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0 } })).to.throw('Invalid state: tokenData must encode at least one token');
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 1 } })).to.not.throw();
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: -1 } })).to.throw();
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 9007199254740991 } })).to.not.throw();
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 9007199254740992 } })).to.throw('Invalid state: to avoid precision loss, tokenData amount must provided as a string for values greater than 9007199254740991.');
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: '9223372036854775808' } })).to.throw('Invalid state: tokenData amount must be less than or equal to 9223372036854775807.');
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: {} } })).to.not.throw();
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { capability: 'unknown' } } })).to.throw('Invalid state: nft capability must be "none", "mutable", or "minting".');
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { capability: 'none' } } })).to.not.throw();
+    expect(new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { commitment: '' } } })).to.deep.equal(new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { commitment: Buffer.of() } } }));
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { commitment: Buffer.from(new Uint8Array(41)) } } })).to.throw('Invalid state: nft commitment length must be less than or equal to 40 bytes.');
+  });
+
+  it('output creation fails if script includes token prefix', function() {
+    expect(() => new Output({ satoshis: 1000, script: 'ef' })).to.throw('Invalid output script: output script may not begin with PREFIX_TOKEN (239).');
+    expect(() => new Output({ satoshis: 1000, script: '00ef' })).to.not.throw();
+  });
+
   it("sets script to null if it is an InvalidBuffer", function() {
     var output = new Output({
       satoshis: 1000,
