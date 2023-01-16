@@ -11148,18 +11148,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should return exceptionId while Wyre is disabled', async() => {
-        server.request = fakeRequest;
-        try {
-          const data = await server.wyreWalletOrderQuotation(req);
-          should.exist(data);
-          data.exceptionId.should.equal('disabled');
-        } catch (err) {
-          should.not.exist(err);
-        };
-      });
-
-      it.skip('should work properly if req is OK', () => {
+      it('should work properly if req is OK', () => {
         server.request = fakeRequest;
         server.wyreWalletOrderQuotation(req).then(data => {
           should.exist(data);
@@ -11180,7 +11169,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it.skip('should return error if post returns error', () => {
+      it('should return error if post returns error', () => {
         req.body.amount = 50;
         const fakeRequest2 = {
           post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
