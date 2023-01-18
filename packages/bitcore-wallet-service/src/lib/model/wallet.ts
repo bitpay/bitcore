@@ -49,6 +49,7 @@ export interface IWallet {
   isTestnet?: boolean;
   usePurpose48?: boolean;
   isSlpToken?: boolean;
+  isFromRaipay?: boolean;
 }
 
 export class Wallet {
@@ -77,6 +78,7 @@ export class Wallet {
   isTestnet?: boolean;
   usePurpose48?: boolean;
   isSlpToken?: boolean;
+  isFromRaipay?: boolean;
   scanning: boolean;
   static COPAYER_PAIR_LIMITS = {};
 
@@ -114,7 +116,7 @@ export class Wallet {
 
     x.scanStatus = null;
     x.isSlpToken = !!opts.isSlpToken;
-
+    x.isFromRaipay = !!opts.isFromRaipay;
     // v8 related
     x.beRegistered = false; // Block explorer registered
     x.beAuthPrivateKey2 = null;
@@ -161,6 +163,7 @@ export class Wallet {
     x.nativeCashAddr = obj.nativeCashAddr;
     x.usePurpose48 = obj.usePurpose48;
     x.isSlpToken = !!obj.isSlpToken;
+    x.isFromRaipay = !!obj.isFromRaipay;
     return x;
   }
 

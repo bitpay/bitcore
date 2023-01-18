@@ -893,6 +893,7 @@ export class API extends EventEmitter {
   // * @param {String} opts.id - set a id for wallet (instead of server given)
   // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
   // * @param {Boolean} opts.isSlpToken - path 1899 suppport SLP Token
+  // * @param {Boolean} opts.isFromRaipay - path 145 suppport SLP Token
   // * @param cb
   // * @return {undefined}
   // */
@@ -942,7 +943,8 @@ export class API extends EventEmitter {
       id: opts.id,
       usePurpose48: n > 1,
       useNativeSegwit: !!opts.useNativeSegwit,
-      isSlpToken: opts.isSlpToken ? true : false
+      isSlpToken: !!opts.isSlpToken,
+      isFromRaipay: !!opts.isFromRaipay
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
@@ -2872,7 +2874,8 @@ export class API extends EventEmitter {
         network: opts.network,
         account: opts.account,
         n: opts.n,
-        isSlpToken: opts.isSlpToken
+        isSlpToken: opts.isSlpToken,
+        isFromRaipay: opts.isFromRaipay
       });
 
       if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
@@ -2993,7 +2996,8 @@ export class API extends EventEmitter {
         ['xpi', 'livenet', true],
         ['xpi', 'livenet', false, true],
         ['xec', 'livenet', true],
-        ['xec', 'livenet', false, true]
+        ['xec', 'livenet', false, true],
+        ['xec', 'livenet', false, true, true]
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig
@@ -3032,7 +3036,8 @@ export class API extends EventEmitter {
             network: x[1],
             account: 0,
             n: x[2] ? 2 : 1,
-            isSlpToken: x[3] ? x[3] : false
+            isSlpToken: !!x[3],
+            isFromRaipay: !!x[4]
           };
           // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
           // TODO OPTI: do not scan accounts if XX
