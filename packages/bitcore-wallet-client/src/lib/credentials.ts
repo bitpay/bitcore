@@ -45,7 +45,8 @@ export class Credentials {
     'keyId', // this is only for information
     'token', // this is for a ERC20 token
     'multisigEthInfo', // this is for a MULTISIG eth wallet
-    'isSlpToken'
+    'isSlpToken',
+    'isFromRaipay'
   ];
   version: number;
   account: number;
@@ -71,7 +72,7 @@ export class Credentials {
   multisigEthInfo?: any;
   externalSource?: boolean; // deprecated property?
   isSlpToken?: boolean;
-
+  isFromRaipay?: boolean;
   constructor() {
     this.version = 2;
     this.account = 0;
@@ -100,6 +101,7 @@ export class Credentials {
     x.xPubKey = opts.xPubKey;
     x.keyId = opts.keyId;
     x.isSlpToken = opts.isSlpToken;
+    x.isFromRaipay = opts.isFromRaipay;
     // this allows to set P2SH in old n=1 wallets
     if (_.isUndefined(opts.addressType)) {
       x.addressType =

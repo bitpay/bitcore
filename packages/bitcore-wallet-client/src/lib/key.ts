@@ -393,6 +393,9 @@ export class Key {
       coinCode = '899';
       if (opts.isSlpToken) {
         coinCode = '1899';
+        if (opts.isFromRaipay) {
+          coinCode = '145';
+        }
       }
     } else if (opts.coin == 'xpi') {
       coinCode = '10605';
@@ -464,7 +467,8 @@ export class Key {
       requestPrivKey,
       addressType: opts.addressType,
       walletPrivKey: opts.walletPrivKey,
-      isSlpToken: !!opts.isSlpToken
+      isSlpToken: !!opts.isSlpToken,
+      isFromRaipay: !!opts.isFromRaipay
     });
   };
 
