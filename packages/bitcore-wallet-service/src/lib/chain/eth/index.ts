@@ -190,7 +190,7 @@ export class EthChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, isTokenSwap } = txp;
+    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, multiSendContractAddress, isTokenSwap } = txp;
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ETHERC20' : 'ETH';
@@ -207,15 +207,24 @@ export class EthChain implements IChain {
       recipients[0].data = data;
     }
     const unsignedTxs = [];
-    for (let index = 0; index < recipients.length; index++) {
-      const rawTx = Transactions.create({
-        ...txp,
-        ...recipients[index],
-        chain,
-        nonce: Number(txp.nonce) + Number(index),
-        recipients: [recipients[index]]
-      });
-      unsignedTxs.push(rawTx);
+
+    if (multiSendContractAddress){
+      let multiSendParams = {
+        ...recipients.length,
+        nonce: Number(txp.nonce),
+        recipients: recipients,
+        contractAdderess: multiSendContractAddress
+      };
+      unsignedTxs.push(Transactions.create({ ...txp, chain, ...multiSendParams }));
+    } else {
+      for (let index = 0; index < recipients.length; index++) {
+        let params = {
+          ...recipients[index],
+          nonce: Number(txp.nonce) + Number(index),
+          recipients: [recipients[index]]
+        };
+        unsignedTxs.push(Transactions.create({ ...txp, chain, ...params }));
+      }
     }
 
     let tx = {
