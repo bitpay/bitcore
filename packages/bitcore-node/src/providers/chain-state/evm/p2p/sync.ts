@@ -22,6 +22,8 @@ export class MultiThreadSync extends EventEmitter {
   private syncQueue: number[] = [];
   private syncing: boolean = false;
   private config: IEVMNetworkConfig;
+  private resolvingGaps: boolean = false;
+  private gapsLength: number = 0;
   protected currentHeight: number = 0;
 
   constructor({ chain, network }) {
@@ -31,7 +33,7 @@ export class MultiThreadSync extends EventEmitter {
     this.config = Config.chains[chain][network];
   }
 
-  async syncBlock(blockNum) {
+  async addBlockToQueue(blockNum) {
     this.syncQueue.push(blockNum);
   }
 
@@ -75,18 +77,32 @@ export class MultiThreadSync extends EventEmitter {
 
       this.syncInterval = setInterval(() => {
         // TODO account for this.syncQueue
-        const blocksProcessed = this.currentHeight - startHeight;
-        const elapsedMinutes = (Date.now() - startTime) / (60 * oneSecond);
-        logger.info(
-          `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} |${(blocksProcessed / elapsedMinutes)
-            .toFixed(2)
-            .padStart(8)} blocks/min | Height: ${this.currentHeight.toString().padStart(7)}`
-        );
+        if (this.resolvingGaps) {
+          logger.info(
+            `${timestamp()} | Filling gaps... | Chain: ${chain} | Network: ${network} | On gap ${this.gapsLength -
+              this.syncQueue.length} of ${this.gapsLength} | Height: ${
+              this.syncQueue[0] ? this.syncQueue[0].toString().padStart(7) : this.syncHeight
+            }`
+          );
+        } else {
+          const blocksProcessed = this.currentHeight - startHeight;
+          const elapsedMinutes = (Date.now() - startTime) / (60 * oneSecond);
+          logger.info(
+            `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} |${(blocksProcessed / elapsedMinutes)
+              .toFixed(2)
+              .padStart(8)} blocks/min | Height: ${this.currentHeight.toString().padStart(7)}`
+          );
+        }
       }, oneSecond);
 
       this.syncingThreads = this.threads.length;
+      // Kick off threads syncing
       for (let i = 0; i < this.threads.length; i++) {
-        this.threads[i].postMessage({ blockNum: this.currentHeight++ });
+        if (this.syncQueue.length > 0) {
+          this.threads[i].postMessage({ blockNum: this.syncQueue.shift() });
+        } else {
+          this.threads[i].postMessage({ blockNum: this.currentHeight++ });
+        }
       }
     } catch (err) {
       logger.error(`Error syncing ${chain} ${network} :: ${err.message}`);
@@ -120,12 +136,12 @@ export class MultiThreadSync extends EventEmitter {
 
     // If last block was found
     if (!msg.notFound) {
-      if (this.syncQueue.length > 0) {
-        const blockNum = this.syncQueue.shift();
-        thread.postMessage({ message: 'sync', blockNum });
-      } else {
-        thread.postMessage({ message: 'sync', blockNum: this.syncHeight++ }); // syncHeight is incremented until there are no more blocks found
+      // If queue is empty, add next block to queue
+      if (this.syncQueue.length === 0) {
+        this.addBlockToQueue(this.syncHeight++); // syncHeight is incremented until there are no more blocks found
       }
+      const blockNum = this.syncQueue.shift();
+      thread.postMessage({ message: 'sync', blockNum });
       this.currentHeight = Math.max(msg.blockNum, this.currentHeight);
       this.bestBlock = Math.max(msg.blockNum, this.bestBlock);
 
@@ -219,17 +235,17 @@ export class MultiThreadSync extends EventEmitter {
     });
     logger.info(`Verification of ${this.chain}:${this.network} blocks finished.`);
     if (gaps.length) {
+      logger.info(`Gaps found. Attempting to fill ${gaps.length} block gaps.`);
+      this.resolvingGaps = true;
+      this.gapsLength = gaps.length;
+      this.syncingThreads = this.threads.length;
       for (let blockNum of gaps) {
-        this.syncBlock(blockNum);
+        this.addBlockToQueue(blockNum);
       }
-      await StateStorage.collection.updateOne(
-        {},
-        {
-          $set: { [`verifiedBlockHeight.${this.chain}.${this.network}`]: gaps[0] > 100 ? gaps[0] - 100 : 0 }
-        },
-        { upsert: true }
-      );
+      this.syncing = false;
+      this.sync();
     } else {
+      this.resolvingGaps = false;
       logger.info(`${this.chain}:${this.network} up to date.`);
       await StateStorage.collection.updateOne(
         {},
@@ -241,8 +257,8 @@ export class MultiThreadSync extends EventEmitter {
       );
       this.emit('INITIALSYNCDONE');
       this.shutdownThreads();
+      this.syncing = false;
     }
-    this.syncing = false;
   }
 
   shutdownThreads() {
