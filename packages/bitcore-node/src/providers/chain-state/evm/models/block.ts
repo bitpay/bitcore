@@ -207,7 +207,13 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
         let prevBlock: IEVMBlock | undefined;
         const outOfSync: number[] = [];
         timeout = setInterval(
-          () => logger.info(`${chain}:${network} Block verification progress: ${((maxHeight - block.height) / (maxHeight - startHeight) * 100).toFixed(1)}%`),
+          () =>
+            logger.info(
+              `${chain}:${network} Block verification progress: ${(
+                ((maxHeight - block.height) / (maxHeight - startHeight)) *
+                100
+              ).toFixed(1)}%`
+            ),
           1000 * 2
         );
         // we are descending in blockHeight as we iterate
