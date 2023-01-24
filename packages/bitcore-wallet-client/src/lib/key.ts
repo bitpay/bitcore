@@ -388,7 +388,7 @@ export class Key {
     ) {
       coinCode = '1';
     } else if (opts.coin == 'bch') {
-      if (this.use0forBCH) {
+      if (this.use0forBCH || opts.use0forBCH) {
         coinCode = '0';
       } else {
         coinCode = '145';
