@@ -106,7 +106,7 @@
     "cors": "2.8.4",
     "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#e8106ed18740b0257a90365e830726cd66e912f6",
     "crypto-wallet-core": "^8.25.44",
-    "heapdump": "0.3.15",
+    "heapdump-next": "1.0.0",
     "http": "0.0.0",
     "lodash": "4.17.11",
     "mongodb": "3.1.1",
