@@ -678,7 +678,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         ),
         CoinStorage.collection.updateMany(
           { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
-          { $set: { spentHeight: SpentHeightIndicators.unspent } }
+          { $set: { spentHeight: SpentHeightIndicators.unspent, spentTxid: '' } }
         ),
         CoinStorage.collection.updateMany(
           { chain, network, mintTxid: { $in: txids } },
