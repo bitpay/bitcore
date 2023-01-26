@@ -16,7 +16,9 @@
     "BWS",
     "BWC"
   ],
-  "engine": "node >= 8.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "repository": {
     "url": "git@github.com:bitpay/bitcore-wallet-client.git",
     "type": "git"
