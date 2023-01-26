@@ -109,7 +109,7 @@
     "heapdump-next": "1.0.0",
     "http": "0.0.0",
     "lodash": "4.17.11",
-    "mongodb": "3.1.1",
+    "mongodb": "3.6.0",
     "request": "2.88.0",
     "ripple-lib": "1.4.2",
     "secp256k1": "4.0.3",
