@@ -40,12 +40,19 @@ const TransactionHash: React.FC = () => {
   const [error, setError] = useState('');
   const {state} = useLocation();
   const [inputMintIndex, setInputMintIndex] = useState<number | undefined>();
+  const [outputIndex, setOutputIndex] = useState<number | undefined>();
 
   useEffect(() => {
     if (detailsIdx !== undefined && fromVout === 'false') {
       setInputMintIndex(Number(detailsIdx));
     } else if (inputMintIndex !== undefined) {
       setInputMintIndex(undefined);
+    }
+
+    if (detailsIdx !== undefined && fromVout === 'true') {
+      setOutputIndex(Number(detailsIdx));
+    } else if (outputIndex !== undefined) {
+      setOutputIndex(undefined);
     }
   }, [detailsIdx, fromVout]);
 
@@ -176,6 +183,7 @@ const TransactionHash: React.FC = () => {
                   currency={currency}
                   network={network}
                   mintIndex={inputMintIndex}
+                  outputIndex={outputIndex}
                 />
               )}
             </motion.div>

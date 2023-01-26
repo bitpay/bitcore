@@ -48,11 +48,13 @@ const TransactionDetails = ({
   currency,
   network,
   mintIndex,
+  outputIndex
 }: {
   transaction: Transaction;
   currency: string;
   network: string;
   mintIndex?: number;
+  outputIndex?: number;
 }) => {
   const navigate = useNavigate();
   const [formattedInputs, setFormattedInputs] = useState<any[]>();
@@ -107,8 +109,10 @@ const TransactionDetails = ({
                 return (
                   <div key={i}>
                     {vi.items.map((item: any, itemIndex: number) => (
-                      <Tile
-                        key={item.mintTxid + itemIndex}
+                      <div key={item.mintTxid + itemIndex}>
+                        {i === outputIndex ? <SelectedPill>Selected</SelectedPill> : null}
+
+                        <Tile
                         invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
                         {showDetails && (
                           <ArrowDiv margin='auto .5rem auto 0'>
@@ -160,6 +164,7 @@ const TransactionDetails = ({
                           {getConvertedValue(item.value, currency)} {currency}
                         </TileDescription>
                       </Tile>
+                      </div>
                     ))}
                   </div>
                 );
@@ -199,7 +204,7 @@ const TransactionDetails = ({
                         {showDetails && vo.spentTxid && vo.spentTxid !== '' && vo.spentHeight >= 0 ? (
                           <TextElipsis>
                             <b>Tx ID </b>
-                            <SpanLink onClick={() => goToTx(vo.spentTxid, undefined, true)}>{vo.spentTxid}</SpanLink>
+                            <SpanLink onClick={() => goToTx(vo.spentTxid, i, true)}>{vo.spentTxid}</SpanLink>
                           </TextElipsis>
                         ) : null}
                       </>
@@ -211,7 +216,7 @@ const TransactionDetails = ({
                     {vo.spentHeight >= 0 ? '(S)' : '(U)'}
                   </TileDescription>
 
-                  {showDetails && vo.spentTxid && vo.spentTxid !== '' 
+                  {showDetails && vo.spentTxid && vo.spentTxid !== ''
                   && vo.spentHeight >= 0 && (
                     <ArrowDiv margin='auto 0 auto .5rem'>
                       <img
@@ -219,7 +224,7 @@ const TransactionDetails = ({
                         width={17}
                         height={17}
                         alt='arrow'
-                        onClick={() => goToTx(vo.spentTxid, undefined, true)}
+                        onClick={() => goToTx(vo.spentTxid, i, true)}
                       />
                     </ArrowDiv>
                   )}

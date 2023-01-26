@@ -1,7 +1,7 @@
 import styled, {css} from 'styled-components';
 import {Truncate} from './global';
 import {size} from '../../utilities/constants';
-import {NeutralSlate, Slate30, SlateDark, Slate} from './colors';
+import {NeutralSlate, Slate30} from './colors';
 
 interface TileDescriptionProps {
   value?: any;
