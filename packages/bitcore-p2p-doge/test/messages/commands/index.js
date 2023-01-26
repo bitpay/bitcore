@@ -22,7 +22,7 @@ describe('Command Messages', function() {
     it('should instantiate with an array of addrs', function() {
       var message = messages.Addresses([{
         ip: {
-          v4: 'localhost'
+          v4: '127.0.0.1'
         },
         services: 1,
         port: 1234

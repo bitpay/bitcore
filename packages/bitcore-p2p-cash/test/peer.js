@@ -72,36 +72,36 @@ describe('Peer', function() {
   });
 
   it('create instance', function() {
-    var peer = new Peer('localhost');
-    peer.host.should.equal('localhost');
+    var peer = new Peer('127.0.0.1');
+    peer.host.should.equal('127.0.0.1');
     peer.network.should.equal(Networks.livenet);
     peer.port.should.equal(Networks.livenet.port);
   });
 
   it('create instance setting a port', function() {
-    var peer = new Peer({host: 'localhost', port: 8111});
-    peer.host.should.equal('localhost');
+    var peer = new Peer({host: '127.0.0.1', port: 8111});
+    peer.host.should.equal('127.0.0.1');
     peer.network.should.equal(Networks.livenet);
     peer.port.should.equal(8111);
   });
 
   it('create instance setting a network', function() {
-    var peer = new Peer({host: 'localhost', network: Networks.testnet});
-    peer.host.should.equal('localhost');
+    var peer = new Peer({host: '127.0.0.1', network: Networks.testnet});
+    peer.host.should.equal('127.0.0.1');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(Networks.testnet.port);
   });
 
   it('create instance setting port and network', function() {
-    var peer = new Peer({host: 'localhost', port: 8111, network: Networks.testnet});
-    peer.host.should.equal('localhost');
+    var peer = new Peer({host: '127.0.0.1', port: 8111, network: Networks.testnet});
+    peer.host.should.equal('127.0.0.1');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(8111);
   });
 
   it('create instance without new', function() {
-    var peer = Peer({host: 'localhost', port: 8111, network: Networks.testnet});
-    peer.host.should.equal('localhost');
+    var peer = Peer({host: '127.0.0.1', port: 8111, network: Networks.testnet});
+    peer.host.should.equal('127.0.0.1');
     peer.network.should.equal(Networks.testnet);
     peer.port.should.equal(8111);
   });
@@ -109,7 +109,7 @@ describe('Peer', function() {
   it('set a proxy', function() {
     var peer, peer2, socket;
 
-    peer = new Peer('localhost');
+    peer = new Peer('127.0.0.1');
     expect(peer.proxy).to.be.undefined();
     socket = peer._getSocket();
     socket.should.be.instanceof(Net.Socket);
@@ -124,7 +124,7 @@ describe('Peer', function() {
   });
 
   it('send pong on ping', function(done) {
-    var peer = new Peer({host: 'localhost'});
+    var peer = new Peer({host: '127.0.0.1'});
     var pingMessage = messages.Ping();
     peer.sendMessage = function(message) {
       message.command.should.equal('pong');
@@ -135,7 +135,7 @@ describe('Peer', function() {
   });
 
   it('relay error from socket', function(done) {
-    var peer = new Peer({host: 'localhost'});
+    var peer = new Peer({host: '127.0.0.1'});
     var socket = new EventEmitter();
     socket.connect = sinon.spy();
     socket.destroy = sinon.spy();
@@ -152,7 +152,7 @@ describe('Peer', function() {
   });
 
   it('will not disconnect twice on disconnect and error', function(done) {
-    var peer = new Peer({host: 'localhost'});
+    var peer = new Peer({host: '127.0.0.1'});
     var socket = new EventEmitter();
     socket.connect = sinon.stub();
     socket.destroy = sinon.stub();
@@ -172,7 +172,7 @@ describe('Peer', function() {
   });
 
   it('disconnect with max buffer length', function(done) {
-    var peer = new Peer({ host: 'localhost' });
+    var peer = new Peer({ host: '127.0.0.1' });
     var socket = new EventEmitter();
     socket.connect = sinon.spy();
     peer._getSocket = function() {
@@ -194,7 +194,7 @@ describe('Peer', function() {
   });
 
   it('emits an error on unknown messages', function(done) {
-    var peer = new Peer({ host: 'localhost' });
+    var peer = new Peer({ host: '127.0.0.1' });
     var socket = new EventEmitter();
     socket.connect = sinon.spy();
     peer._getSocket = function() {
@@ -216,7 +216,7 @@ describe('Peer', function() {
   });
 
   it('should send version on version if not already sent', function(done) {
-    var peer = new Peer({host:'localhost'});
+    var peer = new Peer({host:'127.0.0.1'});
     var commands = {};
     peer.sendMessage = function(message) {
       commands[message.command] = true;
@@ -233,7 +233,7 @@ describe('Peer', function() {
   });
 
   it('should not send version on version if already sent', function(done) {
-    var peer = new Peer({host:'localhost'});
+    var peer = new Peer({host:'127.0.0.1'});
     peer.versionSent = true;
     var commands = {};
     peer.sendMessage = function(message) {
@@ -249,17 +249,17 @@ describe('Peer', function() {
   });
 
   it('relay set properly', function() {
-    var peer = new Peer({host: 'localhost'});
+    var peer = new Peer({host: '127.0.0.1'});
     peer.relay.should.equal(true);
-    var peer2 = new Peer({host: 'localhost', relay: false});
+    var peer2 = new Peer({host: '127.0.0.1', relay: false});
     peer2.relay.should.equal(false);
-    var peer3 = new Peer({host: 'localhost', relay: true});
+    var peer3 = new Peer({host: '127.0.0.1', relay: true});
     peer3.relay.should.equal(true);
   });
 
   it('relay setting respected', function() {
     [true,false].forEach(function(relay) {
-      var peer = new Peer({host: 'localhost', relay: relay});
+      var peer = new Peer({host: '127.0.0.1', relay: relay});
       var peerSendMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {
         message.relay.should.equal(relay);
       });
@@ -269,20 +269,20 @@ describe('Peer', function() {
   });
 
   it('version/subversion set properly', function() {
-    var peer = new Peer({ host: 'localhost' });
+    var peer = new Peer({ host: '127.0.0.1' });
     should.not.exist(peer.ownSubversion);
     should.not.exist(peer.ownVersion);
     var peer2 = new Peer({
-      host: 'localhost',
+      host: '127.0.0.1',
       subversion: '/useragent:0.0.0/'
     });
     peer2.ownSubversion.should.equal('/useragent:0.0.0/');
     should.not.exist(peer.ownVersion);
-    var peer3 = new Peer({ host: 'localhost', version: 70012 });
+    var peer3 = new Peer({ host: '127.0.0.1', version: 70012 });
     should.not.exist(peer.ownSubversion);
     peer3.ownVersion.should.equal(70012);
     var peer4 = new Peer({
-      host: 'localhost',
+      host: '127.0.0.1',
       subversion: '/useragent:0.0.0/',
       version: 70012
     });

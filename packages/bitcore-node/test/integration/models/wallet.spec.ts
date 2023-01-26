@@ -36,7 +36,7 @@ describe('Wallet Model', function() {
 
   describe('Wallet Create', () => {
     it('should return a locked wallet on create', async () => {
-      const baseUrl = 'http://localhost:3000/api';
+      const baseUrl = 'http://127.0.0.1:3000/api';
 
       lockedWallet = await Wallet.create({
         name: walletName,
@@ -50,7 +50,7 @@ describe('Wallet Model', function() {
         name: walletName,
         chain,
         network,
-        baseUrl: 'http://localhost:3000/api'
+        baseUrl: 'http://127.0.0.1:3000/api'
       });
       expect(lockedWallet).to.have.property('pubKey');
       expect(lockedWallet).to.have.property('password');

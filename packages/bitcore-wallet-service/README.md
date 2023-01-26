@@ -27,7 +27,7 @@ More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
  npm start
 ```
 
-This will launch the BWS service (with default settings) at `http://localhost:3232/bws/api`.
+This will launch the BWS service (with default settings) at `http://127.0.0.1:3232/bws/api`.
 
 BWS needs mongoDB. You can configure the connection at `bws.config.js`
 
@@ -88,8 +88,8 @@ The are plenty example creating and sending proposals in the `/test/integration`
 
 ### Requirements
 
-- bitcore-node running on http://localhost:3000
-- bws running locally on http://localhost:3232/bws/api
+- bitcore-node running on http://127.0.0.1:3000
+- bws running locally on http://127.0.0.1:3232/bws/api
 - mongod running
 - copay running on port: 8100
 - bitcoin-core running on regtest mode (blue icon logo)
@@ -124,7 +124,7 @@ The are plenty example creating and sending proposals in the `/test/integration`
 
 **bitcore-wallet-service/bws.config.js**
 
-2. Point testnet to http://localhost:3000 in BWS/bws.config.js and set regtestEnabled to true.
+2. Point testnet to http://127.0.0.1:3000 in BWS/bws.config.js and set regtestEnabled to true.
 
 ```
 blockchainExplorerOpts: {
@@ -133,8 +133,8 @@ blockchainExplorerOpts: {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        // set url to http://localhost:3000 here
-        url: 'http://localhost:3000',
+        // set url to http://127.0.0.1:3000 here
+        url: 'http://127.0.0.1:3000',
         // set regtestEnabled to true here
         regtestEnabled: true
       }
@@ -159,7 +159,7 @@ blockchainExplorerOpts: {
 1. Set the wallet service URL to
 
 ```
-http://localhost:3232/bws/api
+http://127.0.0.1:3232/bws/api
 ```
 
 2. Select Testnet by pressing the slider button.
@@ -171,12 +171,12 @@ http://localhost:3232/bws/api
 Requirements:
 
 - Mobile phone and PC must be connected to the same internet
-- PC desktop ip address for localhost
+- PC desktop ip address for 127.0.0.1
 
 To find ip address for PC run:
 
 ```
-// 127.0.0.1 is equal to localhost
+// 127.0.0.1 is equal to 127.0.0.1
 ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
 

@@ -49,7 +49,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     if (!RippleStateProvider.clients[network]) {
       const networkConfig = this.config[network];
       const provider = networkConfig.provider;
-      const host = provider.host || 'localhost';
+      const host = provider.host || '127.0.0.1';
       const protocol = provider.protocol || 'wss';
       const portString = provider.port;
       const connUrl = portString ? `${protocol}://${host}:${portString}` : `${protocol}://${host}`;

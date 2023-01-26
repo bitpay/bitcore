@@ -21,14 +21,14 @@ module.exports = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
+      uri: 'mongodb://127.0.0.1:27017/bws',
       dbname: 'bws'
     }
   },
   messageBrokerOpts: {
     //  To use message broker server, uncomment this:
     messageBrokerServer: {
-      url: 'http://localhost:3380'
+      url: 'http://127.0.0.1:3380'
     }
   },
   blockchainExplorerOpts: {
@@ -143,7 +143,7 @@ module.exports = {
   // },
   // To use email notifications uncomment this:
   // emailOpts: {
-  //  host: 'localhost',
+  //  host: '127.0.0.1',
   //  port: 25,
   //  ignoreTLS: true,
   //  subjectPrefix: '[Wallet Service]',

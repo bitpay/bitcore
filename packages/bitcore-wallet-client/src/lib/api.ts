@@ -34,7 +34,7 @@ var querystring = require('querystring');
 var log = require('./log');
 const Errors = require('./errors');
 
-var BASE_URL = 'http://localhost:3232/bws/api';
+var BASE_URL = 'http://127.0.0.1:3232/bws/api';
 
 // /**
 // * @desc ClientAPI constructor.

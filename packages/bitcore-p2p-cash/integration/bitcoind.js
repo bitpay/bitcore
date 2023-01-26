@@ -43,7 +43,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
 
   this.timeout(15000);
   var opts = {
-    host: 'localhost',
+    host: '127.0.0.1',
     network: network.name
   };
   it('handshakes', function(cb) {

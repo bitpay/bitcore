@@ -47,8 +47,8 @@ describe('Networks', function() {
       networkMagic: 0xe7beb4d4,
       port: 20001,
       dnsSeeds: [
-        'localhost',
-        'mynet.localhost'
+        '127.0.0.1',
+        'mynet.127.0.0.1'
       ]
     };
     networks.add(custom);
@@ -80,7 +80,7 @@ describe('Networks', function() {
       networkMagic: 0xe7beb4d5,
       port: 20008,
       dnsSeeds: [
-        'somenet.localhost'
+        'somenet.127.0.0.1'
       ]
     };
     networks.add(custom);
