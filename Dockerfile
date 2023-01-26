@@ -1,4 +1,4 @@
-FROM node:12-bullseye
+FROM node:18-bullseye
 
 # Install Chrome
 
@@ -21,7 +21,7 @@ RUN set -x \
     && google-chrome --version
 
 
-RUN npm i -g npm@6.14.15
+RUN npm i -g npm@8.19.3
 
 WORKDIR /bitcore
 
