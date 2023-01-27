@@ -237,7 +237,7 @@ describe('MATIC Chain State Provider', function() {
         await MATIC.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'providers\' of undefined');
+        expect(err.message).to.equal('Cannot read properties of undefined (reading \'providers\')');
       }
     });
 
@@ -248,7 +248,7 @@ describe('MATIC Chain State Provider', function() {
         await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'result\' of null');
+        expect(err.message).to.equal('Cannot read properties of null (reading \'result\')');
       }
     });
   });
