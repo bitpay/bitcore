@@ -75,7 +75,7 @@ COPY  ./packages/bitcore-p2p-doge/package.json ./packages/bitcore-p2p-doge/packa
 COPY  ./packages/bitcore-p2p-doge/package-lock.json ./packages/bitcore-p2p-doge/package-lock.json
 
 
-RUN npm install
+RUN npm install --ignore-scripts
 RUN npm run bootstrap
 ADD . .
 RUN npm run compile
