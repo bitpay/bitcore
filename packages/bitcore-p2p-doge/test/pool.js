@@ -65,12 +65,12 @@ describe('Pool', function() {
       addrs: [
         {
           ip: {
-            v4: '127.0.0.1'
+            v4: 'localhost'
           }
         },
         {
           ip: {
-            v4: '127.0.0.12'
+            v4: 'localhost2'
           }
         }
       ]
@@ -90,7 +90,7 @@ describe('Pool', function() {
       addrs: [
         {
           ip: {
-            v4: '127.0.0.1'
+            v4: 'localhost'
           }
         }
       ]
@@ -120,7 +120,7 @@ describe('Pool', function() {
       addrs: [
         {
           ip: {
-            v4: '127.0.0.1'
+            v4: 'localhost'
           }
         }
       ]
@@ -172,7 +172,7 @@ describe('Pool', function() {
       addrs: [
         {
           ip: {
-            v4: '127.0.0.1'
+            v4: 'localhost'
           }
         }
       ]
@@ -217,7 +217,7 @@ describe('Pool', function() {
       addrs: [
         {
           ip: {
-            v4: '127.0.0.1'
+            v4: 'localhost'
           }
         }
       ]
@@ -254,7 +254,7 @@ describe('Pool', function() {
     });
     [true, false].forEach(function(relay) {
       var pool = new Pool({relay: relay, dnsSeed: false});
-      pool._addAddr({ ip: { v4: '127.0.0.1' } });
+      pool._addAddr({ ip: { v4: 'localhost' } });
       pool.on('peerconnect', function(peer, addr) {
         peer.relay.should.equal(relay);
         pool.disconnect();
@@ -325,7 +325,7 @@ describe('Pool', function() {
       addrs: [
         {
           ip:{
-            v4: '127.0.0.1'
+            v4: 'localhost'
           }
         }
       ]

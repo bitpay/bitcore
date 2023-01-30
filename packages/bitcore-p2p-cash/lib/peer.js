@@ -54,7 +54,7 @@ function Peer(options) {
     this.status = Peer.STATUS.CONNECTED;
     this._addSocketEventHandlers();
   } else {
-    this.host = options.host || '127.0.0.1';
+    this.host = options.host || 'localhost';
     this.status = Peer.STATUS.DISCONNECTED;
     this.port = options.port;
   }

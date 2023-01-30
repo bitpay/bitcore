@@ -59,8 +59,8 @@ describe('PrivateKey', function() {
       networkMagic: 0xf9beb4fe,
       port: 20001,
       dnsSeeds: [
-        '127.0.0.1',
-        'mynet.127.0.0.1'
+        'localhost',
+        'mynet.localhost'
       ]
     };
     Networks.add(nmc);

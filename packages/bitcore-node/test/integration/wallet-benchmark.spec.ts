@@ -121,7 +121,7 @@ describe('Wallet Benchmark', function() {
   describe('Wallet import', () => {
     it('should be able to create two wallets and have them interact', async () => {
       const seenCoins = new Set();
-      const socket = io.connect('http://127.0.0.1:3000', { transports: ['websocket'] });
+      const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
       const connected = new Promise(r => {
         socket.on('connect', () => {
           const room = `/${chain}/${network}/inv`;
@@ -183,7 +183,7 @@ describe('Wallet Benchmark', function() {
 
     it('should be able to create two wallets and have them interact, while syncing', async () => {
       const seenCoins = new Set();
-      const socket = io.connect('http://127.0.0.1:3000', { transports: ['websocket'] });
+      const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
       const connected = new Promise(r => {
         socket.on('connect', () => {
           const room = `/${chain}/${network}/inv`;

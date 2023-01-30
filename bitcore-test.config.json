@@ -14,12 +14,12 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "127.0.0.1",
+              "host": "localhost",
               "port": 8332
             }
           ],
           "rpc": {
-            "host": "127.0.0.1",
+            "host": "localhost",
             "port": 8333,
             "username": "bitcorenodetest",
             "password": "local321"
@@ -31,16 +31,16 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "127.0.0.1",
+              "host": "localhost",
               "port": 40404
             }
           ],
           "providers": [{
-            "host": "127.0.0.1",
+            "host": "localhost",
             "protocol": "ws",
             "port": 9545
           }, {
-            "host": "127.0.0.1",
+            "host": "localhost",
             "protocol": "ws",
             "port": 9556
           }],
@@ -52,12 +52,12 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "127.0.0.1",
+              "host": "localhost",
               "port": 40404
             }
           ],
           "providers": [{
-            "host": "127.0.0.1",
+            "host": "localhost",
             "protocol": "ws",
             "port": 9556
           }],
@@ -68,10 +68,10 @@
         "testnet": {
           "chainSource": "rpc",
           "provider": {
-            "host": "127.0.0.1",
+            "host": "localhost",
             "protocol": "ws",
             "port": 6996,
-            "dataHost": "127.0.0.1"
+            "dataHost": "localhost"
           }
         }
       }

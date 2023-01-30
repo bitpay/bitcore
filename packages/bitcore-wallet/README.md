@@ -9,7 +9,7 @@ This can be used to operate Bitcoin and Bitcoin Cash wallets.
 ## Quick Guide
 
 ```sh
-# Use -h or BWS_HOST to setup the BWS URL (defaults to 127.0.0.1:3001)
+# Use -h or BWS_HOST to setup the BWS URL (defaults to localhost:3001)
 #
 # Start a local BWS instance be doing:
 # git clone https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-service.git bws

@@ -18,7 +18,7 @@ You can start using bitcore-wallet-client via [NPM](https://www.npmjs.com/packag
 
 ## Example
 
-Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `127.0.0.1:3232`.
+Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3232`.
 
 Then create two files `irene.js` and `tomas.js` with the content below:
 

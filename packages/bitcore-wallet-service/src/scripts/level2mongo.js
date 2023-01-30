@@ -11,7 +11,7 @@ var level = new LevelStorage({
 var mongo = new MongoStorage();
 mongo.connect({
     mongoDb: {
-      uri: 'mongodb://127.0.0.1:27017/bws',
+      uri: 'mongodb://localhost:27017/bws',
     }
   },
   function(err) {

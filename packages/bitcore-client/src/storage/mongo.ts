@@ -24,7 +24,7 @@ export class Mongo {
       }
       this.databaseName = databasePath.pop();
     } else {
-      this.path = 'mongodb://127.0.0.1/bitcoreWallet';
+      this.path = 'mongodb://localhost/bitcoreWallet';
       this.databaseName = 'bitcoreWallets';
     }
     this.createIfMissing = createIfMissing;

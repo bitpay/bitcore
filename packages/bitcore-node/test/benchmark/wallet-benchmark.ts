@@ -18,7 +18,7 @@ export async function createWallet(addresses: string[], iteration, networkName?:
   const password = 'iamsatoshi';
   const chain = 'BTC';
   const network = networkName || 'mainnet';
-  const baseUrl = 'http://127.0.0.1:3000/api';
+  const baseUrl = 'http://localhost:3000/api';
   let lockedWallet: Wallet;
 
   try {

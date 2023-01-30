@@ -55,7 +55,7 @@ Example configuration for connecting to the MongoDB instance:
 ```javascript
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://127.0.0.1:27017/bws',
+      uri: 'mongodb://localhost:27017/bws',
     },
   }
 ```
@@ -67,7 +67,7 @@ Example configuration for connecting to message broker service:
 ```javascript
   messageBrokerOpts: {
     messageBrokerServer: {
-      url: 'http://127.0.0.1:3380',
+      url: 'http://localhost:3380',
     },
   }
 ```
@@ -98,7 +98,7 @@ Example configuration for connecting to email service (using postfix):
 
 ```javascript
   emailOpts: {
-    host: '127.0.0.1',
+    host: 'localhost',
     port: 25,
     ignoreTLS: true,
     subjectPrefix: '[Wallet Service]',
