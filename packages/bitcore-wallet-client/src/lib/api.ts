@@ -2813,6 +2813,8 @@ export class API extends EventEmitter {
   // * @param {String} opts.words - mnemonic
   // * @param {String} opts.xPrivKey - extended Private Key
   // * @param {String} opts.passphrase - mnemonic's passphrase (optional)
+  // * @param {Bool} opts.includeTestnetWallets - include testnet wallets (optional)
+  // * @param {Bool} opts.includeLegacyWallets - search legacy wallets (optional)
   // * @param {Object} clientOpts  - BWS connection options (see ClientAPI constructor)
 
   // * @returns {Callback} cb - Returns { err, key, clients[] }
@@ -2824,8 +2826,56 @@ export class API extends EventEmitter {
       'provide opts.words or opts.xPrivKey'
     );
 
+    let client = clientOpts.clientFactory
+      ? clientOpts.clientFactory()
+      : new API(clientOpts);
+    let includeTestnetWallets = opts.includeTestnetWallets;
+    let includeLegacyWallets = opts.includeLegacyWallets;
+    let credentials = [];
     let copayerIdAlreadyTested = {};
-    var checkCredentials = (key, opts, icb) => {
+    let keyCredentialIndex = [];
+    let clients = [];
+    let k;
+    let sets = [
+      {
+        // current wallets: /[44,48]/[0,145]'/
+        nonCompliantDerivation: false,
+        useLegacyCoinType: false,
+        useLegacyPurpose: false
+      }
+    ];
+
+    if (includeLegacyWallets) {
+      const legacyOpts = [
+        {
+          // old bch wallets: /[44,48]/[0,0]'/
+          nonCompliantDerivation: false,
+          useLegacyCoinType: true,
+          useLegacyPurpose: false
+        },
+        {
+          // old BTC/BCH  multisig wallets: /[44]/[0,145]'/
+          nonCompliantDerivation: false,
+          useLegacyCoinType: false,
+          useLegacyPurpose: true
+        },
+        {
+          // old multisig BCH wallets: /[44]/[0]'/
+          nonCompliantDerivation: false,
+          useLegacyCoinType: true,
+          useLegacyPurpose: true
+        },
+        {
+          // old BTC no-comp wallets: /44'/[0]'/
+          nonCompliantDerivation: true,
+          useLegacyPurpose: true
+        }
+      ];
+      // @ts-ignore
+      sets = sets.concat(legacyOpts);
+    }
+
+    const generateCredentials = (key, opts) => {
       let c = key.createCredentials(null, {
         coin: opts.coin,
         chain: opts.coin, // chain === coin for stored clients
@@ -2836,218 +2886,25 @@ export class API extends EventEmitter {
       });
 
       if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
-        // console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
-        return icb();
+        return;
       } else {
         copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
       }
 
-      let client = clientOpts.clientFactory
-        ? clientOpts.clientFactory()
-        : new API(clientOpts);
-
-      client.fromString(c);
-      client.openWallet({}, async (err, status) => {
-        //        console.log(
-        //          `PATH: ${c.rootPath} n: ${c.n}:`,
-        //          err && err.message ? err.message : 'FOUND!'
-        //        );
-
-        // Exists
-        if (!err) {
-          if (
-            opts.coin == 'btc' &&
-            (status.wallet.addressType == 'P2WPKH' ||
-              status.wallet.addressType == 'P2WSH')
-          ) {
-            client.credentials.addressType =
-              status.wallet.n == 1
-                ? Constants.SCRIPT_TYPES.P2WPKH
-                : Constants.SCRIPT_TYPES.P2WSH;
-          }
-          let clients = [client];
-          // Eth wallet with tokens?
-          const tokenAddresses = status.preferences.tokenAddresses;
-          if (!_.isEmpty(tokenAddresses)) {
-            function oneInchGetEthTokensData() {
-              return new Promise((resolve, reject) => {
-                client.request.get(
-                  '/v1/service/oneInch/getTokens/eth',
-                  (err, data) => {
-                    if (err) return reject(err);
-                    return resolve(data);
-                  }
-                );
-              });
-            }
-            let customTokensData;
-            try {
-              customTokensData = await oneInchGetEthTokensData();
-            } catch (error) {
-              log.warn('oneInchGetEthTokensData err', error);
-              customTokensData = null;
-            }
-            _.each(tokenAddresses, t => {
-              const token =
-                Constants.ETH_TOKEN_OPTS[t] ||
-                (customTokensData && customTokensData[t]);
-              if (!token) {
-                log.warn(`Token ${t} unknown`);
-                return;
-              }
-              log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token,
-                'eth'
-              );
-              let tokenClient = _.cloneDeep(client);
-              tokenClient.credentials = tokenCredentials;
-              clients.push(tokenClient);
-            });
-          }
-          // Eth wallet with mulsig wallets?
-          const multisigEthInfo = status.preferences.multisigEthInfo;
-          if (!_.isEmpty(multisigEthInfo)) {
-            _.each(multisigEthInfo, info => {
-              log.info(
-                `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
-              );
-              const multisigEthCredentials =
-                client.credentials.getMultisigEthCredentials({
-                  walletName: info.walletName,
-                  multisigContractAddress: info.multisigContractAddress,
-                  n: info.n,
-                  m: info.m
-                });
-              let multisigEthClient = _.cloneDeep(client);
-              multisigEthClient.credentials = multisigEthCredentials;
-              clients.push(multisigEthClient);
-              const tokenAddresses = info.tokenAddresses;
-              if (!_.isEmpty(tokenAddresses)) {
-                _.each(tokenAddresses, t => {
-                  const token = Constants.ETH_TOKEN_OPTS[t];
-                  if (!token) {
-                    log.warn(`Token ${t} unknown`);
-                    return;
-                  }
-                  log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials =
-                    multisigEthClient.credentials.getTokenCredentials(
-                      token,
-                      'eth'
-                    );
-                  let tokenClient = _.cloneDeep(multisigEthClient);
-                  tokenClient.credentials = tokenCredentials;
-                  clients.push(tokenClient);
-                });
-              }
-            });
-          }
-          // matic wallet with tokens?
-          const maticTokenAddresses = status.preferences.maticTokenAddresses;
-          if (!_.isEmpty(maticTokenAddresses)) {
-            function oneInchGetMaticTokensData() {
-              return new Promise((resolve, reject) => {
-                client.request.get(
-                  '/v1/service/oneInch/getTokens/matic',
-                  (err, data) => {
-                    if (err) return reject(err);
-                    return resolve(data);
-                  }
-                );
-              });
-            }
-            let customTokensData;
-            try {
-              customTokensData = await oneInchGetMaticTokensData(); // change to matic function
-            } catch (error) {
-              log.warn('oneInchGetMaticTokensData err', error);
-              customTokensData = null;
-            }
-            _.each(maticTokenAddresses, t => {
-              const token =
-                Constants.MATIC_TOKEN_OPTS[t] ||
-                (customTokensData && customTokensData[t]);
-              if (!token) {
-                log.warn(`Token ${t} unknown`);
-                return;
-              }
-              log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token,
-                'matic'
-              );
-              let tokenClient = _.cloneDeep(client);
-              tokenClient.credentials = tokenCredentials;
-              clients.push(tokenClient);
-            });
-          }
-          // matic wallet with multisig wallets?
-          const multisigMaticInfo = status.preferences.multisigMaticInfo;
-          if (!_.isEmpty(multisigMaticInfo)) {
-            _.each(multisigMaticInfo, info => {
-              log.info(
-                `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
-              );
-              const multisigMaticCredentials =
-                client.credentials.getMultisigEthCredentials({
-                  walletName: info.walletName,
-                  multisigContractAddress: info.multisigContractAddress,
-                  n: info.n,
-                  m: info.m
-                });
-              let multisigMaticClient = _.cloneDeep(client);
-              multisigMaticClient.credentials = multisigMaticCredentials;
-              clients.push(multisigMaticClient);
-              const maticTokenAddresses = info.maticTokenAddresses;
-              if (!_.isEmpty(maticTokenAddresses)) {
-                _.each(maticTokenAddresses, t => {
-                  const token = Constants.MATIC_TOKEN_OPTS[t];
-                  if (!token) {
-                    log.warn(`Token ${t} unknown`);
-                    return;
-                  }
-                  log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials =
-                    multisigMaticClient.credentials.getTokenCredentials(
-                      token,
-                      'matic'
-                    );
-                  let tokenClient = _.cloneDeep(multisigMaticClient);
-                  tokenClient.credentials = tokenCredentials;
-                  clients.push(tokenClient);
-                });
-              }
-            });
-          }
-          return icb(null, clients);
-        }
-        if (
-          err instanceof Errors.NOT_AUTHORIZED ||
-          err instanceof Errors.WALLET_DOES_NOT_EXIST
-        ) {
-          return icb();
-        }
-
-        return icb(err);
-      });
+      keyCredentialIndex.push({ credentials: c, key, opts });
+      credentials.push(c);
     };
 
-    var checkKey = (key, cb) => {
+    const checkKey = key => {
       let opts = [
         // coin, network,  multisig
         ['btc', 'livenet'],
         ['bch', 'livenet'],
         ['bch', 'livenet', false, true], // check for prefork bch wallet
         ['eth', 'livenet'],
-        ['eth', 'testnet'],
         ['matic', 'livenet'],
-        ['matic', 'testnet'],
         ['xrp', 'livenet'],
-        ['xrp', 'testnet'],
         ['doge', 'livenet'],
-        ['doge', 'testnet'],
-        ['ltc', 'testnet'],
         ['ltc', 'livenet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true],
@@ -3068,161 +2925,413 @@ export class API extends EventEmitter {
         });
       }
 
-      if (!key.nonCompliantDerivation) {
-        // TESTNET
+      if (!key.nonCompliantDerivation && includeTestnetWallets) {
         let testnet = _.cloneDeep(opts);
         testnet.forEach(x => {
           x[1] = 'testnet';
         });
         opts = opts.concat(testnet);
-      } else {
+      }
+      if (key.nonCompliantDerivation) {
         //  leave only BTC, and no testnet
         opts = opts.filter(x => {
           return x[0] == 'btc';
         });
       }
 
-      let clients = [];
-      async.eachSeries(
-        opts,
-        (x, next) => {
-          let optsObj = {
-            coin: x[0],
-            network: x[1],
-            account: 0,
-            n: x[2] ? 2 : 1,
-            use0forBCH: x[3]
-          };
-          // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
-          // TODO OPTI: do not scan accounts if XX
-          //
-          // 1. check account 0
-          checkCredentials(key, optsObj, (err, iclients) => {
-            if (err) return next(err);
-            if (_.isEmpty(iclients)) return next();
-            clients = clients.concat(iclients);
+      for (let i = 0; i < opts.length; i++) {
+        let opt = opts[i];
+        let optsObj = {
+          coin: opt[0],
+          network: opt[1],
+          account: 0,
+          n: opt[2] ? 2 : 1,
+          use0forBCH: opt[3]
+        };
+        generateCredentials(key, optsObj);
+      }
+    };
 
-            // Accounts not allowed?
-            if (
-              key.use0forBCH ||
-              !key.compliantDerivation ||
-              key.use44forMultisig ||
-              key.BIP45
-            )
-              return next();
+    const getClientsFromWallets = (err, res) => {
+      if (err) {
+        return callback(err);
+      }
 
-            // Now, lets scan all accounts for the found client
-            let cont = true,
-              account = 1;
-            async.whilst(
-              () => {
-                return cont;
-              },
-              icb => {
-                optsObj.account = account++;
+      // marry all found wallets and keyCredentialIndex entries for simplicity
+      let combined = keyCredentialIndex
+        .map((x, i) => {
+          if (res[i].success) {
+            x.status = res[i].status;
+            return x;
+          }
+        })
+        .filter(x => x);
 
-                checkCredentials(key, optsObj, (err, iclients) => {
-                  if (err) return icb(err);
-                  // we do not allow accounts nr gaps in BWS.
-                  cont = !_.isEmpty(iclients);
-                  if (cont) {
-                    clients = clients.concat(iclients);
-                  }
-                  return icb();
-                });
-              },
-              err => {
-                return next(err);
+      let foundWallets = [];
+      async.each(
+        combined,
+        (item, cb) => {
+          let credentials = item.credentials;
+          var wallet = item.status.wallet;
+          client.fromString(credentials);
+          client._processStatus(item.status);
+
+          if (!credentials.hasWalletInfo()) {
+            var me = _.find(wallet.copayers, {
+              id: credentials.copayerId
+            });
+
+            if (!me) return cb(null, new Error('Copayer not in wallet'));
+
+            try {
+              credentials.addWalletInfo(
+                wallet.id,
+                wallet.name,
+                wallet.m,
+                wallet.n,
+                me.name,
+                {}
+              );
+            } catch (e) {
+              if (e.message) {
+                log.info('Trying credentials...', e.message);
               }
+              if (e.message && e.message.match(/Bad\snr/)) {
+                return cb(null, new Errors.WALLET_DOES_NOT_EXIST());
+              }
+            }
+          }
+          if (wallet.status != 'complete') return cb(null, item);
+
+          if (item.status.customData?.walletPrivKey) {
+            credentials.addWalletPrivateKey(
+              item.status.customData.walletPrivKey
             );
-          });
+          }
+
+          if (credentials.walletPrivKey) {
+            if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
+              return cb(null, new Errors.SERVER_COMPROMISED());
+            }
+          } else {
+            // this should only happen in AIR-GAPPED flows
+            log.warn(
+              'Could not verify copayers key (missing wallet Private Key)'
+            );
+          }
+
+          credentials.addPublicKeyRing(
+            client._extractPublicKeyRing(wallet.copayers)
+          );
+          client.emit('walletCompleted', wallet);
+
+          foundWallets.push(item);
+          cb();
         },
         err => {
-          if (err) return cb(err);
-          return cb(null, clients);
+          if (err) return callback(err);
+          checkForOtherAccounts(foundWallets);
         }
       );
     };
 
-    let sets = [
-      {
-        // current wallets: /[44,48]/[0,145]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: false,
-        useLegacyPurpose: false
-      },
-      {
-        // older bch wallets: /[44,48]/[0,0]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: true,
-        useLegacyPurpose: false
-      },
-      {
-        // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: false,
-        useLegacyPurpose: true
-      },
-      {
-        // not that // older multisig BCH wallets: /[44]/[0]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: true,
-        useLegacyPurpose: true
-      },
-
-      {
-        // old BTC no-comp wallets: /44'/[0]'/
-        nonCompliantDerivation: true,
-        useLegacyPurpose: true
-      }
-    ];
-
-    let s,
-      resultingClients = [],
-      k;
-    async.whilst(
-      () => {
-        if (!_.isEmpty(resultingClients)) return false;
-
-        s = sets.shift();
-        if (!s) return false;
-
-        try {
-          if (opts.words) {
-            if (opts.passphrase) {
-              s.passphrase = opts.passphrase;
-            }
-
-            k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...s });
-          } else {
-            k = new Key({
-              seedData: opts.xPrivKey,
-              seedType: 'extendedPrivateKey',
-              ...s
-            });
-          }
-        } catch (e) {
-          log.info('Backup error:', e);
-          return callback(new Errors.INVALID_BACKUP());
-        }
-        return true;
-      },
-      icb => {
-        checkKey(k, (err, clients) => {
-          if (err) return icb(err);
-
-          if (clients && clients.length) {
-            resultingClients = clients;
-          }
-          return icb();
+    const getNextBatch = (key, settings) => {
+      let accountKeyCredentialIndex = [];
+      let credBatch = [];
+      // add potential wallet account credentials
+      for (let i = 0; i < 5; i++) {
+        settings.account++;
+        const clonedSettings = JSON.parse(JSON.stringify(settings));
+        let c = key.createCredentials(null, {
+          coin: clonedSettings.coin,
+          network: clonedSettings.network,
+          account: clonedSettings.account,
+          n: clonedSettings.n
         });
-      },
-      err => {
-        if (err) return callback(err);
 
-        if (_.isEmpty(resultingClients)) k = null;
-        return callback(null, k, resultingClients);
+        accountKeyCredentialIndex.push({
+          credentials: c,
+          key,
+          opts: clonedSettings
+        });
+        credBatch.push(c);
       }
+      return { credentials: credBatch, accountKeyCredentialIndex };
+    };
+
+    const checkForOtherAccounts = foundWallets => {
+      let addtFoundWallets = [];
+      async.each(
+        foundWallets,
+        (wallet, next2) => {
+          k = wallet.key;
+          let mostRecentResults = [{ success: true }];
+          async.whilst(
+            () => mostRecentResults.every(x => x.success),
+            next => {
+              let { credentials, accountKeyCredentialIndex } = getNextBatch(
+                k,
+                wallet.opts
+              );
+              client.bulkClient.getStatusAll(
+                credentials,
+                {
+                  silentFailure: true,
+                  twoStep: true,
+                  includeExtendedInfo: true,
+                  ignoreIncomplete: true
+                },
+                (err, response) => {
+                  mostRecentResults = response;
+                  let combined = accountKeyCredentialIndex
+                    .map((x, i) => {
+                      if (response[i].success) {
+                        x.status = response[i].status;
+                        return x;
+                      }
+                    })
+                    .filter(x => x);
+                  addtFoundWallets.push(...combined);
+                  next(err);
+                }
+              );
+            },
+            err => {
+              next2(err);
+            }
+          );
+        },
+        err => {
+          if (err) return callback(err);
+          const allWallets = foundWallets.concat(addtFoundWallets);
+          // generate clients
+          async.each(
+            allWallets,
+            async (wallet, next) => {
+              if (
+                wallet.opts.coin == 'btc' &&
+                (wallet.status.wallet.addressType == 'P2WPKH' ||
+                  wallet.status.wallet.addressType == 'P2WSH')
+              ) {
+                client.credentials.addressType =
+                  wallet.status.wallet.n == 1
+                    ? Constants.SCRIPT_TYPES.P2WPKH
+                    : Constants.SCRIPT_TYPES.P2WSH;
+              }
+              // add client to list
+              let newClient = _.cloneDeep(client);
+              // newClient.credentials = settings.credentials;
+              newClient.fromString(wallet.credentials);
+              clients.push(newClient);
+              // Eth wallet with tokens?
+              const tokenAddresses = wallet.status.preferences.tokenAddresses;
+              const multisigEthInfo = wallet.status.preferences.multisigEthInfo;
+              const maticTokenAddresses =
+                wallet.status.preferences.maticTokenAddresses;
+              const multisigMaticInfo =
+                wallet.status.preferences.multisigMaticInfo;
+              if (!_.isEmpty(tokenAddresses) || !_.isEmpty(multisigEthInfo)) {
+                if (!_.isEmpty(tokenAddresses)) {
+                  function oneInchGetTokensData() {
+                    return new Promise((resolve, reject) => {
+                      newClient.request.get(
+                        '/v1/service/oneInch/getTokens/eth',
+                        (err, data) => {
+                          if (err) return reject(err);
+                          return resolve(data);
+                        }
+                      );
+                    });
+                  }
+                  let customTokensData;
+                  try {
+                    customTokensData = await oneInchGetTokensData();
+                  } catch (error) {
+                    log.warn('oneInchGetTokensData err', error);
+                    customTokensData = null;
+                  }
+                  _.each(tokenAddresses, t => {
+                    const token =
+                      Constants.ETH_TOKEN_OPTS[t] ||
+                      (customTokensData && customTokensData[t]);
+                    if (!token) {
+                      log.warn(`Token ${t} unknown`);
+                      return;
+                    }
+                    log.info(`Importing token: ${token.name}`);
+                    const tokenCredentials =
+                      newClient.credentials.getTokenCredentials(token);
+                    let tokenClient = _.cloneDeep(newClient);
+                    tokenClient.credentials = tokenCredentials;
+                    clients.push(tokenClient);
+                  });
+                  if (_.isEmpty(multisigEthInfo)) {
+                    next();
+                  }
+                }
+                // Eth wallet with mulsig wallets?
+                if (!_.isEmpty(multisigEthInfo)) {
+                  _.each(multisigEthInfo, info => {
+                    log.info(
+                      `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
+                    );
+                    const multisigEthCredentials =
+                      newClient.credentials.getMultisigEthCredentials({
+                        walletName: info.walletName,
+                        multisigContractAddress: info.multisigContractAddress,
+                        n: info.n,
+                        m: info.m
+                      });
+                    let multisigEthClient = _.cloneDeep(newClient);
+                    multisigEthClient.credentials = multisigEthCredentials;
+                    clients.push(multisigEthClient);
+                    const tokenAddresses = info.tokenAddresses;
+                    if (!_.isEmpty(tokenAddresses)) {
+                      _.each(tokenAddresses, t => {
+                        const token = Constants.ETH_TOKEN_OPTS[t];
+                        if (!token) {
+                          log.warn(`Token ${t} unknown`);
+                          return;
+                        }
+                        log.info(`Importing multisig token: ${token.name}`);
+                        const tokenCredentials =
+                          multisigEthClient.credentials.getTokenCredentials(
+                            token
+                          );
+                        let tokenClient = _.cloneDeep(multisigEthClient);
+                        tokenClient.credentials = tokenCredentials;
+                        clients.push(tokenClient);
+                      });
+                    }
+                  });
+                  next();
+                }
+                // matic wallet with tokens?
+              } else if (
+                !_.isEmpty(maticTokenAddresses) ||
+                !_.isEmpty(multisigMaticInfo)
+              ) {
+                if (!_.isEmpty(maticTokenAddresses)) {
+                  function oneInchGetTokensData() {
+                    return new Promise((resolve, reject) => {
+                      newClient.request.get(
+                        '/v1/service/oneInch/getTokens/matic',
+                        (err, data) => {
+                          if (err) return reject(err);
+                          return resolve(data);
+                        }
+                      );
+                    });
+                  }
+                  let customTokensData;
+                  try {
+                    customTokensData = await oneInchGetTokensData();
+                  } catch (error) {
+                    log.warn('oneInchGetTokensData err', error);
+                    customTokensData = null;
+                  }
+                  _.each(maticTokenAddresses, t => {
+                    const token =
+                      Constants.MATIC_TOKEN_OPTS[t] ||
+                      (customTokensData && customTokensData[t]);
+                    if (!token) {
+                      log.warn(`Token ${t} unknown`);
+                      return;
+                    }
+                    log.info(`Importing token: ${token.name}`);
+                    const tokenCredentials =
+                      newClient.credentials.getTokenCredentials(token);
+                    let tokenClient = _.cloneDeep(newClient);
+                    tokenClient.credentials = tokenCredentials;
+                    clients.push(tokenClient);
+                  });
+                  if (_.isEmpty(multisigEthInfo)) {
+                    next();
+                  }
+                }
+                // matic wallet with multisig wallets?
+                if (!_.isEmpty(multisigEthInfo)) {
+                  _.each(multisigEthInfo, info => {
+                    log.info(
+                      `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
+                    );
+                    const multisigEthCredentials =
+                      newClient.credentials.getMultisigEthCredentials({
+                        walletName: info.walletName,
+                        multisigContractAddress: info.multisigContractAddress,
+                        n: info.n,
+                        m: info.m
+                      });
+                    let multisigEthClient = _.cloneDeep(newClient);
+                    multisigEthClient.credentials = multisigEthCredentials;
+                    clients.push(multisigEthClient);
+                    const tokenAddresses = info.tokenAddresses;
+                    if (!_.isEmpty(tokenAddresses)) {
+                      _.each(tokenAddresses, t => {
+                        const token = Constants.ETH_TOKEN_OPTS[t];
+                        if (!token) {
+                          log.warn(`Token ${t} unknown`);
+                          return;
+                        }
+                        log.info(`Importing multisig token: ${token.name}`);
+                        const tokenCredentials =
+                          multisigEthClient.credentials.getTokenCredentials(
+                            token
+                          );
+                        let tokenClient = _.cloneDeep(multisigEthClient);
+                        tokenClient.credentials = tokenCredentials;
+                        clients.push(tokenClient);
+                      });
+                    }
+                  });
+                  next();
+                }
+              } else {
+                next();
+              }
+            },
+            err => {
+              if (err) return callback(err);
+              return callback(null, k, clients);
+            }
+          );
+        }
+      );
+    };
+
+    for (let i = 0; i < sets.length; i++) {
+      let set: any = sets[i];
+      try {
+        if (opts.words) {
+          if (opts.passphrase) {
+            set.passphrase = opts.passphrase;
+          }
+
+          k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...set });
+        } else {
+          k = new Key({
+            seedData: opts.xPrivKey,
+            seedType: 'extendedPrivateKey',
+            ...set
+          });
+        }
+      } catch (e) {
+        log.info('Backup error:', e);
+        return callback(new Errors.INVALID_BACKUP());
+      }
+      checkKey(k);
+    }
+
+    // send batched calls to server
+    client.bulkClient.getStatusAll(
+      credentials,
+      {
+        silentFailure: true,
+        twoStep: true,
+        includeExtendedInfo: true,
+        ignoreIncomplete: true
+      },
+      getClientsFromWallets
     );
   }
 
