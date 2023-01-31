@@ -33,21 +33,28 @@ const TransactionHash: React.FC = () => {
   let {currency, network} = params;
   const [isLoading, setIsLoading] = useState(true);
   const [searchParams] = useSearchParams();
-  const detailsIdx = searchParams.get('detailsIdx');
-  const fromVout = searchParams.get('fromVout');
+  const refvoutParam = searchParams.get('refVout');
+  const reftxidParam = searchParams.get('refTxid');
   const [transaction, setTransaction] = useState<any>();
   const dispatch = useAppDispatch();
   const [error, setError] = useState('');
   const {state} = useLocation();
-  const [inputMintIndex, setInputMintIndex] = useState<number | undefined>();
+  const [refTxid, setRefTxid] = useState<string | undefined>();
+  const [refVout, setRefVout] = useState<number | undefined>();
 
   useEffect(() => {
-    if (detailsIdx !== undefined && fromVout === 'false') {
-      setInputMintIndex(Number(detailsIdx));
-    } else if (inputMintIndex !== undefined) {
-      setInputMintIndex(undefined);
+    if (reftxidParam != null && reftxidParam !== '') {
+      setRefTxid(reftxidParam);
+    } else {
+      setRefTxid(undefined);
     }
-  }, [detailsIdx, fromVout]);
+
+    if (refvoutParam != null && refvoutParam !== '') {
+      setRefVout(Number(refvoutParam));
+    } else {
+      setRefVout(undefined);
+    }
+  }, [reftxidParam, refvoutParam]);
 
   useEffect(() => {
     if (!network || !currency || !tx) return;
@@ -175,7 +182,8 @@ const TransactionHash: React.FC = () => {
                   transaction={transaction}
                   currency={currency}
                   network={network}
-                  mintIndex={inputMintIndex}
+                  refVout={refVout}
+                  refTxid={refTxid}
                 />
               )}
             </motion.div>
