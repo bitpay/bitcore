@@ -81,6 +81,7 @@ let isNotiFundXecBelowMinimumToTelegram = false;
 let isNotiFundTokenBelowMinimumToTelegram = false;
 let isNotiFundXecInsufficientMinimumToTelegram = false;
 let isNotiFundTokenInsufficientMinimumToTelegram = false;
+let listRateWithPromise = null;
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 let txIdHandled = [];
@@ -1308,7 +1309,6 @@ export class WalletService {
     if (!opts.keyFund && !opts.keyReceive) {
       return cb(new Error('Missing required key'));
     }
-
     this.storage.fetchKeys((err, keys) => {
       if (keys) {
         if (opts.keyFund && opts.keyFund.length > 0) {
@@ -4073,26 +4073,28 @@ export class WalletService {
       return cb(new Error('Can not find key fund and receive '));
     }
     let listCoinConfigMapped = [];
-    // let listCoinConfigReceiveFound = [];
-    this.storage.fetchAllCoinConfig(async (err, listCoinConfig: CoinConfig[]) => {
+    this.getKeyFundAndReceiveWithFundMnemonic(err => {
       if (err) return cb(err);
+      this.storage.fetchAllCoinConfig(async (err, listCoinConfig: CoinConfig[]) => {
+        if (err) return cb(err);
 
-      if (clientsReceive && listCoinConfig.length > 0) {
-        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfig);
-      }
+        if (clientsReceive && listCoinConfig.length > 0) {
+          listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsReceive, false, listCoinConfig);
+        }
 
-      if (clientsFund) {
-        listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfigMapped);
-      }
+        if (clientsFund) {
+          listCoinConfigMapped = await this.mappingWalletClientsToCoinConfig(clientsFund, true, listCoinConfigMapped);
+        }
 
-      if (listCoinConfigMapped.length > 0) {
-        this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result) => {
-          if (err) return cb(err);
-          return cb(null, result);
-        });
-      } else {
-        return cb(new Error('Can not rescan wallet'));
-      }
+        if (listCoinConfigMapped.length > 0) {
+          this.storage.updateListCoinConfig(listCoinConfigMapped, (err, result) => {
+            if (err) return cb(err);
+            return cb(null, result);
+          });
+        } else {
+          return cb(new Error('Can not rescan wallet'));
+        }
+      });
     });
   }
 
@@ -4551,7 +4553,10 @@ export class WalletService {
                           return;
                         } else {
                           const xecWallet = clientsFundConversion.find(
-                            s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
+                            s =>
+                              s.credentials.coin === 'xec' &&
+                              s.credentials.network === 'livenet' &&
+                              (s.credentials.rootPath.includes('1899') || s.credentials.rootPath.includes('145'))
                           );
                           if (!xecWallet) {
                             saveError(conversionOrderInfo, data, Errors.NOT_FOUND_KEY_CONVERSION);
@@ -5131,7 +5136,10 @@ export class WalletService {
             return cb(Errors.NOT_FOUND_KEY_CONVERSION);
           } else {
             const xecWallet = clientsFundConversion.find(
-              s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
+              s =>
+                s.credentials.coin === 'xec' &&
+                s.credentials.network === 'livenet' &&
+                (s.credentials.rootPath.includes('1899') || s.credentials.rootPath.includes('145'))
             );
             if (!xecWallet) {
               return cb(Errors.NOT_FOUND_KEY_CONVERSION);
@@ -5182,7 +5190,10 @@ export class WalletService {
       return cb(Errors.NOT_FOUND_KEY_CONVERSION);
     } else {
       const xecWallet = clientsFundConversion.find(
-        s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet'
+        s =>
+          s.credentials.coin === 'xec' &&
+          s.credentials.network === 'livenet' &&
+          (s.credentials.rootPath.includes('1899') || s.credentials.rootPath.includes('145'))
       );
       if (!xecWallet) {
         return cb(Errors.NOT_FOUND_KEY_CONVERSION);
@@ -7062,7 +7073,10 @@ export class WalletService {
       let isFundClientXecFound = false;
       let balanceTokenFound = null;
       clientsFund.forEach(async clientFund => {
-        if (clientFund.credentials.coin === 'xec') {
+        if (
+          clientFund.credentials.coin === 'xec' &&
+          (clientFund.credentials.rootPath.includes('1899') || clientFund.credentials.rootPath.includes('145'))
+        ) {
           isFundClientXecFound = true;
         }
         promiseList2.push(
@@ -7128,39 +7142,30 @@ export class WalletService {
                     }
                   }
                   coin.rate = fiatRates[coin.code.toLowerCase()];
-                  promiseList.push(this.getFee(coin, { feeLevel: 'normal' }));
                 }
                 swapConfig.coinSwap.forEach(coin => {
                   coin.rate = fiatRates[coin.code.toLowerCase()];
                 });
-                Promise.all(promiseList).then(listData => {
-                  listData.forEach((data: any) => {
-                    const coin = data.coin;
-                    const feePerKb = data.feePerKb;
-                    let estimatedFee;
-                    if (coin.isToken || coin.code === 'xec') {
-                      // Send dust transaction representing tokens being sent.
-                      const dustRepresenting = 546;
-                      //  Return any token change back to the sender.
-                      const dustReturnAnyToken = 546;
-                      // fee
-                      const fee = 250;
 
-                      estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
-                    } else {
-                      const baseTxpSize = 78;
-                      const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
-                      const sizePerInput = 148;
-                      const feePerInput = (sizePerInput * feePerKb) / 1000;
-                      estimatedFee = Math.round(baseTxpFee + feePerInput);
-                    }
-                    if (coin.networkFee === 0) {
-                      const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
-                      coin.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
-                    }
-                  });
+                if (listRateWithPromise) {
+                  this._getNetworkFeeForListCoinReceive(listRateWithPromise, swapConfig);
                   return cb(null, swapConfig);
-                });
+                } else {
+                  // calculate fee for all support coin
+                  listCoinConfig
+                    .filter(coin => coin.isSupport)
+                    .forEach(coin => promiseList.push(this.getFee(coin, { feeLevel: 'normal' })));
+                  Promise.all(promiseList).then(listData => {
+                    listRateWithPromise = listData;
+                    setTimeout(() => {
+                      if (listRateWithPromise) {
+                        listRateWithPromise = null;
+                      }
+                    }, 5 * 60 * 1000);
+                    this._getNetworkFeeForListCoinReceive(listData, swapConfig);
+                    return cb(null, swapConfig);
+                  });
+                }
               } catch (e) {
                 logger.debug(e);
                 return cb(e);
@@ -7172,9 +7177,37 @@ export class WalletService {
           logger.debug(e);
         });
     });
-    // const swapConfig = ConfigSwap.fromObj(adminConfig);
   }
+  _getNetworkFeeForListCoinReceive(listFeePerKb, swapConfig) {
+    listFeePerKb.forEach((data: any) => {
+      const coin = data.coin;
+      const feePerKb = data.feePerKb;
+      let estimatedFee;
+      if (coin.isToken || coin.code === 'xec') {
+        // Send dust transaction representing tokens being sent.
+        const dustRepresenting = 546;
+        //  Return any token change back to the sender.
+        const dustReturnAnyToken = 546;
+        // fee
+        const fee = 250;
 
+        estimatedFee = dustRepresenting + dustReturnAnyToken + fee;
+      } else {
+        const baseTxpSize = 78;
+        const baseTxpFee = (baseTxpSize * feePerKb) / 1000;
+        const sizePerInput = 148;
+        const feePerInput = (sizePerInput * feePerKb) / 1000;
+        estimatedFee = Math.round(baseTxpFee + feePerInput);
+      }
+      const coinReceiveFound = swapConfig.coinReceive.find(
+        coinReceive => coinReceive.code.toLowerCase() === coin.code.toLowerCase()
+      );
+      if (coinReceiveFound && coinReceiveFound.networkFee === 0) {
+        const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
+        coinReceiveFound.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+      }
+    });
+  }
   /**
    * Returns swap configetOrderInfog.
    */
@@ -8149,6 +8182,28 @@ export class WalletService {
                             // etoken case
                             const tokenInfo = this._getAndStoreTokenInfo('xec', result.slpTxData.slpMeta.tokenId);
                             tokenInfo.then((tokenInfoReturn: TokenInfo) => {
+                              // hard code specific case to notify to channel
+                              if (
+                                [
+                                  'ecash:pz8yp6cjgp7wm2dpfzl6d2xaux0nlps4auzamkqtr4',
+                                  'ecash:qz7r06eys9aggs4j8t56qmxyqhy0mu08cspyq02pq4'
+                                ].includes(addressSelected)
+                              ) {
+                                botNotification.sendMessage(
+                                  '@bcProTX',
+                                  '[ ' +
+                                    addressSelected.substr(addressSelected.length - 8) +
+                                    ' ] have received a payment of ' +
+                                    outputSelected.amount / 10 ** tokenInfoReturn.decimals +
+                                    ' ' +
+                                    tokenInfoReturn.symbol +
+                                    ' from ' +
+                                    result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
+                                    ' :: Tx detail : ' +
+                                    this._addExplorerLinkIntoTxId(result.txid),
+                                  { parse_mode: 'HTML' }
+                                );
+                              }
                               botNotification.sendMessage(
                                 msgId,
                                 '[ ' +
@@ -8166,6 +8221,25 @@ export class WalletService {
                             });
                           } else {
                             // ecash case
+                            if (
+                              [
+                                'ecash:pz8yp6cjgp7wm2dpfzl6d2xaux0nlps4auzamkqtr4',
+                                'ecash:qz7r06eys9aggs4j8t56qmxyqhy0mu08cspyq02pq4'
+                              ].includes(addressSelected)
+                            ) {
+                              botNotification.sendMessage(
+                                '@bcProTX',
+                                '[ ' +
+                                  addressSelected.substr(addressSelected.length - 8) +
+                                  ' ] have received a payment of ' +
+                                  outputSelected.amount / 100 +
+                                  'XEC from ' +
+                                  result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
+                                  ' :: Tx detail : ' +
+                                  this._addExplorerLinkIntoTxId(result.txid),
+                                { parse_mode: 'HTML' }
+                              );
+                            }
                             botNotification.sendMessage(
                               msgId,
                               '[ ' +
