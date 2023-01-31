@@ -1,5 +1,7 @@
 'use strict';
 
+var { setDefaultResultOrder } = require('dns');
+setDefaultResultOrder('ipv4first');
 var _ = require('lodash');
 var async = require('async');
 
