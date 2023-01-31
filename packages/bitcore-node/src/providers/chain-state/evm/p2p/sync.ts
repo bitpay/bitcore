@@ -104,7 +104,7 @@ export class MultiThreadSync extends EventEmitter {
           this.threads[i].postMessage({ blockNum: this.currentHeight++ });
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       logger.error(`Error syncing ${chain} ${network} :: ${err.message}`);
       await wait(2000);
       this.syncing = false;

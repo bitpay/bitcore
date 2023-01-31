@@ -54,7 +54,7 @@ export class StorageService {
           clearInterval(attemptConnectId);
           this.connection.emit('CONNECTED');
           resolve(this.client);
-        } catch (err) {
+        } catch (err: any) {
           logger.error(err);
           attempted++;
           if (attempted > 5) {
@@ -119,6 +119,7 @@ export class StorageService {
     res.on('close', function() {
       closed = true;
     });
+    // @ts-ignore TODO: Should revise this to work with typings 
     input.on('error', function(err) {
       if (!closed) {
         closed = true;
@@ -161,6 +162,7 @@ export class StorageService {
       closed = true;
       cursor.close();
     });
+    // @ts-ignore TODO: Should revise this to work with typings 
     cursor.on('error', function(err) {
       if (!closed) {
         closed = true;

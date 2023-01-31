@@ -9,7 +9,7 @@
     "watch": "./node_modules/.bin/lerna run watch --parallel",
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
-    "insight:build": "cd ./packages/insight && npm i && npm run build",
+    "insight:build": "cd ./packages/insight && npm i --legacy-peer-deps && npm run build",
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "lerna": "^3.22.1",
-    "typescript": "^4.0.2"
+    "typescript": "^4.9.4"
   },
   "husky": {
     "hooks": {

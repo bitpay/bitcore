@@ -70,7 +70,7 @@
     "@types/lodash": "4.14.116",
     "@types/mocha": "5.2.0",
     "@types/mongodb": "3.1.22",
-    "@types/node": "14.14.20",
+    "@types/node": "18.11.18",
     "@types/request": "2.47.0",
     "@types/sinon": "4.3.3",
     "@types/socket.io": "1.4.39",
@@ -88,7 +88,7 @@
     "socket.io-client": "2.1.1",
     "supertest": "3.0.0",
     "ts-node": "^9.0.0",
-    "typescript": "3.3.4000",
+    "typescript": "^4.9.4",
     "typescript-eslint-parser": "15.0.0"
   },
   "dependencies": {

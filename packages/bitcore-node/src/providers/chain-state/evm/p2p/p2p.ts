@@ -294,7 +294,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
           lastLog = Date.now();
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       logger.error(`Error syncing ${chain} ${network} -- ${err.message || err}`);
       await wait(2000);
       this.syncing = false;

@@ -521,7 +521,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
       try {
         await WalletAddressStorage.collection.bulkWrite(walletAddressInserts);
-      } catch (err) {
+      } catch (err: any) {
         if (err.code !== 11000) {
           throw err;
         }

@@ -236,7 +236,7 @@ describe('ETH Chain State Provider', function() {
       try {
         await ETH.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.equal('Cannot read properties of undefined (reading \'providers\')');
       }
     });
@@ -247,7 +247,7 @@ describe('ETH Chain State Provider', function() {
       try {
         await ETH.estimateGas({ network });
         throw new Error('should have thrown');
-      } catch (err) {
+      } catch (err: any) {
         expect(err.message).to.equal('Cannot read properties of null (reading \'result\')');
       }
     });

@@ -5,12 +5,12 @@ import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { Readable } from 'stream';
 import Config from '../../../config';
-import { IBlock } from '../../../models/baseBlock';
 import { CacheStorage } from '../../../models/cache';
 import { ICoin } from '../../../models/coin';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../services/storage';
+import { IBlock } from '../../../types/Block';
 import { ChainNetwork } from '../../../types/ChainNetwork';
 import {
   BroadcastTransactionParams,
@@ -83,7 +83,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
           const balance = confirmed;
           const unconfirmed = 0;
           return { confirmed, unconfirmed, balance };
-        } catch (e) {
+        } catch (e: any) {
           if (e && e.data && e.data.error_code === 19) {
             // Error code for when we have derived an address,
             // but the account has not yet been funded
@@ -198,8 +198,8 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const client = await this.getClient(params.network);
     const serverInfo = await client.getServerInfo();
     const ledgers = serverInfo.completeLedgers.split('-');
-    const minLedgerVersion = Number(ledgers[0]);
-    const maxLedgerVersion = Number(ledgers[1]);
+    const minLedgerVersion: any = Number(ledgers[0]);
+    const maxLedgerVersion: any = Number(ledgers[1]);
     let allTxs = new Array<FormattedTransactionType>();
     let limit = Number(limitArg) || 100;
     const options = {

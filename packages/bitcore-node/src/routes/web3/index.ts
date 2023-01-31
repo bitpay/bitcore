@@ -21,6 +21,7 @@ export function Web3Proxy(req: express.Request, res: express.Response) {
       };
       requestStream = request(options);
     } else {
+      // @ts-ignore TODO: Should revise this to work with typings 
       requestStream = req.pipe(request(url));
     }
     requestStream
