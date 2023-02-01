@@ -26,6 +26,22 @@
   "bugs": {
     "url": "https://github.com/bitpay/bitcore-wallet-client/issues"
   },
+  "scripts": {
+    "start": "npm run clean && npm run tsc && node app.js",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
+    "test": "npm run compile && mocha --exit",
+    "test:ci": "npm run test",
+    "docs": "TODO ./node_modules/.bin/tsdoc src/lib/* src/lib/common src/lib/errors -o docs && cat README.header.md  docs/*.md LICENSE > README.md",
+    "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "compile": "npm run tsc",
+    "tsc": "npm run clean && tsc",
+    "build": "tsc && npm run lint",
+    "clean": "rm -rf ./ts_build",
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
+    "pub": "npm run build && npm publish",
+    "precommit": "npm run fix && npm run lint",
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'"
+  },
   "dependencies": {
     "ajv": "^6.10.0",
     "async": "^0.9.0",
@@ -60,31 +76,6 @@
     "tslint": "^5.14.0",
     "typescript-eslint-parser": "^22.0.0",
     "uuid": "^2.0.1"
-  },
-  "scripts": {
-    "start": "npm run clean && npm run tsc && node app.js",
-    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
-    "test": "npm run compile && mocha --exit",
-    "test:ci": "npm run test",
-    "docs": "TODO ./node_modules/.bin/tsdoc src/lib/* src/lib/common src/lib/errors -o docs && cat README.header.md  docs/*.md LICENSE > README.md",
-    "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "compile": "npm run tsc",
-    "tsc": "npm run clean && tsc",
-    "build": "tsc && npm run lint",
-    "clean": "rm -rf ./ts_build",
-    "fix": "npm run fix:style && npm run fix:lint",
-    "pub": "npm run build && npm publish",
-    "precommit": "npm run fix && npm run lint",
-    "lint": "npm run lint:ts && npm run lint:style",
-    "lint:ts": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "lint:style": "prettier --check 'src/**/*.ts'",
-    "fix:lint": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "fix:style": "prettier --write 'src/**/*.ts'"
-  },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "none",
-    "arrowParens": "avoid"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

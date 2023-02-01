@@ -16,12 +16,8 @@
     "compile": "npm run clean && tsc",
     "test": "mocha ./test/unit",
     "precommit": "npm run fix && npm run lint",
-    "lint": "npm run lint:ts && npm run lint:style",
-    "lint:ts": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "lint:style": "prettier --check 'src/**/*.ts'",
-    "fix": "npm run fix:lint && npm run fix:style",
-    "fix:lint": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "fix:style": "prettier --write 'src/**/*.ts'"
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"
   },
   "dependencies": {
     "JSONStream": "~1.3.1",
