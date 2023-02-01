@@ -161,8 +161,8 @@ export class FiatRateService {
   }
 
   async _retrieve(provider, coin, cb) {
-    if(coin === 'xpi'){
-      return cb(null, [{code: 'USD', value: 0.00005}]);
+    if (coin === 'xpi') {
+      return cb(null, [{ code: 'USD', value: 0.00005 }]);
     }
     logger.debug(`Fetching data for ${provider.name} / ${coin} `);
     let params = [];
