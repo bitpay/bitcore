@@ -35,7 +35,7 @@ import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
 import { resolve } from 'dns';
 import { link, read } from 'fs';
-import { countBy, findIndex } from 'lodash';
+import { countBy, findIndex, isNumber } from 'lodash';
 import { openStdin } from 'process';
 import { stringify } from 'querystring';
 import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
@@ -4291,6 +4291,7 @@ export class WalletService {
             }
             if (error.code === 'ORDER_EXPIRED') {
               orderInfo.status = 'expired';
+              this.storage.orderQueue.ack(data.ack, (err, id) => {});
             }
             this.storage.updateOrder(orderInfo, err => {
               if (err) throw new Error(err);
@@ -4454,6 +4455,7 @@ export class WalletService {
                     }
                   }
                 );
+                this.storage.orderQueue.ping(data.ack, (err, id) => {});
               } else if (orderInfo.status === 'complete' || orderInfo.status === 'expired') {
                 return this.storage.orderQueue.ack(data.ack, (err, id) => {});
               }
@@ -7072,13 +7074,8 @@ export class WalletService {
       // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
       let isFundClientXecFound = false;
       let balanceTokenFound = null;
+      let listBalanceTokenConverted = null;
       clientsFund.forEach(async clientFund => {
-        if (
-          clientFund.credentials.coin === 'xec' &&
-          (clientFund.credentials.rootPath.includes('1899') || clientFund.credentials.rootPath.includes('145'))
-        ) {
-          isFundClientXecFound = true;
-        }
         promiseList2.push(
           this.getBalanceWithPromise({
             walletId: clientFund.credentials.walletId,
@@ -7086,23 +7083,28 @@ export class WalletService {
             network: clientFund.credentials.network
           })
         );
-        if (isFundClientXecFound && swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1) {
+        if (
+          clientFund.credentials.coin === 'xec' &&
+          (clientFund.credentials.rootPath.includes('1899') || clientFund.credentials.rootPath.includes('145')) &&
+          swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1
+        ) {
           balanceTokenFound = await this.getTokensWithPromise({ walletId: clientFund.credentials.walletId });
         }
-        isFundClientXecFound = false;
       });
       Promise.all(promiseList2)
         .then(balance => {
           logger.debug('balance: ', balance);
-          const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
-            return {
-              tokenId: item.tokenId,
-              tokenInfo: item.tokenInfo,
-              amountToken: item.amountToken,
-              utxoToken: item.utxoToken
-            } as TokenItem;
-          });
-          logger.debug('listBalanceTokenConverted: ', listBalanceTokenConverted);
+          if (balanceTokenFound) {
+            listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+              return {
+                tokenId: item.tokenId,
+                tokenInfo: item.tokenInfo,
+                amountToken: item.amountToken,
+                utxoToken: item.utxoToken
+              } as TokenItem;
+            });
+            logger.debug('listBalanceTokenConverted: ', listBalanceTokenConverted);
+          }
           this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
             this._getRatesWithCustomFormat((err, fiatRates) => {
               try {
@@ -7111,11 +7113,11 @@ export class WalletService {
                   const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
                   const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
                   const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
-                  if (coin.isToken) {
+                  if (coin.isToken && listBalanceTokenConverted) {
                     const balanceSelected = listBalanceTokenConverted.find(
                       s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
                     );
-                    if (balanceSelected) {
+                    if (balanceSelected && !isNaN(balanceSelected.amountToken)) {
                       const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
                         .decimals;
                       coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
@@ -7123,8 +7125,6 @@ export class WalletService {
                       coin.fund = balanceSelected.amountToken * rateCoinUsd;
                       coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
                       coin.decimals = tokenDecimals;
-                    } else {
-                      coin.isEnable = false;
                     }
                   } else {
                     const balanceFound = balance.find(
@@ -7137,8 +7137,6 @@ export class WalletService {
                       coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
                       coin.fundConvertToSat = balanceTotal;
                       coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
-                    } else {
-                      coin.isEnable = false;
                     }
                   }
                   coin.rate = fiatRates[coin.code.toLowerCase()];
