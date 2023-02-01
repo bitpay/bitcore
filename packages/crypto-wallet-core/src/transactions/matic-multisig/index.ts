@@ -11,7 +11,7 @@ export class MATICMULTISIGTxProvider extends MATICTxProvider {
   }
 
   create(params: {
-    recipients: Array<{ address: string; amount: string }>;
+    recipients: Array<{ address: string; amount: string; gasLimit: number }>;
     nonce: number;
     gasPrice: number;
     data: string;
@@ -21,7 +21,7 @@ export class MATICMULTISIGTxProvider extends MATICTxProvider {
     chainId?: number;
   }) {
     const { multisigContractAddress } = params;
-    const recipients = [{ address: multisigContractAddress, amount: '0' }];
+    const recipients = [{ address: multisigContractAddress, amount: '0', gasLimit: 0 }];
     const newParams = { ...params, recipients };
     return super.create(newParams);
   }

@@ -293,6 +293,8 @@ module.exports = {
   // ETH
   DEFAULT_GAS_LIMIT: 60000,
   DEFAULT_ERC20_GAS_LIMIT: 160000,
+  // Gas Limit per each multisend recipient
+  DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT: 50000,
 
   MIN_GAS_LIMIT: 21000,
 

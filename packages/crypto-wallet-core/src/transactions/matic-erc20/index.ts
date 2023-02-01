@@ -12,7 +12,7 @@ export class MATICERC20TxProvider extends MATICTxProvider {
   }
 
   create(params: {
-    recipients: Array<{ address: string; amount: string }>;
+    recipients: Array<{ address: string; amount: string; gasLimit: number }>;
     nonce: number;
     gasPrice: number;
     data: string;
@@ -24,7 +24,7 @@ export class MATICERC20TxProvider extends MATICTxProvider {
   }) {
     const { tokenAddress, contractAddress } = params;
     const data = this.encodeData(params);
-    const recipients = [{ address: contractAddress || tokenAddress, amount: '0' }];
+    const recipients = [{ address: contractAddress || tokenAddress, amount: '0', gasLimit: 0 }];
     const newParams = { ...params, recipients, data };
     return super.create(newParams);
   }

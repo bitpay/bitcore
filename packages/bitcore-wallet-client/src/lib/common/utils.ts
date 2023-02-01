@@ -462,6 +462,7 @@ export class Utils {
         payProUrl,
         tokenAddress,
         multisigContractAddress,
+        multiSendContractAddress,
         isTokenSwap
       } = txp;
       const recipients = outputs.map(output => {
@@ -487,18 +488,28 @@ export class Utils {
         ? chainName + 'ERC20'
         : chainName;
 
-      for (let index = 0; index < recipients.length; index++) {
-        const rawTx = Transactions.create({
-          ...txp,
-          ...recipients[index],
-          tag: destinationTag ? Number(destinationTag) : undefined,
+      if (multiSendContractAddress) {
+        let multiSendParams = {
+          nonce: Number(txp.nonce),
+          recipients,
           chain: _chain,
-          nonce: Number(txp.nonce) + Number(index),
-          recipients: [recipients[index]]
-        });
-        unsignedTxs.push(rawTx);
+          contractAddress: multiSendContractAddress
+        };
+        unsignedTxs.push(Transactions.create({ ...txp, ...multiSendParams }));
+      } else {
+        for (let index = 0; index < recipients.length; index++) {
+          const rawTx = Transactions.create({
+            ...txp,
+            ...recipients[index],
+            tag: destinationTag ? Number(destinationTag) : undefined,
+            chain: _chain,
+            nonce: Number(txp.nonce) + Number(index),
+            recipients: [recipients[index]]
+          });
+          unsignedTxs.push(rawTx);
+        }
+        return { uncheckedSerialize: () => unsignedTxs };
       }
-      return { uncheckedSerialize: () => unsignedTxs };
     }
   }
 

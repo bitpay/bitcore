@@ -146,12 +146,22 @@ export class EthChain implements IChain {
         let gasPrice = inFeePerKb;
         const { from } = opts;
         const { coin, network } = wallet;
-        let inGasLimit;
-        let gasLimit;
+        let inGasLimit = 0;
+        let gasLimit = 0;
         const defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
         let fee = 0;
+        let outputAddresses = [];
+        let outputAmounts = [];
+
         for (let output of opts.outputs) {
-          if (!output.gasLimit) {
+          if (opts.multiSendContractAddress) {
+            outputAddresses.push(output.toAddress);
+            outputAmounts.push(output.amount);
+            output.gasLimit = output.gasLimit ? output.gasLimit : Defaults.DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT;
+            gasLimit += output.gasLimit;
+            fee += feePerKb * output.gasLimit;
+            continue;
+          } else if (!output.gasLimit) {
             try {
               const to = opts.payProUrl
                 ? output.toAddress
@@ -190,7 +200,15 @@ export class EthChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, multiSendContractAddress, isTokenSwap } = txp;
+    const {
+      data,
+      outputs,
+      payProUrl,
+      tokenAddress,
+      multisigContractAddress,
+      multiSendContractAddress,
+      isTokenSwap
+    } = txp;
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ETHERC20' : 'ETH';
@@ -208,12 +226,11 @@ export class EthChain implements IChain {
     }
     const unsignedTxs = [];
 
-    if (multiSendContractAddress){
+    if (multiSendContractAddress) {
       let multiSendParams = {
-        ...recipients.length,
         nonce: Number(txp.nonce),
-        recipients: recipients,
-        contractAdderess: multiSendContractAddress
+        recipients,
+        contractAddress: multiSendContractAddress
       };
       unsignedTxs.push(Transactions.create({ ...txp, chain, ...multiSendParams }));
     } else {
