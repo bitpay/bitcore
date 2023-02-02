@@ -1460,7 +1460,7 @@ Interpreter.prototype.step = function() {
               bn = bn.safeAdd(BN.One, maxScriptIntegerSize);
               break;
             case Opcode.OP_1SUB:
-              bn = bn.sub(BN.One);
+              bn = bn.safeSub(BN.One, maxScriptIntegerSize);
               break;
             case Opcode.OP_NEGATE:
               bn = bn.neg();
@@ -1511,11 +1511,11 @@ Interpreter.prototype.step = function() {
 
           switch (opcodenum) {
             case Opcode.OP_ADD:
-              bn = bn1.safeAdd(bn2);
+              bn = bn1.safeAdd(bn2, maxScriptIntegerSize);
               break;
 
             case Opcode.OP_SUB:
-              bn = bn1.sub(bn2);
+              bn = bn1.safeSub(bn2, maxScriptIntegerSize);
               break;
 
             case Opcode.OP_DIV:
@@ -1528,7 +1528,7 @@ Interpreter.prototype.step = function() {
               break;
 
             case Opcode.OP_MUL:
-              bn = bn1.mul(bn2);
+              bn = bn1.safeMul(bn2, maxScriptIntegerSize);
               break;
 
             case Opcode.OP_MOD:

@@ -193,12 +193,28 @@ BN.prototype.getSize = function() {
   return numBits / 8;
 };
 
-BN.prototype.safeAdd = function(bigNumToAdd, maxSize) {
-  const sum = this.add(bigNumToAdd);
-  if (this.getSize() > maxSize || bigNumToAdd.getSize() > maxSize || sum.getSize() > 8) {
+BN.prototype.checkOperationForOverflow = function (operand, result, maxSize) {
+  if (this.getSize() > maxSize || operand.getSize() > maxSize || result.getSize() > 8) {
     throw new Error('overflow');
   }
+};
+
+BN.prototype.safeAdd = function(bigNumToAdd, maxSize) {
+  const sum = this.add(bigNumToAdd);
+  this.checkOperationForOverflow(bigNumToAdd, sum, maxSize);
   return sum;
+};
+
+BN.prototype.safeSub = function(bigNumToSubtract, maxSize) {
+  const difference = this.sub(bigNumToSubtract);
+  this.checkOperationForOverflow(bigNumToSubtract, difference, maxSize);
+  return difference;
+};
+
+BN.prototype.safeMul = function(bigNumToMultiply, maxSize) {
+  const product = this.mul(bigNumToMultiply);
+  this.checkOperationForOverflow(bigNumToMultiply, product, maxSize);
+  return product;
 };
 
 module.exports = BN;
