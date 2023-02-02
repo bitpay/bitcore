@@ -2952,6 +2952,73 @@ export class API extends EventEmitter {
       }
     };
 
+    const addWalletInfo = (combined, foundWallets, cb) => {
+      async.each(
+        combined,
+        (item, cb2) => {
+          let credentials = item.credentials;
+          var wallet = item.status.wallet;
+          client.fromString(credentials);
+          client._processStatus(item.status);
+
+          if (!credentials.hasWalletInfo()) {
+            var me = _.find(wallet.copayers, {
+              id: credentials.copayerId
+            });
+
+            if (!me) return cb2(null, new Error('Copayer not in wallet'));
+
+            try {
+              credentials.addWalletInfo(
+                wallet.id,
+                wallet.name,
+                wallet.m,
+                wallet.n,
+                me.name,
+                {}
+              );
+            } catch (e) {
+              if (e.message) {
+                log.info('Trying credentials...', e.message);
+              }
+              if (e.message && e.message.match(/Bad\snr/)) {
+                return cb2(null, new Errors.WALLET_DOES_NOT_EXIST());
+              }
+            }
+          }
+          if (wallet.status != 'complete') return cb2(null, item);
+
+          if (item.status.customData?.walletPrivKey) {
+            credentials.addWalletPrivateKey(
+              item.status.customData.walletPrivKey
+            );
+          }
+
+          if (credentials.walletPrivKey) {
+            if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
+              return cb2(null, new Errors.SERVER_COMPROMISED());
+            }
+          } else {
+            // this should only happen in AIR-GAPPED flows
+            log.warn(
+              'Could not verify copayers key (missing wallet Private Key)'
+            );
+          }
+
+          credentials.addPublicKeyRing(
+            client._extractPublicKeyRing(wallet.copayers)
+          );
+          client.emit('walletCompleted', wallet);
+
+          foundWallets.push(item);
+          cb2();
+        },
+        err => {
+          cb(err);
+        }
+      );
+    };
+
     const getClientsFromWallets = (err, res) => {
       if (err) {
         return callback(err);
@@ -2968,71 +3035,10 @@ export class API extends EventEmitter {
         .filter(x => x);
 
       let foundWallets = [];
-      async.each(
-        combined,
-        (item, cb) => {
-          let credentials = item.credentials;
-          var wallet = item.status.wallet;
-          client.fromString(credentials);
-          client._processStatus(item.status);
-
-          if (!credentials.hasWalletInfo()) {
-            var me = _.find(wallet.copayers, {
-              id: credentials.copayerId
-            });
-
-            if (!me) return cb(null, new Error('Copayer not in wallet'));
-
-            try {
-              credentials.addWalletInfo(
-                wallet.id,
-                wallet.name,
-                wallet.m,
-                wallet.n,
-                me.name,
-                {}
-              );
-            } catch (e) {
-              if (e.message) {
-                log.info('Trying credentials...', e.message);
-              }
-              if (e.message && e.message.match(/Bad\snr/)) {
-                return cb(null, new Errors.WALLET_DOES_NOT_EXIST());
-              }
-            }
-          }
-          if (wallet.status != 'complete') return cb(null, item);
-
-          if (item.status.customData?.walletPrivKey) {
-            credentials.addWalletPrivateKey(
-              item.status.customData.walletPrivKey
-            );
-          }
-
-          if (credentials.walletPrivKey) {
-            if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
-              return cb(null, new Errors.SERVER_COMPROMISED());
-            }
-          } else {
-            // this should only happen in AIR-GAPPED flows
-            log.warn(
-              'Could not verify copayers key (missing wallet Private Key)'
-            );
-          }
-
-          credentials.addPublicKeyRing(
-            client._extractPublicKeyRing(wallet.copayers)
-          );
-          client.emit('walletCompleted', wallet);
-
-          foundWallets.push(item);
-          cb();
-        },
-        err => {
-          if (err) return callback(err);
-          checkForOtherAccounts(foundWallets);
-        }
-      );
+      addWalletInfo(combined, foundWallets, err => {
+        if (err) return callback(err);
+        checkForOtherAccounts(foundWallets);
+      });
     };
 
     const getNextBatch = (key, settings) => {
@@ -3044,9 +3050,11 @@ export class API extends EventEmitter {
         const clonedSettings = JSON.parse(JSON.stringify(settings));
         let c = key.createCredentials(null, {
           coin: clonedSettings.coin,
+          chain: clonedSettings.coin, // chain === coin for stored clients
           network: clonedSettings.network,
           account: clonedSettings.account,
-          n: clonedSettings.n
+          n: clonedSettings.n,
+          use0forBCH: opts.use0forBCH // only used for server assisted import
         });
 
         accountKeyCredentialIndex.push({
@@ -3091,8 +3099,7 @@ export class API extends EventEmitter {
                       }
                     })
                     .filter(x => x);
-                  addtFoundWallets.push(...combined);
-                  next(err);
+                  addWalletInfo(combined, addtFoundWallets, next);
                 }
               );
             },
