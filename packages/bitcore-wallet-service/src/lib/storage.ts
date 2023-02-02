@@ -1,6 +1,6 @@
 import * as async from 'async';
 import { AnyRecordWithTtl } from 'dns';
-import _, { countBy } from 'lodash';
+import _, { countBy, isNull, isUndefined } from 'lodash';
 import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
@@ -609,7 +609,30 @@ export class Storage {
           pendingReason: orderInfo.pendingReason,
           lastModified: new Date(),
           isResolve: orderInfo.isResolve,
-          note: orderInfo.note
+          note: orderInfo.note,
+          isInQueue: orderInfo.isInQueue
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateListOrderInQueue(listOrderId: string[], cb) {
+    this.db.collection(collections.ORDER_INFO).updateMany(
+      {
+        id: { $in: listOrderId }
+      },
+      {
+        $set: {
+          isInQueue: true
         }
       },
       {
@@ -879,6 +902,7 @@ export class Storage {
     let queryToNetwork = null;
     let queryToCoin = null;
     let queryStatus = null;
+    let queryIsInQueue = null;
 
     if (coinConfigFilter) {
       if (coinConfigFilter.fromDate && coinConfigFilter.toDate) {
@@ -901,6 +925,9 @@ export class Storage {
       if (coinConfigFilter.status) {
         queryStatus = { status: coinConfigFilter.status };
       }
+      if (!isUndefined(coinConfigFilter.isInQueue) && !isNull(coinConfigFilter.isInQueue)) {
+        queryIsInQueue = { status: coinConfigFilter.status };
+      }
       queryObject = Object.assign(
         {},
         queryDate && { ...queryDate },
@@ -908,7 +935,8 @@ export class Storage {
         queryToCoin && { ...queryToCoin },
         queryStatus && { ...queryStatus },
         queryFromNetwork && { ...queryFromNetwork },
-        queryToNetwork && { ...queryToNetwork }
+        queryToNetwork && { ...queryToNetwork },
+        queryIsInQueue && { ...queryIsInQueue }
       );
     }
 
@@ -918,6 +946,23 @@ export class Storage {
       .sort(opts.query)
       .limit(opts.limit)
       .skip(opts.skip)
+      .toArray((err, listOrderInfo) => {
+        if (err) return cb(err);
+        if (listOrderInfo.length === 0) return cb(new Error('Not found any order'));
+        else return cb(null, listOrderInfo);
+      });
+  }
+
+  fetchAllOrderInfoNotInQueue(cb) {
+    this.db
+      .collection(collections.ORDER_INFO)
+      .find({
+        $or: [
+          { isInQueue: false, status: 'waiting' },
+          { isInQueue: false, status: 'pending', isResolve: true }
+        ]
+      })
+      .sort({ _id: -1 })
       .toArray((err, listOrderInfo) => {
         if (err) return cb(err);
         if (listOrderInfo.length === 0) return cb(new Error('Not found any order'));
