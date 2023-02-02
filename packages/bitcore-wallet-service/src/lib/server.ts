@@ -67,6 +67,7 @@ const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
+let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
 let conversionQueueInterval = null;
 let clientsFundConversion = null;
@@ -162,6 +163,7 @@ export interface ICoinConfigFilter {
   status?: string;
   fromNetwork?: string;
   toNetwork?: string;
+  isInQueue?: boolean;
 }
 
 function boolToNum(x: boolean) {
@@ -4273,6 +4275,33 @@ export class WalletService {
     }, 300000);
   }
 
+  checkOrderInSwapQueue() {
+    checkOrderInSwapQueueInterval = setInterval(() => {
+      if (this.storage && this.storage.orderQueue) {
+        this.storage.fetchAllOrderInfoNotInQueue((err, result) => {
+          if (err) logger.debug('fetchAllOrderInfoNotInQueue error', err);
+          else {
+            const listOrderInfo: Order[] = result.map(item => Order.fromObj(item));
+            this.storage.orderQueue.add(
+              listOrderInfo.map(orderInfo => orderInfo.id),
+              (err, ids) => {
+                if (err) logger.debug('orderQueue add listOrderInfo error', err);
+                else {
+                  this.storage.updateListOrderInQueue(
+                    listOrderInfo.map(order => order.id),
+                    (err, result) => {
+                      if (err) logger.debug('updateListOrderInQueue error', err);
+                    }
+                  );
+                }
+              }
+            );
+          }
+        });
+      }
+    }, 30 * 1000);
+  }
+
   checkQueueHandleSwap() {
     swapQueueInterval = setInterval(() => {
       if (this.storage && this.storage.orderQueue) {
@@ -4286,35 +4315,28 @@ export class WalletService {
             } else {
               orderInfo.error = JSON.stringify(error);
             }
-            if (error.code) {
+            if (error.code && error.code !== 'ORDER_EXPIRED') {
               orderInfo.pendingReason = error.code;
             }
             if (error.code === 'ORDER_EXPIRED') {
               orderInfo.status = 'expired';
-              this.storage.orderQueue.ack(data.ack, (err, id) => {});
             }
+            orderInfo.isInQueue = false;
             this.storage.updateOrder(orderInfo, err => {
               if (err) throw new Error(err);
+              this.storage.orderQueue.ack(data.ack, (err, id) => {});
             });
           };
           console.log('clients fund in queue now: ', clientsFund);
           console.log('clients receive in queue now: ', clientsReceive);
           if (data) {
-            const orderInfo = await this._getOrderInfo({ id: data.payload.id });
+            const orderInfo = await this._getOrderInfo({ id: data.payload });
             try {
-              if (orderInfo.status === 'expired') {
-                return this.storage.orderQueue.ack(data.ack, (err, id) => {});
-              }
               logger.debug('orderinfo in queue detected: ', data);
               console.log('orderinfo in queue detected: ', data);
               const configSwap: ConfigSwap = await this.getConfigSwapWithPromise();
               const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
-              if (
-                isValidOrder &&
-                (orderInfo.status === 'waiting' ||
-                  (orderInfo.status === 'pending' && orderInfo.pendingReason === Errors.BELOW_MIN_LIMIT.code) ||
-                  (orderInfo.status === 'pending' && orderInfo.isResolve))
-              ) {
+              if (isValidOrder) {
                 // get utxos for deposit address => checking amount user sent to deposit address
                 logger.debug('Order info is valid: ', orderInfo);
                 this.getUtxosForSelectedAddressAndWallet(
@@ -4420,8 +4442,10 @@ export class WalletService {
                                   orderInfo.status = 'complete';
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
-                                  this.storage.updateOrder(orderInfo, (err, result) => {
-                                    this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                  orderInfo.isInQueue = false;
+                                  this.storage.updateOrder(orderInfo, err => {
+                                    if (err) saveError(orderInfo, data, err);
+                                    return this.storage.orderQueue.ack(data.ack, (err, id) => {});
                                   });
                                 }
                               );
@@ -4438,11 +4462,10 @@ export class WalletService {
                                   orderInfo.status = 'complete';
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
-                                  this.storage.updateOrder(orderInfo, (err, result) => {
+                                  orderInfo.isInQueue = false;
+                                  this.storage.updateOrder(orderInfo, err => {
                                     if (err) saveError(orderInfo, data, err);
-                                    else {
-                                      this.storage.orderQueue.ack(data.ack, (err, id) => {});
-                                    }
+                                    return this.storage.orderQueue.ack(data.ack, (err, id) => {});
                                   });
                                 }
                               });
@@ -4455,13 +4478,15 @@ export class WalletService {
                     }
                   }
                 );
-                this.storage.orderQueue.ping(data.ack, (err, id) => {});
-              } else if (orderInfo.status === 'complete' || orderInfo.status === 'expired') {
-                return this.storage.orderQueue.ack(data.ack, (err, id) => {});
               }
             } catch (e) {
               saveError(orderInfo, data, e);
             }
+            orderInfo.isInQueue = false;
+            this.storage.updateOrder(orderInfo, err => {
+              if (err) saveError(orderInfo, data, err);
+              return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+            });
           }
         });
         this.storage.orderQueue.clean(err => {});
@@ -5091,15 +5116,13 @@ export class WalletService {
             } else {
               address = addressReturn;
             }
-
             orderInfo.adddressUserDeposit = address;
-            this.storage.storeOrderInfo(orderInfo, (err, result) => {
+            this.storage.storeOrderInfo(orderInfo, (err, orderStoredResult) => {
               if (err) return cb(err);
               // let order into queue
-              this.storage.orderQueue.add(Order.fromObj(result.ops[0]), (err, id) => {
+              const orderCreated = Order.fromObj(orderStoredResult.ops[0]);
+              this.storage.orderQueue.add(orderCreated.id, (err, id) => {
                 if (err) return cb(err);
-                const orderCreated = Order.fromObj(result.ops[0]);
-                orderCreated.coinConfig = coinConfigSelected;
                 return cb(null, orderCreated);
               });
             });
