@@ -3132,7 +3132,7 @@ export class API extends EventEmitter {
                 wallet.status.preferences.multisigMaticInfo;
               if (!_.isEmpty(tokenAddresses) || !_.isEmpty(multisigEthInfo)) {
                 if (!_.isEmpty(tokenAddresses)) {
-                  function oneInchGetTokensData() {
+                  function oneInchGetEthTokensData() {
                     return new Promise((resolve, reject) => {
                       newClient.request.get(
                         '/v1/service/oneInch/getTokens/eth',
@@ -3145,9 +3145,9 @@ export class API extends EventEmitter {
                   }
                   let customTokensData;
                   try {
-                    customTokensData = await oneInchGetTokensData();
+                    customTokensData = await oneInchGetEthTokensData();
                   } catch (error) {
-                    log.warn('oneInchGetTokensData err', error);
+                    log.warn('oneInchGetEthTokensData err', error);
                     customTokensData = null;
                   }
                   _.each(tokenAddresses, t => {
@@ -3160,7 +3160,7 @@ export class API extends EventEmitter {
                     }
                     log.info(`Importing token: ${token.name}`);
                     const tokenCredentials =
-                      newClient.credentials.getTokenCredentials(token);
+                      newClient.credentials.getTokenCredentials(token, 'eth');
                     let tokenClient = _.cloneDeep(newClient);
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
@@ -3196,7 +3196,8 @@ export class API extends EventEmitter {
                         log.info(`Importing multisig token: ${token.name}`);
                         const tokenCredentials =
                           multisigEthClient.credentials.getTokenCredentials(
-                            token
+                            token,
+                            'eth'
                           );
                         let tokenClient = _.cloneDeep(multisigEthClient);
                         tokenClient.credentials = tokenCredentials;
@@ -3212,7 +3213,7 @@ export class API extends EventEmitter {
                 !_.isEmpty(multisigMaticInfo)
               ) {
                 if (!_.isEmpty(maticTokenAddresses)) {
-                  function oneInchGetTokensData() {
+                  function oneInchGetMaticTokensData() {
                     return new Promise((resolve, reject) => {
                       newClient.request.get(
                         '/v1/service/oneInch/getTokens/matic',
@@ -3225,9 +3226,9 @@ export class API extends EventEmitter {
                   }
                   let customTokensData;
                   try {
-                    customTokensData = await oneInchGetTokensData();
+                    customTokensData = await oneInchGetMaticTokensData();
                   } catch (error) {
-                    log.warn('oneInchGetTokensData err', error);
+                    log.warn('oneInchGetMaticTokensData err', error);
                     customTokensData = null;
                   }
                   _.each(maticTokenAddresses, t => {
@@ -3240,45 +3241,46 @@ export class API extends EventEmitter {
                     }
                     log.info(`Importing token: ${token.name}`);
                     const tokenCredentials =
-                      newClient.credentials.getTokenCredentials(token);
+                      newClient.credentials.getTokenCredentials(token, 'matic');
                     let tokenClient = _.cloneDeep(newClient);
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
                   });
-                  if (_.isEmpty(multisigEthInfo)) {
+                  if (_.isEmpty(multisigMaticInfo)) {
                     next();
                   }
                 }
                 // matic wallet with multisig wallets?
-                if (!_.isEmpty(multisigEthInfo)) {
-                  _.each(multisigEthInfo, info => {
+                if (!_.isEmpty(multisigMaticInfo)) {
+                  _.each(multisigMaticInfo, info => {
                     log.info(
                       `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
                     );
-                    const multisigEthCredentials =
+                    const multisigMaticCredentials =
                       newClient.credentials.getMultisigEthCredentials({
                         walletName: info.walletName,
                         multisigContractAddress: info.multisigContractAddress,
                         n: info.n,
                         m: info.m
                       });
-                    let multisigEthClient = _.cloneDeep(newClient);
-                    multisigEthClient.credentials = multisigEthCredentials;
-                    clients.push(multisigEthClient);
-                    const tokenAddresses = info.tokenAddresses;
-                    if (!_.isEmpty(tokenAddresses)) {
-                      _.each(tokenAddresses, t => {
-                        const token = Constants.ETH_TOKEN_OPTS[t];
+                    let multisigMaticClient = _.cloneDeep(newClient);
+                    multisigMaticClient.credentials = multisigMaticCredentials;
+                    clients.push(multisigMaticClient);
+                    const maticTokenAddresses = info.maticTokenAddresses;
+                    if (!_.isEmpty(maticTokenAddresses)) {
+                      _.each(maticTokenAddresses, t => {
+                        const token = Constants.MATIC_TOKEN_OPTS[t];
                         if (!token) {
                           log.warn(`Token ${t} unknown`);
                           return;
                         }
                         log.info(`Importing multisig token: ${token.name}`);
                         const tokenCredentials =
-                          multisigEthClient.credentials.getTokenCredentials(
-                            token
+                          multisigMaticClient.credentials.getTokenCredentials(
+                            token,
+                            'matic'
                           );
-                        let tokenClient = _.cloneDeep(multisigEthClient);
+                        let tokenClient = _.cloneDeep(multisigMaticClient);
                         tokenClient.credentials = tokenCredentials;
                         clients.push(tokenClient);
                       });

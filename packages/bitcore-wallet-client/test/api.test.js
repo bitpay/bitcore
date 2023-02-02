@@ -6304,10 +6304,13 @@ describe('client API', function() {
                     recoveryClient.credentials.walletName.should.equal(walletName);
                     recoveryClient.credentials.copayerName.should.equal(copayerName);
                     recoveryClient.credentials.coin.should.equal('eth');
+                    recoveryClient.credentials.chain.should.equal('eth');
                     let recoveryClient2 = c[2];
                     recoveryClient2.openWallet(err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('gusd');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('eth');
                       done();
                     });
                   });
@@ -6342,10 +6345,13 @@ describe('client API', function() {
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('eth');
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('eth');
                     done();
                   });
                 });
@@ -6379,6 +6385,8 @@ describe('client API', function() {
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  should.exist(recoveryClient.credentials.chain);
+                  recoveryClient.credentials.chain.should.equal('eth');
                   done();
                 });
               })
@@ -6417,10 +6425,13 @@ describe('client API', function() {
                     recoveryClient.credentials.walletName.should.equal(walletName);
                     recoveryClient.credentials.copayerName.should.equal(copayerName);
                     recoveryClient.credentials.coin.should.equal('matic');
+                    recoveryClient.credentials.chain.should.equal('matic');
                     let recoveryClient2 = c[2];
                     recoveryClient2.openWallet(err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('dai');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('matic');
                       done();
                     });
                   });
@@ -6460,6 +6471,8 @@ describe('client API', function() {
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('matic');
                     done();
                   });
                 });
