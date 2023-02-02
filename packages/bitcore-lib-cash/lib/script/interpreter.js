@@ -796,7 +796,7 @@ Interpreter.prototype.step = function() {
     return self.stack[self.stack.length+i];
   }
 
-  function isOpcodeDisabled(opcode) {
+  function isOpcodeDisabled(opcode, f64BitIntegers) {
     switch (opcode) {
       case Opcode.OP_INVERT:
       case Opcode.OP_2MUL:
