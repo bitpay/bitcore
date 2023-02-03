@@ -6278,13 +6278,15 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var tokenAddresses = [
+            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+            '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+          ];
 
           clients[0].savePreferences(
             {
-              tokenAddresses: [
-                '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-                '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
-              ]
+              tokenAddresses
             },
             err => {
               should.not.exist(err);
@@ -6303,11 +6305,16 @@ describe('client API', function() {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
                     recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('eth');
+                    recoveryClient.credentials.chain.should.equal('eth');
                     let recoveryClient2 = c[2];
                     recoveryClient2.openWallet(err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('gusd');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('eth');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[1]}`);
                       done();
                     });
                   });
@@ -6323,8 +6330,12 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var tokenAddresses = [
+            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          ];
 
-          clients[0].savePreferences({ tokenAddresses: ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'] }, err => {
+          clients[0].savePreferences({ tokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
@@ -6341,11 +6352,16 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('eth');
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('eth');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[0]}`);
                     done();
                   });
                 });
@@ -6360,8 +6376,12 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var tokenAddresses = [
+            '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
+          ];
 
-          clients[0].savePreferences({ tokenAddresses: ['0x9da9bc12b19b22d7c55798f722a1b6747ae9a710'] }, err => {
+          clients[0].savePreferences({ tokenAddresses }, err => {
             should.not.exist(err);
               Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
@@ -6378,7 +6398,9 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('eth');
                   done();
                 });
               })
@@ -6391,13 +6413,14 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-
+          var walletId = clients[0].credentials.walletId;
+          var maticTokenAddresses = [
+            '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+            '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
+          ];
           clients[0].savePreferences(
             {
-              maticTokenAddresses: [
-                '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
-                '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
-              ]
+              maticTokenAddresses
             },
             err => {
               should.not.exist(err);
@@ -6416,11 +6439,16 @@ describe('client API', function() {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
                     recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('matic');
+                    recoveryClient.credentials.chain.should.equal('matic');
                     let recoveryClient2 = c[2];
                     recoveryClient2.openWallet(err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('dai');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('matic');
+                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[1]}`);
                       done();
                     });
                   });
@@ -6436,8 +6464,12 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var maticTokenAddresses = [
+            '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+          ];
 
-          clients[0].savePreferences({ maticTokenAddresses: ['0x2791bca1f2de4661ed88a30c99a7a9449aa84174'] }, err => {
+          clients[0].savePreferences({ maticTokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true  },
@@ -6454,12 +6486,16 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('matic');
                   recoveryClient.credentials.chain.should.equal('matic');
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('matic');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[0]}`);
                     done();
                   });
                 });
@@ -6474,8 +6510,12 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var maticTokenAddresses = [
+            '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
+          ];
 
-          clients[0].savePreferences({ maticTokenAddresses: ['0x9da9bc12b19b22d7c55798f722a1b6747ae9a710'] }, err => {
+          clients[0].savePreferences({ maticTokenAddresses }, err => {
             should.not.exist(err);
               Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
@@ -6492,6 +6532,7 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('matic');
                   recoveryClient.credentials.chain.should.equal('matic');
                   done();
@@ -6586,7 +6627,7 @@ describe('client API', function() {
         });
       });
 
-      it('should be able to gain access to three btc 1-1 accounts of a single wallet from mnemonic', done => {
+      it('should be able to gain access to three btc 1-1 accounts of a single wallet from mnemonic and add wallet info correctly to all of them', done => {
         let key = new Key({ seedType: 'new' });
         helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
           helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 1 }, () => {
@@ -6616,7 +6657,9 @@ describe('client API', function() {
                     c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
                     c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
                     c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
-
+                    should.exist(c[0].credentials.walletId);
+                    should.exist(c[1].credentials.walletId);
+                    should.exist(c[2].credentials.walletId);
                     let recoveryClient = c[2];
                     recoveryClient.openWallet(err => {
                       should.not.exist(err);

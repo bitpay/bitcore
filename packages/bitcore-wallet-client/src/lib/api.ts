@@ -2952,6 +2952,73 @@ export class API extends EventEmitter {
       }
     };
 
+    const addWalletInfo = (combined, foundWallets, cb) => {
+      async.each(
+        combined,
+        (item, cb2) => {
+          let credentials = item.credentials;
+          var wallet = item.status.wallet;
+          client.fromString(credentials);
+          client._processStatus(item.status);
+
+          if (!credentials.hasWalletInfo()) {
+            var me = _.find(wallet.copayers, {
+              id: credentials.copayerId
+            });
+
+            if (!me) return cb2(null, new Error('Copayer not in wallet'));
+
+            try {
+              credentials.addWalletInfo(
+                wallet.id,
+                wallet.name,
+                wallet.m,
+                wallet.n,
+                me.name,
+                {}
+              );
+            } catch (e) {
+              if (e.message) {
+                log.info('Trying credentials...', e.message);
+              }
+              if (e.message && e.message.match(/Bad\snr/)) {
+                return cb2(null, new Errors.WALLET_DOES_NOT_EXIST());
+              }
+            }
+          }
+          if (wallet.status != 'complete') return cb2(null, item);
+
+          if (item.status.customData?.walletPrivKey) {
+            credentials.addWalletPrivateKey(
+              item.status.customData.walletPrivKey
+            );
+          }
+
+          if (credentials.walletPrivKey) {
+            if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
+              return cb2(null, new Errors.SERVER_COMPROMISED());
+            }
+          } else {
+            // this should only happen in AIR-GAPPED flows
+            log.warn(
+              'Could not verify copayers key (missing wallet Private Key)'
+            );
+          }
+
+          credentials.addPublicKeyRing(
+            client._extractPublicKeyRing(wallet.copayers)
+          );
+          client.emit('walletCompleted', wallet);
+
+          foundWallets.push(item);
+          cb2();
+        },
+        err => {
+          cb(err);
+        }
+      );
+    };
+
     const getClientsFromWallets = (err, res) => {
       if (err) {
         return callback(err);
@@ -2968,71 +3035,10 @@ export class API extends EventEmitter {
         .filter(x => x);
 
       let foundWallets = [];
-      async.each(
-        combined,
-        (item, cb) => {
-          let credentials = item.credentials;
-          var wallet = item.status.wallet;
-          client.fromString(credentials);
-          client._processStatus(item.status);
-
-          if (!credentials.hasWalletInfo()) {
-            var me = _.find(wallet.copayers, {
-              id: credentials.copayerId
-            });
-
-            if (!me) return cb(null, new Error('Copayer not in wallet'));
-
-            try {
-              credentials.addWalletInfo(
-                wallet.id,
-                wallet.name,
-                wallet.m,
-                wallet.n,
-                me.name,
-                {}
-              );
-            } catch (e) {
-              if (e.message) {
-                log.info('Trying credentials...', e.message);
-              }
-              if (e.message && e.message.match(/Bad\snr/)) {
-                return cb(null, new Errors.WALLET_DOES_NOT_EXIST());
-              }
-            }
-          }
-          if (wallet.status != 'complete') return cb(null, item);
-
-          if (item.status.customData?.walletPrivKey) {
-            credentials.addWalletPrivateKey(
-              item.status.customData.walletPrivKey
-            );
-          }
-
-          if (credentials.walletPrivKey) {
-            if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
-              return cb(null, new Errors.SERVER_COMPROMISED());
-            }
-          } else {
-            // this should only happen in AIR-GAPPED flows
-            log.warn(
-              'Could not verify copayers key (missing wallet Private Key)'
-            );
-          }
-
-          credentials.addPublicKeyRing(
-            client._extractPublicKeyRing(wallet.copayers)
-          );
-          client.emit('walletCompleted', wallet);
-
-          foundWallets.push(item);
-          cb();
-        },
-        err => {
-          if (err) return callback(err);
-          checkForOtherAccounts(foundWallets);
-        }
-      );
+      addWalletInfo(combined, foundWallets, err => {
+        if (err) return callback(err);
+        checkForOtherAccounts(foundWallets);
+      });
     };
 
     const getNextBatch = (key, settings) => {
@@ -3044,9 +3050,11 @@ export class API extends EventEmitter {
         const clonedSettings = JSON.parse(JSON.stringify(settings));
         let c = key.createCredentials(null, {
           coin: clonedSettings.coin,
+          chain: clonedSettings.coin, // chain === coin for stored clients
           network: clonedSettings.network,
           account: clonedSettings.account,
-          n: clonedSettings.n
+          n: clonedSettings.n,
+          use0forBCH: opts.use0forBCH // only used for server assisted import
         });
 
         accountKeyCredentialIndex.push({
@@ -3091,8 +3099,7 @@ export class API extends EventEmitter {
                       }
                     })
                     .filter(x => x);
-                  addtFoundWallets.push(...combined);
-                  next(err);
+                  addWalletInfo(combined, addtFoundWallets, next);
                 }
               );
             },
@@ -3123,16 +3130,17 @@ export class API extends EventEmitter {
               // newClient.credentials = settings.credentials;
               newClient.fromString(wallet.credentials);
               clients.push(newClient);
-              // Eth wallet with tokens?
               const tokenAddresses = wallet.status.preferences.tokenAddresses;
               const multisigEthInfo = wallet.status.preferences.multisigEthInfo;
               const maticTokenAddresses =
                 wallet.status.preferences.maticTokenAddresses;
               const multisigMaticInfo =
                 wallet.status.preferences.multisigMaticInfo;
+
+              // Eth wallet with tokens?
               if (!_.isEmpty(tokenAddresses) || !_.isEmpty(multisigEthInfo)) {
                 if (!_.isEmpty(tokenAddresses)) {
-                  function oneInchGetTokensData() {
+                  function oneInchGetEthTokensData() {
                     return new Promise((resolve, reject) => {
                       newClient.request.get(
                         '/v1/service/oneInch/getTokens/eth',
@@ -3145,9 +3153,9 @@ export class API extends EventEmitter {
                   }
                   let customTokensData;
                   try {
-                    customTokensData = await oneInchGetTokensData();
+                    customTokensData = await oneInchGetEthTokensData();
                   } catch (error) {
-                    log.warn('oneInchGetTokensData err', error);
+                    log.warn('oneInchGetEthTokensData err', error);
                     customTokensData = null;
                   }
                   _.each(tokenAddresses, t => {
@@ -3160,14 +3168,11 @@ export class API extends EventEmitter {
                     }
                     log.info(`Importing token: ${token.name}`);
                     const tokenCredentials =
-                      newClient.credentials.getTokenCredentials(token);
+                      newClient.credentials.getTokenCredentials(token, 'eth');
                     let tokenClient = _.cloneDeep(newClient);
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
                   });
-                  if (_.isEmpty(multisigEthInfo)) {
-                    next();
-                  }
                 }
                 // Eth wallet with mulsig wallets?
                 if (!_.isEmpty(multisigEthInfo)) {
@@ -3196,7 +3201,8 @@ export class API extends EventEmitter {
                         log.info(`Importing multisig token: ${token.name}`);
                         const tokenCredentials =
                           multisigEthClient.credentials.getTokenCredentials(
-                            token
+                            token,
+                            'eth'
                           );
                         let tokenClient = _.cloneDeep(multisigEthClient);
                         tokenClient.credentials = tokenCredentials;
@@ -3204,15 +3210,16 @@ export class API extends EventEmitter {
                       });
                     }
                   });
-                  next();
                 }
-                // matic wallet with tokens?
-              } else if (
+              }
+
+              // matic wallet with tokens?
+              if (
                 !_.isEmpty(maticTokenAddresses) ||
                 !_.isEmpty(multisigMaticInfo)
               ) {
                 if (!_.isEmpty(maticTokenAddresses)) {
-                  function oneInchGetTokensData() {
+                  function oneInchGetMaticTokensData() {
                     return new Promise((resolve, reject) => {
                       newClient.request.get(
                         '/v1/service/oneInch/getTokens/matic',
@@ -3225,9 +3232,9 @@ export class API extends EventEmitter {
                   }
                   let customTokensData;
                   try {
-                    customTokensData = await oneInchGetTokensData();
+                    customTokensData = await oneInchGetMaticTokensData();
                   } catch (error) {
-                    log.warn('oneInchGetTokensData err', error);
+                    log.warn('oneInchGetMaticTokensData err', error);
                     customTokensData = null;
                   }
                   _.each(maticTokenAddresses, t => {
@@ -3240,55 +3247,51 @@ export class API extends EventEmitter {
                     }
                     log.info(`Importing token: ${token.name}`);
                     const tokenCredentials =
-                      newClient.credentials.getTokenCredentials(token);
+                      newClient.credentials.getTokenCredentials(token, 'matic');
                     let tokenClient = _.cloneDeep(newClient);
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
                   });
-                  if (_.isEmpty(multisigEthInfo)) {
-                    next();
-                  }
                 }
                 // matic wallet with multisig wallets?
-                if (!_.isEmpty(multisigEthInfo)) {
-                  _.each(multisigEthInfo, info => {
+                if (!_.isEmpty(multisigMaticInfo)) {
+                  _.each(multisigMaticInfo, info => {
                     log.info(
                       `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
                     );
-                    const multisigEthCredentials =
+                    const multisigMaticCredentials =
                       newClient.credentials.getMultisigEthCredentials({
                         walletName: info.walletName,
                         multisigContractAddress: info.multisigContractAddress,
                         n: info.n,
                         m: info.m
                       });
-                    let multisigEthClient = _.cloneDeep(newClient);
-                    multisigEthClient.credentials = multisigEthCredentials;
-                    clients.push(multisigEthClient);
-                    const tokenAddresses = info.tokenAddresses;
-                    if (!_.isEmpty(tokenAddresses)) {
-                      _.each(tokenAddresses, t => {
-                        const token = Constants.ETH_TOKEN_OPTS[t];
+                    let multisigMaticClient = _.cloneDeep(newClient);
+                    multisigMaticClient.credentials = multisigMaticCredentials;
+                    clients.push(multisigMaticClient);
+                    const maticTokenAddresses = info.maticTokenAddresses;
+                    if (!_.isEmpty(maticTokenAddresses)) {
+                      _.each(maticTokenAddresses, t => {
+                        const token = Constants.MATIC_TOKEN_OPTS[t];
                         if (!token) {
                           log.warn(`Token ${t} unknown`);
                           return;
                         }
                         log.info(`Importing multisig token: ${token.name}`);
                         const tokenCredentials =
-                          multisigEthClient.credentials.getTokenCredentials(
-                            token
+                          multisigMaticClient.credentials.getTokenCredentials(
+                            token,
+                            'matic'
                           );
-                        let tokenClient = _.cloneDeep(multisigEthClient);
+                        let tokenClient = _.cloneDeep(multisigMaticClient);
                         tokenClient.credentials = tokenCredentials;
                         clients.push(tokenClient);
                       });
                     }
                   });
-                  next();
                 }
-              } else {
-                next();
               }
+              next();
             },
             err => {
               if (err) return callback(err);
