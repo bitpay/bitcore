@@ -3130,13 +3130,14 @@ export class API extends EventEmitter {
               // newClient.credentials = settings.credentials;
               newClient.fromString(wallet.credentials);
               clients.push(newClient);
-              // Eth wallet with tokens?
               const tokenAddresses = wallet.status.preferences.tokenAddresses;
               const multisigEthInfo = wallet.status.preferences.multisigEthInfo;
               const maticTokenAddresses =
                 wallet.status.preferences.maticTokenAddresses;
               const multisigMaticInfo =
                 wallet.status.preferences.multisigMaticInfo;
+
+              // Eth wallet with tokens?
               if (!_.isEmpty(tokenAddresses) || !_.isEmpty(multisigEthInfo)) {
                 if (!_.isEmpty(tokenAddresses)) {
                   function oneInchGetEthTokensData() {
@@ -3172,9 +3173,6 @@ export class API extends EventEmitter {
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
                   });
-                  if (_.isEmpty(multisigEthInfo)) {
-                    next();
-                  }
                 }
                 // Eth wallet with mulsig wallets?
                 if (!_.isEmpty(multisigEthInfo)) {
@@ -3212,10 +3210,11 @@ export class API extends EventEmitter {
                       });
                     }
                   });
-                  next();
                 }
-                // matic wallet with tokens?
-              } else if (
+              }
+
+              // matic wallet with tokens?
+              if (
                 !_.isEmpty(maticTokenAddresses) ||
                 !_.isEmpty(multisigMaticInfo)
               ) {
@@ -3253,9 +3252,6 @@ export class API extends EventEmitter {
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
                   });
-                  if (_.isEmpty(multisigMaticInfo)) {
-                    next();
-                  }
                 }
                 // matic wallet with multisig wallets?
                 if (!_.isEmpty(multisigMaticInfo)) {
@@ -3293,11 +3289,9 @@ export class API extends EventEmitter {
                       });
                     }
                   });
-                  next();
                 }
-              } else {
-                next();
               }
+              next();
             },
             err => {
               if (err) return callback(err);
