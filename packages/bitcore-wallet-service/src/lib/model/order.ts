@@ -78,13 +78,15 @@ export class Order implements IOrder {
   isResolve?: boolean;
   toNetwork: string;
   fromNetwork: string;
+  actualSent: number;
+  actualReceived: number;
   static create(opts) {
     opts = opts || {};
 
     const x = new Order();
 
     const now = new Date();
-    const end = new Date(now.getTime() + 15 * 60000);
+    const end = new Date(now.getTime() + 60 * 60 * 1000);
     const uid = new ShortUniqueId({ length: 8 });
     x.version = 2;
     x.priority = opts.priority;
@@ -119,7 +121,10 @@ export class Order implements IOrder {
     x.pendingReason = opts.pendingReason || null;
     x.lastModified = now;
     x.isResolve = false;
-    (x.toNetwork = opts.toNetwork), (x.fromNetwork = opts.fromNetwork);
+    x.toNetwork = opts.toNetwork;
+    x.fromNetwork = opts.fromNetwork;
+    x.actualReceived = 0;
+    x.actualSent = 0;
     return x;
   }
 
@@ -160,7 +165,10 @@ export class Order implements IOrder {
     x.pendingReason = obj.pendingReason;
     x.lastModified = obj.lastModified;
     x.isResolve = obj.isResolve;
-    (x.toNetwork = obj.toNetwork), (x.fromNetwork = obj.fromNetwork);
+    x.toNetwork = obj.toNetwork;
+    x.fromNetwork = obj.fromNetwork;
+    x.actualSent = obj.actualSent;
+    x.actualReceived = obj.actualReceived;
     return x;
   }
 }

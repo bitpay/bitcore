@@ -4407,6 +4407,7 @@ export class WalletService {
 
                             this.walletId = fundingWallet.credentials.walletId;
                             this.copayerId = fundingWallet.credentials.copayerId;
+                            orderInfo.actualSent = (amountDepositDetect / orderInfo.fromSatUnit);
                             let amountDepositInToCoinCodeUnit =
                               (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
                             // TANTODO: in future remove for livenet , also apply for testnet
@@ -4443,6 +4444,7 @@ export class WalletService {
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
                                   orderInfo.isInQueue = false;
+                                  orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
                                   this.storage.updateOrder(orderInfo, err => {
                                     if (err) saveError(orderInfo, data, err);
                                     return this.storage.orderQueue.ack(data.ack, (err, id) => {});
@@ -4463,6 +4465,7 @@ export class WalletService {
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
                                   orderInfo.isInQueue = false;
+                                  orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit
                                   this.storage.updateOrder(orderInfo, err => {
                                     if (err) saveError(orderInfo, data, err);
                                     return this.storage.orderQueue.ack(data.ack, (err, id) => {});
