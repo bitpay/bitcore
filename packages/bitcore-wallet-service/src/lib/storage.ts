@@ -610,7 +610,9 @@ export class Storage {
           lastModified: new Date(),
           isResolve: orderInfo.isResolve,
           note: orderInfo.note,
-          isInQueue: orderInfo.isInQueue
+          isInQueue: orderInfo.isInQueue,
+          actualSent: orderInfo.actualSent,
+          actualReceived: orderInfo.actualReceived
         }
       },
       {
@@ -665,7 +667,9 @@ export class Storage {
           pendingReason: orderInfo.pendingReason,
           lastModified: new Date(),
           isResolve: orderInfo.isResolve,
-          note: orderInfo.note
+          note: orderInfo.note,
+          actualSent: orderInfo.actualSent,
+          actualReceived: orderInfo.actualReceived
         }
       },
       {
