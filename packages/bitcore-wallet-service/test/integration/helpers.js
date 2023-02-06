@@ -1,5 +1,5 @@
 'use strict';
-
+// Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
 var { setDefaultResultOrder } = require('dns');
 setDefaultResultOrder('ipv4first');
 var _ = require('lodash');

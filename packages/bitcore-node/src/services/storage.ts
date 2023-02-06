@@ -119,12 +119,12 @@ export class StorageService {
     res.on('close', function() {
       closed = true;
     });
-    // @ts-ignore TODO: Should revise this to work with typings 
     input.on('error', function(err) {
       if (!closed) {
         closed = true;
         return res.status(500).end(err.message);
       }
+      return;
     });
     let isFirst = true;
     res.type('json');
@@ -162,12 +162,12 @@ export class StorageService {
       closed = true;
       cursor.close();
     });
-    // @ts-ignore TODO: Should revise this to work with typings 
     cursor.on('error', function(err) {
       if (!closed) {
         closed = true;
         return res.status(500).end(err.message);
       }
+      return;
     });
     let isFirst = true;
     res.type('json');

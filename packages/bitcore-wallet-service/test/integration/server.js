@@ -4924,8 +4924,7 @@ describe('Wallet service', function() {
             });
           });
         });
-        // I don't see how this test is ever going to pass as the stubs are not hit
-        xit('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
+        it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
           const coinAmount = {
             btc:0.5,
             bch:0.5,
@@ -4935,11 +4934,14 @@ describe('Wallet service', function() {
             ltc:0.5
           }
           helpers.stubUtxos(server, wallet, 2, { coin }, function() {
-            sandbox.stub(CWC.Transactions, 'create').throws(new Error('dummy exception'));
-            sandbox.stub(CWC.BitcoreLib, 'Transaction').throws(new Error('dummy exception'));
-            sandbox.stub(CWC.BitcoreLibCash, 'Transaction').throws(new Error('dummy exception'));
-            sandbox.stub(CWC.BitcoreLibDoge, 'Transaction').throws(new Error('dummy exception'));
-            sandbox.stub(CWC.BitcoreLibLtc, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(CWC.Transactions, 'create').callsFake(function(...args) {
+              console.log(args, new Error().stack);
+              throw new Error('dummy exception');
+            });
+            sandbox.stub(Bitcore_.btc, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(Bitcore_.bch, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(Bitcore_.doge, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(Bitcore_.ltc, 'Transaction').throws(new Error('dummy exception'));
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,

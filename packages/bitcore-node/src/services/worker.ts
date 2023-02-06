@@ -1,5 +1,4 @@
-import cluster from 'cluster';
-import { Worker as ClusterWorker } from 'cluster';
+import cluster, { Worker as ClusterWorker } from 'cluster';
 import { EventEmitter } from 'events';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
