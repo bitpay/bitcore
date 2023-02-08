@@ -92,6 +92,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     };
   }
 
+  async getERC20TokenAllowance(network: string, tokenAddress: string, ownerAddress: string, spenderAddress: string) {
+    const token = await this.erc20For(network, tokenAddress);
+    return await token.methods.allowance(ownerAddress, spenderAddress).call();
+  }
+
   async getFee(params) {
     let { network, target = 4 } = params;
     const chain = this.chain;
@@ -458,6 +463,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
           value = dataDecoded.params[0].value;
           gasPrice = dataDecoded.params[1].value;
+        } else if (dataDecoded && dataDecoded.type === 'MULTISEND') {
+          // TDOO ETH PAYOUTS modify gas during output stimation
         }
 
         const opts = {

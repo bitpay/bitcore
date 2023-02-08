@@ -146,17 +146,13 @@ export class EthChain implements IChain {
         let gasPrice = inFeePerKb;
         const { from } = opts;
         const { coin, network } = wallet;
-        let inGasLimit = 0;
+        let inGasLimit;
         let gasLimit = 0;
         const defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
         let fee = 0;
-        let outputAddresses = [];
-        let outputAmounts = [];
 
         for (let output of opts.outputs) {
           if (opts.multiSendContractAddress) {
-            outputAddresses.push(output.toAddress);
-            outputAmounts.push(output.amount);
             output.gasLimit = output.gasLimit ? output.gasLimit : Defaults.DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT;
             gasLimit += output.gasLimit;
             fee += feePerKb * output.gasLimit;

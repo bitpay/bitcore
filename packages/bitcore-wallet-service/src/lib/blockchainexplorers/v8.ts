@@ -440,6 +440,21 @@ export class V8 {
       });
   }
 
+  getTokenAllowance(opts, cb) {
+    const url =
+      this.baseUrl + '/token/' + opts.tokenAddress + '/allowance/' + opts.ownerAddress + '/for/' + opts.spenderAddress;
+    console.log('[v8.js.378:url:] CHECKING TOKEN ALLOWANCE', url);
+    this.request
+      .get(url, {})
+      .then(allowance => {
+        allowance = JSON.parse(allowance);
+        return cb(null, allowance);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   getMultisigTxpsInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/txps/' + opts.multisigContractAddress;
     console.log('[v8.js.378:url:] CHECKING CONTRACT TXPS INFO', url);

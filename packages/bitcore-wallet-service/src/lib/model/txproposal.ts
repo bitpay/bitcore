@@ -137,7 +137,6 @@ export class TxProposal {
   lockUntilBlockHeight?: number;
   instantAcceptanceEscrow?: number;
   isTokenSwap?: boolean;
-  // isMultiSend?: boolean;
   multiSendContractAddress?: string;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
@@ -221,7 +220,6 @@ export class TxProposal {
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
-    // x.isMultiSend = opts.isMultiSend;
     x.multiSendContractAddress = opts.multiSendContractAddress;
     x.isTokenSwap = opts.isTokenSwap;
     x.multisigContractAddress = opts.multisigContractAddress;
@@ -294,7 +292,6 @@ export class TxProposal {
     x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
     x.isTokenSwap = obj.isTokenSwap;
-    // x.isMultiSend = obj.isMultiSend;
     x.multiSendContractAddress = obj.multiSendContractAddress;
     x.multisigContractAddress = obj.multisigContractAddress;
     x.multisigTxId = obj.multisigTxId;
