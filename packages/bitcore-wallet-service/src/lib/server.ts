@@ -2509,7 +2509,7 @@ export class WalletService {
       .then(chronikUtxos => {
         const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
           return _.map(scriptUtxos.utxos, utxo => ({
-            addressInfo: addressInfo,
+            addressInfo,
             txid: utxo.outpoint.txid,
             outIdx: utxo.outpoint.outIdx,
             value: utxo.value.toNumber(),

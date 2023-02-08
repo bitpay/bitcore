@@ -14,7 +14,7 @@ const bchjs = new BCHJS({ restURL: bchURL });
 const ecashaddr = require('ecashaddrjs');
 const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
 export interface UtxoToken {
-  addressInfo: any;
+  addressInfo: IAddress;
   txid: string;
   outIdx: number;
   value: number;
@@ -24,6 +24,21 @@ export interface UtxoToken {
   amountToken?: number;
   tokenQty?: number;
   decimals?: number;
+}
+
+export interface IAddress {
+  version: string
+  createdOn: number
+  address: string
+  walletId: string
+  isChange: boolean
+  path: string
+  publicKeys: string[]
+  coin: string
+  network: string
+  type: string
+  hasActivity: any
+  beRegistered: boolean
 }
 
 export interface TokenInfo {
@@ -88,8 +103,6 @@ export class XecChain extends BtcChain implements IChain {
 
     const cashAddress = bchjs.HDNode.toCashAddress(change);
     const slpAddress = bchjs.HDNode.toSLPAddress(change);
-
-    const keyPair = bchjs.HDNode.toKeyPair(change);
 
     try {
       const utxos = await this.getUtxosToken(wallet);
