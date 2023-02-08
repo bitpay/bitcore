@@ -2259,7 +2259,7 @@ export class WalletService {
           if (err) return cb(err);
           let promiseList = [];
           if (wallet.isTokenSupport) {
-            this._getUxtosByChronik(wallet.coin, address)
+            this._getUxtosByChronikOnlyByAddress(wallet.coin, address)
               .then(utxos => {
                 // utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
                 // const utxoNonSlpChronik = _.filter(utxos, item => !item.isNonSLP && item.slpMeta.tokenId === wallet.tokenId);
@@ -2510,6 +2510,40 @@ export class WalletService {
         const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
           return _.map(scriptUtxos.utxos, utxo => ({
             addressInfo,
+            txid: utxo.outpoint.txid,
+            outIdx: utxo.outpoint.outIdx,
+            value: utxo.value.toNumber(),
+            isNonSLP: utxo.slpToken ? false : true,
+            slpMeta: utxo.slpMeta,
+            tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
+            amountToken: utxo.slpToken && utxo.slpToken.amount ? utxo.slpToken.amount.toNumber() : undefined
+          }));
+        });
+        return utxos;
+      })
+      .catch(err => {
+        return Promise.reject(err);
+      });
+  }
+
+  _getUxtosByChronikOnlyByAddress(coin, address) {
+    let chronikClient;
+    let scriptPayload;
+    if (address.includes('ecash:')) {
+      address = address.replace(/ecash:/, '');
+    }
+    try {
+      scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
+      chronikClient = ChainService.getChronikClient(coin);
+    } catch {
+      return Promise.reject('err funtion _getUxtosByChronik in aws');
+    }
+    return chronikClient
+      .script('p2pkh', scriptPayload)
+      .utxos()
+      .then(chronikUtxos => {
+        const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
+          return _.map(scriptUtxos.utxos, utxo => ({
             txid: utxo.outpoint.txid,
             outIdx: utxo.outpoint.outIdx,
             value: utxo.value.toNumber(),
