@@ -14,6 +14,7 @@ const bchjs = new BCHJS({ restURL: bchURL });
 const ecashaddr = require('ecashaddrjs');
 const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
 export interface UtxoToken {
+  addressInfo: IAddress;
   txid: string;
   outIdx: number;
   value: number;
@@ -23,6 +24,21 @@ export interface UtxoToken {
   amountToken?: number;
   tokenQty?: number;
   decimals?: number;
+}
+
+export interface IAddress {
+  version: string;
+  createdOn: number;
+  address: string;
+  walletId: string;
+  isChange: boolean;
+  path: string;
+  publicKeys: string[];
+  coin: string;
+  network: string;
+  type: string;
+  hasActivity: any;
+  beRegistered: boolean;
 }
 
 export interface TokenInfo {
@@ -87,8 +103,6 @@ export class XecChain extends BtcChain implements IChain {
 
     const cashAddress = bchjs.HDNode.toCashAddress(change);
     const slpAddress = bchjs.HDNode.toSLPAddress(change);
-
-    const keyPair = bchjs.HDNode.toKeyPair(change);
 
     try {
       const utxos = await this.getUtxosToken(wallet);
@@ -156,13 +170,26 @@ export class XecChain extends BtcChain implements IChain {
 
       // Sign the transaction with the private key for the BCH UTXO paying the fees.
       let redeemScript;
-      transactionBuilder.sign(0, keyPair, redeemScript, transactionBuilder.hashTypes.SIGHASH_ALL, originalAmount);
+      // Sign the transaction with the private key for the BCH UTXO paying the fees.
+
+      const childIndex = (bchUtxo.addressInfo.path as string).replace(/m\//gm, '');
+      const changeCash = bchjs.HDNode.derivePath(account, childIndex);
+      let keyPairCash = bchjs.HDNode.toKeyPair(changeCash);
+      transactionBuilder.sign(0, keyPairCash, redeemScript, transactionBuilder.hashTypes.SIGHASH_ALL, originalAmount);
 
       // Sign each token UTXO being consumed.
       for (let i = 0; i < tokenUtxos.length; i++) {
         const thisUtxo = tokenUtxos[i];
-
-        transactionBuilder.sign(1 + i, keyPair, redeemScript, transactionBuilder.hashTypes.SIGHASH_ALL, thisUtxo.value);
+        const childIndex = (thisUtxo.addressInfo.path as string).replace(/m\//gm, '');
+        let changeToken = bchjs.HDNode.derivePath(account, childIndex);
+        let keyPairToken = bchjs.HDNode.toKeyPair(changeToken);
+        transactionBuilder.sign(
+          1 + i,
+          keyPairToken,
+          redeemScript,
+          transactionBuilder.hashTypes.SIGHASH_ALL,
+          thisUtxo.value
+        );
       }
 
       // build tx
@@ -202,6 +229,7 @@ export class XecChain extends BtcChain implements IChain {
       // UTXO is not a minting baton.
       if (item.amountToken && slpMeta.tokenId && slpMeta.tokenId === tokenInfo.id && slpMeta.txType != 'MINT') {
         const tokenUtxo: UtxoToken = {
+          addressInfo: item.addressInfo,
           txid: item.txid,
           outIdx: item.outIdx,
           value: item.value,
