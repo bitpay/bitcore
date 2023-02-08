@@ -2116,7 +2116,7 @@ export class WalletService {
               if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
               let promiseList = [];
               _.each(addresses, address => {
-                promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+                promiseList.push(this._getUxtosByChronik(wallet.coin, address));
               });
 
               await Promise.all(promiseList)
@@ -2204,7 +2204,7 @@ export class WalletService {
                 if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
                 let promiseList = [];
                 _.each(addresses, address => {
-                  promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+                  promiseList.push(this._getUxtosByChronik(wallet.coin, address));
                 });
                 await Promise.all(promiseList)
                   .then(async utxos => {
@@ -2490,9 +2490,10 @@ export class WalletService {
     });
   }
 
-  _getUxtosByChronik(coin, address) {
+  _getUxtosByChronik(coin, addressInfo) {
     let chronikClient;
     let scriptPayload;
+    let address = addressInfo.address;
     if (address.includes('ecash:')) {
       address = address.replace(/ecash:/, '');
     }
@@ -2508,6 +2509,7 @@ export class WalletService {
       .then(chronikUtxos => {
         const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
           return _.map(scriptUtxos.utxos, utxo => ({
+            addressInfo: addressInfo,
             txid: utxo.outpoint.txid,
             outIdx: utxo.outpoint.outIdx,
             value: utxo.value.toNumber(),
@@ -2534,7 +2536,7 @@ export class WalletService {
         if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
         let promiseList = [];
         _.each(addresses, address => {
-          promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+          promiseList.push(this._getUxtosByChronik(wallet.coin, address));
         });
 
         await Promise.all(promiseList)
@@ -2597,7 +2599,7 @@ export class WalletService {
         if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
         let promiseList = [];
         _.each(addresses, address => {
-          promiseList.push(this._getUxtosByChronik(wallet.coin, address.address));
+          promiseList.push(this._getUxtosByChronik(wallet.coin, address));
         });
 
         await Promise.all(promiseList)
@@ -4407,7 +4409,7 @@ export class WalletService {
 
                             this.walletId = fundingWallet.credentials.walletId;
                             this.copayerId = fundingWallet.credentials.copayerId;
-                            orderInfo.actualSent = (amountDepositDetect / orderInfo.fromSatUnit);
+                            orderInfo.actualSent = amountDepositDetect / orderInfo.fromSatUnit;
                             let amountDepositInToCoinCodeUnit =
                               (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
                             // TANTODO: in future remove for livenet , also apply for testnet
@@ -4465,7 +4467,7 @@ export class WalletService {
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
                                   orderInfo.isInQueue = false;
-                                  orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit
+                                  orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
                                   this.storage.updateOrder(orderInfo, err => {
                                     if (err) saveError(orderInfo, data, err);
                                     return this.storage.orderQueue.ack(data.ack, (err, id) => {});
