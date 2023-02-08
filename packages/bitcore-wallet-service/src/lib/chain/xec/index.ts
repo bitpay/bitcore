@@ -27,18 +27,18 @@ export interface UtxoToken {
 }
 
 export interface IAddress {
-  version: string
-  createdOn: number
-  address: string
-  walletId: string
-  isChange: boolean
-  path: string
-  publicKeys: string[]
-  coin: string
-  network: string
-  type: string
-  hasActivity: any
-  beRegistered: boolean
+  version: string;
+  createdOn: number;
+  address: string;
+  walletId: string;
+  isChange: boolean;
+  path: string;
+  publicKeys: string[];
+  coin: string;
+  network: string;
+  type: string;
+  hasActivity: any;
+  beRegistered: boolean;
 }
 
 export interface TokenInfo {
