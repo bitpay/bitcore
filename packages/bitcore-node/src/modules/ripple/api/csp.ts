@@ -198,8 +198,8 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const client = await this.getClient(params.network);
     const serverInfo = await client.getServerInfo();
     const ledgers = serverInfo.completeLedgers.split('-');
-    const minLedgerVersion: any = Number(ledgers[0]);
-    const maxLedgerVersion: any = Number(ledgers[1]);
+    const minLedgerVersion = Number(ledgers[0]);
+    const maxLedgerVersion = Number(ledgers[1]);
     let allTxs = new Array<FormattedTransactionType>();
     let limit = Number(limitArg) || 100;
     const options = {
@@ -207,6 +207,11 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       maxLedgerVersion,
       limit,
       binary: false
+    } as {
+      minLedgerVersion?: number,
+      maxLedgerVersion?: number,
+      limit: number,
+      binary: boolean
     };
     if (startTx) {
       options['start'] = params.args.startTx;

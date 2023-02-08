@@ -3,5 +3,5 @@ import { setDefaultResultOrder } from 'dns';
 setDefaultResultOrder('ipv4first');
 import './utils/polyfills';
 import { FullClusteredWorker } from './workers/all';
-require('heapdump-next');
+require('heapdump');
 FullClusteredWorker();

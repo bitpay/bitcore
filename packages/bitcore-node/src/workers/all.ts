@@ -8,7 +8,7 @@ import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
-require('heapdump-next');
+require('heapdump');
 let args = parseArgv([], ['DEBUG']);
 const services: Array<any> = [];
 
