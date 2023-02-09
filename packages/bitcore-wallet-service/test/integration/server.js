@@ -2809,7 +2809,7 @@ describe('Wallet service', function() {
           addresses: ['mrM5kMkqZccK5MxZYSsM3SjqdMaNKLJgrJ']
         }, function(err, utxos) {
           should.not.exist(err);
-          utxos.should.be.empty();
+          utxos.should.be.empty;
           done();
         });
       });
@@ -2825,7 +2825,7 @@ describe('Wallet service', function() {
           addresses: ['CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X']
         }, function(err, utxos) {
           should.not.exist(err);
-          utxos.should.be.empty();
+          utxos.should.be.empty;
           done();
         });
       });
