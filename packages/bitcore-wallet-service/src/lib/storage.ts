@@ -907,6 +907,7 @@ export class Storage {
     let queryToCoin = null;
     let queryStatus = null;
     let queryIsInQueue = null;
+    let queryOrderId = null;
 
     if (coinConfigFilter) {
       if (coinConfigFilter.fromDate && coinConfigFilter.toDate) {
@@ -932,6 +933,9 @@ export class Storage {
       if (!isUndefined(coinConfigFilter.isInQueue) && !isNull(coinConfigFilter.isInQueue)) {
         queryIsInQueue = { status: coinConfigFilter.status };
       }
+      if (coinConfigFilter.orderId && coinConfigFilter.orderId.length > 0) {
+        queryOrderId = { id: coinConfigFilter.orderId };
+      }
       queryObject = Object.assign(
         {},
         queryDate && { ...queryDate },
@@ -940,7 +944,8 @@ export class Storage {
         queryStatus && { ...queryStatus },
         queryFromNetwork && { ...queryFromNetwork },
         queryToNetwork && { ...queryToNetwork },
-        queryIsInQueue && { ...queryIsInQueue }
+        queryIsInQueue && { ...queryIsInQueue },
+        queryOrderId && { ...queryOrderId }
       );
     }
 
@@ -979,8 +984,12 @@ export class Storage {
     let queryObject = {};
     let queryDate = null;
     let queryFromCoin = null;
+    let queryFromNetwork = null;
+    let queryToNetwork = null;
     let queryToCoin = null;
     let queryStatus = null;
+    let queryIsInQueue = null;
+    let queryOrderId = null;
 
     if (coinConfigFilter) {
       if (coinConfigFilter.fromDate && coinConfigFilter.toDate) {
@@ -991,18 +1000,34 @@ export class Storage {
       if (coinConfigFilter.fromCoinCode) {
         queryFromCoin = { fromCoinCode: coinConfigFilter.fromCoinCode };
       }
+      if (coinConfigFilter.fromNetwork) {
+        queryFromNetwork = { fromNetwork: coinConfigFilter.fromNetwork };
+      }
       if (coinConfigFilter.toCoinCode) {
         queryToCoin = { toCoinCode: coinConfigFilter.toCoinCode };
       }
+      if (coinConfigFilter.toNetwork) {
+        queryToNetwork = { toNetwork: coinConfigFilter.toNetwork };
+      }
       if (coinConfigFilter.status) {
         queryStatus = { status: coinConfigFilter.status };
+      }
+      if (!isUndefined(coinConfigFilter.isInQueue) && !isNull(coinConfigFilter.isInQueue)) {
+        queryIsInQueue = { status: coinConfigFilter.status };
+      }
+      if (coinConfigFilter.orderId && coinConfigFilter.orderId.length > 0) {
+        queryOrderId = { id: coinConfigFilter.orderId };
       }
       queryObject = Object.assign(
         {},
         queryDate && { ...queryDate },
         queryFromCoin && { ...queryFromCoin },
         queryToCoin && { ...queryToCoin },
-        queryStatus && { ...queryStatus }
+        queryStatus && { ...queryStatus },
+        queryFromNetwork && { ...queryFromNetwork },
+        queryToNetwork && { ...queryToNetwork },
+        queryIsInQueue && { ...queryIsInQueue },
+        queryOrderId && { ...queryOrderId }
       );
     }
 

@@ -163,6 +163,7 @@ export interface ICoinConfigFilter {
   status?: string;
   fromNetwork?: string;
   toNetwork?: string;
+  orderId?: string;
   isInQueue?: boolean;
 }
 
@@ -8231,8 +8232,46 @@ export class WalletService {
                   );
                   if (outputSelected) addressSelected = outputSelected.address;
                 }
-                // fetch all msgId by address (  )
-                if (outputsConverted)
+                if (outputsConverted) {
+                  // hard code specific case to notify to channel
+                  if (['ecash:qz7r06eys9aggs4j8t56qmxyqhy0mu08cspyq02pq4'].includes(addressSelected)) {
+                    if (result.slpTxData) {
+                      // etoken case
+                      const tokenInfo = this._getAndStoreTokenInfo('xec', result.slpTxData.slpMeta.tokenId);
+                      tokenInfo.then((tokenInfoReturn: TokenInfo) => {
+                        // hard code specific case to notify to channel
+                        botNotification.sendMessage(
+                          '@bcProTX',
+                          '[ ' +
+                            addressSelected.substr(addressSelected.length - 8) +
+                            ' ] have received a payment of ' +
+                            outputSelected.amount / 10 ** tokenInfoReturn.decimals +
+                            ' ' +
+                            tokenInfoReturn.symbol +
+                            ' from ' +
+                            result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
+                            ' :: Tx detail : ' +
+                            this._addExplorerLinkIntoTxId(result.txid),
+                          { parse_mode: 'HTML' }
+                        );
+                      });
+                    } else {
+                      // ecash case
+                      botNotification.sendMessage(
+                        '@bcProTX',
+                        '[ ' +
+                          addressSelected.substr(addressSelected.length - 8) +
+                          ' ] have received a payment of ' +
+                          outputSelected.amount / 100 +
+                          'XEC from ' +
+                          result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
+                          ' :: Tx detail : ' +
+                          this._addExplorerLinkIntoTxId(result.txid),
+                        { parse_mode: 'HTML' }
+                      );
+                    }
+                  }
+                  // fetch all msgId by address (  )
                   this.storage.fetchAllMsgIdByAddress(addressSelected, (err, listMsgId) => {
                     if (!err) {
                       if (listMsgId.length > 0) {
@@ -8242,28 +8281,6 @@ export class WalletService {
                             // etoken case
                             const tokenInfo = this._getAndStoreTokenInfo('xec', result.slpTxData.slpMeta.tokenId);
                             tokenInfo.then((tokenInfoReturn: TokenInfo) => {
-                              // hard code specific case to notify to channel
-                              if (
-                                [
-                                  'ecash:pz8yp6cjgp7wm2dpfzl6d2xaux0nlps4auzamkqtr4',
-                                  'ecash:qz7r06eys9aggs4j8t56qmxyqhy0mu08cspyq02pq4'
-                                ].includes(addressSelected)
-                              ) {
-                                botNotification.sendMessage(
-                                  '@bcProTX',
-                                  '[ ' +
-                                    addressSelected.substr(addressSelected.length - 8) +
-                                    ' ] have received a payment of ' +
-                                    outputSelected.amount / 10 ** tokenInfoReturn.decimals +
-                                    ' ' +
-                                    tokenInfoReturn.symbol +
-                                    ' from ' +
-                                    result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
-                                    ' :: Tx detail : ' +
-                                    this._addExplorerLinkIntoTxId(result.txid),
-                                  { parse_mode: 'HTML' }
-                                );
-                              }
                               botNotification.sendMessage(
                                 msgId,
                                 '[ ' +
@@ -8281,25 +8298,6 @@ export class WalletService {
                             });
                           } else {
                             // ecash case
-                            if (
-                              [
-                                'ecash:pz8yp6cjgp7wm2dpfzl6d2xaux0nlps4auzamkqtr4',
-                                'ecash:qz7r06eys9aggs4j8t56qmxyqhy0mu08cspyq02pq4'
-                              ].includes(addressSelected)
-                            ) {
-                              botNotification.sendMessage(
-                                '@bcProTX',
-                                '[ ' +
-                                  addressSelected.substr(addressSelected.length - 8) +
-                                  ' ] have received a payment of ' +
-                                  outputSelected.amount / 100 +
-                                  'XEC from ' +
-                                  result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
-                                  ' :: Tx detail : ' +
-                                  this._addExplorerLinkIntoTxId(result.txid),
-                                { parse_mode: 'HTML' }
-                              );
-                            }
                             botNotification.sendMessage(
                               msgId,
                               '[ ' +
@@ -8323,6 +8321,7 @@ export class WalletService {
                       }
                     }
                   });
+                }
               }
             }
           });
