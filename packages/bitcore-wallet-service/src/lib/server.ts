@@ -4346,7 +4346,7 @@ export class WalletService {
           logger.debug('orderinfo created: ', data);
           console.log('orderinfo created: ', data);
           const saveError = (orderInfo, data, error, status?) => {
-            orderInfo.status = status || 'pending';
+            orderInfo.status = status || 'progressing';
             if (error.message) {
               orderInfo.error = error.message;
             } else {
@@ -4356,7 +4356,11 @@ export class WalletService {
               orderInfo.pendingReason = error.code;
             }
             if (error.code === 'ORDER_EXPIRED') {
-              orderInfo.status = 'expired';
+              if (orderInfo.status === 'progressing') {
+                orderInfo.status = 'pending';
+              } else {
+                orderInfo.status = 'expired';
+              }
             }
             orderInfo.isInQueue = false;
             this.storage.updateOrder(orderInfo, err => {
@@ -4409,8 +4413,8 @@ export class WalletService {
                         this._getRatesWithCustomFormat(async (err, rateList) => {
                           const rate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
                           orderInfo.updatedRate = rate;
-                          // calculate updated rate compare with created rate , if more than 20% (later dynamic) , suspend transaction
-                          if ((Math.abs(rate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 20) {
+                          // calculate updated rate compare with created rate , if more than 5% (later dynamic) , suspend transaction
+                          if ((Math.abs(rate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 5) {
                             saveError(orderInfo, data, Errors.NOT_STABLE_RATE, 'expired');
                             return;
                           }

@@ -968,7 +968,7 @@ export class Storage {
       .find({
         $or: [
           { isInQueue: false, status: 'waiting' },
-          { isInQueue: false, status: 'pending', isResolve: true }
+          { isInQueue: false, status: 'progressing' }
         ]
       })
       .sort({ _id: -1 })
