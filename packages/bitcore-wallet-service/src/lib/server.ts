@@ -4346,7 +4346,7 @@ export class WalletService {
           logger.debug('orderinfo created: ', data);
           console.log('orderinfo created: ', data);
           const saveError = (orderInfo, data, error, status?) => {
-            orderInfo.status = status || 'progressing';
+            orderInfo.status = status || 'processing';
             if (error.message) {
               orderInfo.error = error.message;
             } else {
@@ -4356,7 +4356,7 @@ export class WalletService {
               orderInfo.pendingReason = error.code;
             }
             if (error.code === 'ORDER_EXPIRED') {
-              if (orderInfo.status === 'progressing') {
+              if (orderInfo.status === 'processing') {
                 orderInfo.status = 'pending';
               } else {
                 orderInfo.status = 'expired';
