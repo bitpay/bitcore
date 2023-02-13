@@ -30,6 +30,7 @@ interface IOrder {
   createdOn?: Date;
   error?: string;
   coinConfig?: CoinConfig;
+  coinConfigReceive?: CoinConfig;
   toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
   note?: string;
@@ -69,6 +70,7 @@ export class Order implements IOrder {
   createdOn?: Date;
   error?: string;
   coinConfig?: CoinConfig;
+  coinConfigReceive?: CoinConfig;
   toTokenInfo?: TokenInfo;
   fromTokenInfo?: TokenInfo;
   note?: string;
@@ -114,6 +116,7 @@ export class Order implements IOrder {
     x.endedOn = end;
     x.error = null;
     x.coinConfig = null;
+    x.coinConfigReceive = null;
     x.toTokenInfo = opts.toTokenInfo || null;
     x.fromTokenInfo = opts.fromTokenInfo || null;
     x.note = '';
@@ -156,6 +159,7 @@ export class Order implements IOrder {
     x.fromSatUnit = obj.fromSatUnit;
     x.toSatUnit = obj.toSatUnit;
     x.coinConfig = obj.coinConfig;
+    x.coinConfigReceive = obj.coinConfigReceive;
     x.toTokenInfo = obj.toTokenInfo;
     x.fromTokenInfo = obj.fromTokenInfo;
     x.updatedRate = obj.updatedRate;

@@ -4945,6 +4945,7 @@ export class WalletService {
       resolve(order.toSatUnit * feeCalculated);
     });
   }
+
   async checkRequirementBeforeQueueExcetue(configSwap: ConfigSwap, orderInfo: Order) {
     let listCoinReceiveCode = [];
     let listCoinSwapCode = [];
@@ -7336,6 +7337,15 @@ export class WalletService {
             orderInfo.coinConfig = configCoinSelected;
           } else {
             return cb(new Error('Can not find coin config for this order'));
+          }
+
+          const configCoinReceiveSelected = configSwap.coinReceive.find(
+            coinConfig => coinConfig.code.toLowerCase() === orderInfo.toCoinCode.toLowerCase()
+          );
+          if (configCoinReceiveSelected) {
+            orderInfo.coinConfigReceive = configCoinReceiveSelected;
+          } else {
+            return cb(new Error('Can not find coin config receive for this order'));
           }
           return cb(null, orderInfo);
         });
