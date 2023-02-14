@@ -11,7 +11,7 @@ export class ETHMULTISIGTxProvider extends ETHTxProvider {
   }
 
   create(params: {
-    recipients: Array<{ address: string; amount: string; gasLimit: number }>;
+    recipients: Array<{ address: string; amount: string }>;
     nonce: number;
     gasPrice: number;
     data: string;
@@ -21,7 +21,7 @@ export class ETHMULTISIGTxProvider extends ETHTxProvider {
     chainId?: number;
   }) {
     const { multisigContractAddress } = params;
-    const recipients = [{ address: multisigContractAddress, amount: '0', gasLimit: 0 }];
+    const recipients = [{ address: multisigContractAddress, amount: '0' }];
     const newParams = { ...params, recipients };
     return super.create(newParams);
   }

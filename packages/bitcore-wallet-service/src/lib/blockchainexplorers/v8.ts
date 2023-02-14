@@ -443,7 +443,7 @@ export class V8 {
   getTokenAllowance(opts, cb) {
     const url =
       this.baseUrl + '/token/' + opts.tokenAddress + '/allowance/' + opts.ownerAddress + '/for/' + opts.spenderAddress;
-    console.log('[v8.js.378:url:] CHECKING TOKEN ALLOWANCE', url);
+    logger.info('[v8.js.378:url:] CHECKING TOKEN ALLOWANCE', url);
     this.request
       .get(url, {})
       .then(allowance => {

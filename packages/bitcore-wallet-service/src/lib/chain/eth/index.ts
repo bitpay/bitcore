@@ -7,6 +7,7 @@ import { ClientError } from '../../errors/clienterror';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
+const { toBN } = Web3.utils;
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -146,16 +147,22 @@ export class EthChain implements IChain {
         let gasPrice = inFeePerKb;
         const { from } = opts;
         const { coin, network } = wallet;
-        let inGasLimit;
-        let gasLimit = 0;
-        const defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
+        let inGasLimit = 0; // Per recepient gas limit
+        let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
         let fee = 0;
+        const defaultGasLimit = this.getDefaultGasLimit(opts);
+        let outputAddresses = []; // Parameter for MuliSend contract
+        let outputAmounts = []; // Parameter for MuliSend contract
+        let totalValue = toBN(0); // Parameter for MuliSend contract
 
         for (let output of opts.outputs) {
           if (opts.multiSendContractAddress) {
-            output.gasLimit = output.gasLimit ? output.gasLimit : Defaults.DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT;
-            gasLimit += output.gasLimit;
-            fee += feePerKb * output.gasLimit;
+            outputAddresses.push(output.toAddress);
+            outputAmounts.push(toBN(output.amount));
+            if (!opts.tokenAddress) {
+              totalValue = totalValue.add(toBN(output.amount));
+            }
+            inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
             continue;
           } else if (!output.gasLimit) {
             try {
@@ -188,6 +195,30 @@ export class EthChain implements IChain {
             gasPrice = feePerKb = Number((opts.fee / (inGasLimit || defaultGasLimit)).toFixed());
           }
           gasLimit = inGasLimit || defaultGasLimit;
+          fee += feePerKb * gasLimit;
+        }
+
+        if (opts.multiSendContractAddress) {
+          try {
+            const data = this.encodeContractParameters(
+              Constants.BITPAY_CONTRACTS.MULTISEND,
+              { addresses: outputAddresses, amounts: outputAmounts },
+              opts
+            );
+
+            gasLimit = await server.estimateGas({
+              coin,
+              network,
+              from,
+              to: opts.multiSendContractAddress,
+              value: totalValue.toString(),
+              data,
+              gasPrice
+            });
+          } catch (error) {
+            logger.error('Error estimating gas for MultiSend contract', error);
+          }
+          gasLimit = gasLimit ? gasLimit : inGasLimit;
           fee += feePerKb * gasLimit;
         }
         return resolve({ feePerKb, gasPrice, gasLimit, fee });
@@ -262,6 +293,29 @@ export class EthChain implements IChain {
     }
 
     return tx;
+  }
+
+  getDefaultGasLimit(opts) {
+    let defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
+    if (opts.multiSendContractAddress) {
+      defaultGasLimit = opts.tokenAddress
+        ? Defaults.DEFAULT_MULTISEND_RECIPIENT_ERC20_GAS_LIMIT
+        : Defaults.DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT;
+    }
+    return defaultGasLimit;
+  }
+
+  encodeContractParameters(contract, params, opts) {
+    if (contract === Constants.BITPAY_CONTRACTS.MULTISEND) {
+      const web3 = new Web3();
+      return {
+        addresses: web3.eth.abi.encodeParameter('address[]', params.addresses),
+        amounts: web3.eth.abi.encodeParameter('uint256[]', params.amounts),
+        method: opts.tokenAddress ? 'sendErc20' : 'sendEth',
+        tokenAddress: opts.tokenAddress,
+        type: Constants.BITPAY_CONTRACTS.MULTISEND
+      };
+    }
   }
 
   convertFeePerKb(p, feePerKb) {

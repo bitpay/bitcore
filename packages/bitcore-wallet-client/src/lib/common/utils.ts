@@ -463,7 +463,8 @@ export class Utils {
         tokenAddress,
         multisigContractAddress,
         multiSendContractAddress,
-        isTokenSwap
+        isTokenSwap,
+        gasLimit
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -493,7 +494,8 @@ export class Utils {
           nonce: Number(txp.nonce),
           recipients,
           chain: _chain,
-          contractAddress: multiSendContractAddress
+          contractAddress: multiSendContractAddress,
+          gasLimit
         };
         unsignedTxs.push(Transactions.create({ ...txp, ...multiSendParams }));
       } else {
@@ -508,8 +510,8 @@ export class Utils {
           });
           unsignedTxs.push(rawTx);
         }
-        return { uncheckedSerialize: () => unsignedTxs };
       }
+      return { uncheckedSerialize: () => unsignedTxs };
     }
   }
 

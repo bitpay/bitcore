@@ -7,7 +7,7 @@ const utils = require('web3-utils');
 const { toBN } = Web3.utils;
 export class ETHTxProvider {
   create(params: {
-    recipients: Array<{ address: string; amount: string; gasLimit: number }>;
+    recipients: Array<{ address: string; amount: string }>;
     nonce: number;
     gasPrice: number;
     data: string;
@@ -16,8 +16,8 @@ export class ETHTxProvider {
     chainId?: number;
     contractAddress?: string;
   }) {
-    const { recipients, nonce, gasPrice, network, contractAddress } = params;
-    let { data, gasLimit } = params;
+    const { recipients, nonce, gasPrice, gasLimit, network, contractAddress } = params;
+    let { data } = params;
     let to;
     let amount;
     if (recipients.length > 1) {
@@ -27,15 +27,10 @@ export class ETHTxProvider {
       const addresses = [];
       const amounts = [];
       amount = toBN(0);
-      const calculateGasLimit = !gasLimit;
-      gasLimit = calculateGasLimit ? 0 : gasLimit;
       for (let recipient of recipients) {
         addresses.push(recipient.address);
         amounts.push(toBN(recipient.amount));
         amount = amount.add(toBN(recipient.amount));
-        if (calculateGasLimit && recipient.gasLimit) {
-          gasLimit += recipient.gasLimit;
-        }
       }
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();

@@ -31,6 +31,7 @@ import {
 import { partition } from '../../../../utils/partition';
 import { StatsUtil } from '../../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
+import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
@@ -74,6 +75,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async erc20For(network: string, address: string) {
     const { web3 } = await this.getWeb3(network);
     const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], address);
+    return contract;
+  }
+
+  async getMultisendContract(network: string, address: string) {
+    const { web3 } = await this.getWeb3(network);
+    const contract = new web3.eth.Contract(MultisendAbi as AbiItem[], address);
     return contract;
   }
 
@@ -463,8 +470,29 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
           value = dataDecoded.params[0].value;
           gasPrice = dataDecoded.params[1].value;
-        } else if (dataDecoded && dataDecoded.type === 'MULTISEND') {
-          // TDOO ETH PAYOUTS modify gas during output stimation
+        } else if (data && data.type === 'MULTISEND') {
+          try {
+            let method, gasLimit;
+            const contract = await this.getMultisendContract(network, to);
+            const addresses = web3.eth.abi.decodeParameter('address[]', data.addresses);
+            const amounts = web3.eth.abi.decodeParameter('uint256[]', data.amounts);
+
+            switch (data.method) {
+              case 'sendErc20':
+                method = contract.methods.sendErc20(data.tokenAddress, addresses, amounts);
+                gasLimit = method ? await method.estimateGas({ from }) : undefined;
+                break;
+              case 'sendEth':
+                method = contract.methods.sendEth(addresses, amounts);
+                gasLimit = method ? await method.estimateGas({ from, value }) : undefined;
+                break;
+              default:
+                break;
+            }
+            return resolve(Number(gasLimit));
+          } catch (err) {
+            return reject(err);
+          }
         }
 
         const opts = {

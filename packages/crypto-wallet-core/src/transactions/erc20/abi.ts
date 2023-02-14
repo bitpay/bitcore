@@ -287,7 +287,7 @@ const MULTISENDAbi = [
         type: 'address'
       },
       {
-        indexed: false,
+        indexed: true,
         name: 'tokenAddress',
         type: 'address'
       },

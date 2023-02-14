@@ -1454,6 +1454,8 @@ export class API extends EventEmitter {
   // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
   // * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
   // * @param {Boolean} opts.enableRBF - Optional. Enable BTC Replace By Fee
+  // * @param {String} opts.multiSendContractAddress - Optional. Use this address to interact with the MultiSend contract that is used to send EVM based txp's with outputs > 1
+  // * @param {String} opts.tokenAddress - Optional. Use this address to reference a token an a given chain.
   // * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
   // * @returns {Callback} cb - Return error or the transaction proposal
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
