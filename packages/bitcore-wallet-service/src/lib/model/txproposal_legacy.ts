@@ -1,8 +1,8 @@
 import _ from 'lodash';
+import { Common } from '../common';
 import logger from '../logger';
 
 const $ = require('preconditions').singleton();
-const Common = require('../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 import { TxProposalAction } from './txproposalaction';

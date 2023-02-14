@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+export const Defaults = {
   MIN_FEE_PER_KB: 0,
 
   MAX_KEYS: 100,

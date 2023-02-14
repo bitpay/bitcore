@@ -4,6 +4,7 @@ import 'source-map-support/register';
 
 import { BlockChainExplorer } from './blockchainexplorer';
 import { ChainService } from './chain/index';
+import { Common } from './common';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
@@ -12,7 +13,6 @@ import { WalletService } from './server';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
 const Constants = Common.Constants;
 
 const throttle = (fn: (bcmContext: any, chain: string, network: string, hash: string) => void) => {

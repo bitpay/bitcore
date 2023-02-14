@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
+import { Common } from './common';
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
 const Defaults = Common.Defaults;
 const PROVIDERS = {
   v8: {

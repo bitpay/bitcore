@@ -1,9 +1,9 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { EthChain } from '../eth';
 
-const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');

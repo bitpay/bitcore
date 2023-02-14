@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import { Common } from './common';
 import logger from './logger';
 import {
   Address,
@@ -39,7 +40,6 @@ const collections = {
   LOCKS: 'locks'
 };
 
-const Common = require('./common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 

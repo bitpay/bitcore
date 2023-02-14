@@ -5,6 +5,7 @@ import 'source-map-support/register';
 
 import request from 'request';
 import { ChainService } from './chain';
+import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
@@ -13,9 +14,9 @@ import { Storage } from './storage';
 const Mustache = require('mustache');
 const defaultRequest = require('request');
 const path = require('path');
-const Utils = require('./common/utils');
-const Defaults = require('./common/defaults');
-const Constants = require('./common/constants');
+const Utils = Common.Utils;
+const Defaults = Common.Defaults;
+const Constants = Common.Constants;
 const sjcl = require('sjcl');
 
 const PUSHNOTIFICATIONS_TYPES = {

@@ -1,3 +1,4 @@
+import { Common } from '../common';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
@@ -8,7 +9,7 @@ import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { XrpChain } from './xrp';
 
-const Common = require('../common');
+
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 

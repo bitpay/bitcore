@@ -6,6 +6,7 @@ import logger from './logger';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
+import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
@@ -47,7 +48,6 @@ const Bitcore_ = {
   ltc: require('bitcore-lib-ltc')
 };
 
-const Common = require('./common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
@@ -113,8 +113,8 @@ export class WalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: string;
-  parsedClientVersion: { agent: string; major: number; minor: number };
+  appVersion: { agent?: string; major?: number; minor?: number };;
+  parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
