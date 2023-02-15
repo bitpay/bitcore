@@ -4934,10 +4934,7 @@ describe('Wallet service', function() {
             ltc:0.5
           }
           helpers.stubUtxos(server, wallet, 2, { coin }, function() {
-            sandbox.stub(CWC.Transactions, 'create').callsFake(function(...args) {
-              console.log(args, new Error().stack);
-              throw new Error('dummy exception');
-            });
+            sandbox.stub(CWC.Transactions, 'create').throws(new Error('dummy exception'));
             sandbox.stub(Bitcore_.btc, 'Transaction').throws(new Error('dummy exception'));
             sandbox.stub(Bitcore_.bch, 'Transaction').throws(new Error('dummy exception'));
             sandbox.stub(Bitcore_.doge, 'Transaction').throws(new Error('dummy exception'));
