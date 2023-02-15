@@ -7,7 +7,7 @@ var should = chai.should();
 var { V8 } = require('../ts_build/lib/blockchainexplorers/v8');
 var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
-var Common = require('../ts_build/lib/common');
+var { Common } = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
 
 const V8UTXOS = [

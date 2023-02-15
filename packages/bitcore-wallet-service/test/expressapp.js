@@ -10,7 +10,7 @@ var proxyquire = require('proxyquire');
 var config = require('../ts_build/config.js');
 var log = require('npmlog');
 
-var Common = require('../ts_build/lib/common');
+var { Common } = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
 var { WalletService } = require('../ts_build/lib/server');
 
