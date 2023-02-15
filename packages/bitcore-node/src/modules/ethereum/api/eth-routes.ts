@@ -36,6 +36,16 @@ EthRoutes.get('/api/ETH/:network/token/:tokenAddress', async (req, res) => {
   }
 });
 
+EthRoutes.get('/api/ETH/:network/token/:tokenAddress/allowance/:ownerAddress/for/:spenderAddress', async (req, res) => {
+  const { network, tokenAddress, ownerAddress, spenderAddress } = req.params;
+  try {
+    const allowance = await ETH.getERC20TokenAllowance(network, tokenAddress, ownerAddress, spenderAddress);
+    res.json(allowance);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
 EthRoutes.get('/api/ETH/:network/ethmultisig/info/:multisigContractAddress', async (req, res) => {
   const { network, multisigContractAddress } = req.params;
   try {
