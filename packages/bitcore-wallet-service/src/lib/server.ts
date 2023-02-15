@@ -113,7 +113,7 @@ export class WalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: { agent?: string; major?: number; minor?: number };;
+  appVersion: { agent?: string; major?: number; minor?: number };
   parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;

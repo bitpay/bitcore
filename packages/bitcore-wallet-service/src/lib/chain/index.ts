@@ -9,7 +9,6 @@ import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { XrpChain } from './xrp';
 
-
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 
