@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Utils = require('../ts_build/lib/common/utils');
+var { Utils } = require('../ts_build/lib/common/utils');
 const { logger } = require('../ts_build/lib/logger');
 
 describe('Utils', function() {

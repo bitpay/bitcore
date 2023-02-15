@@ -8,7 +8,7 @@ const { ChainService } = require('../../ts_build/lib/chain');
 const { DogeChain } = require('../../ts_build/lib/chain/doge');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
 describe('Chain DOGE', () => {
