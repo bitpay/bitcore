@@ -25,6 +25,7 @@ import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
 import { IUser } from './model/user';
 import { ICoinConfigFilter } from './server';
+import { OrderInfoNoti } from './model/OrderInfoNoti';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -57,7 +58,8 @@ const collections = {
   TOKEN_INFO: 'token_info',
   ORDER_INFO: 'order_info',
   CONVERSION_ORDER_INFO: 'conversion_order_info',
-  USER_WATCH_ADDRESS: 'user_watch_address'
+  USER_WATCH_ADDRESS: 'user_watch_address',
+  ORDER_INFO_NOTI: 'order_info_noti'
 };
 
 const Common = require('./common');
@@ -121,6 +123,9 @@ export class Storage {
       id: 1
     });
     db.collection(collections.USER_WATCH_ADDRESS).createIndex({
+      id: 1
+    });
+    db.collection(collections.ORDER_INFO_NOTI).createIndex({
       id: 1
     });
     db.collection(collections.COPAYERS_LOOKUP).createIndex({
@@ -895,6 +900,64 @@ export class Storage {
         const listMsgId = _.map(listUserInfo, user => user.msgId);
         return cb(null, listMsgId);
       });
+  }
+
+  storeOrderInfoNoti(orderInfoNoti: OrderInfoNoti, cb) {
+    if (!this.db) {
+      logger.warn('Trying to store a orderInfoNoti with close DB', orderInfoNoti);
+      return;
+    }
+
+    this.db.collection(collections.ORDER_INFO_NOTI).insertOne(
+      orderInfoNoti,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchOrderInfoNoti(opts, cb) {
+    if (!this.db) {
+      logger.warn('Trying to store a orderInfoNoti with close DB');
+      return;
+    }
+    let queryObject = {};
+    let queryReceivedTxId = null;
+    let queryPendingReason = null;
+    let queryError = null;
+    if (opts) {
+      if (opts.receivedTxId) {
+        queryReceivedTxId = {
+          receivedTxId: opts.receivedTxId
+        };
+      } else if (opts.pendingReason) {
+        queryPendingReason = {
+          pendingReason: opts.pendingReason
+        };
+      } else if (opts.error) {
+        queryError = {
+          error: opts.error
+        };
+      }
+    }
+    queryObject = Object.assign(
+      {},
+      { orderId: opts.orderId },
+      queryReceivedTxId && { ...queryReceivedTxId },
+      queryPendingReason && { ...queryPendingReason },
+      queryError && { ...queryError }
+    );
+    this.db.collection(collections.ORDER_INFO_NOTI).findOne(queryObject, (err, result) => {
+      if (err) return cb(err);
+      if (!result) return cb(null);
+      return cb(null, result);
+    });
   }
 
   fetchAllOrderInfo(opts, cb) {
