@@ -35,7 +35,7 @@ import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
 import { resolve } from 'dns';
 import { link, read } from 'fs';
-import { countBy, findIndex, isNumber } from 'lodash';
+import { add, countBy, findIndex, isNumber } from 'lodash';
 import { openStdin } from 'process';
 import { stringify } from 'querystring';
 import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
@@ -5269,6 +5269,9 @@ export class WalletService {
               // const slpAddress = bchjs.HDNode.toSLPAddress(change);
             } else {
               address = addressReturn;
+            }
+            if (orderInfo.fromCoinCode === 'xec') {
+              address = 'ecash:' + address;
             }
             orderInfo.adddressUserDeposit = address;
             this.storage.storeOrderInfo(orderInfo, (err, orderStoredResult) => {
