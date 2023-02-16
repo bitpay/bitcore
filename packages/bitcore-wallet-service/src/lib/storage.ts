@@ -23,9 +23,9 @@ import { CoinConfig } from './model/config-swap';
 import { ConversionOrder } from './model/conversionOrder';
 import { DonationStorage } from './model/donation';
 import { Order } from './model/order';
+import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IUser } from './model/user';
 import { ICoinConfigFilter } from './server';
-import { OrderInfoNoti } from './model/OrderInfoNoti';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 

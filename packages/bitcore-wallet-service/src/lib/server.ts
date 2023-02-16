@@ -46,9 +46,9 @@ import { CoinConfig, ConfigSwap } from './model/config-swap';
 import { ConversionOrder, IConversionOrder, Output, TxDetail } from './model/conversionOrder';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
 import { Order } from './model/order';
+import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
-import { OrderInfoNoti } from './model/OrderInfoNoti';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
@@ -4900,9 +4900,9 @@ export class WalletService {
 
   _addExplorerLinkIntoTxIdWithCoin(txId: string, coinCode?: string): string {
     let link = 'https://explorer.e.cash/tx/';
-    if(coinCode && coinCode.toLowerCase() === 'xpi'){
-      link = 'https://explorer.givelotus.org/tx/'
-    } 
+    if (coinCode && coinCode.toLowerCase() === 'xpi') {
+      link = 'https://explorer.givelotus.org/tx/';
+    }
     const linkWithTxid = link + txId;
     return `<a href=\"${linkWithTxid}\">${txId}</a>`;
   }
