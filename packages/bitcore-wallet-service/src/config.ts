@@ -131,6 +131,18 @@ const Config = () => {
     //     secretKey: 'moonpay_production_secret_key_here',
     //   }
     // },
+    // ramp: {
+    //   sandbox: {
+    //     apiKey: 'ramp_sandbox_api_key_here',
+    //     api: 'https://api-instant-staging.supozu.com/api',
+    //     widgetApi: 'https://ri-widget-staging.firebaseapp.com',
+    //   },
+    //   production: {
+    //     apiKey: 'ramp_production_api_key_here',
+    //     api: 'https://api-instant.ramp.network/api',
+    //     widgetApi: 'https://buy.ramp.network',
+    //   }
+    // },
     // simplex: {
     //   sandbox: {
     //     apiKey: 'simplex_sandbox_api_key_here',
