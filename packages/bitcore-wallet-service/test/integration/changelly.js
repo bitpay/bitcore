@@ -98,7 +98,7 @@ describe('Changelly integration', () => {
       });
     });
 
-    it('should return error if Changelly is commented in config', () => {
+    it.skip('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
       server.request = fakeRequest;

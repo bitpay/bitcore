@@ -4648,6 +4648,39 @@ export class WalletService {
     return { urlWithSignature };
   }
 
+  moonpayGetIpData(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      let qs = [];
+      qs.push('apiKey=' + API_KEY);
+      if (req.body.ipAddress) qs.push('ipAddress=' + encodeURIComponent(req.body.ipAddress));
+
+      const URL: string = API + `/v4/ip_address?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
   moonpayGetTransactionDetails(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.moonpayGetKeys(req);
@@ -5012,11 +5045,23 @@ export class WalletService {
   }
 
   changellyGetCurrencies(req): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async(resolve, reject) => {
       const keys = this.changellyGetKeys(req);
 
       if (!checkRequired(req.body, ['id'])) {
         return reject(new ClientError('changellyGetCurrencies request missing arguments'));
+      }
+
+      try {
+        // Workaround to block users from NY. This is a temporary solution until we can migrate to Changelly API v2
+        req.body.env = 'production';
+        req.body.ipAddress = Utils.getIpFromReq(req);
+        const ipData = await this.moonpayGetIpData(req);
+        if (ipData && (ipData.alpha2 === 'US' || ipData.alpha3 === 'USA') && ipData.state === 'NY') {
+          return reject('Feature currently blocked for NY users.');
+        }
+      } catch (err) {
+        logger.debug('Unable to get ip data. Continue anyway');
       }
 
       const message = {
