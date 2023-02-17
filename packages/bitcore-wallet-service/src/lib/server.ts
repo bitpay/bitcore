@@ -88,11 +88,12 @@ export interface IWalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: string;
-  parsedClientVersion: { agent: number; major: number; minor: number };
+  appVersion: { agent?: string; major?: number; minor?: number };
+  parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
+  request: any;
 }
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
@@ -101,7 +102,7 @@ function boolToNum(x: boolean) {
  * Creates an instance of the Bitcore Wallet Service.
  * @constructor
  */
-export class WalletService {
+export class WalletService implements IWalletService {
   lock: any;
   storage: Storage;
   blockchainExplorer: V8;
@@ -118,7 +119,7 @@ export class WalletService {
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
-  request;
+  request: any;
 
   constructor() {
     if (!initialized) {
