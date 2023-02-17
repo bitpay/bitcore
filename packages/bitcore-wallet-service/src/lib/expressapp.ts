@@ -2103,6 +2103,7 @@ export class ExpressApp {
     WalletService.initialize(opts, data => {
       const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
       const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
+      const botSwap = new TelegramBot(config.telegram.botTokenId, { polling: true });
       const server = WalletService.getInstance(opts);
       if (listAccount && listAccount.length > 0) {
         listAccount.forEach(account => {
@@ -2126,7 +2127,7 @@ export class ExpressApp {
         });
       }
 
-      server.createBot({ bot, botNotification }, finish => {
+      server.createBot({ bot, botNotification, botSwap }, finish => {
         server.initializeBot();
       });
       server.initializeCoinConfig(err => {
