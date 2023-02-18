@@ -5011,9 +5011,9 @@ export class WalletService {
 
   checkSwapQueue(cb) {
     try {
-      if(!!swapQueueInterval){
+      if (!!swapQueueInterval) {
         return cb(null, true);
-      } else{
+      } else {
         return cb(null, false);
       }
     } catch (e) {
@@ -5021,7 +5021,6 @@ export class WalletService {
       return cb(e);
     }
   }
-
 
   restartHandleConversionQueue(cb) {
     try {
