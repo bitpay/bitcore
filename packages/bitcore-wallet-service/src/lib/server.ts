@@ -4111,9 +4111,9 @@ export class WalletService {
   }
 
   async rescanWalletsInKeys(cb) {
-    if (!clientsFund || !clientsReceive) {
-      return cb(new Error('Can not find key fund and receive '));
-    }
+    // if (!clientsFund || !clientsReceive) {
+    //   return cb(new Error('Can not find key fund and receive '));
+    // }
     let listCoinConfigMapped = [];
     this.getKeyFundAndReceiveWithFundMnemonic(err => {
       if (err) return cb(err);
@@ -5001,8 +5001,21 @@ export class WalletService {
       this.getKeyFundAndReceiveWithFundMnemonic(err => {
         if (err) return cb(err);
         this.checkQueueHandleSwap();
-        return cb(null);
+        return cb(null, true);
       });
+    } catch (e) {
+      logger.debug(e);
+      return cb(e);
+    }
+  }
+
+  checkSwapQueue(cb) {
+    try {
+      if (!!swapQueueInterval) {
+        return cb(null, true);
+      } else {
+        return cb(null, false);
+      }
     } catch (e) {
       logger.debug(e);
       return cb(e);
@@ -5236,7 +5249,7 @@ export class WalletService {
       }
       const orderInfo = Order.create(opts);
       const fromCoinCode = orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode;
-      const configSwap = await this.getConfigSwapWithPromise();
+      const configSwap = await this.getConfigSwapWithNoBalancePromise();
       const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
       if (isValidOrder === true) {
         if (orderInfo.isFromToken) {
@@ -5269,9 +5282,6 @@ export class WalletService {
               // const slpAddress = bchjs.HDNode.toSLPAddress(change);
             } else {
               address = addressReturn;
-            }
-            if (orderInfo.fromCoinCode === 'xec') {
-              address = 'ecash:' + address;
             }
             orderInfo.adddressUserDeposit = address;
             this.storage.storeOrderInfo(orderInfo, (err, orderStoredResult) => {
@@ -7357,6 +7367,76 @@ export class WalletService {
         });
     });
   }
+
+  /**
+   * Returns swap configetOrderInfog.
+   */
+  async getConfigSwapWithNoBalance(cb) {
+    if (!clientsFund) {
+      return cb(Errors.NOT_FOUND_KEY_FUND);
+    }
+    logger.debug('appDir: ', appDir);
+    this.storage.fetchAllCoinConfig((err, listCoinConfig: CoinConfig[]) => {
+      if (err) return cb(err);
+      listCoinConfig = listCoinConfig.filter(s => s.isSupport);
+      const swapConfig = new ConfigSwap();
+      swapConfig.coinReceive = listCoinConfig.filter(s => s.isReceive && s.isEnableReceive && s.isSupport);
+      swapConfig.coinSwap = listCoinConfig.filter(s => s.isSwap && s.isEnableSwap && s.isSupport);
+      let promiseList = [];
+      // const clientFundsSelected = clientsFund.find(client => client.credentials.coin === (coin.isToken ? 'xec' : coin.code));
+      this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
+        this._getRatesWithCustomFormat((err, fiatRates) => {
+          try {
+            for (var i = 0; i < swapConfig.coinReceive.length; i++) {
+              const coin = swapConfig.coinReceive[i];
+              const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
+              const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
+              const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
+              if (coin.isToken) {
+                const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
+                  .decimals;
+                coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
+                coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
+                coin.decimals = tokenDecimals;
+              } else {
+                coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+                coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
+                coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
+              }
+              coin.rate = fiatRates[coin.code.toLowerCase()];
+            }
+            swapConfig.coinSwap.forEach(coin => {
+              coin.rate = fiatRates[coin.code.toLowerCase()];
+            });
+
+            if (listRateWithPromise) {
+              this._getNetworkFeeForListCoinReceive(listRateWithPromise, swapConfig);
+              return cb(null, swapConfig);
+            } else {
+              // calculate fee for all support coin
+              listCoinConfig
+                .filter(coin => coin.isSupport)
+                .forEach(coin => promiseList.push(this.getFee(coin, { feeLevel: 'normal' })));
+              Promise.all(promiseList).then(listData => {
+                listRateWithPromise = listData;
+                setTimeout(() => {
+                  if (listRateWithPromise) {
+                    listRateWithPromise = null;
+                  }
+                }, 5 * 60 * 1000);
+                this._getNetworkFeeForListCoinReceive(listData, swapConfig);
+                return cb(null, swapConfig);
+              });
+            }
+          } catch (e) {
+            logger.debug(e);
+            return cb(e);
+          }
+        });
+      });
+    });
+  }
+
   _getNetworkFeeForListCoinReceive(listFeePerKb, swapConfig) {
     listFeePerKb.forEach((data: any) => {
       const coin = data.coin;
@@ -7422,7 +7502,15 @@ export class WalletService {
       });
     });
   }
-  x;
+
+  getConfigSwapWithNoBalancePromise(): Promise<ConfigSwap> {
+    return new Promise((resolve, reject) => {
+      this.getConfigSwapWithNoBalance((err, configSwap) => {
+        if (err) return reject(err);
+        return resolve(ConfigSwap.fromObj(configSwap));
+      });
+    });
+  }
 
   /**
    * Returns order info.
@@ -7438,7 +7526,7 @@ export class WalletService {
       return cb(new Error('Can not find funding wallet'));
     }
     try {
-      const configSwap = await this.getConfigSwapWithPromise();
+      const configSwap = await this.getConfigSwapWithNoBalancePromise();
       if (configSwap) {
         this.storage.fetchOrderinfoById(opts.id, (err, result) => {
           if (err) return cb(err);
