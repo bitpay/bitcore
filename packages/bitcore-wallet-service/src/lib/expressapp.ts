@@ -1403,7 +1403,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getConfigSwap((err, config) => {
+      server.getConfigSwapWithNoBalance((err, config) => {
         if (err) return returnError(err, res, req);
         res.json(config);
       });
@@ -1458,7 +1458,7 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
           opts = {
             password: reqServer.body.password
@@ -1523,7 +1523,7 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
           opts = {
             email: reqServer.user,
@@ -1568,7 +1568,7 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
           opts = {
             keyFund: reqServer.body.keyFund,
@@ -1657,7 +1657,7 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
           server.checkingSeedExist((err, result) => {
             if (err) return returnError(err, res, reqServer);
@@ -1668,6 +1668,39 @@ export class ExpressApp {
         return returnError(new Error('Can not find user authentication'), res, reqServer);
       }
     });
+
+    router.post('/v3/admin/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.restartHandleSwapQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.get('/v3/admin/queue/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.checkSwapQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
 
     router.post('/v3/conversion/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
       let server;
@@ -1693,7 +1726,7 @@ export class ExpressApp {
         return returnError(ex, res, reqServer);
       }
       if (reqServer.user) {
-        server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
           if (err) return returnError(err, res, reqServer);
           opts = {
             newPassword: reqServer.body.newPassword,

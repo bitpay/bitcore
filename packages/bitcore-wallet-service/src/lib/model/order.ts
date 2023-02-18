@@ -88,7 +88,7 @@ export class Order implements IOrder {
     const x = new Order();
 
     const now = new Date();
-    const end = new Date(new Date().setDate(new Date(now).getDate() + 1));
+    const end = new Date(now.getTime() + 3 * 60 * 60 * 1000);
     const uid = new ShortUniqueId({ length: 8 });
     x.version = 2;
     x.priority = opts.priority;
