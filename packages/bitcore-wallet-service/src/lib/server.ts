@@ -4382,7 +4382,7 @@ export class WalletService {
             if (!isNotiSwapOutOfFundToTelegram && orderInfo.pendingReason === 'OUT_OF_FUND') {
               const moneyWithWingsIcon = '\u{1F4B8}';
               botSwap.sendMessage(
-                config.telegram.channelFailId,
+                config.swapTelegram.channelFailId,
                 moneyWithWingsIcon + ' FUND ' + orderInfo.toCoinCode.toUpperCase() + ' IS OUT OF FUND, PLEASE TOP UP! '
               );
               isNotiSwapOutOfFundToTelegram = true;
@@ -4400,7 +4400,7 @@ export class WalletService {
                       if (err) logger.debug(err);
                       // send message to channel Failure Convert Alert
                       botSwap.sendMessage(
-                        config.telegram.channelFailId,
+                        config.swapTelegram.channelFailId,
                         'Order no.' + orderInfo.id + ' :: Failed reason :: ' + orderInfo.error,
                         {
                           parse_mode: 'HTML'
@@ -4469,7 +4469,7 @@ export class WalletService {
                                 (err, result) => {
                                   if (err) logger.debug(err);
                                   botSwap.sendMessage(
-                                    config.telegram.channelSuccessId,
+                                    config.swapTelegram.channelSuccessId,
                                     'Order no.' +
                                       orderInfo.id +
                                       ' :: ' +
@@ -4567,7 +4567,7 @@ export class WalletService {
                                   orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
                                   botSwap.sendMessage(
-                                    config.telegram.channelSuccessId,
+                                    config.swapTelegram.channelSuccessId,
                                     'Completed :: Order no.' +
                                       orderInfo.id +
                                       ' :: ' +
@@ -4598,7 +4598,7 @@ export class WalletService {
                                   orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
                                   botSwap.sendMessage(
-                                    config.telegram.channelSuccessId,
+                                    config.swapTelegram.channelSuccessId,
                                     'Completed :: Order no.' +
                                       orderInfo.id +
                                       ' :: ' +
