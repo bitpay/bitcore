@@ -134,8 +134,8 @@ const Config = () => {
     // ramp: {
     //   sandbox: {
     //     apiKey: 'ramp_sandbox_api_key_here',
-    //     api: 'https://api-instant-staging.supozu.com/api',
-    //     widgetApi: 'https://ri-widget-staging.firebaseapp.com',
+    //     api: 'https://api.demo.ramp.network/api',
+    //     widgetApi: 'https://app.demo.ramp.network/',
     //   },
     //   production: {
     //     apiKey: 'ramp_production_api_key_here',
