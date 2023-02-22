@@ -63,11 +63,13 @@ export class CurrencyRateService {
       if (err) {
         logger.warn('Error retrieving data', err);
       }
-      this.storage.storeCurrencyRate(res, err => {
-        if (err) {
-          logger.warn('Error storing data', err);
-        }
-      });
+      if (!!res && res.length > 0) {
+        this.storage.storeCurrencyRate(res, err => {
+          if (err) {
+            logger.warn('Error storing data', err);
+          }
+        });
+      }
     });
   }
 

@@ -885,6 +885,8 @@ export class Storage {
         msgId
       })
       .toArray((err, listUserInfo) => {
+        if (err) return cb(err);
+        if (!listUserInfo || listUserInfo.length === 0) return cb(null, null);
         const listAddress = _.map(listUserInfo, user => user.address);
         return cb(null, listAddress);
       });
@@ -897,6 +899,8 @@ export class Storage {
         address
       })
       .toArray((err, listUserInfo) => {
+        if (err) return cb(err);
+        if (!listUserInfo || listUserInfo.length === 0) return cb(null, null);
         const listMsgId = _.map(listUserInfo, user => user.msgId);
         return cb(null, listMsgId);
       });
