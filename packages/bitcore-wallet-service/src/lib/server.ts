@@ -5546,31 +5546,28 @@ export class WalletService {
 
     botNotification.onText(/\/remove\secash:\w+/, msg => {
       this.storage.fetchAllAddressByMsgId(msg.chat.id, (err, listAddress) => {
-        const address = msg.text.toString().replace(/\/remove\s/, '');
-        if (this._checkingValidAddress(address)) {
-          // if (!listAddress.includes(address)) {
-          //   botNotification.sendMessage(msg.chat.id, 'Address is not existed!');
-          // } else if (!!listUserWebsocket[msg.chat.id]) {
-          //   const scriptPayload = ChainService.convertAddressToScriptPayload('xec', address.replace(/ecash:/, ''));
-          //   listUserWebsocket[msg.chat.id].unsubscribe('p2pkh', scriptPayload);
-          //   const user = {
-          //     msgId: msg.chat.id,
-          //     address
-          //   };
-
-          // }
-          this.storage.removeUserWatchAddress({ msgId: msg.chat.id, address }, (err, result) => {
-            if (!err) {
-              botNotification.sendMessage(
-                msg.chat.id,
-                '[ ' + address.substr(address.length - 8) + ' ] has been removed!'
-              );
+        if (!err) {
+          if (listAddress && listAddress.length > 0) {
+            const address = msg.text.toString().replace(/\/remove\s/, '');
+            if (this._checkingValidAddress(address)) {
+              this.storage.removeUserWatchAddress({ msgId: msg.chat.id, address }, (err, result) => {
+                if (!err) {
+                  botNotification.sendMessage(
+                    msg.chat.id,
+                    '[ ' + address.substr(address.length - 8) + ' ] has been removed!'
+                  );
+                } else {
+                  botNotification.sendMessage(msg.chat.id, 'Error while remove. Please try again!');
+                }
+              });
             } else {
-              botNotification.sendMessage(msg.chat.id, 'Error while remove. Please try again!');
+              botNotification.sendMessage(msg.chat.id, 'Invalid address format, please check and try again!');
             }
-          });
+          } else {
+            botNotification.sendMessage(msg.chat.id, 'Your list address has been empty');
+          }
         } else {
-          botNotification.sendMessage(msg.chat.id, 'Invalid address format, please check and try again!');
+          botNotification.sendMessage(msg.chat.id, 'Error while fetching your address. Please try again!');
         }
       });
     });
@@ -8379,16 +8376,20 @@ export class WalletService {
 
   addAddressToUser(msgId, address) {
     this.storage.fetchAllAddressByMsgId(msgId, (err, listAddress) => {
-      let listAddressToSubcribe = [];
-      if (listAddress && listAddress.length > 0) {
-        // handle case address is already in db , does not need to add any more
-        if (listAddress.includes(address)) {
-          botNotification.sendMessage(msgId, 'Address has already registered!');
+      if (!err) {
+        let listAddressToSubcribe = [];
+        if (listAddress && listAddress.length > 0) {
+          // handle case address is already in db , does not need to add any more
+          if (listAddress.includes(address)) {
+            botNotification.sendMessage(msgId, 'Address has already registered!');
+          } else {
+            this._storeUserWatchAddress(msgId, address);
+          }
         } else {
           this._storeUserWatchAddress(msgId, address);
         }
       } else {
-        this._storeUserWatchAddress(msgId, address);
+        botNotification.sendMessage(msgId, 'Error while fetching your address. Please try again!');
       }
     });
   }
@@ -8478,7 +8479,7 @@ export class WalletService {
                           addressSelected.substr(addressSelected.length - 8) +
                           ' ] have received a payment of ' +
                           outputSelected.amount / 100 +
-                          'XEC from ' +
+                          ' XEC from ' +
                           result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
                           ' :: Tx detail : ' +
                           this._addExplorerLinkIntoTxId(result.txid),
@@ -8489,7 +8490,7 @@ export class WalletService {
                   // fetch all msgId by address (  )
                   this.storage.fetchAllMsgIdByAddress(addressSelected, (err, listMsgId) => {
                     if (!err) {
-                      if (listMsgId.length > 0) {
+                      if (!!listMsgId && listMsgId.length > 0) {
                         // if found user watch this address => send message to all user
                         listMsgId.forEach(msgId => {
                           if (result.slpTxData) {
@@ -8528,11 +8529,13 @@ export class WalletService {
                           }
                         });
                       } else {
-                        const scriptPayload = ChainService.convertAddressToScriptPayload(
-                          'xec',
-                          addressSelected.replace(/ecash:/, '')
-                        );
-                        ws.unsubscribe('p2pkh', scriptPayload);
+                        if(!!addressSelected){
+                          const scriptPayload = ChainService.convertAddressToScriptPayload(
+                            'xec',
+                            addressSelected.replace(/ecash:/, '')
+                          );
+                          ws.unsubscribe('p2pkh', scriptPayload);
+                        }
                       }
                     }
                   });
