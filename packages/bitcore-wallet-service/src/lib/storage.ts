@@ -482,6 +482,43 @@ export class Storage {
       });
   }
 
+  fetchTxByNonce(walletId, nonce, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.TXS).findOne(
+      {
+        nonce,
+        walletId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
+      }
+    );
+  }
+
+  // enable to get a TX with a nonce greater than, equalt to, or lower than a given number
+  fetchTxsByNonce(walletId, opts, cb) {
+    opts = opts || {};
+    if (!this.db) return cb();
+    // opts.nonce
+    // opts.grt | eql | les
+    this.db.collection(collections.TXS).find(
+      {
+        nonce: opts.nonce,
+        walletId
+      }).sort({
+        createdOn: -1
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
+      }
+    );
+  }
+
   /**
    * fetchBroadcastedTxs. Times are in UNIX EPOCH (seconds)
    *
