@@ -2484,6 +2484,7 @@ export class WalletService {
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
                     tokenAddress: opts.tokenAddress,
                     multisigContractAddress: opts.multisigContractAddress,
+                    multiSendContractAddress: opts.multiSendContractAddress,
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod,
