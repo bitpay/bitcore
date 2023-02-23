@@ -21,7 +21,7 @@ const TelegramBot = require('node-telegram-bot-api');
 var GoogleTokenStrategy = require('passport-google-id-token');
 const passport = require('passport');
 const listAccount = require('../../../../accounts.json');
-const cron = require('node-cron');
+import cron from 'node-cron';
 
 export class ExpressApp {
   app: express.Express;
