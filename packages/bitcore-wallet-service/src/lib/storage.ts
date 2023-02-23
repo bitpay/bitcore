@@ -724,7 +724,6 @@ export class Storage {
     for (var i = 0; i < listCoinConfig.length; i++) {
       const coinConfig = listCoinConfig[i];
       var ObjectId = require('mongodb').ObjectId;
-
       bulk.find({ _id: ObjectId(coinConfig._id) }).update({
         $set: {
           isEnableSwap: coinConfig.isEnableSwap,
@@ -735,7 +734,8 @@ export class Storage {
           settleFee: coinConfig.settleFee,
           networkFee: coinConfig.networkFee,
           isSwap: coinConfig.isSwap,
-          isReceive: coinConfig.isReceive
+          isReceive: coinConfig.isReceive,
+          dailyLimit: coinConfig.dailyLimit || 0
         }
       });
     }
@@ -1172,6 +1172,52 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb(new Error('Can not update coin config'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateDailyLimitCoinConfig(coinConfig, cb) {
+    this.db.collection(collections.COIN_CONFIG).updateOne(
+      {
+        code: coinConfig.code,
+        network: coinConfig.network
+      },
+      {
+        $set: {
+          dailyLimit: coinConfig.dailyLimit,
+          dailyLimitUsage: coinConfig.dailyLimitUsage        
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update daily limit for coin config'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  resetAllDailyLimitUsageInCoinConfig(cb) {
+    this.db.collection(collections.COIN_CONFIG).updateMany(
+      {
+       
+      },
+      {
+        $set: {
+          dailyLimitUsage: 0,
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update daily limit for coin config'));
 
         return cb(null, result);
       }

@@ -65,7 +65,8 @@ const errors = {
   NOT_FOUND_RATE_TOKEN: 'Not found rate for token wallet',
   INVALID_TX_ID: 'Invalid txid',
   BELOW_MINIMUM_XEC: 'FUND XEC REACHED THRESHOLD LIMIT',
-  BELOW_MINIMUM_TOKEN: 'FUND TOKEN REACHED THRESHOLD LIMIT'
+  BELOW_MINIMUM_TOKEN: 'FUND TOKEN REACHED THRESHOLD LIMIT',
+  EXCEED_DAILY_LIMIT: 'Order exceeds maximum allowed daily usage',
 };
 
 const errorObjects = _.fromPairs(
