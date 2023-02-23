@@ -36,6 +36,7 @@ import assert from 'assert';
 import { resolve } from 'dns';
 import { link, read } from 'fs';
 import { add, countBy, findIndex, isNumber } from 'lodash';
+import moment from 'moment';
 import { openStdin } from 'process';
 import { stringify } from 'querystring';
 import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
@@ -49,7 +50,6 @@ import { Order } from './model/order';
 import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
-import moment from 'moment';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;

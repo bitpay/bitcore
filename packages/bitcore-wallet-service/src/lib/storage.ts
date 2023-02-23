@@ -1187,7 +1187,7 @@ export class Storage {
       {
         $set: {
           dailyLimit: coinConfig.dailyLimit,
-          dailyLimitUsage: coinConfig.dailyLimitUsage        
+          dailyLimitUsage: coinConfig.dailyLimitUsage
         }
       },
       {
@@ -1204,12 +1204,10 @@ export class Storage {
 
   resetAllDailyLimitUsageInCoinConfig(cb) {
     this.db.collection(collections.COIN_CONFIG).updateMany(
-      {
-       
-      },
+      {},
       {
         $set: {
-          dailyLimitUsage: 0,
+          dailyLimitUsage: 0
         }
       },
       {
