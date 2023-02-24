@@ -478,6 +478,10 @@ export class BtcChain implements IChain {
     return bitcoreError;
   }
 
+  getNonceService() {
+    return null;
+  }
+
   checkTxUTXOs(server, txp, opts, cb) {
     logger.debug('Rechecking UTXOs availability for publishTx');
 

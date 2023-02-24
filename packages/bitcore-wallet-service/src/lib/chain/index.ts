@@ -4,6 +4,7 @@ import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
+import { NonceService } from './eth/nonceservice';
 import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { XrpChain } from './xrp';
@@ -43,6 +44,7 @@ export interface IChain {
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
   getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
+  getNonceService(): NonceService;
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
@@ -50,6 +52,7 @@ export interface IChain {
   checkUtxos(opts: { fee: number; inputs: any[] });
   checkValidTxAmount(output): boolean;
   isUTXOChain(): boolean;
+  // TODO isEVMChain():boolean;
   isSingleAddress(): boolean;
   supportsMultisig(): boolean;
   notifyConfirmations(network: string): boolean;
@@ -134,6 +137,10 @@ class ChainProxy {
 
   getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
     return this.get(txp.chain).getBitcoreTx(txp, { signed: opts.signed });
+  }
+
+  getNonceService(chain: string): NonceService {
+    return this.get(chain).getNonceService();
   }
 
   convertFeePerKb(chain, p, feePerKb) {

@@ -7,6 +7,7 @@ import { ClientError } from '../../errors/clienterror';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
+import { NonceService } from './nonceservice';
 const { toBN } = Web3.utils;
 
 const Common = require('../../common');
@@ -127,13 +128,14 @@ export class EthChain implements IChain {
     return 0;
   }
 
-  getTransactionCount(server, wallet, from) {
-    return new Promise((resolve, reject) => {
+  async getTransactionCount(server, wallet, from) {
+    const curNonce = await new Promise((resolve, reject) => {
       server._getTransactionCount(wallet, from, (err, nonce) => {
         if (err) return reject(err);
         return resolve(nonce);
       });
     });
+    return curNonce;
   }
 
   getChangeAddress() {}
@@ -448,6 +450,10 @@ export class EthChain implements IChain {
     return new ClientError(Errors.codes.LOCKED_ETH_FEE, `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`, {
       requiredFee: txp.fee
     });
+  }
+
+  getNonceService() {
+    return new NonceService();
   }
 
   checkUtxos(opts) {}

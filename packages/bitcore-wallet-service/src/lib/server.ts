@@ -16,6 +16,7 @@ import {
   INotification,
   ITxProposal,
   IWallet,
+  NonceManager,
   Notification,
   Preferences,
   PushNotificationSub,
@@ -2236,6 +2237,20 @@ export class WalletService {
     });
   }
 
+  _getPendingTransactionCount(opts) {
+    const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getTransactionCountPending(opts.address, (err, nonce) => {
+        if (err) {
+          this.logw('Error estimating nonce', err);
+          return reject(err);
+        }
+        return resolve(nonce);
+      });
+    });
+  }
+
   getNonce(opts) {
     const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
@@ -2421,7 +2436,22 @@ export class WalletService {
                 async next => {
                   if (!opts.nonce) {
                     try {
-                      opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
+                      if (Utils.isEvmChain(wallet.chain)) {
+                        const nonceOpts = {
+                          server: this,
+                          wallet,
+                          chain: wallet.chain,
+                          address: opts.from,
+                          proposalId: opts.txProposalId,
+                          action: 'create'
+                        };
+                        let nonceService = await ChainService.getNonceService(wallet.chain);
+                        opts.nonce = nonceService
+                          ? await nonceService.updateNonceManager(nonceOpts)
+                          : next(new Error(`Chain ${wallet.chain} expected to have NonceService but returned null`));
+                      } else {
+                        opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
+                      }
                     } catch (error) {
                       return next(error);
                     }
@@ -2736,8 +2766,17 @@ export class WalletService {
           const deleteLockTime = this.getRemainingDeleteLockTime(txp);
           if (deleteLockTime > 0) return cb(Errors.TX_CANNOT_REMOVE);
 
-          this.storage.removeTx(this.walletId, txp.id, () => {
+          this.storage.removeTx(this.walletId, txp.id, async () => {
             this._notifyTxProposalAction('TxProposalRemoved', txp, cb);
+            if (Utils.isEvmChain(txp.chain)) {
+              try {
+                let nonceService = await ChainService.getNonceService(txp.chain);
+                if (nonceService) await nonceService.updateNonceManager({ txp, action: 'remove' });
+              } catch (err) {
+                logger.error('Could not remove nonce from nonceManager');
+                cb(err);
+              }
+            }
           });
         }
       );
@@ -2808,7 +2847,7 @@ export class WalletService {
         {
           txProposalId: opts.txProposalId
         },
-        (err, txp) => {
+        async (err, txp) => {
           if (err) return cb(err);
 
           if (opts.maxTxpVersion < txp.version) {
@@ -2827,6 +2866,15 @@ export class WalletService {
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
+
+          if (Utils.isEvmChain(txp.chain)) {
+            try {
+              let nonceService = await ChainService.getNonceService(txp.chain);
+              if (nonceService) await nonceService.updateNonceManager({ txp, action: 'sign' });
+            } catch (err) {
+              return cb(err);
+            }
+          }
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2894,6 +2942,17 @@ export class WalletService {
         this._notifyTxProposalAction('NewOutgoingTx', txp, extraArgs);
       }
 
+      if (Utils.isEvmChain(txp.chain)) {
+        this._runLocked(cb, async cb => {
+          try {
+            let nonceService = await ChainService.getNonceService(txp.chain);
+            if (nonceService) await nonceService.updateNonceManager({ txp, action: 'broadcast' });
+          } catch (err) {
+            logger.error('Could not update nonceManager after broadcast');
+            cb(err);
+          }
+        });
+      }
       return cb(null, txp);
     });
   }
@@ -2991,7 +3050,7 @@ export class WalletService {
    */
   rejectTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId'], cb)) return;
-
+    // TODO how to handle rejection?
     this.getTx(
       {
         txProposalId: opts.txProposalId

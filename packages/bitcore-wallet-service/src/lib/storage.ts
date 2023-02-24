@@ -7,6 +7,7 @@ import {
   Address,
   Advertisement,
   Email,
+  NonceManager,
   Notification,
   Preferences,
   PushNotificationSub,
@@ -25,6 +26,7 @@ const collections = {
   WALLETS: 'wallets',
   TXS: 'txs',
   ADDRESSES: 'addresses',
+  NONCE_MANAGERS: 'noncemanagers',
   ADVERTISEMENTS: 'advertisements',
   NOTIFICATIONS: 'notifications',
   COPAYERS_LOOKUP: 'copayers_lookup',
@@ -81,6 +83,11 @@ export class Storage {
     });
     db.collection(collections.TXS).createIndex({
       walletId: 1,
+      id: 1,
+      nonce: 1
+    });
+    db.collection(collections.TXS).createIndex({
+      walletId: 1,
       isPending: 1,
       txid: 1
     });
@@ -90,6 +97,11 @@ export class Storage {
     });
     db.collection(collections.TXS).createIndex({
       txid: 1
+    });
+    db.collection(collections.NONCE_MANAGERS).createIndex({
+      walletId: 1,
+      address: 1,
+      chain: 1
     });
     db.collection(collections.NOTIFICATIONS).createIndex({
       walletId: 1,
@@ -482,41 +494,21 @@ export class Storage {
       });
   }
 
-  fetchTxByNonce(walletId, nonce, cb) {
-    if (!this.db) return cb();
-
-    this.db.collection(collections.TXS).findOne(
-      {
-        nonce,
-        walletId
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
-      }
-    );
-  }
-
-  // enable to get a TX with a nonce greater than, equalt to, or lower than a given number
-  fetchTxsByNonce(walletId, opts, cb) {
-    opts = opts || {};
-    if (!this.db) return cb();
-    // opts.nonce
-    // opts.grt | eql | les
-    this.db.collection(collections.TXS).find(
-      {
-        nonce: opts.nonce,
-        walletId
-      }).sort({
-        createdOn: -1
-      })
-      .toArray((err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
-      }
-    );
+  fetchNonceManager(walletId, chain, address): Promise<NonceManager> {
+    return new Promise(async (resolve, reject) => {
+      this.db.collection(collections.NONCE_MANAGERS).findOne(
+        {
+          walletId,
+          chain,
+          address
+        },
+        (err, result) => {
+          if (err) return reject(err);
+          if (!result) return resolve(undefined);
+          return resolve(NonceManager.fromObj(result));
+        }
+      );
+    });
   }
 
   /**
@@ -631,6 +623,60 @@ export class Storage {
       },
       cb
     );
+  }
+
+  updateTxs(walletId, txps) {
+    return new Promise(async (resolve, reject) => {
+      let bulkUpdate = [];
+
+      for (const [id, nonces] of Object.entries(txps)) {
+        const update = {
+          updateOne: {
+            filter: {
+              id,
+              walletId,
+              nonce: nonces['old']
+            },
+            update: {
+              $set: { nonce: nonces['new'] }
+            }
+          }
+        };
+        bulkUpdate.push(update);
+      }
+      this.db.collection(collections.TXS).bulkWrite(
+        bulkUpdate,
+        {
+          w: 1
+        },
+        err => {
+          if (err) reject(err);
+          resolve(true);
+        }
+      );
+    });
+  }
+
+  storeNonceManager(walletId, address, chain, nm) {
+    return new Promise(async (resolve, reject) => {
+      this.db.collection(collections.NONCE_MANAGERS).replaceOne(
+        {
+          walletId,
+          address,
+          chain
+        },
+        nm.toObject(),
+        {
+          w: 1,
+          upsert: true
+        },
+        (err, result) => {
+          if (err) reject(err);
+          logger.info(result);
+          resolve(true);
+        }
+      );
+    });
   }
 
   removeTx(walletId, txProposalId, cb) {

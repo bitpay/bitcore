@@ -13,6 +13,7 @@ const Bitcore_ = {
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
 };
+const Constants = require('./constants');
 
 export class Utils {
   static getMissingFields(obj, args) {
@@ -166,6 +167,10 @@ export class Utils {
       const confirmations = i.confirmations ? i.confirmations + 'c' : 'u';
       return amount + '/' + confirmations;
     }).join(', ');
+  }
+
+  static isEvmChain(chain) {
+    return this.checkValueInCollection(chain, Constants.EVM_CHAINS);
   }
 
   static formatRatio(ratio) {

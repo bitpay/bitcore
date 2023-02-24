@@ -429,9 +429,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     } as Partial<Transaction>;
   }
 
-  async getAccountNonce(network: string, address: string) {
+  async getAccountNonce(network: string, address: string, block: string = 'latest') {
     const { web3 } = await this.getWeb3(network);
-    const count = await web3.eth.getTransactionCount(address);
+    const count = await web3.eth.getTransactionCount(address, block);
     return count;
     /*
      *return EthTransactionStorage.collection.countDocuments({
@@ -441,6 +441,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
      *  blockHeight: { $gt: -1 }
      *});
      */
+  }
+
+  async getAccountPendingNonce(network: string, address: string) {
+    const { web3 } = await this.getWeb3(network);
+    const count = await web3.eth.getTransactionCount(address, 'pending');
+    return count;
   }
 
   async getWalletTokenTransactions(

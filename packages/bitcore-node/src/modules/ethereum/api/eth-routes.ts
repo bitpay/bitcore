@@ -15,6 +15,17 @@ EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) =
   }
 });
 
+EthRoutes.get('/api/ETH/:network/address/:address/txs/count/pending', async (req, res) => {
+  let { address, network } = req.params;
+  try {
+    const nonce = await ETH.getAccountNonce(network, address, 'pending');
+    res.json({ nonce });
+  } catch (err) {
+    logger.error('Nonce Error::' + err);
+    res.status(500).send(err);
+  }
+});
+
 EthRoutes.post('/api/ETH/:network/gas', async (req, res) => {
   const { from, to, value, data, gasPrice } = req.body;
   const { network } = req.params;

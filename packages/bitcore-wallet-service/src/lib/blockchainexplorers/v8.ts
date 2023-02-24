@@ -384,6 +384,20 @@ export class V8 {
       });
   }
 
+  getTransactionCountPending(address, cb) {
+    const url = this.baseUrl + '/address/' + address + '/txs/count/pending';
+    console.log('[v8.js.364:url:] CHECKING ADDRESS NONCE', url);
+    this.request
+      .get(url, {})
+      .then(ret => {
+        ret = JSON.parse(ret);
+        return cb(null, ret.nonce);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   estimateGas(opts, cb) {
     const url = this.baseUrl + '/gas';
     console.log('[v8.js.378:url:] CHECKING GAS LIMIT', url);

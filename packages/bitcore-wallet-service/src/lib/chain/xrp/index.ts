@@ -168,6 +168,10 @@ export class XrpChain implements IChain {
     return tx;
   }
 
+  getNonceService() {
+    return null;
+  }
+
   convertFeePerKb(p, feePerKb) {
     return [p, feePerKb];
   }
