@@ -44,6 +44,8 @@ export class CoinConfig {
   isSwap: boolean;
   isReceive: boolean;
   isSupport: boolean;
+  dailyLimit?: number;
+  dailyLimitUsage?: number;
 
   static create(opts) {
     const x = new CoinConfig();
@@ -69,6 +71,8 @@ export class CoinConfig {
     x.isSupport = opts.isSupport || true;
     x.settleFee = opts.settleFee || 0;
     x.serviceFee = opts.serviceFee || 0;
+    x.dailyLimit = 0;
+    x.dailyLimitUsage = 0;
     return x;
   }
 
@@ -94,6 +98,8 @@ export class CoinConfig {
     x.isSupport = opts.isSupport;
     x.settleFee = opts.settleFee;
     x.serviceFee = opts.serviceFee;
+    x.dailyLimit = opts.dailyLimit;
+    x.dailyLimitUsage = opts.dailyLimitUsage;
     return x;
   }
 }

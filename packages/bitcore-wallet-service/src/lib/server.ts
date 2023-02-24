@@ -36,6 +36,7 @@ import assert from 'assert';
 import { resolve } from 'dns';
 import { link, read } from 'fs';
 import { add, countBy, findIndex, isNumber } from 'lodash';
+import moment from 'moment';
 import { openStdin } from 'process';
 import { stringify } from 'querystring';
 import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
@@ -4355,6 +4356,13 @@ export class WalletService {
             } else {
               orderInfo.error = JSON.stringify(error);
             }
+            if (error.code === 'EXCEED_DAILY_LIMIT') {
+              if (orderInfo.listTxIdUserDeposit && orderInfo.listTxIdUserDeposit.length > 0) {
+                orderInfo.status = 'pending';
+              } else {
+                orderInfo.status = 'expired';
+              }
+            }
             if (error.code && error.code !== 'ORDER_EXPIRED') {
               orderInfo.pendingReason = error.code;
             }
@@ -4486,6 +4494,17 @@ export class WalletService {
                           orderInfo.listTxIdUserDeposit.push(utxo.txid);
                         });
                       }
+                      const coinConfigReceiveSelected = configSwap.coinReceive.find(
+                        coinConfig =>
+                          coinConfig.code === orderInfo.toCoinCode && coinConfig.network === orderInfo.toNetwork
+                      );
+                      const fundAmountSat = _.toSafeInteger(coinConfigReceiveSelected.fundConvertToSat);
+                      if (coinConfigReceiveSelected.dailyLimit && coinConfigReceiveSelected.dailyLimit > 0) {
+                        if (coinConfigReceiveSelected.dailyLimitUsage > coinConfigReceiveSelected.dailyLimit) {
+                          saveError(orderInfo, data, Errors.EXCEED_DAILY_LIMIT);
+                          return;
+                        }
+                      }
                       if (amountDepositDetect > 0) {
                         const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
                         const fundingWallet = clientsFund.find(
@@ -4523,10 +4542,7 @@ export class WalletService {
                             orderInfo.actualSent = amountDepositDetect / orderInfo.fromSatUnit;
                             let amountDepositInToCoinCodeUnit =
                               (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
-                            const coinConfigReceiveSelected = configSwap.coinReceive.find(
-                              coinConfig => coinConfig.code == orderInfo.toCoinCode
-                            );
-                            const fundAmountSat = _.toSafeInteger(coinConfigReceiveSelected.fundConvertToSat);
+
                             // TANTODO: in future remove for livenet , also apply for testnet
                             if (orderInfo.toNetwork === 'livenet') {
                               const feeCalculated = await this.calculateFee(
@@ -4556,7 +4572,7 @@ export class WalletService {
                                 null,
                                 amountDepositInToCoinCodeUnit,
                                 orderInfo.addressUserReceive,
-                                (err, txId) => {
+                                async (err, txId) => {
                                   if (err) {
                                     saveError(orderInfo, data, err);
                                     return;
@@ -4566,6 +4582,15 @@ export class WalletService {
                                   orderInfo.isSentToUser = true;
                                   orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
+                                  if (coinConfigReceiveSelected.dailyLimit > 0) {
+                                    const convertedActualReceivedToUsd =
+                                      orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
+                                    if (!coinConfigReceiveSelected.dailyLimitUsage) {
+                                      coinConfigReceiveSelected.dailyLimitUsage = 0;
+                                    }
+                                    coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
+                                    await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
+                                  }
                                   botSwap.sendMessage(
                                     config.swapTelegram.channelSuccessId,
                                     'Completed :: Order no.' +
@@ -4589,7 +4614,7 @@ export class WalletService {
                                 orderInfo.addressUserReceive,
                                 amountDepositInToCoinCodeUnit
                               );
-                              this._sendSwap(fundingWallet, keyFund, txOptsSwap, (err, txId) => {
+                              this._sendSwap(fundingWallet, keyFund, txOptsSwap, async (err, txId) => {
                                 if (err) saveError(orderInfo, data, err);
                                 else {
                                   orderInfo.status = 'complete';
@@ -4597,6 +4622,15 @@ export class WalletService {
                                   orderInfo.isSentToUser = true;
                                   orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
+                                  if (coinConfigReceiveSelected.dailyLimit > 0) {
+                                    const convertedActualReceivedToUsd =
+                                      orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
+                                    if (!coinConfigReceiveSelected.dailyLimitUsage) {
+                                      coinConfigReceiveSelected.dailyLimitUsage = 0;
+                                    }
+                                    coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
+                                    await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
+                                  }
                                   botSwap.sendMessage(
                                     config.swapTelegram.channelSuccessId,
                                     'Completed :: Order no.' +
@@ -4614,6 +4648,7 @@ export class WalletService {
                                 }
                               });
                             }
+                           
                           }
                         });
                       }
@@ -4891,6 +4926,15 @@ export class WalletService {
     }, 2000);
   }
 
+  _storeDailyLimitUsageForCoinConfig(coinConfig: CoinConfig): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.storage.updateDailyLimitCoinConfig(coinConfig, (err, result) => {
+        if (err) reject(err);
+        resolve(true);
+      });
+    });
+  }
+
   _addExplorerLinkIntoTxId(txId): string {
     const linkBeCash = 'https://explorer.e.cash/tx/';
     const linkBeCashWithTxid = linkBeCash + txId;
@@ -5112,6 +5156,9 @@ export class WalletService {
       if (indexCoinReceiveFound < 0 || indexCoinSwapfound < 0) {
         throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
       }
+      const coinConfigReceive = configSwap.coinReceive.find(
+        config => config.network === orderInfo.toNetwork && config.code === coinCodeReceive
+      );
     } else throw new Error('Not found config swap');
     return true;
   }
@@ -5251,7 +5298,16 @@ export class WalletService {
       const fromCoinCode = orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode;
       const configSwap = await this.getConfigSwapWithNoBalancePromise();
       const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
+
       if (isValidOrder === true) {
+        const coinConfigReceive = configSwap.coinReceive.find(
+          config => config.network === orderInfo.toNetwork && config.code === orderInfo.toCoinCode
+        );
+        if (coinConfigReceive.dailyLimit && coinConfigReceive.dailyLimit > 0) {
+          if (coinConfigReceive.dailyLimitUsage > coinConfigReceive.dailyLimit) {
+            throw new Error(Errors.EXCEED_DAILY_LIMIT.message);
+          }
+        }
         if (orderInfo.isFromToken) {
           orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
         } else {
@@ -8529,7 +8585,7 @@ export class WalletService {
                           }
                         });
                       } else {
-                        if(!!addressSelected){
+                        if (!!addressSelected) {
                           const scriptPayload = ChainService.convertAddressToScriptPayload(
                             'xec',
                             addressSelected.replace(/ecash:/, '')

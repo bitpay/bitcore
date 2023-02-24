@@ -21,6 +21,8 @@ const TelegramBot = require('node-telegram-bot-api');
 var GoogleTokenStrategy = require('passport-google-id-token');
 const passport = require('passport');
 const listAccount = require('../../../../accounts.json');
+import cron from 'node-cron';
+
 export class ExpressApp {
   app: express.Express;
 
@@ -2164,6 +2166,12 @@ export class ExpressApp {
       });
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
+        // Start cron job to update daily limit usage for coin config at midnght everyday to 0
+        cron.schedule('0 0 * * *', () => {
+          server.storage.resetAllDailyLimitUsageInCoinConfig((err, resulst) => {
+            if (err) logger.debug('reset daily limit usage for coin config got error', err);
+          });
+        });
       });
       setTimeout(() => {
         server.restartHandleSwapQueue((err, finish) => {});
