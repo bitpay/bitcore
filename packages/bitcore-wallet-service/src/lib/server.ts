@@ -4572,7 +4572,7 @@ export class WalletService {
                                 null,
                                 amountDepositInToCoinCodeUnit,
                                 orderInfo.addressUserReceive,
-                                (err, txId) => {
+                                async (err, txId) => {
                                   if (err) {
                                     saveError(orderInfo, data, err);
                                     return;
@@ -4582,6 +4582,15 @@ export class WalletService {
                                   orderInfo.isSentToUser = true;
                                   orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
+                                  if (coinConfigReceiveSelected.dailyLimit > 0) {
+                                    const convertedActualReceivedToUsd =
+                                      orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
+                                    if (!coinConfigReceiveSelected.dailyLimitUsage) {
+                                      coinConfigReceiveSelected.dailyLimitUsage = 0;
+                                    }
+                                    coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
+                                    await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
+                                  }
                                   botSwap.sendMessage(
                                     config.swapTelegram.channelSuccessId,
                                     'Completed :: Order no.' +
@@ -4613,7 +4622,15 @@ export class WalletService {
                                   orderInfo.isSentToUser = true;
                                   orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
-
+                                  if (coinConfigReceiveSelected.dailyLimit > 0) {
+                                    const convertedActualReceivedToUsd =
+                                      orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
+                                    if (!coinConfigReceiveSelected.dailyLimitUsage) {
+                                      coinConfigReceiveSelected.dailyLimitUsage = 0;
+                                    }
+                                    coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
+                                    await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
+                                  }
                                   botSwap.sendMessage(
                                     config.swapTelegram.channelSuccessId,
                                     'Completed :: Order no.' +
@@ -4631,15 +4648,7 @@ export class WalletService {
                                 }
                               });
                             }
-                            if (coinConfigReceiveSelected.dailyLimit > 0) {
-                              const convertedActualReceivedToUsd =
-                                orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
-                              if (!coinConfigReceiveSelected.dailyLimitUsage) {
-                                coinConfigReceiveSelected.dailyLimitUsage = 0;
-                              }
-                              coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
-                              await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
-                            }
+                           
                           }
                         });
                       }
