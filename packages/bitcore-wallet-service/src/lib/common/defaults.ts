@@ -320,7 +320,8 @@ module.exports = {
     { code: 'USD', name: 'US Dollar' },
     { code: 'VEF', name: 'Venezuelan Bolívar' },
     { code: 'XCD', name: 'Eastern Caribbean Dollar' },
-    { code: 'ZAR', name: 'South African Rand' }
+    { code: 'ZAR', name: 'South African Rand' },
+    { code: 'CNY', name: 'Chinese Yuan' }
   ],
   FIAT_CURRENCY: { code: 'USD', name: 'US Dollar' }
 };
