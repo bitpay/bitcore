@@ -4370,7 +4370,7 @@ export class WalletService {
             } else if (error.code && error.code !== 'ORDER_EXPIRED') {
               orderInfo.pendingReason = error.code;
               orderInfo.status = 'processing';
-            } else{
+            } else {
               orderInfo.status = 'processing';
             }
 
