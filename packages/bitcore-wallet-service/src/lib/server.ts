@@ -4350,7 +4350,6 @@ export class WalletService {
           logger.debug('orderinfo created: ', data);
           console.log('orderinfo created: ', data);
           const saveError = (orderInfo, data, error, status?) => {
-            orderInfo.status = status || 'processing';
             if (error.message) {
               orderInfo.error = error.message;
             } else {
@@ -4362,17 +4361,19 @@ export class WalletService {
               } else {
                 orderInfo.status = 'expired';
               }
-            }
-            if (error.code && error.code !== 'ORDER_EXPIRED') {
-              orderInfo.pendingReason = error.code;
-            }
-            if (error.code === 'ORDER_EXPIRED') {
+            } else if (error.code === 'ORDER_EXPIRED') {
               if (orderInfo.status === 'processing') {
                 orderInfo.status = 'pending';
               } else {
                 orderInfo.status = 'expired';
               }
+            } else if (error.code && error.code !== 'ORDER_EXPIRED') {
+              orderInfo.pendingReason = error.code;
+              orderInfo.status = 'processing';
+            } else {
+              orderInfo.status = 'processing';
             }
+
             orderInfo.isInQueue = false;
             // TanDraft: calling if this order is having any notification yet ?
             let orderInfoNotiOpts = {};
@@ -4426,8 +4427,6 @@ export class WalletService {
                 this.storage.orderQueue.ack(data.ack, (err, id) => {});
               });
             }
-
-            // TanDraft: if this not
           };
           console.log('clients fund in queue now: ', clientsFund);
           console.log('clients receive in queue now: ', clientsReceive);
@@ -4512,10 +4511,10 @@ export class WalletService {
                         );
                         // checking rate again before creating tx
                         this._getRatesWithCustomFormat(async (err, rateList) => {
-                          const rate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
-                          orderInfo.updatedRate = rate;
+                          const updatedRate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
+                          orderInfo.updatedRate = updatedRate;
                           // calculate updated rate compare with created rate , if more than 5% (later dynamic) , suspend transaction
-                          if ((Math.abs(rate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 5) {
+                          if ((Math.abs(updatedRate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 5) {
                             saveError(orderInfo, data, Errors.NOT_STABLE_RATE, 'expired');
                             return;
                           }
@@ -4541,7 +4540,9 @@ export class WalletService {
                             this.copayerId = fundingWallet.credentials.copayerId;
                             orderInfo.actualSent = amountDepositDetect / orderInfo.fromSatUnit;
                             let amountDepositInToCoinCodeUnit =
-                              (amountDepositDetect / orderInfo.fromSatUnit) * orderInfo.toSatUnit * rate;
+                              (amountDepositDetect / orderInfo.fromSatUnit) *
+                              orderInfo.toSatUnit *
+                              orderInfo.createdRate;
 
                             // TANTODO: in future remove for livenet , also apply for testnet
                             if (orderInfo.toNetwork === 'livenet') {
@@ -4648,7 +4649,6 @@ export class WalletService {
                                 }
                               });
                             }
-                           
                           }
                         });
                       }
@@ -5141,14 +5141,9 @@ export class WalletService {
       if (!configSwap.coinReceive || !configSwap.coinSwap) {
         throw new Error('Not found coin config for exchange');
       }
-      let coinCodeReceive = '';
-      if (orderInfo.isToToken) {
-        coinCodeReceive = 'xec';
-      } else {
-        coinCodeReceive = orderInfo.toCoinCode;
-      }
+
       const indexCoinReceiveFound = configSwap.coinReceive.findIndex(
-        config => config.network === orderInfo.toNetwork && config.code === coinCodeReceive
+        config => config.network === orderInfo.toNetwork && config.code === orderInfo.toCoinCode
       );
       const indexCoinSwapfound = configSwap.coinSwap.findIndex(
         config => config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode
@@ -5156,9 +5151,6 @@ export class WalletService {
       if (indexCoinReceiveFound < 0 || indexCoinSwapfound < 0) {
         throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
       }
-      const coinConfigReceive = configSwap.coinReceive.find(
-        config => config.network === orderInfo.toNetwork && config.code === coinCodeReceive
-      );
     } else throw new Error('Not found config swap');
     return true;
   }
