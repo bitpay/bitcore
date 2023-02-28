@@ -4427,237 +4427,239 @@ export class WalletService {
           console.log('clients receive in queue now: ', clientsReceive);
           if (data) {
             const orderInfo = await this._getOrderInfo({ id: data.payload });
-            try {
-              logger.debug('orderinfo in queue detected: ', data);
-              console.log('orderinfo in queue detected: ', data);
-              const configSwap: ConfigSwap = await this.getConfigSwapWithPromise();
-              const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
-              if (isValidOrder) {
-                // get utxos for deposit address => checking amount user sent to deposit address
-                logger.debug('Order info is valid: ', orderInfo);
-                this.getUtxosForSelectedAddressAndWallet(
-                  {
-                    coin: orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode,
-                    network: orderInfo.fromNetwork,
-                    addresses: orderInfo.isFromToken
-                      ? [this._convertEtokenAddressToEcashAddress(orderInfo.adddressUserDeposit)]
-                      : [orderInfo.adddressUserDeposit],
-                    isTokenSupport: orderInfo.isFromToken,
-                    tokenId: orderInfo.fromTokenId
-                  },
-                  (err, utxos) => {
-                    try {
-                      let amountDepositDetect = 0;
-                      if (utxos && utxos.length > 0) {
-                        // TanDraft: calling Order_Info_Noti check if having any txId in db
-
-                        orderInfo.listTxIdUserDeposit = [];
-                        _.each(utxos, utxo => {
-                          if (orderInfo.isFromToken) {
-                            amountDepositDetect += utxo.amountToken;
-                          } else {
-                            amountDepositDetect += utxo.satoshis;
-                          }
-                          // TanDraft: check if txId already notified to telegram , if not -> notified to telegram and update property isNotifiedErrorToTelegram
-                          const orderInfoNotiOpts = {
-                            orderId: orderInfo.id,
-                            receivedTxId: utxo.txid
-                          };
-                          this.storage.fetchOrderInfoNoti(orderInfoNotiOpts, (err, result) => {
-                            if (err) logger.debug(err);
-                            if (!result) {
-                              this.storage.storeOrderInfoNoti(
-                                OrderInfoNoti.create(orderInfoNotiOpts),
-                                (err, result) => {
-                                  if (err) logger.debug(err);
-                                  botSwap.sendMessage(
-                                    config.swapTelegram.channelSuccessId,
-                                    'Order no.' +
-                                      orderInfo.id +
-                                      ' :: ' +
-                                      this._addExplorerLinkIntoTxIdWithCoin(utxo.txid, orderInfo.fromCoinCode) +
-                                      ':: Amount received',
-                                    {
-                                      parse_mode: 'HTML'
-                                    }
-                                  );
-                                }
-                              );
+            if(['waiting', 'processing'].includes(orderInfo.status)){
+              try {
+                logger.debug('orderinfo in queue detected: ', data);
+                console.log('orderinfo in queue detected: ', data);
+                const configSwap: ConfigSwap = await this.getConfigSwapWithPromise();
+                const isValidOrder = await this.checkRequirementBeforeQueueExcetue(configSwap, orderInfo);
+                if (isValidOrder) {
+                  // get utxos for deposit address => checking amount user sent to deposit address
+                  logger.debug('Order info is valid: ', orderInfo);
+                  this.getUtxosForSelectedAddressAndWallet(
+                    {
+                      coin: orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode,
+                      network: orderInfo.fromNetwork,
+                      addresses: orderInfo.isFromToken
+                        ? [this._convertEtokenAddressToEcashAddress(orderInfo.adddressUserDeposit)]
+                        : [orderInfo.adddressUserDeposit],
+                      isTokenSupport: orderInfo.isFromToken,
+                      tokenId: orderInfo.fromTokenId
+                    },
+                    (err, utxos) => {
+                      try {
+                        let amountDepositDetect = 0;
+                        if (utxos && utxos.length > 0) {
+                          // TanDraft: calling Order_Info_Noti check if having any txId in db
+  
+                          orderInfo.listTxIdUserDeposit = [];
+                          _.each(utxos, utxo => {
+                            if (orderInfo.isFromToken) {
+                              amountDepositDetect += utxo.amountToken;
+                            } else {
+                              amountDepositDetect += utxo.satoshis;
                             }
+                            // TanDraft: check if txId already notified to telegram , if not -> notified to telegram and update property isNotifiedErrorToTelegram
+                            const orderInfoNotiOpts = {
+                              orderId: orderInfo.id,
+                              receivedTxId: utxo.txid
+                            };
+                            this.storage.fetchOrderInfoNoti(orderInfoNotiOpts, (err, result) => {
+                              if (err) logger.debug(err);
+                              if (!result) {
+                                this.storage.storeOrderInfoNoti(
+                                  OrderInfoNoti.create(orderInfoNotiOpts),
+                                  (err, result) => {
+                                    if (err) logger.debug(err);
+                                    botSwap.sendMessage(
+                                      config.swapTelegram.channelSuccessId,
+                                      'Order no.' +
+                                        orderInfo.id +
+                                        ' :: ' +
+                                        this._addExplorerLinkIntoTxIdWithCoin(utxo.txid, orderInfo.fromCoinCode) +
+                                        ':: Amount received',
+                                      {
+                                        parse_mode: 'HTML'
+                                      }
+                                    );
+                                  }
+                                );
+                              }
+                            });
+                            orderInfo.listTxIdUserDeposit.push(utxo.txid);
                           });
-                          orderInfo.listTxIdUserDeposit.push(utxo.txid);
-                        });
-                      }
-                      const coinConfigReceiveSelected = configSwap.coinReceive.find(
-                        coinConfig =>
-                          coinConfig.code === orderInfo.toCoinCode && coinConfig.network === orderInfo.toNetwork
-                      );
-                      const fundAmountSat = _.toSafeInteger(coinConfigReceiveSelected.fundConvertToSat);
-                      if (coinConfigReceiveSelected.dailyLimit && coinConfigReceiveSelected.dailyLimit > 0) {
-                        if (coinConfigReceiveSelected.dailyLimitUsage > coinConfigReceiveSelected.dailyLimit) {
-                          saveError(orderInfo, data, Errors.EXCEED_DAILY_LIMIT);
-                          return;
                         }
-                      }
-                      if (amountDepositDetect > 0) {
-                        const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
-                        const fundingWallet = clientsFund.find(
-                          s => s.credentials.coin === coinCode && s.credentials.network === orderInfo.toNetwork
+                        const coinConfigReceiveSelected = configSwap.coinReceive.find(
+                          coinConfig =>
+                            coinConfig.code === orderInfo.toCoinCode && coinConfig.network === orderInfo.toNetwork
                         );
-                        // checking rate again before creating tx
-                        this._getRatesWithCustomFormat(async (err, rateList) => {
-                          const updatedRate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
-                          orderInfo.updatedRate = updatedRate;
-                          // calculate updated rate compare with created rate , if more than 5% (later dynamic) , suspend transaction
-                          if ((Math.abs(updatedRate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 5) {
-                            saveError(orderInfo, data, Errors.NOT_STABLE_RATE, 'expired');
+                        const fundAmountSat = _.toSafeInteger(coinConfigReceiveSelected.fundConvertToSat);
+                        if (coinConfigReceiveSelected.dailyLimit && coinConfigReceiveSelected.dailyLimit > 0) {
+                          if (coinConfigReceiveSelected.dailyLimitUsage > coinConfigReceiveSelected.dailyLimit) {
+                            saveError(orderInfo, data, Errors.EXCEED_DAILY_LIMIT);
                             return;
                           }
-                          // elseif((!orderInfo.amountFrom || orderInfo.amountFrom === 0)){
-                          else {
-                            const coinConfigSelected = configSwap.coinSwap.find(
-                              coinConfig => coinConfig.code == orderInfo.fromCoinCode
-                            );
-                            const maxAmountSat = _.toSafeInteger(coinConfigSelected.maxConvertToSat);
-                            const minAmountSat = _.toSafeInteger(coinConfigSelected.minConvertToSat);
-                            if (amountDepositDetect < minAmountSat) {
-                              saveError(orderInfo, data, Errors.BELOW_MIN_LIMIT);
+                        }
+                        if (amountDepositDetect > 0) {
+                          const coinCode = orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode;
+                          const fundingWallet = clientsFund.find(
+                            s => s.credentials.coin === coinCode && s.credentials.network === orderInfo.toNetwork
+                          );
+                          // checking rate again before creating tx
+                          this._getRatesWithCustomFormat(async (err, rateList) => {
+                            const updatedRate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
+                            orderInfo.updatedRate = updatedRate;
+                            // calculate updated rate compare with created rate , if more than 5% (later dynamic) , suspend transaction
+                            if ((Math.abs(updatedRate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 5) {
+                              saveError(orderInfo, data, Errors.NOT_STABLE_RATE, 'expired');
                               return;
                             }
-
-                            if (maxAmountSat > 0 && amountDepositDetect > maxAmountSat) {
-                              saveError(orderInfo, data, Errors.EXCEED_MAX_LIMIT);
-                              return;
-                            }
-                            let amountUserDepositConverted = amountDepositDetect / orderInfo.fromSatUnit;
-                            amountUserDepositConverted = _.toSafeInteger(amountUserDepositConverted);
-                            this.walletId = fundingWallet.credentials.walletId;
-                            this.copayerId = fundingWallet.credentials.copayerId;
-                            orderInfo.actualSent = amountDepositDetect / orderInfo.fromSatUnit;
-                            let amountDepositInToCoinCodeUnit =
-                              (amountDepositDetect / orderInfo.fromSatUnit) *
-                              orderInfo.toSatUnit *
-                              orderInfo.createdRate;
-
-                            // TANTODO: in future remove for livenet , also apply for testnet
-                            if (orderInfo.toNetwork === 'livenet') {
-                              const feeCalculated = await this.calculateFee(
-                                amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
-                                orderInfo,
-                                rateList[orderInfo.toCoinCode.toLowerCase()].USD,
-                                configSwap.coinReceive.find(
-                                  coin => coin.code === orderInfo.toCoinCode && coin.network === orderInfo.toNetwork
-                                )
+                            // elseif((!orderInfo.amountFrom || orderInfo.amountFrom === 0)){
+                            else {
+                              const coinConfigSelected = configSwap.coinSwap.find(
+                                coinConfig => coinConfig.code == orderInfo.fromCoinCode
                               );
-                              if (amountDepositInToCoinCodeUnit < feeCalculated) {
-                                saveError(orderInfo, data, Errors.INVALID_AMOUNT);
+                              const maxAmountSat = _.toSafeInteger(coinConfigSelected.maxConvertToSat);
+                              const minAmountSat = _.toSafeInteger(coinConfigSelected.minConvertToSat);
+                              if (amountDepositDetect < minAmountSat) {
+                                saveError(orderInfo, data, Errors.BELOW_MIN_LIMIT);
                                 return;
                               }
-                              amountDepositInToCoinCodeUnit -= feeCalculated;
-                            }
-                            if (amountDepositInToCoinCodeUnit > fundAmountSat) {
-                              saveError(orderInfo, data, Errors.OUT_OF_FUND);
-                              return;
-                            }
-                            if (orderInfo.isToToken) {
-                              await this._sendSwapWithToken(
-                                'xec',
-                                fundingWallet,
-                                mnemonicKeyFund,
-                                orderInfo.toTokenId,
-                                null,
-                                amountDepositInToCoinCodeUnit,
-                                orderInfo.addressUserReceive,
-                                async (err, txId) => {
-                                  if (err) {
-                                    saveError(orderInfo, data, err);
-                                    return;
-                                  }
-                                  orderInfo.status = 'complete';
-                                  orderInfo.listTxIdUserReceive.push(txId);
-                                  orderInfo.isSentToUser = true;
-                                  orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
-                                  if (coinConfigReceiveSelected.dailyLimit > 0) {
-                                    const convertedActualReceivedToUsd =
-                                      orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
-                                    if (!coinConfigReceiveSelected.dailyLimitUsage) {
-                                      coinConfigReceiveSelected.dailyLimitUsage = 0;
-                                    }
-                                    coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
-                                    await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
-                                  }
-                                  botSwap.sendMessage(
-                                    config.swapTelegram.channelSuccessId,
-                                    'Completed :: Order no.' +
-                                      orderInfo.id +
-                                      ' :: ' +
-                                      this._addExplorerLinkIntoTxId(txId),
-                                    {
-                                      parse_mode: 'HTML'
-                                    }
-                                  );
-                                  this.storage.updateOrder(orderInfo, err => {
-                                    if (err) saveError(orderInfo, data, err);
-                                    return this.storage.orderQueue.ack(data.ack, (err, id) => {});
-                                  });
+  
+                              if (maxAmountSat > 0 && amountDepositDetect > maxAmountSat) {
+                                saveError(orderInfo, data, Errors.EXCEED_MAX_LIMIT);
+                                return;
+                              }
+                              let amountUserDepositConverted = amountDepositDetect / orderInfo.fromSatUnit;
+                              amountUserDepositConverted = _.toSafeInteger(amountUserDepositConverted);
+                              this.walletId = fundingWallet.credentials.walletId;
+                              this.copayerId = fundingWallet.credentials.copayerId;
+                              orderInfo.actualSent = amountDepositDetect / orderInfo.fromSatUnit;
+                              let amountDepositInToCoinCodeUnit =
+                                (amountDepositDetect / orderInfo.fromSatUnit) *
+                                orderInfo.toSatUnit *
+                                orderInfo.createdRate;
+  
+                              // TANTODO: in future remove for livenet , also apply for testnet
+                              if (orderInfo.toNetwork === 'livenet') {
+                                const feeCalculated = await this.calculateFee(
+                                  amountDepositInToCoinCodeUnit / orderInfo.toSatUnit,
+                                  orderInfo,
+                                  rateList[orderInfo.toCoinCode.toLowerCase()].USD,
+                                  configSwap.coinReceive.find(
+                                    coin => coin.code === orderInfo.toCoinCode && coin.network === orderInfo.toNetwork
+                                  )
+                                );
+                                if (amountDepositInToCoinCodeUnit < feeCalculated) {
+                                  saveError(orderInfo, data, Errors.INVALID_AMOUNT);
+                                  return;
                                 }
-                              );
-                            } else {
-                              const txOptsSwap = this._createOtpTxSwap(
-                                orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode,
-                                orderInfo.toNetwork,
-                                orderInfo.addressUserReceive,
-                                amountDepositInToCoinCodeUnit
-                              );
-                              this._sendSwap(fundingWallet, keyFund, txOptsSwap, async (err, txId) => {
-                                if (err) saveError(orderInfo, data, err);
-                                else {
-                                  orderInfo.status = 'complete';
-                                  orderInfo.listTxIdUserReceive.push(txId);
-                                  orderInfo.isSentToUser = true;
-                                  orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
-                                  if (coinConfigReceiveSelected.dailyLimit > 0) {
-                                    const convertedActualReceivedToUsd =
-                                      orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
-                                    if (!coinConfigReceiveSelected.dailyLimitUsage) {
-                                      coinConfigReceiveSelected.dailyLimitUsage = 0;
+                                amountDepositInToCoinCodeUnit -= feeCalculated;
+                              }
+                              if (amountDepositInToCoinCodeUnit > fundAmountSat) {
+                                saveError(orderInfo, data, Errors.OUT_OF_FUND);
+                                return;
+                              }
+                              if (orderInfo.isToToken) {
+                                await this._sendSwapWithToken(
+                                  'xec',
+                                  fundingWallet,
+                                  mnemonicKeyFund,
+                                  orderInfo.toTokenId,
+                                  null,
+                                  amountDepositInToCoinCodeUnit,
+                                  orderInfo.addressUserReceive,
+                                  async (err, txId) => {
+                                    if (err) {
+                                      saveError(orderInfo, data, err);
+                                      return;
                                     }
-                                    coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
-                                    await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
+                                    orderInfo.status = 'complete';
+                                    orderInfo.listTxIdUserReceive.push(txId);
+                                    orderInfo.isSentToUser = true;
+                                    orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
+                                    if (coinConfigReceiveSelected.dailyLimit > 0) {
+                                      const convertedActualReceivedToUsd =
+                                        orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
+                                      if (!coinConfigReceiveSelected.dailyLimitUsage) {
+                                        coinConfigReceiveSelected.dailyLimitUsage = 0;
+                                      }
+                                      coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
+                                      await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
+                                    }
+                                    botSwap.sendMessage(
+                                      config.swapTelegram.channelSuccessId,
+                                      'Completed :: Order no.' +
+                                        orderInfo.id +
+                                        ' :: ' +
+                                        this._addExplorerLinkIntoTxId(txId),
+                                      {
+                                        parse_mode: 'HTML'
+                                      }
+                                    );
+                                    this.storage.updateOrder(orderInfo, err => {
+                                      if (err) saveError(orderInfo, data, err);
+                                      return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                    });
                                   }
-                                  botSwap.sendMessage(
-                                    config.swapTelegram.channelSuccessId,
-                                    'Completed :: Order no.' +
-                                      orderInfo.id +
-                                      ' :: ' +
-                                      this._addExplorerLinkIntoTxId(txId),
-                                    {
-                                      parse_mode: 'HTML'
+                                );
+                              } else {
+                                const txOptsSwap = this._createOtpTxSwap(
+                                  orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode,
+                                  orderInfo.toNetwork,
+                                  orderInfo.addressUserReceive,
+                                  amountDepositInToCoinCodeUnit
+                                );
+                                this._sendSwap(fundingWallet, keyFund, txOptsSwap, async (err, txId) => {
+                                  if (err) saveError(orderInfo, data, err);
+                                  else {
+                                    orderInfo.status = 'complete';
+                                    orderInfo.listTxIdUserReceive.push(txId);
+                                    orderInfo.isSentToUser = true;
+                                    orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
+                                    if (coinConfigReceiveSelected.dailyLimit > 0) {
+                                      const convertedActualReceivedToUsd =
+                                        orderInfo.actualReceived * rateList[orderInfo.toCoinCode.toLowerCase()].USD;
+                                      if (!coinConfigReceiveSelected.dailyLimitUsage) {
+                                        coinConfigReceiveSelected.dailyLimitUsage = 0;
+                                      }
+                                      coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
+                                      await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
                                     }
-                                  );
-                                  this.storage.updateOrder(orderInfo, err => {
-                                    if (err) saveError(orderInfo, data, err);
-                                    return this.storage.orderQueue.ack(data.ack, (err, id) => {});
-                                  });
-                                }
-                              });
+                                    botSwap.sendMessage(
+                                      config.swapTelegram.channelSuccessId,
+                                      'Completed :: Order no.' +
+                                        orderInfo.id +
+                                        ' :: ' +
+                                        this._addExplorerLinkIntoTxId(txId),
+                                      {
+                                        parse_mode: 'HTML'
+                                      }
+                                    );
+                                    this.storage.updateOrder(orderInfo, err => {
+                                      if (err) saveError(orderInfo, data, err);
+                                      return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                    });
+                                  }
+                                });
+                              }
                             }
-                          }
-                        });
+                          });
+                        }
+                      } catch (e) {
+                        saveError(orderInfo, data, e);
                       }
-                    } catch (e) {
-                      saveError(orderInfo, data, e);
                     }
-                  }
-                );
+                  );
+                }
+              } catch (e) {
+                saveError(orderInfo, data, e);
               }
-            } catch (e) {
-              saveError(orderInfo, data, e);
+              this.storage.updateOrder(orderInfo, err => {
+                if (err) saveError(orderInfo, data, err);
+                return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+              });
             }
-            this.storage.updateOrder(orderInfo, err => {
-              if (err) saveError(orderInfo, data, err);
-              return this.storage.orderQueue.ack(data.ack, (err, id) => {});
-            });
           }
         });
         this.storage.orderQueue.clean(err => {});
