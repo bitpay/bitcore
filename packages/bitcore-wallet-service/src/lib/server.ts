@@ -4343,10 +4343,17 @@ export class WalletService {
           console.log('orderinfo created: ', data);
           const saveError = (orderInfo, data, error, status?) => {
             if (error.message) {
-              orderInfo.error = error.message;
+              if (!error.code || (error.code && error.code !== 'ORDER_EXPIRED')) {
+                orderInfo.error = error.message;
+              }
             } else {
               orderInfo.error = JSON.stringify(error);
             }
+
+            if (error.code) {
+              orderInfo.pendingReason = error.code;
+            }
+
             if (error.code === 'EXCEED_DAILY_LIMIT') {
               if (orderInfo.listTxIdUserDeposit && orderInfo.listTxIdUserDeposit.length > 0) {
                 orderInfo.status = 'pending';
@@ -4359,9 +4366,6 @@ export class WalletService {
               } else {
                 orderInfo.status = 'expired';
               }
-            } else if (error.code && error.code !== 'ORDER_EXPIRED') {
-              orderInfo.pendingReason = error.code;
-              orderInfo.status = 'processing';
             } else {
               orderInfo.status = 'processing';
             }
