@@ -4427,7 +4427,7 @@ export class WalletService {
           console.log('clients receive in queue now: ', clientsReceive);
           if (data) {
             const orderInfo = await this._getOrderInfo({ id: data.payload });
-            if(['waiting', 'processing'].includes(orderInfo.status)){
+            if (['waiting', 'processing'].includes(orderInfo.status)) {
               try {
                 logger.debug('orderinfo in queue detected: ', data);
                 console.log('orderinfo in queue detected: ', data);
@@ -4451,7 +4451,7 @@ export class WalletService {
                         let amountDepositDetect = 0;
                         if (utxos && utxos.length > 0) {
                           // TanDraft: calling Order_Info_Noti check if having any txId in db
-  
+
                           orderInfo.listTxIdUserDeposit = [];
                           _.each(utxos, utxo => {
                             if (orderInfo.isFromToken) {
@@ -4507,7 +4507,8 @@ export class WalletService {
                           );
                           // checking rate again before creating tx
                           this._getRatesWithCustomFormat(async (err, rateList) => {
-                            const updatedRate = rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
+                            const updatedRate =
+                              rateList[orderInfo.fromCoinCode].USD / rateList[orderInfo.toCoinCode].USD;
                             orderInfo.updatedRate = updatedRate;
                             // calculate updated rate compare with created rate , if more than 5% (later dynamic) , suspend transaction
                             if ((Math.abs(updatedRate - orderInfo.createdRate) / orderInfo.createdRate) * 100 > 5) {
@@ -4525,7 +4526,7 @@ export class WalletService {
                                 saveError(orderInfo, data, Errors.BELOW_MIN_LIMIT);
                                 return;
                               }
-  
+
                               if (maxAmountSat > 0 && amountDepositDetect > maxAmountSat) {
                                 saveError(orderInfo, data, Errors.EXCEED_MAX_LIMIT);
                                 return;
@@ -4539,7 +4540,7 @@ export class WalletService {
                                 (amountDepositDetect / orderInfo.fromSatUnit) *
                                 orderInfo.toSatUnit *
                                 orderInfo.createdRate;
-  
+
                               // TANTODO: in future remove for livenet , also apply for testnet
                               if (orderInfo.toNetwork === 'livenet') {
                                 const feeCalculated = await this.calculateFee(
