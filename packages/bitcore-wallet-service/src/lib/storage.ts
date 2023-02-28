@@ -632,28 +632,6 @@ export class Storage {
     );
   }
 
-  updateListOrderInQueue(listOrderId: string[], cb) {
-    this.db.collection(collections.ORDER_INFO).updateMany(
-      {
-        id: { $in: listOrderId }
-      },
-      {
-        $set: {
-          isInQueue: true
-        }
-      },
-      {
-        upsert: false
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb(new Error('Can not update order'));
-
-        return cb(null, result);
-      }
-    );
-  }
-
   updateOrderById(orderId: string, orderInfo: Order, cb) {
     this.db.collection(collections.ORDER_INFO).updateOne(
       {
@@ -1033,12 +1011,9 @@ export class Storage {
     this.db
       .collection(collections.ORDER_INFO)
       .find({
-        $or: [
-          { isInQueue: false, status: 'waiting' },
-          { isInQueue: false, status: 'processing' }
-        ]
+        $or: [{ status: 'waiting' }, { status: 'processing' }]
       })
-      .sort({ _id: -1 })
+      .sort({ lastModified: 1 })
       .toArray((err, listOrderInfo) => {
         if (err) return cb(err);
         if (listOrderInfo.length === 0) return cb(new Error('Not found any order'));

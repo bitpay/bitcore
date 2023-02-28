@@ -4327,14 +4327,6 @@ export class WalletService {
               listOrderInfo.map(orderInfo => orderInfo.id),
               (err, ids) => {
                 if (err) logger.debug('orderQueue add listOrderInfo error', err);
-                else {
-                  this.storage.updateListOrderInQueue(
-                    listOrderInfo.map(order => order.id),
-                    (err, result) => {
-                      if (err) logger.debug('updateListOrderInQueue error', err);
-                    }
-                  );
-                }
               }
             );
           }
@@ -4374,7 +4366,6 @@ export class WalletService {
               orderInfo.status = 'processing';
             }
 
-            orderInfo.isInQueue = false;
             // TanDraft: calling if this order is having any notification yet ?
             let orderInfoNotiOpts = {};
             if (orderInfo.pendingReason) {
@@ -4581,7 +4572,6 @@ export class WalletService {
                                   orderInfo.status = 'complete';
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
-                                  orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
                                   if (coinConfigReceiveSelected.dailyLimit > 0) {
                                     const convertedActualReceivedToUsd =
@@ -4621,7 +4611,6 @@ export class WalletService {
                                   orderInfo.status = 'complete';
                                   orderInfo.listTxIdUserReceive.push(txId);
                                   orderInfo.isSentToUser = true;
-                                  orderInfo.isInQueue = false;
                                   orderInfo.actualReceived = amountDepositInToCoinCodeUnit / orderInfo.toSatUnit;
                                   if (coinConfigReceiveSelected.dailyLimit > 0) {
                                     const convertedActualReceivedToUsd =
@@ -4661,7 +4650,6 @@ export class WalletService {
             } catch (e) {
               saveError(orderInfo, data, e);
             }
-            orderInfo.isInQueue = false;
             this.storage.updateOrder(orderInfo, err => {
               if (err) saveError(orderInfo, data, err);
               return this.storage.orderQueue.ack(data.ack, (err, id) => {});
@@ -5332,7 +5320,6 @@ export class WalletService {
               address = addressReturn;
             }
             orderInfo.adddressUserDeposit = address;
-            orderInfo.isInQueue = true;
             this.storage.storeOrderInfo(orderInfo, (err, orderStoredResult) => {
               if (err) return cb(err);
               // let order into queue
