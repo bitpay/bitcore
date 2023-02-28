@@ -5332,6 +5332,7 @@ export class WalletService {
               address = addressReturn;
             }
             orderInfo.adddressUserDeposit = address;
+            orderInfo.isInQueue = true;
             this.storage.storeOrderInfo(orderInfo, (err, orderStoredResult) => {
               if (err) return cb(err);
               // let order into queue
