@@ -1488,7 +1488,8 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getServicesData((err, response) => {
+      const opts = req.query;
+      server.getServicesData(opts, (err, response) => {
         if (err) return returnError(err, res, req);
         res.json(response);
       });

@@ -1,4 +1,5 @@
 'use strict';
+import { ExternalServicesConfig } from '../model';
 
 export const Defaults = {
   MIN_FEE_PER_KB: 0,
@@ -319,5 +320,34 @@ export const Defaults = {
     { code: 'AUD', name: 'Australian Dollar' },
     { code: 'JPY', name: 'Japanese Yen' },
     { code: 'NZD', name: 'New Zealand Dollar' }
-  ]
+  ],
+
+  DEFAULT_EXTERNAL_SERVICES_CONFIG: {
+    buyCrypto: {
+      disabled: false,
+      moonpay: {
+        disabled: false,
+        removed: false
+      },
+      ramp: {
+        disabled: false,
+        removed: false
+      },
+      simplex: {
+        disabled: false,
+        removed: false
+      },
+      wyre: {
+        disabled: false,
+        removed: false
+      }
+    },
+    swapCrypto: { 
+      disabled: false,
+      changelly: {
+        disabled: false,
+        removed: false
+      }
+    },
+  } as ExternalServicesConfig
 };

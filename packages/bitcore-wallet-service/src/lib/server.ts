@@ -14,6 +14,7 @@ import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
   Copayer,
+  ExternalServicesConfig,
   INotification,
   ITxProposal,
   IWallet,
@@ -4531,9 +4532,40 @@ export class WalletService implements IWalletService {
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
   }
 
-  getServicesData(cb) {
-    const data = config.services ?? {};
-    return cb(null, data);
+  /**
+   * Get External Services configuration based on the users location and their current version of the app
+   * @param {Object} opts
+   * @param {string} opts.currentAppVersion - (Optional) The version of the app from which the user is connected.
+   * @param {string} opts.currentLocationCountry - (Optional) Country where the user is currently located.
+   * @param {string} opts.currentLocationState - (Optional) State where the user is currently located.
+   * @param {string} opts.bitpayIdLocationCountry - (Optional) Country registered as address of the user logged in with BitpayId.
+   * @param {string} opts.bitpayIdLocationState - (Optional) State registered as address of the user logged in with BitpayId.
+   */
+  getServicesData(opts, cb) {
+    let externalServicesConfig: ExternalServicesConfig = config.services ?? Defaults.DEFAULT_EXTERNAL_SERVICES_CONFIG;
+
+    if (opts) {
+      // USA Specific restrictions
+      if (opts.bitpayIdLocationCountry && opts.bitpayIdLocationCountry !== '') {
+        // Logged in case
+        if (['US', 'USA'].includes(opts.bitpayIdLocationCountry?.toUpperCase())) {
+          if (['NY'].includes(opts.bitpayIdLocationState?.toUpperCase())) {
+            externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Changelly is currently unavailable in your area.'}};
+          } else {
+            return cb(null, externalServicesConfig);
+          }
+        } else {
+          return cb(null, externalServicesConfig);
+        }
+      } else {
+        // Logged out case
+        if (['US', 'USA'].includes(opts.currentLocationCountry?.toUpperCase()) && ['NY'].includes(opts.currentLocationState?.toUpperCase())) {
+          externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Changelly is currently unavailable in your area.'}};
+        }
+      }
+    }
+
+    return cb(null, externalServicesConfig);
   }
 
   private moonpayGetKeys(req) {
