@@ -10618,6 +10618,268 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('getServicesData', () => {
+    let server;
+   
+    beforeEach(() => {
+      server = new WalletService();
+    });
+
+    describe('Case with config.services defined in an unusual manner', () => {
+      it('should return config.services if it is included in the config file and no opts provided', () => {
+        const configServices = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: true,
+              disabledMessage: 'Moonpay is out of service',
+              removed: false
+            },
+          },
+          swapCrypto: { 
+            disabled: false,
+            changelly: {
+              disabled: false,
+              removed: false
+            }
+          },
+        }
+        config.services = configServices;
+        const opts = undefined;
+  
+        server.getServicesData(opts, (err, config) => {
+          should.not.exist(err);
+          should.exist(config);
+          config.should.deep.equal(configServices);
+        });
+      });
+  
+      it('should return config.services with swap crypto disabled if it is included in the config file, the user is logged out and located in NY', () => {
+        const configServices = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: true,
+              disabledMessage: 'Moonpay is out of service',
+              removed: false
+            },
+            ramp: {
+              disabled: false,
+              removed: false
+            },
+            simplex: {
+              disabled: false,
+              removed: false
+            },
+            wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          swapCrypto: { 
+            disabled: false,
+            changelly: {
+              disabled: false,
+              removed: false
+            }
+          },
+        }
+        config.services = configServices;
+        const opts = {
+          currentLocationCountry: 'US',
+          currentLocationState: 'NY',
+        };
+  
+        server.getServicesData(opts, (err, config) => {
+          should.not.exist(err);
+          should.exist(config.swapCrypto);
+          config.swapCrypto.disabled.should.equal(true);
+          config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+        });
+      });
+  
+      it('should return config.services with swap crypto disabled if it is included in the config file and incomplete, the user is logged out and located in NY', () => {
+        const configServices = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: true,
+              disabledMessage: 'Moonpay is out of service',
+              removed: false
+            }
+          },
+        }
+        config.services = configServices;
+        const opts = {
+          currentLocationCountry: 'US',
+          currentLocationState: 'NY',
+        };
+  
+        server.getServicesData(opts, (err, config) => {
+          should.not.exist(err);
+          should.exist(config.swapCrypto);
+          config.swapCrypto.disabled.should.equal(true);
+          config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+        });
+      });
+    });
+
+    describe('Case with config.services defined as expected', () => {
+      beforeEach(() => {
+        config.services = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: false,
+              removed: false
+            },
+            ramp: {
+              disabled: false,
+              removed: false
+            },
+            simplex: {
+              disabled: false,
+              removed: false
+            },
+            wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          swapCrypto: { 
+            disabled: false,
+            changelly: {
+              disabled: false,
+              removed: false
+            }
+          }
+        }
+      });
+
+      describe('User logged out', () => {
+        it('should return swap crypto disabled if the user is located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto enabled if the user is in USA located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return swap crypto enabled if the user is in other country than USA', () => {
+          const opts = {
+            currentLocationCountry: 'AR',
+            currentLocationState: 'T',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+      });
+
+      describe('User logged in', () => {
+        it('should return swap crypto disabled if the user is registred in NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto disabled if the user is registred in NY and located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto disabled if the user is registred in NY and located in other country than USA', () => {
+          const opts = {
+            currentLocationCountry: 'AR',
+            currentLocationState: 'T',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto enabled if the user is registred outside NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return swap crypto enabled if the user is registred in other country than USA and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'AR',
+            bitpayIdLocationState: 'T',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+      });
+    });
+  });
+
   describe('Moonpay', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
