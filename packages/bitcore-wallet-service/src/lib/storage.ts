@@ -755,7 +755,7 @@ export class Storage {
       },
       (err, result) => {
         if (err) return cb(err);
-        if (!result) return cb(new Error('Can not find order info'));
+        if (!result) return cb(new Error('Your order could not be found, please re-enter!'));
 
         return cb(null, result);
       }

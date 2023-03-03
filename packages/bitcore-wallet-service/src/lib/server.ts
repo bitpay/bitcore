@@ -4561,6 +4561,18 @@ export class WalletService {
                                 saveError(orderInfo, data, Errors.OUT_OF_FUND);
                                 return;
                               }
+                              if (amountDepositDetect === orderInfo.amountFrom) {
+                                if (
+                                  (Math.abs(amountDepositInToCoinCodeUnit - amountDepositInToCoinCodeUnit) /
+                                    amountDepositInToCoinCodeUnit) *
+                                    100 >
+                                  2
+                                ) {
+                                  saveError(orderInfo, data, Errors.INVALID_AMOUNT);
+                                } else {
+                                  amountDepositInToCoinCodeUnit = orderInfo.amountTo;
+                                }
+                              }
                               if (orderInfo.isToToken) {
                                 await this._sendSwapWithToken(
                                   'xec',
