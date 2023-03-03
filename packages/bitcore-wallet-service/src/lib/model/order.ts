@@ -9,6 +9,7 @@ interface IOrder {
   fromCoinCode: string;
   fromTokenId?: string;
   amountFrom: number;
+  amountTo: number;
   fromSatUnit: number;
   isFromToken: boolean;
   toCoinCode: string;
@@ -40,6 +41,8 @@ interface IOrder {
   isResolve?: boolean;
   toNetwork: string;
   fromNetwork: string;
+  actualSent: number;
+  actualReceived: number;
 }
 
 export class Order implements IOrder {
@@ -49,6 +52,7 @@ export class Order implements IOrder {
   fromCoinCode: string;
   fromTokenId?: string;
   amountFrom: number;
+  amountTo: number;
   fromSatUnit: number;
   isFromToken: boolean;
   toCoinCode: string;
@@ -96,6 +100,7 @@ export class Order implements IOrder {
     x.id = uid().toUpperCase();
     x.fromCoinCode = opts.fromCoinCode;
     x.amountFrom = opts.amountFrom;
+    x.amountTo = opts.amountTo;
     x.fromSatUnit = opts.fromSatUnit;
     x.toSatUnit = opts.toSatUnit;
     x.isFromToken = opts.isFromToken;
@@ -139,7 +144,6 @@ export class Order implements IOrder {
     x.id = obj.id;
     x.priority = obj.priority;
     x.fromCoinCode = obj.fromCoinCode;
-    x.amountFrom = obj.amountFrom;
     x.isFromToken = obj.isFromToken;
     x.toCoinCode = obj.toCoinCode;
     x.isToToken = obj.isToToken;
@@ -156,6 +160,7 @@ export class Order implements IOrder {
     x.listTxIdUserReceive = obj.listTxIdUserReceive || [];
     x.error = obj.error;
     x.amountFrom = obj.amountFrom;
+    x.amountTo = obj.amountTo;
     x.fromSatUnit = obj.fromSatUnit;
     x.toSatUnit = obj.toSatUnit;
     x.coinConfig = obj.coinConfig;
