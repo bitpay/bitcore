@@ -4342,6 +4342,7 @@ export class WalletService {
           logger.debug('orderinfo created: ', data);
           console.log('orderinfo created: ', data);
           const saveError = (orderInfo, data, error, status?) => {
+            let isOrderOutOfFund = false;
             if (error.message) {
               if (!error.code || (error.code && error.code !== 'ORDER_EXPIRED')) {
                 orderInfo.error = error.message;
@@ -4363,6 +4364,9 @@ export class WalletService {
             } else if (error.code === 'ORDER_EXPIRED') {
               if (orderInfo.status === 'processing') {
                 orderInfo.status = 'pending';
+                if(orderInfo.pendingReason === 'OUT_OF_FUND'){
+                  isOrderOutOfFund = true;
+                }
               } else {
                 orderInfo.status = 'expired';
               }
@@ -4383,18 +4387,7 @@ export class WalletService {
                 error: orderInfo.error
               };
             }
-            if (!isNotiSwapOutOfFundToTelegram && orderInfo.pendingReason === 'OUT_OF_FUND') {
-              const moneyWithWingsIcon = '\u{1F4B8}';
-              botSwap.sendMessage(
-                config.swapTelegram.channelFailId,
-                moneyWithWingsIcon + ' FUND ' + orderInfo.toCoinCode.toUpperCase() + ' IS OUT OF FUND, PLEASE TOP UP! '
-              );
-              isNotiSwapOutOfFundToTelegram = true;
-              setTimeout(() => {
-                isNotiSwapOutOfFundToTelegram = false;
-              }, 1000 * 60 * 30);
-            }
-            if (orderInfo.status === 'processing') {
+            if ((orderInfo.status === 'processing' && orderInfo.pendingReason !== 'OUT_OF_FUND' ) || isOrderOutOfFund) {
               this.storage.fetchOrderInfoNoti(orderInfoNotiOpts, (err, result) => {
                 if (err) logger.debug(err);
                 if (!result) {
@@ -4475,9 +4468,13 @@ export class WalletService {
                                       config.swapTelegram.channelSuccessId,
                                       'Order no.' +
                                         orderInfo.id +
-                                        ' :: ' +
-                                        this._addExplorerLinkIntoTxIdWithCoin(utxo.txid, orderInfo.fromCoinCode) +
-                                        ':: Amount received',
+                                        ':: Amount received' +
+                                        '\n\n' +
+                                        this._addExplorerLinkIntoTxIdWithCoin(
+                                          utxo.txid,
+                                          orderInfo.fromCoinCode,
+                                          'View tx on the Explorer'
+                                        ),
                                       {
                                         parse_mode: 'HTML'
                                       }
@@ -4600,16 +4597,7 @@ export class WalletService {
                                       coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
                                       await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
                                     }
-                                    botSwap.sendMessage(
-                                      config.swapTelegram.channelSuccessId,
-                                      'Completed :: Order no.' +
-                                        orderInfo.id +
-                                        ' :: ' +
-                                        this._addExplorerLinkIntoTxId(txId),
-                                      {
-                                        parse_mode: 'HTML'
-                                      }
-                                    );
+                                    this._sendSwapNotificationSuccess(configSwap, orderInfo, txId);
                                     this.storage.updateOrder(orderInfo, err => {
                                       if (err) saveError(orderInfo, data, err);
                                       return this.storage.orderQueue.ack(data.ack, (err, id) => {});
@@ -4639,16 +4627,7 @@ export class WalletService {
                                       coinConfigReceiveSelected.dailyLimitUsage += convertedActualReceivedToUsd;
                                       await this._storeDailyLimitUsageForCoinConfig(coinConfigReceiveSelected);
                                     }
-                                    botSwap.sendMessage(
-                                      config.swapTelegram.channelSuccessId,
-                                      'Completed :: Order no.' +
-                                        orderInfo.id +
-                                        ' :: ' +
-                                        this._addExplorerLinkIntoTxId(txId),
-                                      {
-                                        parse_mode: 'HTML'
-                                      }
-                                    );
+                                    this._sendSwapNotificationSuccess(configSwap, orderInfo, txId);
                                     this.storage.updateOrder(orderInfo, err => {
                                       if (err) saveError(orderInfo, data, err);
                                       return this.storage.orderQueue.ack(data.ack, (err, id) => {});
@@ -4672,6 +4651,8 @@ export class WalletService {
                 if (err) saveError(orderInfo, data, err);
                 return this.storage.orderQueue.ack(data.ack, (err, id) => {});
               });
+            } else {
+              this.storage.orderQueue.ack(data.ack, (err, id) => {});
             }
           }
         });
@@ -4705,9 +4686,12 @@ export class WalletService {
                   conversionOrderInfo.amountConverted.toFixed(3) +
                   ' ' +
                   config.conversion.tokenCodeUnit +
-                  ' :: [ ' +
-                  this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdFromUser) +
-                  ' ] ',
+                  '\n\n' +
+                  this._addExplorerLinkIntoTxIdWithCoin(
+                    conversionOrderInfo.txIdFromUser,
+                    'xec',
+                    'View tx on the Explorer'
+                  ),
                 { parse_mode: 'HTML' }
               );
 
@@ -4715,10 +4699,14 @@ export class WalletService {
               bot.sendMessage(
                 config.telegram.channelDebugId,
                 new Date().toUTCString() +
-                  ' :: txId from user: ' +
-                  this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdFromUser) +
                   ' ::  error: ' +
-                  conversionOrderInfo.error,
+                  conversionOrderInfo.error +
+                  '\n\n' +
+                  this._addExplorerLinkIntoTxIdWithCoin(
+                    conversionOrderInfo.txIdFromUser,
+                    'xec',
+                    'View tx on the Explorer'
+                  ),
                 { parse_mode: 'HTML' }
               );
               if (err) throw new Error(err);
@@ -4882,9 +4870,12 @@ export class WalletService {
                                                 amountElps.toFixed(3) +
                                                 ' ' +
                                                 config.conversion.tokenCodeUnit +
-                                                ' :: [ ' +
-                                                this._addExplorerLinkIntoTxId(conversionOrderInfo.txIdSentToUser) +
-                                                ' ]',
+                                                '\n\n' +
+                                                this._addExplorerLinkIntoTxIdWithCoin(
+                                                  conversionOrderInfo.txIdSentToUser,
+                                                  'xec',
+                                                  'View tx on the Explorer'
+                                                ),
                                               { parse_mode: 'HTML' }
                                             );
                                             this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
@@ -4933,6 +4924,53 @@ export class WalletService {
     }, 2000);
   }
 
+  _sendSwapNotificationSuccess(configSwap: ConfigSwap, orderInfo: Order, txId: string) {
+    const coinConfigReceive = configSwap.coinReceive.find(coin => coin.code === orderInfo.toCoinCode);
+    if (coinConfigReceive) {
+      const balanceTo = coinConfigReceive.fundConvertToSat / orderInfo.toSatUnit - orderInfo.actualReceived;
+      const unitFrom = orderInfo.isFromToken ? orderInfo.fromTokenInfo.symbol : orderInfo.fromCoinCode.toUpperCase();
+      const unitTo = orderInfo.isToToken ? orderInfo.toTokenInfo.symbol : orderInfo.toCoinCode.toUpperCase();
+      botSwap.sendMessage(
+        config.swapTelegram.channelSuccessId,
+        'Completed :: ' +
+          'Order no.' +
+          orderInfo.id +
+          ' :: ' +
+          orderInfo.actualSent +
+          ' ' +
+          unitFrom +
+          ' to ' +
+          orderInfo.actualReceived +
+          ' ' +
+          unitTo +
+          ' :: ' +
+          'Balance: ' +
+          balanceTo +
+          ' ' +
+          unitTo +
+          '\n\n' +
+          this._addExplorerLinkIntoTxIdWithCoin(txId, orderInfo.toCoinCode, 'View tx on the Explorer'),
+        {
+          parse_mode: 'HTML'
+        }
+      );
+      const balanceToSat = balanceTo * orderInfo.toSatUnit;
+      if (balanceToSat < coinConfigReceive.minConvertToSat) {
+        const moneyWithWingsIcon = '\u{1F4B8}';
+        botSwap.sendMessage(
+          config.swapTelegram.channelFailId,
+          moneyWithWingsIcon +
+            ' FUND ' +
+            orderInfo.toCoinCode.toUpperCase() +
+            ' IS OUT OF FUND, PLEASE TOP UP! \n' +
+            'Remaining balance: ' +
+            balanceTo +
+            ' ' +
+            unitTo
+        );
+      }
+    }
+  }
   _storeDailyLimitUsageForCoinConfig(coinConfig: CoinConfig): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.storage.updateDailyLimitCoinConfig(coinConfig, (err, result) => {
@@ -4942,20 +4980,17 @@ export class WalletService {
     });
   }
 
-  _addExplorerLinkIntoTxId(txId): string {
-    const linkBeCash = 'https://explorer.e.cash/tx/';
-    const linkBeCashWithTxid = linkBeCash + txId;
-
-    return `<a href=\"${linkBeCashWithTxid}\">${txId}</a>`;
-  }
-
-  _addExplorerLinkIntoTxIdWithCoin(txId: string, coinCode?: string): string {
+  _addExplorerLinkIntoTxIdWithCoin(txId: string, coinCode?: string, message?: string): string {
     let link = 'https://explorer.e.cash/tx/';
     if (coinCode && coinCode.toLowerCase() === 'xpi') {
       link = 'https://explorer.givelotus.org/tx/';
     }
     const linkWithTxid = link + txId;
-    return `<a href=\"${linkWithTxid}\">${txId}</a>`;
+    if (!message) {
+      return `<a href=\"${linkWithTxid}\">${txId}</a>`;
+    } else {
+      return `<a href=\"${linkWithTxid}\">${message}</a>`;
+    }
   }
 
   _handleWhenFundIsNotEnough(pendingReason: string, remaining: number, addressTopupEcash: string) {
@@ -8521,8 +8556,8 @@ export class WalletService {
                             tokenInfoReturn.symbol +
                             ' from ' +
                             result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
-                            ' :: Tx detail : ' +
-                            this._addExplorerLinkIntoTxId(result.txid),
+                            '\n\n' +
+                            this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                           { parse_mode: 'HTML' }
                         );
                       });
@@ -8536,8 +8571,8 @@ export class WalletService {
                           outputSelected.amount / 100 +
                           ' XEC from ' +
                           result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
-                          ' :: Tx detail : ' +
-                          this._addExplorerLinkIntoTxId(result.txid),
+                          '\n\n' +
+                          this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                         { parse_mode: 'HTML' }
                       );
                     }
@@ -8562,8 +8597,8 @@ export class WalletService {
                                   tokenInfoReturn.symbol +
                                   ' from ' +
                                   result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
-                                  ' :: Tx detail : ' +
-                                  this._addExplorerLinkIntoTxId(result.txid),
+                                  '\n\n' +
+                                  this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                                 { parse_mode: 'HTML' }
                               );
                             });
@@ -8577,8 +8612,8 @@ export class WalletService {
                                 outputSelected.amount / 100 +
                                 'XEC from ' +
                                 result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
-                                ' :: Tx detail : ' +
-                                this._addExplorerLinkIntoTxId(result.txid),
+                                '\n\n' +
+                                this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                               { parse_mode: 'HTML' }
                             );
                           }
