@@ -4318,18 +4318,26 @@ export class WalletService {
 
   checkOrderInSwapQueue() {
     checkOrderInSwapQueueInterval = setInterval(() => {
+      let listOrderInQueueIds = [];
       if (this.storage && this.storage.orderQueue) {
-        this.storage.fetchAllOrderInfoNotInQueue((err, result) => {
-          if (err) logger.debug('fetchAllOrderInfoNotInQueue error', err);
-          else {
-            const listOrderInfo: Order[] = result.map(item => Order.fromObj(item));
-            this.storage.orderQueue.add(
-              listOrderInfo.map(orderInfo => orderInfo.id),
-              (err, ids) => {
-                if (err) logger.debug('orderQueue add listOrderInfo error', err);
-              }
-            );
+        this.storage.fetchAllOrderInfoInQueue((err, listOrderInQueue) => {
+          if (listOrderInQueue && listOrderInQueue.length > 0) {
+            listOrderInQueueIds = listOrderInQueue.map(s => s.payload);
           }
+          this.storage.fetchAllOrderInfoNotInQueue((err, result) => {
+            if (err) logger.debug('fetchAllOrderInfoNotInQueue error', err);
+            else {
+              if (result && result.length > 0) {
+                const listOrderInfo: Order[] = result.map(item => Order.fromObj(item));
+                this.storage.orderQueue.add(
+                  listOrderInfo.filter(order => !listOrderInQueueIds.includes(order.id)).map(orderInfo => orderInfo.id),
+                  (err, ids) => {
+                    if (err) logger.debug('orderQueue add listOrderInfo error', err);
+                  }
+                );
+              }
+            }
+          });
         });
       }
     }, 30 * 1000);
@@ -4351,7 +4359,7 @@ export class WalletService {
               orderInfo.error = JSON.stringify(error);
             }
 
-            if (error.code) {
+            if (error.code && error.code !== 'ORDER_EXPIRED') {
               orderInfo.pendingReason = error.code;
             }
 
@@ -4364,7 +4372,7 @@ export class WalletService {
             } else if (error.code === 'ORDER_EXPIRED') {
               if (orderInfo.status === 'processing') {
                 orderInfo.status = 'pending';
-                if(orderInfo.pendingReason === 'OUT_OF_FUND'){
+                if (orderInfo.pendingReason === 'OUT_OF_FUND') {
                   isOrderOutOfFund = true;
                 }
               } else {
@@ -4387,7 +4395,7 @@ export class WalletService {
                 error: orderInfo.error
               };
             }
-            if ((orderInfo.status === 'processing' && orderInfo.pendingReason !== 'OUT_OF_FUND' ) || isOrderOutOfFund) {
+            if ((orderInfo.status === 'processing' && orderInfo.pendingReason !== 'OUT_OF_FUND') || isOrderOutOfFund) {
               this.storage.fetchOrderInfoNoti(orderInfoNotiOpts, (err, result) => {
                 if (err) logger.debug(err);
                 if (!result) {
@@ -4398,7 +4406,7 @@ export class WalletService {
                       // send message to channel Failure Convert Alert
                       botSwap.sendMessage(
                         config.swapTelegram.channelFailId,
-                        'Order no.' + orderInfo.id + ' :: Failed reason :: ' + orderInfo.error,
+                        'Order no.' + orderInfo.id + ' :: Failure reason :: ' + orderInfo.error,
                         {
                           parse_mode: 'HTML'
                         }
@@ -4406,7 +4414,6 @@ export class WalletService {
                       this.storage.orderQueue.ack(data.ack, (err, id) => {});
                     });
                   });
-                } else {
                 }
               });
             } else {
@@ -4452,37 +4459,37 @@ export class WalletService {
                             } else {
                               amountDepositDetect += utxo.satoshis;
                             }
-                            // TanDraft: check if txId already notified to telegram , if not -> notified to telegram and update property isNotifiedErrorToTelegram
-                            const orderInfoNotiOpts = {
-                              orderId: orderInfo.id,
-                              receivedTxId: utxo.txid
-                            };
-                            this.storage.fetchOrderInfoNoti(orderInfoNotiOpts, (err, result) => {
-                              if (err) logger.debug(err);
-                              if (!result) {
-                                this.storage.storeOrderInfoNoti(
-                                  OrderInfoNoti.create(orderInfoNotiOpts),
-                                  (err, result) => {
-                                    if (err) logger.debug(err);
-                                    botSwap.sendMessage(
-                                      config.swapTelegram.channelSuccessId,
-                                      'Order no.' +
-                                        orderInfo.id +
-                                        ':: Amount received' +
-                                        '\n\n' +
-                                        this._addExplorerLinkIntoTxIdWithCoin(
-                                          utxo.txid,
-                                          orderInfo.fromCoinCode,
-                                          'View tx on the Explorer'
-                                        ),
-                                      {
-                                        parse_mode: 'HTML'
-                                      }
-                                    );
-                                  }
-                                );
-                              }
-                            });
+                            // TanTODO: tmp  comment out notification for swap
+                            // const orderInfoNotiOpts = {
+                            //   orderId: orderInfo.id,
+                            //   receivedTxId: utxo.txid
+                            // };
+                            // this.storage.fetchOrderInfoNoti(orderInfoNotiOpts, (err, result) => {
+                            //   if (err) logger.debug(err);
+                            //   if (!result) {
+                            //     this.storage.storeOrderInfoNoti(
+                            //       OrderInfoNoti.create(orderInfoNotiOpts),
+                            //       (err, result) => {
+                            //         if (err) logger.debug(err);
+                            //         botSwap.sendMessage(
+                            //           config.swapTelegram.channelSuccessId,
+                            //           'Order no.' +
+                            //             orderInfo.id +
+                            //             ':: Amount received' +
+                            //             '\n\n' +
+                            //             this._addExplorerLinkIntoTxIdWithCoin(
+                            //               utxo.txid,
+                            //               orderInfo.fromCoinCode,
+                            //               'View tx on the Explorer'
+                            //             ),
+                            //           {
+                            //             parse_mode: 'HTML'
+                            //           }
+                            //         );
+                            //       }
+                            //     );
+                            //   }
+                            // });
                             orderInfo.listTxIdUserDeposit.push(utxo.txid);
                           });
                         }

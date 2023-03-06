@@ -59,7 +59,8 @@ const collections = {
   ORDER_INFO: 'order_info',
   CONVERSION_ORDER_INFO: 'conversion_order_info',
   USER_WATCH_ADDRESS: 'user_watch_address',
-  ORDER_INFO_NOTI: 'order_info_noti'
+  ORDER_INFO_NOTI: 'order_info_noti',
+  ORDER_QUEUE: 'order_queue'
 };
 
 const Common = require('./common');
@@ -1016,7 +1017,16 @@ export class Storage {
       .sort({ lastModified: 1 })
       .toArray((err, listOrderInfo) => {
         if (err) return cb(err);
-        if (listOrderInfo.length === 0) return cb(new Error('Not found any order'));
+        else return cb(null, listOrderInfo);
+      });
+  }
+
+  fetchAllOrderInfoInQueue(cb) {
+    this.db
+      .collection(collections.ORDER_QUEUE)
+      .find()
+      .toArray((err, listOrderInfo) => {
+        if (err) return cb(err);
         else return cb(null, listOrderInfo);
       });
   }
