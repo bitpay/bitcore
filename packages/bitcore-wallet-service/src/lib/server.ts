@@ -4866,11 +4866,22 @@ export class WalletService implements IWalletService {
   private simplexGetKeys(req) {
     if (!config.simplex) throw new Error('Simplex missing credentials');
 
-    let env = 'sandbox';
-    if (req.body.env && req.body.env == 'production') {
-      env = 'production';
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    if (req.body.context && req.body.context === 'web') {
+      if (req.body.env && req.body.env === 'production') {
+        env = 'productionWeb';
+      } else {
+        env = 'sandboxWeb';
+      }
+    } else {
+      if (req.body.env && req.body.env === 'production') {
+        env = 'production';
+      } else {
+        env = 'sandbox';
+      }
     }
     delete req.body.env;
+    delete req.body.context;
 
     const keys = {
       API: config.simplex[env].api,

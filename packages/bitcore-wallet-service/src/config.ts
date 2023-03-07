@@ -153,6 +153,16 @@ const Config = () => {
     //     apiKey: 'simplex_production_api_key_here',
     //     api: 'https://backend-wallet-api.simplexcc.com',
     //     appProviderId: 'simplex_provider_id_here'
+    //   },
+    //   sandboxWeb: {
+    //     apiKey: 'simplex_sandbox_web_api_key_here',
+    //     api: 'https://sandbox.test-simplexcc.com',
+    //     appProviderId: 'bitpaywidget'
+    //   },
+    //   productionWeb: {
+    //     apiKey: 'simplex_production_web_api_key_here',
+    //     api: 'https://backend-wallet-api.simplexcc.com',
+    //     appProviderId: 'simplex_web_provider_id_here'
     //   }
     // },
     // wyre: {
