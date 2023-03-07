@@ -11145,6 +11145,16 @@ describe('Wallet service', function() {
           apiKey: 'xxxx',
           api: 'xxxx',
           appProviderId: 'xxxx'
+        },
+        sandboxWeb: {
+          apiKey: 'xxxx',
+          api: 'xxxx',
+          appProviderId: 'xxxx'
+        },
+        productionWeb: {
+          apiKey: 'xxxx',
+          api: 'xxxx',
+          appProviderId: 'xxxx'
         }
       }
 
@@ -11185,6 +11195,16 @@ describe('Wallet service', function() {
       });
 
       it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.simplexGetQuote(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should work properly if req is OK for web', () => {
+        req.body.context = 'web';
         server.request = fakeRequest;
         server.simplexGetQuote(req).then(data => {
           should.exist(data);
