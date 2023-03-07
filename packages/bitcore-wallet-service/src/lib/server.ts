@@ -4615,9 +4615,12 @@ export class WalletService {
                                 const txOptsSwap = this._createOtpTxSwap(
                                   orderInfo.isToToken ? 'xec' : orderInfo.toCoinCode,
                                   orderInfo.toNetwork,
-                                  orderInfo.addressUserReceive,
+                                  orderInfo.toCoinCode === 'bch'
+                                    ? orderInfo.addressUserReceive.replace(/bitcoincash:/, '')
+                                    : orderInfo.addressUserReceive,
                                   amountDepositInToCoinCodeUnit
                                 );
+
                                 this._sendSwap(fundingWallet, keyFund, txOptsSwap, async (err, txId) => {
                                   if (err) saveError(orderInfo, data, err);
                                   else {
