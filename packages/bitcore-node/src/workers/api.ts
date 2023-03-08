@@ -1,4 +1,4 @@
-import cluster = require('cluster');
+import cluster from 'cluster';
 import 'source-map-support/register';
 import { Modules } from '../modules';
 import { Api } from '../services/api';
@@ -21,7 +21,7 @@ export const ClusteredApiWorker = async () => {
   process.on('SIGINT', stop);
 
   services.push(Storage, Event);
-  if (cluster.isMaster) {
+  if (cluster.isPrimary) {
     if (args.DEBUG || !args.CLUSTER) {
       services.push(Api);
     } else {

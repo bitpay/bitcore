@@ -2484,6 +2484,7 @@ export class WalletService {
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
                     tokenAddress: opts.tokenAddress,
                     multisigContractAddress: opts.multisigContractAddress,
+                    multiSendContractAddress: opts.multiSendContractAddress,
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod,
@@ -4701,6 +4702,148 @@ export class WalletService {
       qs.push('apiKey=' + API_KEY);
 
       const URL = API + `/v3/accounts/me?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  private rampGetKeys(req) {
+    if (!config.ramp) throw new Error('Ramp missing credentials');
+
+    let env = 'sandbox';
+    if (req.body.env && req.body.env == 'production') {
+      env = 'production';
+    }
+    delete req.body.env;
+
+    const keys: {
+      API: string;
+      WIDGET_API: string;
+      API_KEY: string;
+    } = {
+      API: config.ramp[env].api,
+      WIDGET_API: config.ramp[env].widgetApi,
+      API_KEY: config.ramp[env].apiKey,
+    };
+
+    return keys;
+  }
+
+  rampGetQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.rampGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['cryptoAssetSymbol', 'fiatValue', 'fiatCurrency'])) {
+        return reject(new ClientError("Ramp's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const URL: string = API + `/host-api/v3/onramp/quote/all?hostApiKey=${API_KEY}`;
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  rampGetSignedPaymentUrl(req): { urlWithSignature: string } {
+    const keys = this.rampGetKeys(req);
+    const API_KEY = keys.API_KEY;
+    const WIDGET_API = keys.WIDGET_API;
+
+    if (
+      !checkRequired(req.body, [
+        'swapAsset',
+        'swapAmount',
+        'enabledFlows',
+        'defaultFlow',
+        'userAddress',
+        'selectedCountryCode',
+        'defaultAsset',
+        'finalUrl',
+      ])
+    ) {
+      throw new ClientError("Ramp's request missing arguments");
+    }
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    let qs = [];
+    qs.push('hostApiKey=' + API_KEY);
+    qs.push('swapAsset=' + encodeURIComponent(req.body.swapAsset));
+    qs.push('swapAmount=' + encodeURIComponent(req.body.swapAmount));
+    qs.push('enabledFlows=' + encodeURIComponent(req.body.enabledFlows));
+    qs.push('defaultFlow=' + encodeURIComponent(req.body.defaultFlow));
+    qs.push('userAddress=' + encodeURIComponent(req.body.userAddress));
+    qs.push('selectedCountryCode=' + encodeURIComponent(req.body.selectedCountryCode));
+    qs.push('defaultAsset=' + encodeURIComponent(req.body.defaultAsset));
+    qs.push('finalUrl=' + encodeURIComponent(req.body.finalUrl));
+    if (req.body.hostLogoUrl) qs.push('hostLogoUrl=' + encodeURIComponent(req.body.hostLogoUrl));
+    if (req.body.hostAppName) qs.push('hostAppName=' + encodeURIComponent(req.body.hostAppName));
+    if (req.body.fiatValue) qs.push('fiatValue=' + encodeURIComponent(req.body.fiatValue));
+    if (req.body.userEmailAddress) qs.push('userEmailAddress=' + encodeURIComponent(req.body.userEmailAddress));
+
+    const URL_SEARCH: string = `?${qs.join('&')}`;
+
+    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}`;
+
+    return { urlWithSignature };
+  }
+
+  rampGetAssets(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.rampGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      let URL: string;
+
+      let qs = [];
+      qs.push('hostApiKey=' + API_KEY);
+    if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
+    if (req.body.withDisabled) qs.push('withDisabled=' + encodeURIComponent(req.body.withDisabled));
+    if (req.body.withHidden) qs.push('withHidden=' + encodeURIComponent(req.body.withHidden));
+    if (req.body.useIp) {
+      const ip = Utils.getIpFromReq(req);
+      qs.push('userIp=' + encodeURIComponent(ip));
+    }
+  
+      URL = API + `/host-api/v3/assets?${qs.join('&')}`;
 
       this.request.get(
         URL,

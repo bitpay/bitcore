@@ -1,5 +1,7 @@
 'use strict';
-
+// Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
+var { setDefaultResultOrder } = require('dns');
+setDefaultResultOrder('ipv4first');
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var chai = require('chai');
@@ -229,8 +231,9 @@ const helpers = {
         extra = extra || '';
         mongodb.MongoClient.connect(config.mongoDb.uri + extra, (err, in_db) => {
             if (err) return cb(err);
-            in_db.dropDatabase(err => {
-                return cb(err, in_db);
+            let db = in_db.db(config.mongoDb.dbname + extra);
+            db.dropDatabase(function(err) {
+                return cb(err, db);
             });
         });
     }

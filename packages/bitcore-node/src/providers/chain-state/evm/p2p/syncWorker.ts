@@ -64,7 +64,7 @@ export class SyncWorker {
         blockNum: block.number,
         threadId: worker.threadId
       });
-    } catch (err) {
+    } catch (err: any) {
       logger.debug(`Syncing thread ${worker.threadId} error: ${err.stack}`);
 
       let error = err.message;

@@ -1,7 +1,8 @@
 import * as os from 'os';
 import logger from '../logger';
-import { BaseBlock, IBlock } from '../models/baseBlock';
+import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
+import { IBlock } from '../types/Block';
 import { wait } from '../utils/wait';
 import { Config, ConfigService } from './config';
 
@@ -144,7 +145,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
           lastHeartBeat: this.lastHeartBeat
         });
       }
-    } catch (e) {
+    } catch (e: any) {
       logger.warn('Issue unregistering');
       logger.error(e);
     }

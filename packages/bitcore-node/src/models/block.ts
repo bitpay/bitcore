@@ -1,11 +1,12 @@
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { StorageService } from '../services/storage';
+import { IBlock } from '../types/Block';
 import { SpentHeightIndicators } from '../types/Coin';
 import { BitcoinBlockType, BitcoinHeaderObj } from '../types/namespaces/Bitcoin';
 import { TransformOptions } from '../types/TransformOptions';
 import { MongoBound } from './base';
-import { BaseBlock, IBlock } from './baseBlock';
+import { BaseBlock } from './baseBlock';
 import { CoinStorage } from './coin';
 import { EventStorage } from './events';
 import { TransactionStorage } from './transaction';

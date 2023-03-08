@@ -135,7 +135,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
   }
 
   async syncWallets() {
-    return new Promise(async resolve => {
+    return new Promise<void>(async resolve => {
       try {
         const { chain, network } = this;
 
@@ -219,7 +219,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
             );
             resolve();
           });
-      } catch (e) {
+      } catch (e: any) {
         logger.error(e);
       }
     });
@@ -342,7 +342,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       );
       this.events.emit('SYNCDONE');
       return true;
-    } catch (e) {
+    } catch (e: any) {
       logger.error(e);
       this.syncing = false;
       await wait(2000);

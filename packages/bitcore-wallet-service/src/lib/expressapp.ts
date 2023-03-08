@@ -200,7 +200,13 @@ export class ExpressApp {
         auth.session = credentials.session;
       }
       WalletService.getInstanceWithAuth(auth, (err, server) => {
-        if (err) return returnError(err, res, req);
+        if (err) {
+          if (opts.silentFailure) {
+            return cb(null, err);
+          } else {
+            return returnError(err, res, req);
+          }
+        }
 
         if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
           return returnError(
@@ -265,7 +271,7 @@ export class ExpressApp {
               }),
               res,
               opts,
-              server => (server ? resolve(server) : reject(server))
+              (server, err) => (err ? reject(err) : resolve(server))
             )
           )
       );
@@ -454,6 +460,7 @@ export class ExpressApp {
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
+          silentFailure: req.query.silentFailure == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
           tokenAddresses: req.query[copayerId]
             ? Array.isArray(req.query[copayerId].tokenAddress)
@@ -468,7 +475,7 @@ export class ExpressApp {
 
       try {
         responses = await Promise.all(
-          getServerWithMultiAuth(req, res).map(promise =>
+          getServerWithMultiAuth(req, res, { silentFailure: req.query.silentFailure == '1' }).map(promise =>
             promise.then(
               (server: any) =>
                 new Promise(resolve => {
@@ -1538,6 +1545,41 @@ export class ExpressApp {
       try {
         server = getServer(req, res);
         response = await server.moonpayGetAccountDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/ramp/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.rampGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/ramp/signedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.rampGetSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/ramp/assets', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.rampGetAssets(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);

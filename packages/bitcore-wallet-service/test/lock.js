@@ -141,9 +141,7 @@ describe('Locks', function() {
     });
   });
   it('should return error if unable to acquire lock', function(done) {
-
-    var err1;
-
+    
     pushEvent(0);
 
     lock.acquire('123', {}, function(err, release) {

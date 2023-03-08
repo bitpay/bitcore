@@ -6246,7 +6246,7 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(addr);
             Client.serverAssistedImport(
-              { words },
+              { words, includeTestnetWallets: true, includeLegacyWallets: true },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6278,18 +6278,20 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var tokenAddresses = [
+            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+            '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+          ];
 
           clients[0].savePreferences(
             {
-              tokenAddresses: [
-                '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-                '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
-              ]
+              tokenAddresses
             },
             err => {
               should.not.exist(err);
               Client.serverAssistedImport(
-                { words },
+                { words, includeTestnetWallets: true },
                 {
                   clientFactory: () => {
                     return helpers.newClient(app);
@@ -6303,11 +6305,16 @@ describe('client API', function() {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
                     recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('eth');
+                    recoveryClient.credentials.chain.should.equal('eth');
                     let recoveryClient2 = c[2];
                     recoveryClient2.openWallet(err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('gusd');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('eth');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[1]}`);
                       done();
                     });
                   });
@@ -6323,11 +6330,15 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var tokenAddresses = [
+            '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+          ];
 
-          clients[0].savePreferences({ tokenAddresses: ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'] }, err => {
+          clients[0].savePreferences({ tokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
-              { words },
+              { words, includeTestnetWallets: true },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6341,11 +6352,16 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('eth');
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('eth');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[0]}`);
                     done();
                   });
                 });
@@ -6360,11 +6376,15 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var tokenAddresses = [
+            '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
+          ];
 
-          clients[0].savePreferences({ tokenAddresses: ['0x9da9bc12b19b22d7c55798f722a1b6747ae9a710'] }, err => {
+          clients[0].savePreferences({ tokenAddresses }, err => {
             should.not.exist(err);
               Client.serverAssistedImport(
-              { words },
+              { words, includeTestnetWallets: true },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6378,7 +6398,9 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('eth');
                   done();
                 });
               })
@@ -6391,18 +6413,19 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-
+          var walletId = clients[0].credentials.walletId;
+          var maticTokenAddresses = [
+            '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+            '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
+          ];
           clients[0].savePreferences(
             {
-              maticTokenAddresses: [
-                '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
-                '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
-              ]
+              maticTokenAddresses
             },
             err => {
               should.not.exist(err);
               Client.serverAssistedImport(
-                { words },
+                { words, includeTestnetWallets: true  },
                 {
                   clientFactory: () => {
                     return helpers.newClient(app);
@@ -6416,11 +6439,16 @@ describe('client API', function() {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
                     recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('matic');
+                    recoveryClient.credentials.chain.should.equal('matic');
                     let recoveryClient2 = c[2];
                     recoveryClient2.openWallet(err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('dai');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('matic');
+                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[1]}`);
                       done();
                     });
                   });
@@ -6436,11 +6464,15 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var maticTokenAddresses = [
+            '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+          ];
 
-          clients[0].savePreferences({ maticTokenAddresses: ['0x2791bca1f2de4661ed88a30c99a7a9449aa84174'] }, err => {
+          clients[0].savePreferences({ maticTokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
-              { words },
+              { words, includeTestnetWallets: true  },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6454,12 +6486,16 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('matic');
                   recoveryClient.credentials.chain.should.equal('matic');
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('matic');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[0]}`);
                     done();
                   });
                 });
@@ -6474,11 +6510,15 @@ describe('client API', function() {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var maticTokenAddresses = [
+            '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
+          ];
 
-          clients[0].savePreferences({ maticTokenAddresses: ['0x9da9bc12b19b22d7c55798f722a1b6747ae9a710'] }, err => {
+          clients[0].savePreferences({ maticTokenAddresses }, err => {
             should.not.exist(err);
               Client.serverAssistedImport(
-              { words },
+              { words, includeTestnetWallets: true },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6492,6 +6532,7 @@ describe('client API', function() {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('matic');
                   recoveryClient.credentials.chain.should.equal('matic');
                   done();
@@ -6512,7 +6553,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(addr);
               Client.serverAssistedImport(
-                { words },
+                { words, includeTestnetWallets: true },
                 {
                   clientFactory: () => {
                     return helpers.newClient(app);
@@ -6555,7 +6596,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(addr);
               Client.serverAssistedImport(
-                { words },
+                { words, includeTestnetWallets: true},
                 {
                   clientFactory: () => {
                     return helpers.newClient(app);
@@ -6586,6 +6627,120 @@ describe('client API', function() {
         });
       });
 
+      it('should be able to gain access to three btc 1-1 accounts of a single wallet from mnemonic and add wallet info correctly to all of them', done => {
+        let key = new Key({ seedType: 'new' });
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 1 }, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 2 }, () => {
+              var words = keys[0].get(null, true).mnemonic;
+              var walletName = clients[0].credentials.walletName;
+              var copayerName = clients[0].credentials.copayerName;
+              clients[0].createAddress((err, addr) => {
+                should.not.exist(err);
+                should.exist(addr);
+                Client.serverAssistedImport(
+                  { words, includeTestnetWallets: true },
+                  {
+                    clientFactory: () => {
+                      return helpers.newClient(app);
+                    }
+                  },
+                  (err, k, c) => {
+                    should.not.exist(err);
+                    c.length.should.equal(3);
+                    c[0].credentials.coin.should.equal('btc');
+                    c[1].credentials.coin.should.equal('btc');
+                    c[2].credentials.coin.should.equal('btc');
+                    c[0].credentials.account.should.equal(0);
+                    c[1].credentials.account.should.equal(1);
+                    c[2].credentials.account.should.equal(2);
+                    c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                    c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                    c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                    should.exist(c[0].credentials.walletId);
+                    should.exist(c[1].credentials.walletId);
+                    should.exist(c[2].credentials.walletId);
+                    let recoveryClient = c[2];
+                    recoveryClient.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient.credentials.walletName.should.equal(walletName);
+                      recoveryClient.credentials.copayerName.should.equal(copayerName);
+                      recoveryClient.getMainAddresses({}, (err, list) => {
+                        should.not.exist(err);
+                        should.exist(list);
+                        list[0].address.should.equal(addr.address);
+                        done();
+                      });
+                    });
+                  }
+                );
+              });
+            });
+          });
+        });
+      });
+
+      it('should be able to gain access to seven btc 1-1 accounts of a single wallet from mnemonic', done => {
+        let key = new Key({ seedType: 'new' });
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 1 }, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 2 }, () => {
+              helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 3 }, () => {
+                helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 4 }, () => {
+                  helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 5 }, () => {
+                    helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 6 }, () => {
+                      var words = keys[0].get(null, true).mnemonic;
+                      var walletName = clients[0].credentials.walletName;
+                      var copayerName = clients[0].credentials.copayerName;
+                      clients[0].createAddress((err, addr) => {
+                        should.not.exist(err);
+                        should.exist(addr);
+                        Client.serverAssistedImport(
+                          { words, includeTestnetWallets: true },
+                          {
+                            clientFactory: () => {
+                              return helpers.newClient(app);
+                            }
+                          },
+                          (err, k, c) => {
+                            should.not.exist(err);
+                            c.length.should.equal(7);
+                            // check the following data on each of the clients
+                            for (let i = 0; i < c.length; i++) {
+                              c[i].credentials.coin.should.equal('btc');
+                              c[i].credentials.account.should.equal(i);
+                            }
+                            // make sure only one client has each copayerId
+                            c.every(client => {
+                              let copayerId = client.credentials.copayerId;
+                              return c.filter(x => x.credentials.copayerId === copayerId).length === 1;
+                            }).should.equal(true);
+
+
+                            let recoveryClient = c[6];
+                            recoveryClient.openWallet(err => {
+                              should.not.exist(err);
+                              recoveryClient.credentials.walletName.should.equal(walletName);
+                              recoveryClient.credentials.copayerName.should.equal(copayerName);
+                              recoveryClient.getMainAddresses({}, (err, list) => {
+                                should.not.exist(err);
+                                should.exist(list);
+                                list[0].address.should.equal(addr.address);
+                                done();
+                              });
+                            });
+                          }
+                        );
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
       it('should be able to gain access to a 1-1 wallet from mnemonic with passphrase', done => {
         let passphrase = 'xxx';
         helpers.createAndJoinWallet(clients, keys, 1, 1, { passphrase }, () => {
@@ -6596,7 +6751,7 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(addr);
             Client.serverAssistedImport(
-              { words, passphrase },
+              { words, passphrase, includeTestnetWallets: true },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6633,7 +6788,7 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(addr);
             Client.serverAssistedImport(
-              { xPrivKey },
+              { xPrivKey, includeTestnetWallets: true },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6674,7 +6829,7 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(addr);
             Client.serverAssistedImport(
-              { words },
+              { words, includeTestnetWallets: true },
               {
                 clientFactory: () => {
                   return helpers.newClient(app);
@@ -6743,7 +6898,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(addr);
               Client.serverAssistedImport(
-                { words },
+                { words, includeLegacyWallets: true, includeTestnetWallets: true },
                 {
                   clientFactory: () => {
                     return helpers.newClient(app);
@@ -6797,7 +6952,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(addr);
               Client.serverAssistedImport(
-                { words },
+                { words, includeLegacyWallets: true, includeTestnetWallets: true },
                 {
                   clientFactory: () => {
                     return helpers.newClient(app);
@@ -6850,7 +7005,7 @@ describe('client API', function() {
               should.not.exist(err);
 
               Client.serverAssistedImport(
-                { xPrivKey },
+                { xPrivKey, includeTestnetWallets: true },
                 {
                   clientFactory: () => {
                     return helpers.newClient(app);

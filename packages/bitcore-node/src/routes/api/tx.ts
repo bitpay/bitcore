@@ -149,7 +149,7 @@ router.post('/send', async function(req: Request, res: Response) {
       rawTx
     });
     return res.send({ txid });
-  } catch (err) {
+  } catch (err: any) {
     logger.error(err);
     return res.status(500).send(err.message);
   }

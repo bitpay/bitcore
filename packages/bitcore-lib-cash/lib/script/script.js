@@ -394,6 +394,33 @@ Script.prototype.isPublicKeyIn = function() {
 };
 
 /**
+ * @param {Object=} values - The return values
+ * @param {Number} values.version - Set with the witness version
+ * @param {Buffer} values.program - Set with the witness program
+ * @returns {boolean} if this is a p2wpkh output script
+ */
+ Script.prototype.isWitnessProgram = function(values) {
+  if (!values) {
+    values = {};
+  }
+  var buf = this.toBuffer();
+  if (buf.length < 4 || buf.length > 42) {
+    return false;
+  }
+  if (buf[0] !== Opcode.OP_0 && !(buf[0] >= Opcode.OP_1 && buf[0] <= Opcode.OP_16)) {
+    return false;
+  }
+
+  if (buf.length === buf[1] + 2) {
+    values.version = buf[0];
+    values.program = buf.slice(2, buf.length);
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * @returns {boolean} if this is a p2sh output script
  */
 Script.prototype.isScriptHashOut = function() {
