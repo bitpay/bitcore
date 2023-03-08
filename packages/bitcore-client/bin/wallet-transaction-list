@@ -14,7 +14,7 @@ program
   .option('--includeMempool')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .option('--tokenContractAddress [tokenContractAddress]', 'optional - address of the token to query')
-  .option('--token [token]', 'optional - name of the token to query')
+  .option('--token [token]', 'optional - symbol of the token to query (ex: USDC. Only works with tokens imported to wallet)')
   .parse(process.argv);
 
 const main = async () => {
