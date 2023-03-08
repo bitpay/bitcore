@@ -3910,7 +3910,7 @@ describe('Wallet service', function() {
 
               if(coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
-                tx.nonce.should.equal('5');
+                should.not.exist(tx.nonce);
                 tx.outputs.should.deep.equal([{
                   toAddress: addressStr,
                   gasLimit: 21000,
@@ -7991,6 +7991,7 @@ describe('Wallet service', function() {
           tx.id.should.equal(txpid);
           var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           should.not.exist(tx.raw);
+          should.not.exist(tx.nonce);
           server.signTx({
             txProposalId: txpid,
             signatures: signatures,
@@ -8003,8 +8004,9 @@ describe('Wallet service', function() {
             // Array length of 1
             txp.raw.length.should.equal(1);
             // this depends on transaction count stub
-            txp.txid.should.equal('0x7805fbd1b393552dc3be013fcfdc00f5ba30a6c7931ca7c3b9832d9f69fbf7bc');
-
+            txp.txid.should.equal('0xf21212b72604e4a5e15bcf172d0d32019715e2c8d4ad54a13ef1b965e4f01e3e');
+            // TXP based on total signed unbroadcasted txs
+            txp.nonce.should.equal('50');
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
               var tx = txs[0];

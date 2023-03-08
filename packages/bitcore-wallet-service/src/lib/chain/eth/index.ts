@@ -141,7 +141,7 @@ export class EthChain implements IChain {
     return new Promise(async (resolve, reject) => {
       try {
         const nextNonce = await this.getNonce(server, wallet, from);
-        const signedTXs = await server.storage.fetchSignedTxs(wallet.id, { from, sortBy: 'nonce' }); 
+        const signedTXs = await server.storage.fetchSignedTxs(wallet.id, { from, sortBy: 'nonce' });
 
         let i;
         for (i = 0; i < signedTXs.length; i++) {
