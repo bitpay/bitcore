@@ -212,6 +212,11 @@ export class XrpChain implements IChain {
   isUTXOChain() {
     return false;
   }
+
+  isEVMChain() {
+    return false;
+  }
+
   isSingleAddress() {
     return true;
   }

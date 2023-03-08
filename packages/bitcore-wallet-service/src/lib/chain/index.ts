@@ -50,6 +50,7 @@ export interface IChain {
   checkUtxos(opts: { fee: number; inputs: any[] });
   checkValidTxAmount(output): boolean;
   isUTXOChain(): boolean;
+  isEVMChain(): boolean;
   isSingleAddress(): boolean;
   supportsMultisig(): boolean;
   notifyConfirmations(network: string): boolean;
@@ -170,6 +171,10 @@ class ChainProxy {
 
   isUTXOChain(chain: string): boolean {
     return this.get(chain).isUTXOChain();
+  }
+
+  isEVMChain(chain: string): boolean {
+    return this.get(chain).isEVMChain();
   }
 
   isSingleAddress(chain: string): boolean {

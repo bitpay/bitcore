@@ -89,6 +89,11 @@ export class Storage {
       createdOn: -1
     });
     db.collection(collections.TXS).createIndex({
+      walletId: 1,
+      status: 1,
+      nonce: 1
+    });
+    db.collection(collections.TXS).createIndex({
       txid: 1
     });
     db.collection(collections.NOTIFICATIONS).createIndex({
@@ -524,6 +529,53 @@ export class Storage {
         });
         return this._completeTxData(walletId, txs, cb);
       });
+  }
+
+  /**
+   * fetch Signed Txs that have not been broadcasted
+   *
+   * @param walletId
+   * @param opts.minTs
+   * @param opts.maxTs
+   * @param opts.limit
+   */
+  fetchSignedTxs(walletId, opts) {
+    return new Promise(async (resolve, reject) => {
+      opts = opts || {};
+
+      const filter: {
+        walletId: string;
+        status: string;
+        from?: string;
+      } = {
+        walletId,
+        status: 'accepted'
+      };
+      if (opts.from) filter.from = opts.from;
+
+      const mods: { limit?: number } = {};
+      if (_.isNumber(opts.limit)) mods.limit = opts.limit;
+      // TODO improve sorting to take in mulitple sorting values in sort precedence and assign 1, -1
+      let sort = {};
+      if (opts.sortBy) sort[opts.sortBy] = 1;
+
+      this.db
+        .collection(collections.TXS)
+        .find(filter, mods)
+        .sort(sort)
+        .toArray((err, result) => {
+          if (err) return reject(err);
+          if (!result) return resolve([]);
+          const txs = _.map(result, tx => {
+            return TxProposal.fromObj(tx);
+          });
+          this._completeTxData(walletId, txs, (err, txData) => {
+            if (err) return reject(err);
+            return resolve(txData);
+          });
+          return resolve(txs);
+        });
+    });
   }
 
   /**
