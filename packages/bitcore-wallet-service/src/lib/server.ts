@@ -30,6 +30,7 @@ import {
 import { Storage } from './storage';
 
 const config = require('../config');
+const crypto = require('crypto');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
@@ -5160,19 +5161,43 @@ export class WalletService implements IWalletService {
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
       throw new Error('ClientError: Service not configured.');
+      if (!config.changelly.v1) {
+        logger.warn('Changelly v1 missing credentials');
+        throw new Error('ClientError: Service v1 not configured.');
+      }
     }
 
     const keys = {
-      API: config.changelly.api,
-      API_KEY: config.changelly.apiKey,
-      SECRET: config.changelly.secret
+      API: config.changelly.v1.api,
+      API_KEY: config.changelly.v1.apiKey,
+      SECRET: config.changelly.v1.secret
+    };
+
+    return keys;
+  }
+
+  private changellyGetKeysV2(req) {
+    if (!config.changelly) {
+      logger.warn('Changelly missing credentials');
+      throw new Error('ClientError: Service not configured.');
+      if (!config.changelly.v2) {
+        logger.warn('Changelly v2 missing credentials');
+        throw new Error('ClientError: Service v2 not configured.');
+      }
+    }
+
+    const keys = {
+      API: config.changelly.v2.api,
+      API_KEY_BASE64: config.changelly.v2.apiKeyBase64,
+      PUBLIC_KEY: config.changelly.v2.publicKey,
+      SECRET: config.changelly.v2.secret
     };
 
     return keys;
   }
 
   changellySignRequests(message, secret: string) {
-    if (!message || !secret) throw new Error('Missing parameters to sign Changelly request');
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v1 request');
 
     const sign: string = Bitcore.crypto.Hash.sha512hmac(
       Buffer.from(JSON.stringify(message)),
@@ -5182,9 +5207,39 @@ export class WalletService implements IWalletService {
     return sign;
   }
 
+
+  changellySignRequestsV2(message, secret: string) {
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v2 request');
+
+    const privateKey = crypto.createPrivateKey({
+      key: secret,
+      format: 'der',
+      type: 'pkcs8',
+      encoding: 'hex'
+    });
+    
+    const publicKey = crypto.createPublicKey(privateKey).export({
+        type: 'pkcs1',
+        format: 'der'
+    });
+
+    const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), {
+      key: privateKey,
+      type: 'pkcs8',
+      format: 'der'
+    });
+
+    return {signature, publicKey};
+  }
+
   changellyGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id'])) {
         return reject(new ClientError('changellyGetCurrencies request missing arguments'));
@@ -5198,13 +5253,22 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5226,7 +5290,12 @@ export class WalletService implements IWalletService {
 
   changellyGetPairsParams(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
         return reject(new ClientError('changellyGetPairsParams request missing arguments'));
@@ -5245,13 +5314,21 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
-
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5273,7 +5350,12 @@ export class WalletService implements IWalletService {
 
   changellyGetFixRateForAmount(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
         return reject(new ClientError('changellyGetFixRateForAmount request missing arguments'));
@@ -5293,13 +5375,22 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5321,7 +5412,12 @@ export class WalletService implements IWalletService {
 
   changellyCreateFixTransaction(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (
         !checkRequired(req.body, [
@@ -5352,13 +5448,22 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5380,7 +5485,12 @@ export class WalletService implements IWalletService {
 
   changellyGetStatus(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
         return reject(new ClientError('changellyGetStatus request missing arguments'));
@@ -5396,13 +5506,22 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
