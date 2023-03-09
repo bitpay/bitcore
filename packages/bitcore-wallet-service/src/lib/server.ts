@@ -4692,7 +4692,7 @@ export class WalletService {
               // send message to channel Failure Convert Alert
               bot.sendMessage(
                 config.telegram.channelFailId,
-                  conversionOrderInfo.addressFrom +
+                conversionOrderInfo.addressFrom +
                   ' :: Converted amount: ' +
                   conversionOrderInfo.amountConverted.toFixed(3) +
                   ' ' +
@@ -4947,16 +4947,16 @@ export class WalletService {
           'Order no.' +
           orderInfo.id +
           ' :: ' +
-          (orderInfo.actualSent).toLocaleString('en-US')  +
+          orderInfo.actualSent.toLocaleString('en-US') +
           ' ' +
           unitFrom +
           ' to ' +
-          (orderInfo.actualReceived).toLocaleString('en-US')  +
+          orderInfo.actualReceived.toLocaleString('en-US') +
           ' ' +
           unitTo +
           ' :: ' +
           'Balance: ' +
-          (balanceTo).toLocaleString('en-US')  +
+          balanceTo.toLocaleString('en-US') +
           ' ' +
           unitTo +
           '\n\n' +
