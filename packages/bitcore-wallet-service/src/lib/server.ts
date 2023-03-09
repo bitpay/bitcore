@@ -87,6 +87,9 @@ let isNotiFundTokenBelowMinimumToTelegram = false;
 let isNotiFundXecInsufficientMinimumToTelegram = false;
 let isNotiFundTokenInsufficientMinimumToTelegram = false;
 let listRateWithPromise = null;
+const minsOfNoti = 5;
+let queueFailed = 0;
+let notiCount = 0;
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 let txIdHandled = [];
@@ -4689,9 +4692,7 @@ export class WalletService {
               // send message to channel Failure Convert Alert
               bot.sendMessage(
                 config.telegram.channelFailId,
-                new Date().toUTCString() +
-                  ' :: ' +
-                  conversionOrderInfo.addressFrom +
+                conversionOrderInfo.addressFrom +
                   ' :: Converted amount: ' +
                   conversionOrderInfo.amountConverted.toFixed(3) +
                   ' ' +
@@ -4946,16 +4947,16 @@ export class WalletService {
           'Order no.' +
           orderInfo.id +
           ' :: ' +
-          orderInfo.actualSent +
+          orderInfo.actualSent.toLocaleString('en-US') +
           ' ' +
           unitFrom +
           ' to ' +
-          orderInfo.actualReceived +
+          orderInfo.actualReceived.toLocaleString('en-US') +
           ' ' +
           unitTo +
           ' :: ' +
           'Balance: ' +
-          balanceTo +
+          balanceTo.toLocaleString('en-US') +
           ' ' +
           unitTo +
           '\n\n' +
@@ -5116,6 +5117,29 @@ export class WalletService {
       logger.debug(e);
       return cb(e);
     }
+  }
+
+  checkSwapQueueAndNoti() {
+    setInterval(() => {
+      if (!swapQueueInterval) {
+        queueFailed++;
+        if (queueFailed > minsOfNoti) {
+          queueFailed = 0;
+          notiCount++;
+          // notification to telegram
+          if (notiCount < 4) {
+            botSwap.sendMessage(config.swapTelegram.channelFailId, `Swap service is not running (${notiCount})…`);
+          }
+        } else {
+          this.restartHandleSwapQueue((err, result) => {
+            if (err) logger.debug(err);
+          });
+        }
+      } else {
+        notiCount = 0;
+        queueFailed = 0;
+      }
+    }, 60 * 1000); // 1 min
   }
 
   restartHandleConversionQueue(cb) {
@@ -5337,6 +5361,9 @@ export class WalletService {
       }
       if (!clientsReceive) {
         throw new Error('Not found funding');
+      }
+      if (!swapQueueInterval) {
+        throw new Error('Not found queue');
       }
       const orderInfo = Order.create(opts);
       const fromCoinCode = orderInfo.isFromToken ? 'xec' : orderInfo.fromCoinCode;
@@ -6048,7 +6075,7 @@ export class WalletService {
       amount = output.slpToken.amount.low;
     } else {
       address = addressBitcore.encode('ecash', type, hashBuffer);
-      amount = output.value ? output.value.low : 0;
+      amount = output.value ? Number(output.value.toString()) : 0;
     }
     return { address, amount };
   }
@@ -8560,8 +8587,8 @@ export class WalletService {
                           '@bcProTX',
                           '[ ' +
                             addressSelected.substr(addressSelected.length - 8) +
-                            ' ] have received a payment of ' +
-                            outputSelected.amount / 10 ** tokenInfoReturn.decimals +
+                            ' ] has received a payment of ' +
+                            (outputSelected.amount / 10 ** tokenInfoReturn.decimals).toLocaleString('en-US') +
                             ' ' +
                             tokenInfoReturn.symbol +
                             ' from ' +
@@ -8577,8 +8604,8 @@ export class WalletService {
                         '@bcProTX',
                         '[ ' +
                           addressSelected.substr(addressSelected.length - 8) +
-                          ' ] have received a payment of ' +
-                          outputSelected.amount / 100 +
+                          ' ] has received a payment of ' +
+                          (outputSelected.amount / 100).toLocaleString('en-US') +
                           ' XEC from ' +
                           result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
                           '\n\n' +
@@ -8601,8 +8628,8 @@ export class WalletService {
                                 msgId,
                                 '[ ' +
                                   addressSelected.substr(addressSelected.length - 8) +
-                                  ' ] have received a payment of ' +
-                                  outputSelected.amount / 10 ** tokenInfoReturn.decimals +
+                                  ' ] has received a payment of ' +
+                                  (outputSelected.amount / 10 ** tokenInfoReturn.decimals).toLocaleString('en-US') +
                                   ' ' +
                                   tokenInfoReturn.symbol +
                                   ' from ' +
@@ -8618,8 +8645,8 @@ export class WalletService {
                               msgId,
                               '[ ' +
                                 addressSelected.substr(addressSelected.length - 8) +
-                                ' ] have received a payment of ' +
-                                outputSelected.amount / 100 +
+                                ' ] has received a payment of ' +
+                                (outputSelected.amount / 100).toLocaleString('en-US') +
                                 'XEC from ' +
                                 result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
                                 '\n\n' +
