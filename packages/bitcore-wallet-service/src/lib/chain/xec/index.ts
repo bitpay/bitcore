@@ -1,6 +1,7 @@
 import { BitcoreLibXec } from '@abcpros/crypto-wallet-core';
 import { ChronikClient } from 'chronik-client';
-import _ from 'lodash';
+import _, { isNumber } from 'lodash';
+import { Token } from 'typescript';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 const config = require('../../../config');
@@ -9,8 +10,7 @@ const Errors = require('../../errors/errordefinitions');
 const Common = require('../../common');
 const Utils = Common.Utils;
 const BCHJS = require('@abcpros/xpi-js');
-const bchURL = config.supportToken.xec.bchUrl;
-const bchjs = new BCHJS({ restURL: bchURL });
+const bchjs = new BCHJS({ restURL: '' });
 const ecashaddr = require('ecashaddrjs');
 const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
 export interface UtxoToken {
@@ -42,22 +42,13 @@ export interface IAddress {
 }
 
 export interface TokenInfo {
+  id: string;
+  symbol: string;
+  name: string;
   coin: string;
-  blockCreated?: number;
-  circulatingSupply?: number;
-  containsBaton: true;
   decimals: number;
   documentHash?: string;
   documentUri: string;
-  id: string;
-  initialTokenQty: number;
-  name: string;
-  symbol: string;
-  timestamp: string;
-  timestamp_unix?: number;
-  totalBurned: number;
-  totalMinted: number;
-  versionType: number;
 }
 export class XecChain extends BtcChain implements IChain {
   chronikClient: ChronikClient;
@@ -86,7 +77,20 @@ export class XecChain extends BtcChain implements IChain {
   }
 
   async getTokenInfo(tokenId) {
-    return await bchjs.SLP.Utils.list(tokenId);
+    const tx = await this.chronikClient.tx(tokenId);
+    return {
+      coin: "xec",
+      id: tx.slpTxData?.slpMeta.tokenId || "",
+      symbol: tx.slpTxData?.genesisInfo?.tokenTicker || "",
+      name:  tx.slpTxData?.genesisInfo?.tokenName || "",
+      documentUri: tx.slpTxData?.genesisInfo?.tokenDocumentUrl || "",
+      documentHash: tx.slpTxData?.genesisInfo?.tokenDocumentHash || "",
+      decimals:  tx.slpTxData &&
+      tx.slpTxData.genesisInfo &&
+      isNumber(tx.slpTxData.genesisInfo.decimals)
+        ? tx.slpTxData.genesisInfo.decimals
+        : NaN
+    } as TokenInfo
   }
 
   async sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {
