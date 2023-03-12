@@ -1816,7 +1816,47 @@ export class ExpressApp {
       });
     });
 
-    router.put('/v3/order/:id', (req, res) => {
+    router.put('/v3/admin/order/:id', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          server.updateOrderById({ orderId: reqServer.params['id'], order: reqServer.body }, (err, order) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(order);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.put('/v3/admin/order/status/:id', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          server.updateOrderStatus({ orderId: reqServer.params['id'], status: reqServer.body.status }, (err, order) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(order);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.put('/v3/order/:id/status', (req, res) => {
       let server;
       try {
         server = getServer(req, res);

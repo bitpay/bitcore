@@ -668,6 +668,28 @@ export class Storage {
     );
   }
 
+  updateOrderStatus(id: string, status: string, cb) {
+    this.db.collection(collections.ORDER_INFO).updateOne(
+      {
+        id
+      },
+      {
+        $set: {
+          status
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
   updateConversionOrder(orderInfo: ConversionOrder, cb) {
     this.db.collection(collections.CONVERSION_ORDER_INFO).updateOne(
       {

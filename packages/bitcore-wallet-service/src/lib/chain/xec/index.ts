@@ -79,18 +79,17 @@ export class XecChain extends BtcChain implements IChain {
   async getTokenInfo(tokenId) {
     const tx = await this.chronikClient.tx(tokenId);
     return {
-      coin: "xec",
-      id: tx.slpTxData?.slpMeta.tokenId || "",
-      symbol: tx.slpTxData?.genesisInfo?.tokenTicker || "",
-      name:  tx.slpTxData?.genesisInfo?.tokenName || "",
-      documentUri: tx.slpTxData?.genesisInfo?.tokenDocumentUrl || "",
-      documentHash: tx.slpTxData?.genesisInfo?.tokenDocumentHash || "",
-      decimals:  tx.slpTxData &&
-      tx.slpTxData.genesisInfo &&
-      isNumber(tx.slpTxData.genesisInfo.decimals)
-        ? tx.slpTxData.genesisInfo.decimals
-        : NaN
-    } as TokenInfo
+      coin: 'xec',
+      id: tx.slpTxData?.slpMeta.tokenId || '',
+      symbol: tx.slpTxData?.genesisInfo?.tokenTicker || '',
+      name: tx.slpTxData?.genesisInfo?.tokenName || '',
+      documentUri: tx.slpTxData?.genesisInfo?.tokenDocumentUrl || '',
+      documentHash: tx.slpTxData?.genesisInfo?.tokenDocumentHash || '',
+      decimals:
+        tx.slpTxData && tx.slpTxData.genesisInfo && isNumber(tx.slpTxData.genesisInfo.decimals)
+          ? tx.slpTxData.genesisInfo.decimals
+          : NaN
+    } as TokenInfo;
   }
 
   async sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {
