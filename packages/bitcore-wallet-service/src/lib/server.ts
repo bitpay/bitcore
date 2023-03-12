@@ -5735,7 +5735,7 @@ export class WalletService {
       this.storage.updateOrderStatus(opts.orderId, opts.status, async (err, result) => {
         if (err) return cb(err);
 
-        const orderInfo = await this._getOrderInfo({ id: opts.orderId });        
+        const orderInfo = await this._getOrderInfo({ id: opts.orderId });
         const stringUserSentToDepositAddress =
           orderInfo.actualSent > 0 ? orderInfo.actualSent.toLocaleString('en-US') : '--';
         const stringUserReceived = '--';
