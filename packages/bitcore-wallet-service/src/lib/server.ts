@@ -4529,6 +4529,7 @@ export class WalletService {
                               );
                               const maxAmountSat = _.toSafeInteger(coinConfigSelected.maxConvertToSat);
                               const minAmountSat = _.toSafeInteger(coinConfigSelected.minConvertToSat);
+                              orderInfo.actualSent = amountDepositDetect / orderInfo.fromSatUnit;
                               if (amountDepositDetect < minAmountSat) {
                                 saveError(orderInfo, data, Errors.BELOW_MIN_LIMIT);
                                 return;
@@ -4542,7 +4543,6 @@ export class WalletService {
                               amountUserDepositConverted = _.toSafeInteger(amountUserDepositConverted);
                               this.walletId = fundingWallet.credentials.walletId;
                               this.copayerId = fundingWallet.credentials.copayerId;
-                              orderInfo.actualSent = amountDepositDetect / orderInfo.fromSatUnit;
                               let amountDepositInToCoinCodeUnit =
                                 (amountDepositDetect / orderInfo.fromSatUnit) *
                                 orderInfo.toSatUnit *
@@ -5720,6 +5720,89 @@ export class WalletService {
       const orderInfo = Order.fromObj(opts.order);
       this.storage.updateOrderById(opts.orderId, orderInfo, (err, result) => {
         if (err) return cb(err);
+        return cb(null, { isUpdated: true });
+      });
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
+  async updateOrderStatus(opts, cb) {
+    try {
+      if (!opts.orderId) {
+        return cb(new Error('Missing required parameter order Id'));
+      }
+      this.storage.updateOrderStatus(opts.orderId, opts.status, async (err, result) => {
+        if (err) return cb(err);
+
+        const orderInfo = await this._getOrderInfo({ id: opts.orderId });
+        const stringUserSentToDepositAddress =
+          orderInfo.actualSent > 0 ? orderInfo.actualSent.toLocaleString('en-US') : '--';
+        const stringUserReceived = '--';
+        const unitFrom = orderInfo.isFromToken ? orderInfo.fromTokenInfo.symbol : orderInfo.fromCoinCode.toUpperCase();
+        const unitTo = orderInfo.isToToken ? orderInfo.toTokenInfo.symbol : orderInfo.toCoinCode.toUpperCase();
+        let balanceFinal = 0;
+        if (orderInfo.isToToken) {
+          const fundingWallet = clientsFund.find(
+            s =>
+              s.credentials.coin === 'xec' &&
+              (s.credentials.rootPath.includes('1899') || s.credentials.rootPath.includes('145'))
+          );
+          let balanceTokenFound = null;
+          balanceTokenFound = await this.getTokensWithPromise({ walletId: fundingWallet.credentials.walletId });
+          if (!!balanceTokenFound) {
+            const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+              return {
+                tokenId: item.tokenId,
+                tokenInfo: item.tokenInfo,
+                amountToken: item.amountToken,
+                utxoToken: item.utxoToken
+              } as TokenItem;
+            });
+            const balance = listBalanceTokenConverted.find(
+              token => token.tokenInfo.symbol.toLowerCase() === orderInfo.toCoinCode.toLowerCase()
+            );
+            if (balance && !isNaN(balance.amountToken)) {
+              balanceFinal = balance.amountToken;
+            }
+          }
+        } else {
+          const fundingWallet = clientsFund.find(
+            s => s.credentials.coin === orderInfo.toCoinCode && s.credentials.network === orderInfo.toNetwork
+          );
+          let balanceCoin = null;
+          balanceCoin = await this.getBalanceWithPromise({
+            walletId: fundingWallet.credentials.walletId,
+            coinCode: fundingWallet.credentials.coin,
+            network: fundingWallet.credentials.network
+          });
+          if (!!balanceCoin) {
+            balanceFinal = balanceCoin.balance.totalAmount / UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+          }
+        }
+
+        botSwap.sendMessage(
+          config.swapTelegram.channelSuccessId,
+          'Manually completed :: ' +
+            'Order no.' +
+            orderInfo.id +
+            ' :: ' +
+            stringUserSentToDepositAddress +
+            ' ' +
+            unitFrom +
+            ' to ' +
+            stringUserReceived +
+            ' ' +
+            unitTo +
+            ' :: ' +
+            'Balance: ' +
+            balanceFinal.toLocaleString('en-US') +
+            ' ' +
+            unitTo,
+          {
+            parse_mode: 'HTML'
+          }
+        );
         return cb(null, { isUpdated: true });
       });
     } catch (e) {
@@ -7400,8 +7483,7 @@ export class WalletService {
         );
         if (
           clientFund.credentials.coin === 'xec' &&
-          (clientFund.credentials.rootPath.includes('1899') || clientFund.credentials.rootPath.includes('145')) &&
-          swapConfig.coinReceive.findIndex(s => s.isToken === true) > -1
+          (clientFund.credentials.rootPath.includes('1899') || clientFund.credentials.rootPath.includes('145'))
         ) {
           balanceTokenFound = await this.getTokensWithPromise({ walletId: clientFund.credentials.walletId });
         }
@@ -7423,45 +7505,23 @@ export class WalletService {
           this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
             this._getRatesWithCustomFormat((err, fiatRates) => {
               try {
-                for (var i = 0; i < swapConfig.coinReceive.length; i++) {
-                  const coin = swapConfig.coinReceive[i];
-                  const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
-                  const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
-                  const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
-                  if (coin.isToken && listBalanceTokenConverted) {
-                    const balanceSelected = listBalanceTokenConverted.find(
-                      s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
-                    );
-                    if (balanceSelected && !isNaN(balanceSelected.amountToken)) {
-                      const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
-                        .decimals;
-                      coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
-                      coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
-                      coin.fund = balanceSelected.amountToken * rateCoinUsd;
-                      coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
-                      coin.decimals = tokenDecimals;
-                    }
-                  } else {
-                    const balanceFound = balance.find(
-                      s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network
-                    );
-                    if (balanceFound) {
-                      const balanceTotal = balanceFound.balance.totalAmount;
-                      coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-                      coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-                      coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
-                      coin.fundConvertToSat = balanceTotal;
-                      coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
-                    }
-                  }
-                  coin.rate = fiatRates[coin.code.toLowerCase()];
-                }
-                swapConfig.coinSwap.forEach(coin => {
-                  coin.rate = fiatRates[coin.code.toLowerCase()];
-                });
+                this._handleListCoinConfig(
+                  swapConfig.coinReceive,
+                  fiatRates,
+                  listBalanceTokenConverted,
+                  balance,
+                  tokenInfoList
+                );
+                this._handleListCoinConfig(
+                  swapConfig.coinSwap,
+                  fiatRates,
+                  listBalanceTokenConverted,
+                  balance,
+                  tokenInfoList
+                );
 
                 if (listRateWithPromise) {
-                  this._getNetworkFeeForListCoinReceive(listRateWithPromise, swapConfig);
+                  this._getNetworkFeeForSwapConfig(listRateWithPromise, swapConfig);
                   return cb(null, swapConfig);
                 } else {
                   // calculate fee for all support coin
@@ -7475,7 +7535,7 @@ export class WalletService {
                         listRateWithPromise = null;
                       }
                     }, 5 * 60 * 1000);
-                    this._getNetworkFeeForListCoinReceive(listData, swapConfig);
+                    this._getNetworkFeeForSwapConfig(listData, swapConfig);
                     return cb(null, swapConfig);
                   });
                 }
@@ -7492,6 +7552,60 @@ export class WalletService {
     });
   }
 
+  _handleListCoinConfig(listCoinConfig: CoinConfig[], fiatRates, listBalanceTokenConverted, balances, tokenInfoList) {
+    for (var i = 0; i < listCoinConfig.length; i++) {
+      const coin = listCoinConfig[i];
+      const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
+      const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
+      const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
+      if (coin.isToken && listBalanceTokenConverted) {
+        const balanceSelected = listBalanceTokenConverted.find(
+          s => s.tokenInfo.symbol.toLowerCase() === coin.code.toLowerCase()
+        );
+        if (balanceSelected && !isNaN(balanceSelected.amountToken)) {
+          const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase()).decimals;
+          coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
+          coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
+          coin.fund = balanceSelected.amountToken * rateCoinUsd;
+          coin.fundConvertToSat = balanceSelected.amountToken * Math.pow(10, tokenDecimals);
+          coin.decimals = tokenDecimals;
+        }
+      } else {
+        const balanceFound = balances.find(
+          s => s.coin.toLowerCase() === coin.code.toLowerCase() && s.network === coin.network
+        );
+        if (balanceFound) {
+          const balanceTotal = balanceFound.balance.totalAmount;
+          coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+          coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
+          coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
+          coin.fundConvertToSat = balanceTotal;
+          coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
+        }
+      }
+      coin.rate = fiatRates[coin.code.toLowerCase()];
+    }
+  }
+
+  _handleListCoinConfigWithNobalance(listCoinConfig: CoinConfig[], fiatRates, tokenInfoList) {
+    for (var i = 0; i < listCoinConfig.length; i++) {
+      const coin = listCoinConfig[i];
+      const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
+      const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
+      const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
+      if (coin.isToken) {
+        const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase()).decimals;
+        coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
+        coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
+        coin.decimals = tokenDecimals;
+      } else {
+        coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
+        coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
+        coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
+      }
+      coin.rate = fiatRates[coin.code.toLowerCase()];
+    }
+  }
   /**
    * Returns swap configetOrderInfog.
    */
@@ -7511,30 +7625,10 @@ export class WalletService {
       this.getAllTokenInfo((err, tokenInfoList: TokenInfo[]) => {
         this._getRatesWithCustomFormat((err, fiatRates) => {
           try {
-            for (var i = 0; i < swapConfig.coinReceive.length; i++) {
-              const coin = swapConfig.coinReceive[i];
-              const coinQuantityFromUSDMin = coin.min / fiatRates[coin.code.toLowerCase()].USD;
-              const coinQuantityFromUSDMax = coin.max / fiatRates[coin.code.toLowerCase()].USD;
-              const rateCoinUsd = fiatRates[coin.code.toLowerCase()].USD;
-              if (coin.isToken) {
-                const tokenDecimals = tokenInfoList.find(s => s.symbol.toLowerCase() === coin.code.toLowerCase())
-                  .decimals;
-                coin.minConvertToSat = coinQuantityFromUSDMin * Math.pow(10, tokenDecimals);
-                coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
-                coin.decimals = tokenDecimals;
-              } else {
-                coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-                coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-                coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
-              }
-              coin.rate = fiatRates[coin.code.toLowerCase()];
-            }
-            swapConfig.coinSwap.forEach(coin => {
-              coin.rate = fiatRates[coin.code.toLowerCase()];
-            });
-
+            this._handleListCoinConfigWithNobalance(swapConfig.coinReceive, fiatRates, tokenInfoList);
+            this._handleListCoinConfigWithNobalance(swapConfig.coinSwap, fiatRates, tokenInfoList);
             if (listRateWithPromise) {
-              this._getNetworkFeeForListCoinReceive(listRateWithPromise, swapConfig);
+              this._getNetworkFeeForSwapConfig(listRateWithPromise, swapConfig);
               return cb(null, swapConfig);
             } else {
               // calculate fee for all support coin
@@ -7548,7 +7642,7 @@ export class WalletService {
                     listRateWithPromise = null;
                   }
                 }, 5 * 60 * 1000);
-                this._getNetworkFeeForListCoinReceive(listData, swapConfig);
+                this._getNetworkFeeForSwapConfig(listData, swapConfig);
                 return cb(null, swapConfig);
               });
             }
@@ -7561,7 +7655,7 @@ export class WalletService {
     });
   }
 
-  _getNetworkFeeForListCoinReceive(listFeePerKb, swapConfig) {
+  _getNetworkFeeForSwapConfig(listFeePerKb, swapConfig) {
     listFeePerKb.forEach((data: any) => {
       const coin = data.coin;
       const feePerKb = data.feePerKb;
@@ -7582,12 +7676,19 @@ export class WalletService {
         const feePerInput = (sizePerInput * feePerKb) / 1000;
         estimatedFee = Math.round(baseTxpFee + feePerInput);
       }
+      const coinSwapFound = swapConfig.coinSwap.find(
+        coinReceive => coinReceive.code.toLowerCase() === coin.code.toLowerCase()
+      );
       const coinReceiveFound = swapConfig.coinReceive.find(
         coinReceive => coinReceive.code.toLowerCase() === coin.code.toLowerCase()
       );
       if (coinReceiveFound && coinReceiveFound.networkFee === 0) {
         const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
         coinReceiveFound.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+      }
+      if (coinSwapFound && coinSwapFound.networkFee === 0) {
+        const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
+        coinSwapFound.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
       }
     });
   }
