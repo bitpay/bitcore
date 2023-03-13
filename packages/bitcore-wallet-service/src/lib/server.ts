@@ -2420,7 +2420,7 @@ export class WalletService {
                 },
                 async next => {
                   // If an EVM TX nonce is not given, we will set it during TX signing
-                  if (!opts.nonce && !ChainService.isEVMChain(wallet.chain)) {
+                  if (!_.isNumber(opts.nonce) && !ChainService.isEVMChain(wallet.chain)) {
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
@@ -2784,36 +2784,6 @@ export class WalletService {
     });
   }
 
-  /**
-   * Sign a transaction proposal.
-   * @param {Object} opts
-   * @param {string} opts.txProposalId - The identifier of the transaction.
-   * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
-   * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
-   * @param {boolean} opts.supportBchSchnorr - indication whether to use schnorr for signing tx
-   */
-  signTx(opts, cb) {
-    if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
-    opts.maxTxpVersion = opts.maxTxpVersion || 3;
-
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
-
-      if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
-        let Err = Errors.NETWORK_SUSPENDED;
-        Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
-        return cb(Err);
-      }
-
-      if (ChainService.isEVMChain(wallet.chain)) {
-        this._runLocked(cb, cb => {
-          this._signTx(wallet, opts, cb);
-        });
-      } else {
-        this._signTx(wallet, opts, cb);
-      }
-    });
-  }
 
   _signTx(wallet, opts, cb) {
     this.getTx(
@@ -2842,7 +2812,7 @@ export class WalletService {
 
         const copayer = wallet.getCopayer(this.copayerId);
 
-        if (!txp.nonce && ChainService.isEVMChain(wallet.chain)) {
+        if (!_.isNumber(opts.nonce) && ChainService.isEVMChain(wallet.chain)) {
           try {
             txp.nonce = await ChainService.getTransactionCount(this, wallet, txp.from);
           } catch (error) {
@@ -2895,6 +2865,37 @@ export class WalletService {
         });
       }
     );
+  }
+
+  /**
+   * Sign a transaction proposal.
+   * @param {Object} opts
+   * @param {string} opts.txProposalId - The identifier of the transaction.
+   * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
+   * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
+   * @param {boolean} opts.supportBchSchnorr - indication whether to use schnorr for signing tx
+   */
+  signTx(opts, cb) {
+    if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
+    opts.maxTxpVersion = opts.maxTxpVersion || 3;
+
+    this.getWallet({}, (err, wallet) => {
+      if (err) return cb(err);
+
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
+        let Err = Errors.NETWORK_SUSPENDED;
+        Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
+        return cb(Err);
+      }
+
+      if (ChainService.isEVMChain(wallet.chain)) {
+        this._runLocked(cb, cb => {
+          this._signTx(wallet, opts, cb);
+        });
+      } else {
+        this._signTx(wallet, opts, cb);
+      }
+    });
   }
 
   _processBroadcast(txp, opts, cb) {

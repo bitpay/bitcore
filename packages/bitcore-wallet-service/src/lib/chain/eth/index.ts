@@ -274,7 +274,7 @@ export class EthChain implements IChain {
 
     if (multiSendContractAddress) {
       let multiSendParams = {
-        nonce: txp.nonce ? Number(txp.nonce) : null,
+        nonce: txp.nonce != null ? Number(txp.nonce) : null,
         recipients,
         contractAddress: multiSendContractAddress
       };
@@ -283,7 +283,7 @@ export class EthChain implements IChain {
       for (let index = 0; index < recipients.length; index++) {
         let params = {
           ...recipients[index],
-          nonce: txp.nonce ? Number(txp.nonce) + Number(index) : null,
+          nonce: txp.nonce != null ? Number(txp.nonce) + Number(index) : null,
           recipients: [recipients[index]]
         };
         unsignedTxs.push(Transactions.create({ ...txp, chain, ...params }));

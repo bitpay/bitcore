@@ -39,7 +39,7 @@ export class MaticChain extends EthChain {
         ...txp,
         ...recipients[index],
         chain,
-        nonce: txp.nonce ? Number(txp.nonce) + Number(index) : null,
+        nonce: txp.nonce != null ? Number(txp.nonce) + Number(index) : null,
         recipients: [recipients[index]]
       });
       unsignedTxs.push(rawTx);
