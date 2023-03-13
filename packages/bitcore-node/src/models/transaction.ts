@@ -57,9 +57,9 @@ export interface MintOp {
         spentHeight?: SpentHeightIndicators;
         wallets?: Array<ObjectID>;
       };
-      $setOnInsert: {
+      $setOnInsert?: {
         spentHeight: SpentHeightIndicators;
-        wallets: Array<ObjectID>;
+        wallets?: Array<ObjectID>;
       };
     };
     upsert: true;
@@ -436,9 +436,11 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
             .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
             .map(wallet => wallet.wallet);
           mintOp.updateOne.update.$set.wallets = transformedWallets;
-          delete mintOp.updateOne.update.$setOnInsert.wallets;
-          if (!Object.keys(mintOp.updateOne.update.$setOnInsert).length) {
-            delete mintOp.updateOne.update.$setOnInsert;
+          if (mintOp.updateOne.update.$setOnInsert) {
+            delete mintOp.updateOne.update.$setOnInsert.wallets;
+            if (!Object.keys(mintOp.updateOne.update.$setOnInsert).length) {
+              delete mintOp.updateOne.update.$setOnInsert;
+            }
           }
         }
 

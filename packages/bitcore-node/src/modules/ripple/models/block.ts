@@ -1,9 +1,10 @@
 import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
-import { BaseBlock, IBlock } from '../../../models/baseBlock';
+import { BaseBlock } from '../../../models/baseBlock';
 import { EventStorage } from '../../../models/events';
 import { StorageService } from '../../../services/storage';
+import { IBlock } from '../../../types/Block';
 import { TransformOptions } from '../../../types/TransformOptions';
 import { IXrpBlock, IXrpCoin, IXrpTransaction } from '../types';
 import { XrpTransactionStorage } from './transaction';

@@ -4,22 +4,6 @@ import { ChainNetwork } from '../types/ChainNetwork';
 import { TransformOptions } from '../types/TransformOptions';
 import { BaseModel, MongoBound } from './base';
 
-export interface IBlock {
-  chain: string;
-  confirmations?: number;
-  network: string;
-  height: number;
-  hash: string;
-  time: Date;
-  timeNormalized: Date;
-  previousBlockHash: string;
-  nextBlockHash: string;
-  transactionCount: number;
-  size: number;
-  reward: number;
-  processed: boolean;
-}
-
 export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
   constructor(storage?: StorageService) {
     super('blocks', storage);

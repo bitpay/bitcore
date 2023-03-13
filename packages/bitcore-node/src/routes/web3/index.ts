@@ -21,7 +21,7 @@ export function Web3Proxy(req: express.Request, res: express.Response) {
       };
       requestStream = request(options);
     } else {
-      requestStream = req.pipe(request(url));
+      requestStream = req.pipe(request(url) as any);
     }
     requestStream
       .on('error', () => {

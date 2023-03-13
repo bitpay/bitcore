@@ -6,7 +6,6 @@ import { Validation } from 'crypto-wallet-core';
 import { ObjectId } from 'mongodb';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { MongoBound } from '../../../models/base';
-import { IBlock } from '../../../models/baseBlock';
 import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
 import { CacheStorage } from '../../../models/cache';
 import { CoinStorage, ICoin } from '../../../models/coin';
@@ -17,6 +16,7 @@ import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddr
 import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
+import { IBlock } from '../../../types/Block';
 import { CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
 import { IUtxoNetworkConfig } from '../../../types/Config';
 import {

@@ -48,7 +48,7 @@ export class GethRPC implements IRpc {
         jsonrpc: '2.0',
         id: 1
       });
-    } catch (e) {
+    } catch (e: any) {
       logger.debug(e.message || e);
     }
     return result;

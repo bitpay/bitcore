@@ -3362,6 +3362,28 @@ export class API extends EventEmitter {
     });
   }
 
+  rampGetQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/ramp/quote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  rampGetSignedPaymentUrl(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/ramp/signedPaymentUrl',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
   simplexGetQuote(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post('/v1/service/simplex/quote', data, (err, data) => {

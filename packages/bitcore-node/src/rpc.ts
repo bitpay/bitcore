@@ -147,7 +147,7 @@ export class AsyncRPC {
     try {
       const ret = await this.call('signrawtransactionwithwallet', [txs]);
       return ret;
-    } catch (e) {
+    } catch (e: any) {
       if (!e.code || e.code != -32601) return Promise.reject(e);
       return await this.call('signrawtransaction', [txs]);
     }

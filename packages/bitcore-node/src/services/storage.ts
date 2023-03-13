@@ -54,7 +54,7 @@ export class StorageService {
           clearInterval(attemptConnectId);
           this.connection.emit('CONNECTED');
           resolve(this.client);
-        } catch (err) {
+        } catch (err: any) {
           logger.error(err);
           attempted++;
           if (attempted > 5) {
@@ -124,6 +124,7 @@ export class StorageService {
         closed = true;
         return res.status(500).end(err.message);
       }
+      return;
     });
     let isFirst = true;
     res.type('json');
@@ -166,6 +167,7 @@ export class StorageService {
         closed = true;
         return res.status(500).end(err.message);
       }
+      return;
     });
     let isFirst = true;
     res.type('json');
