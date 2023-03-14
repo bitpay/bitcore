@@ -8,7 +8,7 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
-var Common = require('../../ts_build/lib/common');
+var { Common } = require('../../ts_build/lib/common');
 var Defaults = Common.Defaults;
 var Constants = Common.Constants;
 

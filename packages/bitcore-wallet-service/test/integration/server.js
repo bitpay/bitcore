@@ -27,7 +27,7 @@ const Bitcore_ = {
 
 const { WalletService } = require('../../ts_build/lib/server');
 const { Storage } = require('../../ts_build/lib/storage')
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
