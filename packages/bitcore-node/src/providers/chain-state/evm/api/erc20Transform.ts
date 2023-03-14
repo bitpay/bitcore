@@ -1,67 +1,67 @@
 import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../../models/base';
-import { IEVMTransaction, IEVMTransactionTransformed } from '../types';
+import { IAbiDecodedData, IEVMTransaction } from '../types';
 
 export class Erc20RelatedFilterTransform extends Transform {
-  constructor(private web3: Web3, private tokenAddress: string) {
+  constructor(private web3: Web3, private walletAddresses: string[]) {
     super({ objectMode: true });
   }
 
   async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
+    tx.transfers = [];
+    // Check if tx has the abi for an ERC20 transfer or transferFrom
     if (
       tx.abiType &&
       tx.abiType.type === 'ERC20' &&
-      tx.abiType.name === 'transfer' &&
-      tx.to.toLowerCase() === this.tokenAddress.toLowerCase()
+      (tx.abiType.name === 'transfer' || tx.abiType.name === 'transferFrom')
     ) {
-      tx.value = tx.abiType!.params[1].value as any;
-      tx.to = this.web3.utils.toChecksumAddress(tx.abiType!.params[0].value);
-    } else if (
-      tx.abiType &&
-      tx.abiType.type === 'INVOICE' &&
-      tx.abiType.name === 'pay' &&
-      tx.abiType.params[8].value.toLowerCase() === this.tokenAddress.toLowerCase()
-    ) {
-      tx.value = tx.abiType!.params[0].value as any;
-    } else if (tx.internal && tx.internal.length > 0) {
+      
+      tx.transfers.push({
+        to: this.getERC20AbiPropertyValue(tx.abiType, tx.from, 'to'),
+        from: this.getERC20AbiPropertyValue(tx.abiType, tx.from, 'from'),
+        value: this.getERC20AbiPropertyValue(tx.abiType, tx.from, 'value') as any,
+        tokenContract: tx.to
+      });
+    } 
+    
+    // Then check if any internal Txs have ERC20 transfer or transferFrom
+    if (tx.internal && tx.internal.length > 0) {
       this.erigonInternalTransform(tx);
-      return done();
     } else if (tx.calls && tx.calls.length > 0) {
       this.gethInternalTransform(tx);
-      return done();
-    } else {
-      return done();
-    }
+    } 
+
     this.push(tx);
     return done();
   }
 
   erigonInternalTransform(tx: MongoBound<IEVMTransaction>) {
     try {
-      const tokenRelatedIncomingInternalTxs = tx.internal.filter(
-        (internalTx: any) =>
-          internalTx.action.to && this.tokenAddress.toLowerCase() === internalTx.action.to.toLowerCase()
-      );
-      for (const internalTx of tokenRelatedIncomingInternalTxs) {
+      for (const internalTx of tx.internal) {
         if (
           internalTx.abiType &&
+          internalTx.abiType.type == 'ERC20' &&
           (internalTx.abiType.name === 'transfer' || internalTx.abiType.name === 'transferFrom')
         ) {
-          const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
-          for (const element of internalTx.abiType.params) {
-            if (element.name === '_value') _tx.value = element.value as any;
-            if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);
-            if (element.name === '_from') {
-              _tx.initialFrom = tx.from;
-              _tx.from = this.web3.utils.toChecksumAddress(element.value);
-            } else if (internalTx.action.from && internalTx.abiType && internalTx.abiType.name == 'transfer') {
-              _tx.initialFrom = tx.from;
-              _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
+            // If we have walletAddresses then skip any internal tx that doesn't pertain to them
+            if (
+              this.walletAddresses &&
+              this.walletAddresses.length > 0 &&
+              !(this.walletAddresses.includes(internalTx.action.to) ||
+                this.walletAddresses.includes(internalTx.action.from!))
+            ) {
+              continue;
             }
+
+            tx.transfers = tx.transfers || [];
+            tx.transfers.push({
+              to: this.getERC20AbiPropertyValue(internalTx.abiType, internalTx.action.from as string, 'to'),
+              from: this.getERC20AbiPropertyValue(internalTx.abiType, internalTx.action.from as string, 'from'),
+              value: this.getERC20AbiPropertyValue(internalTx.abiType, internalTx.action.from as string, 'value') as any,
+              tokenContract: tx.to
+            });
           }
-          this.push(_tx);
-        }
       }
     } catch (err) {
       console.error(err);
@@ -70,28 +70,44 @@ export class Erc20RelatedFilterTransform extends Transform {
 
   gethInternalTransform(tx: MongoBound<IEVMTransaction>) {
     try {
-      const tokenRelatedIncomingCalls = tx.calls.filter(
-        call => this.tokenAddress.toLowerCase() === call.to.toLowerCase()
-      );
-      for (const call of tokenRelatedIncomingCalls) {
-        if (call.abiType && (call.abiType.name === 'transfer' || call.abiType.name === 'transferFrom')) {
-          const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
-          for (const element of call.abiType.params) {
-            if (element.name === '_value') _tx.value = element.value as any;
-            if (element.name === '_to') _tx.to = this.web3.utils.toChecksumAddress(element.value);
-            if (element.name === '_from') {
-              _tx.initialFrom = tx.from;
-              _tx.from = this.web3.utils.toChecksumAddress(element.value);
-            } else if (call.from && call.abiType && call.abiType.name == 'transfer') {
-              _tx.initialFrom = tx.from;
-              _tx.from = this.web3.utils.toChecksumAddress(call.from);
-            }
+      for (const call of tx.calls) {
+        if (call.abiType && call.abiType.type === 'ERC20' && (call.abiType.name === 'transfer' || call.abiType.name === 'transferFrom')) {
+          // If we have walletAddresses then skip any internal tx that doesn't pertain to them
+          if (
+            this.walletAddresses &&
+            this.walletAddresses.length > 0 &&
+            !(this.walletAddresses.includes(call.to) ||
+              this.walletAddresses.includes(call.from!))
+          ) {
+            continue;
           }
-          this.push(_tx);
+
+          tx.transfers = tx.transfers || [];
+          tx.transfers.push({
+            to: this.getERC20AbiPropertyValue(call.abiType, call.from, 'to'),
+            from: this.getERC20AbiPropertyValue(call.abiType, call.from, 'from'),
+            value: this.getERC20AbiPropertyValue(call.abiType, call.from, 'value') as any,
+            tokenContract: tx.to
+          });
         }
       }
     } catch (err) {
       console.error(err);
     }
+  }
+  
+  getERC20AbiPropertyValue(abi: IAbiDecodedData, from: string , property: string): string {
+    // Transfer method unlike tranferFrom doesn't have from address in params
+    if (abi.name === 'transfer' && property === 'from') {
+      return this.web3.utils.toChecksumAddress(from);
+    }
+
+    // If to or from, parse as checksum address
+    if (property === 'to' || property === 'from') {
+      return this.web3.utils.toChecksumAddress(abi.params.find(p => p.name === '_' + property)?.value || '');
+    }
+
+    // Otherwise must be value
+    return abi.params.find(p => p.name === '_' + property)?.value as string;
   }
 }

@@ -36,8 +36,8 @@ import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
-import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
+import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { EVMListTransactionsStream } from './transform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
@@ -359,12 +359,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-    const { network, wallet, res, args } = params;
+    const { network, wallet, res } = params;
     const { web3 } = await this.getWeb3(network);
     const query = this.getWalletTransactionQuery(params);
-
     let transactionStream = new Readable({ objectMode: true });
-    const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+    const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address) || [];
     const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
     const populateReceipt = new PopulateReceiptTransform();
 
@@ -373,18 +372,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
-    if (!args.tokenAddress && wallet._id) {
-      const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
-      transactionStream = transactionStream.pipe(internalTxTransform);
-    }
+    // Add tx receipt to results
+    transactionStream = transactionStream.pipe(populateReceipt);
 
-    if (args.tokenAddress) {
-      const erc20Transform = new Erc20RelatedFilterTransform(web3, args.tokenAddress);
-      transactionStream = transactionStream.pipe(erc20Transform);
-    }
+    const refundInternalTxTransform = new InternalTxRelatedFilterTransform(web3, walletAddresses);
+    transactionStream = transactionStream.pipe(refundInternalTxTransform);
+    
+    const erc20Transform = new Erc20RelatedFilterTransform(web3, walletAddresses);
+    transactionStream = transactionStream.pipe(erc20Transform);
 
     transactionStream
-      .pipe(populateReceipt)
       .pipe(ethTransactionTransform)
       .pipe(res);
   }

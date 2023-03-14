@@ -175,6 +175,13 @@ export type IEVMTransaction = ITransaction & {
     gasUsed: number;
     logs: Array<any>;
   };
+  transfers?: Array<{
+    to: string;
+    from: string;
+    value: number;
+    tokenContract: string;
+    category?: 'send' | 'receive' | 'move';
+  }>
 };
 
 export type IEVMTransactionTransformed = IEVMTransaction & {

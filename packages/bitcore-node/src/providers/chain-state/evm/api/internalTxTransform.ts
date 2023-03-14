@@ -1,32 +1,28 @@
 import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../../models/base';
-import { IWalletAddress, WalletAddressStorage } from '../../../../models/walletAddress';
 import { IEVMTransaction, IEVMTransactionTransformed } from '../types';
 
 export class InternalTxRelatedFilterTransform extends Transform {
-  private walletAddresses: IWalletAddress[] = [];
-  constructor(private web3: Web3, private walletId) {
+  constructor(private web3: Web3, private walletAddresses: string[]) {
     super({ objectMode: true });
   }
 
   /**
-   * This creates a duplicate transaction object for each relevant
-   * internal tx with the `value` field reset to the internal value.
+   * Subtracts any internal value that is being sent back to the
+   * original sending address from the original value sent.
    * @param tx Transaction object
    * @param _ Encoding (discarded)
    * @param done Callback
    * @returns
    */
   async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
-    const walletAddresses = await this.getWalletAddresses(tx);
-    // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
-
     let numInternalTxs = 0;
+    // Check internal txs for any that refund the sender
     if (tx.internal && tx.internal.length > 0) {
-      numInternalTxs = this.erigonTransform(tx, walletAddresses);
+      numInternalTxs = this.erigonRefundTransform(tx);
     } else if (tx.calls && tx.calls.length > 0) {
-      numInternalTxs = this.gethTransform(tx, walletAddresses);
+      numInternalTxs = this.gethRefundTransform(tx);
     }
 
     // Discard original tx if original value is 0
@@ -38,18 +34,10 @@ export class InternalTxRelatedFilterTransform extends Transform {
     return done();
   }
 
-  async getWalletAddresses(tx) {
-    if (!this.walletAddresses.length) {
-      this.walletAddresses = await WalletAddressStorage.collection
-        .find({ chain: tx.chain, network: tx.network, wallet: this.walletId })
-        .toArray();
-    }
-    return this.walletAddresses.map(walletAddress => walletAddress.address.toLowerCase());
-  }
-
-  erigonTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {
+  erigonRefundTransform(tx: MongoBound<IEVMTransaction>) {
+    // Filter to internal txs that are sending back to the original sender
     const walletRelatedInternalTxs = tx.internal.filter((internalTx: any) =>
-      walletAddresses.includes(internalTx.action.to)
+      this.walletAddresses.includes(this.web3.utils.toChecksumAddress(internalTx.action.to))
     );
     for (let internalTx of walletRelatedInternalTxs) {
       // Contract will refund the excess back to the sender
@@ -58,6 +46,7 @@ export class InternalTxRelatedFilterTransform extends Transform {
       if (isRefund) {
         tx.value -= internalValue;
       } else {
+        // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
         const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
         _tx.value = internalValue;
         _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
@@ -71,8 +60,9 @@ export class InternalTxRelatedFilterTransform extends Transform {
     return walletRelatedInternalTxs.length;
   }
 
-  gethTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {
-    const walletRelatedInternalTxs = tx.calls.filter((call: any) => walletAddresses.includes(call.to));
+  gethRefundTransform(tx: MongoBound<IEVMTransaction>) {
+    // Filter to internal txs that are sending back to the original sender
+    const walletRelatedInternalTxs = tx.calls.filter((call: any) => this.walletAddresses.includes(this.web3.utils.toChecksumAddress(call.to)));
     for (let call of walletRelatedInternalTxs) {
       // Contract will refund the excess back to the sender
       const isRefund = tx.value && call.to === tx.from.toLowerCase();
@@ -80,7 +70,8 @@ export class InternalTxRelatedFilterTransform extends Transform {
       if (isRefund) {
         tx.value -= internalValue;
       } else {
-        const _tx: IEVMTransactionTransformed = JSON.parse(JSON.stringify(tx));
+        // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
+        const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
         _tx.value = internalValue;
         _tx.to = this.web3.utils.toChecksumAddress(call.to);
         if (call.from) {
