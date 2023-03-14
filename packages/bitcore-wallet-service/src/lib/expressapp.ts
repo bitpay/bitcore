@@ -1370,7 +1370,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/pushnotifications/subscriptions/', (req, res) => {
+    router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
