@@ -4540,18 +4540,9 @@ export class WalletService implements IWalletService {
     if (!config.moonpay) throw new Error('Moonpay missing credentials');
 
     let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    if (req.body.context && req.body.context === 'web') {
-      if (req.body.env && req.body.env === 'production') {
-        env = 'productionWeb';
-      } else {
-        env = 'sandboxWeb';
-      }
-    } else {
-      if (req.body.env && req.body.env === 'production') {
-        env = 'production';
-      } else {
-        env = 'sandbox';
-      }
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
     }
 
     delete req.body.env;
