@@ -4542,27 +4542,17 @@ export class WalletService implements IWalletService {
    * @param {string} opts.bitpayIdLocationState - (Optional) State registered as address of the user logged in with BitpayId.
    */
   getServicesData(opts, cb) {
-    let externalServicesConfig: ExternalServicesConfig = config.services ?? Defaults.DEFAULT_EXTERNAL_SERVICES_CONFIG;
+    let externalServicesConfig: ExternalServicesConfig = config.services;
 
-    if (opts) {
-      // USA Specific restrictions
-      if (opts.bitpayIdLocationCountry && opts.bitpayIdLocationCountry !== '') {
-        // Logged in case
-        if (['US', 'USA'].includes(opts.bitpayIdLocationCountry?.toUpperCase())) {
-          if (['NY'].includes(opts.bitpayIdLocationState?.toUpperCase())) {
-            externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Changelly is currently unavailable in your area.'}};
-          } else {
-            return cb(null, externalServicesConfig);
-          }
-        } else {
-          return cb(null, externalServicesConfig);
-        }
-      } else {
-        // Logged out case
-        if (['US', 'USA'].includes(opts.currentLocationCountry?.toUpperCase()) && ['NY'].includes(opts.currentLocationState?.toUpperCase())) {
-          externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Changelly is currently unavailable in your area.'}};
-        }
-      }
+    const isLoggedIn = !!opts?.bitpayIdLocationCountry;
+
+    if (
+      // Logged in with bitpayId
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && ['NY'].includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      // Logged out (IP restriction)
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && ['NY'].includes(opts?.currentLocationState?.toUpperCase()))
+    ) {
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
     }
 
     return cb(null, externalServicesConfig);
