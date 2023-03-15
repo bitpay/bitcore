@@ -4743,7 +4743,7 @@ export class WalletService {
                         output => !result.inputAddresses.includes(output.address)
                       );
                       accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
-                      accountTo.amount = accountTo.amount - 5000;
+                      accountTo.amount = accountTo.amount - 5000 - accountTo.amount / 100;
                       this._getRatesWithCustomFormat((err, rateList) => {
                         if (isNaN(rateList['xec'].USD)) {
                           saveError(conversionOrderInfo, data, Errors.NOT_FOUND_RATE_XEC);
