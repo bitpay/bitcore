@@ -319,5 +319,5 @@ export const Defaults = {
     { code: 'AUD', name: 'Australian Dollar' },
     { code: 'JPY', name: 'Japanese Yen' },
     { code: 'NZD', name: 'New Zealand Dollar' }
-  ]
+  ],
 };

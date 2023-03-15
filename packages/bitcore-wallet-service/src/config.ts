@@ -113,7 +113,32 @@ const Config = () => {
       maintenanceMode: false
     },
     services: {
-      buyCrypto: { simplexPromotion202002: false }
+      buyCrypto: {
+        disabled: false,
+        moonpay: {
+          disabled: false,
+          removed: false
+        },
+        ramp: {
+          disabled: false,
+          removed: false
+        },
+        simplex: {
+          disabled: false,
+          removed: false
+        },
+        wyre: {
+          disabled: false,
+          removed: false
+        }
+      },
+      swapCrypto: { 
+        disabled: false,
+        changelly: {
+          disabled: false,
+          removed: false
+        }
+      },
     },
     suspendedChains: [],
     staticRoot: '/tmp/static'
