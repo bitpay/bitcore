@@ -225,9 +225,7 @@ const Config = () => {
     //     api: 'https://api.changelly.com'
     //   },
     //   v2: {
-    //     apiKeyBase64: 'changelly_api_key_base64_v2',
     //     secret: 'changelly_secret_v2',
-    //     publicKey: 'changelly_public_key_v2',
     //     api: 'https://api.changelly.com/v2'
     //   }
     // },

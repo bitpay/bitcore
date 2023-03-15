@@ -10,7 +10,7 @@ const helpers = require('./helpers');
 let config = require('../../ts_build/config.js');
 let server, wallet, fakeRequest, req;
 
-var { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+let { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
   modulusLength: 2048,
   publicKeyEncoding: {
     type: 'pkcs1',
@@ -37,9 +37,7 @@ describe('Changelly integration', () => {
         api: 'apiV1'
       },
       v2: {
-        apiKeyBase64: crypto.createHash('sha256').update(publicKey).digest('base64'),
         secret: privateKey.toString('hex'),
-        publicKey: publicKey.toString('base64'),
         api: 'apiV2'
       }
     }

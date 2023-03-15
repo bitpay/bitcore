@@ -1,4 +1,5 @@
 import * as async from 'async';
+import * as crypto from 'crypto'
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import logger from './logger';
@@ -30,7 +31,6 @@ import {
 import { Storage } from './storage';
 
 const config = require('../config');
-const crypto = require('crypto');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
@@ -5188,8 +5188,6 @@ export class WalletService implements IWalletService {
 
     const keys = {
       API: config.changelly.v2.api,
-      API_KEY_BASE64: config.changelly.v2.apiKeyBase64,
-      PUBLIC_KEY: config.changelly.v2.publicKey,
       SECRET: config.changelly.v2.secret
     };
 
@@ -5212,10 +5210,9 @@ export class WalletService implements IWalletService {
     if (!message || !secret) throw new Error('Missing parameters to sign Changelly v2 request');
 
     const privateKey = crypto.createPrivateKey({
-      key: secret,
+      key: Buffer.from(secret, 'hex'),
       format: 'der',
       type: 'pkcs8',
-      encoding: 'hex'
     });
     
     const publicKey = crypto.createPublicKey(privateKey).export({
@@ -5223,11 +5220,7 @@ export class WalletService implements IWalletService {
         format: 'der'
     });
 
-    const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), {
-      key: privateKey,
-      type: 'pkcs8',
-      format: 'der'
-    });
+    const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), privateKey);
 
     return {signature, publicKey};
   }
