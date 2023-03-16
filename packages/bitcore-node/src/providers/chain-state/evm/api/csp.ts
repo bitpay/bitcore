@@ -36,8 +36,8 @@ import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
-import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
+import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
