@@ -7,7 +7,7 @@ const config = require('../../../config');
 const Common = require('../../common');
 const Utils = Common.Utils;
 const Errors = require('../../errors/errordefinitions');
-const chronikClient = new ChronikClient('https://chronik.be.cash/xpi');
+const chronikClient = new ChronikClient(config.supportToken.xpi.chronikClientUrl);
 
 export class XpiChain extends BtcChain implements IChain {
   constructor() {

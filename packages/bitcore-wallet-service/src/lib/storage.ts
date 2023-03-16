@@ -1,8 +1,10 @@
 import * as async from 'async';
-import _ from 'lodash';
+import { AnyRecordWithTtl } from 'dns';
+import _, { countBy, isNull, isUndefined } from 'lodash';
 import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import { TokenInfo } from './chain/xec';
 import logger from './logger';
 import {
   Address,
@@ -17,7 +19,14 @@ import {
   TxProposal,
   Wallet
 } from './model';
+import { CoinConfig } from './model/config-swap';
+import { ConversionOrder } from './model/conversionOrder';
 import { DonationStorage } from './model/donation';
+import { Order } from './model/order';
+import { OrderInfoNoti } from './model/OrderInfoNoti';
+import { IUser } from './model/user';
+import { ICoinConfigFilter } from './server';
+// import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
@@ -26,6 +35,11 @@ const $ = require('preconditions').singleton();
 const collections = {
   // Duplciated in helpers.. TODO
   WALLETS: 'wallets',
+  USER: 'user',
+  USER_CONVERSION: 'user_conversion',
+  COIN_CONFIG: 'coin_config',
+  KEYS: 'keys',
+  KEYS_CONVERSION: 'keys_conversion',
   TXS: 'txs',
   ADDRESSES: 'addresses',
   ADVERTISEMENTS: 'advertisements',
@@ -42,6 +56,11 @@ const collections = {
   LOCKS: 'locks',
   DONATION: 'donation',
   TOKEN_INFO: 'token_info',
+  ORDER_INFO: 'order_info',
+  CONVERSION_ORDER_INFO: 'conversion_order_info',
+  USER_WATCH_ADDRESS: 'user_watch_address',
+  ORDER_INFO_NOTI: 'order_info_noti',
+  ORDER_QUEUE: 'order_queue'
 };
 
 const Common = require('./common');
@@ -58,6 +77,8 @@ export class Storage {
   static collections = collections;
   db: Db;
   queue: any;
+  orderQueue: any;
+  conversionOrderQueue: any;
   client: any;
 
   constructor(opts: { db?: Db } = {}) {
@@ -72,17 +93,42 @@ export class Storage {
       logger.error('DB not ready');
       return;
     }
+    db.collection(collections.USER).createIndex({
+      id: 1
+    });
+    db.collection(collections.USER_CONVERSION).createIndex({
+      id: 1
+    });
+    db.collection(collections.COIN_CONFIG).createIndex({
+      id: 1
+    });
+    db.collection(collections.KEYS).createIndex({
+      id: 1
+    });
+    db.collection(collections.KEYS_CONVERSION).createIndex({
+      id: 1
+    });
     db.collection(collections.WALLETS).createIndex({
       id: 1
     });
     db.collection(collections.DONATION).createIndex({
       txidDonation: 1
     });
-
     db.collection(collections.TOKEN_INFO).createIndex({
       id: 1
     });
-
+    db.collection(collections.ORDER_INFO).createIndex({
+      id: 1
+    });
+    db.collection(collections.CONVERSION_ORDER_INFO).createIndex({
+      id: 1
+    });
+    db.collection(collections.USER_WATCH_ADDRESS).createIndex({
+      id: 1
+    });
+    db.collection(collections.ORDER_INFO_NOTI).createIndex({
+      id: 1
+    });
     db.collection(collections.COPAYERS_LOOKUP).createIndex({
       copayerId: 1
     });
@@ -202,6 +248,8 @@ export class Storage {
       this.db = client.db(config.dbname);
       this.client = client;
       this.queue = mongoDbQueue(this.db, 'donation_queue');
+      this.orderQueue = mongoDbQueue(this.db, 'order_queue');
+      this.conversionOrderQueue = mongoDbQueue(this.db, 'conversion_order_queue');
       logger.info(`Connection established to db: ${config.uri}`);
 
       Storage.createIndexes(this.db);
@@ -299,6 +347,18 @@ export class Storage {
     );
   }
 
+  fetchTokenInfo(cb) {
+    if (!this.db) return cb();
+
+    this.db
+      .collection(collections.TOKEN_INFO)
+      .find({})
+      .toArray((err, result: TokenInfo[]) => {
+        if (err) return cb(err);
+        return cb(null, result);
+      });
+  }
+
   fetchDonationByTxid(txidDonation, cb) {
     if (!this.db) return cb();
 
@@ -349,6 +409,823 @@ export class Storage {
         upsert: false
       },
       cb
+    );
+  }
+
+  storeUser(user, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', user);
+      return;
+    }
+
+    this.db.collection(collections.USER).update(
+      {
+        email: user.email
+      },
+      {
+        $setOnInsert: user
+      },
+      { upsert: true },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result);
+      }
+    );
+  }
+  storeUserConversion(user, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', user);
+      return;
+    }
+
+    this.db.collection(collections.USER_CONVERSION).update(
+      {
+        email: user.email
+      },
+      {
+        $setOnInsert: user
+      },
+      { upsert: true },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchUserByEmail(email, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.USER).findOne(
+      {
+        email
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb('Can not find user in db');
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchUserConversionByEmail(email, cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.USER_CONVERSION).findOne(
+      {
+        email
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb('Can not find user conversion in db');
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeKeys(keys, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', keys);
+      return;
+    }
+
+    this.db.collection(collections.KEYS).insertOne(
+      keys,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeKeysConversion(keys, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', keys);
+      return;
+    }
+
+    this.db.collection(collections.KEYS_CONVERSION).insertOne(
+      keys,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchKeys(cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.KEYS).findOne({}, (err, result) => {
+      if (err) return cb(err);
+      if (!result) return cb(null, null);
+
+      return cb(null, result);
+    });
+  }
+
+  fetchKeysConversion(cb) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.KEYS_CONVERSION).findOne({}, (err, result) => {
+      if (err) return cb(err);
+      if (!result) return cb(null, null);
+
+      return cb(null, result);
+    });
+  }
+
+  updateKeys(keys, cb) {
+    this.db.collection(collections.KEYS).findOneAndUpdate(
+      {},
+      {
+        $set: {
+          keyFund: keys.keyFund,
+          keyReceive: keys.keyReceive,
+          hashPassword: keys.hashPassword,
+          hashRecoveryKey: keys.hashRecoveryKey
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update keys'));
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateKeysConversion(keys, cb) {
+    this.db.collection(collections.KEYS_CONVERSION).findOneAndUpdate(
+      {},
+      {
+        $set: {
+          keyFund: keys.keyFund,
+          hashPassword: keys.hashPassword,
+          hashRecoveryKey: keys.hashRecoveryKey,
+          lastModified: new Date()
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update key conversion'));
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateOrder(orderInfo: Order, cb) {
+    this.db.collection(collections.ORDER_INFO).updateOne(
+      {
+        id: orderInfo.id
+      },
+      {
+        $set: {
+          adddressUserDeposit: orderInfo.adddressUserDeposit,
+          updatedRate: orderInfo.updatedRate,
+          status: orderInfo.status,
+          isSentToFund: orderInfo.isSentToFund,
+          isSentToUser: orderInfo.isSentToUser,
+          listTxIdUserDeposit: orderInfo.listTxIdUserDeposit,
+          listTxIdUserReceive: orderInfo.listTxIdUserReceive,
+          error: orderInfo.error,
+          pendingReason: orderInfo.pendingReason,
+          lastModified: new Date(),
+          isResolve: orderInfo.isResolve,
+          note: orderInfo.note,
+          isInQueue: orderInfo.isInQueue,
+          actualSent: orderInfo.actualSent,
+          actualReceived: orderInfo.actualReceived
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateOrderById(orderId: string, orderInfo: Order, cb) {
+    this.db.collection(collections.ORDER_INFO).updateOne(
+      {
+        id: orderId
+      },
+      {
+        $set: {
+          adddressUserDeposit: orderInfo.adddressUserDeposit,
+          updatedRate: orderInfo.updatedRate,
+          status: orderInfo.status,
+          isSentToFund: orderInfo.isSentToFund,
+          isSentToUser: orderInfo.isSentToUser,
+          listTxIdUserDeposit: orderInfo.listTxIdUserDeposit,
+          listTxIdUserReceive: orderInfo.listTxIdUserReceive,
+          error: orderInfo.error,
+          pendingReason: orderInfo.pendingReason,
+          lastModified: new Date(),
+          isResolve: orderInfo.isResolve,
+          note: orderInfo.note,
+          actualSent: orderInfo.actualSent,
+          actualReceived: orderInfo.actualReceived
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateOrderStatus(id: string, status: string, cb) {
+    this.db.collection(collections.ORDER_INFO).updateOne(
+      {
+        id
+      },
+      {
+        $set: {
+          status
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateConversionOrder(orderInfo: ConversionOrder, cb) {
+    this.db.collection(collections.CONVERSION_ORDER_INFO).updateOne(
+      {
+        txIdFromUser: orderInfo.txIdFromUser
+      },
+      {
+        $set: {
+          txIdSentToUser: orderInfo.txIdSentToUser,
+          lastModified: new Date(),
+          error: orderInfo.error,
+          pendingReason: orderInfo.pendingReason,
+          status: orderInfo.status
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateListCoinConfig(listCoinConfig: CoinConfig[], cb) {
+    if (!this.db) {
+      logger.warn('Trying to update list coin config with close DB', listCoinConfig);
+      return;
+    }
+    var bulk = this.db.collection(collections.COIN_CONFIG).initializeUnorderedBulkOp();
+    for (var i = 0; i < listCoinConfig.length; i++) {
+      const coinConfig = listCoinConfig[i];
+      var ObjectId = require('mongodb').ObjectId;
+      bulk.find({ _id: ObjectId(coinConfig._id) }).update({
+        $set: {
+          isEnableSwap: coinConfig.isEnableSwap,
+          isEnableReceive: coinConfig.isEnableReceive,
+          min: coinConfig.min,
+          max: coinConfig.max,
+          serviceFee: coinConfig.serviceFee,
+          settleFee: coinConfig.settleFee,
+          networkFee: coinConfig.networkFee,
+          isSwap: coinConfig.isSwap,
+          isReceive: coinConfig.isReceive,
+          dailyLimit: coinConfig.dailyLimit || 0
+        }
+      });
+    }
+    bulk
+      .execute()
+      .then(result => {
+        return cb(null, result);
+      })
+      .catch(e => {
+        return cb(e);
+      });
+  }
+
+  storeOrderInfo(orderInfo, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', orderInfo);
+      return;
+    }
+
+    this.db.collection(collections.ORDER_INFO).insertOne(
+      orderInfo,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchOrderinfoById(orderId: string, cb) {
+    this.db.collection(collections.ORDER_INFO).findOne(
+      {
+        id: orderId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Your order could not be found, please re-enter!'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchConversionOrderInfoByTxIdFromUser(txIdFromUser: string, cb) {
+    this.db.collection(collections.CONVERSION_ORDER_INFO).findOne(
+      {
+        txIdFromUser
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeConversionOrderInfo(conversionOrderInfo, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', conversionOrderInfo);
+      return;
+    }
+
+    this.db.collection(collections.CONVERSION_ORDER_INFO).insertOne(
+      conversionOrderInfo,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeUserWatchAddress(user, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', user);
+      return;
+    }
+
+    this.db.collection(collections.USER_WATCH_ADDRESS).insertOne(
+      user,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateUserWatchAddress(user, cb) {
+    this.db.collection(collections.USER_WATCH_ADDRESS).updateOne(
+      {
+        msgId: user.msgId
+      },
+      {
+        $set: {
+          address: user.address
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update order'));
+        return cb(null, result);
+      }
+    );
+  }
+
+  removeUserWatchAddress(userInfo, cb) {
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', userInfo);
+      return;
+    }
+
+    this.db.collection(collections.USER_WATCH_ADDRESS).deleteOne(
+      userInfo,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchAllAddressByMsgId(msgId: string, cb) {
+    this.db
+      .collection(collections.USER_WATCH_ADDRESS)
+      .find({
+        msgId
+      })
+      .toArray((err, listUserInfo) => {
+        if (err) return cb(err);
+        if (!listUserInfo || listUserInfo.length === 0) return cb(null, null);
+        const listAddress = _.map(listUserInfo, user => user.address);
+        return cb(null, listAddress);
+      });
+  }
+
+  fetchAllMsgIdByAddress(address: string, cb) {
+    this.db
+      .collection(collections.USER_WATCH_ADDRESS)
+      .find({
+        address
+      })
+      .toArray((err, listUserInfo) => {
+        if (err) return cb(err);
+        if (!listUserInfo || listUserInfo.length === 0) return cb(null, null);
+        const listMsgId = _.map(listUserInfo, user => user.msgId);
+        return cb(null, listMsgId);
+      });
+  }
+
+  storeOrderInfoNoti(orderInfoNoti: OrderInfoNoti, cb) {
+    if (!this.db) {
+      logger.warn('Trying to store a orderInfoNoti with close DB', orderInfoNoti);
+      return;
+    }
+
+    this.db.collection(collections.ORDER_INFO_NOTI).insertOne(
+      orderInfoNoti,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchOrderInfoNoti(opts, cb) {
+    if (!this.db) {
+      logger.warn('Trying to store a orderInfoNoti with close DB');
+      return;
+    }
+    let queryObject = {};
+    let queryReceivedTxId = null;
+    let queryPendingReason = null;
+    let queryError = null;
+    if (opts) {
+      if (opts.receivedTxId) {
+        queryReceivedTxId = {
+          receivedTxId: opts.receivedTxId
+        };
+      } else if (opts.pendingReason) {
+        queryPendingReason = {
+          pendingReason: opts.pendingReason
+        };
+      } else if (opts.error) {
+        queryError = {
+          error: opts.error
+        };
+      }
+    }
+    queryObject = Object.assign(
+      {},
+      { orderId: opts.orderId },
+      queryReceivedTxId && { ...queryReceivedTxId },
+      queryPendingReason && { ...queryPendingReason },
+      queryError && { ...queryError }
+    );
+    this.db.collection(collections.ORDER_INFO_NOTI).findOne(queryObject, (err, result) => {
+      if (err) return cb(err);
+      if (!result) return cb(null);
+      return cb(null, result);
+    });
+  }
+
+  fetchAllOrderInfo(opts, cb) {
+    const coinConfigFilter: ICoinConfigFilter = opts.coinConfigFilter || null;
+    let queryObject = {};
+    let queryDate = null;
+    let queryFromCoin = null;
+    let queryFromNetwork = null;
+    let queryToNetwork = null;
+    let queryToCoin = null;
+    let queryStatus = null;
+    let queryIsInQueue = null;
+    let queryOrderId = null;
+
+    if (coinConfigFilter) {
+      if (coinConfigFilter.fromDate && coinConfigFilter.toDate) {
+        queryDate = {
+          lastModified: { $gte: new Date(coinConfigFilter.fromDate), $lte: new Date(coinConfigFilter.toDate) }
+        };
+      }
+      if (coinConfigFilter.fromCoinCode) {
+        queryFromCoin = { fromCoinCode: coinConfigFilter.fromCoinCode };
+      }
+      if (coinConfigFilter.fromNetwork) {
+        queryFromNetwork = { fromNetwork: coinConfigFilter.fromNetwork };
+      }
+      if (coinConfigFilter.toCoinCode) {
+        queryToCoin = { toCoinCode: coinConfigFilter.toCoinCode };
+      }
+      if (coinConfigFilter.toNetwork) {
+        queryToNetwork = { toNetwork: coinConfigFilter.toNetwork };
+      }
+      if (coinConfigFilter.status) {
+        queryStatus = { status: coinConfigFilter.status };
+      }
+      if (!isUndefined(coinConfigFilter.isInQueue) && !isNull(coinConfigFilter.isInQueue)) {
+        queryIsInQueue = { status: coinConfigFilter.status };
+      }
+      if (coinConfigFilter.orderId && coinConfigFilter.orderId.length > 0) {
+        queryOrderId = { id: coinConfigFilter.orderId };
+      }
+      queryObject = Object.assign(
+        {},
+        queryDate && { ...queryDate },
+        queryFromCoin && { ...queryFromCoin },
+        queryToCoin && { ...queryToCoin },
+        queryStatus && { ...queryStatus },
+        queryFromNetwork && { ...queryFromNetwork },
+        queryToNetwork && { ...queryToNetwork },
+        queryIsInQueue && { ...queryIsInQueue },
+        queryOrderId && { ...queryOrderId }
+      );
+    }
+
+    this.db
+      .collection(collections.ORDER_INFO)
+      .find(queryObject)
+      .sort(opts.query)
+      .limit(opts.limit)
+      .skip(opts.skip)
+      .toArray((err, listOrderInfo) => {
+        if (err) return cb(err);
+        if (listOrderInfo.length === 0) return cb(new Error('Not found any order'));
+        else return cb(null, listOrderInfo);
+      });
+  }
+
+  fetchAllOrderInfoNotInQueue(cb) {
+    this.db
+      .collection(collections.ORDER_INFO)
+      .find({
+        $or: [{ status: 'waiting' }, { status: 'processing' }]
+      })
+      .sort({ lastModified: 1 })
+      .toArray((err, listOrderInfo) => {
+        if (err) return cb(err);
+        else return cb(null, listOrderInfo);
+      });
+  }
+
+  fetchAllOrderInfoInQueue(cb) {
+    this.db
+      .collection(collections.ORDER_QUEUE)
+      .find()
+      .toArray((err, listOrderInfo) => {
+        if (err) return cb(err);
+        else return cb(null, listOrderInfo);
+      });
+  }
+
+  countAllOrderInfo(opts) {
+    const coinConfigFilter: ICoinConfigFilter = opts.coinConfigFilter || null;
+    let queryObject = {};
+    let queryDate = null;
+    let queryFromCoin = null;
+    let queryFromNetwork = null;
+    let queryToNetwork = null;
+    let queryToCoin = null;
+    let queryStatus = null;
+    let queryIsInQueue = null;
+    let queryOrderId = null;
+
+    if (coinConfigFilter) {
+      if (coinConfigFilter.fromDate && coinConfigFilter.toDate) {
+        queryDate = {
+          lastModified: { $gte: new Date(coinConfigFilter.fromDate), $lte: new Date(coinConfigFilter.toDate) }
+        };
+      }
+      if (coinConfigFilter.fromCoinCode) {
+        queryFromCoin = { fromCoinCode: coinConfigFilter.fromCoinCode };
+      }
+      if (coinConfigFilter.fromNetwork) {
+        queryFromNetwork = { fromNetwork: coinConfigFilter.fromNetwork };
+      }
+      if (coinConfigFilter.toCoinCode) {
+        queryToCoin = { toCoinCode: coinConfigFilter.toCoinCode };
+      }
+      if (coinConfigFilter.toNetwork) {
+        queryToNetwork = { toNetwork: coinConfigFilter.toNetwork };
+      }
+      if (coinConfigFilter.status) {
+        queryStatus = { status: coinConfigFilter.status };
+      }
+      if (!isUndefined(coinConfigFilter.isInQueue) && !isNull(coinConfigFilter.isInQueue)) {
+        queryIsInQueue = { status: coinConfigFilter.status };
+      }
+      if (coinConfigFilter.orderId && coinConfigFilter.orderId.length > 0) {
+        queryOrderId = { id: coinConfigFilter.orderId };
+      }
+      queryObject = Object.assign(
+        {},
+        queryDate && { ...queryDate },
+        queryFromCoin && { ...queryFromCoin },
+        queryToCoin && { ...queryToCoin },
+        queryStatus && { ...queryStatus },
+        queryFromNetwork && { ...queryFromNetwork },
+        queryToNetwork && { ...queryToNetwork },
+        queryIsInQueue && { ...queryIsInQueue },
+        queryOrderId && { ...queryOrderId }
+      );
+    }
+
+    return this.db
+      .collection(collections.ORDER_INFO)
+      .find(queryObject)
+      .sort(opts.query)
+      .count();
+  }
+
+  fetchAllConversionOrderInfo(opts, cb) {
+    this.db
+      .collection(collections.CONVERSION_ORDER_INFO)
+      .find({})
+      .sort({ _id: -1 })
+      .toArray((err, listConversionOrderInfo) => {
+        if (err) return cb(err);
+        if (listConversionOrderInfo.length === 0) return cb(new Error('Not found any conversion order'));
+        else return cb(null, listConversionOrderInfo);
+      });
+  }
+
+  countAllConversionOrderInfo(opts) {
+    return this.db
+      .collection(collections.CONVERSION_ORDER_INFO)
+      .find({})
+      .sort({ _id: -1 })
+      .count();
+  }
+
+  fetchAllCoinConfig(cb) {
+    this.db
+      .collection(collections.COIN_CONFIG)
+      .find()
+      .toArray((err, listCoinConfig) => {
+        if (err) return cb(err);
+        else return cb(null, listCoinConfig);
+      });
+  }
+
+  storeListCoinConfig(listCoinConfig, cb) {
+    if (!this.db) {
+      logger.warn('Trying to store a notification with close DB', listCoinConfig);
+      return;
+    }
+
+    this.db.collection(collections.COIN_CONFIG).insertMany(
+      listCoinConfig,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateCoinConfig(coinConfig, cb) {
+    this.db.collection(collections.COIN_CONFIG).updateOne(
+      {
+        code: coinConfig.code,
+        network: coinConfig.network
+      },
+      {
+        $set: {
+          isSupport: coinConfig.isSupport
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update coin config'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateDailyLimitCoinConfig(coinConfig, cb) {
+    this.db.collection(collections.COIN_CONFIG).updateOne(
+      {
+        code: coinConfig.code,
+        network: coinConfig.network
+      },
+      {
+        $set: {
+          dailyLimit: coinConfig.dailyLimit,
+          dailyLimitUsage: coinConfig.dailyLimitUsage
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update daily limit for coin config'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  resetAllDailyLimitUsageInCoinConfig(cb) {
+    this.db.collection(collections.COIN_CONFIG).updateMany(
+      {},
+      {
+        $set: {
+          dailyLimitUsage: 0
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update daily limit for coin config'));
+
+        return cb(null, result);
+      }
     );
   }
 
@@ -414,6 +1291,18 @@ export class Storage {
         return cb(null, result);
       }
     );
+  }
+
+  fetchAllAddressInUserWatchAddress(cb) {
+    this.db
+      .collection(collections.USER_WATCH_ADDRESS)
+      .distinct('address')
+      .then(listAddress => {
+        return cb(null, listAddress);
+      })
+      .catch(e => {
+        return cb(e);
+      });
   }
 
   // TODO: should be done client-side
@@ -913,6 +1802,19 @@ export class Storage {
         this.storeWallet(wallet, err => {
           return cb(err, duplicate);
         });
+      }
+    );
+  }
+
+  fetchAddressWithWalletId(walletId, cb) {
+    this.db.collection(collections.ADDRESSES).findOne(
+      {
+        walletId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, Address.fromObj(result));
       }
     );
   }
@@ -1426,6 +2328,9 @@ export class Storage {
         code,
         ts: {
           $lte: ts
+        },
+        value: {
+          $gt: 0
         }
       })
       .sort({

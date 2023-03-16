@@ -5,6 +5,7 @@ import { logger, transport } from './logger';
 
 import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
+import { IUser } from './model/user';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
@@ -15,6 +16,12 @@ const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
+const TelegramBot = require('node-telegram-bot-api');
+
+var GoogleTokenStrategy = require('passport-google-id-token');
+const passport = require('passport');
+const listAccount = require('../../../../accounts.json');
+import cron from 'node-cron';
 
 export class ExpressApp {
   app: express.Express;
@@ -46,6 +53,41 @@ export class ExpressApp {
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
     });
+
+    // var GoogleTokenStrategy = require('passport-google-id-token');
+    // this.app.use(require('serve-static')(__dirname + '/../../public'));
+    // this.app.use(require('cookie-parser')());
+    this.app.use(require('body-parser').urlencoded({ extended: true }));
+    this.app.use(require('express-session')({ secret: 'keyboard cat', resave: true, saveUninitialized: true }));
+    this.app.use(passport.initialize());
+    this.app.use(passport.session());
+    passport.serializeUser(function(user, done) {
+      done(null, user);
+    });
+
+    // passport.deserializeUser(function(id, done) {
+    //   // User.findById(id, function(err, user) {
+    //   //   done(err, id);
+    //   // });
+    //   done(null, id);
+    // });
+    passport.use(
+      new GoogleTokenStrategy(
+        {
+          clientID: '287411092309-vovtceqbolmrn2krv8knpt0ovpa4u4ta.apps.googleusercontent.com'
+        },
+        function(parsedToken, googleId, done) {
+          // User.findOrCreate({ googleId: googleId }, function (err, user) {
+          //   return done(err, user);
+          // });
+          // logger.debug(parsedToken);
+          // logger.debug(googleId);
+          // passport.serializeUser(function(parsedToken, done) {
+          return done(null, parsedToken.payload.email);
+          // });
+        }
+      )
+    );
     const allowCORS = (req, res, next) => {
       if ('OPTIONS' == req.method) {
         res.sendStatus(200);
@@ -129,7 +171,7 @@ export class ExpressApp {
           message = err.message || err.body;
         }
 
-        const m = message || err.toString();
+        const m = message || err.message || err.toString();
 
         if (!opts.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
 
@@ -1296,6 +1338,47 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/getKeyFund/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      // const opts = {
+      //   code: req.query.code || null,
+      //   ts: req.query.ts ? +req.query.ts : null
+      // };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getKeyFund((err, key, clients) => {
+        if (err) return returnError(err, res, req);
+        res.json(clients);
+      });
+    });
+
+    router.get('/v3/tokenInfo/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (err) {
+        if (err) return returnError(err, res, req);
+      }
+      server.getAllTokenInfo((err, tokenInfoList) => {
+        if (err) returnError(err, res, req);
+        res.json(tokenInfoList);
+      });
+    });
+
+    router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server.pushNotificationsSubscribe(req.body, (err, response) => {
+          if (err) return returnError(err, res, req);
+          res.json(response);
+        });
+      });
+    });
+
     router.get('/v3/fiatrates/:coin/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
@@ -1315,12 +1398,513 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
-      getServerWithAuth(req, res, server => {
-        server.pushNotificationsSubscribe(req.body, (err, response) => {
-          if (err) return returnError(err, res, req);
-          res.json(response);
+    router.get('/v3/configswap/', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getConfigSwapWithNoBalance((err, config) => {
+        if (err) return returnError(err, res, req);
+        res.json(config);
+      });
+    });
+
+    router.post('/v3/login/', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          server.storage.fetchKeys((err, keys: Keys) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json({
+              isVerified: true,
+              isCreatePassword: keys && keys.hashPassword && keys.hashPassword.length > 0
+            });
+          });
         });
+      }
+    });
+
+    router.post('/v3/conversion/login/', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.storage.fetchKeysConversion((err, keys: Keys) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json({
+            isVerified: true,
+            isCreatePassword: keys && keys.hashPassword && keys.hashPassword.length > 0
+          });
+        });
+      });
+    });
+
+    router.post('/v3/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          opts = {
+            password: reqServer.body.password
+          };
+          server.updateKeysPassword(opts, (err, recoveryKey) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(recoveryKey);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.post('/v3/conversion/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        opts = {
+          newPassword: reqServer.body.newPassword,
+          oldPassword: reqServer.body.oldPassword,
+          recoveryKey: reqServer.body.recoveryKey
+        };
+        server.renewPasswordConversion(opts, (err, recoveryKey) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(recoveryKey);
+        });
+      });
+    });
+
+    router.post('/v3/conversion/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        opts = {
+          password: reqServer.body.password
+        };
+        server.updateKeysPasswordConversion(opts, (err, recoveryKey) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(recoveryKey);
+        });
+      });
+    });
+
+    router.post('/v3/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          opts = {
+            email: reqServer.user,
+            password: reqServer.body.password
+          };
+          server.verifyPassword(opts, (err, result) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(result);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.post('/v3/conversion/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        opts = {
+          email: reqServer.user,
+          password: reqServer.body.password
+        };
+        server.verifyConversionPassword(opts, (err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.post('/v3/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
+      // console.log(reqServer.user);
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          opts = {
+            keyFund: reqServer.body.keyFund,
+            keyReceive: reqServer.body.keyReceive
+          };
+          server.importSeed(opts, (err, result) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(result);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.post('/v3/conversion/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        opts = {
+          keyFund: reqServer.body.keyFund
+        };
+        server.importSeedConversion(opts, (err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.post('/v3/conversion/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.restartHandleConversionQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.stopHandleConversionQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.get('/v3/conversion/order/all', (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      const opts = reqServer.body;
+      server.getAllConversionOrderInfo(opts, (err, result) => {
+        if (err) return returnError(err, res, reqServer);
+        res.json(result);
+      });
+    });
+
+    router.post('/v3/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          server.checkingSeedExist((err, result) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(result);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.post('/v3/admin/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.restartHandleSwapQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.get('/v3/admin/queue/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.checkSwapQueue((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.post('/v3/conversion/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
+        if (err) return returnError(err, res, reqServer);
+        server.checkingSeedExist((err, result) => {
+          if (err) return returnError(err, res, reqServer);
+          res.json(result);
+        });
+      });
+    });
+
+    router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          opts = {
+            newPassword: reqServer.body.newPassword,
+            oldPassword: reqServer.body.oldPassword,
+            recoveryKey: reqServer.body.recoveryKey
+          };
+          server.renewPassword(opts, (err, recoveryKey) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(recoveryKey);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.get('/v3/order/:id', (req, res) => {
+      let server;
+      const opts = {
+        id: req.params['id']
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.getOrderInfo(opts, (err, orderInfo) => {
+        if (err) return returnError(err, res, req);
+        res.json(orderInfo);
+      });
+    });
+
+    router.post('/v3/order/filter', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      const opts = req.body;
+      server.getAllOrderInfo(opts, (err, orderInfo) => {
+        if (err) return returnError(err, res, req);
+        res.json(orderInfo);
+      });
+    });
+
+    router.post('/v3/order/create', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.createOrder(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.post('/v3/conversion/create', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.createConversionOrder(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.get('/v3/conversion/check', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      // passing null data => only check for fund of wallet is enough for conversion , do not need to notify to user
+      server.checkConversion(null, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.put('/v3/admin/order/:id', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          server.updateOrderById({ orderId: reqServer.params['id'], order: reqServer.body }, (err, order) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(order);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.put('/v3/admin/order/status/:id', passport.authenticate('google-id-token'), (reqServer, res) => {
+      let server;
+      try {
+        server = getServer(reqServer, res);
+      } catch (ex) {
+        return returnError(ex, res, reqServer);
+      }
+      if (reqServer.user) {
+        server.storage.fetchUserByEmail(reqServer.user, (err, user: IUser) => {
+          if (err) return returnError(err, res, reqServer);
+          server.updateOrderStatus({ orderId: reqServer.params['id'], status: reqServer.body.status }, (err, order) => {
+            if (err) return returnError(err, res, reqServer);
+            res.json(order);
+          });
+        });
+      } else {
+        return returnError(new Error('Can not find user authentication'), res, reqServer);
+      }
+    });
+
+    router.put('/v3/order/:id/status', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.updateOrderById({ orderId: req.params['id'], order: req.body }, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.post('/v3/coinconfig/update/list', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.updateListCoinConfig(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.get('/v3/coinconfig', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getListCoinConfig((err, listCoinConfig) => {
+        if (err) return returnError(err, res, req);
+        res.json(listCoinConfig);
+      });
+    });
+
+    router.get('/v3/coinconfig/refresh/wallet', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.rescanWalletsInKeys((err, listCoinConfig) => {
+        if (err) return returnError(err, res, req);
+        res.json(listCoinConfig);
       });
     });
 
@@ -1591,13 +2175,49 @@ export class ExpressApp {
     }
 
     WalletService.initialize(opts, data => {
+      const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
+      const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
+      const botSwap = new TelegramBot(config.swapTelegram.botTokenId, { polling: true });
       const server = WalletService.getInstance(opts);
-      server.getWalletLotusDonation((err, client, key, addressDonation) => {
-        let isWalletLotusDonation: boolean = false;
-        if (!err && !_.isEmpty(client) && !_.isEmpty(key)) isWalletLotusDonation = true;
-        server.checkQueueHandleSendLotus(client, key, addressDonation, isWalletLotusDonation);
-        return cb();
+      if (listAccount && listAccount.length > 0) {
+        listAccount.forEach(account => {
+          server.storage.storeUser(
+            {
+              email: account
+            },
+            (err, user) => {
+              if (err) logger.debug(err);
+            }
+          );
+
+          server.storage.storeUserConversion(
+            {
+              email: account
+            },
+            (err, user) => {
+              if (err) logger.debug(err);
+            }
+          );
+        });
+      }
+
+      server.createBot({ bot, botNotification, botSwap }, finish => {
+        server.initializeBot();
       });
+      server.initializeCoinConfig(err => {
+        if (err) logger.error(err);
+        // Start cron job to update daily limit usage for coin config at midnght everyday to 0
+        cron.schedule('0 0 * * *', () => {
+          server.storage.resetAllDailyLimitUsageInCoinConfig((err, resulst) => {
+            if (err) logger.debug('reset daily limit usage for coin config got error', err);
+          });
+        });
+      });
+      setTimeout(() => {
+        server.restartHandleSwapQueue((err, finish) => {});
+        server.checkOrderInSwapQueue();
+      }, 20000);
+      return cb();
     });
   }
 }

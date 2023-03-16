@@ -15,6 +15,7 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "target": "es5",
+    "resolveJsonModule": true,
     "typeRoots": [
       "./node_modules/@types"
     ],
@@ -31,6 +32,7 @@
   "include": [
     "./scripts/**/*.ts",
     "./src/**/*.ts",
+    "./src/**/*.json",
     "./tests/**/*.ts"
   ],
   "exclude": [

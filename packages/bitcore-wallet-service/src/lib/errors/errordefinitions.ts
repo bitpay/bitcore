@@ -42,7 +42,31 @@ const errors = {
   WALLET_NOT_FOUND: 'Wallet not found',
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
   WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network',
-  LONG_MESSAGE: 'Long message'
+  OUT_OF_FUND: 'Out of fund',
+  BELOW_MIN_LIMIT: 'Below minimum allow',
+  EXCEED_MAX_LIMIT: 'Above maximum allow',
+  NOT_FOUND_KEY_FUND: 'Not found funding key',
+  NOT_FOUND_KEY_RECEIVE: 'Not found receiving key',
+  NOT_FOUND_KEY_CONVERSION: 'Not found key conversion',
+  MISSING_REQUIRED_FIELD: 'Missing required field',
+  ORDER_EXPIRED: 'Order is expired',
+  NO_AVAILABLE_SWAP_COIN: 'Not found availabe coin user can swap',
+  NO_AVAILABLE_RECEIVE_COIN: 'Not found availbe coin user can receive',
+  NOT_FOUND_COIN_IN_CONFIG: 'This coin is not allowed to swap',
+  NOT_STABLE_RATE: 'Rate is not stable',
+  INVALID_AMOUNT: 'Invalid amount',
+  NOT_FOUND_TXDETAIL: 'Can not get txdetail',
+  INVALID_ADDRESS_TO: 'Invalid address to',
+  INSUFFICIENT_FUND_XEC: 'Insufficient fund for xec wallet',
+  INSUFFICIENT_FUND_TOKEN: 'Insufficient fund for token wallet',
+  NOT_FOUND_XEC_WALLET_BALANCE: 'Not found xec wallet balance',
+  NOT_FOUND_TOKEN_WALLET: 'Not found token wallet',
+  NOT_FOUND_RATE_XEC: 'Not found rate for xec wallet',
+  NOT_FOUND_RATE_TOKEN: 'Not found rate for token wallet',
+  INVALID_TX_ID: 'Invalid txid',
+  BELOW_MINIMUM_XEC: 'FUND XEC REACHED THRESHOLD LIMIT',
+  BELOW_MINIMUM_TOKEN: 'FUND TOKEN REACHED THRESHOLD LIMIT',
+  EXCEED_DAILY_LIMIT: 'Order exceeds maximum allowed daily usage'
 };
 
 const errorObjects = _.fromPairs(

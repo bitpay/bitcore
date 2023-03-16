@@ -90,7 +90,7 @@ export class FiatRateService {
     return _.find(this.providers, provider => provider.name === nameProvider);
   }
 
-  getLatestCurrencyRates(opts): any {
+  getLatestCurrencyRates(opts): Promise<any> {
     return new Promise((resolve, reject) => {
       const now = Date.now();
       const ts = opts.ts ? opts.ts : now;
@@ -104,18 +104,26 @@ export class FiatRateService {
       const currencies: { code: string; name: string }[] = fiatFiltered.length
         ? fiatFiltered
         : Defaults.SUPPORT_FIAT_CURRENCIES;
+      const promiseList = [];
       _.forEach(currencies, currency => {
-        this.storage.fetchCurrencyRates(currency.code, ts, async (err, res) => {
-          if (err) {
-            logger.warn('Error fetching data for ' + currency, err);
-          }
-          rates.push(res);
-        });
+        promiseList.push(this._getCurrencyRate(currency.code, ts));
       });
-      return resolve(rates);
+      Promise.all(promiseList).then(listRate => {
+        return resolve(listRate);
+      });
     });
   }
 
+  _getCurrencyRate(code, ts): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchCurrencyRates(code, ts, async (err, res) => {
+        if (err) {
+          logger.warn('Error fetching data for ' + code, err);
+        }
+        return resolve(res);
+      });
+    });
+  }
   _getEtokenSupportPrice() {
     const etokenSupportPrice = _.get(config, 'etoken.etokenSupportPrice', undefined);
     if (!etokenSupportPrice) return [];
@@ -152,7 +160,10 @@ export class FiatRateService {
     }
   }
 
-  _retrieve(provider, coin, cb) {
+  async _retrieve(provider, coin, cb) {
+    if (coin === 'xpi') {
+      return cb(null, [{ code: 'USD', value: 0.00005 }]);
+    }
     logger.debug(`Fetching data for ${provider.name} / ${coin} `);
     let params = [];
     let appendString = '';
@@ -171,7 +182,15 @@ export class FiatRateService {
       try {
         const etokenSupportPrice: EtokenSupportPrice[] = _.get(config, 'etoken.etokenSupportPrice', []);
         if (!etokenSupportPrice) return cb('no etoken supported');
-        const body = provider.getRate(coin, etokenSupportPrice);
+        let currencyRate = null;
+        if (coin.toLowerCase() === 'elps') {
+          currencyRate = await this.getLatestCurrencyRates({ code: 'HNL' });
+        }
+        const body = await provider.getRate(
+          coin,
+          etokenSupportPrice,
+          currencyRate && currencyRate[0] ? currencyRate[0] : null
+        );
         const rates = _.filter(body, x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
         return cb(null, rates);
       } catch (e) {
@@ -301,7 +320,7 @@ export class FiatRateService {
     );
   }
 
-  getRatesByCoin(opts, cb) {
+  public getRatesByCoin(opts, cb) {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesByCoin()>');
 
     opts = opts || {};

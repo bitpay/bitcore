@@ -63,11 +63,13 @@ export class CurrencyRateService {
       if (err) {
         logger.warn('Error retrieving data', err);
       }
-      this.storage.storeCurrencyRate(res, err => {
-        if (err) {
-          logger.warn('Error storing data', err);
-        }
-      });
+      if (!!res && res.length > 0) {
+        this.storage.storeCurrencyRate(res, err => {
+          if (err) {
+            logger.warn('Error storing data', err);
+          }
+        });
+      }
     });
   }
 
@@ -89,9 +91,7 @@ export class CurrencyRateService {
         }
         logger.debug('Data for currency rate fetched successfully');
         try {
-          const rates = _.filter(this.convertRates(body.data), x =>
-            _.some(Defaults.SUPPORT_FIAT_CURRENCIES, ['code', x.code])
-          );
+          const rates = this.convertRates(body.data);
           return cb(null, rates);
         } catch (e) {
           return cb(e);
