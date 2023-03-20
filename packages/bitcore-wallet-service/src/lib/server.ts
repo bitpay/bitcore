@@ -4750,11 +4750,13 @@ export class WalletService implements IWalletService {
   private rampGetKeys(req) {
     if (!config.ramp) throw new Error('Ramp missing credentials');
 
-    let env = 'sandbox';
-    if (req.body.env && req.body.env == 'production') {
-      env = 'production';
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
     }
     delete req.body.env;
+    delete req.body.context;
 
     const keys: {
       API: string;

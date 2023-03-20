@@ -178,6 +178,16 @@ const Config = () => {
     //     apiKey: 'ramp_production_api_key_here',
     //     api: 'https://api-instant.ramp.network/api',
     //     widgetApi: 'https://buy.ramp.network',
+    //   },
+    //   sandboxWeb: {
+    //     apiKey: 'ramp_sandbox_web_api_key_here',
+    //     api: 'https://api.demo.ramp.network/api',
+    //     widgetApi: 'https://app.demo.ramp.network/',
+    //   },
+    //   productionWeb: {
+    //     apiKey: 'ramp_production_web_api_key_here',
+    //     api: 'https://api-instant.ramp.network/api',
+    //     widgetApi: 'https://buy.ramp.network',
     //   }
     // },
     // simplex: {

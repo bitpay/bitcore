@@ -11206,6 +11206,16 @@ describe('Wallet service', function() {
           apiKey: 'apiKey2',
           api: 'api2',
           widgetApi: 'widgetApi2',
+        },
+        sandboxWeb: {
+          apiKey: 'apiKey3',
+          api: 'api3',
+          widgetApi: 'widgetApi3',
+        },
+        productionWeb: {
+          apiKey: 'apiKey4',
+          api: 'api4',
+          widgetApi: 'widgetApi4',
         }
       }
 
@@ -11248,6 +11258,17 @@ describe('Wallet service', function() {
       });
   
       it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
         server.request = fakeRequest;
         try {
           const data = await server.rampGetQuote(req);
