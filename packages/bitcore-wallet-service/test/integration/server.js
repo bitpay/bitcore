@@ -10758,7 +10758,7 @@ describe('Wallet service', function() {
 
       describe('User logged out', () => {
         const usaBannedStates = ['HI', 'LA', 'NY'];
-        usaBannedStates.forEach(bannedState => {
+        for (const bannedState of usaBannedStates) {
           it(`should return swap crypto disabled if the user is located in ${bannedState}`, () => {
             const opts = {
               currentLocationCountry: 'US',
@@ -10772,7 +10772,7 @@ describe('Wallet service', function() {
               config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
             });
           });
-        })
+        };
 
         it('should return swap crypto enabled if the user is in USA located outside NY', () => {
           const opts = {
