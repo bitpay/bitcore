@@ -25,7 +25,7 @@ var Bitcore_ = {
 };
 
 var { ChainService } = require('../../ts_build/lib/chain/index');
-var Common = require('../../ts_build/lib/common');
+var { Common } = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;

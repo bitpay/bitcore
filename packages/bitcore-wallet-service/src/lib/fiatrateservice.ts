@@ -1,10 +1,10 @@
 import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request';
+import { Common } from './common';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 import logger from './logger';

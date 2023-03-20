@@ -1,4 +1,5 @@
 import * as async from 'async';
+import * as crypto from 'crypto'
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import logger from './logger';
@@ -6,6 +7,7 @@ import logger from './logger';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
+import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
@@ -13,6 +15,7 @@ import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
   Copayer,
+  ExternalServicesConfig,
   INotification,
   ITxProposal,
   IWallet,
@@ -47,7 +50,6 @@ const Bitcore_ = {
   ltc: require('bitcore-lib-ltc')
 };
 
-const Common = require('./common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
@@ -88,11 +90,12 @@ export interface IWalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: string;
-  parsedClientVersion: { agent: number; major: number; minor: number };
+  appVersion: { agent?: string; major?: number; minor?: number };
+  parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
+  request: any;
 }
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
@@ -101,7 +104,7 @@ function boolToNum(x: boolean) {
  * Creates an instance of the Bitcore Wallet Service.
  * @constructor
  */
-export class WalletService {
+export class WalletService implements IWalletService {
   lock: any;
   storage: Storage;
   blockchainExplorer: V8;
@@ -113,12 +116,12 @@ export class WalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: string;
-  parsedClientVersion: { agent: string; major: number; minor: number };
+  appVersion: { agent?: string; major?: number; minor?: number };
+  parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
-  request;
+  request: any;
 
   constructor() {
     if (!initialized) {
@@ -4550,19 +4553,43 @@ export class WalletService {
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
   }
 
-  getServicesData(cb) {
-    const data = config.services ?? {};
-    return cb(null, data);
+  /**
+   * Get External Services configuration based on the users location and their current version of the app
+   * @param {Object} opts
+   * @param {string} opts.currentAppVersion - (Optional) The version of the app from which the user is connected.
+   * @param {string} opts.currentLocationCountry - (Optional) Country where the user is currently located.
+   * @param {string} opts.currentLocationState - (Optional) State where the user is currently located.
+   * @param {string} opts.bitpayIdLocationCountry - (Optional) Country registered as address of the user logged in with BitpayId.
+   * @param {string} opts.bitpayIdLocationState - (Optional) State registered as address of the user logged in with BitpayId.
+   */
+  getServicesData(opts, cb) {
+    let externalServicesConfig: ExternalServicesConfig = config.services;
+
+    const isLoggedIn = !!opts?.bitpayIdLocationCountry;
+
+    if (
+      // Logged in with bitpayId
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && ['NY'].includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      // Logged out (IP restriction)
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && ['NY'].includes(opts?.currentLocationState?.toUpperCase()))
+    ) {
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
+    }
+
+    return cb(null, externalServicesConfig);
   }
 
   private moonpayGetKeys(req) {
     if (!config.moonpay) throw new Error('Moonpay missing credentials');
 
-    let env = 'sandbox';
-    if (req.body.env && req.body.env == 'production') {
-      env = 'production';
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
     }
+
     delete req.body.env;
+    delete req.body.context;
 
     const keys: {
       API: string;
@@ -4885,11 +4912,14 @@ export class WalletService {
   private simplexGetKeys(req) {
     if (!config.simplex) throw new Error('Simplex missing credentials');
 
-    let env = 'sandbox';
-    if (req.body.env && req.body.env == 'production') {
-      env = 'production';
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
     }
+
     delete req.body.env;
+    delete req.body.context;
 
     const keys = {
       API: config.simplex[env].api,
@@ -5151,19 +5181,41 @@ export class WalletService {
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
       throw new Error('ClientError: Service not configured.');
+      if (!config.changelly.v1) {
+        logger.warn('Changelly v1 missing credentials');
+        throw new Error('ClientError: Service v1 not configured.');
+      }
     }
 
     const keys = {
-      API: config.changelly.api,
-      API_KEY: config.changelly.apiKey,
-      SECRET: config.changelly.secret
+      API: config.changelly.v1.api,
+      API_KEY: config.changelly.v1.apiKey,
+      SECRET: config.changelly.v1.secret
+    };
+
+    return keys;
+  }
+
+  private changellyGetKeysV2(req) {
+    if (!config.changelly) {
+      logger.warn('Changelly missing credentials');
+      throw new Error('ClientError: Service not configured.');
+      if (!config.changelly.v2) {
+        logger.warn('Changelly v2 missing credentials');
+        throw new Error('ClientError: Service v2 not configured.');
+      }
+    }
+
+    const keys = {
+      API: config.changelly.v2.api,
+      SECRET: config.changelly.v2.secret
     };
 
     return keys;
   }
 
   changellySignRequests(message, secret: string) {
-    if (!message || !secret) throw new Error('Missing parameters to sign Changelly request');
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v1 request');
 
     const sign: string = Bitcore.crypto.Hash.sha512hmac(
       Buffer.from(JSON.stringify(message)),
@@ -5173,9 +5225,34 @@ export class WalletService {
     return sign;
   }
 
+
+  changellySignRequestsV2(message, secret: string) {
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v2 request');
+
+    const privateKey = crypto.createPrivateKey({
+      key: Buffer.from(secret, 'hex'),
+      format: 'der',
+      type: 'pkcs8',
+    });
+    
+    const publicKey = crypto.createPublicKey(privateKey).export({
+        type: 'pkcs1',
+        format: 'der'
+    });
+
+    const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), privateKey);
+
+    return {signature, publicKey};
+  }
+
   changellyGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id'])) {
         return reject(new ClientError('changellyGetCurrencies request missing arguments'));
@@ -5189,13 +5266,22 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5217,7 +5303,12 @@ export class WalletService {
 
   changellyGetPairsParams(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
         return reject(new ClientError('changellyGetPairsParams request missing arguments'));
@@ -5236,13 +5327,21 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
-
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5264,7 +5363,12 @@ export class WalletService {
 
   changellyGetFixRateForAmount(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
         return reject(new ClientError('changellyGetFixRateForAmount request missing arguments'));
@@ -5284,13 +5388,22 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5312,7 +5425,12 @@ export class WalletService {
 
   changellyCreateFixTransaction(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (
         !checkRequired(req.body, [
@@ -5343,13 +5461,22 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -5371,7 +5498,12 @@ export class WalletService {
 
   changellyGetStatus(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
         return reject(new ClientError('changellyGetStatus request missing arguments'));
@@ -5387,13 +5519,22 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,

@@ -1,8 +1,9 @@
 import _ from 'lodash';
+import { Common } from '../common';
 
 const $ = require('preconditions').singleton();
-const Constants = require('../common/constants');
-const Utils = require('../common/utils');
+const Constants = Common.Constants;
+const Utils = Common.Utils;
 
 export interface IAddressManager {
   version: number;

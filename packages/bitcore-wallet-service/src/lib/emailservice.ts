@@ -6,6 +6,7 @@ import 'source-map-support/register';
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
 import request from 'request';
+import { Common } from './common';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
@@ -21,9 +22,9 @@ export interface Recipient {
 const Mustache = require('mustache');
 const fs = require('fs');
 const path = require('path');
-const Utils = require('./common/utils');
-const Defaults = require('./common/defaults');
-const Constants = require('./common/constants');
+const Utils = Common.Utils;
+const Defaults = Common.Defaults;
+const Constants = Common.Constants;
 const defaultRequest = require('request');
 
 const EMAIL_TYPES = {

@@ -4,6 +4,7 @@ import _ from 'lodash';
 import 'source-map-support/register';
 import { logger, transport } from './logger';
 
+import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
@@ -13,7 +14,6 @@ const bodyParser = require('body-parser');
 const compression = require('compression');
 const config = require('../config');
 const RateLimit = require('express-rate-limit');
-const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
@@ -1488,7 +1488,8 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getServicesData((err, response) => {
+      const opts = req.query;
+      server.getServicesData(opts, (err, response) => {
         if (err) return returnError(err, res, req);
         res.json(response);
       });

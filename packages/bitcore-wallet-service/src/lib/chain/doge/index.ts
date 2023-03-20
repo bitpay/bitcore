@@ -6,8 +6,9 @@ import logger from '../../logger';
 import { TxProposal } from '../../model';
 import { BtcChain } from '../btc';
 const $ = require('preconditions').singleton();
+import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
-const Common = require('../../common');
+
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;

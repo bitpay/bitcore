@@ -1,10 +1,10 @@
 import { Deriver } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { ChainService } from '../chain/index';
+import { Common } from '../common';
 import { AddressManager } from './addressmanager';
 
 const $ = require('preconditions').singleton();
-const Common = require('../common');
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;

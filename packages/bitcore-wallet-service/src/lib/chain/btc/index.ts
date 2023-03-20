@@ -2,11 +2,12 @@ import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain, INotificationData } from '..';
+import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import logger from '../../logger';
 import { TxProposal } from '../../model';
+
 const $ = require('preconditions').singleton();
-const Common = require('../../common');
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;

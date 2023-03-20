@@ -1,7 +1,7 @@
 'use strict';
 import * as CWC from 'crypto-wallet-core';
 
-module.exports = {
+export const Constants = {
   CHAINS: {
     BTC: 'btc',
     BCH: 'bch',

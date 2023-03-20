@@ -281,4 +281,3 @@ export class Utils {
     return coin == 'bch' ? result.toLegacyAddress() : result.toString();
   }
 }
-module.exports = Utils;

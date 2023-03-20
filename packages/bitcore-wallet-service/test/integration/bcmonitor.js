@@ -9,7 +9,7 @@ var should = chai.should();
 
 var { WalletService } = require('../../ts_build/lib/server');
 var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
-var { Constants } = require('../../ts_build/lib/common');
+var { Constants } = require('../../ts_build/lib/common/constants');
 
 var helpers = require('./helpers');
 var storage, blockchainExplorer, blockchainExplorerEVM, bcmonitor;
