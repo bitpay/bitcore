@@ -4546,12 +4546,13 @@ export class WalletService implements IWalletService {
     let externalServicesConfig: ExternalServicesConfig = config.services;
 
     const isLoggedIn = !!opts?.bitpayIdLocationCountry;
+    const usaBannedStates = ['HI', 'LA', 'NY'];
 
     if (
       // Logged in with bitpayId
-      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && ['NY'].includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && usaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
       // Logged out (IP restriction)
-      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && ['NY'].includes(opts?.currentLocationState?.toUpperCase()))
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && usaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
       externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
     }

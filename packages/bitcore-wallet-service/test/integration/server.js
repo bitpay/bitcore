@@ -10757,19 +10757,22 @@ describe('Wallet service', function() {
       });
 
       describe('User logged out', () => {
-        it('should return swap crypto disabled if the user is located in NY', () => {
-          const opts = {
-            currentLocationCountry: 'US',
-            currentLocationState: 'NY',
-          };
-    
-          server.getServicesData(opts, (err, config) => {
-            should.not.exist(err);
-            should.exist(config.swapCrypto);
-            config.swapCrypto.disabled.should.equal(true);
-            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+        const usaBannedStates = ['HI', 'LA', 'NY'];
+        for (const bannedState of usaBannedStates) {
+          it(`should return swap crypto disabled if the user is located in ${bannedState}`, () => {
+            const opts = {
+              currentLocationCountry: 'US',
+              currentLocationState: bannedState,
+            };
+      
+            server.getServicesData(opts, (err, config) => {
+              should.not.exist(err);
+              should.exist(config.swapCrypto);
+              config.swapCrypto.disabled.should.equal(true);
+              config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+            });
           });
-        });
+        };
 
         it('should return swap crypto enabled if the user is in USA located outside NY', () => {
           const opts = {
