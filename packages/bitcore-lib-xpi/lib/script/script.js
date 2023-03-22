@@ -919,6 +919,7 @@ Script.buildDataOut = function(data, encoding) {
  * @param {(string|Buffer)} data - the data to embed in the output
  */
  Script.buildOnchainMessage = function(data) {
+  $.checkArgument(!_.isUndefined(data));
   var s = new Script();
   s.add(Opcode.OP_RETURN);
   if (!_.isUndefined(data)) {
