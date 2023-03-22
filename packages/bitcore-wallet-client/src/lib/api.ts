@@ -231,7 +231,7 @@ export class API extends EventEmitter {
     if (!txps) return;
 
     var encryptingKey = this.credentials.sharedEncryptingKey;
-    _.each([].concat(txps), async txp => {
+    _.each([].concat(txps), txp => {
       txp.encryptedMessage = txp.message;
       txp.message =
         Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
