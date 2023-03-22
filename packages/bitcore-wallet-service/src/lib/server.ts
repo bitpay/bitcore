@@ -3326,7 +3326,7 @@ export class WalletService {
                 next => {
                   // TanTodo: checking message onchain
                   if (opts.messageOnChain) {
-                    if (Buffer.from(opts.messageOnChain).length > 206) {
+                    if (Buffer.from((opts.messageOnChain)).length > 206) {
                       return next(Errors.LONG_MESSAGE);
                     }
                   }

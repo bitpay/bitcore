@@ -919,11 +919,10 @@ Script.buildDataOut = function(data, encoding) {
  * @param {(string|Buffer)} data - the data to embed in the output
  */
  Script.buildOnchainMessage = function(data) {
-  $.checkArgument(_.isUndefined(data) || _.isString(data) || BufferUtil.isBuffer(data));
   var s = new Script();
   s.add(Opcode.OP_RETURN);
   if (!_.isUndefined(data)) {
-    s.add( Buffer.from('02020202', 'hex'));
+    s.add( Buffer.from('03030303', 'hex'));
     s.add( Buffer.from(data));
   }
   return s;

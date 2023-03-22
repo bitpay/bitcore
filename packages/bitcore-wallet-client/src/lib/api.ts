@@ -231,7 +231,7 @@ export class API extends EventEmitter {
     if (!txps) return;
 
     var encryptingKey = this.credentials.sharedEncryptingKey;
-    _.each([].concat(txps), txp => {
+    _.each([].concat(txps), async txp => {
       txp.encryptedMessage = txp.message;
       txp.message =
         Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
@@ -254,19 +254,6 @@ export class API extends EventEmitter {
         // TODO get copayerName from Credentials -> copayerId to copayerName
         // action.copayerName = null;
       });
-      const outputFound = _.find(
-        txp.outputs,
-        o => o.outputScript && o.outputScript.length > 0
-      );
-      if (outputFound) {
-        txp.messageOnchain = Utils.decryptMessageOnchain(
-          outputFound.outputScript
-        );
-        const index = txp.outputs.indexOf(outputFound, 0);
-        if (index > -1) {
-          txp.outputs.splice(index, 1);
-        }
-      }
       _.each(txp.outputs, output => {
         output.encryptedMessage = output.message;
         output.message =
