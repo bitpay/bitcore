@@ -3910,7 +3910,7 @@ describe('Wallet service', function() {
 
               if(coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
-                should.not.exist(tx.nonce);
+                tx.nonce.should.equal('5');
                 tx.outputs.should.deep.equal([{
                   toAddress: addressStr,
                   gasLimit: 21000,
@@ -7991,7 +7991,6 @@ describe('Wallet service', function() {
           tx.id.should.equal(txpid);
           var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           should.not.exist(tx.raw);
-          should.not.exist(tx.nonce);
           server.signTx({
             txProposalId: txpid,
             signatures: signatures,

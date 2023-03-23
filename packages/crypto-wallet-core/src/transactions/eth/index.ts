@@ -62,8 +62,6 @@ export class ETHTxProvider {
     let chainId = 1;
     switch (network) {
       case 'testnet':
-        chainId = 1337;
-        break;
       case 'goerli':
         chainId = 5;
         break;

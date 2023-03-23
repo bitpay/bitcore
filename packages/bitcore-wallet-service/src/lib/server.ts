@@ -397,15 +397,6 @@ export class WalletService implements IWalletService {
       });
     })
   }
-
-  // _clearGlobalCacheKey(cacheKey){
-  //   return new Promise((resolve) => {
-  //     this.storage.clearGlobalCache(cacheKey, ()=>{
-  //       return resolve(true);
-  //     });
-  //   })
-  // }
-
   logi(message, ...args) {
     if (!this || !this.walletId) {
       return logger.warn(message, ...args);
@@ -2302,14 +2293,6 @@ export class WalletService implements IWalletService {
                 if (err) return reject(err);
                 return resolve(txp);
               });
-            /*
-            const cacheKey =  this.getCachedNonceKey(opts.address, opts.txId);
-
-            this.storage.storeGlobalCache(cacheKey, {nonce}, err => {
-              if(err) return reject(err);
-              return resolve(nonce);
-            });
-            */
           });
         });   
       })
@@ -2319,23 +2302,6 @@ export class WalletService implements IWalletService {
   getNonceLockName(network, address){
     return 'getNonce:' + network + ':' + address;
   }
-
-  // getCachedNonceKey(address, txpId){
-  //   return 'nonce:' + address + ':' + txpId;
-  // }
-
-  // getCachedNonce(cacheKey){
-  //   return new Promise((resolve, reject) => {
-  //     this.storage.checkAndUseGlobalCache(
-  //       cacheKey, 
-  //       Defaults.TX_ASSIGN_EVM_NONCE_TIME, 
-  //       async (err, values) => {
-  //         if(err) return reject (err);
-  //         if (values) return resolve(values.nonce); 
-  //         return reject('No Cached Nonce found');
-  //     })
-  //   })
-  // }
 
   async processAssignedNonce(wallet, txp){
     try {
@@ -2350,19 +2316,6 @@ export class WalletService implements IWalletService {
       return err;
     }    
   }
-
-  // clearCachedNonce(address, txpId){
-  //   const cacheKey = this.getCachedNonceKey(address, txpId);
-  //   return new Promise((resolve, reject) => {
-  //     this.storage.clearGlobalCache(
-  //       cacheKey,
-  //       async (err, values) => {
-  //         if(err) return reject (err);
-  //         if (values) return resolve(values.nonce); 
-  //         return reject(`No Cached Nonce found for txpId`);
-  //     })
-  //   })
-  // }
 
   estimateGas(opts) {
     const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
@@ -2933,14 +2886,8 @@ export class WalletService implements IWalletService {
         const isEVM = ChainService.isEVMChain(wallet.chain);
 
         if (isEVM) {
-          if (!_.isNumber(txp.nonce)) return cb('Missing Nonce on EVM Transaction');
-          // if(opts.proposalSignature) txp.proposalSignature = opts.proposalSignature;
-          // try{
-          //   const cacheKey = this.getCachedNonceKey(txp.from, txp.id);
-          //   txp.nonce = await this.getCachedNonce(cacheKey);
-          // } catch (error) {
-          //   return cb(error);
-          // }
+          if (!_.isNumber(txp.nonce)) logger.error('Missing Nonce on EVM Transaction');
+          if(opts.proposalSignature) txp.proposalSignature = opts.proposalSignature;
         }
 
         try {
