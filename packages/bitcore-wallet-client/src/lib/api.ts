@@ -1784,6 +1784,10 @@ export class API extends EventEmitter {
         var args = {
           signatures
         };
+
+        if (Constants.EVM_CHAINS.includes(txp.chain)){
+            args['proposalSignature'] = txp.proposalSignature;
+        } 
         this.request.post(url, args, (err, txp) => {
           if (err) return cb(err);
           this._processTxps(txp);
@@ -2535,7 +2539,7 @@ export class API extends EventEmitter {
 
   // /**
   // * Returns nonce.
-  // * @param {Object} opts - chain, coin, network
+  // * @param {Object} opts - chain, coin, network, walletId (optional)
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
   getNonce(opts, cb) {
@@ -2554,6 +2558,42 @@ export class API extends EventEmitter {
       if (err) return cb(err);
       return cb(null, nonce);
     });
+  }
+
+  // /**
+  // * Stores the assigned nonce with given txId in BWS cache. Returns nonce.
+  // * @param {Object} opts - chain, coin, network, txId
+  // * @return {Callback} cb - Return error (if exists) and nonce
+  // */
+  assignNonce(opts) {
+    $.checkArgument(opts.txId, 'Transaction ID must be provided');
+    $.checkArgument(opts.network, 'Chain network must be provided');
+    $.checkArgument(
+      Constants.EVM_CHAINS.includes(opts.chain),
+      'Invalid chain: must be EVM based'
+    );
+    return new Promise((resolve, reject) => {
+      const url = `/v1/txproposals/${opts.txId}/setnonce`;
+      this.request.post(url, opts, (err, txp) => {
+        if (err) return reject(err);
+        try{      
+          this._processTxps(txp);
+          txp.proposalSignature = this._generateProposalSignature(txp);
+          return resolve(txp);
+        } catch (error){
+          return reject(error);
+        }
+      });
+    })
+  }
+
+  _generateProposalSignature(txp){
+    var t = Utils.buildTx(txp);
+    var hash = t.uncheckedSerialize();
+    return Utils.signMessage(
+      hash,
+      this.credentials.requestPrivKey
+    );
   }
 
   // /**

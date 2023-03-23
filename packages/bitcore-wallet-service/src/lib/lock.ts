@@ -54,6 +54,11 @@ export class Lock {
     });
   }
 
+  release(token, cb) {
+    if (!cb) cb = () => {};
+    this.storage.releaseLock(token, cb);
+  }
+
   runLocked(token, opts, cb, task) {
     $.shouldBeDefined(token, 'Failed state: token undefined at <runLocked()>');
 

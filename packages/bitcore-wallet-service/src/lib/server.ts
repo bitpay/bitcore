@@ -388,6 +388,24 @@ export class WalletService implements IWalletService {
 
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
+
+  _releaseLock(lockName){
+    return new Promise((resolve, reject) => {
+      this.lock.releaseLock(lockName, err => { 
+        if (err) return reject(err);
+        return resolve(true);
+      });
+    })
+  }
+
+  // _clearGlobalCacheKey(cacheKey){
+  //   return new Promise((resolve) => {
+  //     this.storage.clearGlobalCache(cacheKey, ()=>{
+  //       return resolve(true);
+  //     });
+  //   })
+  // }
+
   logi(message, ...args) {
     if (!this || !this.walletId) {
       return logger.warn(message, ...args);
@@ -2250,8 +2268,101 @@ export class WalletService implements IWalletService {
         }
         return resolve(nonce);
       });
+
     });
   }
+
+  // Gets an updated nonce based on exisiting signed transactions.
+  // Takes the nonce found and stores it in cache associated to TXP.
+  assignNonce(opts) {
+    return new Promise((resolve, reject) => {
+      const lockName = this.getNonceLockName(opts.network, opts.address);
+      
+      this.getWallet({}, async (err, wallet) => {          
+        if (err) return reject(err);
+        this.getTx(
+          {
+            txProposalId: opts.txId
+          },
+          (err, txp) => {
+            if (err) return reject(err);
+            const lockParams =  { lockTime: Defaults.TX_ASSIGN_EVM_NONCE_TIME, waitTime: 0 }
+            this.lock.acquire(lockName,lockParams, async (err,release) => {
+              if (err) return reject(err);
+
+              try{
+                txp.nonce = await ChainService.getTransactionCount(this, wallet, opts.address);
+              } catch (error){
+                this.logw('Error getting nonce', err);
+                release();
+                return reject(error);
+              }
+
+              this.storage.storeTx(this.walletId, txp , err => {
+                if (err) return reject(err);
+                return resolve(txp);
+              });
+            /*
+            const cacheKey =  this.getCachedNonceKey(opts.address, opts.txId);
+
+            this.storage.storeGlobalCache(cacheKey, {nonce}, err => {
+              if(err) return reject(err);
+              return resolve(nonce);
+            });
+            */
+          });
+        });   
+      })
+    });
+  }
+
+  getNonceLockName(network, address){
+    return 'getNonce:' + network + ':' + address;
+  }
+
+  // getCachedNonceKey(address, txpId){
+  //   return 'nonce:' + address + ':' + txpId;
+  // }
+
+  // getCachedNonce(cacheKey){
+  //   return new Promise((resolve, reject) => {
+  //     this.storage.checkAndUseGlobalCache(
+  //       cacheKey, 
+  //       Defaults.TX_ASSIGN_EVM_NONCE_TIME, 
+  //       async (err, values) => {
+  //         if(err) return reject (err);
+  //         if (values) return resolve(values.nonce); 
+  //         return reject('No Cached Nonce found');
+  //     })
+  //   })
+  // }
+
+  async processAssignedNonce(wallet, txp){
+    try {
+      // const cacheKey = this.getCachedNonceKey(txp.from, txp.id);
+      const lockName = this.getNonceLockName(wallet.network, txp.from);
+      // clear cached values
+      // await this._clearGlobalCacheKey(cacheKey);
+      // release getNonceLock
+      await this._releaseLock(lockName)
+      return;
+    } catch (err) {
+      return err;
+    }    
+  }
+
+  // clearCachedNonce(address, txpId){
+  //   const cacheKey = this.getCachedNonceKey(address, txpId);
+  //   return new Promise((resolve, reject) => {
+  //     this.storage.clearGlobalCache(
+  //       cacheKey,
+  //       async (err, values) => {
+  //         if(err) return reject (err);
+  //         if (values) return resolve(values.nonce); 
+  //         return reject(`No Cached Nonce found for txpId`);
+  //     })
+  //   })
+  // }
 
   estimateGas(opts) {
     const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
@@ -2421,15 +2532,20 @@ export class WalletService implements IWalletService {
                   }
                   next();
                 },
-                async next => {
-                  // If an EVM TX nonce is not given, we will set it during TX signing
-                  if (!_.isNumber(opts.nonce) && !ChainService.isEVMChain(wallet.chain)) {
-                    try {
-                      opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
-                    } catch (error) {
-                      return next(error);
-                    }
+                async next => {                  
+                  if (!_.isNumber(opts.nonce)){                    
+                    // If an EVM TX nonce is not given, we will set it during TX signing
+                    if(ChainService.isEVMChain(wallet.chain)) {
+                      opts.nonce = null;
+                    } else {
+                      try {
+                        opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
+                      } catch (error) {
+                        return next(error);
+                      }
+                    }                    
                   }
+
                   return next();
                 },
                 async next => {
@@ -2814,13 +2930,17 @@ export class WalletService implements IWalletService {
         if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
         const copayer = wallet.getCopayer(this.copayerId);
+        const isEVM = ChainService.isEVMChain(wallet.chain);
 
-        if (!_.isNumber(opts.nonce) && ChainService.isEVMChain(wallet.chain)) {
-          try {
-            txp.nonce = await ChainService.getTransactionCount(this, wallet, txp.from);
-          } catch (error) {
-            return cb(error);
-          }
+        if (isEVM) {
+          if (!_.isNumber(txp.nonce)) return cb('Missing Nonce on EVM Transaction');
+          // if(opts.proposalSignature) txp.proposalSignature = opts.proposalSignature;
+          // try{
+          //   const cacheKey = this.getCachedNonceKey(txp.from, txp.id);
+          //   txp.nonce = await this.getCachedNonce(cacheKey);
+          // } catch (error) {
+          //   return cb(error);
+          // }
         }
 
         try {
@@ -2859,6 +2979,14 @@ export class WalletService implements IWalletService {
                 } else {
                   next();
                 }
+              },
+              next => {
+                try {
+                  if(isEVM) this.processAssignedNonce(wallet, txp);
+                  next();
+                } catch (err) {
+                  next(err);
+                }                
               }
             ],
             () => {
@@ -2870,11 +2998,14 @@ export class WalletService implements IWalletService {
     );
   }
 
+
+
   /**
    * Sign a transaction proposal.
    * @param {Object} opts
    * @param {string} opts.txProposalId - The identifier of the transaction.
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
+   * @param {string} opts.proposalSignature - The latest proposal signature, used for EVM txps that updated nonce during signing
    * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
    * @param {boolean} opts.supportBchSchnorr - indication whether to use schnorr for signing tx
    */

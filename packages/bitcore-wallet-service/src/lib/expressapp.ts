@@ -1314,6 +1314,18 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/txproposals/:id/setnonce', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        req.body.txProposalId = req.params['id'];
+        try {
+          const nonce = await server.assignNonce(req.body);
+          res.json(nonce);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
     router.post('/v1/clearcache/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.clearWalletCache().then(val => {
