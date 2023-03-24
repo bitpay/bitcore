@@ -24,6 +24,7 @@ const errors = {
   LOCKED_MATIC_FEE: 'Your linked POLYGON wallet does not have enough MATIC for fee',
   HISTORY_LIMIT_EXCEEDED: 'Requested page limit is above allowed maximum',
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
+  MISMATCH_RAW_TX: 'The raw transaction values do not match the original transaction',
   NETWORK_SUSPENDED: '$network operations are currently suspended. Please check status.bitpay.com for further updates.',
   NOT_AUTHORIZED: 'Not authorized',
   TOO_MANY_KEYS: 'Too many keys registered',

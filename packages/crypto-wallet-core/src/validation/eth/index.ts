@@ -1,3 +1,4 @@
+import { ethers } from 'ethers';
 import { IValidation } from '..';
 const utils = require('web3-utils');
 
@@ -13,6 +14,15 @@ export class EthValidation implements IValidation {
     const address = this.extractAddress(addressUri);
     const ethereumPrefix = /ethereum/i.exec(addressUri);
     return !!ethereumPrefix && utils.isAddress(address);
+  }
+
+  validateRawTx(params: { raw: string; txp: any, fields: Array<string> }) {
+    let { raw, txp, fields } = params;
+    const parsedTx = ethers.utils.parseTransaction(raw);
+    for (const field of fields) {
+      if (parsedTx[field] != txp[field]) return false; // throw new Error(`Raw TX did not match txp ${txp.id} on field ${field}`)
+    }
+    return true;
   }
 
   protected extractAddress(data) {

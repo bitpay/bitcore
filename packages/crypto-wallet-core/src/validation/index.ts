@@ -9,6 +9,7 @@ import { XrpValidation } from './xrp';
 export interface IValidation {
   validateAddress(network: string, address: string): boolean;
   validateUri(addressUri: string): boolean;
+  validateRawTx?(params: any): boolean;
 }
 
 const validation: { [chain: string]: IValidation } = {
@@ -33,6 +34,11 @@ export class ValidationProxy {
 
   validateUri(chain, addressUri) {
     return this.get(chain).validateUri(addressUri);
+  }
+
+  validateRawTx(chain, params) {
+    const validation = this.get(chain);
+    return validation.validateRawTx ? validation.validateRawTx(params) : null;
   }
 }
 

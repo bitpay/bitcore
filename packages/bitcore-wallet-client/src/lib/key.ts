@@ -487,7 +487,7 @@ export class Key {
     };
   };
 
-  sign = function (rootPath, txp, password, cb) {
+  sign = function (rootPath, txp, password, cb) { 
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
       return cb(new Errors.ENCRYPTED_PRIVATE_KEY());
@@ -497,10 +497,13 @@ export class Key {
 
     var derived = this.derive(password, rootPath);
     var xpriv = new Bitcore.HDPrivateKey(derived);
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+    
+    if (Constants.EVM_CHAINS.includes(chain) && txp.nonce == null) {
+      return cb(new Errors.NULL_NONCE());
+    }
 
     var t = Utils.buildTx(txp);
-
-    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       _.each(txp.inputs, function (i) {

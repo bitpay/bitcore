@@ -2265,7 +2265,7 @@ export class WalletService implements IWalletService {
 
   // Gets an updated nonce based on exisiting signed transactions.
   // Takes the nonce found and stores it in cache associated to TXP.
-  assignNonce(opts) {
+  setNonce(opts) {
     return new Promise((resolve, reject) => {
       const lockName = this.getNonceLockName(opts.network, opts.address);
       
@@ -2284,7 +2284,7 @@ export class WalletService implements IWalletService {
               try{
                 txp.nonce = await ChainService.getTransactionCount(this, wallet, opts.address);
               } catch (error){
-                this.logw('Error getting nonce', err);
+                logger.error('Error getting nonce', err);
                 release();
                 return reject(error);
               }
@@ -2305,11 +2305,7 @@ export class WalletService implements IWalletService {
 
   async processAssignedNonce(wallet, txp){
     try {
-      // const cacheKey = this.getCachedNonceKey(txp.from, txp.id);
       const lockName = this.getNonceLockName(wallet.network, txp.from);
-      // clear cached values
-      // await this._clearGlobalCacheKey(cacheKey);
-      // release getNonceLock
       await this._releaseLock(lockName)
       return;
     } catch (err) {
@@ -2487,7 +2483,7 @@ export class WalletService implements IWalletService {
                 },
                 async next => {                  
                   if (!_.isNumber(opts.nonce)){                    
-                    // If an EVM TX nonce is not given, we will set it during TX signing
+                    // If an EVM TX nonce is not given, we will set it during TX signing via setNonce
                     if(ChainService.isEVMChain(wallet.chain)) {
                       opts.nonce = null;
                     } else {
@@ -3043,6 +3039,12 @@ export class WalletService implements IWalletService {
             } catch (ex) {
               return cb(ex);
             }
+
+            if(ChainService.isEVMChain(wallet.chain) 
+              && !Validation.validateRawTx(wallet.chain,{ raw, txp })) {
+              return cb(Errors.MISMATCH_RAW_TX)
+            }
+
             this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
               if (err || txid != txp.txid) {
                 if (!err || txp.txid != txid) {

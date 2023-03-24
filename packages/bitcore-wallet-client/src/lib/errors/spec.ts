@@ -90,6 +90,11 @@ var errorSpec = [
       'Your POLYGON linked wallet funds are locked by pending spend proposals.'
   },
   {
+    name: 'NULL_NONCE',
+    message:
+      'Your transaction was created without a nonce. Cannot sign transaction.'
+  },
+  {
     name: 'DUST_AMOUNT',
     message: 'Amount below dust threshold.'
   },

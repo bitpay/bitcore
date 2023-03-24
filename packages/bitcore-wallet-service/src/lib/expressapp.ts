@@ -1318,7 +1318,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         req.body.txProposalId = req.params['id'];
         try {
-          const nonce = await server.assignNonce(req.body);
+          const nonce = await server.setNonce(req.body);
           res.json(nonce);
         } catch (err) {
           returnError(err, res, req);

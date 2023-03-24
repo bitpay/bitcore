@@ -2561,11 +2561,11 @@ export class API extends EventEmitter {
   }
 
   // /**
-  // * Stores the assigned nonce with given txId in BWS cache. Returns nonce.
+  // * Stores the set nonce to the given txp. Returns the txp wotj.
   // * @param {Object} opts - chain, coin, network, txId
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
-  assignNonce(opts) {
+  setNonce(opts) {
     $.checkArgument(opts.txId, 'Transaction ID must be provided');
     $.checkArgument(opts.network, 'Chain network must be provided');
     $.checkArgument(
@@ -2576,9 +2576,11 @@ export class API extends EventEmitter {
       const url = `/v1/txproposals/${opts.txId}/setnonce`;
       this.request.post(url, opts, (err, txp) => {
         if (err) return reject(err);
-        try{      
+        try{
           this._processTxps(txp);
-          txp.proposalSignature = this._generateProposalSignature(txp);
+          if(opts.isPublished) {
+            txp.proposalSignature = this._generateProposalSignature(txp); // Update signature on already published txp
+          }
           return resolve(txp);
         } catch (error){
           return reject(error);
