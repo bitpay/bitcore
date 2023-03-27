@@ -2882,7 +2882,7 @@ export class WalletService implements IWalletService {
         const isEVM = ChainService.isEVMChain(wallet.chain);
 
         if (isEVM) {
-          if (!_.isNumber(txp.nonce)) logger.error('Missing Nonce on EVM Transaction');
+          if (!_.isNumber(txp.nonce)) return cb(Errors.NULL_NONCE);
           if(opts.proposalSignature) txp.proposalSignature = opts.proposalSignature;
         }
 
@@ -3040,9 +3040,13 @@ export class WalletService implements IWalletService {
               return cb(ex);
             }
 
-            if(ChainService.isEVMChain(wallet.chain) 
-              && !Validation.validateRawTx(wallet.chain,{ raw, txp })) {
-              return cb(Errors.MISMATCH_RAW_TX)
+            if(ChainService.isEVMChain(wallet.chain)) {
+              if (!_.isNumber(txp.nonce)) {
+                return cb(Errors.NULL_NONCE);
+              }
+              if (!Validation.validateRawTx(wallet.chain, { raw: raw[0], txp, fields: ['from', 'nonce'] } )) {
+                return cb(Errors.MISMATCH_RAW_TX)
+              }
             }
 
             this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {

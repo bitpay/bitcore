@@ -3910,7 +3910,6 @@ describe('Wallet service', function() {
 
               if(coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
-                tx.nonce.should.equal('5');
                 tx.outputs.should.deep.equal([{
                   toAddress: addressStr,
                   gasLimit: 21000,
@@ -7972,6 +7971,7 @@ describe('Wallet service', function() {
                 }],
                 from,
                 feePerKb: 100e2,
+                nonce: 1,
               };
               helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
                 should.exist(tx);
@@ -8003,9 +8003,9 @@ describe('Wallet service', function() {
             // Array length of 1
             txp.raw.length.should.equal(1);
             // this depends on transaction count stub
-            txp.txid.should.equal('0xf21212b72604e4a5e15bcf172d0d32019715e2c8d4ad54a13ef1b965e4f01e3e');
+            txp.txid.should.equal('0xea1e779f55e32575e5618114c94a1711b0d93b6c8fc1be621ecefc8d030d8348');
             // TXP based on total signed unbroadcasted txs
-            txp.nonce.should.equal('50');
+            txp.nonce.should.equal(1);
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
               var tx = txs[0];
@@ -8529,6 +8529,7 @@ describe('Wallet service', function() {
               from,
               message: 'some message',
               feePerKb: 100e2,
+              nonce: 1,
             };
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
               should.exist(txp);

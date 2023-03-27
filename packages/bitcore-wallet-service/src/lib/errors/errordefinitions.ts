@@ -27,6 +27,7 @@ const errors = {
   MISMATCH_RAW_TX: 'The raw transaction values do not match the original transaction',
   NETWORK_SUSPENDED: '$network operations are currently suspended. Please check status.bitpay.com for further updates.',
   NOT_AUTHORIZED: 'Not authorized',
+  NULL_NONCE: 'EVM transactions without a nonce cannot be signed and broadcasted',
   TOO_MANY_KEYS: 'Too many keys registered',
   TX_ALREADY_BROADCASTED: 'The transaction proposal is already broadcasted',
   TX_CANNOT_CREATE: 'Cannot create TX proposal during backoff time',

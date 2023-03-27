@@ -5211,7 +5211,8 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2
+            feePerKb: 100e2,
+            nonce: 1
           };
           helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
@@ -5239,6 +5240,65 @@ describe('client API', function() {
       });
     });
 
+    it('Send and broadcast in 1-1 wallet ETH with no nonce', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, w => {
+        clients[0].createAddress((err, x0) => {
+          should.not.exist(err);
+          should.exist(x0.address);
+          var opts = {
+            outputs: [
+              {
+                amount: 10000000,
+                toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+                message: 'output 0',
+                gasLimit: 21000
+              }
+            ],
+            message: 'hello',
+            feePerKb: 100e2
+          };
+          helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
+            should.not.exist(err);
+            txp.requiredRejections.should.equal(1);
+            txp.requiredSignatures.should.equal(1);
+            txp.status.should.equal('pending');
+            txp.outputs[0].message.should.equal('output 0');
+            txp.message.should.equal('hello');
+            keys[0].sign(clients[0].getRootPath(), txp, null, err =>{
+              should.exist(err);
+              err.message.should.equal('Your transaction was created without a nonce. Cannot sign transaction.');
+            });
+            try {
+              txp = await clients[0].setNonce({
+                address: txp.from,
+                chain: txp.chain,
+                coin: txp.coin,
+                network: 5,
+                txId: txp.id,
+                isPublished: true,
+              });
+            } catch (err) {
+              should.not.exist(err);
+            }
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(txp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              txp.outputs[0].message.should.equal('output 0');
+              txp.message.should.equal('hello');
+              clients[0].broadcastTxProposal(txp, (err, txp) => {
+                should.not.exist(err);
+                txp.status.should.equal('broadcasted');
+                txp.txid.should.contain('0x');
+                txp.message.should.equal('hello');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+  
     it('Send and broadcast in 1-1 wallet MATIC', done => {
       helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, w => {
         clients[0].createAddress((err, x0) => {
@@ -5256,7 +5316,8 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2
+            feePerKb: 100e2,
+            nonce: 1
           };
           helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);

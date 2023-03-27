@@ -20,7 +20,7 @@ export class EthValidation implements IValidation {
     let { raw, txp, fields } = params;
     const parsedTx = ethers.utils.parseTransaction(raw);
     for (const field of fields) {
-      if (parsedTx[field] != txp[field]) return false; // throw new Error(`Raw TX did not match txp ${txp.id} on field ${field}`)
+      if (parsedTx[field] != txp[field]) return false;
     }
     return true;
   }
