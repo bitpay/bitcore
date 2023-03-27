@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@abcpros/bitcore-lib": "^8.25.32",
-    "@abcpros/bitcore-wallet-client": "^8.25.40",
+    "@abcpros/bitcore-wallet-client": "^8.25.41",
     "async": "^2.5.0",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
