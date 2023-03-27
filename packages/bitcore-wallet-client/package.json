@@ -25,8 +25,8 @@
     "url": "https://github.com/bitpay/bitcore-wallet-client/issues"
   },
   "dependencies": {
-    "@abcpros/bitcore-mnemonic": "^8.25.33",
-    "@abcpros/crypto-wallet-core": "^8.25.35",
+    "@abcpros/bitcore-mnemonic": "^8.25.41",
+    "@abcpros/crypto-wallet-core": "^8.25.41",
     "ajv": "^6.10.0",
     "async": "^0.9.0",
     "awesome-typescript-loader": "^5.2.1",
@@ -41,7 +41,7 @@
     "typescript": "^3.9.3"
   },
   "devDependencies": {
-    "@abcpros/bitcore-wallet-service": "^8.25.39",
+    "@abcpros/bitcore-wallet-service": "^8.25.41",
     "@types/lodash": "^4.14.136",
     "@types/node": "^10.0.2",
     "browserify": "^13.1.0",
