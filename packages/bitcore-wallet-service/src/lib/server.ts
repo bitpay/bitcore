@@ -7096,9 +7096,9 @@ export class WalletService {
         next => {
           // get all txs from chronik client
           if (resultTxs && resultTxs.length > 0) {
-            var chronikClient = ChainService.getChronikClient(wallet.coin);
+            const chronikClient = ChainService.getChronikClient(wallet.coin);
             // filter get only tx have on-chain message
-            let filterResulTxs = _.filter(resultTxs, tx => {
+            let filterResultTxs = _.filter(resultTxs, tx => {
               // if tx action = received => get all txs because we have no clue if this tx having message or not
               if (tx.action === 'received') {
                 return true;
@@ -7107,37 +7107,39 @@ export class WalletService {
                 return !!_.find(tx.outputs, o => o.address === 'false' || !o.address);
               }
             });
-            if (filterResulTxs && filterResulTxs.length > 0) {
+            if (filterResultTxs && filterResultTxs.length > 0) {
               // call chronik client get all tx details
-              const listTxDetailFromChronik = _.map(filterResulTxs, async tx => {
+              const listTxDetailFromChronik = _.map(filterResultTxs, async tx => {
                 const txDetailFromChronik = chronikClient.tx(tx.txid);
                 return txDetailFromChronik;
               });
 
               // handle tx details return from chronik client
-              return Promise.all(listTxDetailFromChronik).then(values => {
-                if (!!values && values.length > 0) {
+              return Promise.all(listTxDetailFromChronik).then(listTx => {
+                if (!!listTx && listTx.length > 0) {
                   // remove undefined, false value from list txs return from chronik
-                  values = _.compact(values);
+                  listTx = _.compact(listTx);
 
                   // mapping tx details from chronik with only 2 att : txid and outputScript
-                  values = _.map(values, function(value) {
-                    if (value) {
+                  const opReturnScript = Constants.opReturn.opReturnPrefixHex + Constants.opReturn.opReturnAppPrefixLengthHex
+                  listTx = _.map(listTx, function(tx) {
+                    if (tx) {
                       return {
-                        txid: value.txid,
-                        outputScript: _.find(value.outputs, o => o.outputScript.includes('6a04'))
-                          ? _.find(value.outputs, o => o.outputScript.includes('6a04')).outputScript
+                        txid: tx.txid,
+                        outputScript: _.find(tx.outputs, o => o.outputScript.includes('6a04'))
+                          ? _.find(tx.outputs, o => o.outputScript.includes('6a04')).outputScript
                           : null
                       };
                     }
                   });
 
                   // mapping txs from chronik with txs already on node or bws
-                  _.each(values, txDetail => {
-                    const txFound = _.find(filterResulTxs, tx => txDetail.outputScript && tx.txid === txDetail.txid);
+                  _.each(listTx, txDetail => {
+                    const txFound = _.find(filterResultTxs, tx => txDetail.outputScript && tx.txid === txDetail.txid);
                     if (txFound) {
                       const outputFalse = _.find(txFound.outputs, o => o.address === 'false' || !o.address);
                       if (outputFalse) {
+                        // assign outputscript from chronik tx detail to output in tx detail
                         outputFalse.outputScript = txDetail.outputScript;
                       } else {
                         txFound.outputs.push({
