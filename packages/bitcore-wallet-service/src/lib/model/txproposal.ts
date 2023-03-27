@@ -25,6 +25,7 @@ export interface ITxProposal {
   chain: string;
   network: string;
   message: string;
+  messageOnChain: string;
   payProUrl: string;
   from: string;
   changeAddress: string;
@@ -84,6 +85,7 @@ export class TxProposal {
   chain: string;
   network: string;
   message: string;
+  messageOnChain: string;
   payProUrl: string;
   from: string;
   changeAddress: any;
@@ -163,6 +165,7 @@ export class TxProposal {
     x.network = opts.network;
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
+    x.messageOnChain = opts.messageOnChain;
     x.payProUrl = opts.payProUrl;
     x.changeAddress = opts.changeAddress;
     x.outputs = _.map(opts.outputs, output => {
@@ -237,6 +240,7 @@ export class TxProposal {
     x.outputs = obj.outputs;
     x.amount = obj.amount;
     x.message = obj.message;
+    x.messageOnChain = obj.messageOnChain;
     x.payProUrl = obj.payProUrl;
     x.changeAddress = obj.changeAddress;
     x.inputs = obj.inputs;
