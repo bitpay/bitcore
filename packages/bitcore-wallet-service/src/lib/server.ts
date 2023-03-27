@@ -7127,8 +7127,8 @@ export class WalletService {
                     if (tx) {
                       return {
                         txid: tx.txid,
-                        outputScript: _.find(tx.outputs, o => o.outputScript.includes('6a04'))
-                          ? _.find(tx.outputs, o => o.outputScript.includes('6a04')).outputScript
+                        outputScript: _.find(tx.outputs, o => o.outputScript.includes(opReturnScript))
+                          ? _.find(tx.outputs, o => o.outputScript.includes(opReturnScript)).outputScript
                           : null
                       };
                     }
