@@ -3324,6 +3324,15 @@ export class WalletService {
                   return next();
                 },
                 next => {
+                  // TanTodo: checking message onchain
+                  if (opts.messageOnChain) {
+                    if (Buffer.from(opts.messageOnChain).length > 206) {
+                      return next(Errors.LONG_MESSAGE);
+                    }
+                  }
+                  return next();
+                },
+                next => {
                   let txOptsFee = fee;
 
                   if (!txOptsFee) {
@@ -3345,6 +3354,7 @@ export class WalletService {
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
+                    messageOnChain: opts.messageOnChain,
                     from: opts.from,
                     changeAddress,
                     feeLevel: opts.feeLevel,
@@ -3391,7 +3401,6 @@ export class WalletService {
                     const format = opts.noCashAddr ? 'copay' : 'cashaddr';
                     txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
                   }
-
                   this.storage.storeTx(wallet.id, txp, next);
                 }
               ],
@@ -7027,6 +7036,7 @@ export class WalletService {
             );
           });
         },
+
         next => {
           // Case 1.
           //            t -->
@@ -7078,9 +7088,72 @@ export class WalletService {
                 x.action = 'mined';
               }
             });
+
             resultTxs = resultTxs.concat(oldTxs);
             return next();
           });
+        },
+        next => {
+          // get all txs from chronik client
+          if (resultTxs && resultTxs.length > 0) {
+            var chronikClient = ChainService.getChronikClient(wallet.coin);
+            // filter get only tx have on-chain message
+            let filterResulTxs = _.filter(resultTxs, tx => {
+              // if tx action = received => get all txs because we have no clue if this tx having message or not
+              if (tx.action === 'received') {
+                return true;
+              } else if (tx.action === 'sent') {
+                // if tx action = sent => check output having false address or not
+                return !!_.find(tx.outputs, o => o.address === 'false' || !o.address);
+              }
+            });
+            if (filterResulTxs && filterResulTxs.length > 0) {
+              // call chronik client get all tx details
+              const listTxDetailFromChronik = _.map(filterResulTxs, async tx => {
+                const txDetailFromChronik = chronikClient.tx(tx.txid);
+                return txDetailFromChronik;
+              });
+
+              // handle tx details return from chronik client
+              return Promise.all(listTxDetailFromChronik).then(values => {
+                if (!!values && values.length > 0) {
+                  // remove undefined, false value from list txs return from chronik
+                  values = _.compact(values);
+
+                  // mapping tx details from chronik with only 2 att : txid and outputScript
+                  values = _.map(values, function(value) {
+                    if (value) {
+                      return {
+                        txid: value.txid,
+                        outputScript: _.find(value.outputs, o => o.outputScript.includes('6a04'))
+                          ? _.find(value.outputs, o => o.outputScript.includes('6a04')).outputScript
+                          : null
+                      };
+                    }
+                  });
+
+                  // mapping txs from chronik with txs already on node or bws
+                  _.each(values, txDetail => {
+                    const txFound = _.find(filterResulTxs, tx => txDetail.outputScript && tx.txid === txDetail.txid);
+                    if (txFound) {
+                      const outputFalse = _.find(txFound.outputs, o => o.address === 'false' || !o.address);
+                      if (outputFalse) {
+                        outputFalse.outputScript = txDetail.outputScript;
+                      } else {
+                        txFound.outputs.push({
+                          address: 'false',
+                          outputScript: txDetail.outputScript
+                        });
+                      }
+                    }
+                  });
+                  return next();
+                }
+              });
+            }
+            return next();
+          }
+          return next();
         },
         next => {
           if (streamData) {

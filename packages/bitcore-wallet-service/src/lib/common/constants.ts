@@ -64,5 +64,17 @@ module.exports = {
 
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
-  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS
+  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
+  opReturn: {
+    opReturnPrefixHex: '6a',
+    opReturnAppPrefixLengthHex: '04',
+    opPushDataOne: '4c',
+    appPrefixesHex: {
+      eToken: '534c5000',
+      lotusChat: '02020202',
+      lotusChatEncrypted: '03030303'
+    },
+    encryptedMsgByteLimit: 206,
+    unencryptedMsgByteLimit: 215
+  }
 };
