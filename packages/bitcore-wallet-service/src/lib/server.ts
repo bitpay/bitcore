@@ -7121,7 +7121,8 @@ export class WalletService {
                   listTx = _.compact(listTx);
 
                   // mapping tx details from chronik with only 2 att : txid and outputScript
-                  const opReturnScript = Constants.opReturn.opReturnPrefixHex + Constants.opReturn.opReturnAppPrefixLengthHex
+                  const opReturnScript =
+                    Constants.opReturn.opReturnPrefixHex + Constants.opReturn.opReturnAppPrefixLengthHex;
                   listTx = _.map(listTx, function(tx) {
                     if (tx) {
                       return {
