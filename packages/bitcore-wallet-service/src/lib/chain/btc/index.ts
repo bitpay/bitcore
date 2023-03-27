@@ -362,7 +362,16 @@ export class BtcChain implements IChain {
         break;
     }
     if (txp.messageOnChain) {
-      t.addOnchainMessage(txp.messageOnChain);
+      const script = new this.bitcoreLib.Script();
+      script.add(this.bitcoreLib.Opcode.OP_RETURN);
+      script.add(Buffer.from(Constants.opReturn.appPrefixesHex.lotusChatEncrypted, 'hex'));
+      script.add(Buffer.from(txp.messageOnChain));
+      t.addOutput(
+        new this.bitcoreLib.Transaction.Output({
+          script,
+          satoshis: 0
+        })
+      );
     }
     _.each(txp.outputs, o => {
       $.checkState(

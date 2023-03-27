@@ -350,7 +350,21 @@ export class Utils {
         t.to(txp.toAddress, txp.amount);
       } else if (txp.outputs) {
         if (txp.messageOnChain) {
-          t.addOnchainMessage(txp.messageOnChain);
+          const script = new bitcore.Script();
+          script.add(bitcore.Opcode.OP_RETURN);
+          script.add(
+            Buffer.from(
+              Constants.opReturn.appPrefixesHex.lotusChatEncrypted,
+              'hex'
+            )
+          );
+          script.add(Buffer.from(txp.messageOnChain));
+          t.addOutput(
+            new bitcore.Transaction.Output({
+              script,
+              satoshis: 0
+            })
+          );
         }
         _.each(txp.outputs, o => {
           $.checkState(
