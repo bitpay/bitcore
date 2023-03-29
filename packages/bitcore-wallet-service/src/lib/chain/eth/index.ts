@@ -216,7 +216,7 @@ export class EthChain implements IChain {
               gasPrice
             });
           } catch (error) {
-            logger.error('Error estimating gas for MultiSend contract', error);
+            logger.error('Error estimating gas for MultiSend contract: %o', error);
           }
           gasLimit = gasLimit ? gasLimit : inGasLimit;
           fee += feePerKb * gasLimit;
@@ -326,7 +326,7 @@ export class EthChain implements IChain {
     try {
       const tx = this.getBitcoreTx(txp);
     } catch (ex) {
-      logger.debug('Error building Bitcore transaction', ex);
+      logger.debug('Error building Bitcore transaction: %o', ex);
       return ex;
     }
 
@@ -464,7 +464,7 @@ export class EthChain implements IChain {
       }
       return true;
     } catch (err) {
-      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount. Err: ${err.message}`);
+      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: $o`, err);
       return false;
     }
   }

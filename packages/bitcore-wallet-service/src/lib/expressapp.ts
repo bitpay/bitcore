@@ -281,8 +281,7 @@ export class ExpressApp {
 
     if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
       logger.info(
-        '',
-        'Limiting wallet creation per IP: %d req/h',
+        'Limiting wallet creation per IP: %o req/h',
         ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       createWalletLimiter = new RateLimit(Defaults.RateLimit.createWallet);
@@ -866,8 +865,7 @@ export class ExpressApp {
 
     if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {
       logger.info(
-        '',
-        'Limiting estimate fee per IP: %d req/h',
+        'Limiting estimate fee per IP: %o req/h',
         ((Defaults.RateLimit.estimateFee.max / Defaults.RateLimit.estimateFee.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       estimateFeeLimiter = new RateLimit(Defaults.RateLimit.estimateFee);

@@ -231,7 +231,7 @@ export class WalletService implements IWalletService {
         lock = opts.lock || new Lock(storage);
 
         if (err) {
-          logger.error('Could not initialize', err);
+          logger.error('Could not initialize: %o', err);
           throw err;
         }
         initialized = true;
@@ -389,6 +389,12 @@ export class WalletService implements IWalletService {
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
   logi(message, ...args) {
+    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
+      for (let i = 0; i < args.length; i++) {
+        message += ' %o';
+      }
+    }
+
     if (!this || !this.walletId) {
       return logger.warn(message, ...args);
     }
@@ -398,6 +404,12 @@ export class WalletService implements IWalletService {
   }
 
   logw(message, ...args) {
+    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
+      for (let i = 0; i < args.length; i++) {
+        message += ' %o';
+      }
+    }
+  
     if (!this || !this.walletId) {
       return logger.warn(message, ...args);
     }
@@ -407,6 +419,12 @@ export class WalletService implements IWalletService {
   }
 
   logd(message, ...args) {
+    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
+      for (let i = 0; i < args.length; i++) {
+        message += ' %o';
+      }
+    }
+
     if (!this || !this.walletId) {
       return logger.verbose(message, ...args);
     }
@@ -2937,7 +2955,7 @@ export class WalletService implements IWalletService {
             isCreator: true
           });
           this.storage.storeTxConfirmationSub(sub, err => {
-            if (err) logger.error('Could not store Tx confirmation subscription: ', err);
+            if (err) logger.error('Could not store Tx confirmation subscription: %o', err);
 
             let raw;
             try {
@@ -2948,9 +2966,9 @@ export class WalletService implements IWalletService {
             this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
               if (err || txid != txp.txid) {
                 if (!err || txp.txid != txid) {
-                  logger.warn(`Broadcast failed for: ${raw}`);
+                  logger.warn('Broadcast failed for: %o', raw);
                 } else {
-                  logger.warn(`Broadcast failed: ${err}`);
+                  logger.warn('Broadcast failed: %o', err);
                 }
 
                 const broadcastErr = err;
@@ -3426,7 +3444,7 @@ export class WalletService implements IWalletService {
           if (isOK) {
             logger.debug('Wallet Sync Check OK');
           } else {
-            logger.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
+            logger.warn('ERROR: Wallet check failed: %o', { localCheck, serverCheck });
             return cb(null, isOK);
           }
 
@@ -3916,7 +3934,7 @@ export class WalletService implements IWalletService {
         next => {
           if (skip == 0 || !streamKey) return next();
 
-          logger.debug('Checking streamKey/skip', streamKey, skip);
+          logger.debug('Checking streamKey/skip %o', { streamKey, skip });
           this.storage.getTxHistoryStreamV8(walletCacheKey, (err, result) => {
             if (err) return next(err);
             if (!result) return next();
@@ -3938,7 +3956,7 @@ export class WalletService implements IWalletService {
           }
 
           const startBlock = cacheStatus.updatedHeight || 0;
-          logger.debug(' ########### GET HISTORY v8 startBlock/bcH]', startBlock, bcHeight); // TODO
+          logger.debug(' ########### GET HISTORY v8 startBlock/bcH] %o', { startBlock, bcHeight });
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);

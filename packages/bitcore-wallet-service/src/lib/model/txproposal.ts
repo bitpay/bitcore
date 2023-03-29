@@ -424,7 +424,7 @@ export class TxProposal {
 
       return true;
     } catch (e) {
-      logger.debug(e);
+      logger.debug('%o', e);
       return false;
     }
   }

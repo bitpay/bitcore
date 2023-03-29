@@ -62,8 +62,7 @@ export class Storage {
   static createIndexes(db) {
     logger.info('Creating DB indexes');
     if (!db.collection) {
-      console.log('[storage.ts.55] no db.collection'); // TODO
-      logger.error('DB not ready');
+      logger.error('DB not ready: [storage.ts] no db.collection');
       return;
     }
     db.collection(collections.WALLETS).createIndex({
@@ -567,7 +566,7 @@ export class Storage {
   storeNotification(walletId, notification, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
-      logger.warn('Trying to store a notification with close DB', notification);
+      logger.warn('Trying to store a notification with close DB %o', notification);
       return;
     }
 
@@ -793,7 +792,7 @@ export class Storage {
           } else {
             // just return it
             duplicate = true;
-            logger.warn('Found duplicate address: ' + _.join(_.map(clonedAddresses, 'address'), ','));
+            logger.warn('Found duplicate address: ' + clonedAddresses.map(a => a.address).join(','));
           }
         }
         this.storeWallet(wallet, err => {
