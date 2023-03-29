@@ -90,7 +90,7 @@ describe('Utils', function() {
       should.exist(res);
       res.should.equal(false);
       logSpy.called.should.equal(true);
-      logSpy.calledOnceWith('_tryImportPublicKey encountered an error.').should.equal(true);
+      logSpy.calledOnceWith('_tryImportPublicKey encountered an error: %o').should.equal(true);
     });
     it('should call logger when _tryVerifyMessage throws', function() {
       var logSpy = sinon.spy(logger, 'error');
@@ -101,7 +101,7 @@ describe('Utils', function() {
       should.exist(res);
       res.should.equal(false);
       logSpy.called.should.equal(true);
-      logSpy.calledOnceWith('_tryVerifyMessage encountered an error.').should.equal(true);
+      logSpy.calledOnceWith('_tryVerifyMessage encountered an error: %o').should.equal(true);
     });
     it('should verify', function() {
       var res = Utils.verifyMessage('hola', '3045022100d6186930e4cd9984e3168e15535e2297988555838ad10126d6c20d4ac0e74eb502201095a6319ea0a0de1f1e5fb50f7bf10b8069de10e0083e23dbbf8de9b8e02785', '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f');
