@@ -7095,7 +7095,7 @@ export class WalletService {
         },
         next => {
           // get all txs from chronik client
-          if (this._isSupportToken(wallet)) {
+          if (wallet.coin === 'xpi' && wallet.singleAddress) {
             if (resultTxs && resultTxs.length > 0) {
               const chronikClient = ChainService.getChronikClient(wallet.coin);
               // filter get only tx have on-chain message
@@ -7114,13 +7114,13 @@ export class WalletService {
                   const txDetailFromChronik = chronikClient.tx(tx.txid);
                   return txDetailFromChronik;
                 });
-  
+
                 // handle tx details return from chronik client
                 return Promise.all(listTxDetailFromChronik).then(listTx => {
                   if (!!listTx && listTx.length > 0) {
                     // remove undefined, false value from list txs return from chronik
                     listTx = _.compact(listTx);
-  
+
                     // mapping tx details from chronik with only 2 att : txid and outputScript
                     const opReturnScript =
                       Constants.opReturn.opReturnPrefixHex + Constants.opReturn.opReturnAppPrefixLengthHex;
@@ -7134,7 +7134,7 @@ export class WalletService {
                         };
                       }
                     });
-  
+
                     // mapping txs from chronik with txs already on node or bws
                     _.each(listTx, txDetail => {
                       const txFound = _.find(filterResultTxs, tx => txDetail.outputScript && tx.txid === txDetail.txid);
@@ -7158,7 +7158,7 @@ export class WalletService {
               return next();
             }
           }
-        
+
           return next();
         },
         next => {
