@@ -36,8 +36,8 @@ commands:
       - run:
           name: Use Node 18
           command: |
-            nvm install 18.13.0
-            nvm alias default 18.13.0
+            nvm install 18.14.2
+            nvm alias default 18.14.2
             nvm use default
   restore_dependency_cache:
     steps:
