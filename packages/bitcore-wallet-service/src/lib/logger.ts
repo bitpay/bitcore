@@ -17,7 +17,7 @@ export const logger = winston.createLogger({
       if (typeof info.message === 'object') {
         info.message = JSON.stringify(info.message, null, 4);
       }
-      return `${info.level}: ${info.message}`;
+      return `${info.level} :: ${new Date().toISOString()} :: ${info.message}`;
     })
   ),
   transports: [transport]

@@ -108,7 +108,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     const operations = [] as Array<Promise<any>>;
     operations.push(this.pruneMempool({ ...params }));
     const txOps = await this.addTransactions({ ...params });
-    logger.debug('Writing Transactions', txOps.length);
+    logger.debug('Writing Transactions: %o', txOps.length);
     operations.push(
       ...partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
         this.collection.bulkWrite(

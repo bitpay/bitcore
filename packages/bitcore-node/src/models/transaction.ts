@@ -355,7 +355,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
           // TODO: Fee is negative for mempool txs
           fee = groupedSpends[txid].total - tx.outputAmount;
           if (fee < 0) {
-            logger.debug('negative fee', txid, groupedSpends[txid], tx.outputAmount);
+            logger.debug('Negative fee %o %o %o', txid, groupedSpends[txid], tx.outputAmount);
           }
         }
 

@@ -10,7 +10,7 @@ EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) =
     const nonce = await ETH.getAccountNonce(network, address);
     res.json({ nonce });
   } catch (err) {
-    logger.error('Nonce Error::' + err);
+    logger.error('Nonce Error::%o', err);
     res.status(500).send(err);
   }
 });

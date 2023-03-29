@@ -10,7 +10,7 @@ MaticRoutes.get('/api/MATIC/:network/address/:address/txs/count', async (req, re
     const nonce = await MATIC.getAccountNonce(network, address);
     res.json({ nonce });
   } catch (err) {
-    logger.error('Nonce Error::' + err);
+    logger.error('Nonce Error::%o', err);
     res.status(500).send(err);
   }
 });

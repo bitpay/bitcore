@@ -64,7 +64,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
         { chain, network, hash: previousBlock.hash },
         { $set: { nextBlockHash: convertedBlock.hash } }
       );
-      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+      logger.debug('Updating previous block.nextBlockHash %o', convertedBlock.hash);
     }
 
     await TransactionStorage.batchImport({
@@ -155,7 +155,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       } else {
         logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
       }
-      logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
+      logger.info(`Resetting tip to ${localTip.height - 1}, %o`, { chain, network });
     }
     const reorgOps = [
       this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
@@ -169,7 +169,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.unspent } }
     );
 
-    logger.debug('Removed data from above blockHeight: ', localTip.height);
+    logger.debug('Removed data from above blockHeight: %o', localTip.height);
     return true;
   }
 

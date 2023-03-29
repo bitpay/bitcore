@@ -228,7 +228,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           .on('transactionHash', resolve)
           .on('error', reject)
           .catch(e => {
-            logger.error(e);
+            logger.error('%o', e);
             reject(e);
           });
       });

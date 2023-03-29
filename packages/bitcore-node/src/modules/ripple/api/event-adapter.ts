@@ -64,7 +64,7 @@ export class RippleEventAdapter {
             streams: ['ledger', 'transactions_proposed']
           });
         } catch (e: any) {
-          logger.error('Error connecting to XRP', e.message);
+          logger.error('Error connecting to XRP: %o', e);
         }
       }
     });

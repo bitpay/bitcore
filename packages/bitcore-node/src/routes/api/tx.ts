@@ -150,7 +150,7 @@ router.post('/send', async function(req: Request, res: Response) {
     });
     return res.send({ txid });
   } catch (err: any) {
-    logger.error(err);
+    logger.error('%o', err);
     return res.status(500).send(err.message);
   }
 });
