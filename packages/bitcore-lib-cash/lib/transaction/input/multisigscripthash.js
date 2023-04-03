@@ -75,7 +75,7 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
 
   var self = this;
   var results = [];
-  for (var publicKey of this.publicKeys) {
+  for (const publicKey of this.publicKeys) {
     if (publicKey.toString() === privateKey.publicKey.toString()) {
       results.push(new TransactionSignature({
         publicKey: privateKey.publicKey,
