@@ -65,7 +65,7 @@ Signature.fromCompact = function(buf) {
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
   // Schnorr signatures are 64 bytes: r [len] 32 || s [len] 32
   //  There can be a 65th byte that is the nhashtype. It needs to be trimmed before calling this.
-  if(buf.length === 64) {
+  if (buf.length === 64) {
     let obj = Signature.parseSchnorrEncodedSig(buf);
     let sig = new Signature();
     sig.r = obj.r;
