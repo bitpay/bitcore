@@ -11344,7 +11344,26 @@ describe('Wallet service', function() {
         try {
           const data = server.rampGetSignedPaymentUrl(req);
           should.exist(data.urlWithSignature);
-          data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&swapAsset=BTC_BTC&swapAmount=1000000&enabledFlows=ONRAMP&defaultFlow=ONRAMP&userAddress=bitcoin%3A123123&selectedCountryCode=US&defaultAsset=BTC_BTC&finalUrl=bitpay%3A%2F%2Framp');
+          data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&swapAsset=BTC_BTC&userAddress=bitcoin%3A123123&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&enabledFlows=ONRAMP&defaultFlow=ONRAMP&swapAmount=1000000&defaultAsset=BTC_BTC');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK for web', () => {
+        try {
+          req.body = {
+            env: 'production',
+            context: 'web',
+            swapAsset: 'BTC_BTC',
+            userAddress: 'bitcoin:123123',
+            selectedCountryCode: 'US',
+            defaultAsset: 'BTC_BTC',
+            finalUrl: 'bitpay://ramp',
+          }
+          const data = server.rampGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi4?hostApiKey=apiKey4&swapAsset=BTC_BTC&userAddress=bitcoin%3A123123&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&defaultAsset=BTC_BTC');
         } catch (err) {
           should.not.exist(err);
         }

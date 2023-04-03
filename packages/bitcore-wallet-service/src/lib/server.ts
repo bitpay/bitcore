@@ -4825,21 +4825,30 @@ export class WalletService implements IWalletService {
   }
 
   rampGetSignedPaymentUrl(req): { urlWithSignature: string } {
+    const webRequiredParams = [
+      'swapAsset',
+      'userAddress',
+      'selectedCountryCode',
+      'finalUrl',
+    ];
+    const appRequiredParams = [
+      'swapAsset',
+      'swapAmount',
+      'enabledFlows',
+      'defaultFlow',
+      'userAddress',
+      'selectedCountryCode',
+      'defaultAsset',
+      'finalUrl',
+    ];
+
+    const requiredParams = req.body.context === 'web' ? webRequiredParams : appRequiredParams;
     const keys = this.rampGetKeys(req);
     const API_KEY = keys.API_KEY;
     const WIDGET_API = keys.WIDGET_API;
 
     if (
-      !checkRequired(req.body, [
-        'swapAsset',
-        'swapAmount',
-        'enabledFlows',
-        'defaultFlow',
-        'userAddress',
-        'selectedCountryCode',
-        'defaultAsset',
-        'finalUrl',
-      ])
+      !checkRequired(req.body, requiredParams)
     ) {
       throw new ClientError("Ramp's request missing arguments");
     }
@@ -4851,16 +4860,17 @@ export class WalletService implements IWalletService {
     let qs = [];
     qs.push('hostApiKey=' + API_KEY);
     qs.push('swapAsset=' + encodeURIComponent(req.body.swapAsset));
-    qs.push('swapAmount=' + encodeURIComponent(req.body.swapAmount));
-    qs.push('enabledFlows=' + encodeURIComponent(req.body.enabledFlows));
-    qs.push('defaultFlow=' + encodeURIComponent(req.body.defaultFlow));
     qs.push('userAddress=' + encodeURIComponent(req.body.userAddress));
     qs.push('selectedCountryCode=' + encodeURIComponent(req.body.selectedCountryCode));
-    qs.push('defaultAsset=' + encodeURIComponent(req.body.defaultAsset));
     qs.push('finalUrl=' + encodeURIComponent(req.body.finalUrl));
+    if (req.body.enabledFlows) qs.push('enabledFlows=' + encodeURIComponent(req.body.enabledFlows));
+    if (req.body.defaultFlow) qs.push('defaultFlow=' + encodeURIComponent(req.body.defaultFlow));
     if (req.body.hostLogoUrl) qs.push('hostLogoUrl=' + encodeURIComponent(req.body.hostLogoUrl));
     if (req.body.hostAppName) qs.push('hostAppName=' + encodeURIComponent(req.body.hostAppName));
+    if (req.body.swapAmount) qs.push('swapAmount=' + encodeURIComponent(req.body.swapAmount));
     if (req.body.fiatValue) qs.push('fiatValue=' + encodeURIComponent(req.body.fiatValue));
+    if (req.body.fiatCurrency) qs.push('fiatCurrency=' + encodeURIComponent(req.body.fiatCurrency));
+    if (req.body.defaultAsset) qs.push('defaultAsset=' + encodeURIComponent(req.body.defaultAsset));
     if (req.body.userEmailAddress) qs.push('userEmailAddress=' + encodeURIComponent(req.body.userEmailAddress));
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
