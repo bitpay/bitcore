@@ -290,32 +290,30 @@ describe('Interpreter', function() {
     verified.should.equal(expected);
   };
   describe('bitcoind script evaluation fixtures', function() {
-    var testAllFixtures = function(set) {
-      var c = 0; var l = set.length;
-      set.forEach(function(vector) {
-        if (vector.length === 1) {
-          return;
-        }
-        c++;
+    let c = 0;
+    const l = script_tests.length;
+    for (const vector of script_tests) {
+      if (vector.length === 1) {
+        continue;
+      }
+      c++;
 
-        var extraData;
-        if (_.isArray (vector[0])) {
-          extraData = vector.shift();
-        }
+      let extraData;
+      if (Array.isArray(vector[0])) {
+        extraData = vector.shift();
+      }
 
-        var fullScriptString = vector[0] + ' ' + vector[1];
-        var expected = vector[3] == 'OK';
-        var descstr = vector[4];
-        var comment = descstr ? (' (' + descstr + ')') : '';
-        var txt = 'should ' +( vector[3] == 'OK' ? 'PASS' : 'FAIL') + ' script_tests ' +
-            'vector #' + c + '/ ' + l + ': ' + fullScriptString + comment;
+      const fullScriptString = vector[0] + ' ' + vector[1];
+      const expected = vector[3] == 'OK';
+      const descstr = vector[4];
+      const comment = descstr ? (' (' + descstr + ')') : '';
+      const result = vector[3] == 'OK' ? 'PASS' : 'FAIL';
+      const txt = `should ${result} script_tests vector #${c}/${l}: ${fullScriptString + comment}`;
 
-        it(txt, function() { testFixture(vector, expected, extraData); });
-
+      it(txt, function() {
+        testFixture(vector, expected, extraData);
       });
-    };
-    testAllFixtures(script_tests);
-
+    }
   });
   describe('libauth vmb evaluation fixtures', () => {
     const flags = getFlags('P2SH CLEANSTACK MINIMALDATA VERIFY_CHECKLOCKTIMEVERIFY NATIVE_INTROSPECTION 64_BIT_INTEGERS');

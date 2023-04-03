@@ -910,7 +910,9 @@ export class BtcChain implements IChain {
     let i = 0;
     const x = new this.bitcoreLib.HDPublicKey(xpub);
 
-    _.each(signatures, signatureHex => {
+    for (i = 0; i < inputs.length; i++) {
+      const signatureHex = signatures[i];
+
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
@@ -923,7 +925,7 @@ export class BtcChain implements IChain {
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
       } catch (e) {}
-    });
+    }
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
