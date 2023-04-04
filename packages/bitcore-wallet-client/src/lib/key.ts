@@ -514,7 +514,7 @@ export class Key {
         }
       };
 
-      var signatures = privs.map(function (priv, i) {
+      var signatures = privs.map(function(priv, i) {
         return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
