@@ -9,6 +9,12 @@ const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 const config = require('../config');
 
+const ELECTRICITY_RATE = config.fiatRateServiceOpts.lotusFormula.ELECTRICITY_RATE;
+const MINER_MARGIN = config.fiatRateServiceOpts.lotusFormula.MINER_MARGIN;
+const RIG_HASHRATE = config.fiatRateServiceOpts.lotusFormula.RIG_HASHRATE;
+const RIG_POWER = config.fiatRateServiceOpts.lotusFormula.RIG_POWER;
+const MINING_EFFICIENCY = RIG_HASHRATE / RIG_POWER;
+
 import { resolve } from 'dns';
 import logger from './logger';
 import { EtokenSupportPrice } from './model/config-model';
@@ -57,6 +63,32 @@ export class FiatRateService {
       }, interval * 60 * 1000);
     }
     return cb();
+  }
+
+  handleRateCurrencyXpi(res, dataBtc) {
+    if (_.isEmpty(res) || _.isEmpty(dataBtc)) return res;
+    const rateUsdBtc = _.get(
+      _.find(dataBtc, item => item.code == 'USD'),
+      'value',
+      0
+    );
+    const rateUsdXpi = _.get(
+      _.find(res, item => item.code == 'USD'),
+      'value',
+      0
+    );
+    if (rateUsdBtc == 0) return res;
+    const newData = _.cloneDeep(res);
+    _.forEach(dataBtc, (itemBtc: any) => {
+      if (_.some(res, itemXpi => itemXpi.code != itemBtc.code)) {
+        const newRate = (rateUsdXpi * itemBtc.value) / rateUsdBtc;
+        newData.push({
+          code: itemBtc.code,
+          value: newRate
+        });
+      }
+    });
+    return newData;
   }
 
   async handleRateCurrencyCoin(res, listRate) {
@@ -162,7 +194,7 @@ export class FiatRateService {
 
   async _retrieve(provider, coin, cb) {
     if (coin === 'xpi') {
-      return cb(null, [{ code: 'USD', value: 0.00005 }]);
+      return this._retrieveLotus(cb);
     }
     logger.debug(`Fetching data for ${provider.name} / ${coin} `);
     let params = [];
@@ -225,6 +257,29 @@ export class FiatRateService {
         }
       }
     );
+  }
+
+  _retrieveLotus(cb) {
+    logger.debug(`Fetching data for lotus`);
+    let lotusPrice = 0;
+    this.request.get(
+      {
+        url: 'https://explorer.givelotus.org/api/getdifficulty'
+      },
+      (err, res, body) => {
+        if (err || !body) {
+          return cb(err);
+        }
+        const currentDiff: number = +(body as string).replace(/["]+/g, '');
+        const networkHashRate = ((2 ** 48 / 65535 / (2 * 60)) * currentDiff) / 1000 / 1000 / 1000;
+        const currentMinerReward = Math.round((Math.log2(currentDiff / 16) + 1) * 130);
+        const dailyElectricityCost = (((networkHashRate / MINING_EFFICIENCY) * 24) / 1000) * ELECTRICITY_RATE;
+        const lotusCost = dailyElectricityCost / currentMinerReward / 30 / 24;
+        lotusPrice = lotusCost * (1 + MINER_MARGIN);
+        return cb(null, [{ code: 'USD', value: lotusPrice }]);
+      }
+    );
+    return lotusPrice;
   }
 
   getRate(opts, cb) {
