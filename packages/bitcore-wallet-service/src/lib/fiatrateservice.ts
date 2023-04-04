@@ -260,7 +260,7 @@ export class FiatRateService {
   }
 
   _retrieveLotus(cb) {
-    logger.debug(`Fetching data for lotus`);
+    logger.debug('Fetching data for lotus');
     let lotusPrice = 0;
     this.request.get(
       {
