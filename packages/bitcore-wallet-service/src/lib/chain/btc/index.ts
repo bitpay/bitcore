@@ -910,9 +910,7 @@ export class BtcChain implements IChain {
     let i = 0;
     const x = new this.bitcoreLib.HDPublicKey(xpub);
 
-    for (i = 0; i < inputs.length; i++) {
-      const signatureHex = signatures[i];
-
+    for (const signatureHex of signatures) {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
