@@ -2829,7 +2829,7 @@ export class WalletService implements IWalletService {
         {
           txProposalId: opts.txProposalId
         },
-        (err, txp) => {
+        async (err, txp) => {
           if (err) return cb(err);
 
           if (opts.maxTxpVersion < txp.version) {
@@ -2848,6 +2848,15 @@ export class WalletService implements IWalletService {
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
+          
+          if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+            try {
+              const nonce = await this.getNonce({address : txp.from, chain: wallet.chain, network: wallet.network});
+              if (txp.nonce && txp.nonce != nonce) return cb(Errors.NONCE_MISMATCH);
+            } catch(error) {
+              return cb(error)
+            }            
+          }
 
           const copayer = wallet.getCopayer(this.copayerId);
 

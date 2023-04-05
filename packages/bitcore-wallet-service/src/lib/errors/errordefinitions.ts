@@ -36,6 +36,7 @@ const errors = {
   TX_NOT_PENDING: 'The transaction proposal is not pending',
   UNAVAILABLE_UTXOS: 'Unavailable unspent outputs',
   NO_INPUT_PATHS: 'Derivation paths were not provided for the inputs',
+  NONCE_MISMATCH: 'Transaction nonce does not match Wallet nonce. Please sign the transaction with the correct nonce.',
   UPGRADE_NEEDED: 'Client app needs to be upgraded',
   WALLET_ALREADY_EXISTS: 'Wallet already exists',
   WALLET_FULL: 'Wallet full',
