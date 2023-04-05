@@ -16,9 +16,9 @@ const RIG_HASHRATE = config.fiatRateServiceOpts.lotusFormula.RIG_HASHRATE;
 const RIG_POWER = config.fiatRateServiceOpts.lotusFormula.RIG_POWER;
 const MINING_EFFICIENCY = RIG_HASHRATE / RIG_POWER;
 
+import { BlockChainExplorer } from './blockchainexplorer';
 import logger from './logger';
 import { EtokenSupportPrice } from './model/config-model';
-import { BlockChainExplorer } from './blockchainexplorer';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -426,4 +426,3 @@ export class FiatRateService {
     );
   }
 }
-

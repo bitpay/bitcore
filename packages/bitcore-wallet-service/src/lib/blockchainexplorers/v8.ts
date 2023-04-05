@@ -625,4 +625,3 @@ const _parseErr = (err, res) => {
   logger.warn('V8 ' + res.request.href + ' Returned Status: ' + res.statusCode);
   return 'Error querying the blockchain';
 };
-
