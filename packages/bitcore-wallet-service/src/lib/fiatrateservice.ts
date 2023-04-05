@@ -8,6 +8,7 @@ const Common = require('./common');
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 const config = require('../config');
+const Bitcore = require('@abcpros/bitcore-lib');
 
 const ELECTRICITY_RATE = config.fiatRateServiceOpts.lotusFormula.ELECTRICITY_RATE;
 const MINER_MARGIN = config.fiatRateServiceOpts.lotusFormula.MINER_MARGIN;
@@ -15,9 +16,9 @@ const RIG_HASHRATE = config.fiatRateServiceOpts.lotusFormula.RIG_HASHRATE;
 const RIG_POWER = config.fiatRateServiceOpts.lotusFormula.RIG_POWER;
 const MINING_EFFICIENCY = RIG_HASHRATE / RIG_POWER;
 
-import { resolve } from 'dns';
 import logger from './logger';
 import { EtokenSupportPrice } from './model/config-model';
+import { BlockChainExplorer } from './blockchainexplorer';
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -235,25 +236,22 @@ export class FiatRateService {
 
   _retrieveLotus(cb) {
     logger.debug('Fetching data for lotus');
-    let lotusPrice = 0;
-    this.request.get(
-      {
-        url: 'https://explorer.givelotus.org/api/getdifficulty'
-      },
-      (err, res, body) => {
-        if (err || !body) {
-          return cb(err);
-        }
-        const currentDiff: number = +(body as string).replace(/["]+/g, '');
-        const networkHashRate = ((2 ** 48 / 65535 / (2 * 60)) * currentDiff) / 1000 / 1000 / 1000;
-        const currentMinerReward = Math.round((Math.log2(currentDiff / 16) + 1) * 130);
-        const dailyElectricityCost = (((networkHashRate / MINING_EFFICIENCY) * 24) / 1000) * ELECTRICITY_RATE;
-        const lotusCost = dailyElectricityCost / currentMinerReward / 30 / 24;
-        lotusPrice = lotusCost * (1 + MINER_MARGIN);
-        return cb(null, [{ code: 'USD', value: lotusPrice }]);
-      }
-    );
-    return lotusPrice;
+    const bc = BlockChainExplorer({
+      coin: 'xpi',
+      network: 'livenet',
+      url: config.blockchainExplorerOpts.xpi.livenet.url
+    });
+    bc.getBlockBits((err, bits) => {
+      if (err) return cb(err);
+      const currentDiff = Bitcore.BlockHeader({ bits }).getDifficulty();
+      let lotusPrice = 0;
+      const networkHashRate = ((2 ** 48 / 65535 / (2 * 60)) * currentDiff) / 1000 / 1000 / 1000;
+      const currentMinerReward = Math.round((Math.log2(currentDiff / 16) + 1) * 130);
+      const dailyElectricityCost = (((networkHashRate / MINING_EFFICIENCY) * 24) / 1000) * ELECTRICITY_RATE;
+      const lotusCost = dailyElectricityCost / currentMinerReward / 30 / 24;
+      lotusPrice = lotusCost * (1 + MINER_MARGIN);
+      return cb(null, [{ code: 'USD', value: lotusPrice }]);
+    });
   }
 
   getRate(opts, cb) {
@@ -428,3 +426,4 @@ export class FiatRateService {
     );
   }
 }
+

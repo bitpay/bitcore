@@ -520,6 +520,21 @@ export class V8 {
       .catch(cb);
   }
 
+  getBlockBits(cb) {
+    const url = this.baseUrl + '/block/tip';
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          return cb(null, ret.bits);
+        } catch (err) {
+          return cb(new Error('Could not get bits from block explorer'));
+        }
+      })
+      .catch(cb);
+  }
+
   getTxidsInBlock(blockHash, cb) {
     const url = this.baseUrl + '/tx/?blockHash=' + blockHash;
     this.request
@@ -610,3 +625,4 @@ const _parseErr = (err, res) => {
   logger.warn('V8 ' + res.request.href + ' Returned Status: ' + res.statusCode);
   return 'Error querying the blockchain';
 };
+
