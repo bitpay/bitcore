@@ -5239,6 +5239,54 @@ describe('client API', function() {
       });
     });
 
+    it('Prevent signing of TXs with lower Nonces in 1-1 wallet ETH', function(done) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, w => {
+        clients[0].createAddress((err, x0) => {
+          should.not.exist(err);
+          should.exist(x0.address);
+          var opts = {
+            outputs: [
+              {
+                amount: 10000000,
+                toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+                message: 'output 0',
+                gasLimit: 21000
+              }
+            ],
+            message: 'hello',
+            feePerKb: 100e2
+          };
+          let opts1 = opts;
+          opts1.nonce = 1
+          helpers.createAndPublishTxProposal(clients[0], opts1, (err, txp1) => {
+            should.not.exist(err);
+            txp1.requiredRejections.should.equal(1);
+            txp1.requiredSignatures.should.equal(1);
+            txp1.status.should.equal('pending');
+            txp1.outputs[0].message.should.equal('output 0');
+            txp1.message.should.equal('hello');
+
+            let opts2 = opts;
+            opts2.nonce = 2;
+            helpers.createAndPublishTxProposal(clients[0], opts2, (err, txp2) => {
+              should.not.exist(err);
+              txp2.requiredRejections.should.equal(1);
+              txp2.requiredSignatures.should.equal(1);
+              txp2.status.should.equal('pending');
+              txp2.outputs[0].message.should.equal('output 0');
+              txp2.message.should.equal('hello');
+              
+              let signatures = keys[0].sign(clients[0].getRootPath(), txp2);
+              clients[0].pushSignatures(txp2, signatures, err => {
+                should.exist(err);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
     it('Send and broadcast in 1-1 wallet MATIC', done => {
       helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, w => {
         clients[0].createAddress((err, x0) => {
