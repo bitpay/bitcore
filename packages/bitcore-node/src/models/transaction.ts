@@ -597,44 +597,29 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
   async findAllRelatedOutputs(forTx: string) {
     const seen = {};
-    const getOutputs = (txid: string) =>
-      CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
-    let batch = await getOutputs(forTx);
-    let allRelatedCoins = new Array<ICoin>();
-    while (batch.length) {
-      allRelatedCoins = allRelatedCoins.concat(batch);
-      let newBatch = new Array<ICoin>();
-      for (const coin of batch) {
-        seen[coin.mintTxid] = true;
-        if (coin.spentTxid && !seen[coin.spentTxid]) {
-          const outputs = await getOutputs(coin.spentTxid);
-          newBatch = newBatch.concat(outputs);
-        }
+    const allRelatedCoins: ICoin[] = await CoinStorage.collection.find({ mintTxid: forTx, mintHeight: { $ne: SpentHeightIndicators.conflicting } }).toArray();
+    for (let coin of allRelatedCoins) {
+      seen[coin.mintTxid] = true;
+      if (coin.spentTxid && !seen[coin.spentTxid]) {
+        const outputs = await this.findAllRelatedOutputs(coin.spentTxid);
+        allRelatedCoins.push(...outputs);
       }
-      batch = newBatch;
     }
     return allRelatedCoins;
   }
 
   async *yieldRelatedOutputs(forTx: string) {
     const seen = {};
-    const getOutputs = (txid: string) =>
-      CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
-    let batch = await getOutputs(forTx);
-    while (batch.length) {
-      for (const coin of batch) {
-        seen[coin.mintTxid] = true;
-        yield coin;
+    const batchStream = CoinStorage.collection.find({ mintTxid: forTx, mintHeight: { $ne: SpentHeightIndicators.conflicting } });
+    let coin: ICoin | null;
+    while (coin = (await batchStream.next())) {
+      seen[coin.mintTxid] = true;
+      yield coin;
+      
+      if (coin.spentTxid && !seen[coin.spentTxid]) {
+        yield * this.yieldRelatedOutputs(coin.spentTxid);
+        seen[coin.spentTxid] = true;
       }
-      let newBatch = new Array<ICoin>();
-      for (const coin of batch) {
-        if (coin.spentTxid && !seen[coin.spentTxid]) {
-          const outputs = await getOutputs(coin.spentTxid);
-          seen[coin.spentTxid] = true;
-          newBatch = newBatch.concat(outputs);
-        }
-      }
-      batch = newBatch;
     }
   }
 
@@ -648,45 +633,68 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     if (!initialSyncComplete || !spendOps.length) {
       return;
     }
-    let coins = await CoinStorage.collection
+    let coinStream = await CoinStorage.collection
       .find({
         chain,
         network,
         spentHeight: SpentHeightIndicators.pending,
         mintTxid: { $in: spendOps.map(s => s.updateOne.filter.mintTxid) }
       })
-      .project({ mintTxid: 1, mintIndex: 1, spentTxid: 1 })
-      .toArray();
-    coins = coins.filter(
-      c =>
-        spendOps.findIndex(
-          s =>
-            s.updateOne.filter.mintTxid === c.mintTxid &&
-            s.updateOne.filter.mintIndex === c.mintIndex &&
-            s.updateOne.update.$set.spentTxid !== c.spentTxid
-        ) > -1
-    );
+      .project({ mintTxid: 1, mintIndex: 1, spentTxid: 1 });
 
-    const invalidatedTxids = Array.from(new Set(coins.map(c => c.spentTxid)));
+    const handledSpentTxids = new Set();
+    const invalidatedTxids = new Set();
 
-    for (const invalidTxid of invalidatedTxids) {
-      const allRelatedCoins = await this.findAllRelatedOutputs(invalidTxid);
-      const spentTxids = new Set(allRelatedCoins.filter(c => c.spentTxid).map(c => c.spentTxid));
-      const txids = [invalidTxid].concat(Array.from(spentTxids));
-      await Promise.all([
-        this.collection.updateMany(
-          { chain, network, txid: { $in: txids } },
-          { $set: { blockHeight: SpentHeightIndicators.conflicting } }
-        ),
-        CoinStorage.collection.updateMany(
-          { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
-          { $set: { spentHeight: SpentHeightIndicators.unspent, spentTxid: '' } }
-        ),
-        CoinStorage.collection.updateMany(
-          { chain, network, mintTxid: { $in: txids } },
-          { $set: { mintHeight: SpentHeightIndicators.conflicting } }
-        )
-      ]);
+    let coin;
+    while (coin = (await coinStream.next())) {
+      if (handledSpentTxids.has(coin.spentTxid)) {
+        continue;
+      }
+
+      const coinReplaced = spendOps.findIndex(
+        s =>
+          s.updateOne.filter.mintTxid === coin!.mintTxid &&
+          s.updateOne.filter.mintIndex === coin!.mintIndex &&
+          s.updateOne.update.$set.spentTxid !== coin!.spentTxid
+      ) > -1;
+      if (coinReplaced) {
+        invalidatedTxids.add(coin.spentTxid);
+      }
+
+      handledSpentTxids.add(coin.spentTxid);
+    }
+
+    for (const invalidTxid of invalidatedTxids.values() as IterableIterator<string>) {
+      // reset coins to unspent 
+      await CoinStorage.collection.updateMany(
+        { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
+        { $set: { spentHeight: SpentHeightIndicators.unspent, spentTxid: '' } }
+      );
+
+      // set any spent unconfirmed utxos to conflicting
+      const relatedCoinsGenerator = this.yieldRelatedOutputs(invalidTxid);
+      let coin;
+      let txidsBatch = [invalidTxid];
+      while (!(coin = (await relatedCoinsGenerator.next())).done) {
+        if (!coin.value.spentTxid) {
+          continue;
+        }
+        txidsBatch.push(coin.value.spentTxid);
+        if (txidsBatch.length >= 100 || coin.done) {
+          await Promise.all([
+            this.collection.updateMany(
+              { chain, network, txid: { $in: txidsBatch } },
+              { $set: { blockHeight: SpentHeightIndicators.conflicting } }
+            ),
+            CoinStorage.collection.updateMany(
+              { chain, network, mintTxid: { $in: txidsBatch } },
+              { $set: { mintHeight: SpentHeightIndicators.conflicting } }
+            )
+          ]);
+        }
+
+        txidsBatch = [];
+      }
     }
 
     return;
