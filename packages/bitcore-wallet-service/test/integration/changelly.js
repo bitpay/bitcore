@@ -358,6 +358,81 @@ describe('Changelly integration', () => {
     });
   });
 
+  describe('#changellyGetTransactions', () => {
+    beforeEach(() => {
+      req = {
+        headers: {},
+        body: {
+          id: "test",
+          exchangeTxId: 'exchangeTxId'
+        }
+      }
+    });
+
+    it('should work properly if req is OK', async() => {
+      server.request = fakeRequest;
+      try {
+        const data = await server.changellyGetTransactions(req);
+        should.exist(data);
+      } catch (err) {
+        should.not.exist(err);
+      }
+    });
+
+    it('should work properly if req is OK for v2', async() => {
+      server.request = fakeRequest;
+      req.body.useV2 = true;
+      try {
+        const data = await server.changellyGetTransactions(req);
+        should.exist(data);
+      } catch (err) {
+        should.not.exist(err);
+      }
+    });
+
+    it('should return error if there is some missing arguments', async() => {
+      delete req.body.exchangeTxId;
+      server.request = fakeRequest;
+
+      try {
+        const data = await server.changellyGetTransactions(req);
+        should.not.exist(data);
+      } catch (err) {
+        should.exist(err);
+        err.message.should.equal('changellyGetTransactions request missing arguments');
+      }
+    });
+
+    it('should return error if post returns error', async() => {
+      req.body.exchangeTxId = 'exchangeTxId';
+      const fakeRequest2 = {
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+      };
+      server.request = fakeRequest2;
+
+      try {
+        const data = await server.changellyGetTransactions(req);
+        should.not.exist(data);
+      } catch (err) {
+        should.exist(err);
+        err.message.should.equal('Error');
+      }
+    });
+
+    it('should return error if Changelly is commented in config', async() => {
+      config.changelly = undefined;
+      server.request = fakeRequest;
+
+      try {
+        const data = await server.changellyGetTransactions(req);
+        should.not.exist(data);
+      } catch (err) {
+        should.exist(err);
+        err.message.should.equal('ClientError: Service not configured.');
+      }
+    });
+  });
+
   describe('#changellyGetStatus', () => {
     beforeEach(() => {
       req = {
