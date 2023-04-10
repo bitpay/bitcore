@@ -1,7 +1,7 @@
 import * as async from 'async';
+import * as crypto from 'crypto';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
-import * as crypto from 'crypto';
 import io = require('socket.io-client');
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
