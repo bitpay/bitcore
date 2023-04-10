@@ -5507,6 +5507,66 @@ export class WalletService implements IWalletService {
     });
   }
 
+  changellyGetTransactions(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
+
+      if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
+        return reject(new ClientError('changellyGetTransactions request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getTransactions',
+        params:
+          {
+            id: req.body.exchangeTxId,
+            limit: req.body.limit ?? 1,
+          }
+      };
+
+      const URL: string = keys.API;
+
+      if (req.body.useV2) {
+        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
   changellyGetStatus(req): Promise<any> {
     return new Promise((resolve, reject) => {
       let keys, headers;
