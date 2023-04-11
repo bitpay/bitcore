@@ -597,8 +597,10 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
   async findAllRelatedOutputs(forTx: string) {
     const seen = {};
-    const allRelatedCoins: ICoin[] = await CoinStorage.collection.find({ mintTxid: forTx, mintHeight: { $ne: SpentHeightIndicators.conflicting } }).toArray();
-    for (let coin of allRelatedCoins) {
+    const allRelatedCoins: ICoin[] = [];
+    const txCoins = await CoinStorage.collection.find({ mintTxid: forTx, mintHeight: { $ne: SpentHeightIndicators.conflicting } }).toArray();
+    for (let coin of txCoins) {
+      allRelatedCoins.push(coin);
       seen[coin.mintTxid] = true;
       if (coin.spentTxid && !seen[coin.spentTxid]) {
         const outputs = await this.findAllRelatedOutputs(coin.spentTxid);
