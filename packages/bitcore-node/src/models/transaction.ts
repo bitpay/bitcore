@@ -644,30 +644,30 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       })
       .project({ mintTxid: 1, mintIndex: 1, spentTxid: 1 });
 
-    const handledSpentTxids = new Set();
+    const seenTxids = new Set();
     const invalidatedTxids = new Set();
 
-    let coin;
+    let coin: ICoin | null;
     while (coin = (await coinStream.next())) {
-      if (handledSpentTxids.has(coin.spentTxid)) {
+      if (seenTxids.has(coin.spentTxid)) {
         continue;
       }
 
-      const coinReplaced = spendOps.findIndex(
+      const txReplaced = spendOps.findIndex(
         s =>
           s.updateOne.filter.mintTxid === coin!.mintTxid &&
           s.updateOne.filter.mintIndex === coin!.mintIndex &&
           s.updateOne.update.$set.spentTxid !== coin!.spentTxid
       ) > -1;
-      if (coinReplaced) {
+      if (txReplaced) {
         invalidatedTxids.add(coin.spentTxid);
       }
 
-      handledSpentTxids.add(coin.spentTxid);
+      seenTxids.add(coin.spentTxid); // prevents duplication
     }
 
     for (const invalidTxid of invalidatedTxids.values() as IterableIterator<string>) {
-      // reset coins to unspent 
+      // reset tx's coins to unspent 
       await CoinStorage.collection.updateMany(
         { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
         { $set: { spentHeight: SpentHeightIndicators.unspent, spentTxid: '' } }
@@ -679,11 +679,10 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       let txidsBatch = [invalidTxid];
       do {
         coin = await relatedCoinsGenerator.next();
-        if (coin.value?.spentTxid) {
-          txidsBatch.push(coin.value.spentTxid);
-        }
 
-        if (txidsBatch.length >= 100 || coin.done) {
+        // If coin.done, the generator/stream has reached the end. Update txs and coins.
+        // Also update txs and coins in batches to keep memory usage down.
+        if (coin.done || txidsBatch.length === 100) {
           await Promise.all([
             this.collection.updateMany(
               { chain, network, txid: { $in: txidsBatch } },
@@ -695,6 +694,12 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
             )
           ]);
           txidsBatch = [];
+        }
+
+        // Adding this coin to txidsBatch _after_ the updateMany statements is important.
+        // Updating this coin to conflicting before calling relatedCoinsGenerator.next() will cause the generator to return `done` prematurely.
+        if (coin.value?.spentTxid) {
+          txidsBatch.push(coin.value.spentTxid);
         }
       } while (!coin.done)
     }
