@@ -34,6 +34,7 @@ const errors = {
   TX_NOT_ACCEPTED: 'The transaction proposal is not accepted',
   TX_NOT_FOUND: 'Transaction proposal not found',
   TX_NOT_PENDING: 'The transaction proposal is not pending',
+  TX_NONCE_CONFLICT: 'Unsigned TX proposal(s) with lower or conflicting nonces exist. Please sign or reject them first.',
   UNAVAILABLE_UTXOS: 'Unavailable unspent outputs',
   NO_INPUT_PATHS: 'Derivation paths were not provided for the inputs',
   UPGRADE_NEEDED: 'Client app needs to be upgraded',
