@@ -610,7 +610,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     return allRelatedCoins;
   }
 
-  async *yieldRelatedOutputs(forTx: string) {
+  async *yieldRelatedOutputs(forTx: string): AsyncGenerator<ICoin> {
     const seen = {};
     const batchStream = CoinStorage.collection.find({ mintTxid: forTx, mintHeight: { $ne: SpentHeightIndicators.conflicting } });
     let coin: ICoin | null;
@@ -675,13 +675,14 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
       // set any spent unconfirmed utxos to conflicting
       const relatedCoinsGenerator = this.yieldRelatedOutputs(invalidTxid);
-      let coin;
+      let coin: IteratorResult<ICoin, null>;
       let txidsBatch = [invalidTxid];
-      while (!(coin = (await relatedCoinsGenerator.next())).done) {
-        if (!coin.value.spentTxid) {
-          continue;
+      do {
+        coin = await relatedCoinsGenerator.next();
+        if (coin.value?.spentTxid) {
+          txidsBatch.push(coin.value.spentTxid);
         }
-        txidsBatch.push(coin.value.spentTxid);
+
         if (txidsBatch.length >= 100 || coin.done) {
           await Promise.all([
             this.collection.updateMany(
@@ -693,10 +694,9 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
               { $set: { mintHeight: SpentHeightIndicators.conflicting } }
             )
           ]);
+          txidsBatch = [];
         }
-
-        txidsBatch = [];
-      }
+      } while (!coin.done)
     }
 
     return;
