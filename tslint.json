@@ -46,7 +46,8 @@
     "space-before-function-paren": [false, "never"],
     "array-type": false,
     "eofline": false,
-    "new-parens": false
+    "new-parens": false,
+    "no-conditional-assignment": false
   },
   "rulesDirectory": []
 }
