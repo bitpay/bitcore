@@ -40,7 +40,8 @@
     "p2p": "npm run tsc && node build/src/workers/p2p.js",
     "precommit": "npm run fix && npm run lint",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
+    "test:scripts": "npx mocha scripts/test"
   },
   "nyc": {
     "reporter": [
