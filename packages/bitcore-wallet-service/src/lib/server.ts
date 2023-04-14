@@ -4583,7 +4583,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.bitpayIdLocationState - (Optional) State registered as address of the user logged in with BitpayId.
    */
   getServicesData(opts, cb) {
-    let externalServicesConfig: ExternalServicesConfig = config.services;
+    let externalServicesConfig: ExternalServicesConfig = _.cloneDeep(config.services);
 
     const isLoggedIn = !!opts?.bitpayIdLocationCountry;
     const usaBannedStates = ['HI', 'LA', 'NY'];
