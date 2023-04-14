@@ -392,7 +392,11 @@ export class Key {
     } else if (opts.coin == 'xec') {
       coinCode = '899';
       if (opts.isSlpToken) {
-        coinCode = '1899';
+        if(opts.isPath899){
+          coinCode = '899';
+        } else{
+          coinCode = '1899';
+        }
         if (opts.isFromRaipay) {
           coinCode = '145';
         }
@@ -468,7 +472,8 @@ export class Key {
       addressType: opts.addressType,
       walletPrivKey: opts.walletPrivKey,
       isSlpToken: !!opts.isSlpToken,
-      isFromRaipay: !!opts.isFromRaipay
+      isFromRaipay: !!opts.isFromRaipay,
+      isPath899: !!opts.isPath899
     });
   };
 

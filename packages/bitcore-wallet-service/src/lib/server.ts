@@ -676,8 +676,9 @@ export class WalletService {
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
             usePurpose48: opts.n > 1 && !!opts.usePurpose48,
-            isSlpToken: opts.isSlpToken,
-            isFromRaipay: opts.isFromRaipay
+            isSlpToken: !!opts.isSlpToken,
+            isFromRaipay: !!opts.isFromRaipay,
+            isPath899: !!opts.isPath899
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
