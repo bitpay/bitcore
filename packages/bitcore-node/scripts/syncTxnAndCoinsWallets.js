@@ -15,7 +15,7 @@ function usage(err) {
     console.log(err);
     console.log('');
   }
-  console.log('Usage: ./fixTxnToWalletMarriage.js [options] <chain> <network> <startBlockHeight> <endBlockHeight>');
+  console.log('Usage: ./syncTxnAndCoinsWallets.js [options] <chain> <network> <startBlockHeight> <endBlockHeight>');
   console.log('');
   console.log('  --chain <value>          BTC, BCH, ETH, etc.');
   console.log('  --network <value>        mainnet, testnet, or regtest');
@@ -59,11 +59,11 @@ if (!dryRun) {
 
 console.log('Connecting to database...');
 
-Storage.start({ dbName: 'bitcore_mocha_scripts' })
+Storage.start()
   .catch(console.error)
   .then(async () => {
     try {
-      const logFileName = `fixTxnsToWalletMarriageOutput-${chain}-${network}-${new Date().toISOString()}.log`;
+      const logFileName = `syncTxnAndCoinsWalletsOutput-${chain}-${network}-${new Date().toISOString()}.log`;
 
       const coinCursor = await CoinStorage.collection.find({
         chain,

@@ -11,17 +11,16 @@ const { CoinStorage } = require('../../build/src/models/coin');
 describe('syncTxnAndCoinsWallets', function() {
   this.timeout(20000);
 
+  const DB_NAME = 'bitcore_mocha_scripts';
   before(async function() {
     if (!Storage.connected) {
-      await Storage.start({ dbName: 'bitcore_mocha_scripts' });
+      await Storage.start({ dbName: DB_NAME });
     }
     
     await TransactionStorage.collection.deleteMany({});
     await CoinStorage.collection.deleteMany({});
 
     await setupDb();
-    const t = await TransactionStorage.collection.findOne({ txid: 'ac857c7c8679d33cfc54430db060ac310fba30240c775fa21fc32de5c2c98d66' });
-    expect(t).to.exist;
   });
 
   after(async function() {
@@ -31,7 +30,7 @@ describe('syncTxnAndCoinsWallets', function() {
   });
 
   it('should add wallets to txns from coins', async function() {
-    const buf = execSync(__dirname + '/../syncTxnAndCoinsWallets.js --chain BTC --network mainnet --startHeight 784431 --endHeight 784432 --no-dry --no-log-file');
+    const buf = execSync(__dirname + '/../syncTxnAndCoinsWallets.js --chain BTC --network mainnet --startHeight 784431 --endHeight 784432 --no-dry --no-log-file', { env: { ...process.env, DB_NAME }});
 
     for (const t of txnsAndCoins) {
       const tx = await TransactionStorage.collection.findOne({ txid: t.txid });
@@ -712,4 +711,4 @@ const txnsAndCoins = [
       }
     ]
   }
-]
+];
