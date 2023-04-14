@@ -1707,6 +1707,23 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/changelly/getTransactions', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .changellyGetTransactions(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.post('/v1/service/changelly/getStatus', (req, res) => {
       let server;
       try {
