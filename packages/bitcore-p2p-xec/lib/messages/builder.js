@@ -61,7 +61,8 @@ function builder(options) {
       sendheaders: 'SendHeaders',
       mempool: 'MemPool',
       getaddr: 'GetAddr',
-      xversion: 'Xversion'
+      xversion: 'Xversion',
+      avahello: 'avahello'
     },
     commands: {}
   };
