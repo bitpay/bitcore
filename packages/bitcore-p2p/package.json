@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-p2p",
-  "version": "8.25.41",
+  "version": "8.25.42",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "@abcpros/bitcore-lib": "^8.25.41",
+    "@abcpros/bitcore-lib": "^8.25.42",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"

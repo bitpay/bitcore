@@ -2,7 +2,7 @@
   "name": "@abcpros/bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "8.25.41",
+  "version": "8.25.42",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "ts_build/index.d.js",
@@ -25,8 +25,8 @@
     "url": "https://github.com/bitpay/bitcore-wallet-client/issues"
   },
   "dependencies": {
-    "@abcpros/bitcore-mnemonic": "^8.25.41",
-    "@abcpros/crypto-wallet-core": "^8.25.41",
+    "@abcpros/bitcore-mnemonic": "^8.25.42",
+    "@abcpros/crypto-wallet-core": "^8.25.42",
     "ajv": "^6.10.0",
     "async": "^0.9.0",
     "awesome-typescript-loader": "^5.2.1",
@@ -41,7 +41,7 @@
     "typescript": "^3.9.3"
   },
   "devDependencies": {
-    "@abcpros/bitcore-wallet-service": "^8.25.41",
+    "@abcpros/bitcore-wallet-service": "^8.25.42",
     "@types/lodash": "^4.14.136",
     "@types/node": "^10.0.2",
     "browserify": "^13.1.0",

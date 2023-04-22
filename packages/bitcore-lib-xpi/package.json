@@ -1,6 +1,6 @@
 {
   "name": "@abcpros/bitcore-lib-xpi",
-  "version": "8.25.41",
+  "version": "8.25.42",
   "description": "A pure and powerful JavaScript Lotus library.",
   "main": "index.js",
   "types": "index.d.js",
@@ -35,7 +35,7 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "@abcpros/bitcore-lib": "^8.25.41",
+    "@abcpros/bitcore-lib": "^8.25.42",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
