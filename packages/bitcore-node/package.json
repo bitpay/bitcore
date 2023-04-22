@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.25.43",
+  "version": "8.25.44",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -102,7 +102,7 @@
     "@abcpros/bitcore-p2p": "^8.25.43",
     "@abcpros/bitcore-p2p-cash": "^8.25.43",
     "@abcpros/bitcore-p2p-doge": "^8.25.43",
-    "@abcpros/bitcore-p2p-xec": "^8.25.43",
+    "@abcpros/bitcore-p2p-xec": "^8.25.44",
     "@abcpros/bitcore-p2p-xpi": "^8.25.43",
     "@abcpros/bitcore-wallet-client": "^8.25.43",
     "@abcpros/crypto-wallet-core": "^8.25.43",
