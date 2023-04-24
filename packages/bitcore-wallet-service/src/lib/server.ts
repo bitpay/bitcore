@@ -2520,11 +2520,11 @@ export class WalletService {
             addressInfo,
             txid: utxo.outpoint.txid,
             outIdx: utxo.outpoint.outIdx,
-            value: utxo.value.toNumber(),
+            value: Number(utxo.value),
             isNonSLP: utxo.slpToken ? false : true,
             slpMeta: utxo.slpMeta,
             tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
-            amountToken: utxo.slpToken && utxo.slpToken.amount ? utxo.slpToken.amount.toNumber() : undefined
+            amountToken: utxo.slpToken && utxo.slpToken.amount ? Number(utxo.slpToken.amount) : undefined
           }));
         });
         return utxos;
@@ -2554,11 +2554,11 @@ export class WalletService {
           return _.map(scriptUtxos.utxos, utxo => ({
             txid: utxo.outpoint.txid,
             outIdx: utxo.outpoint.outIdx,
-            value: utxo.value.toNumber(),
+            value: Number(utxo.value),
             isNonSLP: utxo.slpToken ? false : true,
             slpMeta: utxo.slpMeta,
             tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
-            amountToken: utxo.slpToken && utxo.slpToken.amount ? utxo.slpToken.amount.toNumber() : undefined
+            amountToken: utxo.slpToken && utxo.slpToken.amount ? Number(utxo.slpToken.amount) : undefined
           }));
         });
         return utxos;
@@ -6891,7 +6891,7 @@ export class WalletService {
         );
         item.amountTokenUnit =
           txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
-            ? txsSlp.outputs[1].slpToken.amount.toNumber()
+            ? Number(txsSlp.outputs[1].slpToken.amount)
             : undefined;
       }
       validTxs.push(item);
