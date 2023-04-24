@@ -323,7 +323,7 @@ export class PushNotificationsService {
               tokenDecimals = tokenInfo?.decimals;
             }
           });
-          notification.data.amount = txDetail.outputs[1].slpToken.amount.toNumber() || null;
+          notification.data.amount = Number(txDetail.outputs[1].slpToken.amount) || null;
           notification.data.tokenId = tokenId || null;
         }
       }
