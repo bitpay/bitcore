@@ -6164,7 +6164,7 @@ export class WalletService {
     let amount = 0;
     if (output.slpToken) {
       address = addressBitcore.encode('etoken', type, hashBuffer);
-      amount = output.slpToken.amount.low;
+      amount = Number(output.slpToken.amount);
     } else {
       address = addressBitcore.encode('ecash', type, hashBuffer);
       amount = output.value ? Number(output.value.toString()) : 0;
