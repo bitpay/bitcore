@@ -33,10 +33,11 @@ import * as forge from 'node-forge';
 import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
 import assert from 'assert';
+import messageLib from 'bitcoinjs-message';
 import { resolve } from 'dns';
 import { link, read } from 'fs';
 import { add, countBy, findIndex, isNumber } from 'lodash';
-import moment from 'moment';
+import moment, { relativeTimeThreshold } from 'moment';
 import { openStdin } from 'process';
 import { stringify } from 'querystring';
 import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
@@ -46,8 +47,12 @@ import { Config } from './model/config-model';
 import { CoinConfig, ConfigSwap } from './model/config-swap';
 import { ConversionOrder, IConversionOrder, Output, TxDetail } from './model/conversionOrder';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
+import { MerchantInfo } from './model/merchantinfo';
+import { IMerchantOrder, MerchantOrder, PaymentType } from './model/merchantorder';
 import { Order } from './model/order';
 import { OrderInfoNoti } from './model/OrderInfoNoti';
+import { IQPayInfo } from './model/qpayinfo';
+import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
 
@@ -55,6 +60,8 @@ const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
+const merchantList = require('../../../../merchant-list.json');
+const raipayFee = require('../../../../raipay-fee.json');
 // const keyFund = require('../../../../key-store.json');
 const { dirname } = require('path');
 const appDir = dirname(require.main.filename);
@@ -68,10 +75,10 @@ const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
-
 let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
 let conversionQueueInterval = null;
+let merchantOrderQueueInterval = null;
 let clientsFundConversion = null;
 let bot = null;
 let botNotification = null;
@@ -2390,6 +2397,103 @@ export class WalletService {
   }
 
   /**
+   * @param {string} txId - the transaction id.
+   * @returns {Obejct} tx detail
+   */
+  async getTxDetailForXecWalletWithPromise(txId): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const chronikClient = ChainService.getChronikClient('xec');
+        const txDetail: any = await chronikClient.tx(txId);
+        if (!txDetail) return reject('no txDetail');
+        const inputAddresses = _.uniq(
+          _.map(txDetail.inputs, item => {
+            return this._convertAddressFormInputScript(item.inputScript, 'xec', !!item.slpToken);
+          })
+        );
+        const outputAddresses = _.uniq(
+          _.map(txDetail.outputs, item => {
+            return this._convertAddressFormInputScript(item.outputScript, 'xec', !!item.slpToken);
+          })
+        );
+        if (inputAddresses) {
+          txDetail.inputAddresses = inputAddresses;
+          txDetail.outputAddresses = outputAddresses;
+          return resolve(txDetail);
+        } else {
+          return resolve(txDetail);
+        }
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  }
+
+  /**
+   * @param {string} txId - the transaction id.
+   * @returns {Obejct} tx detail
+   */
+  async getTxDetailForWallet(txId, coin, cb) {
+    try {
+      const chronikClient = ChainService.getChronikClient(coin);
+      const txDetail: any = await chronikClient.tx(txId);
+      if (!txDetail) return cb('no txDetail');
+      const inputAddresses = _.uniq(
+        _.map(txDetail.inputs, item => {
+          return this._convertAddressFormInputScript(item.inputScript, coin, !!item.slpToken);
+        })
+      );
+      const outputAddresses = _.uniq(
+        _.map(txDetail.outputs, item => {
+          return this._convertAddressFormInputScript(item.outputScript, coin, !!item.slpToken);
+        })
+      );
+      if (inputAddresses) {
+        txDetail.inputAddresses = inputAddresses;
+        txDetail.outputAddresses = outputAddresses;
+        return cb(null, txDetail);
+      } else {
+        return cb(null, txDetail);
+      }
+    } catch (err) {
+      return cb(err);
+    }
+  }
+
+  /**
+   * @param {string} txId - the transaction id.
+   * @returns {Obejct} tx detail
+   */
+  async getTxDetailForWalletWithPromise(txId, coin): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const chronikClient = ChainService.getChronikClient(coin);
+        const txDetail: any = await chronikClient.tx(txId);
+        if (!txDetail) return reject('no txDetail');
+        const inputAddresses = _.uniq(
+          _.map(txDetail.inputs, item => {
+            return this._convertAddressFormInputScript(item.inputScript, coin, !!item.slpToken);
+          })
+        );
+        const outputAddresses = _.uniq(
+          _.map(txDetail.outputs, item => {
+            return this._convertAddressFormInputScript(item.outputScript, coin, !!item.slpToken);
+          })
+        );
+        if (inputAddresses) {
+          txDetail.inputAddresses = inputAddresses;
+          txDetail.outputAddresses = outputAddresses;
+          return resolve(txDetail);
+        } else {
+          return resolve(txDetail);
+        }
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  }
+
+  /**
    * Get wallet balance.
    * @param {Object} opts
    * @returns {Object} balance - Total amount & locked amount.
@@ -3941,6 +4045,15 @@ export class WalletService {
     }
   }
 
+  async _burnToken(coin, wallet, mnemonic, tokenId, TOKENQTY, splitTxId, cb) {
+    try {
+      const txId = await ChainService.burnToken(coin, wallet, mnemonic, tokenId, TOKENQTY, splitTxId);
+      return cb(null, txId);
+    } catch (e) {
+      return cb(e);
+    }
+  }
+
   _getKeyLotus(client, cb) {
     let key;
     const walletData = walletLotus;
@@ -4765,7 +4878,6 @@ export class WalletService {
                         const rate = rateList['xec'].USD / rateList[config.conversion.tokenCodeLowerCase].USD;
                         const amountElpsSatoshis = accountTo.amount * rate;
                         const amountElps = amountElpsSatoshis / 10 ** 2;
-                        logger.debug('amountElps: ' + amountElps);
                         conversionOrderInfo.addressFrom = result.inputAddresses[0];
                         conversionOrderInfo.amountConverted = amountElps;
 
@@ -4900,7 +5012,7 @@ export class WalletService {
                                             );
                                             this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
                                               setTimeout(() => {
-                                                this.checkConversion(accountTo.address, (err, result) => {
+                                                this.checkConversion(accountTo.address, 'xec', (err, result) => {
                                                   if (err) logger.debug('error for checking conversion: ', err);
                                                 });
                                               }, 1000 * 10); // 10 seconds later recheck fund to notify if we don't have enough balance after transaction
@@ -4944,6 +5056,444 @@ export class WalletService {
     }, 2000);
   }
 
+  checkQueueHandleMerchantOrder() {
+    merchantOrderQueueInterval = setInterval(() => {
+      if (this.storage && this.storage.merchantOrderQueue) {
+        this.storage.merchantOrderQueue.get(async (err, data, msg) => {
+          const saveError = (merchantOrder: MerchantOrder, data, error, status?) => {
+            merchantOrder.status = status || 'pending';
+            if (error.message) {
+              merchantOrder.error = error.message;
+            } else {
+              merchantOrder.error = JSON.stringify(error);
+            }
+            this.storage.updateMerchantOrder(merchantOrder, err => {
+              // send message to channel Failure Convert Alert
+              bot.sendMessage(
+                config.telegram.channelFailId,
+                merchantOrder.userAddress +
+                  ' :: Elps amount: ' +
+                  merchantOrder.amount.toFixed(3) +
+                  ' ' +
+                  config.conversion.tokenCodeUnit +
+                  '\n\n' +
+                  this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
+                { parse_mode: 'HTML' }
+              );
+
+              // send message to channel Debug Convert Alert
+              bot.sendMessage(
+                config.telegram.channelDebugId,
+                new Date().toUTCString() +
+                  ' ::  error: ' +
+                  merchantOrder.error +
+                  '\n\n' +
+                  this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
+                { parse_mode: 'HTML' }
+              );
+              if (err) throw new Error(err);
+            });
+          };
+          if (data) {
+            const merchantOrder = await this._getMerchantOrder({ txIdFromUser: data.payload });
+            if (merchantOrder.status === 'waiting') {
+              try {
+                // check valid signature if order payment type is burn
+                if (merchantOrder.paymentType === PaymentType.BURN) {
+                  if (!merchantOrder.signature) {
+                    saveError(merchantOrder, data, new Error('Missing signature'));
+                    return;
+                  }
+                  const messageSignature =
+                    merchantOrder.txIdFromUser + '-' + merchantOrder.merchantCode + '-' + merchantOrder.amount;
+                  const ecashMessagePrefix = '\x16eCash Signed Message:\n';
+                  const lotusMessagePrefix = '\x16Lotus Signed Message:\n';
+                  let messagePrefix = '';
+                  let bchAddress = '';
+                  if (merchantOrder.coin === 'xec') {
+                    const decoded = ecashaddr.decode(merchantOrder.userAddress);
+                    bchAddress = ecashaddr.encode('bitcoincash', decoded.type, decoded.hash);
+                  } else {
+                    bchAddress = Bitcore_[merchantOrder.coin].Address(merchantOrder.userAddress).toCashAddress();
+                  }
+                  let legacyAddress = bchjs.SLP.Address.toLegacyAddress(bchAddress);
+                  if (merchantOrder.coin === 'xec') {
+                    messagePrefix = ecashMessagePrefix;
+                  } else {
+                    messagePrefix = lotusMessagePrefix;
+                  }
+                  if (!messageLib.verify(messageSignature, legacyAddress, merchantOrder.signature, messagePrefix)) {
+                    saveError(merchantOrder, data, new Error('Invalid signature'));
+                    return;
+                  }
+                }
+                const txDetail = await this.getTxDetailForWalletWithPromise(
+                  merchantOrder.txIdFromUser,
+                  merchantOrder.coin
+                );
+                const outputsConverted = _.uniq(
+                  _.map(txDetail.outputs, item => {
+                    return this._convertOutputScript(merchantOrder.coin, item);
+                  })
+                );
+                let accountTo = null;
+                // convert outputscript to output address
+                accountTo = outputsConverted.find(
+                  output => !!output && !!output.address && !txDetail.inputAddresses.includes(output.address)
+                );
+                if (!!merchantOrder.tokenId) {
+                  accountTo = outputsConverted.find(
+                    output =>
+                      !!output &&
+                      !!output.address &&
+                      !txDetail.inputAddresses.includes(output.address) &&
+                      output.address.includes('etoken')
+                  );
+                  accountTo.address = this._convertEtokenAddressToEcashAddress(accountTo.address);
+                }
+                if (!accountTo) {
+                  saveError(merchantOrder, data, new Error('Can not find destination address from user tx detail'));
+                }
+                if (!clientsFundConversion) {
+                  saveError(merchantOrder, data, Errors.NOT_FOUND_KEY_CONVERSION);
+                  return;
+                } else {
+                  const xecWallet = clientsFundConversion.find(
+                    s => s.credentials.coin === 'xec' && s.credentials.network === 'livenet' && s.credentials.isSlpToken
+                  );
+                  if (!xecWallet) {
+                    saveError(merchantOrder, data, Errors.NOT_FOUND_KEY_CONVERSION);
+                    return;
+                  }
+                  let walletSelected = xecWallet;
+                  const xpiWallet = clientsFundConversion.find(
+                    s => s.credentials.coin === 'xpi' && s.credentials.network === 'livenet'
+                  );
+                  if (merchantOrder.coin === 'xpi' && !xpiWallet) {
+                    saveError(merchantOrder, data, Errors.NOT_FOUND_KEY_CONVERSION);
+                    return;
+                  }
+                  if (merchantOrder.coin === 'xpi') {
+                    walletSelected = xpiWallet;
+                  }
+                  const addressOfFundingWallet = await this._fetchAddressByWalletIdWithPromise(
+                    walletSelected.credentials.walletId,
+                    accountTo.address.replace(/ecash:/, '')
+                  );
+                  let xecBalance = null;
+                  xecBalance = await this.getBalanceWithPromise({
+                    walletId: xecWallet.credentials.walletId,
+                    coinCode: xecWallet.credentials.coin,
+                    network: xecWallet.credentials.network
+                  }).catch(e => {
+                    saveError(merchantOrder, data, e);
+                    return;
+                  });
+                  const walletEcashAddress = await this._getWalletAddressByWalletId(xecWallet.credentials.walletId);
+                  if (xecBalance && xecBalance.balance && _.isNumber(xecBalance.balance.totalAmount)) {
+                    if (xecBalance.balance.totalAmount <= 546) {
+                      saveError(merchantOrder, data, Errors.INSUFFICIENT_FUND_XEC);
+                      this._handleWhenFundIsNotEnough(
+                        Errors.INSUFFICIENT_FUND_XEC.code,
+                        xecBalance.balance.totalAmount / 100,
+                        walletEcashAddress
+                      );
+                      return;
+                    }
+                    if (xecBalance.balance.totalAmount < config.conversion.minXecSatConversion) {
+                      this._handleWhenFundIsNotEnough(
+                        Errors.BELOW_MINIMUM_XEC.code,
+                        xecBalance.balance.totalAmount / 100,
+                        walletEcashAddress
+                      );
+                    }
+                  } else {
+                    this._handleWhenFundIsNotEnough(Errors.INSUFFICIENT_FUND_XEC.code, 0, walletEcashAddress);
+                    return;
+                  }
+                  // get balance of XEC Wallet and token elps
+                  let balanceTokenFound = null;
+                  balanceTokenFound = await this.getTokensWithPromise({
+                    walletId: xecWallet.credentials.walletId
+                  });
+                  if (balanceTokenFound && balanceTokenFound.length > 0) {
+                    const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+                      return {
+                        tokenId: item.tokenId,
+                        tokenInfo: item.tokenInfo,
+                        amountToken: item.amountToken,
+                        utxoToken: item.utxoToken
+                      } as TokenItem;
+                    });
+                    const tokenElps = listBalanceTokenConverted.find(
+                      // TANTODO: replace with tyd token id
+                      s => s.tokenId === config.conversion.tokenId
+                    );
+                    if (tokenElps) {
+                      if (tokenElps.amountToken < 1) {
+                        this._handleWhenFundIsNotEnough(
+                          Errors.INSUFFICIENT_FUND_TOKEN.code,
+                          tokenElps.amountToken,
+                          walletEcashAddress
+                        );
+                        saveError(merchantOrder, data, Errors.INSUFFICIENT_FUND_TOKEN);
+                        return;
+                      }
+                      // from txId get txDetail
+                      if (tokenElps.amountToken < config.conversion.minTokenConversion) {
+                        this._handleWhenFundIsNotEnough(
+                          Errors.BELOW_MINIMUM_TOKEN.code,
+                          tokenElps.amountToken,
+                          walletEcashAddress
+                        );
+                      } else {
+                        // get merchant info by merchant code
+                        let amountCoinUserSentToServer = 0;
+                        let amountElps = 0;
+                        const listMerchant = await this.getListMerchantInfo();
+                        const merchant = listMerchant.find(s => s.code === merchantOrder.merchantCode);
+                        const merchantEtokenAddress = this._convertFromEcashWithPrefixToEtoken(merchant.walletAddress);
+                        if (!!merchantOrder.tokenId) {
+                          amountElps = accountTo.amount / 10 ** tokenElps.tokenInfo.decimals;
+                        } else {
+                          const rateList = await this._getRatesCustomFormatWithPromise();
+                          if (isNaN(rateList['xec'].USD)) {
+                            saveError(merchantOrder, data, Errors.NOT_FOUND_RATE_XEC);
+                            return;
+                          }
+                          if (isNaN(rateList[config.conversion.tokenCodeLowerCase].USD)) {
+                            saveError(merchantOrder, data, Errors.NOT_FOUND_RATE_TOKEN);
+                            return;
+                          }
+                          accountTo.amount = accountTo.amount / UNITS[merchantOrder.coin].toSatoshis;
+                          accountTo.amount = this._calculateRaipayFee(merchantOrder.coin, accountTo.amount);
+                          amountCoinUserSentToServer = accountTo.amount;
+                          const rate =
+                            rateList[merchantOrder.coin].USD / rateList[config.conversion.tokenCodeLowerCase].USD;
+                          amountElps = accountTo.amount * rate;
+                        }
+                        if (
+                          (Math.abs(Number(amountElps.toFixed(tokenElps.tokenInfo.decimals)) - merchantOrder.amount) /
+                            merchantOrder.amount) *
+                            100 >
+                          2
+                        ) {
+                          saveError(merchantOrder, data, Errors.NOT_STABLE_RATE);
+                          return;
+                        }
+                        amountElps = merchantOrder.amount;
+                        const amountElpsSataoshi = amountElps * 10 ** tokenElps.tokenInfo.decimals;
+                        if (tokenElps.amountToken < amountElps) {
+                          this._handleWhenFundIsNotEnough(
+                            Errors.INSUFFICIENT_FUND_TOKEN.code,
+                            tokenElps.amountToken,
+                            walletEcashAddress
+                          );
+                          saveError(merchantOrder, data, Errors.INSUFFICIENT_FUND_TOKEN);
+                          return;
+                        }
+                        if (amountElps)
+                          if (merchantOrder.paymentType === PaymentType.BURN) {
+                            // burn token right here
+                            this._sendSwapWithToken(
+                              'xec',
+                              xecWallet,
+                              mnemonicKeyFundConversion,
+                              tokenElps.tokenId,
+                              tokenElps,
+                              amountElpsSataoshi,
+                              null,
+                              (err, txId) => {
+                                if (err) {
+                                  saveError(merchantOrder, data, err);
+                                  return;
+                                }
+                                if (txId) {
+                                  this._burnToken(
+                                    'xec',
+                                    xecWallet,
+                                    mnemonicKeyFundConversion,
+                                    tokenElps.tokenId,
+                                    amountElpsSataoshi,
+                                    txId,
+                                    (err, txId) => {
+                                      if (err) {
+                                        saveError(merchantOrder, data, err);
+                                        return;
+                                      }
+                                      merchantOrder.txIdMerchantPayment = txId;
+                                      merchantOrder.status = 'complete';
+                                      this._handleSendSuccesMerchantOrder(
+                                        amountCoinUserSentToServer,
+                                        amountElps,
+                                        txId,
+                                        merchantOrder,
+                                        merchant.name
+                                      );
+                                      this.storage.updateMerchantOrder(merchantOrder, (err, result) => {
+                                        setTimeout(() => {
+                                          this.checkConversion(walletEcashAddress, 'xec', (err, result) => {
+                                            if (err) logger.debug('error for checking conversion: ', err);
+                                          });
+                                        }, 1000 * 10); // 10 seconds later recheck fund to notify if we don't have enough balance after transaction
+                                        if (err) {
+                                          saveError(merchantOrder, data, err);
+                                          return;
+                                        } else {
+                                          this.storage.merchantOrderQueue.ack(data.ack, (err, id) => {});
+                                        }
+                                      });
+                                    }
+                                  );
+                                }
+                              }
+                            );
+                          } else {
+                            // send elps to merchant address
+                            this._sendSwapWithToken(
+                              'xec',
+                              xecWallet,
+                              mnemonicKeyFundConversion,
+                              tokenElps.tokenId,
+                              tokenElps,
+                              amountElps,
+                              merchantEtokenAddress,
+                              (err, txId) => {
+                                if (err) {
+                                  saveError(merchantOrder, data, err);
+                                  return;
+                                }
+                                if (txId) {
+                                  merchantOrder.txIdMerchantPayment = txId;
+                                  merchantOrder.status = 'complete';
+                                  this._handleSendSuccesMerchantOrder(
+                                    amountCoinUserSentToServer,
+                                    amountElps,
+                                    txId,
+                                    merchantOrder,
+                                    merchant.name
+                                  );
+                                  this.storage.updateMerchantOrder(merchantOrder, (err, result) => {
+                                    setTimeout(() => {
+                                      this.checkConversion(walletEcashAddress, 'xec', (err, result) => {
+                                        if (err) logger.debug('error for checking conversion: ', err);
+                                      });
+                                    }, 1000 * 10); // 10 seconds later recheck fund to notify if we don't have enough balance after transaction
+                                    if (err) {
+                                      saveError(merchantOrder, data, err);
+                                      return;
+                                    } else {
+                                      this.storage.merchantOrderQueue.ack(data.ack, (err, id) => {});
+                                    }
+                                  });
+                                }
+                              }
+                            );
+                          }
+                      }
+                    } else {
+                      saveError(merchantOrder, data, Errors.NOT_FOUND_TOKEN_WALLET);
+                      return;
+                    }
+                  } else {
+                    saveError(merchantOrder, data, Errors.NOT_FOUND_TOKEN_WALLET);
+                    return;
+                  }
+                }
+              } catch (e) {
+                saveError(merchantOrder, data, e);
+              }
+            } else {
+              this.storage.merchantOrderQueue.ack(data.ack, (err, id) => {});
+            }
+          }
+        });
+        this.storage.merchantOrderQueue.clean(err => {});
+      }
+    }, 10000000000);
+  }
+  _handleSendSuccesMerchantOrder(
+    amountCoinUserSentToServer,
+    amountElps,
+    txId,
+    merchantOrder: MerchantOrder,
+    merchantName
+  ) {
+    if (amountCoinUserSentToServer > 0) {
+      bot.sendMessage(
+        config.telegram.channelSuccessId,
+        merchantOrder.userAddress +
+          ' :: Converted ' +
+          amountCoinUserSentToServer +
+          ' ' +
+          merchantOrder.coin.toUpperCase() +
+          ' to ' +
+          amountElps.toFixed(2) +
+          ' ' +
+          config.conversion.tokenCodeUnit +
+          ' :: ' +
+          this._getPaymentTypeString(merchantOrder.paymentType) +
+          ' : ' +
+          amountElps.toFixed(2) +
+          ' ' +
+          config.conversion.tokenCodeUnit +
+          ' to ' +
+          merchantName +
+          '\n\n' +
+          this._addExplorerLinkIntoTxIdWithCoin(
+            merchantOrder.txIdMerchantPayment,
+            merchantOrder.coin,
+            'View tx on the Explorer'
+          ),
+        { parse_mode: 'HTML' }
+      );
+    } else {
+      bot.sendMessage(
+        config.telegram.channelSuccessId,
+        merchantOrder.userAddress +
+          ' :: ' +
+          this._getPaymentTypeString(merchantOrder.paymentType) +
+          ' : ' +
+          amountElps.toFixed(2) +
+          ' ' +
+          config.conversion.tokenCodeUnit +
+          ' to ' +
+          merchantName +
+          '\n\n' +
+          this._addExplorerLinkIntoTxIdWithCoin(
+            merchantOrder.txIdMerchantPayment,
+            merchantOrder.coin,
+            'View tx on the Explorer'
+          ),
+        { parse_mode: 'HTML' }
+      );
+    }
+  }
+
+  _getPaymentTypeString(paymentType: PaymentType): string {
+    switch (paymentType) {
+      case PaymentType.BURN:
+        return 'BURNED';
+      case PaymentType.SEND:
+        return 'PAID';
+      default:
+        return '';
+    }
+  }
+  // get fee coin
+  _calculateRaipayFee(coin: string, amount: number): number {
+    if (!!raipayFee && raipayFee.length > 0) {
+      const raipayFeeConverted: RaipayFee[] = raipayFee.map(fee => RaipayFee.create(fee));
+      const feeSelected = raipayFeeConverted.find(s => s.coin === coin);
+      if (!!feeSelected) {
+        amount -= feeSelected.feeQuantity;
+        amount -= (feeSelected.feePercentage * amount) / 100;
+        return amount;
+      } else return amount;
+    } else {
+      return amount;
+    }
+  }
   _sendSwapNotificationSuccess(configSwap: ConfigSwap, orderInfo: Order, txId: string) {
     const coinConfigReceive = configSwap.coinReceive.find(coin => coin.code === orderInfo.toCoinCode);
     if (coinConfigReceive) {
@@ -5091,6 +5641,16 @@ export class WalletService {
     });
   }
 
+  _getMerchantOrder(opts): Promise<MerchantOrder> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchMerchantOrderByTxIdFromUser(opts.txIdFromUser, (err, result) => {
+        if (err) return reject(err);
+        const merchantOrder = MerchantOrder.fromObj(result);
+        return resolve(merchantOrder);
+      });
+    });
+  }
+
   stopHandleSwapQueue(): boolean {
     try {
       clearInterval(swapQueueInterval);
@@ -5168,6 +5728,30 @@ export class WalletService {
   stopHandleConversionQueue(cb): boolean {
     try {
       clearInterval(conversionQueueInterval);
+      return cb(null, true);
+    } catch (e) {
+      logger.debug(e);
+      return cb(e);
+    }
+  }
+
+  restartHandleMerchantQueue(cb) {
+    try {
+      clearInterval(merchantOrderQueueInterval);
+      this.getKeyConversionWithFundMnemonic(err => {
+        if (err) return cb(err);
+        this.checkQueueHandleMerchantOrder();
+        return cb(null, true);
+      });
+    } catch (e) {
+      logger.debug(e);
+      return cb(e);
+    }
+  }
+
+  stopHandleMerchantQueue(cb): boolean {
+    try {
+      clearInterval(merchantOrderQueueInterval);
       return cb(null, true);
     } catch (e) {
       logger.debug(e);
@@ -5363,6 +5947,27 @@ export class WalletService {
     });
   }
 
+  _getRatesCustomFormatWithPromise(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let rateList = [];
+      this.getFiatRates({}, (err, fiatRates) => {
+        try {
+          _.map(fiatRates, (rates, coin) => {
+            const coinRates = {};
+            _.each(rates, r => {
+              const rate = { [r.code]: r.rate };
+              Object.assign(coinRates, rate);
+            });
+            rateList[coin.toLowerCase()] = !_.isEmpty(coinRates) ? coinRates : { USD: 0 };
+          });
+          return resolve(rateList);
+        } catch (error) {
+          return reject(error);
+        }
+      });
+    });
+  }
+
   async createOrder(opts, cb) {
     try {
       if (!clientsFund) {
@@ -5449,7 +6054,7 @@ export class WalletService {
         if (result) {
           let outputsConverted = _.uniq(
             _.map(result.outputs, item => {
-              return this._convertOutputScript(item);
+              return this._convertOutputScript('xec', item);
             })
           );
           outputsConverted = _.compact(outputsConverted);
@@ -5508,12 +6113,99 @@ export class WalletService {
       }
     });
   }
+
+  getListMerchantInfo(): MerchantInfo[] {
+    if (merchantList && merchantList.length > 0) {
+      const merchantListConverted = merchantList.map(merchant => MerchantInfo.fromObj(merchant));
+      return merchantListConverted;
+    } else {
+      return null;
+    }
+  }
+
+  getListRaipayFee(): RaipayFee[] {
+    if (raipayFee && raipayFee.length > 0) {
+      const raipayFeeConverted = raipayFee.map(fee => RaipayFee.fromObj(fee));
+      return raipayFee;
+    } else {
+      return null;
+    }
+  }
+
+  async createMerchantOrder(opts, cb) {
+    if (
+      !opts.txIdFromUser ||
+      !opts.coin ||
+      !opts.merchantCode ||
+      !opts.userAddress ||
+      !opts.amount ||
+      !opts.listEmailContent
+    ) {
+      return cb(new Error('Missing required parameter'));
+    }
+    const merchantOrder = MerchantOrder.create(opts);
+    if (merchantOrder.isPaidByUser) {
+      merchantOrder.paymentType = PaymentType.SEND;
+      this.storage.storeMerchantOrder(merchantOrder, (err, result) => {
+        if (err) return cb(err);
+        // let order into queue
+        return cb(null, true);
+      });
+    } else {
+      const listMerchant = this.getListMerchantInfo();
+      const merchantSelected = listMerchant.find(merchant => merchant.code === merchantOrder.merchantCode);
+      if (!merchantSelected.isElpsAccepted) {
+        merchantOrder.paymentType = PaymentType.BURN;
+        if (!opts.signature) {
+          return cb(new Error('Missing signature'));
+        }
+      } else {
+        merchantOrder.paymentType = PaymentType.SEND;
+      }
+      try {
+        const isValidTxIdFromUser = await this._checkIfTxIdFromUserDuplicate(merchantOrder.txIdFromUser);
+      } catch (e) {
+        if (e) return cb(e);
+      }
+      this.storage.storeMerchantOrder(merchantOrder, (err, result) => {
+        if (err) return cb(err);
+        // let order into queue
+        this.storage.merchantOrderQueue.add(merchantOrder.txIdFromUser, (err, id) => {
+          if (err) return cb(err);
+          return cb(null, true);
+        });
+      });
+    }
+  }
+
+  _checkIfTxIdFromUserDuplicate(txIdFromUser): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchMerchantOrderByTxIdFromUser(txIdFromUser, (err, result) => {
+        if (err) return reject(err);
+        if (!!result) {
+          return reject(new Error('Duplicate conversion order info'));
+        } else {
+          return resolve(true);
+        }
+      });
+    });
+  }
+
+  _fetchAddressByWalletIdWithPromise(walletId, accountToAddress): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchAddressByWalletId(walletId, accountToAddress, (err, result) => {
+        if (err) return reject(err);
+        if (!result) return reject(Errors.INVALID_ADDRESS_TO);
+        return resolve(result);
+      });
+    });
+  }
   /**
    * checkConversion - Checking if fund is ready for conversion
    *
    * @param {string} addressTopupEcash - The top up ecash address , if pass this data => call notify to user in case of insufficient fund for XEC, or eToken
    */
-  async checkConversion(addressTopupEcash, cb) {
+  async checkConversion(addressTopupEcash, coin, cb) {
     if (!clientsFundConversion) {
       return cb(Errors.NOT_FOUND_KEY_CONVERSION);
     } else {
@@ -5574,10 +6266,7 @@ export class WalletService {
             utxoToken: item.utxoToken
           } as TokenItem;
         });
-        const tokenElps = listBalanceTokenConverted.find(
-          // TANTODO: replace with tyd token id
-          s => s.tokenId === config.conversion.tokenId
-        );
+        const tokenElps = listBalanceTokenConverted.find(s => s.tokenId === config.conversion.tokenId);
 
         if (tokenElps) {
           if (tokenElps.amountToken < 1) {
@@ -5600,9 +6289,22 @@ export class WalletService {
             }
           }
           if (!addressTopupEcash) {
-            this.storage.fetchAddressWithWalletId(xecWallet.credentials.walletId, async (err, address) => {
-              return cb(null, address.address);
-            });
+            if (!!coin && coin === 'xpi') {
+              const xpiWallet = clientsFundConversion.find(
+                s => s.credentials.coin === 'xpi' && s.credentials.network === 'livenet'
+              );
+              if (!xpiWallet) {
+                return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+              } else {
+                this.storage.fetchAddressWithWalletId(xpiWallet.credentials.walletId, async (err, address) => {
+                  return cb(null, address.address);
+                });
+              }
+            } else {
+              this.storage.fetchAddressWithWalletId(xecWallet.credentials.walletId, async (err, address) => {
+                return cb(null, address.address);
+              });
+            }
           } else {
             return cb(null, addressTopupEcash);
           }
@@ -5613,6 +6315,35 @@ export class WalletService {
         return cb(Errors.NOT_FOUND_TOKEN_WALLET);
       }
     }
+  }
+
+  getQpayInfo(cb) {
+    const merchantList = this.getListMerchantInfo();
+    const raipayFeeList = this.getListRaipayFee();
+    const streets = [
+      'Calle Francisco Suarez',
+      'Calle Juan de Mariana',
+      'Calle Francisco de Vitoria',
+      'Calle Martin de Azpilicueta',
+      'Calle Luis de Molina'
+    ];
+    const unit = 16;
+    const qpayinfo: IQPayInfo = {
+      merchantList,
+      raipayFeeList,
+      streets,
+      unit
+    };
+    return cb(null, qpayinfo);
+  }
+
+  _getWalletAddressByWalletId(walletId): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.storage.fetchAddressWithWalletId(walletId, async (err, address) => {
+        if (err) reject(err);
+        return resolve(address.address);
+      });
+    });
   }
 
   createBot(opts, cb) {
@@ -6154,21 +6885,26 @@ export class WalletService {
     return { address, amount };
   }
 
-  _convertOutputScript(output: Output): { address: string; amount: number } {
+  _convertOutputScript(coin: string, output: Output): { address: string; amount: number } {
     let address: string;
-    const coin = 'xec';
     const scriptBitcore = Bitcore_[coin].Script(output.outputScript);
     const { hashBuffer, type } = scriptBitcore.getAddressInfo();
     if (!hashBuffer || !type) return null;
     const addressBitcore = Bitcore_[coin].Address(hashBuffer);
     let amount = 0;
-    if (output.slpToken) {
-      address = addressBitcore.encode('etoken', type, hashBuffer);
-      amount = Number(output.slpToken.amount);
+    if (coin === 'xec') {
+      if (output.slpToken) {
+        address = addressBitcore.encode('etoken', type, hashBuffer);
+        amount = Number(output.slpToken.amount);
+      } else {
+        address = addressBitcore.encode('ecash', type, hashBuffer);
+        amount = output.value ? Number(output.value.toString()) : 0;
+      }
     } else {
-      address = addressBitcore.encode('ecash', type, hashBuffer);
+      address = addressBitcore.toXAddress();
       amount = output.value ? Number(output.value.toString()) : 0;
     }
+
     return { address, amount };
   }
 
@@ -8734,7 +9470,7 @@ export class WalletService {
               if (result) {
                 let outputsConverted = _.uniq(
                   _.map(result.outputs, item => {
-                    return this._convertOutputScript(item);
+                    return this._convertOutputScript('xec', item);
                   })
                 );
                 outputsConverted = _.compact(outputsConverted);

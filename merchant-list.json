@@ -1,0 +1,19 @@
+[
+    {
+        "code": "CA",
+        "name": "Community Artists",
+        "walletAddress": "ecash:qrmaaeuqeny7rg5a7phczg2afa5kn6xelcjsrw8yrl",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": true
+
+    },
+    {
+        "code": "CHEM",
+        "name": "Morazan Electric and Hydro",
+        "walletAddress": "ecash:qz040l29cm70n93nruj7c37ecw7jk59nmseckfr5q5",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": false
+    }
+]

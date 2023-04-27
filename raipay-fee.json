@@ -1,0 +1,12 @@
+[
+    {
+        "coin": "xpi",
+        "feePercentage": "10",
+        "feeQuantity": "100"
+    },
+    {
+        "coin": "xec",
+        "feePercentage": "10",
+        "feeQuantity": "100"
+    }
+]

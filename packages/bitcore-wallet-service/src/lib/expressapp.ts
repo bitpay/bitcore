@@ -1614,7 +1614,7 @@ export class ExpressApp {
       }
       server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
-        server.restartHandleConversionQueue((err, result) => {
+        server.restartHandleMerchantQueue((err, result) => {
           if (err) return returnError(err, res, reqServer);
           res.json(result);
         });
@@ -1630,7 +1630,7 @@ export class ExpressApp {
       }
       server.storage.fetchUserConversionByEmail(reqServer.user, (err, user: IUser) => {
         if (err) return returnError(err, res, reqServer);
-        server.stopHandleConversionQueue((err, result) => {
+        server.stopHandleMerchantQueue((err, result) => {
           if (err) return returnError(err, res, reqServer);
           res.json(result);
         });
@@ -1802,7 +1802,34 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/conversion/check', (req, res) => {
+    router.post('/v3/merchant/create', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.createMerchantOrder(req.body, (err, order) => {
+        if (err) return returnError(err, res, req);
+        res.json(order);
+      });
+    });
+
+    router.post('/v3/merchant/restart', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.restartHandleMerchantQueue((err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
+    router.get('/v3/conversion/check/:coin', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1810,9 +1837,22 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
       // passing null data => only check for fund of wallet is enough for conversion , do not need to notify to user
-      server.checkConversion(null, (err, order) => {
+      server.checkConversion(null, req.params['coin'], (err, order) => {
         if (err) return returnError(err, res, req);
         res.json(order);
+      });
+    });
+
+    router.get('/v3/merchant/qpayinfo', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getQpayInfo((err, info) => {
+        if (err) return returnError(err, res, req);
+        res.json(info);
       });
     });
 

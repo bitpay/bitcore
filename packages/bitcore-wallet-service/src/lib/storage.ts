@@ -22,6 +22,7 @@ import {
 import { CoinConfig } from './model/config-swap';
 import { ConversionOrder } from './model/conversionOrder';
 import { DonationStorage } from './model/donation';
+import { MerchantOrder } from './model/merchantorder';
 import { Order } from './model/order';
 import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IUser } from './model/user';
@@ -58,6 +59,7 @@ const collections = {
   TOKEN_INFO: 'token_info',
   ORDER_INFO: 'order_info',
   CONVERSION_ORDER_INFO: 'conversion_order_info',
+  MERCHANT_ORDER: 'merchant_order',
   USER_WATCH_ADDRESS: 'user_watch_address',
   ORDER_INFO_NOTI: 'order_info_noti',
   ORDER_QUEUE: 'order_queue'
@@ -79,6 +81,7 @@ export class Storage {
   queue: any;
   orderQueue: any;
   conversionOrderQueue: any;
+  merchantOrderQueue: any;
   client: any;
 
   constructor(opts: { db?: Db } = {}) {
@@ -121,6 +124,9 @@ export class Storage {
       id: 1
     });
     db.collection(collections.CONVERSION_ORDER_INFO).createIndex({
+      id: 1
+    });
+    db.collection(collections.MERCHANT_ORDER).createIndex({
       id: 1
     });
     db.collection(collections.USER_WATCH_ADDRESS).createIndex({
@@ -250,6 +256,7 @@ export class Storage {
       this.queue = mongoDbQueue(this.db, 'donation_queue');
       this.orderQueue = mongoDbQueue(this.db, 'order_queue');
       this.conversionOrderQueue = mongoDbQueue(this.db, 'conversion_order_queue');
+      this.merchantOrderQueue = mongoDbQueue(this.db, 'merchant_order_queue');
       logger.info(`Connection established to db: ${config.uri}`);
 
       Storage.createIndexes(this.db);
@@ -716,6 +723,30 @@ export class Storage {
     );
   }
 
+  updateMerchantOrder(merchantOrder: MerchantOrder, cb) {
+    this.db.collection(collections.MERCHANT_ORDER).updateOne(
+      {
+        txIdFromUser: merchantOrder.txIdFromUser
+      },
+      {
+        $set: {
+          status: merchantOrder.status,
+          txIdMerchantPayment: merchantOrder.txIdMerchantPayment,
+          lastModified: new Date(),
+          error: merchantOrder.error
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update merchant order'));
+        return cb(null, result);
+      }
+    );
+  }
+
   updateListCoinConfig(listCoinConfig: CoinConfig[], cb) {
     if (!this.db) {
       logger.warn('Trying to update list coin config with close DB', listCoinConfig);
@@ -797,6 +828,18 @@ export class Storage {
     );
   }
 
+  fetchMerchantOrderByTxIdFromUser(txIdFromUser: string, cb) {
+    this.db.collection(collections.MERCHANT_ORDER).findOne(
+      {
+        txIdFromUser
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        return cb(null, result);
+      }
+    );
+  }
+
   storeConversionOrderInfo(conversionOrderInfo, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
@@ -806,6 +849,27 @@ export class Storage {
 
     this.db.collection(collections.CONVERSION_ORDER_INFO).insertOne(
       conversionOrderInfo,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  storeMerchantOrder(merchantOrder, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store merchant order with close DB', merchantOrder);
+      return;
+    }
+
+    this.db.collection(collections.MERCHANT_ORDER).insertOne(
+      merchantOrder,
       {
         w: 1
       },

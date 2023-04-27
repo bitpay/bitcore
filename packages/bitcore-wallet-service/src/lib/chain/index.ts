@@ -46,6 +46,7 @@ export interface IChain {
   convertFeePerKb(p: number, feePerKb: number);
   convertAddressToScriptPayload(address: string);
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
+  burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId);
   getChronikClient();
   getTokenInfo(tokenId);
   checkTx(server: WalletService, txp: ITxProposal);
@@ -141,6 +142,10 @@ class ChainProxy {
   }
   async sendToken(coin, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {
     return await this.get(coin).sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
+  }
+
+  async burnToken(coin, wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {
+    return await this.get(coin).burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId);
   }
 
   async getTokenInfo(coin, tokenId) {
