@@ -6,7 +6,7 @@ services:
     image: mongo:3.6.23
 
   bitcoin:
-    image: ruimarinho/bitcoin-core:0.16
+    image: ruimarinho/bitcoin-core:24
     command:
       -printtoconsole
       -regtest=1
