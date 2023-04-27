@@ -24,7 +24,7 @@ services:
       # -fallbackfee=0.00001
 
   erigon:
-    image: thorax/erigon:latest
+    image: thorax/erigon:v2.43.0
     command:
       /usr/local/bin/erigon
       --chain=dev
