@@ -226,7 +226,7 @@ describe('MATIC Chain State Provider', function() {
         await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err).to.equal({ message: 'need some param' });
+        expect(err).to.deep.equal({ message: 'need some param' });
       }
     });
 
@@ -237,7 +237,7 @@ describe('MATIC Chain State Provider', function() {
         await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err).to.equal('need some param');
+        expect(err).to.deep.equal({ code: 2, message: 'need some param' });
       }
     });
 

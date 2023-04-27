@@ -237,7 +237,7 @@ describe('ETH Chain State Provider', function() {
         await ETH.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err).to.equal('need some param');
+        expect(err).to.deep.equal({ code: 2, message: 'need some param' });
       }
     });
 
