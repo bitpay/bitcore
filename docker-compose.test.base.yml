@@ -37,7 +37,7 @@ services:
       --ws
 
   geth:
-    image: 0labs/geth:v1.10.23
+    image: 0labs/geth:v1.11.5
     volumes:
       - ./.docker/geth-keystore:/keystore
     command:
