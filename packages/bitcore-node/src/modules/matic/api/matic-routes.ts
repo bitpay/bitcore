@@ -22,7 +22,7 @@ MaticRoutes.post('/api/MATIC/:network/gas', async (req, res) => {
     const gasLimit = await MATIC.estimateGas({ network, from, to, value, data, gasPrice });
     res.json(gasLimit);
   } catch (err: any) {
-    if (err?.code != null) { // Preventable error from geth (probably due to insufficient funds or something)
+    if (err?.code != null) { // Preventable error from geth (probably due to insufficient funds or similar)
       res.status(400).send(err.message);
     } else {
       logger.error('Gas Error::%o', err);
