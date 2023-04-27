@@ -3,7 +3,7 @@ version: "3"
 services:
 
   db:
-    image: mongo:6.0.5
+    image: mongo:3.6.23
 
   bitcoin:
     image: ruimarinho/bitcoin-core:24
