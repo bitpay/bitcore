@@ -21,7 +21,7 @@ services:
       -rpcbind=0.0.0.0
       -rpcuser=bitcorenodetest
       -rpcpassword=local321
-      # -fallbackfee=0.00001
+      -fallbackfee=0.00001
 
   erigon:
     image: thorax/erigon:v2022.10.01
