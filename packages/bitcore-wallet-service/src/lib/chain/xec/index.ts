@@ -113,9 +113,9 @@ export class XecChain extends BtcChain implements IChain {
       const utxos = await this.getUtxosToken(wallet);
       if (utxos.length === 0) throw new Error('No UTXOs to spend! Exiting.');
 
-      const bchUtxos = _.filter(utxos, item => item.isNonSLP);
+      const xecUtxos = _.filter(utxos, item => item.isNonSLP);
 
-      if (bchUtxos.length === 0) {
+      if (xecUtxos.length === 0) {
         throw new Error('Wallet does not have a BCH UTXO to pay miner fees.');
       }
       const tokenUtxos = await this.getTokenUtxos(utxos, tokenInfo);
@@ -125,7 +125,7 @@ export class XecChain extends BtcChain implements IChain {
       }
 
       // Choose a UTXO to pay for the transaction.
-      const bchUtxo = this.findBiggestUtxo(bchUtxos);
+      const bchUtxo = this.findBiggestUtxo(xecUtxos);
 
       // BEGIN transaction construction.
 
@@ -205,7 +205,7 @@ export class XecChain extends BtcChain implements IChain {
 
       // output rawhex
       const hex = tx.toHex();
-      const txid = await this.broadcast_raw(wallet, hex, true).catch(e => {
+      const txid = await this.broadcastRaw(wallet, hex, true).catch(e => {
         throw e;
       });
       return txid;
@@ -215,7 +215,7 @@ export class XecChain extends BtcChain implements IChain {
     // Get a UTXO
   }
 
-  async burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {
+  async burnToken(wallet, mnemonic: string, tokenId: string, TOKENQTY: number, splitTxId: string) {
     const tokenInfo = await this.getTokenInfo(tokenId);
     const rootSeed = await bchjs.Mnemonic.toSeed(mnemonic);
     // master HDNode
@@ -234,9 +234,9 @@ export class XecChain extends BtcChain implements IChain {
 
     if (utxos.length === 0) throw new Error('No UTXOs to spend! Exiting.');
 
-    const bchUtxos = _.filter(utxos, item => item.isNonSLP);
+    const xecUtxos = _.filter(utxos, item => item.isNonSLP);
 
-    if (bchUtxos.length === 0) {
+    if (xecUtxos.length === 0) {
       throw new Error('Wallet does not have a BCH UTXO to pay miner fees.');
     }
     const tokenUtxos = await this.getTokenUtxos(utxos, tokenInfo);
@@ -248,7 +248,7 @@ export class XecChain extends BtcChain implements IChain {
     const tokenUtxoSelected = tokenUtxos.find(utxo => utxo.txid === splitTxId);
 
     // Choose a UTXO to pay for the transaction.
-    const bchUtxo = this.findBiggestUtxo(bchUtxos);
+    const bchUtxo = this.findBiggestUtxo(xecUtxos);
     // console.log(`bchUtxo: ${JSON.stringify(bchUtxo, null, 2)}`);
 
     // Generate the OP_RETURN code.
@@ -274,15 +274,17 @@ export class XecChain extends BtcChain implements IChain {
     // byteCount += 546 * (1 - 2);
     // amount to send back to the sending address. It's the original amount - 1 sat/byte for tx size
     const remainder = originalAmount - byteCount;
-    if (remainder < 1) {
+    if (remainder < 0) {
       throw new Error('Selected UTXO does not have enough satoshis');
     }
 
     // Add OP_RETURN as first output.
     transactionBuilder.addOutput(slpData, 0);
 
-    // Last output: send the BCH change back to the wallet.
-    transactionBuilder.addOutput(bchjs.Address.toLegacyAddress(cashAddress), remainder);
+    if (remainder > 546) {
+      // Last output: send the BCH change back to the wallet.
+      transactionBuilder.addOutput(bchjs.Address.toLegacyAddress(cashAddress), remainder);
+    }
 
     // Sign the transaction with the private key for the BCH UTXO paying the fees.
     let redeemScript;
@@ -303,7 +305,7 @@ export class XecChain extends BtcChain implements IChain {
 
     // output rawhex
     const hex = tx.toHex();
-    const txid = await this.broadcast_raw(wallet, hex, true);
+    const txid = await this.broadcastRaw(wallet, hex, true);
     return txid;
   }
 
@@ -344,7 +346,7 @@ export class XecChain extends BtcChain implements IChain {
     return tokenUtxos;
   }
 
-  public broadcast_raw(wallet, raw, ischronik) {
+  public broadcastRaw(wallet, raw, ischronik) {
     return new Promise((resolve, reject) => {
       wallet.broadcastRawTx(
         {

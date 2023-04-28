@@ -5106,8 +5106,7 @@ export class WalletService {
                   }
                   const messageSignature =
                     merchantOrder.txIdFromUser + '-' + merchantOrder.merchantCode + '-' + merchantOrder.amount;
-                  const ecashMessagePrefix = '\x16eCash Signed Message:\n';
-                  const lotusMessagePrefix = '\x16Lotus Signed Message:\n';
+                 
                   let messagePrefix = '';
                   let bchAddress = '';
                   if (merchantOrder.coin === 'xec') {
@@ -5118,9 +5117,9 @@ export class WalletService {
                   }
                   let legacyAddress = bchjs.SLP.Address.toLegacyAddress(bchAddress);
                   if (merchantOrder.coin === 'xec') {
-                    messagePrefix = ecashMessagePrefix;
+                    messagePrefix = Constants.MESSAGE_PREFIX.XEC;
                   } else {
-                    messagePrefix = lotusMessagePrefix;
+                    messagePrefix = Constants.MESSAGE_PREFIX.MESSAGE_PREFIX.XPI;
                   }
                   if (!messageLib.verify(messageSignature, legacyAddress, merchantOrder.signature, messagePrefix)) {
                     saveError(merchantOrder, data, new Error('Invalid signature'));
