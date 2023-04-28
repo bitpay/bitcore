@@ -96,24 +96,24 @@ describe('Wallet Model', function() {
         name: walletName,
         chain,
         network
-      });
+      }, { sort: { _id: -1 }});
 
-      if (findWalletResult && findWalletResult._id) {
-        const findAddressResult = await WalletAddressStorage.collection
-          .find({
-            wallet: findWalletResult._id,
-            chain,
-            network,
-            address: address1
-          })
-          .toArray();
+      expect(findWalletResult?._id).to.exist;
+      const findAddressResult = await WalletAddressStorage.collection
+        .find({
+          wallet: findWalletResult?._id,
+          chain,
+          network,
+          address: address1
+        })
+        .toArray();
 
-        expect(findAddressResult[0]).to.have.deep.property('chain', chain);
-        expect(findAddressResult[0]).to.have.deep.property('network', network);
-        expect(findAddressResult[0]).to.have.deep.property('wallet', findWalletResult._id);
-        expect(findAddressResult[0]).to.have.deep.property('address', address1);
-        expect(findAddressResult[0]).to.have.deep.property('processed', true);
-      }
+      expect(findAddressResult[0]).to.exist;
+      expect(findAddressResult[0]).to.have.deep.property('chain', chain);
+      expect(findAddressResult[0]).to.have.deep.property('network', network);
+      expect(findAddressResult[0]).to.have.deep.property('wallet', findWalletResult?._id);
+      expect(findAddressResult[0]).to.have.deep.property('address', address1);
+      expect(findAddressResult[0]).to.have.deep.property('processed', true);
     });
   });
 });

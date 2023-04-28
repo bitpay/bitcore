@@ -11,11 +11,11 @@ export class RPC {
     private port: number | string
   ) {}
 
-  public callMethod(method: string, params: any, callback: CallbackType) {
+  public callMethod(method: string, params: any, callback: CallbackType, walletName?: string) {
     request(
       {
         method: 'POST',
-        url: `http://${this.username}:${this.password}@${this.host}:${this.port}`,
+        url: `http://${this.username}:${this.password}@${this.host}:${this.port}${walletName ? '/wallet/' + walletName : ''}`,
         body: {
           jsonrpc: '1.0',
           id: Date.now(),
@@ -44,14 +44,14 @@ export class RPC {
     );
   }
 
-  async asyncCall<T>(method: string, params: any[]) {
+  async asyncCall<T>(method: string, params: any[], walletName?: string) {
     return new Promise<T>((resolve, reject) => {
       this.callMethod(method, params, (err, data) => {
         if (err) {
           return reject(err);
         }
         return resolve(data);
-      });
+      }, walletName);
     });
   }
 
@@ -115,20 +115,41 @@ export class RPC {
 @LoggifyClass
 export class AsyncRPC {
   private rpc: RPC;
+  private walletName: string | undefined;
 
   constructor(username: string, password: string, host: string, port: number | string) {
     this.rpc = new RPC(username, password, host, port);
+    this.walletName = process.env.LOADED_MOCHA_OPTS === 'true' ? 'MOCHA_BITCORE_WALLET' : undefined;
   }
 
-  async call<T = any>(method: string, params: any[]): Promise<T> {
+  async call<T = any>(method: string, params: any[], walletName?: string): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       this.rpc.callMethod(method, params, (err, data) => {
         if (err) {
           return reject(err);
         }
         return resolve(data);
-      });
+      }, walletName);
     });
+  }
+
+  async setWallet(walletName?: string) {
+    if (!this.walletName && !walletName) {
+      throw new Error('No wallet name specified');
+    }
+    if (this.walletName == walletName) {
+      return;
+    }
+
+    walletName = walletName || this.walletName;
+    try {
+      await this.call('createwallet', [walletName]);
+    } catch (err: any) {
+      if (!err.message.includes('already exists')) {
+        throw err;
+      }
+    }
+    this.walletName = walletName;
   }
 
   async block(hash: string): Promise<RPCBlock<string>> {
@@ -140,12 +161,15 @@ export class AsyncRPC {
   }
 
   async getnewaddress(account: string): Promise<string> {
-    return (await this.call('getnewaddress', [account])) as string;
+    await this.setWallet();
+    return (await this.call('getnewaddress', [account], this.walletName)) as string;
   }
 
   async signrawtx(txs: string): Promise<any> {
+    await this.setWallet();
+
     try {
-      const ret = await this.call('signrawtransactionwithwallet', [txs]);
+      const ret = await this.call('signrawtransactionwithwallet', [txs], this.walletName);
       return ret;
     } catch (e: any) {
       if (!e.code || e.code != -32601) return Promise.reject(e);
@@ -162,7 +186,8 @@ export class AsyncRPC {
   }
 
   async sendtoaddress(address: string, value: string | number) {
-    return this.call<string>('sendtoaddress', [address, value]);
+    await this.setWallet();
+    return this.call<string>('sendtoaddress', [address, value], this.walletName);
   }
 }
 
