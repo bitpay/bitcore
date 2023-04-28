@@ -5106,7 +5106,7 @@ export class WalletService {
                   }
                   const messageSignature =
                     merchantOrder.txIdFromUser + '-' + merchantOrder.merchantCode + '-' + merchantOrder.amount;
-                 
+
                   let messagePrefix = '';
                   let bchAddress = '';
                   if (merchantOrder.coin === 'xec') {
