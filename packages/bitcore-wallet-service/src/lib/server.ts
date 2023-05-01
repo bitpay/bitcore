@@ -5121,7 +5121,7 @@ export class WalletService {
                   if (merchantOrder.coin === 'xec') {
                     messagePrefix = Constants.MESSAGE_PREFIX.XEC;
                   } else {
-                    messagePrefix = Constants.MESSAGE_PREFIX.MESSAGE_PREFIX.XPI;
+                    messagePrefix = Constants.MESSAGE_PREFIX.XPI;
                   }
                   if (!messageLib.verify(messageSignature, legacyAddress, merchantOrder.signature, messagePrefix)) {
                     saveError(merchantOrder, data, new Error('Invalid signature'));
@@ -5438,11 +5438,7 @@ export class WalletService {
           ' to ' +
           merchantName +
           '\n\n' +
-          this._addExplorerLinkIntoTxIdWithCoin(
-            merchantOrder.txIdMerchantPayment,
-            merchantOrder.coin,
-            'View tx on the Explorer'
-          ),
+          this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdMerchantPayment, 'xec', 'View tx on the Explorer'),
         { parse_mode: 'HTML' }
       );
     } else {
@@ -5458,11 +5454,7 @@ export class WalletService {
           ' to ' +
           merchantName +
           '\n\n' +
-          this._addExplorerLinkIntoTxIdWithCoin(
-            merchantOrder.txIdMerchantPayment,
-            merchantOrder.coin,
-            'View tx on the Explorer'
-          ),
+          this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdMerchantPayment, 'xec', 'View tx on the Explorer'),
         { parse_mode: 'HTML' }
       );
     }
