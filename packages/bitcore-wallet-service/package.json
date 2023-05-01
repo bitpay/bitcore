@@ -31,7 +31,7 @@
     "@abcpros/bitcore-wallet-client": "^8.25.43",
     "@abcpros/crypto-wallet-core": "^8.25.43",
     "@abcpros/xpi-js": "^4.0.5",
-    "@sendgrid/mail": "^6.3.1",
+    "@sendgrid/mail": "^6.5.5",
     "abi-decoder": "^2.0.4",
     "async": "^0.9.2",
     "bcrypt": "^5.1.0",

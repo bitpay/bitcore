@@ -75,6 +75,8 @@ const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
 let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
 let conversionQueueInterval = null;
@@ -5012,7 +5014,7 @@ export class WalletService {
                                             );
                                             this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
                                               setTimeout(() => {
-                                                this.checkConversion(accountTo.address, 'xec', (err, result) => {
+                                                this.checkConversion(accountTo.address, (err, result) => {
                                                   if (err) logger.debug('error for checking conversion: ', err);
                                                 });
                                               }, 1000 * 10); // 10 seconds later recheck fund to notify if we don't have enough balance after transaction
@@ -5271,12 +5273,9 @@ export class WalletService {
                             rateList[merchantOrder.coin].USD / rateList[config.conversion.tokenCodeLowerCase].USD;
                           amountElps = accountTo.amount * rate;
                         }
-                        if (
-                          (Math.abs(Number(amountElps.toFixed(tokenElps.tokenInfo.decimals)) - merchantOrder.amount) /
-                            merchantOrder.amount) *
-                            100 >
-                          2
-                        ) {
+                        amountElps = _.toSafeInteger(amountElps * 10 ** tokenElps.tokenInfo.decimals);
+                        amountElps = amountElps / 10 ** tokenElps.tokenInfo.decimals;
+                        if ((Math.abs(amountElps - merchantOrder.amount) / merchantOrder.amount) * 100 > 2) {
                           saveError(merchantOrder, data, Errors.NOT_STABLE_RATE);
                           return;
                         }
@@ -5315,7 +5314,7 @@ export class WalletService {
                                     tokenElps.tokenId,
                                     amountElpsSataoshi,
                                     txId,
-                                    (err, txId) => {
+                                    async (err, txId) => {
                                       if (err) {
                                         saveError(merchantOrder, data, err);
                                         return;
@@ -5331,7 +5330,7 @@ export class WalletService {
                                       );
                                       this.storage.updateMerchantOrder(merchantOrder, (err, result) => {
                                         setTimeout(() => {
-                                          this.checkConversion(walletEcashAddress, 'xec', (err, result) => {
+                                          this.checkMerchantConversion(walletEcashAddress, 'xec', (err, result) => {
                                             if (err) logger.debug('error for checking conversion: ', err);
                                           });
                                         }, 1000 * 10); // 10 seconds later recheck fund to notify if we don't have enough balance after transaction
@@ -5355,9 +5354,9 @@ export class WalletService {
                               mnemonicKeyFundConversion,
                               tokenElps.tokenId,
                               tokenElps,
-                              amountElps,
+                              amountElpsSataoshi,
                               merchantEtokenAddress,
-                              (err, txId) => {
+                              async (err, txId) => {
                                 if (err) {
                                   saveError(merchantOrder, data, err);
                                   return;
@@ -5374,7 +5373,7 @@ export class WalletService {
                                   );
                                   this.storage.updateMerchantOrder(merchantOrder, (err, result) => {
                                     setTimeout(() => {
-                                      this.checkConversion(walletEcashAddress, 'xec', (err, result) => {
+                                      this.checkMerchantConversion(walletEcashAddress, 'xec', (err, result) => {
                                         if (err) logger.debug('error for checking conversion: ', err);
                                       });
                                     }, 1000 * 10); // 10 seconds later recheck fund to notify if we don't have enough balance after transaction
@@ -5411,7 +5410,7 @@ export class WalletService {
       }
     }, 10000000000);
   }
-  _handleSendSuccesMerchantOrder(
+  async _handleSendSuccesMerchantOrder(
     amountCoinUserSentToServer,
     amountElps,
     txId,
@@ -5467,6 +5466,7 @@ export class WalletService {
         { parse_mode: 'HTML' }
       );
     }
+    await this._handleEmailNotificationForMerchantOrder(merchantOrder);
   }
 
   _getPaymentTypeString(paymentType: PaymentType): string {
@@ -6145,9 +6145,14 @@ export class WalletService {
     const merchantOrder = MerchantOrder.create(opts);
     if (merchantOrder.isPaidByUser) {
       merchantOrder.paymentType = PaymentType.SEND;
-      this.storage.storeMerchantOrder(merchantOrder, (err, result) => {
+      this.storage.storeMerchantOrder(merchantOrder, async (err, result) => {
         if (err) return cb(err);
         // let order into queue
+        try {
+          await this._handleEmailNotificationForMerchantOrder(merchantOrder);
+        } catch (e) {
+          logger.debug('email sent to user error: ', e);
+        }
         return cb(null, true);
       });
     } else {
@@ -6177,6 +6182,40 @@ export class WalletService {
     }
   }
 
+  _handleEmailNotificationForMerchantOrder(merchantOrder: IMerchantOrder) {
+    return new Promise(async (resolve, reject) => {
+      const msgCustomer = {
+        to: merchantOrder.userEmailAddress, // Change to your recipient
+        from: config.emailMerchant.emailFrom, // Change to your verified sender
+        subject: merchantOrder.listSubject[0],
+        text: 'abc',
+        html: merchantOrder.listEmailContent[0]
+      };
+      const promistList = [];
+      promistList.push(sgMail.send(msgCustomer));
+      if (!!config.emailMerchant.listEmailMerchant && config.emailMerchant.listEmailMerchant.length > 0) {
+        const listEmail = config.emailMerchant.listEmailMerchant;
+        listEmail.forEach(email => {
+          const msgMerchant = {
+            to: email, // Change to your recipient
+            from: config.emailMerchant.emailFrom, // Change to your verified sender
+            subject: merchantOrder.listSubject[1],
+            text: 'abc',
+            html: merchantOrder.listEmailContent[1]
+          };
+          promistList.push(sgMail.send(msgMerchant));
+        });
+      }
+      await Promise.all(promistList)
+        .then(() => {
+          return resolve(true);
+        })
+        .catch(err => {
+          return reject(err);
+        });
+    });
+  }
+
   _checkIfTxIdFromUserDuplicate(txIdFromUser): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.storage.fetchMerchantOrderByTxIdFromUser(txIdFromUser, (err, result) => {
@@ -6199,12 +6238,120 @@ export class WalletService {
       });
     });
   }
+
   /**
    * checkConversion - Checking if fund is ready for conversion
    *
    * @param {string} addressTopupEcash - The top up ecash address , if pass this data => call notify to user in case of insufficient fund for XEC, or eToken
    */
-  async checkConversion(addressTopupEcash, coin, cb) {
+  async checkConversion(addressTopupEcash, cb) {
+    if (!clientsFundConversion) {
+      return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+    } else {
+      const xecWallet = clientsFundConversion.find(
+        s =>
+          s.credentials.coin === 'xec' &&
+          s.credentials.network === 'livenet' &&
+          (s.credentials.rootPath.includes('1899') || s.credentials.rootPath.includes('145'))
+      );
+      if (!xecWallet) {
+        return cb(Errors.NOT_FOUND_KEY_CONVERSION);
+      }
+      let xecBalance = null;
+      xecBalance = await this.getBalanceWithPromise({
+        walletId: xecWallet.credentials.walletId,
+        coinCode: xecWallet.credentials.coin,
+        network: xecWallet.credentials.network
+      }).catch(e => {
+        return cb(e);
+      });
+      if (xecBalance && xecBalance.balance && _.isNumber(xecBalance.balance.totalAmount)) {
+        if (xecBalance.balance.totalAmount <= 546) {
+          if (addressTopupEcash) {
+            this._handleWhenFundIsNotEnough(
+              Errors.INSUFFICIENT_FUND_XEC.code,
+              xecBalance.balance.totalAmount / 100,
+              addressTopupEcash
+            );
+          }
+          return cb(Errors.INSUFFICIENT_FUND_XEC);
+        }
+        if (xecBalance.balance.totalAmount < config.conversion.minXecSatConversion) {
+          if (addressTopupEcash) {
+            this._handleWhenFundIsNotEnough(
+              Errors.BELOW_MINIMUM_XEC.code,
+              xecBalance.balance.totalAmount / 100,
+              addressTopupEcash
+            );
+          }
+        }
+      } else {
+        if (addressTopupEcash) {
+          this._handleWhenFundIsNotEnough(Errors.INSUFFICIENT_FUND_XEC.code, 0, addressTopupEcash);
+          return cb(Errors.INSUFFICIENT_FUND_XEC);
+        }
+      }
+      // get balance of XEC Wallet and token elps
+      let balanceTokenFound = null;
+      balanceTokenFound = await this.getTokensWithPromise({
+        walletId: xecWallet.credentials.walletId
+      });
+      if (balanceTokenFound && balanceTokenFound.length > 0) {
+        const listBalanceTokenConverted = _.map(balanceTokenFound, item => {
+          return {
+            tokenId: item.tokenId,
+            tokenInfo: item.tokenInfo,
+            amountToken: item.amountToken,
+            utxoToken: item.utxoToken
+          } as TokenItem;
+        });
+        const tokenElps = listBalanceTokenConverted.find(
+          // TANTODO: replace with tyd token id
+          s => s.tokenId === config.conversion.tokenId
+        );
+
+        if (tokenElps) {
+          if (tokenElps.amountToken < 1) {
+            if (addressTopupEcash) {
+              this._handleWhenFundIsNotEnough(
+                Errors.INSUFFICIENT_FUND_TOKEN.code,
+                tokenElps.amountToken,
+                addressTopupEcash
+              );
+            }
+            return cb(Errors.INSUFFICIENT_FUND_TOKEN);
+          }
+          if (tokenElps.amountToken < config.conversion.minTokenConversion) {
+            if (addressTopupEcash) {
+              this._handleWhenFundIsNotEnough(
+                Errors.BELOW_MINIMUM_TOKEN.code,
+                tokenElps.amountToken,
+                addressTopupEcash
+              );
+            }
+          }
+          if (!addressTopupEcash) {
+            this.storage.fetchAddressWithWalletId(xecWallet.credentials.walletId, async (err, address) => {
+              return cb(null, address.address);
+            });
+          } else {
+            return cb(null, addressTopupEcash);
+          }
+        } else {
+          return cb(Errors.NOT_FOUND_TOKEN_WALLET);
+        }
+      } else {
+        return cb(Errors.NOT_FOUND_TOKEN_WALLET);
+      }
+    }
+  }
+
+  /**
+   * checkMerchantConversion - Checking if fund is ready for merchant conversion
+   *
+   * @param {string} addressTopupEcash - The top up ecash address , if pass this data => call notify to user in case of insufficient fund for XEC, or eToken
+   */
+  async checkMerchantConversion(addressTopupEcash, coin, cb) {
     if (!clientsFundConversion) {
       return cb(Errors.NOT_FOUND_KEY_CONVERSION);
     } else {
