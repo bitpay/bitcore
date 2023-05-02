@@ -875,6 +875,7 @@ export class BtcChain implements IChain {
   }
   convertAddressToScriptPayload(address) {}
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {}
+  burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {}
 
   getChronikClient() {}
   getTokenInfo(tokenId) {}

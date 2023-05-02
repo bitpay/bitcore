@@ -44,6 +44,7 @@ export class XrpChain implements IChain {
   convertAddressToScriptPayload(address) {}
   getTokenInfo(tokenId) {}
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {}
+  burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {}
   getSizeSafetyMargin() {
     return 0;
   }

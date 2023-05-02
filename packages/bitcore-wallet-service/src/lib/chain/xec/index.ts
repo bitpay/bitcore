@@ -1,4 +1,6 @@
 import { BitcoreLibXec } from '@abcpros/crypto-wallet-core';
+import BN from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 import { ChronikClient } from 'chronik-client';
 import _, { isNumber } from 'lodash';
 import { Token } from 'typescript';
@@ -111,9 +113,9 @@ export class XecChain extends BtcChain implements IChain {
       const utxos = await this.getUtxosToken(wallet);
       if (utxos.length === 0) throw new Error('No UTXOs to spend! Exiting.');
 
-      const bchUtxos = _.filter(utxos, item => item.isNonSLP);
+      const xecUtxos = _.filter(utxos, item => item.isNonSLP);
 
-      if (bchUtxos.length === 0) {
+      if (xecUtxos.length === 0) {
         throw new Error('Wallet does not have a BCH UTXO to pay miner fees.');
       }
       const tokenUtxos = await this.getTokenUtxos(utxos, tokenInfo);
@@ -123,7 +125,7 @@ export class XecChain extends BtcChain implements IChain {
       }
 
       // Choose a UTXO to pay for the transaction.
-      const bchUtxo = this.findBiggestUtxo(bchUtxos);
+      const bchUtxo = this.findBiggestUtxo(xecUtxos);
 
       // BEGIN transaction construction.
 
@@ -156,12 +158,15 @@ export class XecChain extends BtcChain implements IChain {
 
       // Send the token back to the same wallet if the user hasn't specified a
       // different address.
-
-      // Send dust transaction representing tokens being sent.
-      const { prefix, type, hash } = ecashaddr.decode(etokenAddress);
-      const cashAdr = ecashaddr.encode('bitcoincash', type, hash);
-      // const cashAdress = ecashaddr.encodeAddress('bitcoincash', type, hash, etokenAddress);
-      transactionBuilder.addOutput(bchjs.SLP.Address.toLegacyAddress(cashAdr), 546);
+      if (!!etokenAddress) {
+        // Send dust transaction representing tokens being sent.
+        const { prefix, type, hash } = ecashaddr.decode(etokenAddress);
+        const cashAdr = ecashaddr.encode('bitcoincash', type, hash);
+        // const cashAdress = ecashaddr.encodeAddress('bitcoincash', type, hash, etokenAddress);
+        transactionBuilder.addOutput(bchjs.SLP.Address.toLegacyAddress(cashAdr), 546);
+      } else {
+        transactionBuilder.addOutput(bchjs.SLP.Address.toLegacyAddress(cashAddress), 546);
+      }
 
       // Return any token change back to the sender.
       if (slpSendObj.outputs > 1) {
@@ -200,7 +205,7 @@ export class XecChain extends BtcChain implements IChain {
 
       // output rawhex
       const hex = tx.toHex();
-      const txid = await this.broadcast_raw(wallet, hex, true).catch(e => {
+      const txid = await this.broadcastRaw(wallet, hex, true).catch(e => {
         throw e;
       });
       return txid;
@@ -208,6 +213,100 @@ export class XecChain extends BtcChain implements IChain {
       throw e;
     }
     // Get a UTXO
+  }
+
+  async burnToken(wallet, mnemonic: string, tokenId: string, TOKENQTY: number, splitTxId: string) {
+    const tokenInfo = await this.getTokenInfo(tokenId);
+    const rootSeed = await bchjs.Mnemonic.toSeed(mnemonic);
+    // master HDNode
+    let masterHDNode;
+    masterHDNode = bchjs.HDNode.fromSeed(rootSeed);
+    const rootPath = wallet.getRootPath() ? wallet.getRootPath() : "m/44'/1899'/0'";
+    // HDNode of BIP44 account
+    const account = bchjs.HDNode.derivePath(masterHDNode, rootPath);
+    const change = bchjs.HDNode.derivePath(account, '0/0');
+
+    const cashAddress = bchjs.HDNode.toCashAddress(change);
+    const slpAddress = bchjs.HDNode.toSLPAddress(change);
+
+    // Get a UTXO
+    const utxos: UtxoToken[] = await this.getUtxosToken(wallet);
+
+    if (utxos.length === 0) throw new Error('No UTXOs to spend! Exiting.');
+
+    const xecUtxos = _.filter(utxos, item => item.isNonSLP);
+
+    if (xecUtxos.length === 0) {
+      throw new Error('Wallet does not have a BCH UTXO to pay miner fees.');
+    }
+    const tokenUtxos = await this.getTokenUtxos(utxos, tokenInfo);
+
+    if (tokenUtxos.length === 0) {
+      throw new Error('No token UTXOs for the specified token could be found.');
+    }
+
+    const tokenUtxoSelected = tokenUtxos.find(utxo => utxo.txid === splitTxId);
+
+    // Choose a UTXO to pay for the transaction.
+    const bchUtxo = this.findBiggestUtxo(xecUtxos);
+    // console.log(`bchUtxo: ${JSON.stringify(bchUtxo, null, 2)}`);
+
+    // Generate the OP_RETURN code.
+    TOKENQTY = TOKENQTY / Math.pow(10, tokenInfo.decimals);
+    TOKENQTY = _.floor(TOKENQTY, tokenInfo.decimals);
+    const slpData = this.buildBurnOpReturn(tokenInfo.id, new BigNumber(TOKENQTY).times(10 ** tokenInfo.decimals));
+    // BEGIN transaction construction.
+
+    // instance of transaction builder
+    let transactionBuilder;
+    transactionBuilder = new bchjs.TransactionBuilder();
+
+    // Add the BCH UTXO as input to pay for the transaction.
+    const originalAmount = bchUtxo.value;
+    transactionBuilder.addInput(bchUtxo.txid, bchUtxo.outIdx);
+
+    // add each token UTXO as an input.
+    transactionBuilder.addInput(tokenUtxoSelected.txid, tokenUtxoSelected.outIdx);
+
+    let byteCount = bchjs.BitcoinCash.getByteCount({ P2PKH: 2 }, { P2PKH: 2 });
+    byteCount += slpData.length;
+    // Account for difference in inputs and outputs
+    // byteCount += 546 * (1 - 2);
+    // amount to send back to the sending address. It's the original amount - 1 sat/byte for tx size
+    const remainder = originalAmount - byteCount;
+    if (remainder < 0) {
+      throw new Error('Selected UTXO does not have enough satoshis');
+    }
+
+    // Add OP_RETURN as first output.
+    transactionBuilder.addOutput(slpData, 0);
+
+    if (remainder > 546) {
+      // Last output: send the BCH change back to the wallet.
+      transactionBuilder.addOutput(bchjs.Address.toLegacyAddress(cashAddress), remainder);
+    }
+
+    // Sign the transaction with the private key for the BCH UTXO paying the fees.
+    let redeemScript;
+    const childIndex = (bchUtxo.addressInfo.path as string).replace(/m\//gm, '');
+    const changeCash = bchjs.HDNode.derivePath(account, childIndex);
+    let keyPairCash = bchjs.HDNode.toKeyPair(changeCash);
+    transactionBuilder.sign(0, keyPairCash, redeemScript, transactionBuilder.hashTypes.SIGHASH_ALL, originalAmount);
+
+    // Sign each token UTXO being consumed.
+    const thisUtxo = tokenUtxoSelected;
+    const childIndex2 = (thisUtxo.addressInfo.path as string).replace(/m\//gm, '');
+    let changeToken = bchjs.HDNode.derivePath(account, childIndex2);
+    let keyPairToken = bchjs.HDNode.toKeyPair(changeToken);
+    transactionBuilder.sign(1, keyPairToken, redeemScript, transactionBuilder.hashTypes.SIGHASH_ALL, thisUtxo.value);
+
+    // build tx
+    const tx = transactionBuilder.build();
+
+    // output rawhex
+    const hex = tx.toHex();
+    const txid = await this.broadcastRaw(wallet, hex, true);
+    return txid;
   }
 
   private findBiggestUtxo(utxos: UtxoToken[]) {
@@ -247,7 +346,7 @@ export class XecChain extends BtcChain implements IChain {
     return tokenUtxos;
   }
 
-  public broadcast_raw(wallet, raw, ischronik) {
+  public broadcastRaw(wallet, raw, ischronik) {
     return new Promise((resolve, reject) => {
       wallet.broadcastRawTx(
         {
@@ -304,5 +403,56 @@ export class XecChain extends BtcChain implements IChain {
       throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
     return;
+  }
+
+  pushdata(buf: Buffer | Uint8Array): Buffer {
+    if (buf.length === 0) {
+      return Buffer.from([0x4c, 0x00]);
+    } else if (buf.length < 0x4e) {
+      return Buffer.concat([Buffer.from([buf.length]), buf]);
+    } else if (buf.length < 0xff) {
+      return Buffer.concat([Buffer.from([0x4c, buf.length]), buf]);
+    } else if (buf.length < 0xffff) {
+      const tmp = Buffer.allocUnsafe(2);
+      tmp.writeUInt16LE(buf.length, 0);
+      return Buffer.concat([Buffer.from([0x4d]), tmp, buf]);
+    } else if (buf.length < 0xffffffff) {
+      const tmp = Buffer.allocUnsafe(4);
+      tmp.writeUInt32LE(buf.length, 0);
+      return Buffer.concat([Buffer.from([0x4e]), tmp, buf]);
+    } else {
+      throw new Error('does not support bigger pushes yet');
+    }
+  }
+  6;
+
+  BNToInt64BE(bn: BN): Buffer {
+    if (!bn.isInteger()) {
+      throw new Error('bn not an integer');
+    }
+
+    if (!bn.isPositive()) {
+      throw new Error('bn not positive integer');
+    }
+
+    const h = bn.toString(16);
+    if (h.length > 16) {
+      throw new Error('bn outside of range');
+    }
+
+    return Buffer.from(h.padStart(16, '0'), 'hex');
+  }
+
+  buildBurnOpReturn(tokenId: string, burnQuantity: BN): Buffer {
+    const tokenIdHex = Buffer.from(tokenId, 'hex');
+    const buf = Buffer.concat([
+      Buffer.from([0x6a]), // OP_RETURN
+      this.pushdata(Buffer.from('SLP\0')),
+      this.pushdata(Buffer.from([0x01])), // versionType
+      this.pushdata(Buffer.from('BURN')),
+      this.pushdata(tokenIdHex),
+      this.pushdata(this.BNToInt64BE(burnQuantity))
+    ]);
+    return buf;
   }
 }

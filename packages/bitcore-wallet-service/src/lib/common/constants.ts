@@ -50,6 +50,7 @@ module.exports = {
     P2PKH: 'P2PKH',
     P2WPKH: 'P2WPKH'
   },
+
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',
     BIP45: 'BIP45'
@@ -65,6 +66,7 @@ module.exports = {
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
   TOKEN_OPTS: CWC.Constants.TOKEN_OPTS,
+
   opReturn: {
     opReturnPrefixHex: '6a',
     opReturnAppPrefixLengthHex: '04',
@@ -76,5 +78,10 @@ module.exports = {
     },
     encryptedMsgByteLimit: 206,
     unencryptedMsgByteLimit: 215
+  },
+
+  MESSAGE_PREFIX: {
+    XEC: '\x16eCash Signed Message:\n',
+    XPI: '\x16Lotus Signed Message:\n'
   }
 };

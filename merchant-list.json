@@ -1,0 +1,28 @@
+[
+    {
+        "code": "CA",
+        "name": "Community Artists",
+        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": true
+
+    },
+    {
+        "code": "CABURN",
+        "name": "Community - Burn",
+        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": false
+
+    },
+    {
+        "code": "CHEM",
+        "name": "Morazan Electric and Hydro",
+        "walletAddress": "ecash:qz040l29cm70n93nruj7c37ecw7jk59nmseckfr5q5",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": false
+    }
+]

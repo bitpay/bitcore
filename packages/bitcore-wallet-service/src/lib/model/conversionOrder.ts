@@ -20,12 +20,14 @@ export class ConversionOrder implements IConversionOrder {
   pendingReason?: string;
   addressFrom?: string;
   amountConverted?: number;
+  coin?: string;
 
   static create(opts) {
     opts = opts || {};
     const x = new ConversionOrder();
     const now = new Date();
     x.txIdFromUser = opts.txIdFromUser;
+    x.coin = opts.coin || null;
     x.txIdSentToUser = opts.txIdSentToUser || null;
     x.status = 'waiting';
     x.createdOn = now;
