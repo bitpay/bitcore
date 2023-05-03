@@ -1593,7 +1593,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1606,7 +1606,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1620,7 +1620,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1633,7 +1633,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1646,7 +1646,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1664,7 +1664,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1676,7 +1676,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1689,7 +1689,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1702,7 +1702,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1737,7 +1737,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1754,7 +1754,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1766,7 +1766,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1784,7 +1784,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1820,7 +1820,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
