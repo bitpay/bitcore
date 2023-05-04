@@ -77,6 +77,7 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
+
 let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
 let conversionQueueInterval = null;
@@ -96,9 +97,19 @@ let isNotiFundTokenBelowMinimumToTelegram = false;
 let isNotiFundXecInsufficientMinimumToTelegram = false;
 let isNotiFundTokenInsufficientMinimumToTelegram = false;
 let listRateWithPromise = null;
+const GAP_RESTART_QUEUE = config.queueNoti.GAP_RESTART_QUEUE;
+const NOTI_AFTER_MANY_RESTART = config.queueNoti.NOTI_AFTER_MANY_RESTART;
+const MAXIMUM_NOTI = config.queueNoti.MAXIMUM_NOTI;
 const minsOfNoti = 5;
-let queueFailed = 0;
-let notiCount = 0;
+let merchantQueueFailed = 0;
+let merchantNotiCount = 0;
+
+let conversionQueueFailed = 0;
+let conversionNotiCount = 0;
+
+let swapQueueFailed = 0;
+let swapNotiCount = 0;
+
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 let txIdHandled = [];
@@ -5679,27 +5690,97 @@ export class WalletService {
     }
   }
 
-  checkSwapQueueAndNoti() {
+  initCheckQueue() {
+    this.checkMerchantOrderQueueAndNoti();
+    this.checkConversionOrderQueueAndNoti();
+    this.checkSwapQueueAndNoti();
+  }
+
+  checkMerchantOrderQueueAndNoti() {
     setInterval(() => {
-      if (!swapQueueInterval) {
-        queueFailed++;
-        if (queueFailed > minsOfNoti) {
-          queueFailed = 0;
-          notiCount++;
+      if (!merchantOrderQueueInterval) {
+        merchantQueueFailed += 1;
+        if (merchantQueueFailed > NOTI_AFTER_MANY_RESTART) {
+          merchantQueueFailed = 0;
+          merchantNotiCount += 1;
           // notification to telegram
-          if (notiCount < 4) {
-            botSwap.sendMessage(config.swapTelegram.channelFailId, `Swap service is not running (${notiCount})…`);
+          if (merchantNotiCount < MAXIMUM_NOTI + 1) {
+            botSwap.sendMessage(
+              config.queueNoti.channelId,
+              `Merchant service is not running. Try to restart (${merchantNotiCount})…`
+            );
           }
         } else {
-          this.restartHandleSwapQueue((err, result) => {
-            if (err) logger.debug(err);
+          this.restartHandleMerchantQueue((err, result) => {
+            if (err) logger.debug('Restart merchant order queue error: ', err);
           });
         }
       } else {
-        notiCount = 0;
-        queueFailed = 0;
+        if (merchantQueueFailed > 0) {
+          botSwap.sendMessage(config.queueNoti.channelId, 'Merchant service is running');
+        }
+        merchantNotiCount = 0;
+        merchantQueueFailed = 0;
       }
-    }, 60 * 1000); // 1 min
+    }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
+  }
+
+  checkConversionOrderQueueAndNoti() {
+    setInterval(() => {
+      if (!conversionQueueInterval) {
+        conversionQueueFailed += 1;
+        if (conversionQueueFailed > NOTI_AFTER_MANY_RESTART) {
+          conversionQueueFailed = 0;
+          conversionNotiCount += 1;
+          // notification to telegram
+          if (conversionNotiCount < MAXIMUM_NOTI + 1) {
+            botSwap.sendMessage(
+              config.queueNoti.channelId,
+              `Conversion service is not running. Try to restart (${conversionNotiCount})…`
+            );
+          }
+        } else {
+          this.restartHandleConversionQueue((err, result) => {
+            if (err) logger.debug('Restart conversion order queue error: ', err);
+          });
+        }
+      } else {
+        if (conversionQueueFailed > 0) {
+          botSwap.sendMessage(config.queueNoti.channelId, 'Conversion service is running');
+        }
+        conversionNotiCount = 0;
+        conversionQueueFailed = 0;
+      }
+    }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
+  }
+
+  checkSwapQueueAndNoti() {
+    setInterval(() => {
+      if (!swapQueueInterval) {
+        swapQueueFailed += 1;
+        if (swapQueueFailed > NOTI_AFTER_MANY_RESTART) {
+          swapQueueFailed = 0;
+          swapNotiCount += 1;
+          // notification to telegram
+          if (swapNotiCount < MAXIMUM_NOTI + 1) {
+            botSwap.sendMessage(
+              config.queueNoti.channelId,
+              `Swap service is not running. Try to restart (${swapNotiCount})…`
+            );
+          }
+        } else {
+          this.restartHandleSwapQueue((err, result) => {
+            if (err) logger.debug('Restart swap queue error: ', err);
+          });
+        }
+      } else {
+        if (swapQueueFailed > 0) {
+          botSwap.sendMessage(config.queueNoti.channelId, 'Swap service is running');
+        }
+        swapNotiCount = 0;
+        swapQueueFailed = 0;
+      }
+    }, GAP_RESTART_QUEUE * 60 * 1000); // 5 min
   }
 
   restartHandleConversionQueue(cb) {
