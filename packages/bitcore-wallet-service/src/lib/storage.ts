@@ -19,16 +19,16 @@ import {
   TxProposal,
   Wallet
 } from './model';
+import { Appreciation } from './model/appreciation';
 import { CoinConfig } from './model/config-swap';
 import { ConversionOrder } from './model/conversionOrder';
 import { DonationStorage } from './model/donation';
+import { LogDevice } from './model/log-devide';
 import { MerchantOrder } from './model/merchantorder';
 import { Order } from './model/order';
 import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IUser } from './model/user';
 import { ICoinConfigFilter } from './server';
-import { LogDevice } from './model/log-devide';
-import { Appreciation } from './model/appreciation';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -2624,9 +2624,9 @@ export class Storage {
   }
 
   fetchAllAppreciation(opts, cb) {
-    const filter: {deviceId?: string} = {}
+    const filter: { deviceId?: string } = {};
     if (opts.deviceId) filter.deviceId = opts.deviceId;
-    
+
     this.db
       .collection(collections.APPRECIATION)
       .find(filter)
@@ -2642,35 +2642,29 @@ export class Storage {
   }
 
   getAppreciationById(opts, cb) {
-    const filter: {deviceId?: string, claimCode?: string} = {}
+    const filter: { deviceId?: string; claimCode?: string } = {};
     if (opts.deviceId) filter.deviceId = opts.deviceId;
     if (opts.claimCode) filter.claimCode = opts.claimCode;
 
-    this.db.collection(collections.APPRECIATION).findOne(
-      filter
-      ,
-      (err, result) => {
-        if (err || !result) return cb(err);
-        return cb(null, Appreciation.fromObj(result));
-      }
-    );
+    this.db.collection(collections.APPRECIATION).findOne(filter, (err, result) => {
+      if (err || !result) return cb(err);
+      return cb(null, Appreciation.fromObj(result));
+    });
   }
 
   getOneAppreciationValid(cb) {
-    this.db
-      .collection(collections.APPRECIATION)
-      .findOne(
-        {
-          deviceId: 'null',
-          status: false
-        },
-        (err, result) => {
-          if (err) return cb(err);
-          if (!result) return cb();
-  
-          return cb(null, Appreciation.fromObj(result));
-        }
-      )
+    this.db.collection(collections.APPRECIATION).findOne(
+      {
+        deviceId: 'null',
+        status: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, Appreciation.fromObj(result));
+      }
+    );
   }
 
   storeAppreciation(appreciationInfo, cb) {
@@ -2716,9 +2710,10 @@ export class Storage {
   }
 
   updateAppreciation(appreciationInfo, cb) {
-    this.db.collection(collections.APPRECIATION).replaceOne({
-      claimCode: appreciationInfo.claimCode
-    },
+    this.db.collection(collections.APPRECIATION).replaceOne(
+      {
+        claimCode: appreciationInfo.claimCode
+      },
       appreciationInfo.toObject(),
       {
         w: 1,
@@ -2732,15 +2727,14 @@ export class Storage {
       }
     );
   }
-  
+
   removeExpiredAppreciation(typeAppreciation, cb) {
     const filter = {
       status: false,
       type: typeAppreciation
     };
     this.db.collection(collections.APPRECIATION).deleteMany(
-      filter
-      ,
+      filter,
       {
         w: 1
       },

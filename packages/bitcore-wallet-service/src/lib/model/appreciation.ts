@@ -3,22 +3,22 @@ import _ from 'lodash';
 const Uuid = require('uuid');
 
 export interface IAppreciation {
-    id: number;
-    createdOn: number;
-    dateClaim: string;
-    deviceId: string;
-    claimCode: string;
-    status: boolean;
-    type: string;
+  id: number;
+  createdOn: number;
+  dateClaim: string;
+  deviceId: string;
+  claimCode: string;
+  status: boolean;
+  type: string;
 }
 export class Appreciation {
-    id: number;
-    createdOn: number;
-    dateClaim: string;
-    deviceId: string;
-    claimCode: string;
-    status: boolean;
-    type: string;
+  id: number;
+  createdOn: number;
+  dateClaim: string;
+  deviceId: string;
+  claimCode: string;
+  status: boolean;
+  type: string;
 
   static create(opts) {
     opts = opts || {};
@@ -29,11 +29,11 @@ export class Appreciation {
 
     x.id = Uuid.v4();
     x.createdOn = now;
-    x.dateClaim = 'null'
+    x.dateClaim = 'null';
     x.deviceId = opts.deviceId;
     x.claimCode = opts.claimCode;
     x.status = false;
-    x.type = opts.type
+    x.type = opts.type;
 
     return x;
   }

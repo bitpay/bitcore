@@ -62,7 +62,7 @@ export class LogDevice {
     x.updatedOn = obj.updatedOn;
     x.platform = obj.platform;
     x.packageName = obj.packageName;
-    x.token = obj.token
+    x.token = obj.token;
     x.deviceId = obj.deviceId;
     x.location = obj.location;
     x.isFirstInstall = obj.isFirstInstall;
