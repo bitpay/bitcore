@@ -8940,13 +8940,17 @@ export class WalletService {
     async.series(
       [
         next => {
-          this.storage.getLogDeviceById(deviceId, (err, d) => {
-            if (err) {
-              return next(err);
-            }
-            device = d;
-            next();
-          });
+          if (deviceId) {
+            this.storage.getLogDeviceById(deviceId, (err, d) => {
+              if (err) {
+                return next(err);
+              }
+              device = d;
+              next();
+            });
+          } else {
+            next(new Error('No have deviceId'));
+          }
         },
         next => {
           if (!device || !device.isValid()) {
@@ -9016,13 +9020,17 @@ export class WalletService {
     async.series(
       [
         next => {
-          this.storage.getLogDeviceById(deviceId, (err, d) => {
-            if (err) {
-              return next(err);
-            }
-            device = d;
-            next();
-          });
+          if (deviceId) {
+            this.storage.getLogDeviceById(deviceId, (err, d) => {
+              if (err) {
+                return next(err);
+              }
+              device = d;
+              next();
+            });
+          } else {
+            next(new Error('No have deviceId'));
+          }
         },
         next => {
           if (!device || !device.isValid()) {
@@ -9124,52 +9132,44 @@ export class WalletService {
    */
   applyAppreciationForDevice(device, cb) {
     let deviceId = device.deviceId;
-    let appreciation;
 
-    async.series(
+    async.waterfall(
       [
         next => {
-          this.storage.getOneAppreciationValid((err, appre) => {
+          this.storage.getOneAppreciationValid((err, appreciation) => {
             if (err) {
               return next(err);
             }
-            appreciation = appre;
-            next();
+            if (appreciation) next(null, appreciation);
           });
         },
-        next => {
+        (appreciation, next) => {
           if (appreciation) {
             appreciation.deviceId = deviceId;
-            this.storage.updateAppreciation(appreciation, (err, result) => {
+            this.storage.updateAppreciation(appreciation, (err, appreciationUpdated) => {
               if (err) return next(err);
-              if (result) {
-                appreciation = result;
-                next();
+              if (appreciationUpdated) {
+                next(null, appreciationUpdated);
               }
             });
           } else {
-            return next(new Error('Not appreciation valid'));
+            return next(new Error('Could not get appreciation valid...'));
           }
         },
-        next => {
-          if (appreciation) {
-            device.isFirstInstall = true;
-            this.storage.updateLogDevice(device, (err, result) => {
+        (appreciationUpdated, next) => {
+          device.isFirstInstall = true;
+            this.storage.updateLogDevice(device, (err, updated) => {
               if (err) return next(err);
-              if (result) {
-                return cb(null, appreciation);
+              if (updated) {
+                return cb(null, appreciationUpdated);
               }
             });
-          }
         }
       ],
       err => {
-        if (err) return cb(err);
-        if (!appreciation) {
-          return cb(new Error('Could not get current device for this deviceId'));
+        if (err) {
+          return cb(err);
         }
-
-        return cb(null, appreciation);
       }
     );
   }
