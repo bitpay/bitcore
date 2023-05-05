@@ -1621,6 +1621,116 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/device', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getAllLogDevice((err, listDevice) => {
+        if (err) return returnError(err, res, req);
+        res.json(listDevice);
+      });
+    });
+
+    router.post('/v3/device/add', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      const opts = req.body;
+      server.storeLogDevice(opts, (err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
+    router.post('/v3/device/update', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      const opts = req.body;
+      server.updateLogDevice(opts, (err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
+    router.get('/v3/appreciation/:id', (req, res) => {
+      let server;
+      const opts = {
+        id: req.params['id']
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getAllAppreciation(opts.id, (err, listAppreciation) => {
+        if (err) return returnError(err, res, req);
+        res.json(listAppreciation);
+      });
+    });
+
+    router.post('/v3/appreciation/claim', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      const opts = req.body;
+      server.updateAppreciationClaim(opts, (err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
+    router.get('/v3/calculateGroupWeeklyAcive', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.calculateGroupWeeklyAcive((err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
+    router.get('/v3/createAppreciationWeekly', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.createAppreciationWeekly((err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
+    router.get('/v3/createAppreciationMonthly', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.createAppreciationMonthly((err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
     router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer, res) => {
       let server;
       try {

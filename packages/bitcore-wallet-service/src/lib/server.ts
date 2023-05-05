@@ -55,6 +55,9 @@ import { IQPayInfo } from './model/qpayinfo';
 import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { IUser } from './model/user';
+import { LogDevice } from './model/log-devide';
+import { Appreciation } from './model/appreciation';
+import { PushNotificationsService } from './pushnotificationsservice';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
@@ -77,6 +80,8 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
+const csv = require('csvtojson')
+const csvFilePath = `${__dirname}/csv/subLixiList.csv`;
 
 let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
@@ -150,6 +155,7 @@ let storage;
 let blockchainExplorer;
 let blockchainExplorerOpts;
 let messageBroker;
+let pushNotifications;
 let fiatRateService;
 let currencyRateService;
 let serviceVersion;
@@ -169,6 +175,7 @@ export interface IWalletService {
   blockchainExplorer: any;
   blockchainExplorerOpts: any;
   messageBroker: any;
+  pushNotifications: PushNotificationsService;
   fiatRateService: any;
   notifyTicker: number;
   userAgent: string;
@@ -207,6 +214,7 @@ export class WalletService {
   blockchainExplorer: V8;
   blockchainExplorerOpts: any;
   messageBroker: any;
+  pushNotifications: PushNotificationsService;
   fiatRateService: any;
   notifyTicker: number;
   userAgent: string;
@@ -8895,6 +8903,629 @@ export class WalletService {
       if (err) return cb(err);
       return cb(null, rates);
     });
+  }
+
+  /**
+   * Usage for case get All Device
+   * @param {Object} opts - Optional filter propety.
+   * @param {boolean} opts.isActive - Optional. Get device active (countNumber > 0).
+   * @returns {Array} - Return Array Device suitable condition.
+   */
+  getAllLogDevice(cb) {
+    const opts = {};
+    this.storage.fetchAllLogDevice(opts, (err, listLogDevice) => {
+      if (err) return cb(err);
+      return cb(null, listLogDevice);
+    });
+  }
+
+  /**
+   * Usage for case FIRST INSTALL APP. Will store device info to DB & send appreciation to device
+   * @param {Object} opts - Device Info to store DB.
+   * @param {String} opts.deviceId - Id of device.
+   * @param {String} opts.location - OPTIONAL. Location is string gps number of device.
+   * @param {String} opts.platform - OPTIONAL. Platform of device.
+   * @param {String} opts.token - OPTIONAL. Token of device. It use for case send notification via firebase.
+   * @param {String} opts.packageName - OPTIONAL. packageName of device. It use for case send notification via firebase.
+   * @returns {Object} - Result deviceInfo after save DB.
+   */
+  storeLogDevice(opts, cb) {
+    let device;
+    let deviceId = opts?.deviceId;
+    let location = opts?.location;
+    let platform = opts?.platform;
+    let token = opts?.token;
+    let packageName = opts?.packageName;
+
+    async.series(
+      [
+        next => {
+          this.storage.getLogDeviceById(deviceId, (err, d) => {
+            if (err) {
+              return next(err);
+            }
+            device = d;
+            next();
+          });
+        },
+        next => {
+          if (!device || !device.isValid()) {
+            device = LogDevice.create({
+              platform: platform,
+              deviceId: deviceId,
+              location: location,
+              token: token,
+              packageName: packageName
+            });
+            return this.storage.storeLogDevice(device, (err, rs) => {
+              if (err) {
+                return next(err);
+              }
+              device = rs;
+              next();
+            });
+          } else {
+            return cb(null, 'Exist device record');
+          }
+        },
+        next => {
+          if (token) {
+            this.applyAppreciationForDevice(device, (err, appreciationInfo) => {
+              if (err) {
+                return cb(err);
+              }
+              // Create appreciation successfully & push notification if have token of device
+              if (appreciationInfo) {
+                // If have token device => push notification
+                this.pushNotificationAppreciation(token, packageName, appreciationInfo, next);
+              }
+            })
+          }
+          return cb(null, 'Store successfully!!');
+        }
+      ],
+      err => {
+        if (err) {
+          return cb(err);
+        }
+        if (!device) {
+          return cb(new Error('Could not get current device for this deviceId'));
+        }
+
+        return cb(null, device);
+      }
+    );
+  }
+
+  /**
+   * Usage for case update LOCATION or DAILY CHECKIN or TOKEN
+   * @param {Object} opts - Device Info.
+   * @param {String} opts.deviceId - Id of device.
+   * @param {String} opts.location - OPTIONAL. Location is string gps number of device.
+   * @param {boolean} opts.attendance - OPTIONAL. DAILY CHECKIN variable.
+   * @param {String} opts.token - OPTIONAL. Token of device. It use for case send notification via firebase.
+   * @returns {Object} - Return device info.
+   */
+  updateLogDevice(opts, cb) {
+    let device;
+    let deviceId = opts?.deviceId;
+    let location = opts?.location;
+    let attendance = opts?.attendance;
+    let token = opts?.token;
+
+    async.series(
+      [
+        next => {
+          this.storage.getLogDeviceById(deviceId, (err, d) => {
+            if (err) {
+              return next(err);
+            }
+            device = d;
+            next();
+          });
+        },
+        next => {
+          if (!device || !device.isValid()) {
+            device = LogDevice.create({
+              deviceId: deviceId,
+              location: location
+            });
+          } else {
+            device.touch();
+            if (location) device.location = location;
+            if (token) device.token = token;
+            if (attendance) device.attendance();
+          }
+          next();
+        },
+        next => {
+          this.storage.updateLogDevice(device, next);
+        }
+      ],
+      err => {
+        if (err) {
+          return cb(err);
+        }
+        if (!device) {
+          return cb(new Error('Could not get current device for this deviceId'));
+        }
+
+        return cb(null, device);
+      }
+    );
+  }
+
+  /**
+   * Get Appreaciation by deviceId || ALL
+   * @param {Object} opts - Object fetch Appreciation.
+   * @param {String} deviceId - OPTIONAL. Fetch Appreciation by deviceId. NOT Fetch Appreciation all in DB.
+   * @returns {Array} - Return List Appreciation suitable condition.
+   */
+  getAllAppreciation(deviceId, cb) {
+    const opts = {
+      deviceId: deviceId
+    }
+    this.storage.fetchAllAppreciation(opts, (err, listAppreciation) => {
+      if (err) return cb(err);
+      return cb(null, listAppreciation);
+    });
+  }
+
+  /**
+   * Update Appreaciation claimed
+   * @param {Object} opts - Object fetch Appreciation.
+   * @param {String} deviceId - DeviceId
+   * @param {String} claimCode - DeviceId
+   * @param {String} dateClaim - DeviceId
+   * @returns {Array} - Return List Appreciation suitable condition.
+   */
+  updateAppreciationClaim(opts, cb) {
+    const claimCode = opts?.claimCode;
+    const deviceId = opts?.deviceId;
+    const dateClaim = opts?.dateClaim;
+    
+    let appreciation;
+
+    async.series(
+      [
+        next => {
+          this.storage.getAppreciationById({deviceId: deviceId, claimCode: claimCode}, (err, appre) => {
+            if (err) {
+              return next(err);
+            }
+            appreciation = appre;
+            next();
+          });
+        },
+        next => {
+          if (appreciation) {
+            appreciation.deviceId = deviceId;
+            appreciation.dateClaim = dateClaim;
+            appreciation.status = !!dateClaim;
+            this.storage.updateAppreciation(appreciation, next);
+          }
+        }
+      ],
+      err => {
+        if (err) return cb(err);
+        if (!appreciation) {
+          return cb(new Error('Could not get current device for this deviceId'));
+        }
+
+        return cb(null, appreciation);
+      }
+    );
+  }
+
+  /**
+   * Apply Appreaciation for Device
+   * @param {String} deviceId - The token representing the app/device.
+   * @returns {Object} - Return Appreciation.
+   */
+  applyAppreciationForDevice(device, cb) {
+    let deviceId = device.deviceId;
+    let appreciation;
+
+    async.series(
+      [
+        next => {
+          this.storage.getOneAppreciationValid((err, appre) => {
+            if (err) {
+              return next(err);
+            }
+            appreciation = appre;
+            next();
+          });
+        },
+        next => {
+          if (appreciation) {
+            appreciation.deviceId = deviceId;
+            this.storage.updateAppreciation(appreciation, (err, result) => {
+              if (err) return next(err);
+              if (result) {
+                appreciation = result;
+                next();
+              }
+            });
+          } else {
+            return next(new Error('Not appreciation valid'));
+          }
+        },
+        next => {
+          if (appreciation) {
+            device.isFirstInstall = true;
+            this.storage.updateLogDevice(device, (err, result) => {
+              if (err) return next(err);
+              if (result) {
+                return cb(null, appreciation);
+              }
+            });
+          }
+        }
+      ],
+      err => {
+        if (err) return cb(err);
+        if (!appreciation) {
+          return cb(new Error('Could not get current device for this deviceId'));
+        }
+
+        return cb(null, appreciation);
+      }
+    );
+  }
+
+  /**
+   * Get listDevice from DB to calculate group active (countNumber > 0) => map to list.
+   * @param {Object} opts
+   * @param {boolean} opts.isActive - Just take countNumber > 0 (Device active on week).
+   * @returns {String} - Result group active.
+   */
+  calculateGroupWeeklyAcive(cb) {
+    // LOW (1-3)
+    // MEDIUM (4-6)
+    // HIGH (7)
+    const opts = {
+      isActive: true
+    }
+    let listDevice;
+    let listLow = [], listMedium = [], listHigh = [];
+    let result;
+
+    this.storage.fetchAllLogDevice(opts, (err, d) => {
+      if (err) {
+        return cb(err);
+      }
+      listDevice = d;
+      listDevice.forEach(device => {
+        if (device.countNumber > 0 && device.countNumber <= 3) {
+            listLow.push(device);
+        } else if (device.countNumber > 3 && device.countNumber <= 6) {
+            listMedium.push(device);
+        } else if (device.countNumber === 7) {
+            listHigh.push(device);
+        }
+      })
+      result = {
+        listDeviceLow: listLow,
+        listDeviceMedium: listMedium,
+        listDeviceHigh: listHigh,
+        lengthGroupLow: listLow.length,
+        lengthGroupMedium: listMedium.length,
+        lengthGroupHight: listHigh.length,
+      };
+  
+      return cb(null, result);
+    });
+  }
+
+  createAppreciationMonthly(cb) {
+    // Read file csv monthly to json array => each record array => create appreciation & save to DB
+    let listCodeMonthlyCsv = [], appreciationList = [];
+    let countCreatedAppreciation = 0;
+
+    async.waterfall(
+      [
+        next => {
+          this.readDataCvs(next);
+        },
+        (listSubLixi, next) => {
+          listCodeMonthlyCsv = listSubLixi;
+          if (listCodeMonthlyCsv.length > 0) {
+            listCodeMonthlyCsv.forEach(item => {
+              if (item.claimCode && item.claimed === 'false') {
+                let appreciation = Appreciation.create({
+                  deviceId: 'null',
+                  claimCode: item.claimCode,
+                  type: 'Monthly'
+                });
+                appreciationList.push(appreciation);
+              } 
+            });
+            return next(null, appreciationList);
+          } else {
+            return next(new Error('Could not get data in csv file...'));
+          }
+        },
+        (appreciationList, next) => {
+          this.storage.removeExpiredAppreciation('Monthly', (err, result) => {
+            if (err) {
+              return next(err);
+            }
+            if (result) return next(null, result);
+          });
+        },
+        (resultRemove, next) => {
+          if (appreciationList.length > 0) {
+            this.storage.storeManyAppreciation(appreciationList, (err, result) => {
+              if (err) {
+                return next(new Error('Create appreciation monthly error!!!'));
+              }
+              if (result) {
+                countCreatedAppreciation = result.insertedCount;
+                return next(null, countCreatedAppreciation);
+              }
+            });
+          } else {
+            return next(new Error('Could not get data in csv file...'));
+          }
+        },
+        (countCreated, next) => {
+          return cb(null, `Create successfully with: ${countCreated} appreciation`);
+        }
+      ],
+      err => {
+        if (err) {
+          logger.error('An error ocurred generating appreciation monthly:' + err);
+        }
+        return cb(err);
+      }
+    );
+  }
+
+  createAppreciationWeekly(cb) {
+    let listDevice;
+    let listDeviceLow = [], listDeviceMedium = [], listDeviceHigh = [];
+    const listCodeWeeklyLowCsv = [
+      {
+        "id": "2104",
+        "name": "yfsFb",
+        "claimCode": "lixi_CpfVGvasvXPdH",
+        "amount": "1",
+        "package": "2g",
+        "barcode": "00000002104",
+        "claimed": "false"
+      }
+    ];
+    const listCodeWeeklyMediumCsv = [];
+    const listCodeWeeklyHighCsv = [];
+    // const listCodeWeeklyLow = [
+    //   {
+    //     "id": "2104",
+    //     "name": "yfsFb",
+    //     "claimCode": "lixi_CpfVGvasvXPdH",
+    //     "amount": "1",
+    //     "package": "2g",
+    //     "barcode": "00000002104",
+    //     "claimed": "false"
+    //   },
+    //   {
+    //     "id": "2105",
+    //     "name": "x5Cxa",
+    //     "claimCode": "lixi_Pcanoc6ds8ndJ",
+    //     "amount": "1",
+    //     "package": "2g",
+    //     "barcode": "00000002105",
+    //     "claimed": "false"
+    //   }
+    // ]
+    // const listCodeWeeklyMedium = [
+    //   {
+    //     "id": "2104",
+    //     "name": "yfsFb",
+    //     "claimCode": "lixi_CpfvachXPdH",
+    //     "amount": "1",
+    //     "package": "2g",
+    //     "barcode": "00000002104",
+    //     "claimed": "false"
+    //   },
+    //   {
+    //     "id": "2105",
+    //     "name": "x5Cxa",
+    //     "claimCode": "lixi_PQasfcds8ndJ",
+    //     "amount": "1",
+    //     "package": "2g",
+    //     "barcode": "00000002105",
+    //     "claimed": "false"
+    //   }
+    // ]
+    // const listCodeWeeklyHigh = [
+    //   {
+    //     "id": "2104",
+    //     "name": "yfsFb",
+    //     "claimCode": "lixi_CpfakhXPdH",
+    //     "amount": "1",
+    //     "package": "2g",
+    //     "barcode": "00000002104",
+    //     "claimed": "false"
+    //   },
+    // ]
+
+    const opts = {
+      isActive: true
+    }
+
+    async.series(
+      [
+        next => {
+          this.storage.fetchAllLogDevice(opts, (err, d) => {
+            if (err) {
+              return next(err);
+            }
+            listDevice = d;
+            next();
+          });
+        },
+        next => {
+          if (listDevice) {
+            listDevice.forEach(device => {
+              if (device.countNumber > 0 && device.countNumber <= 3) {
+                  listDeviceLow.push(device);
+              } else if (device.countNumber > 3 && device.countNumber <= 6) {
+                  listDeviceMedium.push(device);
+              } else if (device.countNumber === 7) {
+                  listDeviceHigh.push(device);
+              }
+            });
+            next();
+          }
+        },
+        next => {
+          if (listDeviceLow.length === listCodeWeeklyLowCsv.length) {
+            listDeviceLow.map((device, i) => {
+              listCodeWeeklyLowCsv.map((voucher, j) => {
+                  if (i == j && voucher.claimed === 'false') {
+                    let appreciation = Appreciation.create({
+                      deviceId: device.deviceId,
+                      claimCode: voucher.claimCode,
+                      type: 'Weekly'
+                    });
+                    this.storage.storeAppreciation(appreciation, (err, result) => {
+                      if (err) {
+                        console.log('Not create appreciation!!!', err);
+                      }
+                      if (result) {
+                        console.log('Create appreciation successfully.');
+                      }
+                    });
+                  }
+              })
+            })
+          } else {
+            cb('Number code of LOW not enough to device');
+          }
+    
+          if (listDeviceMedium.length === listCodeWeeklyMediumCsv.length) {
+            listDeviceMedium.map((device, i) => {
+              listCodeWeeklyMediumCsv.map((voucher, j) => {
+                  if (i == j && voucher.claimed === 'false') {
+                    let appreciation = Appreciation.create({
+                      deviceId: device.deviceId,
+                      claimCode: voucher.claimCode,
+                      type: 'Weekly'
+                    });
+                    this.storage.storeAppreciation(appreciation, (err, result) => {
+                      if (err) {
+                        console.log('Not create appreciation!!!', err);
+                      }
+                      if (result) {
+                        console.log('Create appreciation successfully.');
+                      }
+                    });
+                  }
+              })
+            })
+          } else {
+            cb('Number code of MEDIUM not enough to device');
+          }
+    
+          if (listDeviceHigh.length === listCodeWeeklyHighCsv.length) {
+            listDeviceHigh.map((device, i) => {
+              listCodeWeeklyHighCsv.map((voucher, j) => {
+                  if (i == j && voucher.claimed === 'false') {
+                    let appreciation = Appreciation.create({
+                      deviceId: device.deviceId,
+                      claimCode: voucher.claimCode,
+                      type: 'Weekly'
+                    });
+                    this.storage.storeAppreciation(appreciation, (err, appreciationInfo) => {
+                      if (err) {
+                        console.log('Not create appreciation!!!', err);
+                      }
+                      if (appreciationInfo) {
+                        console.log('Create appreciation successfully.');
+                      }
+                    });
+                  }
+              })
+            })
+          } else {
+            cb('Number code of HIGH not enough to device');
+          }
+          next();
+        },
+        next => {
+          this.storage.resetCountNumberLogDevice((err, rs) => {
+            if (err) return cb(err);
+            if (rs) {
+              return cb(null, listDevice);
+            }
+          });
+        }
+      ],
+      err => {
+        if (err) return cb(err);
+        if (!listDevice) {
+          return cb(new Error('Could not get list device'));
+        }
+
+        return cb(null, listDevice);
+      }
+    );
+  }
+
+  resetCountNumberLogDevice(cb) {
+    this.storage.resetCountNumberLogDevice((err, rs) => {
+      if (err) return cb(err);
+      if (rs) {
+        return cb(null, rs);
+      }
+    });
+  }
+
+  pushNotificationAppreciation(token, packageName, appreciationInfo, cb) {
+    let title = appreciationInfo.type === 'Monthly' 
+    ? 'Welcome to AbcPay wallet !' 
+    : 'Thanks for checking in !';
+
+    let body = appreciationInfo.type === 'Monthly' 
+    ? 'Thanks for using our app. Here our small appreciation to you to start using the app.' 
+    : 'Here a small gift for checking around! Give it to someone who is in need.';
+
+    const notification = {
+      to: token,
+      priority: 'high',
+      restricted_package_name: packageName,
+      data: {
+        title: title,
+        body: body,
+        claimCode: appreciationInfo.claimCode,
+        status: appreciationInfo.status,
+        createdOn: appreciationInfo.createdOn,
+        type: appreciationInfo.type,
+        notification: {
+          title: title,
+          body: body,
+          sound: 'default',
+          click_action: 'FCM_PLUGIN_ACTIVITY',
+          icon: 'fcm_push_icon'
+        }
+      }
+    };
+    this.pushNotifications._makeRequest(notification, (err, rs) => {
+      if (err) return cb(err)
+      if (rs) return cb(null, 'Push notification successfully!')
+    });
+  }
+
+  readDataCvs(cb) {
+    csv()
+    .fromFile(csvFilePath)
+    .then((jsonObj) => {
+        return cb(null, jsonObj)
+    })
+    .catch(err => {
+      return cb(err);
+    })
   }
 
   /**

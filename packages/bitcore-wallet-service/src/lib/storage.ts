@@ -27,6 +27,8 @@ import { Order } from './model/order';
 import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IUser } from './model/user';
 import { ICoinConfigFilter } from './server';
+import { LogDevice } from './model/log-devide';
+import { Appreciation } from './model/appreciation';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
@@ -62,7 +64,9 @@ const collections = {
   MERCHANT_ORDER: 'merchant_order',
   USER_WATCH_ADDRESS: 'user_watch_address',
   ORDER_INFO_NOTI: 'order_info_noti',
-  ORDER_QUEUE: 'order_queue'
+  ORDER_QUEUE: 'order_queue',
+  LOG_DEVICE: 'log_device',
+  APPRECIATION: 'appreciation'
 };
 
 const Common = require('./common');
@@ -223,6 +227,12 @@ export class Storage {
     });
     db.collection(collections.SESSIONS).createIndex({
       copayerId: 1
+    });
+    db.collection(collections.LOG_DEVICE).createIndex({
+      id: 1
+    });
+    db.collection(collections.APPRECIATION).createIndex({
+      id: 1
     });
   }
 
@@ -2515,6 +2525,224 @@ export class Storage {
       {
         w: 1,
         upsert: true
+      },
+      cb
+    );
+  }
+
+  fetchAllLogDevice(opts, cb) {
+    let isActive = opts?.isActive;
+    const filter: { countNumber?: object } = {};
+
+    if (isActive) filter.countNumber = { $gt: 0 };
+    this.db
+      .collection(collections.LOG_DEVICE)
+      .find(filter)
+      .toArray((err, listLogDevice) => {
+        if (err) return cb(err);
+        else {
+          const devices = _.map([].concat(listLogDevice), r => {
+            return LogDevice.fromObj(r);
+          });
+          return cb(null, devices);
+        }
+      });
+  }
+
+  getLogDeviceById(deviceId, cb) {
+    this.db.collection(collections.LOG_DEVICE).findOne(
+      {
+        deviceId
+      },
+      (err, result) => {
+        if (err || !result) return cb(err);
+        return cb(null, LogDevice.fromObj(result));
+      }
+    );
+  }
+
+  storeLogDevice(deviceInfo, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store a log device with close DB', deviceInfo);
+      return;
+    }
+
+    this.db.collection(collections.LOG_DEVICE).insertOne(
+      deviceInfo,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result.ops[0]);
+      }
+    );
+  }
+
+  updateLogDevice(device, cb) {
+    this.db.collection(collections.LOG_DEVICE).replaceOne(
+      {
+        deviceId: device.deviceId
+      },
+      device.toObject(),
+      {
+        w: 1,
+        upsert: true
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result.ops[0]);
+      }
+    );
+  }
+
+  resetCountNumberLogDevice(cb) {
+    this.db.collection(collections.LOG_DEVICE).updateMany(
+      {
+        countNumber: { $gt: 0 }
+      },
+      {
+        $set: {
+          countNumber: 0
+        }
+      },
+      {
+        upsert: false
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb(new Error('Can not update daily limit for coin config'));
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  fetchAllAppreciation(opts, cb) {
+    const filter: {deviceId?: string} = {}
+    if (opts.deviceId) filter.deviceId = opts.deviceId;
+    
+    this.db
+      .collection(collections.APPRECIATION)
+      .find(filter)
+      .toArray((err, listAppreciation) => {
+        if (err) return cb(err);
+        else {
+          const appreciations = _.map([].concat(listAppreciation), r => {
+            return Appreciation.fromObj(r);
+          });
+          return cb(null, appreciations);
+        }
+      });
+  }
+
+  getAppreciationById(opts, cb) {
+    const filter: {deviceId?: string, claimCode?: string} = {}
+    if (opts.deviceId) filter.deviceId = opts.deviceId;
+    if (opts.claimCode) filter.claimCode = opts.claimCode;
+
+    this.db.collection(collections.APPRECIATION).findOne(
+      filter
+      ,
+      (err, result) => {
+        if (err || !result) return cb(err);
+        return cb(null, Appreciation.fromObj(result));
+      }
+    );
+  }
+
+  getOneAppreciationValid(cb) {
+    this.db
+      .collection(collections.APPRECIATION)
+      .findOne(
+        {
+          deviceId: 'null',
+          status: false
+        },
+        (err, result) => {
+          if (err) return cb(err);
+          if (!result) return cb();
+  
+          return cb(null, Appreciation.fromObj(result));
+        }
+      )
+  }
+
+  storeAppreciation(appreciationInfo, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store appreciation with close DB', appreciationInfo);
+      return;
+    }
+
+    this.db.collection(collections.APPRECIATION).insertOne(
+      appreciationInfo,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result.ops[0]);
+      }
+    );
+  }
+
+  storeManyAppreciation(appreciationList, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      logger.warn('Trying to store appreciation with close DB', appreciationList);
+      return;
+    }
+
+    this.db.collection(collections.APPRECIATION).insertMany(
+      appreciationList,
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result);
+      }
+    );
+  }
+
+  updateAppreciation(appreciationInfo, cb) {
+    this.db.collection(collections.APPRECIATION).replaceOne({
+      claimCode: appreciationInfo.claimCode
+    },
+      appreciationInfo.toObject(),
+      {
+        w: 1,
+        upsert: true
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, result.ops[0]);
+      }
+    );
+  }
+  
+  removeExpiredAppreciation(typeAppreciation, cb) {
+    const filter = {
+      status: false,
+      type: typeAppreciation
+    };
+    this.db.collection(collections.APPRECIATION).deleteMany(
+      filter
+      ,
+      {
+        w: 1
       },
       cb
     );
