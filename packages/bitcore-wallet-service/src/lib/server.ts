@@ -5489,8 +5489,8 @@ export class WalletService {
       const raipayFeeConverted: RaipayFee[] = raipayFee.map(fee => RaipayFee.create(fee));
       const feeSelected = raipayFeeConverted.find(s => s.coin === coin);
       if (!!feeSelected) {
-        amount -= feeSelected.feeQuantity;
         amount -= (feeSelected.feePercentage * amount) / 100;
+        amount -= feeSelected.feeQuantity;
         return amount;
       } else return amount;
     } else {
