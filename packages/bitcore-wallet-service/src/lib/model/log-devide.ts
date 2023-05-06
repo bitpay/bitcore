@@ -6,7 +6,7 @@ const Defaults = require('../common/defaults');
 const MAX_ATTENDANCE_WEEK = 7;
 
 export interface ILogDevice {
-  id: number;
+  id: string;
   version: number;
   createdOn: number;
   updatedOn: number;
@@ -19,7 +19,7 @@ export interface ILogDevice {
   countNumber: number;
 }
 export class LogDevice {
-  id: number;
+  id: string;
   version: number;
   createdOn: number;
   updatedOn: number;

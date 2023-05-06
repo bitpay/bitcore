@@ -3,7 +3,7 @@ import _ from 'lodash';
 const Uuid = require('uuid');
 
 export interface IAppreciation {
-  id: number;
+  id: string;
   createdOn: number;
   dateClaim: string;
   deviceId: string;
@@ -12,7 +12,7 @@ export interface IAppreciation {
   type: string;
 }
 export class Appreciation {
-  id: number;
+  id: string;
   createdOn: number;
   dateClaim: string;
   deviceId: string;

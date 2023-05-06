@@ -9158,12 +9158,12 @@ export class WalletService {
         },
         (appreciationUpdated, next) => {
           device.isFirstInstall = true;
-            this.storage.updateLogDevice(device, (err, updated) => {
-              if (err) return next(err);
-              if (updated) {
-                return cb(null, appreciationUpdated);
-              }
-            });
+          this.storage.updateLogDevice(device, (err, updated) => {
+            if (err) return next(err);
+            if (updated) {
+              return cb(null, appreciationUpdated);
+            }
+          });
         }
       ],
       err => {
@@ -9180,7 +9180,7 @@ export class WalletService {
    * @param {boolean} opts.isActive - Just take countNumber > 0 (Device active on week).
    * @returns {String} - Result group active.
    */
-  calculateGroupWeeklyAcive(cb) {
+  calculateGroupWeeklyActive(cb) {
     // LOW (1-3)
     // MEDIUM (4-6)
     // HIGH (7)

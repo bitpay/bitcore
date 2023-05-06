@@ -1692,14 +1692,14 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/calculateGroupWeeklyAcive', (req, res) => {
+    router.get('/v3/calculateGroupWeeklyActive', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.calculateGroupWeeklyAcive((err, result) => {
+      server.calculateGroupWeeklyActive((err, result) => {
         if (err) return returnError(err, res, req);
         res.json(result);
       });
