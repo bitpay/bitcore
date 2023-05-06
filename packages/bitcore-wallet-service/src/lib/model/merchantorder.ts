@@ -21,7 +21,7 @@ export interface IQpayInfoForEmail {
 export interface IMerchantOrder {
   status: string;
   coin: string;
-  tokenId?: string;
+  tokenId: string;
   txIdFromUser: string;
   txMerchantPayment?: string;
   merchantCode: string;
@@ -38,6 +38,7 @@ export interface IMerchantOrder {
   paymentType: number;
   userEmailAddress: string;
   qpayInfoForEmail: IQpayInfoForEmail;
+  isToken: boolean;
 }
 
 export class MerchantOrder implements IMerchantOrder {
@@ -45,7 +46,7 @@ export class MerchantOrder implements IMerchantOrder {
   qpayInfoForEmail: IQpayInfoForEmail;
   status: string;
   coin: string;
-  tokenId?: string;
+  tokenId: string;
   userAddress: string;
   txIdFromUser: string;
   txIdMerchantPayment?: string;
@@ -61,13 +62,14 @@ export class MerchantOrder implements IMerchantOrder {
   signature?: string;
   isPaidByUser: boolean;
   userEmailAddress: string;
+  isToken: boolean;
   static create(opts) {
     opts = opts || {};
     const x = new MerchantOrder();
     const now = new Date();
     x.status = 'waiting';
     x.coin = opts.coin;
-    x.tokenId = opts.tokenId || null;
+    x.tokenId = opts.tokenId;
     x.userAddress = opts.userAddress;
     x.txIdFromUser = opts.txIdFromUser;
     x.txIdMerchantPayment = opts.txIdMerchantPayment || null;
@@ -84,6 +86,7 @@ export class MerchantOrder implements IMerchantOrder {
     x.paymentType = opts.paymentType;
     x.userEmailAddress = opts.userEmailAddress;
     x.qpayInfoForEmail = opts.qpayInfoForEmail;
+    x.isToken = opts.isToken;
     return x;
   }
 
@@ -108,6 +111,7 @@ export class MerchantOrder implements IMerchantOrder {
     x.paymentType = obj.paymentType;
     x.userEmailAddress = obj.userEmailAddress;
     x.qpayInfoForEmail = obj.qpayInfoForEmail;
+    x.isToken = obj.isToken;
     return x;
   }
 }
