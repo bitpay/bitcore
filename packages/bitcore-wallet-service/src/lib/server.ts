@@ -4081,6 +4081,7 @@ export class WalletService {
       let opts = { words: '' };
       this.storage.fetchKeys((err, result: Keys) => {
         if (err) return cb(err);
+        if (!result) return cb(new Error('Can not find key fund'));
         const keyFundDecrypted = this.decrypt(config.sharedKey, result.keyFund);
         const ctArray = Array.from(new Uint8Array(keyFundDecrypted)); // ciphertext as byte array\
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
@@ -4104,6 +4105,7 @@ export class WalletService {
       let opts = { words: '' };
       this.storage.fetchKeysConversion((err, result: KeysConversion) => {
         if (err) return cb(err);
+        if (!result) return cb(new Error('Can not find key fund for conversion'));
         const keyFundDecrypted = this.decrypt(config.sharedKey, result.keyFund);
         const ctArray = Array.from(new Uint8Array(keyFundDecrypted)); // ciphertext as byte array\
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join(''); // ciphertext as string
@@ -5142,7 +5144,16 @@ export class WalletService {
                 accountTo = outputsConverted.find(
                   output => !!output && !!output.address && !txDetail.inputAddresses.includes(output.address)
                 );
-                if (!!merchantOrder.tokenId) {
+                if (merchantOrder.isToken && !!txDetail.slpTxData.slpMeta.tokenId) {
+                  if (
+                    !txDetail ||
+                    !txDetail.slpTxData ||
+                    !txDetail.slpTxData.slpMeta ||
+                    txDetail.slpTxData.slpMeta.tokenId !== config.conversion.tokenId
+                  ) {
+                    saveError(merchantOrder, data, new Error('Invalid token support'));
+                    return;
+                  }
                   accountTo = outputsConverted.find(
                     output =>
                       !!output &&
@@ -5155,6 +5166,7 @@ export class WalletService {
                 if (!accountTo) {
                   saveError(merchantOrder, data, new Error('Can not find destination address from user tx detail'));
                 }
+
                 if (!clientsFundConversion) {
                   saveError(merchantOrder, data, Errors.NOT_FOUND_KEY_CONVERSION);
                   return;
@@ -5254,7 +5266,7 @@ export class WalletService {
                         const listMerchant = await this.getListMerchantInfo();
                         const merchant = listMerchant.find(s => s.code === merchantOrder.merchantCode);
                         const merchantEtokenAddress = this._convertFromEcashWithPrefixToEtoken(merchant.walletAddress);
-                        if (!!merchantOrder.tokenId) {
+                        if (merchantOrder.isToken) {
                           amountElps = accountTo.amount / 10 ** tokenElps.tokenInfo.decimals;
                         } else {
                           const rateList = await this._getRatesCustomFormatWithPromise();
@@ -5267,8 +5279,8 @@ export class WalletService {
                             return;
                           }
                           accountTo.amount = accountTo.amount / UNITS[merchantOrder.coin].toSatoshis;
-                          accountTo.amount = this._calculateRaipayFee(merchantOrder.coin, accountTo.amount);
                           amountCoinUserSentToServer = accountTo.amount;
+                          accountTo.amount = this._calculateRaipayFee(merchantOrder.coin, accountTo.amount);
                           const rate =
                             rateList[merchantOrder.coin].USD / rateList[config.conversion.tokenCodeLowerCase].USD;
                           amountElps = accountTo.amount * rate;
@@ -6130,47 +6142,56 @@ export class WalletService {
       !opts.merchantCode ||
       !opts.userAddress ||
       !opts.amount ||
-      !opts.listEmailContent
+      !opts.listEmailContent ||
+      !opts.listSubject
     ) {
       return cb(new Error('Missing required parameter'));
     }
-    const merchantOrder = MerchantOrder.create(opts);
-    if (merchantOrder.isPaidByUser) {
-      merchantOrder.paymentType = PaymentType.SEND;
-      this.storage.storeMerchantOrder(merchantOrder, async (err, result) => {
-        if (err) return cb(err);
-        // let order into queue
-        try {
-          await this._handleEmailNotificationForMerchantOrder(merchantOrder);
-        } catch (e) {
-          logger.debug('email sent to user error: ', e);
-        }
-        return cb(null, true);
-      });
-    } else {
-      const listMerchant = this.getListMerchantInfo();
-      const merchantSelected = listMerchant.find(merchant => merchant.code === merchantOrder.merchantCode);
-      if (!merchantSelected.isElpsAccepted) {
-        merchantOrder.paymentType = PaymentType.BURN;
-        if (!opts.signature) {
-          return cb(new Error('Missing signature'));
-        }
-      } else {
+    try {
+      if (!config.conversion.tokenId) {
+        return cb(new Error('Can not find config for conversion'));
+      }
+      const merchantOrder = MerchantOrder.create(opts);
+      if (merchantOrder.isPaidByUser) {
         merchantOrder.paymentType = PaymentType.SEND;
-      }
-      try {
-        const isValidTxIdFromUser = await this._checkIfTxIdFromUserDuplicate(merchantOrder.txIdFromUser);
-      } catch (e) {
-        if (e) return cb(e);
-      }
-      this.storage.storeMerchantOrder(merchantOrder, (err, result) => {
-        if (err) return cb(err);
-        // let order into queue
-        this.storage.merchantOrderQueue.add(merchantOrder.txIdFromUser, (err, id) => {
+        this.storage.storeMerchantOrder(merchantOrder, async (err, result) => {
           if (err) return cb(err);
+          // let order into queue
+          try {
+            await this._handleEmailNotificationForMerchantOrder(merchantOrder);
+          } catch (e) {
+            logger.debug('email sent to user error: ', e);
+          }
           return cb(null, true);
         });
-      });
+      } else {
+        const listMerchant = this.getListMerchantInfo();
+        const merchantSelected = listMerchant.find(merchant => merchant.code === merchantOrder.merchantCode);
+        if (!merchantSelected.isElpsAccepted) {
+          merchantOrder.paymentType = PaymentType.BURN;
+          if (!opts.signature) {
+            return cb(new Error('Missing signature'));
+          }
+        } else {
+          merchantOrder.paymentType = PaymentType.SEND;
+        }
+        try {
+          const isValidTxIdFromUser = await this._checkIfTxIdFromUserDuplicate(merchantOrder.txIdFromUser);
+        } catch (e) {
+          if (e) return cb(e);
+        }
+        merchantOrder.tokenId = config.conversion.tokenId;
+        this.storage.storeMerchantOrder(merchantOrder, (err, result) => {
+          if (err) return cb(err);
+          // let order into queue
+          this.storage.merchantOrderQueue.add(merchantOrder.txIdFromUser, (err, id) => {
+            if (err) return cb(err);
+            return cb(null, true);
+          });
+        });
+      }
+    } catch (e) {
+      return cb(e);
     }
   }
 
@@ -6197,6 +6218,11 @@ export class WalletService {
           };
           promistList.push(sgMail.send(msgMerchant));
         });
+      }
+      const listMerchant = this.getListMerchantInfo();
+      const merchantSelected = listMerchant.find(merchant => merchant.code === merchantOrder.merchantCode);
+      if (!!merchantSelected.email && merchantSelected.email.length > 0) {
+        promistList.push(merchantSelected.email);
       }
       await Promise.all(promistList)
         .then(() => {
