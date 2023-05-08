@@ -7856,28 +7856,59 @@ export class WalletService {
     }
   }
 
-  updateStatusSlpTxs(inTxs, lastTxsChronik, wallet) {
-    const validTxs = [];
-    _.forEach(inTxs, item => {
-      const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
-      if (txsSlp && txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
-        item.isSlpToken = true;
-        item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
-        item.tokenType = txsSlp.slpTxData.slpMeta.tokenType;
-        item.txType = txsSlp.slpTxData.slpMeta.txType;
-        item.inputAddresses = _.uniq(
-          _.map(txsSlp.inputs, item => {
-            return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
-          })
-        );
-        item.amountTokenUnit =
-          txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
-            ? Number(txsSlp.outputs[1].slpToken.amount)
-            : undefined;
-      }
-      validTxs.push(item);
+  updateStatusSlpTxs(inTxs, lastTxsChronik, wallet, chronikClient): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      const validTxs = [];
+      _.forEach(inTxs, item => {
+        const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
+
+        if (txsSlp && txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
+          const txDetailFromChronik = chronikClient.tx(inTxs.txid);
+          item.isSlpToken = true;
+          item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
+          item.tokenType = txsSlp.slpTxData.slpMeta.tokenType;
+          item.txType = txsSlp.slpTxData.slpMeta.txType;
+          item.inputAddresses = _.uniq(
+            _.map(txsSlp.inputs, item => {
+              return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
+            })
+          );
+          item.amountTokenUnit =
+            txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
+              ? Number(txsSlp.outputs[1].slpToken.amount)
+              : undefined;
+          item.burnAmountToken = this._getBurnAmountToken(txsSlp.inputs, txsSlp.slpTxData.slpMeta.txType);
+          if (item.burnAmountToken > 0) {
+            item.txType = 'BURN';
+          }
+        }
+        validTxs.push(item);
+      });
+      return resolve(validTxs);
     });
-    return validTxs;
+  }
+
+  _getBurnAmountToken(inputs: any[], type): number {
+    let burnAmount = 0;
+    if (!!type && type === 'BURN') {
+      inputs.forEach(input => {
+        if (typeof input.slpToken !== 'undefined' && input.slpToken.amount && input.slpToken.amount !== '0') {
+          burnAmount = input.slpToken.amount;
+        }
+      });
+    } else if (!!type && type === 'SEND') {
+      inputs.forEach(input => {
+        if (
+          typeof input.slpBurn !== 'undefined' &&
+          input.slpBurn.token &&
+          input.slpBurn.token.amount &&
+          input.slpBurn.token.amount !== '0'
+        ) {
+          burnAmount += Number(input.slpBurn.token.amount);
+        }
+      });
+    }
+    return Number(burnAmount);
   }
 
   getTxHistoryV8(bc, wallet, opts, skip, limit, cb) {
@@ -7986,10 +8017,16 @@ export class WalletService {
                         this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
                       );
                     });
+                    const chronikClient = ChainService.getChronikClient(wallet.coin);
                     await Promise.all(promiseList).then(async lastTxsChronik => {
                       lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
                       if (lastTxsChronik.length > 0) {
-                        inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
+                        inTxs = await this.updateStatusSlpTxs(
+                          _.cloneDeep(inTxs),
+                          lastTxsChronik,
+                          wallet,
+                          chronikClient
+                        );
                       }
                     });
                   } catch (err) {
