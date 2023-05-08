@@ -573,7 +573,7 @@ export class PushNotificationsService {
     }
   }
 
-  _makeRequest(opts, cb) {
+  public _makeRequest(opts, cb) {
     this.request(
       {
         url: this.pushServerUrl + '/send',

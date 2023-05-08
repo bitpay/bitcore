@@ -81,7 +81,6 @@ const EmailValidator = require('email-validator');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
 const csv = require('csvtojson');
-const csvFilePath = `${__dirname}/csv/subLixiList.csv`;
 
 let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
@@ -175,7 +174,7 @@ export interface IWalletService {
   blockchainExplorer: any;
   blockchainExplorerOpts: any;
   messageBroker: any;
-  pushNotifications: PushNotificationsService;
+  pushNotifications: any;
   fiatRateService: any;
   notifyTicker: number;
   userAgent: string;
@@ -214,7 +213,7 @@ export class WalletService {
   blockchainExplorer: V8;
   blockchainExplorerOpts: any;
   messageBroker: any;
-  pushNotifications: PushNotificationsService;
+  pushNotifications: any;
   fiatRateService: any;
   notifyTicker: number;
   userAgent: string;
@@ -238,6 +237,7 @@ export class WalletService {
     this.blockchainExplorer = blockchainExplorer;
     this.blockchainExplorerOpts = blockchainExplorerOpts;
     this.messageBroker = messageBroker;
+    this.pushNotifications = pushNotifications;
     this.fiatRateService = fiatRateService;
     this.notifyTicker = 0;
     // for testing
@@ -315,6 +315,16 @@ export class WalletService {
       return cb();
     };
 
+    const initPushNotification = cb => {
+      pushNotifications = new PushNotificationsService();
+      pushNotifications.start(config, err => {
+        if (err) throw err;
+  
+        logger.info('Push Notification Service started');
+        return cb();
+      });
+    }
+
     const initFiatRateService = cb => {
       if (opts.fiatRateService) {
         fiatRateService = opts.fiatRateService;
@@ -359,6 +369,9 @@ export class WalletService {
         },
         next => {
           initMessageBroker(next);
+        },
+        next => {
+          initPushNotification(next);
         },
         next => {
           initFiatRateService(next);
@@ -8981,11 +8994,15 @@ export class WalletService {
               // Create appreciation successfully & push notification if have token of device
               if (appreciationInfo) {
                 // If have token device => push notification
-                this.pushNotificationAppreciation(token, packageName, appreciationInfo, next);
+                this.pushNotificationAppreciationMonthly(token, packageName, appreciationInfo, (err, isSent) => {
+                  if (err) return cb(err);
+                  if (isSent) return cb(null, 'Store & push notification successfully!!');
+                });
               }
             });
+          } else {
+            return cb(null, 'Store successfully!!');
           }
-          return cb(null, 'Store successfully!!');
         }
       ],
       err => {
@@ -9229,7 +9246,7 @@ export class WalletService {
     async.waterfall(
       [
         next => {
-          this.readDataCvs(next);
+          this.readDataCvsMonthly(next);
         },
         (listSubLixi, next) => {
           listCodeMonthlyCsv = listSubLixi;
@@ -9273,7 +9290,7 @@ export class WalletService {
           }
         },
         (countCreated, next) => {
-          return cb(null, `Create successfully with: ${countCreated} appreciation`);
+          return cb(null, `Create successfully appreciation MONTHLY with: ${countCreated} appreciation`);
         }
       ],
       err => {
@@ -9286,214 +9303,313 @@ export class WalletService {
   }
 
   createAppreciationWeekly(cb) {
-    let listDevice;
-    let listDeviceLow = [],
-      listDeviceMedium = [],
-      listDeviceHigh = [];
-    const listCodeWeeklyLowCsv = [
-      {
-        id: '2104',
-        name: 'yfsFb',
-        claimCode: 'lixi_CpfVGvasvXPdH',
-        amount: '1',
-        package: '2g',
-        barcode: '00000002104',
-        claimed: 'false'
-      }
-    ];
-    const listCodeWeeklyMediumCsv = [];
-    const listCodeWeeklyHighCsv = [];
-    // const listCodeWeeklyLow = [
-    //   {
-    //     "id": "2104",
-    //     "name": "yfsFb",
-    //     "claimCode": "lixi_CpfVGvasvXPdH",
-    //     "amount": "1",
-    //     "package": "2g",
-    //     "barcode": "00000002104",
-    //     "claimed": "false"
-    //   },
-    //   {
-    //     "id": "2105",
-    //     "name": "x5Cxa",
-    //     "claimCode": "lixi_Pcanoc6ds8ndJ",
-    //     "amount": "1",
-    //     "package": "2g",
-    //     "barcode": "00000002105",
-    //     "claimed": "false"
-    //   }
-    // ]
-    // const listCodeWeeklyMedium = [
-    //   {
-    //     "id": "2104",
-    //     "name": "yfsFb",
-    //     "claimCode": "lixi_CpfvachXPdH",
-    //     "amount": "1",
-    //     "package": "2g",
-    //     "barcode": "00000002104",
-    //     "claimed": "false"
-    //   },
-    //   {
-    //     "id": "2105",
-    //     "name": "x5Cxa",
-    //     "claimCode": "lixi_PQasfcds8ndJ",
-    //     "amount": "1",
-    //     "package": "2g",
-    //     "barcode": "00000002105",
-    //     "claimed": "false"
-    //   }
-    // ]
-    // const listCodeWeeklyHigh = [
-    //   {
-    //     "id": "2104",
-    //     "name": "yfsFb",
-    //     "claimCode": "lixi_CpfakhXPdH",
-    //     "amount": "1",
-    //     "package": "2g",
-    //     "barcode": "00000002104",
-    //     "claimed": "false"
-    //   },
-    // ]
-
+    // Filter to get list Device active (countNumber > 0)
     const opts = {
       isActive: true
     };
 
-    async.series(
+    let newListDeviceLow, newListDeviceMedium, newListDeviceHigh;
+
+    async.waterfall(
       [
         next => {
-          this.storage.fetchAllLogDevice(opts, (err, d) => {
+          this.storage.fetchAllLogDevice(opts, (err, listDevice) => {
             if (err) {
               return next(err);
             }
-            listDevice = d;
-            next();
+            if (listDevice) return next(null, listDevice);
           });
         },
-        next => {
-          if (listDevice) {
-            listDevice.forEach(device => {
-              if (device.countNumber > 0 && device.countNumber <= 3) {
-                listDeviceLow.push(device);
-              } else if (device.countNumber > 3 && device.countNumber <= 6) {
-                listDeviceMedium.push(device);
-              } else if (device.countNumber === 7) {
-                listDeviceHigh.push(device);
-              }
-            });
-            next();
-          }
-        },
-        next => {
-          if (listDeviceLow.length === listCodeWeeklyLowCsv.length) {
-            listDeviceLow.map((device, i) => {
-              listCodeWeeklyLowCsv.map((voucher, j) => {
-                if (i == j && voucher.claimed === 'false') {
-                  let appreciation = Appreciation.create({
-                    deviceId: device.deviceId,
-                    claimCode: voucher.claimCode,
-                    type: 'Weekly'
-                  });
-                  this.storage.storeAppreciation(appreciation, (err, result) => {
-                    if (err) {
-                      console.log('Not create appreciation!!!', err);
-                    }
-                    if (result) {
-                      console.log('Create appreciation successfully.');
-                    }
-                  });
-                }
-              });
-            });
-          } else {
-            cb('Number code of LOW not enough to device');
-          }
-
-          if (listDeviceMedium.length === listCodeWeeklyMediumCsv.length) {
-            listDeviceMedium.map((device, i) => {
-              listCodeWeeklyMediumCsv.map((voucher, j) => {
-                if (i == j && voucher.claimed === 'false') {
-                  let appreciation = Appreciation.create({
-                    deviceId: device.deviceId,
-                    claimCode: voucher.claimCode,
-                    type: 'Weekly'
-                  });
-                  this.storage.storeAppreciation(appreciation, (err, result) => {
-                    if (err) {
-                      console.log('Not create appreciation!!!', err);
-                    }
-                    if (result) {
-                      console.log('Create appreciation successfully.');
-                    }
-                  });
-                }
-              });
-            });
-          } else {
-            cb('Number code of MEDIUM not enough to device');
-          }
-
-          if (listDeviceHigh.length === listCodeWeeklyHighCsv.length) {
-            listDeviceHigh.map((device, i) => {
-              listCodeWeeklyHighCsv.map((voucher, j) => {
-                if (i == j && voucher.claimed === 'false') {
-                  let appreciation = Appreciation.create({
-                    deviceId: device.deviceId,
-                    claimCode: voucher.claimCode,
-                    type: 'Weekly'
-                  });
-                  this.storage.storeAppreciation(appreciation, (err, appreciationInfo) => {
-                    if (err) {
-                      console.log('Not create appreciation!!!', err);
-                    }
-                    if (appreciationInfo) {
-                      console.log('Create appreciation successfully.');
-                    }
-                  });
-                }
-              });
-            });
-          } else {
-            cb('Number code of HIGH not enough to device');
-          }
-          next();
-        },
-        next => {
-          this.storage.resetCountNumberLogDevice((err, rs) => {
-            if (err) return cb(err);
-            if (rs) {
-              return cb(null, listDevice);
+        (listDevice, next) => {
+          let listDeviceLow = [], listDeviceMedium = [], listDeviceHigh = [];
+          let listCodeWeeklyLowCsv = [], listCodeWeeklyMediumCsv = [], listCodeWeeklyHighCsv = [];
+          // After filter, have list Device => group list device by countNumber.
+          listDevice.forEach(device => {
+            if (device.countNumber > 0 && device.countNumber <= 3) {
+              listDeviceLow.push(device);
+            } else if (device.countNumber > 3 && device.countNumber <= 6) {
+              listDeviceMedium.push(device);
+            } else if (device.countNumber === 7) {
+              listDeviceHigh.push(device);
             }
           });
+          // Read file csv => Have a group claim code data.
+          this.readDataCvsWeekly((err, listClaimCodeCsv) => {
+            if (err) return next(err);
+            if (listClaimCodeCsv) {
+              listCodeWeeklyLowCsv = listClaimCodeCsv[0];
+              listCodeWeeklyMediumCsv = listClaimCodeCsv[1];
+              listCodeWeeklyHighCsv = listClaimCodeCsv[2];
+              
+              if (listDeviceLow.length === listCodeWeeklyLowCsv.length) {
+                newListDeviceLow = _.clone(listDeviceLow);
+                newListDeviceLow.map((device, i) => {
+                  listCodeWeeklyLowCsv.map((lixi, j) => {
+                    if (i == j && lixi?.claimed === 'false') {
+                      Object.assign(device, lixi);
+                    }
+                  });
+                });
+              } else {
+                return next(new Error ('List LOW device & List LOW claim code not equal'));
+              }
+              if (listDeviceMedium.length === listCodeWeeklyMediumCsv.length) {
+                newListDeviceMedium = _.clone(listDeviceMedium);
+                newListDeviceMedium.map((device, i) => {
+                  listCodeWeeklyMediumCsv.map((lixi, j) => {
+                    if (i == j && lixi?.claimed === 'false') {
+                      Object.assign(device, lixi);
+                    }
+                  });
+                });
+              } else {
+                return next(new Error ('List MEDIUM device & List MEDIUM claim code not equal'));
+              }
+              if (listDeviceHigh.length === listCodeWeeklyHighCsv.length) {
+                newListDeviceHigh = _.clone(listDeviceHigh);
+                newListDeviceHigh.map((device, i) => {
+                  listCodeWeeklyHighCsv.map((lixi, j) => {
+                    if (i == j && lixi?.claimed === 'false') {
+                      Object.assign(device, lixi);
+                    }
+                  });
+                });
+              } else {
+                return next(new Error('List HIGH device & List HIGH claim code not equal'));
+              }
+              next(null, newListDeviceLow, newListDeviceMedium, newListDeviceHigh);
+            }
+          })
+        },
+        (newListDeviceLow, newListDeviceMedium, newListDeviceHigh, next) => {
+          let appreciationListLow = [], appreciationListMedium = [], appreciationListHigh = [];
+          newListDeviceLow.map(deviceLow => {
+            let appreciation = Appreciation.create({
+              deviceId: deviceLow?.deviceId,
+              claimCode: deviceLow?.claimCode,
+              type: 'Weekly'
+            });
+            appreciationListLow.push(appreciation);
+          });
+          newListDeviceMedium.map(deviceLow => {
+            let appreciation = Appreciation.create({
+              deviceId: deviceLow?.deviceId,
+              claimCode: deviceLow?.claimCode,
+              type: 'Weekly'
+            });
+            appreciationListMedium.push(appreciation);
+          });
+          newListDeviceHigh.map(deviceLow => {
+            let appreciation = Appreciation.create({
+              deviceId: deviceLow?.deviceId,
+              claimCode: deviceLow?.claimCode,
+              type: 'Weekly'
+            });
+            appreciationListHigh.push(appreciation);
+          });
+          this.storeAppreciationWeekly(appreciationListLow, appreciationListMedium, appreciationListHigh, next);
+        },
+        (countCreatedAppreciation, next) => {
+          if (newListDeviceLow.length > 0) {
+            async.each(
+              newListDeviceLow,
+              (deviceLow: any, next) => {
+                const notification = {
+                  to: deviceLow.token,
+                  priority: 'high',
+                  restricted_package_name: deviceLow.packageName,
+                  data: {
+                    title: 'Thanks for checking in !',
+                    body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                    claimCode: deviceLow.claimCode,
+                    status: deviceLow.status,
+                    createdOn: deviceLow.createdOn,
+                    type: deviceLow.type,
+                    notification: {
+                      title: '',
+                      body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                      sound: 'default',
+                      click_action: 'FCM_PLUGIN_ACTIVITY',
+                      icon: 'fcm_push_icon'
+                    }
+                  }
+                };
+                this.pushNotifications._makeRequest(notification, (err, response) => {
+                  if (err) logger.error('ERROR:' + err);
+                  if (response) {
+                    //                      logger.debug('Request status:  ' + response.statusCode);
+                    //                      logger.debug('Request message: ' + response.statusMessage);
+                    //                      logger.debug('Request body:  ' + response.request.body);
+                  }
+                  next();
+                });
+              },
+              err => {
+                return next(err);
+              }
+            );
+          }
+          if (newListDeviceMedium.length > 0) {
+            async.each(
+              newListDeviceMedium,
+              (deviceMedium: any, next) => {
+                const notification = {
+                  to: deviceMedium.token,
+                  priority: 'high',
+                  restricted_package_name: deviceMedium.packageName,
+                  data: {
+                    title: 'Thanks for checking in !',
+                    body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                    claimCode: deviceMedium.claimCode,
+                    status: deviceMedium.status,
+                    createdOn: deviceMedium.createdOn,
+                    type: deviceMedium.type,
+                    notification: {
+                      title: '',
+                      body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                      sound: 'default',
+                      click_action: 'FCM_PLUGIN_ACTIVITY',
+                      icon: 'fcm_push_icon'
+                    }
+                  }
+                };
+                this.pushNotifications._makeRequest(notification, (err, response) => {
+                  if (err) logger.error('ERROR:' + err);
+                  if (response) {
+                    //                      logger.debug('Request status:  ' + response.statusCode);
+                    //                      logger.debug('Request message: ' + response.statusMessage);
+                    //                      logger.debug('Request body:  ' + response.request.body);
+                  }
+                  next();
+                });
+              },
+              err => {
+                return next(err);
+              }
+            );
+          }
+          if (newListDeviceHigh.length > 0) {
+            async.each(
+              newListDeviceHigh,
+              (deviceHigh: any, next) => {
+                const notification = {
+                  to: deviceHigh.token,
+                  priority: 'high',
+                  restricted_package_name: deviceHigh.packageName,
+                  data: {
+                    title: 'Thanks for checking in !',
+                    body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                    claimCode: deviceHigh.claimCode,
+                    status: deviceHigh.status,
+                    createdOn: deviceHigh.createdOn,
+                    type: deviceHigh.type,
+                    notification: {
+                      title: '',
+                      body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                      sound: 'default',
+                      click_action: 'FCM_PLUGIN_ACTIVITY',
+                      icon: 'fcm_push_icon'
+                    }
+                  }
+                };
+                this.pushNotifications._makeRequest(notification, (err, response) => {
+                  if (err) logger.error('ERROR:' + err);
+                  if (response) {
+                    //                      logger.debug('Request status:  ' + response.statusCode);
+                    //                      logger.debug('Request message: ' + response.statusMessage);
+                    //                      logger.debug('Request body:  ' + response.request.body);
+                  }
+                  next();
+                });
+              },
+              err => {
+                return next(err);
+              }
+            );
+          }
+          return cb(null, `Create successfully appreciation WEEKLY with: ${countCreatedAppreciation} appreciation`);
         }
       ],
       err => {
-        if (err) return cb(err);
-        if (!listDevice) {
-          return cb(new Error('Could not get list device'));
+        if (err) {
+          logger.error('An error ocurred generating appreciation weekly:' + err);
         }
-
-        return cb(null, listDevice);
+        return cb(err);
       }
     );
   }
 
-  resetCountNumberLogDevice(cb) {
-    this.storage.resetCountNumberLogDevice((err, rs) => {
-      if (err) return cb(err);
-      if (rs) {
-        return cb(null, rs);
+  storeAppreciationWeekly(listAppreciationLow, listAppreciationMedium, listAppreciationHigh, cb) {
+    let countCreatedAppreciation = 0;
+    async.series(
+      [
+        next => {
+          if (listAppreciationLow.length > 0) {
+            this.storage.storeManyAppreciation(listAppreciationLow, (err, result) => {
+              if (err) {
+                return next(new Error('Create appreciation weekly LOW error!!!'));
+              }
+              if (result) {
+                countCreatedAppreciation += result.insertedCount;
+                return next();
+              }
+            });
+          } else {
+            next();
+          }
+        },
+        next => {
+          if (listAppreciationMedium.length > 0) {
+            this.storage.storeManyAppreciation(listAppreciationMedium, (err, result) => {
+              if (err) {
+                return next(new Error('Create appreciation weekly MEDIUM error!!!'));
+              }
+              if (result) {
+                countCreatedAppreciation += result.insertedCount;
+                return next();
+              }
+            });
+          } else {
+            return next();
+          }
+        },
+        next => {
+          if (listAppreciationHigh.length > 0) {
+            this.storage.storeManyAppreciation(listAppreciationHigh, (err, result) => {
+              if (err) {
+                return next(new Error('Create appreciation weekly HIGH error!!!'));
+              }
+              if (result) {
+                countCreatedAppreciation += result.insertedCount;
+                return next();
+              }
+            });
+          } else {
+            return next();
+          }
+        },
+        next => {
+          if (countCreatedAppreciation !== 0) {
+            this.storage.resetCountNumberLogDevice((err, rs) => {
+              if (err) return cb(err);
+              if (rs) {
+                return cb(null, countCreatedAppreciation);
+              }
+            });
+          } else {
+            return cb(null, 'Weekly appreciation is empty!!')
+          }
+        }
+      ],
+      err => {
+        if (err) return cb(err);
       }
-    });
+    )
   }
 
-  pushNotificationAppreciation(token, packageName, appreciationInfo, cb) {
-    let title = appreciationInfo.type === 'Monthly' ? 'Welcome to AbcPay wallet !' : 'Thanks for checking in !';
-
-    let body =
-      appreciationInfo.type === 'Monthly'
-        ? 'Thanks for using our app. Here our small appreciation to you to start using the app.'
-        : 'Here a small gift for checking around! Give it to someone who is in need.';
+  pushNotificationAppreciationMonthly(token, packageName, appreciationInfo, cb) {
+    let title = 'Welcome to AbcPay wallet !';
+    let body = 'Here a small gift for checking around! Give it to someone who is in need.'
 
     const notification = {
       to: token,
@@ -9521,7 +9637,9 @@ export class WalletService {
     });
   }
 
-  readDataCvs(cb) {
+  readDataCvsMonthly(cb) {
+    const csvFilePath = `${__dirname}/csv/appreciation_monthly.csv`;
+
     csv()
       .fromFile(csvFilePath)
       .then(jsonObj => {
@@ -9530,6 +9648,60 @@ export class WalletService {
       .catch(err => {
         return cb(err);
       });
+  }
+
+  readDataCvsWeekly(cb) {
+    const csvFilePathLow = `${__dirname}/csv/appreciation_weekly_low.csv`;
+    const csvFilePathMedium = `${__dirname}/csv/appreciation_weekly_medium.csv`;
+    const csvFilePathHigh = `${__dirname}/csv/appreciation_weekly_high.csv`;
+
+    let listClaimCode = [];
+
+    async.series(
+      [
+        next => {
+          csv()
+          .fromFile(csvFilePathMedium)
+          .then(jsonArrayLow => {
+            listClaimCode.push(jsonArrayLow);
+            next();
+          })
+          .catch(err => {
+            return next(err);
+          });
+        },
+        next => {
+          csv()
+          .fromFile(csvFilePathMedium)
+          .then(jsonArrayMedium => {
+            listClaimCode.push(jsonArrayMedium);
+            next();
+          })
+          .catch(err => {
+            return next(err);
+          });
+        },
+        next => {
+          csv()
+          .fromFile(csvFilePathHigh)
+          .then(jsonArrayHigh => {
+            listClaimCode.push(jsonArrayHigh);
+            next();
+          })
+          .catch(err => {
+            return next(err);
+          });
+        },
+        next => {
+          return cb(null, listClaimCode);
+        }
+      ],
+      err => {
+        if (err) return cb(err);
+        if (!listClaimCode) return cb('List claim code weekly empty!');
+        return cb(null, listClaimCode);
+      }
+    );
   }
 
   /**
