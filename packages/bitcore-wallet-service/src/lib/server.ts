@@ -7856,36 +7856,32 @@ export class WalletService {
     }
   }
 
-  updateStatusSlpTxs(inTxs, lastTxsChronik, wallet, chronikClient): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      const validTxs = [];
-      _.forEach(inTxs, item => {
-        const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
-
-        if (txsSlp && txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
-          const txDetailFromChronik = chronikClient.tx(inTxs.txid);
-          item.isSlpToken = true;
-          item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
-          item.tokenType = txsSlp.slpTxData.slpMeta.tokenType;
-          item.txType = txsSlp.slpTxData.slpMeta.txType;
-          item.inputAddresses = _.uniq(
-            _.map(txsSlp.inputs, item => {
-              return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
-            })
-          );
-          item.amountTokenUnit =
-            txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
-              ? Number(txsSlp.outputs[1].slpToken.amount)
-              : undefined;
-          item.burnAmountToken = this._getBurnAmountToken(txsSlp.inputs, txsSlp.slpTxData.slpMeta.txType);
-          if (item.burnAmountToken > 0) {
-            item.txType = 'BURN';
-          }
+  updateStatusSlpTxs(inTxs, lastTxsChronik, wallet) {
+    const validTxs = [];
+    _.forEach(inTxs, item => {
+      const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
+      if (txsSlp && txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
+        item.isSlpToken = true;
+        item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
+        item.tokenType = txsSlp.slpTxData.slpMeta.tokenType;
+        item.txType = txsSlp.slpTxData.slpMeta.txType;
+        item.inputAddresses = _.uniq(
+          _.map(txsSlp.inputs, item => {
+            return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
+          })
+        );
+        item.amountTokenUnit =
+          txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
+            ? Number(txsSlp.outputs[1].slpToken.amount)
+            : undefined;
+        item.burnAmountToken = this._getBurnAmountToken(txsSlp.inputs, txsSlp.slpTxData.slpMeta.txType);
+        if (item.burnAmountToken > 0) {
+          item.txType = 'BURN';
         }
-        validTxs.push(item);
-      });
-      return resolve(validTxs);
+      }
+      validTxs.push(item);
     });
+    return validTxs;
   }
 
   _getBurnAmountToken(inputs: any[], type): number {
@@ -8021,12 +8017,7 @@ export class WalletService {
                     await Promise.all(promiseList).then(async lastTxsChronik => {
                       lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
                       if (lastTxsChronik.length > 0) {
-                        inTxs = await this.updateStatusSlpTxs(
-                          _.cloneDeep(inTxs),
-                          lastTxsChronik,
-                          wallet,
-                          chronikClient
-                        );
+                        inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
                       }
                     });
                   } catch (err) {
