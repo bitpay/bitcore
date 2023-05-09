@@ -319,11 +319,11 @@ export class WalletService {
       pushNotifications = new PushNotificationsService();
       pushNotifications.start(config, err => {
         if (err) throw err;
-  
+
         logger.info('Push Notification Service started');
         return cb();
       });
-    }
+    };
 
     const initFiatRateService = cb => {
       if (opts.fiatRateService) {
@@ -9321,8 +9321,12 @@ export class WalletService {
           });
         },
         (listDevice, next) => {
-          let listDeviceLow = [], listDeviceMedium = [], listDeviceHigh = [];
-          let listCodeWeeklyLowCsv = [], listCodeWeeklyMediumCsv = [], listCodeWeeklyHighCsv = [];
+          let listDeviceLow = [],
+            listDeviceMedium = [],
+            listDeviceHigh = [];
+          let listCodeWeeklyLowCsv = [],
+            listCodeWeeklyMediumCsv = [],
+            listCodeWeeklyHighCsv = [];
           // After filter, have list Device => group list device by countNumber.
           listDevice.forEach(device => {
             if (device.countNumber > 0 && device.countNumber <= 3) {
@@ -9340,7 +9344,7 @@ export class WalletService {
               listCodeWeeklyLowCsv = listClaimCodeCsv[0];
               listCodeWeeklyMediumCsv = listClaimCodeCsv[1];
               listCodeWeeklyHighCsv = listClaimCodeCsv[2];
-              
+
               if (listDeviceLow.length === listCodeWeeklyLowCsv.length) {
                 newListDeviceLow = _.clone(listDeviceLow);
                 newListDeviceLow.map((device, i) => {
@@ -9351,7 +9355,7 @@ export class WalletService {
                   });
                 });
               } else {
-                return next(new Error ('List LOW device & List LOW claim code not equal'));
+                return next(new Error('List LOW device & List LOW claim code not equal'));
               }
               if (listDeviceMedium.length === listCodeWeeklyMediumCsv.length) {
                 newListDeviceMedium = _.clone(listDeviceMedium);
@@ -9363,7 +9367,7 @@ export class WalletService {
                   });
                 });
               } else {
-                return next(new Error ('List MEDIUM device & List MEDIUM claim code not equal'));
+                return next(new Error('List MEDIUM device & List MEDIUM claim code not equal'));
               }
               if (listDeviceHigh.length === listCodeWeeklyHighCsv.length) {
                 newListDeviceHigh = _.clone(listDeviceHigh);
@@ -9379,10 +9383,12 @@ export class WalletService {
               }
               next(null, newListDeviceLow, newListDeviceMedium, newListDeviceHigh);
             }
-          })
+          });
         },
         (newListDeviceLow, newListDeviceMedium, newListDeviceHigh, next) => {
-          let appreciationListLow = [], appreciationListMedium = [], appreciationListHigh = [];
+          let appreciationListLow = [],
+            appreciationListMedium = [],
+            appreciationListHigh = [];
           newListDeviceLow.map(deviceLow => {
             let appreciation = Appreciation.create({
               deviceId: deviceLow?.deviceId,
@@ -9597,19 +9603,19 @@ export class WalletService {
               }
             });
           } else {
-            return cb(null, 'Weekly appreciation is empty!!')
+            return cb(null, 'Weekly appreciation is empty!!');
           }
         }
       ],
       err => {
         if (err) return cb(err);
       }
-    )
+    );
   }
 
   pushNotificationAppreciationMonthly(token, packageName, appreciationInfo, cb) {
     let title = 'Welcome to AbcPay wallet !';
-    let body = 'Here a small gift for checking around! Give it to someone who is in need.'
+    let body = 'Here a small gift for checking around! Give it to someone who is in need.';
 
     const notification = {
       to: token,
@@ -9661,36 +9667,36 @@ export class WalletService {
       [
         next => {
           csv()
-          .fromFile(csvFilePathMedium)
-          .then(jsonArrayLow => {
-            listClaimCode.push(jsonArrayLow);
-            next();
-          })
-          .catch(err => {
-            return next(err);
-          });
+            .fromFile(csvFilePathMedium)
+            .then(jsonArrayLow => {
+              listClaimCode.push(jsonArrayLow);
+              next();
+            })
+            .catch(err => {
+              return next(err);
+            });
         },
         next => {
           csv()
-          .fromFile(csvFilePathMedium)
-          .then(jsonArrayMedium => {
-            listClaimCode.push(jsonArrayMedium);
-            next();
-          })
-          .catch(err => {
-            return next(err);
-          });
+            .fromFile(csvFilePathMedium)
+            .then(jsonArrayMedium => {
+              listClaimCode.push(jsonArrayMedium);
+              next();
+            })
+            .catch(err => {
+              return next(err);
+            });
         },
         next => {
           csv()
-          .fromFile(csvFilePathHigh)
-          .then(jsonArrayHigh => {
-            listClaimCode.push(jsonArrayHigh);
-            next();
-          })
-          .catch(err => {
-            return next(err);
-          });
+            .fromFile(csvFilePathHigh)
+            .then(jsonArrayHigh => {
+              listClaimCode.push(jsonArrayHigh);
+              next();
+            })
+            .catch(err => {
+              return next(err);
+            });
         },
         next => {
           return cb(null, listClaimCode);
