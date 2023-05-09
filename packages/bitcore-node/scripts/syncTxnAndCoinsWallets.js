@@ -15,7 +15,7 @@ function usage(err) {
     console.log(err);
     console.log('');
   }
-  console.log('Usage: ./syncTxnAndCoinsWallets.js [options] <chain> <network> <startBlockHeight> <endBlockHeight>');
+  console.log('Usage: ./syncTxnAndCoinsWallets.js [options]');
   console.log('');
   console.log('  --chain <value>          BTC, BCH, ETH, etc.');
   console.log('  --network <value>        mainnet, testnet, or regtest');
