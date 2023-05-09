@@ -7874,10 +7874,37 @@ export class WalletService {
           txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
             ? Number(txsSlp.outputs[1].slpToken.amount)
             : undefined;
+        item.burnAmountToken = this._getBurnAmountToken(txsSlp.inputs, txsSlp.slpTxData.slpMeta.txType);
+        if (item.burnAmountToken > 0) {
+          item.txType = 'BURN';
+        }
       }
       validTxs.push(item);
     });
     return validTxs;
+  }
+
+  _getBurnAmountToken(inputs: any[], type): number {
+    let burnAmount = 0;
+    if (!!type && type === 'BURN') {
+      inputs.forEach(input => {
+        if (typeof input.slpToken !== 'undefined' && input.slpToken.amount && input.slpToken.amount !== '0') {
+          burnAmount = input.slpToken.amount;
+        }
+      });
+    } else if (!!type && type === 'SEND') {
+      inputs.forEach(input => {
+        if (
+          typeof input.slpBurn !== 'undefined' &&
+          input.slpBurn.token &&
+          input.slpBurn.token.amount &&
+          input.slpBurn.token.amount !== '0'
+        ) {
+          burnAmount += Number(input.slpBurn.token.amount);
+        }
+      });
+    }
+    return Number(burnAmount);
   }
 
   getTxHistoryV8(bc, wallet, opts, skip, limit, cb) {
@@ -7986,6 +8013,7 @@ export class WalletService {
                         this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
                       );
                     });
+                    const chronikClient = ChainService.getChronikClient(wallet.coin);
                     await Promise.all(promiseList).then(async lastTxsChronik => {
                       lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
                       if (lastTxsChronik.length > 0) {
