@@ -8045,7 +8045,6 @@ export class WalletService {
             );
           });
         },
-
         next => {
           // Case 1.
           //            t -->
@@ -8167,7 +8166,70 @@ export class WalletService {
               return next();
             }
           }
+          return next();
+        },
+        next => {
+          if (this._isSupportToken(wallet)) {
+            const chronikClient = ChainService.getChronikClient(wallet.coin);
+            let filterResultTxs = _.filter(resultTxs, tx => !tx.burnAmountToken);
+            if (filterResultTxs.length > 0) {
+              const listTxDetailFromChronik = _.map(filterResultTxs, async tx => {
+                const txDetailFromChronik = chronikClient.tx(tx.txid);
+                return txDetailFromChronik;
+              });
 
+              return Promise.all(listTxDetailFromChronik).then(listTx => {
+                listTx = _.compact(listTx);
+                if (!!listTx && listTx.length > 0) {
+                  // remove undefined, false value from list txs return from chronik
+                  _.each(listTx, async txDetail => {
+                    const tx = _.find(
+                      filterResultTxs,
+                      tx =>
+                        tx.txid === txDetail.txid &&
+                        !!txDetail &&
+                        !!txDetail.slpTxData &&
+                        !!txDetail.slpTxData.slpMeta &&
+                        !!txDetail.slpTxData.slpMeta.txType
+                    );
+                    if (!!tx) {
+                      let burnAmount = 0;
+                      const type = txDetail.slpTxData.slpMeta.txType;
+                      const inputs = txDetail.inputs;
+                      if (!!type && type === 'BURN') {
+                        inputs.forEach(input => {
+                          if (
+                            typeof input.slpToken !== 'undefined' &&
+                            input.slpToken.amount &&
+                            input.slpToken.amount !== '0'
+                          ) {
+                            burnAmount = Number(input.slpToken.amount);
+                          }
+                        });
+                      } else if (!!type && type === 'SEND') {
+                        inputs.forEach(input => {
+                          if (
+                            typeof input.slpBurn !== 'undefined' &&
+                            input.slpBurn.token &&
+                            input.slpBurn.token.amount &&
+                            input.slpBurn.token.amount !== '0'
+                          ) {
+                            burnAmount += Number(input.slpBurn.token.amount);
+                          }
+                        });
+                      }
+                      tx.burnAmountToken = burnAmount;
+                      if (tx.burnAmountToken > 0) {
+                        tx.txType = 'BURN';
+                      }
+                    }
+                  });
+                  return next();
+                }
+              });
+            }
+            return next();
+          }
           return next();
         },
         next => {
