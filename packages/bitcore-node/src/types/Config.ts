@@ -57,7 +57,7 @@ export interface ConfigType {
   dbPort: string;
   dbUser: string;
   dbPass: string;
-  dbReadPreference: string;
+  dbReadPreference?: string;
   numWorkers: number;
 
   chains: {
