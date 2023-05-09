@@ -1648,7 +1648,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/device/update', (req, res) => {
+    router.put('/v3/device/update', (req, res) => {
       let server;
       try {
         server = getServer(req, res);
