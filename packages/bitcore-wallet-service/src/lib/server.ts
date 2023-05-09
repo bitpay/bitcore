@@ -8228,7 +8228,6 @@ export class WalletService {
                 }
               });
             }
-            return next();
           }
           return next();
         },
