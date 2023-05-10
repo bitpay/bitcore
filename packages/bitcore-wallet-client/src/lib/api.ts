@@ -892,7 +892,8 @@ export class API extends EventEmitter {
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
   // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
-  // * @param {Boolean} opts.isSlpToken - path 1899 suppport SLP Token
+  // * @param {Boolean} opts.isSlpToken - path 1899, 899 suppport SLP Token
+  // * @param {Boolean} opts.isPath899 - path 899 suppport SLP Token
   // * @param {Boolean} opts.isFromRaipay - path 145 suppport SLP Token
   // * @param cb
   // * @return {undefined}
@@ -944,7 +945,8 @@ export class API extends EventEmitter {
       usePurpose48: n > 1,
       useNativeSegwit: !!opts.useNativeSegwit,
       isSlpToken: !!opts.isSlpToken,
-      isFromRaipay: !!opts.isFromRaipay
+      isFromRaipay: !!opts.isFromRaipay,
+      isPath899: !!opts.isPath899
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
@@ -2875,7 +2877,8 @@ export class API extends EventEmitter {
         account: opts.account,
         n: opts.n,
         isSlpToken: opts.isSlpToken,
-        isFromRaipay: opts.isFromRaipay
+        isFromRaipay: opts.isFromRaipay,
+        isPath899: opts.isPath899
       });
 
       if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
@@ -2985,8 +2988,6 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
-        ['xec', 'livenet'],
-        ['xec', 'testnet'],
         ['xpi', 'livenet'],
         ['xpi', 'testnet'],
         ['ltc', 'testnet'],
@@ -2995,9 +2996,12 @@ export class API extends EventEmitter {
         ['bch', 'livenet', true],
         ['xpi', 'livenet', true],
         ['xpi', 'livenet', false, true],
-        ['xec', 'livenet', true],
+        ['xec', 'livenet', false, true, false, true], // is path 899 slptoken
+        ['xec', 'livenet', false, true, true], // is from raipay
         ['xec', 'livenet', false, true],
-        ['xec', 'livenet', false, true, true]
+        ['xec', 'livenet', true],
+        ['xec', 'livenet'],
+        ['xec', 'testnet']
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig
@@ -3037,7 +3041,8 @@ export class API extends EventEmitter {
             account: 0,
             n: x[2] ? 2 : 1,
             isSlpToken: !!x[3],
-            isFromRaipay: !!x[4]
+            isFromRaipay: !!x[4],
+            isPath899: !!x[5]
           };
           // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
           // TODO OPTI: do not scan accounts if XX
