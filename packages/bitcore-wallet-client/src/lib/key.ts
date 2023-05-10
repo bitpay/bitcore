@@ -392,9 +392,9 @@ export class Key {
     } else if (opts.coin == 'xec') {
       coinCode = '899';
       if (opts.isSlpToken) {
-        if(opts.isPath899){
+        if (opts.isPath899) {
           coinCode = '899';
-        } else{
+        } else {
           coinCode = '1899';
         }
         if (opts.isFromRaipay) {
