@@ -121,7 +121,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function() {};
+    cb = cb || function () {};
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -2922,9 +2922,8 @@ export class API extends EventEmitter {
                 return;
               }
               log.info(`Importing token: ${token.name}`);
-              const tokenCredentials = client.credentials.getTokenCredentials(
-                token
-              );
+              const tokenCredentials =
+                client.credentials.getTokenCredentials(token);
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
@@ -2937,14 +2936,13 @@ export class API extends EventEmitter {
               log.info(
                 `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
               );
-              const multisigEthCredentials = client.credentials.getMultisigEthCredentials(
-                {
+              const multisigEthCredentials =
+                client.credentials.getMultisigEthCredentials({
                   walletName: info.walletName,
                   multisigContractAddress: info.multisigContractAddress,
                   n: info.n,
                   m: info.m
-                }
-              );
+                });
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
@@ -2957,9 +2955,8 @@ export class API extends EventEmitter {
                     return;
                   }
                   log.info(`Importing multisig token: ${token.name}`);
-                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(
-                    token
-                  );
+                  const tokenCredentials =
+                    multisigEthClient.credentials.getTokenCredentials(token);
                   let tokenClient = _.cloneDeep(multisigEthClient);
                   tokenClient.credentials = tokenCredentials;
                   clients.push(tokenClient);
@@ -2991,8 +2988,6 @@ export class API extends EventEmitter {
         ['xrp', 'testnet'],
         ['doge', 'livenet'],
         ['doge', 'testnet'],
-        ['xec', 'livenet'],
-        ['xec', 'testnet'],
         ['xpi', 'livenet'],
         ['xpi', 'testnet'],
         ['ltc', 'testnet'],
@@ -3001,10 +2996,12 @@ export class API extends EventEmitter {
         ['bch', 'livenet', true],
         ['xpi', 'livenet', true],
         ['xpi', 'livenet', false, true],
-        ['xec', 'livenet', true],
+        ['xec', 'livenet', false, true, false, true], // is path 899 slptoken
+        ['xec', 'livenet', false, true, true], // is from raipay
         ['xec', 'livenet', false, true],
-        ['xec', 'livenet', false, true, true],
-        ['xec', 'livenet', false, true, true, true]
+        ['xec', 'livenet', true],
+        ['xec', 'livenet'],
+        ['xec', 'testnet']
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig
