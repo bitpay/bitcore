@@ -5086,45 +5086,32 @@ export class WalletService {
             this.storage.updateMerchantOrder(merchantOrder, err => {
               const actualAmountConverted =
                 !!error.code && error.code === 'NOT_STABLE_RATE'
-                  ? ' :: Actual amount convert on server : ' +
-                    merchantOrder.amountCalculated +
-                    ' ' +
-                    config.conversion.tokenCodeUnit
+                  ? `:: Actual amount convert on server : ${merchantOrder.amountCalculated} ${config.conversion.tokenCodeUnit}`
                   : '';
               const stringConvert =
                 !!merchantOrder.amountFrom && merchantOrder.amountFrom > 0
-                  ? ' :: Not able to convert ' +
-                    merchantOrder.amountFrom +
-                    ' ' +
-                    merchantOrder.coin.toUpperCase() +
-                    ' to ' +
-                    merchantOrder.amount +
-                    ' ' +
-                    config.conversion.tokenCodeUnit
+                  ? `:: Not able to convert ${merchantOrder.amountFrom} ${merchantOrder.coin.toUpperCase()} to ${
+                      merchantOrder.amount
+                    } ${config.conversion.tokenCodeUnit}`
                   : '';
               // send message to channel Failure Convert Alert
+              const failMessage = `${merchantOrder.userAddress} :: Elps amount: ${merchantOrder.amount.toFixed(3)} ${
+                config.conversion.tokenCodeUnit
+              } ${stringConvert} ${actualAmountConverted}`;
               bot.sendMessage(
                 config.telegram.channelFailId,
-                merchantOrder.userAddress +
-                  ' :: Elps amount: ' +
-                  merchantOrder.amount.toFixed(3) +
-                  ' ' +
-                  config.conversion.tokenCodeUnit +
-                  merchantOrder.amountFrom +
-                  stringConvert +
-                  actualAmountConverted +
+                failMessage +
                   '\n\n' +
                   this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
                 { parse_mode: 'HTML' }
               );
 
               // send message to channel Debug Convert Alert
+              const dateStr = new Date().toUTCString();
+              const debugMessage = `${dateStr} :: error: ${merchantOrder.error} ${stringConvert} ${actualAmountConverted}`;
               bot.sendMessage(
                 config.telegram.channelDebugId,
-                new Date().toUTCString() +
-                  ' ::  error: ' +
-                  merchantOrder.error +
-                  stringConvert +
+                debugMessage +
                   '\n\n' +
                   this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
                 { parse_mode: 'HTML' }
