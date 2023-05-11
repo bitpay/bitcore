@@ -733,7 +733,8 @@ export class Storage {
           status: merchantOrder.status,
           txIdMerchantPayment: merchantOrder.txIdMerchantPayment,
           lastModified: new Date(),
-          error: merchantOrder.error
+          error: merchantOrder.error,
+          amountCalculated: merchantOrder.amountCalculated
         }
       },
       {

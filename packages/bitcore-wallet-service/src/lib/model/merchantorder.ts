@@ -39,6 +39,8 @@ export interface IMerchantOrder {
   userEmailAddress: string;
   qpayInfoForEmail: IQpayInfoForEmail;
   isToken: boolean;
+  amountFrom: number;
+  amountCalculated?: number;
 }
 
 export class MerchantOrder implements IMerchantOrder {
@@ -63,6 +65,9 @@ export class MerchantOrder implements IMerchantOrder {
   isPaidByUser: boolean;
   userEmailAddress: string;
   isToken: boolean;
+  amountFrom: number;
+  amountCalculated?: number;
+
   static create(opts) {
     opts = opts || {};
     const x = new MerchantOrder();
@@ -87,6 +92,8 @@ export class MerchantOrder implements IMerchantOrder {
     x.userEmailAddress = opts.userEmailAddress;
     x.qpayInfoForEmail = opts.qpayInfoForEmail;
     x.isToken = opts.isToken;
+    x.amountFrom = opts.amountFrom;
+    x.amountCalculated = opts.amountCalculated || 0;
     return x;
   }
 
@@ -112,6 +119,8 @@ export class MerchantOrder implements IMerchantOrder {
     x.userEmailAddress = obj.userEmailAddress;
     x.qpayInfoForEmail = obj.qpayInfoForEmail;
     x.isToken = obj.isToken;
+    x.amountFrom = obj.amountFrom;
+    x.amountCalculated = obj.amountCalculated;
     return x;
   }
 }
