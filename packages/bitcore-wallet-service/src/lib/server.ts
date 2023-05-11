@@ -5076,14 +5076,32 @@ export class WalletService {
     merchantOrderQueueInterval = setInterval(() => {
       if (this.storage && this.storage.merchantOrderQueue) {
         this.storage.merchantOrderQueue.get(async (err, data, msg) => {
-          const saveError = (merchantOrder: MerchantOrder, data, error, status?) => {
-            merchantOrder.status = status || 'pending';
+          const saveError = (merchantOrder: MerchantOrder, data, error) => {
+            merchantOrder.status = 'pending';
             if (error.message) {
               merchantOrder.error = error.message;
             } else {
               merchantOrder.error = JSON.stringify(error);
             }
             this.storage.updateMerchantOrder(merchantOrder, err => {
+              const actualAmountConverted =
+                !!error.code && error.code === 'NOT_STABLE_RATE'
+                  ? ' :: Actual amount convert on server : ' +
+                    merchantOrder.amountCalculated +
+                    ' ' +
+                    config.conversion.tokenCodeUnit
+                  : '';
+              const stringConvert =
+                !!merchantOrder.amountFrom && merchantOrder.amountFrom > 0
+                  ? ' :: Not able to convert ' +
+                    merchantOrder.amountFrom +
+                    ' ' +
+                    merchantOrder.coin.toUpperCase() +
+                    ' to ' +
+                    merchantOrder.amount +
+                    ' ' +
+                    config.conversion.tokenCodeUnit
+                  : '';
               // send message to channel Failure Convert Alert
               bot.sendMessage(
                 config.telegram.channelFailId,
@@ -5092,6 +5110,9 @@ export class WalletService {
                   merchantOrder.amount.toFixed(3) +
                   ' ' +
                   config.conversion.tokenCodeUnit +
+                  merchantOrder.amountFrom +
+                  stringConvert +
+                  actualAmountConverted +
                   '\n\n' +
                   this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
                 { parse_mode: 'HTML' }
@@ -5103,6 +5124,7 @@ export class WalletService {
                 new Date().toUTCString() +
                   ' ::  error: ' +
                   merchantOrder.error +
+                  stringConvert +
                   '\n\n' +
                   this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
                 { parse_mode: 'HTML' }
@@ -5299,6 +5321,7 @@ export class WalletService {
                         }
                         amountElps = _.toSafeInteger(amountElps * 10 ** tokenElps.tokenInfo.decimals);
                         amountElps = amountElps / 10 ** tokenElps.tokenInfo.decimals;
+                        merchantOrder.amountCalculated = amountElps;
                         if ((Math.abs(amountElps - merchantOrder.amount) / merchantOrder.amount) * 100 > 2) {
                           saveError(merchantOrder, data, Errors.NOT_STABLE_RATE);
                           return;
