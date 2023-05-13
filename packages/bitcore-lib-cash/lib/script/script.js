@@ -423,12 +423,23 @@ Script.prototype.isPublicKeyIn = function() {
 /**
  * @returns {boolean} if this is a p2sh output script
  */
-Script.prototype.isScriptHashOut = function() {
+Script.prototype.isScriptHashOut = function(fEnableP2SH32) {
   var buf = this.toBuffer();
-  return (buf.length === 23 &&
+  const isP2SH20 = (buf.length === 23 &&
     buf[0] === Opcode.OP_HASH160 &&
     buf[1] === 0x14 &&
     buf[buf.length - 1] === Opcode.OP_EQUAL);
+  if (isP2SH20) {
+    return true;
+  }
+  if (!fEnableP2SH32) {
+    return false;
+  }
+  const isP2SH32 = (buf.length === 35 &&
+    buf[0] === Opcode.OP_HASH256 &&
+    buf[1] === 0x20 &&
+    buf[buf.length - 1] === Opcode.OP_EQUAL);
+  return isP2SH32;
 };
 
 /**

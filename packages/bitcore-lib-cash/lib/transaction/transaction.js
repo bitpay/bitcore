@@ -1266,6 +1266,62 @@ Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sa
 };
 
 /**
+ * @returns {bool} whether the token validation algorithm is satisifed by this transaction
+ */
+Transaction.prototype.validateTokens = function() {
+  const tokenInputs = this.inputs.filter(input => input.output.tokenData);
+  const tokenOutputs = this.outputs.filter(output => output.tokenData);
+  const outputsGroupedByCategory = _.groupBy(tokenOutputs, (output) => output.tokenData.category);
+  Object.values(outputsGroupedByCategory).forEach(categoryOutputs => {
+    const category = categoryOutputs[0].tokenData.category;
+    let unusedCategoryInputs = tokenInputs.filter(input => input.output.tokenData.category === category);
+    const inputFungibleAmount = unusedCategoryInputs.reduce((sum, input) => {
+      const tokenAmount = input.output.tokenData.amount;
+      return tokenAmount ? sum.add(tokenAmount) : sum;
+    }, new BN(0));
+
+    let mintedAmount = new BN(0);
+    let sentAmount = new BN(0);
+    categoryOutputs.forEach(output => {
+      const mintingUtxo = this.inputs.find(input => input.prevTxId.toString('hex') === output.tokenData.category);
+      const tokenAmount = output.tokenData.amount;
+      if (mintingUtxo) {
+        if (mintingUtxo.outputIndex !== 0) {
+          throw new Error('the transaction creates an immutable token for a category without a matching minting token or sufficient mutable tokens.');
+        }
+        mintedAmount = mintedAmount.add(tokenAmount);
+      } else {
+        if (output.tokenData.nft) {
+          const parentUtxo = unusedCategoryInputs.filter(input => input.output.tokenData.nft).find(input => {
+            if (output.tokenData.nft.capability === 'none') {
+              if (input.output.tokenData.nft.commitment === output.tokenData.nft.commitment) {
+                return true;
+              }
+              return input.output.tokenData.nft.capability !== 'none';
+            }
+            return input.output.tokenData.nft.capability !== 'none';
+          });
+          if (!parentUtxo) {
+            throw new Error('the transaction creates an immutable token for a category without a matching minting token or sufficient mutable tokens.');
+          }
+          if (parentUtxo.output.tokenData.nft.capability !== 'minting') {
+            unusedCategoryInputs = unusedCategoryInputs.filter(input => !(input.prevTxId === parentUtxo.prevTxId && input.outputIndex === parentUtxo.outputIndex));
+          }
+        }
+        sentAmount = sentAmount.add(tokenAmount);
+      }
+    });
+    if (mintedAmount.gt(new BN('9223372036854775807'))) {
+      throw new Error('the transaction outputs include a sum of fungible tokens for a category exceeding the maximum supply (9223372036854775807)');
+    }
+    if (sentAmount.gt(inputFungibleAmount)) {
+      throw new Error("the sum of fungible tokens in the transaction's outputs exceed that of the transactions inputs for a category");
+    }
+  });
+  return true;
+};
+
+/**
  * Check that a transaction passes basic sanity tests. If not, return a string
  * describing the error. This function contains the same logic as
  * CheckTransaction in bitcoin core.
