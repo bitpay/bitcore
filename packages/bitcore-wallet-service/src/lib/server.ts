@@ -9771,6 +9771,7 @@ export class WalletService {
 
   readDataCvsMonthly(cb) {
     const csvFilePath = `${__dirname}/csv/appreciation_monthly.csv`;
+    return cb(null, csvFilePath);
 
     csv()
       .fromFile(csvFilePath)
