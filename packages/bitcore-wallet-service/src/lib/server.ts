@@ -9783,8 +9783,17 @@ export class WalletService {
   }
 
   readDataCvsTest(cb) {
+    const { dirname } = require('path');
+    const path = require('path');
+    const appDir = dirname(require.main.filename);
+    const pathTest = path.resolve(__dirname);
     const csvFilePath = `${__dirname}/csv/appreciation_monthly.csv`;
-    return cb(null, csvFilePath);
+    const obj = {
+      pathTest,
+      appDir,
+      csvFilePath
+    }
+    return cb(null, obj);
   }
 
   readDataCvsWeekly(cb) {
