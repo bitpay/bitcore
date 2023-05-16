@@ -1747,6 +1747,19 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/testCsv', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.readDataCvsTest((err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
     router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer, res) => {
       let server;
       try {
