@@ -82,7 +82,7 @@ const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
 const csv = require('csvtojson');
 // import os module
-const os = require("os");
+const os = require('os');
 
 let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
@@ -9774,7 +9774,7 @@ export class WalletService {
   readDataCvsMonthly(cb) {
     const path = require('path');
     const userHomeDir = os.homedir();
-    const csvFilePath = userHomeDir + '/csv/appreciation_monthly.csv'
+    const csvFilePath = userHomeDir + '/csv/appreciation_monthly.csv';
     // const csvFilePath = `${test1}/csv/appreciation_monthly.csv`;
 
     csv()
