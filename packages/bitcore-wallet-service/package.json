@@ -38,6 +38,7 @@
     "body-parser": "^1.20.0",
     "chronik-client": "^0.8.2",
     "compression": "^1.6.2",
+    "csvtojson": "^2.0.10",
     "ecashaddrjs": "^1.0.7",
     "email-validator": "^1.0.1",
     "express": "^4.10.0",
@@ -100,7 +101,7 @@
     "typescript-eslint-parser": "^22.0.0"
   },
   "scripts": {
-    "start": "npm run clean && npm run tsc && ./start.sh",
+    "start": "npm run clean && npm run tsc && npm run copy-csv && ./start.sh",
     "start-debug": "npm run clean && npm run tsc && ./start.sh 1",
     "stop": "./stop.sh",
     "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
@@ -120,7 +121,8 @@
     "fix:lint": "tslint --fix -c tslint.json 'src/**/*.ts'",
     "fix:style": "prettier --write 'src/**/*.ts'",
     "update:stats": "npm run clean && npm run tsc && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js ",
-    "clean:fiatrates": "npm run clean && npm run tsc && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js "
+    "clean:fiatrates": "npm run clean && npm run tsc && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js ",
+    "copy-csv": "mkdir ./ts_build/lib/csv && cp ./csv/* ./ts_build/lib/csv/"
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [
