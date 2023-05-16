@@ -9770,7 +9770,9 @@ export class WalletService {
   }
 
   readDataCvsMonthly(cb) {
-    const csvFilePath = `${__dirname}/csv/appreciation_monthly.csv`;
+    const path = require('path');
+    const csvFilePath = path.resolve(process.cwd(), 'csv/appreciation_monthly.csv');
+    // const csvFilePath = `${test1}/csv/appreciation_monthly.csv`;
 
     csv()
       .fromFile(csvFilePath)
@@ -9785,14 +9787,16 @@ export class WalletService {
   readDataCvsTest(cb) {
     const { dirname } = require('path');
     const path = require('path');
+    const test1 = path.resolve(process.cwd(), 'csv/appreciation_monthly.csv');
     const appDir = dirname(require.main.filename);
     const pathTest = path.resolve(__dirname);
     const csvFilePath = `${__dirname}/csv/appreciation_monthly.csv`;
     const obj = {
       pathTest,
       appDir,
-      csvFilePath
-    }
+      csvFilePath,
+      test1
+    };
     return cb(null, obj);
   }
 
