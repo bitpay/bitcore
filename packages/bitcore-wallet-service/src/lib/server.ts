@@ -9358,7 +9358,7 @@ export class WalletService {
         listDeviceHigh: listHigh,
         lengthGroupLow: listLow.length,
         lengthGroupMedium: listMedium.length,
-        lengthGroupHight: listHigh.length
+        lengthGroupHigh: listHigh.length
       };
 
       return cb(null, result);
@@ -9772,10 +9772,7 @@ export class WalletService {
   }
 
   readDataCvsMonthly(cb) {
-    const path = require('path');
-    const userHomeDir = os.homedir();
-    const csvFilePath = userHomeDir + '/csv/appreciation_monthly.csv';
-    // const csvFilePath = `${test1}/csv/appreciation_monthly.csv`;
+    const csvFilePath = `public/csv/appreciation_monthly.csv`;
 
     csv()
       .fromFile(csvFilePath)
@@ -9787,28 +9784,10 @@ export class WalletService {
       });
   }
 
-  readDataCvsTest(cb) {
-    const { dirname } = require('path');
-    const path = require('path');
-    const test1 = path.resolve(process.cwd(), 'csv/appreciation_monthly.csv');
-    const appDir = dirname(require.main.filename);
-    const pathTest = path.resolve(__dirname);
-    const csvFilePath = `${__dirname}/csv/appreciation_monthly.csv`;
-    const userHomeDir = os.homedir();
-    const obj = {
-      pathTest,
-      appDir,
-      csvFilePath,
-      test1,
-      userHomeDir
-    };
-    return cb(null, obj);
-  }
-
   readDataCvsWeekly(cb) {
-    const csvFilePathLow = `${__dirname}/csv/appreciation_weekly_low.csv`;
-    const csvFilePathMedium = `${__dirname}/csv/appreciation_weekly_medium.csv`;
-    const csvFilePathHigh = `${__dirname}/csv/appreciation_weekly_high.csv`;
+    const csvFilePathLow = `public/csv/appreciation_weekly_low.csv`;
+    const csvFilePathMedium = `public/csv/appreciation_weekly_medium.csv`;
+    const csvFilePathHigh = `public/csv/appreciation_weekly_high.csv`;
 
     let listClaimCode = [];
 

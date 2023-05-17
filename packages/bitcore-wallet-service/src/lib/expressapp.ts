@@ -18,6 +18,8 @@ const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 const TelegramBot = require('node-telegram-bot-api');
 
+const csvUpload = require('./csvUpload');
+
 var GoogleTokenStrategy = require('passport-google-id-token');
 const passport = require('passport');
 const listAccount = require('../../../../accounts.json');
@@ -1745,6 +1747,18 @@ export class ExpressApp {
         if (err) return returnError(err, res, req);
         res.json(result);
       });
+    });
+
+    router.post('/v3/uploadCsvMonthly', csvUpload.uploadCsv().array('file'), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      if (req.files) {
+        res.json(req.files);
+      }
     });
 
     router.get('/v3/testCsv', (req, res) => {
