@@ -2602,6 +2602,23 @@ export class Storage {
     );
   }
 
+  // TODO: delete after done feature
+  deleteLogDevice(deviceId, cb) {
+    this.db.collection(collections.LOG_DEVICE).deleteOne(
+      {
+        deviceId: deviceId
+      },
+      {
+        w: 1
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result);
+      }
+    );
+  }
+
   resetCountNumberLogDevice(cb) {
     this.db.collection(collections.LOG_DEVICE).updateMany(
       {

@@ -1636,6 +1636,20 @@ export class ExpressApp {
       });
     });
 
+    router.delete('/v3/deleteDevice/:deviceId', (req, res) => {
+      const deviceId = req.params['deviceId'];
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.deleteLogDevice(deviceId, (err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
     router.post('/v3/device/add', (req, res) => {
       let server;
       try {
