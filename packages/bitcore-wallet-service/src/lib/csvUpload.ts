@@ -1,9 +1,10 @@
 const multer = require('multer');
+const path = require('path');
 
 module.exports.uploadCsv = () => {
   const csvStorage = multer.diskStorage({
     destination(req, file, cb) {
-      cb(null, 'public/csv/');
+      cb(null, `${__dirname}/../../public/csv/`);
     },
     filename(req, file, cb) {
       cb(null, file.originalname);

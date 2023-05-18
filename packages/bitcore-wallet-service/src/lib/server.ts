@@ -9760,7 +9760,7 @@ export class WalletService {
   }
 
   readDataCvsMonthly(cb) {
-    const csvFilePath = 'public/csv/appreciation_monthly.csv';
+    const csvFilePath = `${__dirname}/../../public/csv/appreciation_monthly.csv`;
 
     csv()
       .fromFile(csvFilePath)
