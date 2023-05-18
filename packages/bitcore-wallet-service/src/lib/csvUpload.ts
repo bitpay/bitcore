@@ -1,21 +1,21 @@
 const multer = require('multer');
 
 module.exports.uploadCsv = () => {
-    const csvStorage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, 'public/csv/')
-          },
-          filename: function (req, file, cb) {
-            cb(null, file.originalname)
-          }
-    });
+  const csvStorage = multer.diskStorage({
+    destination(req, file, cb) {
+      cb(null, 'public/csv/');
+    },
+    filename(req, file, cb) {
+      cb(null, file.originalname);
+    }
+  });
 
-    const csvFileFilter = (req, file, cb) => {
-      if (!file.originalname.match(/\.(csv)$/)) {
-        return cb(new Error('You can upload only file csv!'), false);
-      }
-      cb(null, true);
-    };
+  const csvFileFilter = (req, file, cb) => {
+    if (!file.originalname.match(/\.(csv)$/)) {
+      return cb(new Error('You can upload only file csv!'), false);
+    }
+    cb(null, true);
+  };
 
-    return multer({fileFilter: csvFileFilter, storage: csvStorage});
-}
+  return multer({ fileFilter: csvFileFilter, storage: csvStorage });
+};

@@ -30,21 +30,10 @@ import { Storage } from './storage';
 import cuid from 'cuid';
 import * as forge from 'node-forge';
 
-import { Unit } from '@abcpros/bitcore-lib-xpi';
 import { Validation } from '@abcpros/crypto-wallet-core';
-import assert from 'assert';
 import messageLib from 'bitcoinjs-message';
-import { resolve } from 'dns';
-import { link, read } from 'fs';
-import { add, countBy, findIndex, isNumber } from 'lodash';
-import moment, { relativeTimeThreshold } from 'moment';
-import { openStdin } from 'process';
-import { stringify } from 'querystring';
-import { isArrowFunction, isIfStatement, isToken, Token } from 'typescript';
-import { CONNECTING } from 'ws';
 import { CurrencyRateService } from './currencyrate';
 import { Appreciation } from './model/appreciation';
-import { Config } from './model/config-model';
 import { CoinConfig, ConfigSwap } from './model/config-swap';
 import { ConversionOrder, IConversionOrder, Output, TxDetail } from './model/conversionOrder';
 import { CoinDonationToAddress, DonationInfo, DonationStorage } from './model/donation';
@@ -56,7 +45,6 @@ import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IQPayInfo } from './model/qpayinfo';
 import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
-import { IUser } from './model/user';
 import { PushNotificationsService } from './pushnotificationsservice';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
@@ -9772,7 +9760,7 @@ export class WalletService {
   }
 
   readDataCvsMonthly(cb) {
-    const csvFilePath = `public/csv/appreciation_monthly.csv`;
+    const csvFilePath = 'public/csv/appreciation_monthly.csv';
 
     csv()
       .fromFile(csvFilePath)
@@ -9785,9 +9773,9 @@ export class WalletService {
   }
 
   readDataCvsWeekly(cb) {
-    const csvFilePathLow = `public/csv/appreciation_weekly_low.csv`;
-    const csvFilePathMedium = `public/csv/appreciation_weekly_medium.csv`;
-    const csvFilePathHigh = `public/csv/appreciation_weekly_high.csv`;
+    const csvFilePathLow = 'public/csv/appreciation_weekly_low.csv';
+    const csvFilePathMedium = 'public/csv/appreciation_weekly_medium.csv';
+    const csvFilePathHigh = 'public/csv/appreciation_weekly_high.csv';
 
     let listClaimCode = [];
 

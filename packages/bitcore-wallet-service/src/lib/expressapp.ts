@@ -1761,17 +1761,16 @@ export class ExpressApp {
       }
     });
 
-    router.get('/v3/testCsv', (req, res) => {
+    router.post('/v3/uploadCsvWeekly', csvUpload.uploadCsv().array('file'), (req, res) => {
       let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.readDataCvsTest((err, result) => {
-        if (err) return returnError(err, res, req);
-        res.json(result);
-      });
+      if (req.files) {
+        res.json(req.files);
+      }
     });
 
     router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer, res) => {
