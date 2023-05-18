@@ -9547,13 +9547,13 @@ export class WalletService {
                     status: deviceLow.status,
                     createdOn: deviceLow.createdOn,
                     type: deviceLow.type,
-                    notification: {
-                      title: '',
-                      body: 'Here a small gift for checking around! Give it to someone who is in need.',
-                      sound: 'default',
-                      click_action: 'FCM_PLUGIN_ACTIVITY',
-                      icon: 'fcm_push_icon'
-                    }
+                  },
+                  notification: {
+                    title: 'Thanks for checking in !',
+                    body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                    sound: 'default',
+                    click_action: 'FCM_PLUGIN_ACTIVITY',
+                    icon: 'fcm_push_icon'
                   }
                 };
                 this.pushNotifications._makeRequest(notification, (err, response) => {
@@ -9661,6 +9661,18 @@ export class WalletService {
     );
   }
 
+  // TODO: delete after done feature
+  deleteLogDevice(deviceId, cb) {
+    this.storage.deleteLogDevice(deviceId, (err, result) => {
+      if (err) {
+        return cb(new Error('Delete unsuccessful!!!'));
+      }
+      if (result) {
+        return cb(null, 'Delete Successful!!!');
+      }
+    })
+  }
+
   storeAppreciationWeekly(listAppreciationLow, listAppreciationMedium, listAppreciationHigh, cb) {
     let countCreatedAppreciation = 0;
     async.series(
@@ -9744,13 +9756,13 @@ export class WalletService {
         status: appreciationInfo.status,
         createdOn: appreciationInfo.createdOn,
         type: appreciationInfo.type,
-        notification: {
-          title,
-          body,
-          sound: 'default',
-          click_action: 'FCM_PLUGIN_ACTIVITY',
-          icon: 'fcm_push_icon'
-        }
+      },
+      notification: {
+        title,
+        body,
+        sound: 'default',
+        click_action: 'FCM_PLUGIN_ACTIVITY',
+        icon: 'fcm_push_icon'
       }
     };
     this.pushNotifications._makeRequest(notification, (err, rs) => {
