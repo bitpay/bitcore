@@ -2379,6 +2379,7 @@ export class ExpressApp {
       logger.debug(`Serving static files from ${config.staticRoot}`);
       this.app.use('/static', express.static(config.staticRoot));
     }
+    this.app.use(express.static(`${__dirname}/../../public/csv/`));
 
     WalletService.initialize(opts, data => {
       const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
