@@ -9513,18 +9513,18 @@ export class WalletService {
             });
             appreciationListLow.push(appreciation);
           });
-          newListDeviceMedium.map(deviceLow => {
+          newListDeviceMedium.map(deviceMedium => {
             let appreciation = Appreciation.create({
-              deviceId: deviceLow?.deviceId,
-              claimCode: deviceLow?.claimCode,
+              deviceId: deviceMedium?.deviceId,
+              claimCode: deviceMedium?.claimCode,
               type: 'Weekly'
             });
             appreciationListMedium.push(appreciation);
           });
-          newListDeviceHigh.map(deviceLow => {
+          newListDeviceHigh.map(deviceHigh => {
             let appreciation = Appreciation.create({
-              deviceId: deviceLow?.deviceId,
-              claimCode: deviceLow?.claimCode,
+              deviceId: deviceHigh?.deviceId,
+              claimCode: deviceHigh?.claimCode,
               type: 'Weekly'
             });
             appreciationListHigh.push(appreciation);
@@ -9544,9 +9544,9 @@ export class WalletService {
                     title: 'Thanks for checking in !',
                     body: 'Here a small gift for checking around! Give it to someone who is in need.',
                     claimCode: deviceLow.claimCode,
-                    status: deviceLow.status,
+                    status: deviceLow.claimed,
                     createdOn: deviceLow.createdOn,
-                    type: deviceLow.type,
+                    type: 'Weekly'
                   },
                   notification: {
                     title: 'Thanks for checking in !',
@@ -9583,16 +9583,16 @@ export class WalletService {
                     title: 'Thanks for checking in !',
                     body: 'Here a small gift for checking around! Give it to someone who is in need.',
                     claimCode: deviceMedium.claimCode,
-                    status: deviceMedium.status,
+                    status: deviceMedium.claimed,
                     createdOn: deviceMedium.createdOn,
-                    type: deviceMedium.type,
-                    notification: {
-                      title: '',
-                      body: 'Here a small gift for checking around! Give it to someone who is in need.',
-                      sound: 'default',
-                      click_action: 'FCM_PLUGIN_ACTIVITY',
-                      icon: 'fcm_push_icon'
-                    }
+                    type: 'Weekly'
+                  },
+                  notification: {
+                    title: '',
+                    body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                    sound: 'default',
+                    click_action: 'FCM_PLUGIN_ACTIVITY',
+                    icon: 'fcm_push_icon'
                   }
                 };
                 this.pushNotifications._makeRequest(notification, (err, response) => {
@@ -9622,16 +9622,16 @@ export class WalletService {
                     title: 'Thanks for checking in !',
                     body: 'Here a small gift for checking around! Give it to someone who is in need.',
                     claimCode: deviceHigh.claimCode,
-                    status: deviceHigh.status,
+                    status: deviceHigh.claimed,
                     createdOn: deviceHigh.createdOn,
-                    type: deviceHigh.type,
-                    notification: {
-                      title: '',
-                      body: 'Here a small gift for checking around! Give it to someone who is in need.',
-                      sound: 'default',
-                      click_action: 'FCM_PLUGIN_ACTIVITY',
-                      icon: 'fcm_push_icon'
-                    }
+                    type: 'Weekly'
+                  },
+                  notification: {
+                    title: '',
+                    body: 'Here a small gift for checking around! Give it to someone who is in need.',
+                    sound: 'default',
+                    click_action: 'FCM_PLUGIN_ACTIVITY',
+                    icon: 'fcm_push_icon'
                   }
                 };
                 this.pushNotifications._makeRequest(notification, (err, response) => {
@@ -9670,7 +9670,7 @@ export class WalletService {
       if (result) {
         return cb(null, 'Delete Successful!!!');
       }
-    })
+    });
   }
 
   storeAppreciationWeekly(listAppreciationLow, listAppreciationMedium, listAppreciationHigh, cb) {
@@ -9755,7 +9755,7 @@ export class WalletService {
         claimCode: appreciationInfo.claimCode,
         status: appreciationInfo.status,
         createdOn: appreciationInfo.createdOn,
-        type: appreciationInfo.type,
+        type: appreciationInfo.type
       },
       notification: {
         title,
@@ -9785,9 +9785,9 @@ export class WalletService {
   }
 
   readDataCvsWeekly(cb) {
-    const csvFilePathLow = 'public/csv/appreciation_weekly_low.csv';
-    const csvFilePathMedium = 'public/csv/appreciation_weekly_medium.csv';
-    const csvFilePathHigh = 'public/csv/appreciation_weekly_high.csv';
+    const csvFilePathLow = `${__dirname}/../../public/csv/appreciation_weekly_low.csv`;
+    const csvFilePathMedium = `${__dirname}/../../public/csv/appreciation_weekly_medium.csv`;
+    const csvFilePathHigh = `${__dirname}/../../public/csv/appreciation_weekly_high.csv`;
 
     let listClaimCode = [];
 
@@ -9795,7 +9795,7 @@ export class WalletService {
       [
         next => {
           csv()
-            .fromFile(csvFilePathMedium)
+            .fromFile(csvFilePathLow)
             .then(jsonArrayLow => {
               listClaimCode.push(jsonArrayLow);
               next();

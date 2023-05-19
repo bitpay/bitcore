@@ -2606,7 +2606,7 @@ export class Storage {
   deleteLogDevice(deviceId, cb) {
     this.db.collection(collections.LOG_DEVICE).deleteOne(
       {
-        deviceId: deviceId
+        deviceId
       },
       {
         w: 1
@@ -2749,6 +2749,7 @@ export class Storage {
   removeExpiredAppreciation(typeAppreciation, cb) {
     const filter = {
       status: false,
+      deviceId: 'null',
       type: typeAppreciation
     };
     this.db.collection(collections.APPRECIATION).deleteMany(

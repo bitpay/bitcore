@@ -1694,22 +1694,6 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/appreciation', (req, res) => {
-      let server;
-      const opts = {
-        id: req.params['id']
-      };
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.fetchAllAppreciation(opts.id, (err, listAppreciation) => {
-        if (err) return returnError(err, res, req);
-        res.json(listAppreciation);
-      });
-    });
-
     router.post('/v3/appreciation/claim', (req, res) => {
       let server;
       try {
