@@ -1516,6 +1516,17 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/moonpay/currencyLimits', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetCurrencyLimits(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.post('/v1/service/moonpay/signedPaymentUrl', (req, res) => {
       getServerWithAuth(req, res, server => {
         let response;

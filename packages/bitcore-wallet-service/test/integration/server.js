@@ -11016,6 +11016,80 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('#moonpayGetCurrencyLimits', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            currencyAbbreviation: 'btc',
+            baseCurrencyCode: 'usd'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.baseCurrencyCode;
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
     describe('#moonpayGetSignedPaymentUrl', () => {
       beforeEach(() => {
         req = {
