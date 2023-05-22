@@ -136,9 +136,9 @@ export class EthChain implements IChain {
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
@@ -169,10 +169,10 @@ export class EthChain implements IChain {
               const to = opts.payProUrl
                 ? output.toAddress
                 : opts.tokenAddress
-                ? opts.tokenAddress
-                : opts.multisigContractAddress
-                ? opts.multisigContractAddress
-                : output.toAddress;
+                  ? opts.tokenAddress
+                  : opts.multisigContractAddress
+                    ? opts.multisigContractAddress
+                    : output.toAddress;
               const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               inGasLimit = await server.estimateGas({
                 coin,
@@ -450,7 +450,7 @@ export class EthChain implements IChain {
     });
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     try {
