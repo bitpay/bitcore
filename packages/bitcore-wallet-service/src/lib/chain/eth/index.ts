@@ -158,9 +158,9 @@ export class EthChain implements IChain {
         for (let output of opts.outputs) {
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
-            outputAmounts.push(toBN(BigInt(output.amount).toString()));
+            outputAmounts.push(toBN(output.amount));
             if (!opts.tokenAddress) {
-              totalValue = totalValue.add(toBN(BigInt(output.amount).toString()));
+              totalValue = totalValue.add(toBN(output.amount));
             }
             inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
             continue;
@@ -458,7 +458,7 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
+        Web3.utils.toBN(output.amount).toString() !== output.amount.toString()
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }

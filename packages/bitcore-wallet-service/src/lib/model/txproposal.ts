@@ -164,7 +164,6 @@ export class TxProposal {
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
     x.chain = opts.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
-    if(x.chain === 'eth') { opts.network = 'regtest'; }
     x.network = opts.network;
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
