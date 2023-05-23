@@ -46,6 +46,7 @@ import { IQPayInfo } from './model/qpayinfo';
 import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { PushNotificationsService } from './pushnotificationsservice';
+import moment from 'moment';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
@@ -9202,15 +9203,97 @@ export class WalletService {
    * @param {String} deviceId - OPTIONAL. Fetch Appreciation by deviceId. NOT Fetch Appreciation all in DB.
    * @returns {Array} - Return List Appreciation suitable condition.
    */
-  getAllAppreciation(deviceId, cb) {
-    const opts = {
-      deviceId
-    };
+  getAllAppreciation(opts, cb) {
     this.storage.fetchAllAppreciation(opts, (err, listAppreciation) => {
       if (err) return cb(err);
       return cb(null, listAppreciation);
     });
   }
+
+  /**
+   * Resend appreciation by deviceId. Just resend appreciation with status false
+   * @param {String} deviceId - Fetch Appreciation by deviceId.
+   * @returns {string} - Return status push notification.
+   */
+  resendAppreciation(deviceId, cb) {
+    async.waterfall(
+      [
+        next => {
+          this.storage.getLogDeviceById(deviceId, (err, device) => {
+            if (err) return next(err);
+            if (device) {
+              next(null, device)
+            } else {
+              return next(new Error('Undefined deviceId'));
+            }
+          });
+        },
+        (device, next) => {
+          if (device) {
+            this.storage.fetchAllAppreciation({deviceId}, (err, appreciation) => {
+              if (err) return next(err);
+              if (appreciation) {
+                next(null, appreciation, device);
+              } else {
+                return next(new Error('Undefined appreciation'));
+              }
+            });
+          }
+        },
+        (appreciations, device, next) => {
+          async.each(
+            appreciations,
+            (appreciation: any, next) => {
+              if (appreciation.status === false) {
+                let title = appreciation.type === 'Weekly' ? 'Thanks for checking in !' : 'Welcome to AbcPay wallet !';
+                let body = appreciation.type === 'Weekly' ? 'Here a small gift for checking around! Give it to someone who is in need.' : 'Thanks for using our app. Here our small appreciation to you to start using the app. Claim it now!';
+                const notification = {
+                  to: device.token,
+                  priority: 'high',
+                  restricted_package_name: device.packageName,
+                  data: {
+                    title: title,
+                    body: body,
+                    claimCode: device.claimCode,
+                    status: appreciation.status,
+                    createdOn: device.createdOn,
+                    type: appreciation.type
+                  },
+                  notification: {
+                    title: title,
+                    body: body,
+                    sound: 'default',
+                    click_action: 'FCM_PLUGIN_ACTIVITY',
+                    icon: 'fcm_push_icon'
+                  }
+                };
+                this.pushNotifications._makeRequest(notification, (err, response) => {
+                  if (err) logger.error('ERROR:' + err);
+                  if (response) {
+                    //                      logger.debug('Request status:  ' + response.statusCode);
+                    //                      logger.debug('Request message: ' + response.statusMessage);
+                    //                      logger.debug('Request body:  ' + response.request.body);
+                  }
+                  next();
+                });
+              }
+            },
+            err => {
+              return next(err);
+            }
+          );
+          return cb(null, 'Resend succesfully');
+        }
+      ],
+      err => {
+        if (err) {
+          return cb(err);
+        }
+      }
+    );
+  }
+
+
 
   /**
    * Update Appreaciation claimed
@@ -9661,14 +9744,17 @@ export class WalletService {
     );
   }
 
-  // TODO: delete after done feature
   deleteLogDevice(deviceId, cb) {
     this.storage.deleteLogDevice(deviceId, (err, result) => {
       if (err) {
-        return cb(new Error('Delete unsuccessful!!!'));
+        return cb(err);
       }
       if (result) {
-        return cb(null, 'Delete Successful!!!');
+        if (result.deletedCount !== 0) {
+          return cb(null, 'Delete Successful!!!');
+        } else {
+          return cb(null, 'No have deviceId in DB!!!');
+        }
       }
     });
   }
@@ -9743,7 +9829,7 @@ export class WalletService {
 
   pushNotificationAppreciationMonthly(token, packageName, appreciationInfo, cb) {
     let title = 'Welcome to AbcPay wallet !';
-    let body = 'Here a small gift for checking around! Give it to someone who is in need.';
+    let body = 'Thanks for using our app. Here our small appreciation to you to start using the app. Claim it now!';
 
     const notification = {
       to: token,
@@ -9772,7 +9858,7 @@ export class WalletService {
   }
 
   readDataCvsMonthly(cb) {
-    const csvFilePath = `${__dirname}/../../public/csv/appreciation_monthly.csv`;
+    const csvFilePath = `${__dirname}/../../public/csv/appreciation_monthly_${moment().format('MMYY')}.csv`;
 
     csv()
       .fromFile(csvFilePath)
@@ -9785,9 +9871,9 @@ export class WalletService {
   }
 
   readDataCvsWeekly(cb) {
-    const csvFilePathLow = `${__dirname}/../../public/csv/appreciation_weekly_low.csv`;
-    const csvFilePathMedium = `${__dirname}/../../public/csv/appreciation_weekly_medium.csv`;
-    const csvFilePathHigh = `${__dirname}/../../public/csv/appreciation_weekly_high.csv`;
+    const csvFilePathLow = `${__dirname}/../../public/csv/appreciation_weekly_low_${moment().week()}.csv`;
+    const csvFilePathMedium = `${__dirname}/../../public/csv/appreciation_weekly_medium_${moment().week()}.csv`;
+    const csvFilePathHigh = `${__dirname}/../../public/csv/appreciation_weekly_high_${moment().week()}.csv`;
 
     let listClaimCode = [];
 
