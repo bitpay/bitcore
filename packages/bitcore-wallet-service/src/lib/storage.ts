@@ -2642,10 +2642,10 @@ export class Storage {
   }
 
   fetchAllAppreciation(opts, cb) {
-    const filter: { 
-      deviceId?: string,
-      status: boolean,
-      type?: string 
+    const filter: {
+      deviceId?: string;
+      status: boolean;
+      type?: string;
     } = {
       status: opts.status ? opts.status : false
     };

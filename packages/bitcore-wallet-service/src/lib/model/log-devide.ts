@@ -87,7 +87,7 @@ export class LogDevice {
 
   attendance() {
     const attendance = this.countNumber + 1;
-    if (attendance > MAX_ATTENDANCE_WEEK) return;
+    if (attendance > MAX_ATTENDANCE_WEEK) this.countNumber = MAX_ATTENDANCE_WEEK;
     this.countNumber = attendance;
   }
 }

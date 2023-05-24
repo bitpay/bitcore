@@ -32,6 +32,7 @@ import * as forge from 'node-forge';
 
 import { Validation } from '@abcpros/crypto-wallet-core';
 import messageLib from 'bitcoinjs-message';
+import moment from 'moment';
 import { CurrencyRateService } from './currencyrate';
 import { Appreciation } from './model/appreciation';
 import { CoinConfig, ConfigSwap } from './model/config-swap';
@@ -46,7 +47,6 @@ import { IQPayInfo } from './model/qpayinfo';
 import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { PushNotificationsService } from './pushnotificationsservice';
-import moment from 'moment';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
@@ -9083,7 +9083,7 @@ export class WalletService {
           }
         },
         next => {
-          if (!device || !device.isValid()) {
+          if (!device) {
             device = LogDevice.create({
               platform,
               deviceId,
@@ -9167,11 +9167,8 @@ export class WalletService {
           }
         },
         next => {
-          if (!device || !device.isValid()) {
-            device = LogDevice.create({
-              deviceId,
-              location
-            });
+          if (!device) {
+            next(new Error('No have device to update'));
           } else {
             device.touch();
             if (location) device.location = location;
@@ -9222,7 +9219,7 @@ export class WalletService {
           this.storage.getLogDeviceById(deviceId, (err, device) => {
             if (err) return next(err);
             if (device) {
-              next(null, device)
+              next(null, device);
             } else {
               return next(new Error('Undefined deviceId'));
             }
@@ -9230,7 +9227,7 @@ export class WalletService {
         },
         (device, next) => {
           if (device) {
-            this.storage.fetchAllAppreciation({deviceId}, (err, appreciation) => {
+            this.storage.fetchAllAppreciation({ deviceId }, (err, appreciation) => {
               if (err) return next(err);
               if (appreciation) {
                 next(null, appreciation, device);
@@ -9246,22 +9243,25 @@ export class WalletService {
             (appreciation: any, next) => {
               if (appreciation.status === false) {
                 let title = appreciation.type === 'Weekly' ? 'Thanks for checking in !' : 'Welcome to AbcPay wallet !';
-                let body = appreciation.type === 'Weekly' ? 'Here a small gift for checking around! Give it to someone who is in need.' : 'Thanks for using our app. Here our small appreciation to you to start using the app. Claim it now!';
+                let body =
+                  appreciation.type === 'Weekly'
+                    ? 'Here a small gift for checking around! Give it to someone who is in need.'
+                    : 'Thanks for using our app. Here our small appreciation to you to start using the app. Claim it now!';
                 const notification = {
                   to: device.token,
                   priority: 'high',
                   restricted_package_name: device.packageName,
                   data: {
-                    title: title,
-                    body: body,
+                    title,
+                    body,
                     claimCode: device.claimCode,
                     status: appreciation.status,
                     createdOn: device.createdOn,
                     type: appreciation.type
                   },
                   notification: {
-                    title: title,
-                    body: body,
+                    title,
+                    body,
                     sound: 'default',
                     click_action: 'FCM_PLUGIN_ACTIVITY',
                     icon: 'fcm_push_icon'
@@ -9292,8 +9292,6 @@ export class WalletService {
       }
     );
   }
-
-
 
   /**
    * Update Appreaciation claimed
