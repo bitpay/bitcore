@@ -2642,9 +2642,15 @@ export class Storage {
   }
 
   fetchAllAppreciation(opts, cb) {
-    const filter: { deviceId?: string } = {};
+    const filter: { 
+      deviceId?: string,
+      status: boolean,
+      type?: string 
+    } = {
+      status: opts.status ? opts.status : false
+    };
     if (opts.deviceId) filter.deviceId = opts.deviceId;
-
+    if (opts.type) filter.type = opts.type;
     this.db
       .collection(collections.APPRECIATION)
       .find(filter)

@@ -1678,19 +1678,33 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/appreciation/:id', (req, res) => {
+    router.post('/v3/filterAppreciation', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      const opts = req.body;
+      server.getAllAppreciation(opts, (err, listAppreciation) => {
+        if (err) return returnError(err, res, req);
+        res.json(listAppreciation);
+      });
+    });
+
+    router.get('/v3/resendAppreciationByDeviceId/:deviceId', (req, res) => {
       let server;
       const opts = {
-        id: req.params['id']
+        id: req.params['deviceId']
       };
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getAllAppreciation(opts.id, (err, listAppreciation) => {
+      server.resendAppreciation(opts.id, (err, result) => {
         if (err) return returnError(err, res, req);
-        res.json(listAppreciation);
+        res.json(result);
       });
     });
 
