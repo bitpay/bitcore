@@ -5111,7 +5111,7 @@ export class WalletService {
                 config.conversion.tokenCodeUnit
               } ${stringConvert} ${actualAmountConverted}`;
               bot.sendMessage(
-                config.telegram.channelFailId,
+                config.merchantOrder.channelFailId,
                 failMessage +
                   '\n\n' +
                   this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
@@ -5122,7 +5122,7 @@ export class WalletService {
               const dateStr = new Date().toUTCString();
               const debugMessage = `${dateStr} :: error: ${merchantOrder.error} ${stringConvert} ${actualAmountConverted}`;
               bot.sendMessage(
-                config.telegram.channelDebugId,
+                config.merchantOrder.channelDebugId,
                 debugMessage +
                   '\n\n' +
                   this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
@@ -5454,7 +5454,7 @@ export class WalletService {
         });
         this.storage.merchantOrderQueue.clean(err => {});
       }
-    }, 10000000000);
+    }, 2000);
   }
   async _handleSendSuccesMerchantOrder(
     amountCoinUserSentToServer,
@@ -5465,7 +5465,7 @@ export class WalletService {
   ) {
     if (amountCoinUserSentToServer > 0) {
       bot.sendMessage(
-        config.telegram.channelSuccessId,
+        config.merchantOrder.channelSuccessId,
         merchantOrder.userAddress +
           ' :: Converted ' +
           amountCoinUserSentToServer +
@@ -5489,7 +5489,7 @@ export class WalletService {
       );
     } else {
       bot.sendMessage(
-        config.telegram.channelSuccessId,
+        config.merchantOrder.channelSuccessId,
         merchantOrder.userAddress +
           ' :: ' +
           this._getPaymentTypeString(merchantOrder.paymentType) +

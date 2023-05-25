@@ -2,16 +2,7 @@
     {
         "code": "CA",
         "name": "Community Artists",
-        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
-        "merchantAddress": "",
-        "email": "",
-        "isElpsAccepted": true
-
-    },
-    {
-        "code": "CABURN",
-        "name": "Community - Burn",
-        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "walletAddress": "ecash:qq0dnmu3tekw0a9pf0r9mk4q3d4hqwjqeypzdncvzl",
         "merchantAddress": "",
         "email": "",
         "isElpsAccepted": false
