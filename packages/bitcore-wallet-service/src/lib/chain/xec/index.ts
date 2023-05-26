@@ -305,7 +305,7 @@ export class XecChain extends BtcChain implements IChain {
 
     // output rawhex
     const hex = tx.toHex();
-    const txid = await this.broadcastRaw(wallet, hex, true);
+    const txid = await this.broadcastRaw(wallet, hex, true, true);
     return txid;
   }
 
@@ -346,14 +346,15 @@ export class XecChain extends BtcChain implements IChain {
     return tokenUtxos;
   }
 
-  public broadcastRaw(wallet, raw, ischronik) {
+  public broadcastRaw(wallet, raw, ischronik, skipSlpCheck = false) {
     return new Promise((resolve, reject) => {
       wallet.broadcastRawTx(
         {
           rawTx: raw,
           network: 'livenet',
           coin: wallet.credentials.coin,
-          ischronik
+          ischronik,
+          skipSlpCheck
         },
         (err, txid) => {
           if (err || !txid) return reject(err ? err : 'No Tokens');

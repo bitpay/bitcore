@@ -3764,9 +3764,9 @@ export class WalletService {
     });
   }
 
-  _broadcastRawTxByChronik(chronikClient, hex, cb) {
+  _broadcastRawTxByChronik(chronikClient, hex, skipSlpCheck, cb) {
     return chronikClient
-      .broadcastTx(hex)
+      .broadcastTx(hex, skipSlpCheck)
       .then(txidObj => {
         return cb(null, txidObj.txid);
       })
@@ -3780,6 +3780,7 @@ export class WalletService {
    * @param {Object} opts
    * @param {string} [opts.coin = 'btc'] - The coin for this transaction.
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network for this transaction.
+   * @param {string} [opts.skipSlpCheck = false] - If set this prop to false, chronik will check tx doesn't burn. Default to false
    * @param {string} opts.rawTx - Raw tx data.
    */
   async broadcastRawTx(opts, cb) {
@@ -3795,7 +3796,7 @@ export class WalletService {
     } else {
       const coin = opts.coin;
       const chronikClient = ChainService.getChronikClient(coin);
-      this._broadcastRawTxByChronik(chronikClient, opts.rawTx, async (err, txid) => {
+      this._broadcastRawTxByChronik(chronikClient, opts.rawTx, !!opts.skipLibCheck, async (err, txid) => {
         if (err || !txid) {
           logger.warn(`Broadcast failed: ${err}`);
           if (err) return cb(err);
@@ -5101,7 +5102,7 @@ export class WalletService {
                   ? `:: Actual amount convert on server : ${merchantOrder.amountCalculated} ${config.conversion.tokenCodeUnit}`
                   : '';
               const stringConvert =
-                !!merchantOrder.amountFrom && merchantOrder.amountFrom > 0
+                !merchantOrder.isToken && !!merchantOrder.amountFrom && merchantOrder.amountFrom > 0
                   ? `:: Not able to convert ${merchantOrder.amountFrom} ${merchantOrder.coin.toUpperCase()} to ${
                       merchantOrder.amount
                     } ${config.conversion.tokenCodeUnit}`
@@ -5503,6 +5504,10 @@ export class WalletService {
           this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdMerchantPayment, 'xec', 'View tx on the Explorer'),
         { parse_mode: 'HTML' }
       );
+    }
+    if (!!merchantOrder.listEmailContent && merchantOrder.listEmailContent.length > 2) {
+      let contentEmail = merchantOrder.listEmailContent[2];
+      bot.sendMessage(config.merchantOrder.channelSuccessId, contentEmail, { parse_mode: 'HTML' });
     }
     await this._handleEmailNotificationForMerchantOrder(merchantOrder);
   }
