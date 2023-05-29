@@ -3796,7 +3796,7 @@ export class WalletService {
     } else {
       const coin = opts.coin;
       const chronikClient = ChainService.getChronikClient(coin);
-      this._broadcastRawTxByChronik(chronikClient, opts.rawTx, !!opts.skipLibCheck, async (err, txid) => {
+      this._broadcastRawTxByChronik(chronikClient, opts.rawTx, !!opts.skipSlpCheck, async (err, txid) => {
         if (err || !txid) {
           logger.warn(`Broadcast failed: ${err}`);
           if (err) return cb(err);
