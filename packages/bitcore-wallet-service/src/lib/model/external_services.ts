@@ -11,6 +11,7 @@ export interface BuyCryptoConfig {
   disabledMessage?: string;
   moonpay?: ExchangeConfig;
   ramp?: ExchangeConfig;
+  sardine?: ExchangeConfig;
   simplex?: ExchangeConfig;
   wyre?: ExchangeConfig;
 }
