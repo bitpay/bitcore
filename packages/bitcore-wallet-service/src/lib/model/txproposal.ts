@@ -74,6 +74,7 @@ export interface ITxProposal {
   isTokenSwap?: boolean;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
+  confirmations?: number;
 }
 
 export class TxProposal {
@@ -140,6 +141,7 @@ export class TxProposal {
   multiSendContractAddress?: string;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
+  confirmations?: number;
 
   static create(opts) {
     opts = opts || {};
@@ -439,6 +441,18 @@ export class TxProposal {
 
   isPending() {
     return !_.includes(['temporary', 'broadcasted', 'rejected'], this.status);
+  }
+
+  isConfirmed(): boolean {
+    if(this.status != 'broadcasted'){
+      return false;
+    }
+
+    if (Constants.EVM_CHAINS[this.chain.toUpperCase()] && !this.confirmations){
+      return false;
+    }    
+
+    return true;
   }
 
   isAccepted() {
