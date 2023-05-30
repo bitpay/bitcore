@@ -5,6 +5,7 @@ import logger from '../../../../logger';
 import { Config } from '../../../../services/config';
 import { Storage } from '../../../../services/storage';
 import { valueOrDefault } from '../../../../utils/check';
+import { wait } from '../../../../utils/wait';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { AnyBlock, ErigonTransaction, GethTransaction, IEVMBlock, IEVMTransaction } from '../types';
@@ -19,6 +20,7 @@ export class SyncWorker {
   private rpc?: IRpc;
   private client?: 'erigon' | 'geth';
   private stopping: boolean = false;
+  private isWorking: boolean = false;
 
   constructor() {
     this.chainConfig = Config.get().chains[this.chain][this.network];
@@ -30,11 +32,21 @@ export class SyncWorker {
     this.parentPort!.on('message', this.messageHandler.bind(this));
   }
 
+  async stop() {
+    this.stopping = true;
+    logger.info('Stopping syncing thread ' + worker.threadId);
+    while (this.isWorking) {
+      await wait(1000);
+    }
+    await Storage.stop();
+    await (this.web3?.currentProvider as any)?.disconnect();
+    process.exit(0);
+  }
+
   async messageHandler(msg) {
     switch (msg.message) {
       case 'shutdown':
-        logger.info('Stopping syncing thread ' + worker.threadId);
-        this.stopping = true;
+        this.stop();
         return;
       default:
         this.syncBlock(msg);
@@ -45,9 +57,9 @@ export class SyncWorker {
   async syncBlock({ blockNum }) {
     try {
       if (this.stopping) {
-        await Storage.stop();
-        process.exit(0);
+        return;
       }
+      this.isWorking = true;
 
       const block = await this.rpc!.getBlock(blockNum);
       if (!block) {
@@ -77,6 +89,8 @@ export class SyncWorker {
         await this.connect();
       }
       worker.parentPort!.postMessage({ message: 'sync', notFound: true, blockNum, threadId: worker.threadId, error });
+    } finally {
+      this.isWorking = false;
     }
   }
 
