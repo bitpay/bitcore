@@ -2796,11 +2796,19 @@ export class WalletService implements IWalletService {
 
   _checkTxInBlockchain(txp, cb) {
     if (!txp.txid) return cb();
+    this._getTxInBlockchain(txp, (err, tx) => {
+      if (err) return cb(err);
+      return cb(null, !!tx);
+    });
+  }
+
+  _getTxInBlockchain(txp, cb) {
+    if (!txp.txid) return cb();
     const bc = this._getBlockchainExplorer(txp.chain, txp.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getTransaction(txp.txid, (err, tx) => {
       if (err) return cb(err);
-      return cb(null, !!tx);
+      return cb(null, tx);
     });
   }
 
@@ -3121,8 +3129,15 @@ export class WalletService implements IWalletService {
           (txp: ITxProposal, next) => {
             if (txp.status != 'accepted') return next();
 
-            this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
+            this._getTxInBlockchain(txp, (err, tx) => {
+              const isInBlockchain = !!tx;
+              
               if (err || !isInBlockchain) return next(err);
+              
+              if(Constants.EVM_CHAINS[txp.chain.toUpperCase()] && txp.status == 'broadcasted' && tx) { 
+                txp.confirmations = tx.confirmations; // update confirmations
+              }
+
               this._processBroadcast(
                 txp,
                 {
@@ -3134,7 +3149,7 @@ export class WalletService implements IWalletService {
           },
           err => {
             txps = _.reject(txps, txp => {
-              return txp.status == 'broadcasted';
+              return txp.isConfirmed();
             });
 
             if (txps[0] && txps[0].chain == 'bch') {
