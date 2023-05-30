@@ -41,7 +41,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
 
     this.pool.on('peertx', async (peer, message) => {
       const hash = message.transaction.hash;
-      logger.debug('peer tx received', {
+      logger.debug('peer tx received: %o', {
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
         network: this.network,
@@ -53,7 +53,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
     this.pool.on('peerblock', async (peer, message) => {
       const { block } = message;
       const { hash } = block;
-      logger.debug('peer block received', {
+      logger.debug('peer block received: %o', {
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
         network: this.network,
@@ -65,7 +65,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
     });
 
     this.pool.on('peerheaders', (peer, message) => {
-      logger.debug('peerheaders message received', {
+      logger.debug('peerheaders message received: %o', {
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
         network: this.network,
@@ -134,7 +134,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
         }
         currentHeight++;
         if (Date.now() - lastLog > 100) {
-          logger.info('Re-Sync ', {
+          logger.info('Re-Sync: %o', {
             chain,
             network,
             height: currentHeight

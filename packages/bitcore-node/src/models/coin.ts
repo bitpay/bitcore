@@ -205,7 +205,7 @@ export class CoinModel extends BaseModel<ICoin> {
         }
       } catch (e) {
         logger.debug(
-          `could not parse address on "${coin.chain}:${coin.network}" for coin ${coin.mintTxid}[${coin.mintIndex}]`
+          `Could not parse address on "${coin.chain}:${coin.network}" for coin ${coin.mintTxid}[${coin.mintIndex}]`
         );
       }
     }

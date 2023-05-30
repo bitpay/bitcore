@@ -228,7 +228,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           .on('transactionHash', resolve)
           .on('error', reject)
           .catch(e => {
-            logger.error(e);
+            logger.error('%o', e);
             reject(e);
           });
       });
@@ -463,13 +463,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async estimateGas(params): Promise<number> {
     return new Promise(async (resolve, reject) => {
       try {
-        let { network, value, from, data, gasPrice, to } = params;
+        let { network, value, from, data, /*gasPrice,*/ to } = params;
         const { web3 } = await this.getWeb3(network);
         const dataDecoded = EVMTransactionStorage.abiDecode(data);
 
         if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
           value = dataDecoded.params[0].value;
-          gasPrice = dataDecoded.params[1].value;
+          // gasPrice = dataDecoded.params[1].value;
         } else if (data && data.type === 'MULTISEND') {
           try {
             let method, gasLimit;
@@ -495,6 +495,14 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           }
         }
 
+        let _value;
+        if (data) {
+          // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
+          // We want this method to give a blind fee estimation, though, so we should not include the value
+          // unless it's needed for estimating smart contract execution.
+          _value = web3.utils.toHex(value)
+        }
+
         const opts = {
           method: 'eth_estimateGas',
           params: [
@@ -502,18 +510,18 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
               data,
               to: to && to.toLowerCase(),
               from: from && from.toLowerCase(),
-              gasPrice: web3.utils.toHex(gasPrice),
-              value: web3.utils.toHex(value)
+              // gasPrice: web3.utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
+              value: _value
             }
           ],
           jsonrpc: '2.0',
-          id: 1
+          id: 'bitcore-' + Date.now()
         };
 
         let provider = web3.currentProvider as any;
         provider.send(opts, (err, data) => {
           if (err) return reject(err);
-          if (!data.result) return reject(data.message);
+          if (!data.result) return reject(data.error || data);
           return resolve(Number(data.result));
         });
       } catch (err) {

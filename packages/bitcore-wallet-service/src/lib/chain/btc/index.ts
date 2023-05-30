@@ -230,7 +230,7 @@ export class BtcChain implements IChain {
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
 
       default:
-        logger.warn('Unknown address type at getEstimatedSizeForSingleInput:', txp.addressType);
+        logger.warn('Unknown address type at getEstimatedSizeForSingleInput: %o', txp.addressType);
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
     }
   }
@@ -263,7 +263,7 @@ export class BtcChain implements IChain {
         break;
       default:
         scriptSize = 34;
-        // logger.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
+        // logger.warn('Unknown address type at getEstimatedSizeForSingleOutput: %o', addressType);
         break;
     }
     return scriptSize + 8 + 1; // value + script length
@@ -460,7 +460,7 @@ export class BtcChain implements IChain {
         txp.fee = bitcoreTx.getFee();
       }
     } catch (ex) {
-      logger.warn('Error building Bitcore transaction', ex);
+      logger.warn('Error building Bitcore transaction: %o', ex);
       return ex;
     }
 
@@ -696,7 +696,7 @@ export class BtcChain implements IChain {
 
         if (netTotal >= fullTxpAmount) {
           const changeAmount = Math.round(total - fullTxpAmount - fee);
-          logger.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
+          logger.debug('Tx change: %o', Utils.formatAmountInBtc(changeAmount));
 
           const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
@@ -724,7 +724,7 @@ export class BtcChain implements IChain {
         selected = [];
         if (!_.isEmpty(bigInputs)) {
           const input = _.head(bigInputs);
-          logger.debug('Using big input: ', Utils.formatUtxos(input));
+          logger.debug('Using big input: %o', Utils.formatUtxos(input));
           total = input.satoshis;
           fee = Math.round(baseTxpFee + feePerInput);
           netTotal = total - fee;
@@ -861,7 +861,7 @@ export class BtcChain implements IChain {
                   Utils.formatAmountInBtc(change)
               );
             } else {
-              logger.warn('Error building transaction', err);
+              logger.warn('Error building transaction: %o', err);
             }
 
             return cb(err);
@@ -915,7 +915,7 @@ export class BtcChain implements IChain {
     let i = 0;
     const x = new this.bitcoreLib.HDPublicKey(xpub);
 
-    _.each(signatures, signatureHex => {
+    for (const signatureHex of signatures) {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
@@ -928,7 +928,7 @@ export class BtcChain implements IChain {
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
       } catch (e) {}
-    });
+    }
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }

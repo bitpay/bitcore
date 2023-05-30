@@ -244,6 +244,6 @@ if (require.main === module)
     await transactions(info, creds);
     process.exit();
   })().catch(err => {
-    logger.error(err);
+    logger.error('%o', err);
     process.exit(1);
   });

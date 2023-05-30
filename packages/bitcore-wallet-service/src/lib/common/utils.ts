@@ -73,7 +73,7 @@ export class Utils {
       }
       return publicKeyBuffer;
     } catch (e) {
-      logger.error('_tryImportPublicKey encountered an error.', e);
+      logger.error('_tryImportPublicKey encountered an error: %o', e);
       return false;
     }
   }
@@ -84,27 +84,20 @@ export class Utils {
       if (!Buffer.isBuffer(signature)) {
         signatureBuffer = Buffer.from(signature, 'hex');
       }
-      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
-      // const sig = Bitcore.crypto.Signature.fromDER(signatureBuffer);
-      // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
+      // uses the native module (c++) for performance vs bitcore lib (javascript)
       return secp256k1.signatureImport(signatureBuffer);
     } catch (e) {
-      logger.error('_tryImportSignature encountered an error.', e);
+      logger.error('_tryImportSignature encountered an error: %o', e);
       return false;
     }
   }
 
   static _tryVerifyMessage(hash, sig, publicKeyBuffer) {
     try {
-      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
-      // const { BN, Signature, ECDSA } = Bitcore.crypto;
-      // const { PublicKey } = Bitcore;
-      // const bitcoreSig = new Signature({ r: new BN(sig.slice(0, 32)), s: new BN(sig.slice(32)) });
-      // const bitcorePubKey = PublicKey.fromBuffer(publicKeyBuffer);
-      // return ECDSA.verify(hash, bitcoreSig, bitcorePubKey);
+      // uses the native module (c++) for performance vs bitcore lib (javascript)
       return secp256k1.ecdsaVerify(sig, hash, publicKeyBuffer);
     } catch (e) {
-      logger.error('_tryVerifyMessage encountered an error.', e);
+      logger.error('_tryVerifyMessage encountered an error: %o', e);
       return false;
     }
   }

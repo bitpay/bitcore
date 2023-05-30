@@ -143,7 +143,7 @@ export class BlockchainMonitor {
       ],
       err => {
         if (err) {
-          logger.error(err);
+          logger.error('%o', err);
         }
         return cb(err);
       }
@@ -200,7 +200,7 @@ export class BlockchainMonitor {
       txp.setBroadcasted();
 
       this.storage.storeTx(this.walletId, txp, err => {
-        if (err) logger.error('Could not save TX');
+        if (err) logger.error('Could not save TX for wallet %o, %o', this.walletId, err);
 
         const args = {
           txProposalId: txp.id,
@@ -245,7 +245,7 @@ export class BlockchainMonitor {
     logger.debug(`Checking ${chain}:${network}:${out.address} ${out.amount}`);
     this.storage.fetchAddressByChain(chain, out.address, (err, address) => {
       if (err) {
-        logger.error('Could not fetch addresses from the db');
+        logger.error('Could not fetch addresses from the db %o', err);
         return;
       }
       if (!address || address.isChange) {
@@ -294,7 +294,7 @@ export class BlockchainMonitor {
                 this.storage.storeTxConfirmationSub(sub, next);
               },
               err => {
-                if (err) logger.error(err);
+                if (err) logger.error('%o', err);
               }
             );
           });
@@ -360,7 +360,7 @@ export class BlockchainMonitor {
 
     explorer.getTxidsInBlock(hash, async (err, txids) => {
       if (err) {
-        logger.error('Could not fetch txids from block ' + hash, err);
+        logger.error('Could not fetch txids from block %o %o', hash, err);
         return;
       }
 
@@ -369,7 +369,7 @@ export class BlockchainMonitor {
       while (txSub != null) {
         processTriggeredSub(txSub, err => {
           if (err) {
-            logger.error('Could not process tx confirmation', err);
+            logger.error('Could not process tx confirmation %o', err);
           }
           return;
         });

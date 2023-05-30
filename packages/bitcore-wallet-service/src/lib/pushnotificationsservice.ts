@@ -373,7 +373,7 @@ export class PushNotificationsService {
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
-        if (err) logger.error(err);
+        if (err) logger.error('%o', err);
         if (_.isEmpty(preferences)) preferences = [];
 
         const recipientPreferences = _.compact(
@@ -558,7 +558,7 @@ export class PushNotificationsService {
       try {
         return Mustache.render(t, data);
       } catch (e) {
-        logger.error('Could not apply data to template:' + e);
+        logger.error('Could not apply data to template: %o', e);
         error = e;
       }
     });

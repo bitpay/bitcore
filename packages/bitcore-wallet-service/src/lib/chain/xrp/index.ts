@@ -176,7 +176,7 @@ export class XrpChain implements IChain {
     try {
       this.getBitcoreTx(txp);
     } catch (ex) {
-      logger.warn('Error building XRP  transaction', ex);
+      logger.warn('Error building XRP transaction: %o', ex);
       return ex;
     }
   }

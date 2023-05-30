@@ -10,7 +10,7 @@ MaticRoutes.get('/api/MATIC/:network/address/:address/txs/count', async (req, re
     const nonce = await MATIC.getAccountNonce(network, address);
     res.json({ nonce });
   } catch (err) {
-    logger.error('Nonce Error::' + err);
+    logger.error('Nonce Error::%o', err);
     res.status(500).send(err);
   }
 });
@@ -21,8 +21,13 @@ MaticRoutes.post('/api/MATIC/:network/gas', async (req, res) => {
   try {
     const gasLimit = await MATIC.estimateGas({ network, from, to, value, data, gasPrice });
     res.json(gasLimit);
-  } catch (err) {
-    res.status(500).send(err);
+  } catch (err: any) {
+    if (err?.code != null) { // Preventable error from geth (probably due to insufficient funds or similar)
+      res.status(400).send(err.message);
+    } else {
+      logger.error('Gas Error::%o', err);
+      res.status(500).send(err);
+    }
   }
 });
 
@@ -32,6 +37,7 @@ MaticRoutes.get('/api/MATIC/:network/token/:tokenAddress', async (req, res) => {
     const tokenInfo = await MATIC.getERC20TokenInfo(network, tokenAddress);
     res.json(tokenInfo);
   } catch (err) {
+    logger.error('Token Info Error::%o', err);
     res.status(500).send(err);
   }
 });
@@ -42,6 +48,7 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/info/:multisigContractAddress',
     const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
     res.json(multisigInfo);
   } catch (err) {
+    logger.error('Multisig Info Error::%o', err);
     res.status(500).send(err);
   }
 });
@@ -52,6 +59,7 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/:sender/instantiation/:txId', a
     const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender, txId);
     res.json(multisigInstantiationInfo);
   } catch (err) {
+    logger.error('Multisig Instantiation Error::%o', err);
     res.status(500).send(err);
   }
 });
@@ -62,6 +70,7 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/txps/:multisigContractAddress',
     const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
     res.json(multisigTxpsInfo);
   } catch (err) {
+    logger.error('Multisig Txps Error::%o', err);
     res.status(500).send(err);
   }
 });
@@ -80,6 +89,7 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/transactions/:multisigContractA
       args: req.query
     });
   } catch (err) {
+    logger.error('Multisig Transactions Error::%o', err);
     return res.status(500).send(err);
   }
 });

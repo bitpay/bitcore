@@ -62,7 +62,7 @@ export class XrpBlockModel extends BaseBlock<IBlock> {
         { chain, network, hash: previousBlock.hash },
         { $set: { nextBlockHash: convertedBlock.hash } }
       );
-      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+      logger.debug('Updating previous block.nextBlockHash %o', convertedBlock.hash);
     }
 
     await XrpTransactionStorage.batchImport({
@@ -103,7 +103,7 @@ export class XrpBlockModel extends BaseBlock<IBlock> {
     })();
 
     const height = block.height;
-    logger.debug('Setting blockheight', height);
+    logger.debug('Setting blockheight: %o', height);
     return {
       updateOne: {
         filter: {
@@ -136,7 +136,7 @@ export class XrpBlockModel extends BaseBlock<IBlock> {
       } else {
         logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
       }
-      logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
+      logger.info(`Resetting tip to ${localTip.height - 1} %o`, { chain, network });
     }
     const reorgOps = [
       this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
@@ -144,7 +144,7 @@ export class XrpBlockModel extends BaseBlock<IBlock> {
     ];
     await Promise.all(reorgOps);
 
-    logger.debug('Removed data from above blockHeight: ', localTip.height);
+    logger.debug('Removed data from above blockHeight: %o', localTip.height);
     return localTip.hash !== prevHash;
   }
 

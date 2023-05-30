@@ -145,7 +145,7 @@ export class EmailService {
       ],
       err => {
         if (err) {
-          logger.error(err);
+          logger.error('%o', err);
         }
         return cb(err);
       }
@@ -189,7 +189,7 @@ export class EmailService {
       try {
         return Mustache.render(t, data);
       } catch (e) {
-        logger.error('Could not apply data to template', e);
+        logger.error('Could not apply data to template: %o', e);
         error = e;
       }
     });
@@ -337,7 +337,7 @@ export class EmailService {
           try {
             data.urlForTx = Mustache.render(urlTemplate, data);
           } catch (ex) {
-            logger.warn('Could not render public url for tx', ex);
+            logger.warn('Could not render public url for tx: %o', ex);
           }
         } else {
           logger.warn(`Could not find template for chain "${wallet.chain}" on network "${wallet.network}"`);
@@ -362,7 +362,7 @@ export class EmailService {
     this.mailer
       .send(mailOptions)
       .then(result => {
-        logger.debug('Message sent: ', result || '');
+        logger.debug('Message sent: %o', result || '');
         return cb(null, result);
       })
       .catch(err => {
@@ -371,7 +371,7 @@ export class EmailService {
           errStr = err.toString().substr(0, 100);
         } catch (e) {}
 
-        logger.warn('An error occurred when trying to send email to ' + email.to, errStr || err);
+        logger.warn('An error occurred when trying to send email to %o %o', email.to, (errStr || err));
         return cb(err);
       });
   }
@@ -498,7 +498,7 @@ export class EmailService {
                     errStr = err.toString().substr(0, 100);
                   } catch (e) {}
 
-                  logger.warn('An error ocurred generating email notification', errStr || err);
+                  logger.warn('An error ocurred generating email notification: %o', errStr || err);
                 }
                 return cb(err);
               }

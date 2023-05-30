@@ -56,7 +56,7 @@ export class P2pManager {
       try {
         p2pWorker.start();
       } catch (e) {
-        logger.error('P2P Worker died with', e);
+        logger.error('P2P Worker died with %o', e);
       }
     }
   }
@@ -147,7 +147,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       }
     } catch (e: any) {
       logger.warn('Issue unregistering');
-      logger.error(e);
+      logger.error('%o', e);
     }
   }
 }

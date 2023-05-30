@@ -55,7 +55,7 @@ export class StorageService {
           this.connection.emit('CONNECTED');
           resolve(this.client);
         } catch (err: any) {
-          logger.error(err);
+          logger.error('%o', err);
           attempted++;
           if (attempted > 5) {
             clearInterval(attemptConnectId);

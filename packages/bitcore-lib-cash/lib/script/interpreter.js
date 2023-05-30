@@ -1693,7 +1693,7 @@ Interpreter.prototype.step = function() {
             if(!sig.isSchnorr) {
               fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
             } else {
-              fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, "schnorr");
+              fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, 'schnorr');
             }
           } catch (e) {
             //invalid sig or pubkey

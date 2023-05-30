@@ -10759,19 +10759,22 @@ describe('Wallet service', function() {
       });
 
       describe('User logged out', () => {
-        it('should return swap crypto disabled if the user is located in NY', () => {
-          const opts = {
-            currentLocationCountry: 'US',
-            currentLocationState: 'NY',
-          };
-    
-          server.getServicesData(opts, (err, config) => {
-            should.not.exist(err);
-            should.exist(config.swapCrypto);
-            config.swapCrypto.disabled.should.equal(true);
-            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+        const usaBannedStates = ['HI', 'LA', 'NY'];
+        for (const bannedState of usaBannedStates) {
+          it(`should return swap crypto disabled if the user is located in ${bannedState}`, () => {
+            const opts = {
+              currentLocationCountry: 'US',
+              currentLocationState: bannedState,
+            };
+      
+            server.getServicesData(opts, (err, config) => {
+              should.not.exist(err);
+              should.exist(config.swapCrypto);
+              config.swapCrypto.disabled.should.equal(true);
+              config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+            });
           });
-        });
+        };
 
         it('should return swap crypto enabled if the user is in USA located outside NY', () => {
           const opts = {
@@ -11015,6 +11018,80 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('#moonpayGetCurrencyLimits', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            currencyAbbreviation: 'btc',
+            baseCurrencyCode: 'usd'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.baseCurrencyCode;
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
     describe('#moonpayGetSignedPaymentUrl', () => {
       beforeEach(() => {
         req = {
@@ -11208,6 +11285,16 @@ describe('Wallet service', function() {
           apiKey: 'apiKey2',
           api: 'api2',
           widgetApi: 'widgetApi2',
+        },
+        sandboxWeb: {
+          apiKey: 'apiKey3',
+          api: 'api3',
+          widgetApi: 'widgetApi3',
+        },
+        productionWeb: {
+          apiKey: 'apiKey4',
+          api: 'api4',
+          widgetApi: 'widgetApi4',
         }
       }
 
@@ -11250,6 +11337,17 @@ describe('Wallet service', function() {
       });
   
       it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
         server.request = fakeRequest;
         try {
           const data = await server.rampGetQuote(req);
@@ -11322,7 +11420,26 @@ describe('Wallet service', function() {
         try {
           const data = server.rampGetSignedPaymentUrl(req);
           should.exist(data.urlWithSignature);
-          data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&swapAsset=BTC_BTC&swapAmount=1000000&enabledFlows=ONRAMP&defaultFlow=ONRAMP&userAddress=bitcoin%3A123123&selectedCountryCode=US&defaultAsset=BTC_BTC&finalUrl=bitpay%3A%2F%2Framp');
+          data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&swapAsset=BTC_BTC&userAddress=bitcoin%3A123123&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&enabledFlows=ONRAMP&defaultFlow=ONRAMP&swapAmount=1000000&defaultAsset=BTC_BTC');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK for web', () => {
+        try {
+          req.body = {
+            env: 'production',
+            context: 'web',
+            swapAsset: 'BTC_BTC',
+            userAddress: 'bitcoin:123123',
+            selectedCountryCode: 'US',
+            defaultAsset: 'BTC_BTC',
+            finalUrl: 'bitpay://ramp',
+          }
+          const data = server.rampGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi4?hostApiKey=apiKey4&swapAsset=BTC_BTC&userAddress=bitcoin%3A123123&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&defaultAsset=BTC_BTC');
         } catch (err) {
           should.not.exist(err);
         }

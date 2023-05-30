@@ -84,7 +84,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
         { chain, network, hash: previousBlock.hash },
         { $set: { nextBlockHash: convertedBlock.hash } }
       );
-      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+      logger.debug('Updating previous block.nextBlockHash: %o', convertedBlock.hash);
     }
 
     if (initialSyncComplete) {
@@ -111,7 +111,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
     })();
 
     const height = block.height;
-    logger.debug('Setting blockheight', height);
+    logger.debug('Setting blockheight: %o', height);
     return {
       updateOne: {
         filter: {
@@ -152,7 +152,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
     ];
     await Promise.all(reorgOps);
 
-    logger.debug('Removed data from above blockHeight: ', localTip.height);
+    logger.debug('Removed data from above blockHeight: %o', localTip.height);
     return localTip.hash !== prevHash;
   }
 

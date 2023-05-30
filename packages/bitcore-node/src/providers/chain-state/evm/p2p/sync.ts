@@ -191,7 +191,7 @@ export class MultiThreadSync extends EventEmitter {
           1
         );
         if (code !== 0) {
-          logger.error('Thread exited with non-zero code', code);
+          logger.error('Thread exited with non-zero code: %o', code);
         }
         if (self.threads.length === 0) {
           logger.info('All syncing threads stopped.');

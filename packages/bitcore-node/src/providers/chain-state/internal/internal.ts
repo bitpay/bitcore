@@ -69,6 +69,9 @@ export class InternalStateProvider implements IChainStateService {
     if (args.unspent) {
       query.spentHeight = { $lt: SpentHeightIndicators.minimum };
     }
+    if (args.excludeConflicting) {
+      query.mintHeight = { $gt: SpentHeightIndicators.conflicting };
+    }
     return query;
   }
 

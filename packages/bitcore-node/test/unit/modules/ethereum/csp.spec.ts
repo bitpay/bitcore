@@ -226,7 +226,18 @@ describe('ETH Chain State Provider', function() {
         await ETH.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err).to.equal('need some param');
+        expect(err).to.deep.equal({ message: 'need some param' });
+      }
+    });
+
+    it('should reject if response body is missing result and has error', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, null, { error: { code: 2, message: 'need some param' } });
+  
+      try {
+        await ETH.estimateGas({ network });
+        throw new Error('should have thrown');
+      } catch (err) {
+        expect(err).to.deep.equal({ code: 2, message: 'need some param' });
       }
     });
 

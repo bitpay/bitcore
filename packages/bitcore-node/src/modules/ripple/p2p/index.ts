@@ -220,7 +220,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
             resolve();
           });
       } catch (e: any) {
-        logger.error(e);
+        logger.error('%o', e);
       }
     });
   }
@@ -271,7 +271,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
             const tx = await client.getTransaction(txid);
             block.transactions.push(tx);
           } catch (e) {
-            logger.warn(`Unparseable transaction. Skipping: Block ${currentHeight} Txid: ${txid}`, e);
+            logger.warn(`Unparseable transaction. Skipping: Block ${currentHeight} Txid: ${txid} Error: %o`, e);
           }
         }
       }
@@ -343,7 +343,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       this.events.emit('SYNCDONE');
       return true;
     } catch (e: any) {
-      logger.error(e);
+      logger.error('%o', e);
       this.syncing = false;
       await wait(2000);
       return this.sync();

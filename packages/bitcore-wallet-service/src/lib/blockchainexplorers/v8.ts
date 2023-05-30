@@ -1,4 +1,5 @@
 import * as async from 'async';
+import * as crypto from 'crypto';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
@@ -97,14 +98,15 @@ export class V8 {
     });
 
     const k = 'addAddresses' + addresses.length;
-    console.time(k);
+    const perfKey = getPerformanceKey(k);
+    console.time(perfKey);
     client
       .importAddresses({
         payload,
         pubKey: wallet.beAuthPublicKey2
       })
       .then(ret => {
-        console.timeEnd(k);
+        console.timeEnd(perfKey);
         return cb(null, ret);
       })
       .catch(err => {
@@ -184,7 +186,8 @@ export class V8 {
   getUtxos(wallet, height, cb, params: { includeSpent?: boolean } = {}) {
     $.checkArgument(cb);
     const client = this._getAuthClient(wallet);
-    console.time('V8getUtxos');
+    const perfKey = getPerformanceKey('V8getUtxos');
+    console.time(perfKey);
     client
       .getCoins({
         pubKey: wallet.beAuthPublicKey2,
@@ -192,7 +195,7 @@ export class V8 {
         ...params
       })
       .then(utxos => {
-        console.timeEnd('V8getUtxos');
+        console.timeEnd(perfKey);
         return cb(null, this._transformUtxos(utxos, height));
       })
       .catch(cb);
@@ -201,11 +204,12 @@ export class V8 {
   getCoinsForTx(txId, cb) {
     $.checkArgument(cb);
     const client = this._getClient();
-    console.time('V8getCoinsForTx');
+    const perfKey = getPerformanceKey('V8getCoinsForTx');
+    console.time(perfKey);
     client
       .getCoinsForTx({ txId, payload: {} })
       .then(coins => {
-        console.timeEnd('V8getCoinsForTx');
+        console.timeEnd(perfKey);
         return cb(null, coins);
       })
       .catch(cb);
@@ -216,11 +220,12 @@ export class V8 {
    */
   getCheckData(wallet, cb) {
     const client = this._getAuthClient(wallet);
-    console.time('WalletCheck');
+    const perfKey = getPerformanceKey('WalletCheck');
+    console.time(perfKey);
     client
       .getCheckData({ pubKey: wallet.beAuthPublicKey2, payload: {} })
       .then(checkInfo => {
-        console.timeEnd('WalletCheck');
+        console.timeEnd(perfKey);
         return cb(null, checkInfo);
       })
       .catch(cb);
@@ -247,13 +252,13 @@ export class V8 {
       })
       .catch(err => {
         if (count > 3) {
-          logger.error('FINAL Broadcast error:', err);
+          logger.error('FINAL Broadcast error: %o', err);
           return cb(err);
         } else {
           count++;
           // retry
           setTimeout(() => {
-            logger.info('Retrying broadcast after', count * Defaults.BROADCAST_RETRY_TIME);
+            logger.info('Retrying broadcast after %o', count * Defaults.BROADCAST_RETRY_TIME);
             return this.broadcast(rawTx, cb, count);
           }, count * Defaults.BROADCAST_RETRY_TIME);
         }
@@ -295,7 +300,8 @@ export class V8 {
   }
 
   getTransactions(wallet, startBlock, cb) {
-    console.time('V8 getTxs');
+    const perfKey = getPerformanceKey('V8getTxs');
+    console.time(perfKey);
     if (startBlock) {
       logger.debug(`getTxs: startBlock ${startBlock}`);
     } else {
@@ -345,13 +351,13 @@ export class V8 {
         if (tx.height >= 0) txs.push(tx);
         else if (tx.height >= -2) unconf.push(tx);
       });
-      console.timeEnd('V8 getTxs');
+      console.timeEnd(perfKey);
       // blockTime on unconf is 'seenTime';
       return cb(null, _.flatten(_.orderBy(unconf, 'blockTime', 'desc').concat(txs.reverse())));
     });
 
     txStream.on('error', e => {
-      logger.error('v8 error:' + e);
+      logger.error('v8 error: %o', e);
       broken = true;
       return cb(e);
     });
@@ -359,7 +365,7 @@ export class V8 {
 
   getAddressActivity(address, cb) {
     const url = this.baseUrl + '/address/' + address + '/txs?limit=1';
-    console.log('[v8.js.328:url:] CHECKING ADDRESS ACTIVITY', url); // TODO
+    logger.info('[v8.js %o] CHECKING ADDRESS ACTIVITY', url);
     this.request
       .get(url, {})
       .then(ret => {
@@ -443,7 +449,7 @@ export class V8 {
   getTokenAllowance(opts, cb) {
     const url =
       this.baseUrl + '/token/' + opts.tokenAddress + '/allowance/' + opts.ownerAddress + '/for/' + opts.spenderAddress;
-    logger.info('[v8.js.378:url:] CHECKING TOKEN ALLOWANCE', url);
+    logger.info('[v8.js %o] CHECKING TOKEN ALLOWANCE', url);
     this.request
       .get(url, {})
       .then(allowance => {
@@ -457,7 +463,7 @@ export class V8 {
 
   getMultisigTxpsInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/txps/' + opts.multisigContractAddress;
-    console.log('[v8.js.378:url:] CHECKING CONTRACT TXPS INFO', url);
+    logger.info('[v8.js %o] CHECKING CONTRACT TXPS INFO', url);
     this.request
       .get(url, {})
       .then(multisigTxpsInfo => {
@@ -485,13 +491,13 @@ export class V8 {
 
               // only process right responses.
               if (!_.isUndefined(ret.blocks) && ret.blocks != x) {
-                logger.info(`Ignoring response for ${x}:` + JSON.stringify(ret));
+                logger.info(`Ignoring response for ${x}: %o`, ret);
                 return icb();
               }
 
               result[x] = ret.feerate;
             } catch (e) {
-              logger.warn('fee error:', e);
+              logger.warn('fee error: %o', e);
             }
 
             return icb();
@@ -581,7 +587,7 @@ export class V8 {
     });
 
     walletsSocket.on('connect_error', () => {
-      logger.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chainNetwork}`);
+      logger.error(`Error connecting to ${this.getConnectionInfo()} ${this.chainNetwork}`);
     });
 
     walletsSocket.on('failure', err => {
@@ -610,9 +616,13 @@ export class V8 {
 
 const _parseErr = (err, res) => {
   if (err) {
-    logger.warn('V8 error: ', err);
+    logger.warn('V8 error: %o', err);
     return 'V8 Error';
   }
   logger.warn('V8 ' + res.request.href + ' Returned Status: ' + res.statusCode);
   return 'Error querying the blockchain';
+};
+
+const getPerformanceKey = (name: string) => {
+  return name + '-' + crypto.randomBytes(5).toString('hex');
 };

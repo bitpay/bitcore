@@ -280,6 +280,8 @@ curl -v localhost:3000/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJ
 
 GET `/api/BTC/mainnet/address/:address/?unspent=true`
 
+**if you want to filter out conflicting utxos, you can add `excludeConflicting=true` to the end of the url.**
+
 <details>
 <summary><b>Response</b></summary>
 <br>

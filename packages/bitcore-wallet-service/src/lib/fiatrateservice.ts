@@ -33,7 +33,7 @@ export class FiatRateService {
       ],
       err => {
         if (err) {
-          logger.error(err);
+          logger.error('%o', err);
         }
         return cb(err);
       }
@@ -66,12 +66,12 @@ export class FiatRateService {
       (coin, next2) => {
         this._retrieve(provider, coin, (err, res) => {
           if (err) {
-            logger.warn('Error retrieving data for ' + provider.name + coin, err);
+            logger.warn('Error retrieving data for %o: %o', provider.name + coin, err);
             return next2();
           }
           this.storage.storeFiatRate(coin, res, err => {
             if (err) {
-              logger.warn('Error storing data for ' + provider.name, err);
+              logger.warn('Error storing data for %o: %o', provider.name, err);
             }
             return next2();
           });
@@ -83,14 +83,14 @@ export class FiatRateService {
   }
 
   _retrieve(provider, coin, cb) {
-    logger.debug(`Fetching data for ${provider.name} / ${coin} `);
+    logger.debug(`Fetching data for ${provider.name} / ${coin}`);
 
     const handleCoinsRates = (err, res) => {
       if (err || !res) {
         return cb(err);
       }
 
-      logger.debug(`Data for ${provider.name} /  ${coin} fetched successfully`);
+      logger.debug(`Data for ${provider.name} / ${coin} fetched successfully`);
 
       if (!provider.parseFn) {
         return cb(new Error('No parse function for provider ' + provider.name));

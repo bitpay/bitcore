@@ -75,7 +75,7 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
 
   var self = this;
   var results = [];
-  _.each(this.publicKeys, function(publicKey) {
+  for (const publicKey of this.publicKeys) {
     if (publicKey.toString() === privateKey.publicKey.toString()) {
       results.push(new TransactionSignature({
         publicKey: privateKey.publicKey,
@@ -86,7 +86,7 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
         sigtype: sigtype
       }));
     }
-  });
+  }
   return results;
 };
 
@@ -150,8 +150,7 @@ MultiSigScriptHashInput.prototype.publicKeysWithoutSignature = function() {
 };
 
 MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signature, signingMethod) {
-  // FIXME: Refactor signature so this is not necessary
-  signingMethod = signingMethod || "ecdsa";
+  signingMethod = signingMethod || (signature.signature.isSchnorr ? 'schnorr' : 'ecdsa');
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
       transaction,

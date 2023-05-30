@@ -6,7 +6,7 @@ services:
     image: mongo:3.6.23
 
   bitcoin:
-    image: ruimarinho/bitcoin-core:0.16
+    image: ruimarinho/bitcoin-core:24
     command:
       -printtoconsole
       -regtest=1
@@ -21,10 +21,10 @@ services:
       -rpcbind=0.0.0.0
       -rpcuser=bitcorenodetest
       -rpcpassword=local321
-      # -fallbackfee=0.00001
+      -fallbackfee=0.00001
 
   erigon:
-    image: thorax/erigon:v2022.08.01
+    image: thorax/erigon:v2022.10.01
     command:
       /usr/local/bin/erigon
       --chain=dev
@@ -37,7 +37,7 @@ services:
       --ws
 
   geth:
-    image: 0labs/geth:v1.10.23
+    image: 0labs/geth:v1.11.5
     volumes:
       - ./.docker/geth-keystore:/keystore
     command:
