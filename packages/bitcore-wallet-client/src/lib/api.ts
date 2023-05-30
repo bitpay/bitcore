@@ -3384,6 +3384,24 @@ export class API extends EventEmitter {
     });
   }
 
+  sardineGetQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/sardine/quote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  sardineGetToken(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/sardine/getToken', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   simplexGetQuote(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post('/v1/service/simplex/quote', data, (err, data) => {

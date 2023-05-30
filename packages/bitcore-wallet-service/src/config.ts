@@ -123,6 +123,10 @@ const Config = () => {
           disabled: false,
           removed: false
         },
+        sardine: {
+          disabled: false,
+          removed: false
+        },
         simplex: {
           disabled: false,
           removed: false
@@ -188,6 +192,28 @@ const Config = () => {
     //     apiKey: 'ramp_production_web_api_key_here',
     //     api: 'https://api-instant.ramp.network/api',
     //     widgetApi: 'https://buy.ramp.network',
+    //   }
+    // },
+    // sardine: {
+    //   sandbox: {
+    //     api: 'https://api.sandbox.sardine.ai',
+    //     secretKey: 'sardine_sandbox_secret_key_here',
+    //     clientId: 'sardine_sandbox_client_id_here',
+    //   },
+    //   production: {
+    //     api: 'https://api.sardine.ai/v1',
+    //     secretKey: 'sardine_production_secret_key_here',
+    //     clientId: 'sardine_production_client_id_here',
+    //   },
+    //   sandboxWeb: {
+    //     api: 'https://api.sandbox.sardine.ai',
+    //     secretKey: 'sardine_sandbox_web_secret_key_here',
+    //     clientId: 'sardine_sandbox_web_client_id_here',
+    //   },
+    //   productionWeb: {
+    //     api: 'https://api.sardine.ai/v1',
+    //     secretKey: 'sardine_production_web_secret_key_here',
+    //     clientId: 'sardine_production_web_client_id_here',
     //   }
     // },
     // simplex: {
