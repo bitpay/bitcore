@@ -9155,6 +9155,7 @@ export class WalletService {
     let location = opts?.location;
     let attendance = opts?.attendance;
     let token = opts?.token;
+    let resultUpdate;
 
     async.series(
       [
@@ -9183,7 +9184,30 @@ export class WalletService {
           next();
         },
         next => {
-          this.storage.updateLogDevice(device, next);
+          this.storage.updateLogDevice(device, (err, result) => {
+            if (err) return next(err);
+            if (result) {
+              resultUpdate = result;
+              next();
+            }
+          });
+        },
+        next => {
+          if (device.isFirstInstall === false && device.token) {
+            this.applyAppreciationForDevice(device, (err, appreciationInfo) => {
+              if (err) {
+                return cb(err);
+              }
+              if (appreciationInfo) {
+                this.pushNotificationAppreciationMonthly(device.token, device.packageName, appreciationInfo, (err, isSent) => {
+                  if (err) return next(err);
+                  if (isSent) return cb(null, resultUpdate);
+                });
+              }
+            });
+          } else {
+            return cb(null, resultUpdate);
+          }
         }
       ],
       err => {
@@ -9259,7 +9283,7 @@ export class WalletService {
                   data: {
                     title,
                     body,
-                    claimCode: device.claimCode,
+                    claimCode: appreciation.claimCode,
                     status: appreciation.status,
                     createdOn: device.createdOn,
                     type: appreciation.type
@@ -9275,11 +9299,15 @@ export class WalletService {
                 this.pushNotifications._makeRequest(notification, (err, response) => {
                   if (err) logger.error('ERROR:' + err);
                   if (response) {
-                    //                      logger.debug('Request status:  ' + response.statusCode);
-                    //                      logger.debug('Request message: ' + response.statusMessage);
-                    //                      logger.debug('Request body:  ' + response.request.body);
+                    const statusCode = _.get(response, 'statusCode');
+                    const statusMessage = _.get(response, 'statusMessage');
+                    const bodyRes = _.get(response, 'body');
+                    if (statusCode === 200) {
+                      return cb(null, bodyRes);
+                    } else {
+                      return next(new Error(statusMessage));
+                    }
                   }
-                  next();
                 });
               }
             },
@@ -9287,7 +9315,6 @@ export class WalletService {
               return next(err);
             }
           );
-          return cb(null, 'Resend succesfully');
         }
       ],
       err => {
@@ -9923,6 +9950,58 @@ export class WalletService {
         if (err) return cb(err);
         if (!listClaimCode) return cb('List claim code weekly empty!');
         return cb(null, listClaimCode);
+      }
+    );
+  }
+
+  editLogDevice(deviceId, checkIn, cb) {
+    let device;
+    async.series(
+      [
+        next => {
+          if (deviceId) {
+            this.storage.getLogDeviceById(deviceId, (err, d) => {
+              if (err) {
+                return next(err);
+              }
+              device = d;
+              next();
+            });
+          } else {
+            next(new Error('No have deviceId'));
+          }
+        },
+        next => {
+          if (!device) {
+            next(new Error('No have device to update'));
+          } else {
+            if (checkIn) {
+              device.countNumber = checkIn;
+            } else {
+              next(new Error('No have checkIn to update'));
+            }
+
+          }
+          next();
+        },
+        next => {
+          this.storage.updateLogDevice(device, (err, result) => {
+            if (err) return cb(err);
+            if (result) {
+              cb(null, result)
+            }
+          });
+        }
+      ],
+      err => {
+        if (err) {
+          return cb(err);
+        }
+        if (!device) {
+          return cb(new Error('Could not get current device for this deviceId'));
+        }
+
+        return cb(null, device);
       }
     );
   }

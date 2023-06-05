@@ -1785,6 +1785,20 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v3/device/checkInUpdate', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      const opts = req.body;
+      server.editLogDevice(opts?.deviceId, opts?.checkIn, (err, result) => {
+        if (err) return returnError(err, res, req);
+        res.json(result);
+      });
+    });
+
     router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer, res) => {
       let server;
       try {
@@ -2434,7 +2448,7 @@ export class ExpressApp {
       });
       setTimeout(() => {
         server.checkOrderInSwapQueue();
-        server.initCheckQueue();
+        // server.initCheckQueue();
       }, 10000);
       return cb();
     });
