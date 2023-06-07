@@ -9169,19 +9169,19 @@ export class WalletService {
               next();
             });
           } else {
-            next(new Error('No have deviceId'));
+            return next(new Error('No have deviceId'));
           }
         },
         next => {
           if (!device) {
-            next(new Error('No have device to update'));
+            return next(new Error('No have device to update'));
           } else {
             device.touch();
             if (location) device.location = location;
             if (token) device.token = token;
             if (attendance) device.attendance();
+            next();
           }
-          next();
         },
         next => {
           this.storage.updateLogDevice(device, (err, result) => {
