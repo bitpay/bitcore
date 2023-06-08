@@ -2539,7 +2539,7 @@ export class API extends EventEmitter {
 
   // /**
   // * Returns nonce.
-  // * @param {Object} opts - chain, coin, network, walletId (optional)
+  // * @param {Object} opts - address, chain, coin, network
   // * @return {Callback} cb - Return error (if exists) and nonce
   // */
   getNonce(opts, cb) {

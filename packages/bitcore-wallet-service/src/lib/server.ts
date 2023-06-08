@@ -389,14 +389,15 @@ export class WalletService implements IWalletService {
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
 
-  _releaseLock(lockName){
+  _releaseLock(lockName) {
     return new Promise((resolve, reject) => {
-      this.lock.releaseLock(lockName, err => { 
+      this.lock.release(lockName, err => {
         if (err) return reject(err);
         return resolve(true);
       });
     })
   }
+
   logi(message, ...args) {
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
@@ -2282,12 +2283,11 @@ export class WalletService implements IWalletService {
   }
 
   // Gets an updated nonce based on exisiting signed transactions.
-  // Takes the nonce found and stores it in cache associated to TXP.
   setNonce(opts) {
     return new Promise((resolve, reject) => {
       const lockName = this.getNonceLockName(opts.network, opts.address);
-      
-      this.getWallet({}, async (err, wallet) => {          
+
+      this.getWallet({}, async (err, wallet) => {
         if (err) return reject(err);
         this.getTx(
           {
@@ -2295,11 +2295,13 @@ export class WalletService implements IWalletService {
           },
           (err, txp) => {
             if (err) return reject(err);
-            const lockParams =  { lockTime: Defaults.TX_ASSIGN_EVM_NONCE_TIME, waitTime: 0 }
-            this.lock.acquire(lockName,lockParams, async (err,release) => {
+
+            const lockParams =  { lockTime: Defaults.TX_ASSIGN_EVM_NONCE_TIME, waitTime: 0 };
+
+            this.lock.acquire(lockName, lockParams, async (err,release) => {
               if (err) return reject(err);
 
-              try{
+              try {
                 txp.nonce = await ChainService.getTransactionCount(this, wallet, opts.address);
               } catch (error){
                 logger.error('Error getting nonce', err);
@@ -2308,11 +2310,15 @@ export class WalletService implements IWalletService {
               }
 
               this.storage.storeTx(this.walletId, txp , err => {
-                if (err) return reject(err);
+                if (err) {
+                  release();
+                  return reject(err);
+                }
+                // release lock after transaction has been signed and saved in storage
                 return resolve(txp);
               });
           });
-        });   
+        });
       })
     });
   }
@@ -2327,7 +2333,8 @@ export class WalletService implements IWalletService {
       await this._releaseLock(lockName)
       return;
     } catch (err) {
-      return err;
+      this.logw('Error releasing getNonce lock', err);
+      return;
     }    
   }
 
@@ -2502,7 +2509,7 @@ export class WalletService implements IWalletService {
                 async next => {                  
                   if (!_.isNumber(opts.nonce)){                    
                     // If an EVM TX nonce is not given, we will set it during TX signing via setNonce
-                    if(ChainService.isEVMChain(wallet.chain)) {
+                    if (ChainService.isEVMChain(wallet.chain)) {
                       opts.nonce = null;
                     } else {
                       try {
@@ -2894,27 +2901,26 @@ export class WalletService implements IWalletService {
         if (action) return cb(Errors.COPAYER_VOTED);
         if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
-          if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
-
-          if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
-            try {
-              const txps = await this.getPendingTxsPromise({});
-              for (let t of txps) {
-                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
-                  return cb(Errors.TX_NONCE_CONFLICT);
-                }
-              }  
-            } catch (err) {
-              return cb(err);
-            }            
-          }
+        if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
         const copayer = wallet.getCopayer(this.copayerId);
         const isEVM = ChainService.isEVMChain(wallet.chain);
 
         if (isEVM) {
           if (!_.isNumber(txp.nonce)) return cb(Errors.NULL_NONCE);
-          if(opts.proposalSignature) txp.proposalSignature = opts.proposalSignature;
+
+          try {
+            const txps = await this.getPendingTxsPromise({});
+            for (let t of txps) {
+              if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
+                return cb(Errors.TX_NONCE_CONFLICT);
+              }
+            }
+          } catch (err) {
+            return cb(err);
+          }
+
+          if (opts.proposalSignature) txp.proposalSignature = opts.proposalSignature;
         }
 
         try {
@@ -2956,11 +2962,11 @@ export class WalletService implements IWalletService {
               },
               next => {
                 try {
-                  if(isEVM) this.processAssignedNonce(wallet, txp);
+                  if (isEVM) this.processAssignedNonce(wallet, txp);
                   next();
                 } catch (err) {
                   next(err);
-                }                
+                }
               }
             ],
             () => {
@@ -3071,7 +3077,7 @@ export class WalletService implements IWalletService {
               return cb(ex);
             }
 
-            if(ChainService.isEVMChain(wallet.chain)) {
+            if (ChainService.isEVMChain(wallet.chain)) {
               if (!_.isNumber(txp.nonce)) {
                 return cb(Errors.NULL_NONCE);
               }

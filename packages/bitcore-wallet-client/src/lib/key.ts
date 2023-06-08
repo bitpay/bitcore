@@ -487,7 +487,7 @@ export class Key {
     };
   };
 
-  sign = function (rootPath, txp, password, cb) { 
+  sign = function (rootPath, txp, password, cb) {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
       return cb(new Errors.ENCRYPTED_PRIVATE_KEY());

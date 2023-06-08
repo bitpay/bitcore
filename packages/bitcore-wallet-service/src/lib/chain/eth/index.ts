@@ -127,11 +127,11 @@ export class EthChain implements IChain {
     return 0;
   }
 
-  getNonce(server, wallet, from) {
+  getOnChainTxCount(server, wallet, from) {
     return new Promise((resolve, reject) => {
-      server._getTransactionCount(wallet, from, (err, nonce) => {
+      server._getTransactionCount(wallet, from, (err, txCount) => {
         if (err) return reject(err);
-        return resolve(nonce);
+        return resolve(txCount); // returns nonce
       });
     });
   }
@@ -140,7 +140,7 @@ export class EthChain implements IChain {
   getTransactionCount(server, wallet, from) {
     return new Promise(async (resolve, reject) => {
       try {
-        const nextNonce = await this.getNonce(server, wallet, from);
+        const nextNonce = await this.getOnChainTxCount(server, wallet, from);
         const signedTXs = await server.storage.fetchSignedTxs(wallet.id, { from, sortBy: 'nonce' });
 
         let i;

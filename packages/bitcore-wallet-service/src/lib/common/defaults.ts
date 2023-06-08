@@ -202,7 +202,7 @@ export const Defaults = {
   // Cache time for latest copay version (in ms)
   COPAY_VERSION_CACHE_DURATION: 6 * 60 * 1000,
 
-  // Cache time for assigning an EVM Nonce (in ms)
+  // Lock expiry time for assigning an EVM Nonce (in ms)
   TX_ASSIGN_EVM_NONCE_TIME: 2 * 60 * 1000,
 
   // Max allowed timespan for notification queries in seconds
