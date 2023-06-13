@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /****************************************
  *** This migration script will fix historical instances
- *** of an issue where inputs that were used in an RBF tx
- *** are left in a pending state if they are not used by
- *** the new tx that is the replacement.
+ *** of an issue where coins that were used in a now invalid
+ *** tx are left with that txid as the spentTxid even
+ *** though the coin is now unspent.
  ***
  *** This does a dry run by default. Use "--dryrun false"
  *** to execute outside of dry run.
@@ -55,7 +55,7 @@ class Migration {
 
     const helpIdx = args.findIndex(i => i == '--help');
     if (helpIdx >= 0) {
-      console.log("Usage: node fixUnspentInputs.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]");
+      console.log("Usage: node fixOldSpentTxid.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]");
       this.endProcess();
     }
 
@@ -90,12 +90,13 @@ class Migration {
   async runScript(args) {
     console.log('Running script with these args: ', args);
     let output = {};
+    let actuallySpent = {};
     const { chain, network, dryrun } = args;
     console.log(`Checking records for ${chain}:${network}`);
-    // Get all pending coins from valid transactions (mintHeight should be valid block height)
+    // Get all unspent coins that have a spentTxid specified
     const stream = this.coinModel.collection
       .find(
-        { chain, network, mintHeight: { $gt: -1 }, spentHeight: -1 } // -1 is pending status
+        { chain, network, mintHeight: { $gt: -1 }, spentHeight: -2, spentTxid: {$exists: true, $ne: null, $ne: ""} } // -2 is unspent status
       )
       .addCursorFlag('noCursorTimeout', true);
 
@@ -123,6 +124,7 @@ class Migration {
 
     let data = (await stream.next());
     while (data != null) {
+      // Verify that output is truly unspent
       let isUnspent = false;
       // If spent (or in mempool) then this returns an error otherwise returns data on unspent output
       try {
@@ -133,7 +135,12 @@ class Migration {
         isUnspent = !!coinData;
       } catch (e) {
         if (e.message && e.message.match(`No info found for ${data.mintTxid}`)){
-          // Coin must be spent or actually pending in mempool - do nothing
+          // Coin must be spent or actually pending in mempool - log so that we can diagnose, this is unexpected
+          if (actuallySpent[`${chain}-${network}`]) {
+            actuallySpent[`${chain}-${network}`].push(data);
+          } else {
+            actuallySpent[`${chain}-${network}`] = [data];
+          }
         } else {
           // Lets log the error in case it is config related
           console.error(e);
@@ -148,8 +155,8 @@ class Migration {
           }
 
           if (!dryrun) {
-            // Update record to be unspent (-2)
-            await this.coinModel.collection.updateOne({ _id: data._id }, { $set: { spentHeight: -2, spentTxid: '' } }); // -2 is unspent status
+            // Update record to be have no spentTxid
+            await this.coinModel.collection.updateOne({ _id: data._id }, { $set: { spentTxid: '' } });
           }
         }
       }
@@ -159,7 +166,7 @@ class Migration {
 
     console.log(`Finished ${dryrun ? 'scanning' : 'updating'} records for ${chain}-${network}`);
     const date = new Date().getTime();
-    const filename = `fixUnspentInputs-output-${chain}-${network}-${date}.log`;
+    const filename = `fixOldSpentTxid-output-${chain}-${network}-${date}.log`;
     console.log(`Writing output to ${filename}`);
     try {
       await fsPromises.writeFile(filename, JSON.stringify(output));
@@ -167,6 +174,20 @@ class Migration {
       // write to stdout
       console.log('Failed to write output to file. Writing to stdout instead.');
       console.log(output);
+    }
+    // if we found some spent coins mislabelled as unspent, log it
+    if (actuallySpent[`${chain}-${network}`]) {
+      console.log("WARNING: Found some coins that were marked unspent that were actually spent.");
+      const date = new Date().getTime();
+      const filename = `fixOldSpentTxid-actually-spent-${chain}-${network}-${date}.log`;
+      console.log(`Writing them to ${filename}`);
+      try {
+        await fsPromises.writeFile(filename, JSON.stringify(actuallySpent));
+      } catch (e) {
+        // write to stdout
+        console.log('Failed to write output to file. Writing to stdout instead.');
+        console.log(output);
+      }
     }
     if (dryrun) {
       console.log('Run the script with "--dryrun false" to execute this operation on the returned results.');
