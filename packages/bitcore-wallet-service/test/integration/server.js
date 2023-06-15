@@ -11467,6 +11467,7 @@ describe('Wallet service', function() {
             env: 'sandbox',
             referenceId: 'referenceId1',
             externalUserId: 'externalUserId1',
+            customerId: 'customerId1',
           }
         }
       });
