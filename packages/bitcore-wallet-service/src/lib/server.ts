@@ -4581,6 +4581,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.currentLocationState - (Optional) State where the user is currently located.
    * @param {string} opts.bitpayIdLocationCountry - (Optional) Country registered as address of the user logged in with BitpayId.
    * @param {string} opts.bitpayIdLocationState - (Optional) State registered as address of the user logged in with BitpayId.
+   * @param {Object} opts.platform - (Optional) Operating system and version of the user's device.
    */
   getServicesData(opts, cb) {
     let externalServicesConfig: ExternalServicesConfig = _.cloneDeep(config.services);
@@ -4595,6 +4596,10 @@ export class WalletService implements IWalletService {
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && usaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
       externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
+    }
+
+    if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'Swaps are currently unavailable in your area.'}};
     }
 
     return cb(null, externalServicesConfig);

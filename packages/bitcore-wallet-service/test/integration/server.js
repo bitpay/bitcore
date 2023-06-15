@@ -10879,6 +10879,68 @@ describe('Wallet service', function() {
             config.swapCrypto.disabled.should.equal(false);
           });
         });
+
+        it('should return swap crypto disabled if platform is ios and version of the app is 14.11.5', () => {
+          const opts = {
+            currentAppVersion: '14.11.5',
+            currentLocationCountry: 'US',
+            currentLocationState: 'GA',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'GA',
+            platform: {
+              os: 'ios',
+              version: '1.1.1'
+            },
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledTitle.should.equal('Unavailable');
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto enabled if platform is ios and version of the app is other than 14.11.5', () => {
+          const opts = {
+            currentAppVersion: '14.11.4',
+            currentLocationCountry: 'US',
+            currentLocationState: 'GA',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'GA',
+            platform: {
+              os: 'ios',
+              version: '1.1.1'
+            },
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return swap crypto enabled if platform is other than ios', () => {
+          const opts = {
+            currentAppVersion: '14.11.5',
+            currentLocationCountry: 'US',
+            currentLocationState: 'GA',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'GA',
+            platform: {
+              os: 'android',
+              version: '1.1.2'
+            },
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
       });
     });
   });
