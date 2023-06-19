@@ -2509,7 +2509,7 @@ export class WalletService implements IWalletService {
                 async next => {                  
                   if (!_.isNumber(opts.nonce)){                    
                     // If an EVM TX nonce is not given, we will set it during TX signing via setNonce
-                    if (ChainService.isEVMChain(wallet.chain)) {
+                    if (opts.txpVersion >= 4 && ChainService.isEVMChain(wallet.chain)) {
                       opts.nonce = null;
                     } else {
                       try {
