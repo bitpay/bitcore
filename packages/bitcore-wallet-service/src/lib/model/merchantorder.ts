@@ -5,6 +5,7 @@ export enum PaymentType {
 
 export interface IQpayInfoForEmail {
   payee: string;
+  payeeCode: string;
   paymentReason: string;
   paymentReasonValue: number;
   paymentDescription: string;
@@ -16,6 +17,7 @@ export interface IQpayInfoForEmail {
   amountToken: number;
   dateFormatted: string;
   date: Date;
+  taxId?: string;
 }
 
 export interface IMerchantOrder {
@@ -23,7 +25,7 @@ export interface IMerchantOrder {
   coin: string;
   tokenId: string;
   txIdFromUser: string;
-  txMerchantPayment?: string;
+  txIdMerchantPayment?: string;
   merchantCode: string;
   userAddress: string;
   amount: number;

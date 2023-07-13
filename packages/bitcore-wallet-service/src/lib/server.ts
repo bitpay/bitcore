@@ -72,7 +72,11 @@ sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
 const csv = require('csvtojson');
 // import os module
 const os = require('os');
-
+const { google } = require('googleapis');
+const auth = new google.auth.GoogleAuth({
+  keyFile: '../../qpayPriv.json',
+  scopes: 'https://www.googleapis.com/auth/spreadsheets'
+});
 let checkOrderInSwapQueueInterval = null;
 let swapQueueInterval = null;
 let conversionQueueInterval = null;
@@ -6331,8 +6335,63 @@ export class WalletService {
       const listMerchant = this.getListMerchantInfo();
       const merchantSelected = listMerchant.find(merchant => merchant.code === merchantOrder.merchantCode);
       if (!!merchantSelected.email && merchantSelected.email.length > 0) {
-        promistList.push(merchantSelected.email);
+        const msgMerchant = {
+          to: merchantSelected.email, // Change to your recipient
+          from: config.emailMerchant.emailFrom, // Change to your verified sender
+          subject: merchantOrder.listSubject[1],
+          text: 'abc',
+          html: merchantOrder.listEmailContent[1]
+        };
+        promistList.push(sgMail.send(msgMerchant));
       }
+      try {
+        // append new tx to google sheet
+        const client = await auth.getClient();
+        // Instance of Google Sheets API
+        const googleSheets = google.sheets({ version: 'v4', auth: client });
+        const spreadsheetId = config.spreadsheetId;
+        // Get metadata about spreadsheet
+        const metaData = await googleSheets.spreadsheets.get({
+          auth,
+          spreadsheetId
+        });
+        console.log(metaData);
+        const sheetName = metaData.data.sheets[0].properties.title;
+        await googleSheets.spreadsheets.values.append({
+          auth,
+          spreadsheetId,
+          range: sheetName + '!A:M',
+          valueInputOption: 'USER_ENTERED',
+          resource: {
+            values: [
+              [
+                merchantOrder.qpayInfoForEmail.date,
+                merchantOrder.userAddress,
+                merchantOrder.userEmailAddress,
+                merchantOrder.qpayInfoForEmail.taxId || '',
+                merchantOrder.qpayInfoForEmail.street || '',
+                merchantOrder.qpayInfoForEmail.unitNumber || '',
+                merchantOrder.qpayInfoForEmail.paymentReason || '',
+                merchantOrder.qpayInfoForEmail.accountNumber || '',
+                merchantOrder.qpayInfoForEmail.paymentDescription || '',
+                merchantSelected.name,
+                merchantOrder.qpayInfoForEmail.amountToken > 0 ? merchantOrder.qpayInfoForEmail.amountPay : '',
+                merchantOrder.coin,
+                merchantOrder.qpayInfoForEmail.amountToken === 0
+                  ? merchantOrder.qpayInfoForEmail.amountPay
+                  : merchantOrder.qpayInfoForEmail.amountToken,
+                merchantOrder.txIdFromUser,
+                merchantOrder.txIdMerchantPayment,
+                PaymentType[merchantOrder.paymentType],
+                !!merchantOrder.isPaidByUser
+              ]
+            ]
+          }
+        });
+      } catch (e) {
+        logger.error('Append data to google sheet error', e);
+      }
+
       await Promise.all(promistList)
         .then(() => {
           return resolve(true);
