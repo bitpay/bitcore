@@ -12,7 +12,7 @@ export class MATICTxProvider extends ETHTxProvider {
         chainId = 80001;
         break;
       case 'regtest':
-        chainId = 1337;
+        chainId = 13375;
         break;
       default:
         chainId = 137;
