@@ -6314,7 +6314,7 @@ export class WalletService {
         to: merchantOrder.userEmailAddress, // Change to your recipient
         from: config.emailMerchant.emailFrom, // Change to your verified sender
         subject: merchantOrder.listSubject[0],
-        text: 'abc',
+        text: '',
         html: merchantOrder.listEmailContent[0]
       };
       const promistList = [];
@@ -6326,7 +6326,7 @@ export class WalletService {
             to: email, // Change to your recipient
             from: config.emailMerchant.emailFrom, // Change to your verified sender
             subject: merchantOrder.listSubject[1],
-            text: 'abc',
+            text: '',
             html: merchantOrder.listEmailContent[1]
           };
           promistList.push(sgMail.send(msgMerchant));
@@ -6355,7 +6355,6 @@ export class WalletService {
           auth,
           spreadsheetId
         });
-        console.log(metaData);
         const sheetName = metaData.data.sheets[0].properties.title;
         await googleSheets.spreadsheets.values.append({
           auth,
@@ -9258,10 +9257,15 @@ export class WalletService {
                 return cb(err);
               }
               if (appreciationInfo) {
-                this.pushNotificationAppreciationMonthly(device.token, device.packageName, appreciationInfo, (err, isSent) => {
-                  if (err) return next(err);
-                  if (isSent) return cb(null, resultUpdate);
-                });
+                this.pushNotificationAppreciationMonthly(
+                  device.token,
+                  device.packageName,
+                  appreciationInfo,
+                  (err, isSent) => {
+                    if (err) return next(err);
+                    if (isSent) return cb(null, resultUpdate);
+                  }
+                );
               }
             });
           } else {
@@ -10039,7 +10043,6 @@ export class WalletService {
             } else {
               next(new Error('No have checkIn to update'));
             }
-
           }
           next();
         },
@@ -10047,7 +10050,7 @@ export class WalletService {
           this.storage.updateLogDevice(device, (err, result) => {
             if (err) return cb(err);
             if (result) {
-              cb(null, result)
+              cb(null, result);
             }
           });
         }
