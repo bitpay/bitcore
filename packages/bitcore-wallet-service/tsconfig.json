@@ -5,6 +5,7 @@
       "es6",
       "es2017"
     ],
+    "skipLibCheck": true,
     "noImplicitAny": false,
     "removeComments": true,
     "declaration": true,
