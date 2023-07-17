@@ -6314,7 +6314,7 @@ export class WalletService {
         to: merchantOrder.userEmailAddress, // Change to your recipient
         from: config.emailMerchant.emailFrom, // Change to your verified sender
         subject: merchantOrder.listSubject[0],
-        text: '',
+        text: 'abc',
         html: merchantOrder.listEmailContent[0]
       };
       const promistList = [];
@@ -6326,7 +6326,7 @@ export class WalletService {
             to: email, // Change to your recipient
             from: config.emailMerchant.emailFrom, // Change to your verified sender
             subject: merchantOrder.listSubject[1],
-            text: '',
+            text: 'abc',
             html: merchantOrder.listEmailContent[1]
           };
           promistList.push(sgMail.send(msgMerchant));
