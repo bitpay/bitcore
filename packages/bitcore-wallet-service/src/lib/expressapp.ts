@@ -2448,7 +2448,7 @@ export class ExpressApp {
       });
       setTimeout(() => {
         server.checkOrderInSwapQueue();
-        // server.initCheckQueue();
+        server.initCheckQueue();
       }, 10000);
       return cb();
     });
