@@ -74,7 +74,7 @@ const csv = require('csvtojson');
 const os = require('os');
 const { google } = require('googleapis');
 const auth = new google.auth.GoogleAuth({
-  keyFile: '../../qpayPriv.json',
+  credentials: config.googlesheetCredentials,
   scopes: 'https://www.googleapis.com/auth/spreadsheets'
 });
 let checkOrderInSwapQueueInterval = null;
