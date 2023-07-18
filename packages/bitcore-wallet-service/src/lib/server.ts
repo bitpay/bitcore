@@ -6359,7 +6359,7 @@ export class WalletService {
         await googleSheets.spreadsheets.values.append({
           auth,
           spreadsheetId,
-          range: sheetName + '!A:M',
+          range: sheetName + '!A:R',
           valueInputOption: 'USER_ENTERED',
           resource: {
             values: [
@@ -6368,6 +6368,7 @@ export class WalletService {
                 merchantOrder.userAddress,
                 merchantOrder.userEmailAddress,
                 merchantOrder.qpayInfoForEmail.taxId || '',
+                merchantOrder.qpayInfoForEmail.idNumber || '',
                 merchantOrder.qpayInfoForEmail.street || '',
                 merchantOrder.qpayInfoForEmail.unitNumber || '',
                 merchantOrder.qpayInfoForEmail.paymentReason || '',
