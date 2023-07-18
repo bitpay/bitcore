@@ -52,7 +52,6 @@ export function LogMiddleware() {
     openConnections++;
     // LogPhase(req, res, 'START');
     res.on('finish', () => {
-      openConnections--;
       LogPhase(req, res, 'END');
     });
     res.on('close', () => {
