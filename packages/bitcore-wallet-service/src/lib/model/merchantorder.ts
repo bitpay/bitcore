@@ -18,6 +18,7 @@ export interface IQpayInfoForEmail {
   dateFormatted: string;
   date: Date;
   taxId?: string;
+  idNumber?: string;
 }
 
 export interface IMerchantOrder {

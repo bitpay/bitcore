@@ -5375,7 +5375,6 @@ export class WalletService {
                                       this._handleSendSuccesMerchantOrder(
                                         amountCoinUserSentToServer,
                                         amountElps,
-                                        txId,
                                         merchantOrder,
                                         merchant.name
                                       );
@@ -5418,7 +5417,6 @@ export class WalletService {
                                   this._handleSendSuccesMerchantOrder(
                                     amountCoinUserSentToServer,
                                     amountElps,
-                                    txId,
                                     merchantOrder,
                                     merchant.name
                                   );
@@ -5464,9 +5462,9 @@ export class WalletService {
   async _handleSendSuccesMerchantOrder(
     amountCoinUserSentToServer,
     amountElps,
-    txId,
     merchantOrder: MerchantOrder,
-    merchantName
+    merchantName,
+    isPaidByUser = false
   ) {
     if (amountCoinUserSentToServer > 0) {
       bot.sendMessage(
@@ -5504,8 +5502,13 @@ export class WalletService {
           config.conversion.tokenCodeUnit +
           ' to ' +
           merchantName +
+          (isPaidByUser ? ' :: is Paid by user' : '') +
           '\n\n' +
-          this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdMerchantPayment, 'xec', 'View tx on the Explorer'),
+          this._addExplorerLinkIntoTxIdWithCoin(
+            isPaidByUser ? merchantOrder.txIdFromUser : merchantOrder.txIdMerchantPayment,
+            'xec',
+            'View tx on the Explorer'
+          ),
         { parse_mode: 'HTML' }
       );
     }
@@ -6265,21 +6268,31 @@ export class WalletService {
         return cb(new Error('Can not find config for conversion'));
       }
       const merchantOrder = MerchantOrder.create(opts);
+      const listMerchant = this.getListMerchantInfo();
+      if (!listMerchant || listMerchant.length < 1) {
+        return cb('Can not find list merchant on server');
+      }
+      const merchantSelected = listMerchant.find(merchant => merchant.code === merchantOrder.merchantCode);
+      if (!merchantSelected) {
+        return cb('Can not find selected merchant on server');
+      }
       if (merchantOrder.isPaidByUser) {
         merchantOrder.paymentType = PaymentType.SEND;
         this.storage.storeMerchantOrder(merchantOrder, async (err, result) => {
           if (err) return cb(err);
           // let order into queue
           try {
-            await this._handleEmailNotificationForMerchantOrder(merchantOrder);
+            const amountToken =
+              merchantOrder.qpayInfoForEmail.amountToken === 0
+                ? merchantOrder.qpayInfoForEmail.amountPay
+                : merchantOrder.qpayInfoForEmail.amountToken;
+            await this._handleSendSuccesMerchantOrder(0, amountToken, merchantOrder, merchantSelected.name, true);
           } catch (e) {
             logger.debug('email sent to user error: ', e);
           }
           return cb(null, true);
         });
       } else {
-        const listMerchant = this.getListMerchantInfo();
-        const merchantSelected = listMerchant.find(merchant => merchant.code === merchantOrder.merchantCode);
         if (!merchantSelected.isElpsAccepted) {
           merchantOrder.paymentType = PaymentType.BURN;
           if (!opts.signature) {
@@ -6359,7 +6372,7 @@ export class WalletService {
         await googleSheets.spreadsheets.values.append({
           auth,
           spreadsheetId,
-          range: sheetName + '!A:M',
+          range: sheetName + '!A:R',
           valueInputOption: 'USER_ENTERED',
           resource: {
             values: [
@@ -6368,6 +6381,7 @@ export class WalletService {
                 merchantOrder.userAddress,
                 merchantOrder.userEmailAddress,
                 merchantOrder.qpayInfoForEmail.taxId || '',
+                merchantOrder.qpayInfoForEmail.idNumber || '',
                 merchantOrder.qpayInfoForEmail.street || '',
                 merchantOrder.qpayInfoForEmail.unitNumber || '',
                 merchantOrder.qpayInfoForEmail.paymentReason || '',
