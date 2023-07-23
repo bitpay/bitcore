@@ -14,7 +14,7 @@ BWS can usually be installed within minutes and accommodates all the needed infr
 
 See [bitcore-wallet-client](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-client) for the _official_ client library that communicates to BWS and verifies its response. Also check [bitcore-wallet](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet) for a simple CLI wallet implementation that relies on BWS.
 
-BWS is been used in production enviroments for [Copay Wallet](https://copay.io), [Bitpay App wallet](https://bitpay.com/wallet) and others.
+BWS is used in production enviroments for [Copay Wallet](https://copay.io), [Bitpay App wallet](https://bitpay.com/wallet) and others.
 
 More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
@@ -82,7 +82,7 @@ Tx proposal need to be:
 3.  Then signed via /v?/txproposal/:id/signature for each copayer
 4.  Then broadcasted to the p2p network via /v?/txproposal/:id/broadcast
 
-The are plenty example creating and sending proposals in the `/test/integration` code.
+There are plenty of examples of creating and sending proposals in the `/test/integration` code.
 
 ## Enabling Regtest Mode for BWS and Copay
 
