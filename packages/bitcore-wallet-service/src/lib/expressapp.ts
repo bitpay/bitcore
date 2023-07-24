@@ -1897,6 +1897,40 @@ export class ExpressApp {
         });
     });
 
+    router.post('/v1/moralis/getWalletTokenBalances', async (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetWalletTokenBalances(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetTokenAllowance', async (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetTokenAllowance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     // Set no-cache by default
     this.app.use((req, res, next) => {
       res.setHeader('Cache-Control', 'no-store');

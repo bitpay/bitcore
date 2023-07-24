@@ -1,6 +1,7 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
 import * as _ from 'lodash';
+import * as moralis from 'moralis';
 import 'source-map-support/register';
 import logger from './logger';
 
@@ -37,6 +38,7 @@ const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
+const Moralis = moralis.default;
 
 import { Validation } from 'crypto-wallet-core';
 const Bitcore = require('bitcore-lib');
@@ -60,6 +62,7 @@ const Errors = require('./errors/errordefinitions');
 let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
+let isMoralisInitialized = false;
 
 let lock;
 let storage;
@@ -215,6 +218,31 @@ export class WalletService implements IWalletService {
       }
     };
 
+    // Init Moralis
+    const initMoralis = async cb => {
+      if (!isMoralisInitialized) {
+        try {
+          logger.info('Initializing Moralis...');
+          if (!config.moralis || !config.moralis.apiKey) throw new Error('Moralis missing credentials');
+
+          const API_KEY = config.moralis.apiKey;
+
+          await Moralis.start({
+            apiKey: API_KEY,
+          });
+          logger.info('Moralis initialized successfully!');
+          isMoralisInitialized = true;
+          return cb();
+        } catch (err) {
+          logger.error('Error initializing Moralis: ', err);
+          isMoralisInitialized = false;
+          return cb(err);
+        }
+      } else {
+        return cb();
+      }
+    };
+
     async.series(
       [
         next => {
@@ -225,6 +253,9 @@ export class WalletService implements IWalletService {
         },
         next => {
           initFiatRateService(next);
+        },
+        next => {
+          initMoralis(next);
         }
       ],
       err => {
@@ -6099,6 +6130,42 @@ export class WalletService implements IWalletService {
       });
     });
   }
+
+  // Moralis services
+  moralisGetWalletTokenBalances(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getWalletTokenBalances({
+          address: req.body.address,
+          chain: req.body.chain,
+          toBlock: req.body.toBlock,
+          tokenAddresses: req.body.tokenAddresses,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetTokenAllowance(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getTokenAllowance({
+          address: req.body.address,
+          chain: req.body.chain,
+          ownerAddress: req.body.ownerAddress,
+          spenderAddress: req.body.spenderAddress,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {
