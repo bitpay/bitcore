@@ -1897,7 +1897,19 @@ export class ExpressApp {
         });
     });
 
-    router.post('/v1/moralis/getWalletTokenBalances', async (req, res) => {
+    const moralisWhitelist = ['https://staging.bitpay.com', 'https://test.bitpay.com', 'https://bitpay.com'];
+
+    const moralisCorsOptions = {
+      origin: (origin, cb) => {
+        if (moralisWhitelist.indexOf(origin) !== -1) {
+          cb(null, true);
+        } else {
+          cb(new Error('Not allowed by CORS'));
+        }
+      },
+    };
+
+    router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), async (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1914,7 +1926,7 @@ export class ExpressApp {
         });
     });
 
-    router.post('/v1/moralis/moralisGetTokenAllowance', async (req, res) => {
+    router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), async (req, res) => {
       let server;
       try {
         server = getServer(req, res);
