@@ -1898,11 +1898,10 @@ export class ExpressApp {
         });
     });
 
-    const moralisWhitelist = ['https://staging.bitpay.com', 'https://test.bitpay.com', 'https://bitpay.com'];
-
     const moralisCorsOptions = {
       origin: (origin, cb) => {
-        if (moralisWhitelist.indexOf(origin) !== -1) {
+        const moralisWhiteList = config.moralis?.whitelist ?? [];
+        if (moralisWhiteList.indexOf(origin) !== -1) {
           cb(null, true);
         } else {
           cb(new Error('Not allowed by CORS'));
