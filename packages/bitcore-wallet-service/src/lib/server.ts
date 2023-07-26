@@ -220,11 +220,14 @@ export class WalletService implements IWalletService {
 
     // Init Moralis
     const initMoralis = async cb => {
+      if (!config.moralis || !config.moralis.apiKey) {
+        logger.warn('Moralis missing credentials');
+        return cb();
+      }
+
       if (!isMoralisInitialized) {
         try {
           logger.info('Initializing Moralis...');
-          if (!config.moralis || !config.moralis.apiKey) throw new Error('Moralis missing credentials');
-
           const API_KEY = config.moralis.apiKey;
 
           await Moralis.start({
@@ -236,7 +239,7 @@ export class WalletService implements IWalletService {
         } catch (err) {
           logger.error('Error initializing Moralis: ', err);
           isMoralisInitialized = false;
-          return cb(err);
+          return cb();
         }
       } else {
         return cb();

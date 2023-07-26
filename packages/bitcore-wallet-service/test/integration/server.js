@@ -15,6 +15,11 @@ const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
 var config = require('../../ts_build/config.js');
+config.moralis = config.moralis ?? {
+  apiKey: 'apiKey',
+  whitelist: []
+};
+
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
