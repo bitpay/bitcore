@@ -5098,7 +5098,7 @@ export class WalletService implements IWalletService {
       const CLIENT_ID = keys.CLIENT_ID;
       const SECRET_KEY = keys.SECRET_KEY;
 
-      if (!checkRequired(req.body, ['referenceId', 'externalUserId'])) {
+      if (!checkRequired(req.body, ['referenceId', 'externalUserId', 'customerId'])) {
         return reject(new ClientError("Sardine's request missing arguments"));
       }
 
