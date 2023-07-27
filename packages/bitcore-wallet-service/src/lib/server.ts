@@ -4612,7 +4612,7 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sardineUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.buyCrypto.sardine = {...externalServicesConfig.buyCrypto.sardine, ...{ disabled: true, disabledMessage:'Sardine is currently unavailable in your area.'}};
+      externalServicesConfig.buyCrypto.sardine = {...externalServicesConfig.buyCrypto.sardine, ...{ disabled: true, disabledMessage:'This service is currently unavailable in your area.'}};
     }
 
     return cb(null, externalServicesConfig);

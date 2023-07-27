@@ -10816,7 +10816,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(config.buyCrypto.sardine);
               config.buyCrypto.sardine.disabled.should.equal(true);
-              config.buyCrypto.sardine.disabledMessage.should.equal('Sardine is currently unavailable in your area.');
+              config.buyCrypto.sardine.disabledMessage.should.equal('This service is currently unavailable in your area.');
             });
           });
         };
@@ -10988,7 +10988,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(config.buyCrypto.sardine);
             config.buyCrypto.sardine.disabled.should.equal(true);
-            config.buyCrypto.sardine.disabledMessage.should.equal('Sardine is currently unavailable in your area.');
+            config.buyCrypto.sardine.disabledMessage.should.equal('This service is currently unavailable in your area.');
           });
         });
 
