@@ -1909,7 +1909,7 @@ export class ExpressApp {
       },
     };
 
-    router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), async (req, res) => {
+    router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1926,7 +1926,7 @@ export class ExpressApp {
         });
     });
 
-    router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), async (req, res) => {
+    router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), (req, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1935,6 +1935,23 @@ export class ExpressApp {
       }
 
       server.moralisGetTokenAllowance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetNativeBalance', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetNativeBalance(req)
         .then(response => {
           res.json(response);
         })

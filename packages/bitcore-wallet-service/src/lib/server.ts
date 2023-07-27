@@ -6168,6 +6168,21 @@ export class WalletService implements IWalletService {
     });
   }
 
+  moralisGetNativeBalance(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.balance.getNativeBalance({
+          address: req.body.address,
+          chain: req.body.chain,
+          toBlock: req.body.toBlock,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {
