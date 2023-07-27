@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
 import * as _ from 'lodash';
-import * as moralis from 'moralis';
+import Moralis from 'moralis';
 import 'source-map-support/register';
 import logger from './logger';
 
@@ -38,7 +38,6 @@ const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
-const Moralis = moralis.default;
 
 import { Validation } from 'crypto-wallet-core';
 const Bitcore = require('bitcore-lib');
