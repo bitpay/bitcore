@@ -4587,19 +4587,32 @@ export class WalletService implements IWalletService {
     let externalServicesConfig: ExternalServicesConfig = _.cloneDeep(config.services);
 
     const isLoggedIn = !!opts?.bitpayIdLocationCountry;
-    const usaBannedStates = ['HI', 'LA', 'NY'];
+
+    // Swap crypto rules
+    const swapUsaBannedStates = ['HI', 'LA', 'NY'];
 
     if (
       // Logged in with bitpayId
-      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && usaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
       // Logged out (IP restriction)
-      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && usaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
       externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
     }
 
     if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
       externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'Swaps are currently unavailable in your area.'}};
+    }
+
+    // Buy crypto rules: Sardine
+    const sardineUsaBannedStates = ['NY'];
+    if (
+      // Logged in with bitpayId
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && sardineUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      // Logged out (IP restriction)
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sardineUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
+    ) {
+      externalServicesConfig.buyCrypto.sardine = {...externalServicesConfig.buyCrypto.sardine, ...{ disabled: true, disabledMessage:'Sardine is currently unavailable in your area.'}};
     }
 
     return cb(null, externalServicesConfig);
