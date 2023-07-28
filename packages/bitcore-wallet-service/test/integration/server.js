@@ -10742,6 +10742,10 @@ describe('Wallet service', function() {
               disabled: false,
               removed: false
             },
+            sardine: {
+              disabled: false,
+              removed: false
+            },
             simplex: {
               disabled: false,
               removed: false
@@ -10762,8 +10766,8 @@ describe('Wallet service', function() {
       });
 
       describe('User logged out', () => {
-        const usaBannedStates = ['HI', 'LA', 'NY'];
-        for (const bannedState of usaBannedStates) {
+        const swapUsaBannedStates = ['HI', 'LA', 'NY'];
+        for (const bannedState of swapUsaBannedStates) {
           it(`should return swap crypto disabled if the user is located in ${bannedState}`, () => {
             const opts = {
               currentLocationCountry: 'US',
@@ -10802,6 +10806,36 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(config.swapCrypto);
             config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        const buyCryptoUsaBannedStates = ['NY'];
+        for (const bannedState of buyCryptoUsaBannedStates) {
+          it(`should return buy crypto disabled if the user is located in ${bannedState}`, () => {
+            const opts = {
+              currentLocationCountry: 'US',
+              currentLocationState: bannedState,
+            };
+      
+            server.getServicesData(opts, (err, config) => {
+              should.not.exist(err);
+              should.exist(config.buyCrypto);
+              config.buyCrypto.disabled.should.equal(true);
+              config.buyCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+            });
+          });
+        };
+
+        it('should return buy crypto enabled if the user is in USA located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(false);
           });
         });
       });
@@ -10944,6 +10978,37 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(config.swapCrypto);
             config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return buy crypto disabled if the user is registred in NY and located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(true);
+            config.buyCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+          });
+        });
+
+        it('should return buy crypto enabled if the user is registred outside NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(false);
           });
         });
       });
