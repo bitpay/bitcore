@@ -1,6 +1,7 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
 import * as _ from 'lodash';
+import Moralis from 'moralis';
 import 'source-map-support/register';
 import logger from './logger';
 
@@ -60,6 +61,7 @@ const Errors = require('./errors/errordefinitions');
 let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
+let isMoralisInitialized = false;
 
 let lock;
 let storage;
@@ -215,6 +217,34 @@ export class WalletService implements IWalletService {
       }
     };
 
+    // Init Moralis
+    const initMoralis = async cb => {
+      if (!config.moralis || !config.moralis.apiKey) {
+        logger.warn('Moralis missing credentials');
+        return cb();
+      }
+
+      if (!isMoralisInitialized) {
+        try {
+          logger.info('Initializing Moralis...');
+          const API_KEY = config.moralis.apiKey;
+
+          await Moralis.start({
+            apiKey: API_KEY,
+          });
+          logger.info('Moralis initialized successfully!');
+          isMoralisInitialized = true;
+          return cb();
+        } catch (err) {
+          logger.error('Error initializing Moralis: ', err);
+          isMoralisInitialized = false;
+          return cb();
+        }
+      } else {
+        return cb();
+      }
+    };
+
     async.series(
       [
         next => {
@@ -225,6 +255,9 @@ export class WalletService implements IWalletService {
         },
         next => {
           initFiatRateService(next);
+        },
+        next => {
+          initMoralis(next);
         }
       ],
       err => {
@@ -6097,6 +6130,57 @@ export class WalletService implements IWalletService {
       this.storage.clearWalletCache(this.walletId, () => {
         resolve(true);
       });
+    });
+  }
+
+  // Moralis services
+  moralisGetWalletTokenBalances(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getWalletTokenBalances({
+          address: req.body.address,
+          chain: req.body.chain,
+          toBlock: req.body.toBlock,
+          tokenAddresses: req.body.tokenAddresses,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetTokenAllowance(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getTokenAllowance({
+          address: req.body.address,
+          chain: req.body.chain,
+          ownerAddress: req.body.ownerAddress,
+          spenderAddress: req.body.spenderAddress,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetNativeBalance(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.balance.getNativeBalance({
+          address: req.body.address,
+          chain: req.body.chain,
+          toBlock: req.body.toBlock,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 }
