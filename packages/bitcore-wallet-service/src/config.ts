@@ -136,7 +136,7 @@ const Config = () => {
           removed: false
         }
       },
-      swapCrypto: { 
+      swapCrypto: {
         disabled: false,
         changelly: {
           disabled: false,
@@ -180,8 +180,8 @@ const Config = () => {
     //   },
     //   production: {
     //     apiKey: 'ramp_production_api_key_here',
-    //     api: 'https://api-instant.ramp.network/api',
-    //     widgetApi: 'https://buy.ramp.network',
+    //     api: 'https://api.ramp.network/api',
+    //     widgetApi: 'https://app.ramp.network',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'ramp_sandbox_web_api_key_here',
@@ -190,8 +190,8 @@ const Config = () => {
     //   },
     //   productionWeb: {
     //     apiKey: 'ramp_production_web_api_key_here',
-    //     api: 'https://api-instant.ramp.network/api',
-    //     widgetApi: 'https://buy.ramp.network',
+    //     api: 'https://api.ramp.network/api',
+    //     widgetApi: 'https://app.ramp.network',
     //   }
     // },
     // sardine: {
