@@ -442,7 +442,7 @@ export class WalletService implements IWalletService {
         message += ' %o';
       }
     }
-  
+
     if (!this || !this.walletId) {
       return logger.warn(message, ...args);
     }
@@ -2889,10 +2889,10 @@ export class WalletService implements IWalletService {
                 if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
-              }  
+              }
             } catch (err) {
               return cb(err);
-            }            
+            }
           }
 
           const copayer = wallet.getCopayer(this.copayerId);
@@ -4780,6 +4780,7 @@ export class WalletService implements IWalletService {
     if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
+    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
@@ -4999,7 +5000,7 @@ export class WalletService implements IWalletService {
       const ip = Utils.getIpFromReq(req);
       qs.push('userIp=' + encodeURIComponent(ip));
     }
-  
+
       URL = API + `/host-api/v3/assets?${qs.join('&')}`;
 
       this.request.get(
@@ -5539,7 +5540,7 @@ export class WalletService implements IWalletService {
       format: 'der',
       type: 'pkcs8',
     });
-    
+
     const publicKey = crypto.createPublicKey(privateKey).export({
         type: 'pkcs1',
         format: 'der'
