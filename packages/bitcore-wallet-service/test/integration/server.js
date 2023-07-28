@@ -10804,9 +10804,9 @@ describe('Wallet service', function() {
           });
         });
 
-        const sardineUsaBannedStates = ['NY'];
-        for (const bannedState of sardineUsaBannedStates) {
-          it(`should return Sardine disabled if the user is located in ${bannedState}`, () => {
+        const buyCryptoUsaBannedStates = ['NY'];
+        for (const bannedState of buyCryptoUsaBannedStates) {
+          it(`should return buy crypto disabled if the user is located in ${bannedState}`, () => {
             const opts = {
               currentLocationCountry: 'US',
               currentLocationState: bannedState,
@@ -10814,14 +10814,14 @@ describe('Wallet service', function() {
       
             server.getServicesData(opts, (err, config) => {
               should.not.exist(err);
-              should.exist(config.buyCrypto.sardine);
-              config.buyCrypto.sardine.disabled.should.equal(true);
-              config.buyCrypto.sardine.disabledMessage.should.equal('This service is currently unavailable in your area.');
+              should.exist(config.buyCrypto);
+              config.buyCrypto.disabled.should.equal(true);
+              config.buyCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
             });
           });
         };
 
-        it('should return Sardine enabled if the user is in USA located outside NY', () => {
+        it('should return buy crypto enabled if the user is in USA located outside NY', () => {
           const opts = {
             currentLocationCountry: 'US',
             currentLocationState: 'FL',
@@ -10829,8 +10829,8 @@ describe('Wallet service', function() {
     
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
-            should.exist(config.buyCrypto.sardine);
-            config.buyCrypto.sardine.disabled.should.equal(false);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(false);
           });
         });
       });
@@ -10976,7 +10976,7 @@ describe('Wallet service', function() {
           });
         });
 
-        it('should return Sardine disabled if the user is registred in NY and located outside NY', () => {
+        it('should return buy crypto disabled if the user is registred in NY and located outside NY', () => {
           const opts = {
             currentLocationCountry: 'US',
             currentLocationState: 'FL',
@@ -10986,13 +10986,13 @@ describe('Wallet service', function() {
     
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
-            should.exist(config.buyCrypto.sardine);
-            config.buyCrypto.sardine.disabled.should.equal(true);
-            config.buyCrypto.sardine.disabledMessage.should.equal('This service is currently unavailable in your area.');
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(true);
+            config.buyCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
           });
         });
 
-        it('should return Sardine enabled if the user is registred outside NY and located in NY', () => {
+        it('should return buy crypto enabled if the user is registred outside NY and located in NY', () => {
           const opts = {
             currentLocationCountry: 'US',
             currentLocationState: 'NY',
@@ -11002,8 +11002,8 @@ describe('Wallet service', function() {
     
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
-            should.exist(config.buyCrypto.sardine);
-            config.buyCrypto.sardine.disabled.should.equal(false);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(false);
           });
         });
       });
