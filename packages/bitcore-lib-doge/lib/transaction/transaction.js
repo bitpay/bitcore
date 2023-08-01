@@ -670,7 +670,7 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
     } else if (utxo.script.isScriptHashOut()) {
       clazz = MultiSigScriptHashInput;
     }
-  } else if (utxo.script.isPublicKeyHashOut()) {
+  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
     clazz = PublicKeyHashInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
