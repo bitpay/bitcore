@@ -635,76 +635,90 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     if (!initialSyncComplete || !spendOps.length) {
       return;
     }
-    let coinStream = await CoinStorage.collection
-      .find({
-        chain,
-        network,
-        spentHeight: SpentHeightIndicators.pending,
-        mintTxid: { $in: spendOps.map(s => s.updateOne.filter.mintTxid) }
-      })
-      .project({ mintTxid: 1, mintIndex: 1, spentTxid: 1 });
 
-    const seenTxids = new Set();
-    const invalidatedTxids = new Set();
-
-    let coin: ICoin | null;
-    while (coin = (await coinStream.next())) {
-      if (seenTxids.has(coin.spentTxid)) {
+    const seenMinedTxids = new Set();
+    for (const spentOp of spendOps) {
+      const minedTxid = spentOp.updateOne.update.$set.spentTxid;
+      if (seenMinedTxids.has(minedTxid)) {
         continue;
       }
 
-      const txReplaced = spendOps.findIndex(
-        s =>
-          s.updateOne.filter.mintTxid === coin!.mintTxid &&
-          s.updateOne.filter.mintIndex === coin!.mintIndex &&
-          s.updateOne.update.$set.spentTxid !== coin!.spentTxid
-      ) > -1;
-      if (txReplaced) {
-        invalidatedTxids.add(coin.spentTxid);
+      const conflictingInputsQuery = {
+        chain,
+        network,
+        spentHeight: SpentHeightIndicators.pending,
+        mintTxid: spentOp.updateOne.filter.mintTxid,
+        mintIndex: spentOp.updateOne.filter.mintIndex,
+        spentTxid: { $ne: minedTxid }
+      };
+
+      const conflictingInputsStream = await CoinStorage.collection.find(conflictingInputsQuery);
+      const seenInvalidTxids = new Set();
+      let input: ICoin | null;
+
+      while ((input = await conflictingInputsStream.next())) {
+        if (seenInvalidTxids.has(input.spentTxid)) {
+          continue;
+        }
+        await this._invalidateTx({ chain, network, invalidTxid: input.spentTxid, replacedByTxid: minedTxid });
+        seenInvalidTxids.add(input.spentTxid);
       }
 
-      seenTxids.add(coin.spentTxid); // prevents duplication
-    }
-
-    for (const invalidTxid of invalidatedTxids.values() as IterableIterator<string>) {
-      // reset tx's coins to unspent 
-      await CoinStorage.collection.updateMany(
-        { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
-        { $set: { spentHeight: SpentHeightIndicators.unspent, spentTxid: '' } }
-      );
-
-      // set any spent unconfirmed utxos to conflicting
-      const relatedCoinsGenerator = this.yieldRelatedOutputs(invalidTxid);
-      let coin: IteratorResult<ICoin, null>;
-      let txidsBatch = [invalidTxid];
-      do {
-        coin = await relatedCoinsGenerator.next();
-
-        // If coin.done, the generator/stream has reached the end. Update txs and coins.
-        // Also update txs and coins in batches to keep memory usage down.
-        if (coin.done || txidsBatch.length === 100) {
-          await Promise.all([
-            this.collection.updateMany(
-              { chain, network, txid: { $in: txidsBatch } },
-              { $set: { blockHeight: SpentHeightIndicators.conflicting } }
-            ),
-            CoinStorage.collection.updateMany(
-              { chain, network, mintTxid: { $in: txidsBatch } },
-              { $set: { mintHeight: SpentHeightIndicators.conflicting } }
-            )
-          ]);
-          txidsBatch = [];
-        }
-
-        // Adding this coin to txidsBatch _after_ the updateMany statements is important.
-        // Updating this coin to conflicting before calling relatedCoinsGenerator.next() will cause the generator to return `done` prematurely.
-        if (coin.value?.spentTxid) {
-          txidsBatch.push(coin.value.spentTxid);
-        }
-      } while (!coin.done)
+      seenMinedTxids.add(minedTxid);
     }
 
     return;
+  }
+
+  async _invalidateTx(params: {
+    chain: string;
+    network: string;
+    invalidTxid: string,
+    replacedByTxid?: string // only provided at the beginning of the ancestral tree. Txs that spend unconfirmed outputs aren't "replaced"
+  }) {
+    const { chain, network, invalidTxid, replacedByTxid } = params;
+    const spentOutputsQuery = {
+      chain,
+      network,
+      spentHeight: SpentHeightIndicators.pending,
+      mintTxid: invalidTxid
+    };
+
+    // spent outputs of invalid tx
+    const spentOutputsStream = await CoinStorage.collection.find(spentOutputsQuery);
+    const seenTxids = new Set();
+    let output: ICoin | null;
+
+    while ((output = await spentOutputsStream.next())) {
+      if (!output.spentTxid || seenTxids.has(output.spentTxid)) {
+        continue;
+      }
+      // invalidate descendent tx (tx spending unconfirmed UTXO)
+      await this._invalidateTx({ chain, network, invalidTxid: output.spentTxid });
+    }
+
+    const setTx: { blockHeight: number; replacedByTxid?: string } = { blockHeight: SpentHeightIndicators.conflicting };
+    if (replacedByTxid) {
+      setTx.replacedByTxid = replacedByTxid;
+    }
+
+    await Promise.all([
+      // Tx
+      this.collection.updateMany(
+        { chain, network, txid: invalidTxid },
+        { $set: setTx }
+      ),
+      // Tx Outputs
+      CoinStorage.collection.updateMany(
+        { chain, network, mintTxid: invalidTxid },
+        { $set: { mintHeight: SpentHeightIndicators.conflicting } }
+      ),
+      // Tx Inputs
+      CoinStorage.collection.updateMany(
+        { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
+        { $set: { spentHeight: SpentHeightIndicators.unspent, spentTxid: '' } }
+      )
+    ]);
   }
 
   _apiTransform(tx: Partial<MongoBound<IBtcTransaction>>, options?: TransformOptions): TransactionJSON | string {
@@ -725,6 +739,9 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       fee: tx.fee || -1,
       value: tx.value || -1
     };
+    if (tx.blockHeight === SpentHeightIndicators.conflicting) {
+      transaction.replacedByTxid = tx.replacedByTxid || ''
+    }
     if (options && options.object) {
       return transaction;
     }
