@@ -99,10 +99,135 @@ module.exports = {
     maintenanceMode: false
   },
   services: {
-    buyCrypto: { simplexPromotion202002: false }
+    buyCrypto: {
+      disabled: false,
+      banxa: {
+        disabled: false,
+        removed: false
+      },
+      moonpay: {
+        disabled: false,
+        removed: false
+      },
+      ramp: {
+        disabled: false,
+        removed: false
+      },
+      sardine: {
+        disabled: false,
+        removed: false
+      },
+      simplex: {
+        disabled: false,
+        removed: false
+      },
+      wyre: {
+        disabled: false,
+        removed: false
+      }
+    },
+    swapCrypto: {
+      disabled: false,
+      changelly: {
+        disabled: false,
+        removed: false
+      }
+    },
   },
   suspendedChains: [],
   staticRoot: '/tmp/static'
+  // banxa : {
+  //   sandbox: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_sandbox_api_key_here',
+  //     secretKey: 'banxa_sandbox_secret_key_here',
+  //   },
+  //   production: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_production_api_key_here',
+  //     secretKey: 'banxa_production_secret_key_here',
+  //   },
+  //   sandboxWeb: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_sandbox_web_api_key_here',
+  //     secretKey: 'banxa_sandbox_web_secret_key_here',
+  //   },
+  //   productionWeb: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_production_web_api_key_here',
+  //     secretKey: 'banxa_production_web_secret_key_here',
+  //   },
+  // },
+  // moonpay: {
+  //   sandbox: {
+  //     apiKey: 'moonpay_sandbox_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy-sandbox.moonpay.com',
+  //     secretKey: 'moonpay_sandbox_secret_key_here',
+  //   },
+  //   production: {
+  //     apiKey: 'moonpay_production_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy.moonpay.com',
+  //     secretKey: 'moonpay_production_secret_key_here',
+  //   },
+  //   sandboxWeb: {
+  //     apiKey: 'moonpay_sandbox_web_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy-sandbox.moonpay.com',
+  //     secretKey: 'moonpay_sandbox_web_secret_key_here',
+  //   },
+  //   productionWeb: {
+  //     apiKey: 'moonpay_production_web_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy.moonpay.com',
+  //     secretKey: 'moonpay_production_web_secret_key_here',
+  //   }
+  // },
+  // ramp: {
+  //   sandbox: {
+  //     apiKey: 'ramp_sandbox_api_key_here',
+  //     api: 'https://api.demo.ramp.network/api',
+  //     widgetApi: 'https://app.demo.ramp.network/',
+  //   },
+  //   production: {
+  //     apiKey: 'ramp_production_api_key_here',
+  //     api: 'https://api.ramp.network/api',
+  //     widgetApi: 'https://app.ramp.network',
+  //   },
+  //   sandboxWeb: {
+  //     apiKey: 'ramp_sandbox_web_api_key_here',
+  //     api: 'https://api.demo.ramp.network/api',
+  //     widgetApi: 'https://app.demo.ramp.network/',
+  //   },
+  //   productionWeb: {
+  //     apiKey: 'ramp_production_web_api_key_here',
+  //     api: 'https://api.ramp.network/api',
+  //     widgetApi: 'https://app.ramp.network',
+  //   }
+  // },
+  // sardine: {
+  //   sandbox: {
+  //     api: 'https://api.sandbox.sardine.ai',
+  //     secretKey: 'sardine_sandbox_secret_key_here',
+  //     clientId: 'sardine_sandbox_client_id_here',
+  //   },
+  //   production: {
+  //     api: 'https://api.sardine.ai/v1',
+  //     secretKey: 'sardine_production_secret_key_here',
+  //     clientId: 'sardine_production_client_id_here',
+  //   },
+  //   sandboxWeb: {
+  //     api: 'https://api.sandbox.sardine.ai',
+  //     secretKey: 'sardine_sandbox_web_secret_key_here',
+  //     clientId: 'sardine_sandbox_web_client_id_here',
+  //   },
+  //   productionWeb: {
+  //     api: 'https://api.sardine.ai/v1',
+  //     secretKey: 'sardine_production_web_secret_key_here',
+  //     clientId: 'sardine_production_web_client_id_here',
+  //   }
+  // },
   // simplex: {
   //   sandbox: {
   //     apiKey: 'simplex_sandbox_api_key_here',
@@ -113,6 +238,16 @@ module.exports = {
   //     apiKey: 'simplex_production_api_key_here',
   //     api: 'https://backend-wallet-api.simplexcc.com',
   //     appProviderId: 'simplex_provider_id_here'
+  //   },
+  //   sandboxWeb: {
+  //     apiKey: 'simplex_sandbox_web_api_key_here',
+  //     api: 'https://sandbox.test-simplexcc.com',
+  //     appProviderId: 'simplex_web_provider_id_here'
+  //   },
+  //   productionWeb: {
+  //     apiKey: 'simplex_production_web_api_key_here',
+  //     api: 'https://backend-wallet-api.simplexcc.com',
+  //     appProviderId: 'simplex_web_provider_id_here'
   //   }
   // },
   // wyre: {
@@ -132,9 +267,15 @@ module.exports = {
   //   }
   // },
   // changelly: {
-  //   apiKey: 'changelly_api_key',
-  //   secret: 'changelly_secret',
-  //   api: 'https://api.changelly.com'
+  //   v1: {
+  //     apiKey: 'changelly_api_key',
+  //     secret: 'changelly_secret',
+  //     api: 'https://api.changelly.com'
+  //   },
+  //   v2: {
+  //     secret: 'changelly_secret_v2',
+  //     api: 'https://api.changelly.com/v2'
+  //   }
   // },
   // oneInch: {
   //   api: 'https://api.1inch.dev/swap',

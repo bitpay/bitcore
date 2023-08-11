@@ -115,6 +115,10 @@ const Config = () => {
     services: {
       buyCrypto: {
         disabled: false,
+        banxa: {
+          disabled: false,
+          removed: false
+        },
         moonpay: {
           disabled: false,
           removed: false
@@ -146,6 +150,28 @@ const Config = () => {
     },
     suspendedChains: [],
     staticRoot: '/tmp/static',
+    // banxa : {
+    //   sandbox: {
+    //     api: 'https://bitpay.banxa-sandbox.com/api',
+    //     apiKey: 'banxa_sandbox_api_key_here',
+    //     secretKey: 'banxa_sandbox_secret_key_here',
+    //   },
+    //   production: {
+    //     api: 'https://bitpay.banxa-sandbox.com/api',
+    //     apiKey: 'banxa_production_api_key_here',
+    //     secretKey: 'banxa_production_secret_key_here',
+    //   },
+    //   sandboxWeb: {
+    //     api: 'https://bitpay.banxa-sandbox.com/api',
+    //     apiKey: 'banxa_sandbox_web_api_key_here',
+    //     secretKey: 'banxa_sandbox_web_secret_key_here',
+    //   },
+    //   productionWeb: {
+    //     api: 'https://bitpay.banxa-sandbox.com/api',
+    //     apiKey: 'banxa_production_web_api_key_here',
+    //     secretKey: 'banxa_production_web_secret_key_here',
+    //   },
+    // },
     // moonpay: {
     //   sandbox: {
     //     apiKey: 'moonpay_sandbox_api_key_here',

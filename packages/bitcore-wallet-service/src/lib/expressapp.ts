@@ -1505,6 +1505,52 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/banxa/paymentMethods', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.banxaGetPaymentMethods(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/banxa/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.banxaGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/banxa/createOrder', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.banxaCreateOrder(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/banxa/getOrder', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.banxaGetOrder(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.post('/v1/service/moonpay/quote', (req, res) => {
       getServerWithAuth(req, res, async server => {
         let response;

@@ -3343,6 +3343,24 @@ export class API extends EventEmitter {
     );
   }
 
+  banxaGetQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/banxa/quote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  banxaCreateOrder(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/banxa/createOrder', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   moonpayGetQuote(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post('/v1/service/moonpay/quote', data, (err, data) => {
