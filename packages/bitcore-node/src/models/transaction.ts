@@ -675,8 +675,9 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     network: string;
     invalidTxid: string,
     replacedByTxid?: string // only provided at the beginning of the ancestral tree. Txs that spend unconfirmed outputs aren't "replaced"
+    invalidParentTxids?: string[] // empty at the beginning of the ancestral tree. 
   }) {
-    const { chain, network, invalidTxid, replacedByTxid } = params;
+    const { chain, network, invalidTxid, replacedByTxid, invalidParentTxids = [] } = params;
     const spentOutputsQuery = {
       chain,
       network,
@@ -694,7 +695,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         continue;
       }
       // invalidate descendent tx (tx spending unconfirmed UTXO)
-      await this._invalidateTx({ chain, network, invalidTxid: output.spentTxid });
+      await this._invalidateTx({ chain, network, invalidTxid: output.spentTxid, invalidParentTxids: [...invalidParentTxids, invalidTxid] });
     }
 
     const setTx: { blockHeight: number; replacedByTxid?: string } = { blockHeight: SpentHeightIndicators.conflicting };
@@ -715,7 +716,8 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       ),
       // Tx Inputs
       CoinStorage.collection.updateMany(
-        { chain, network, spentTxid: invalidTxid, spentHeight: SpentHeightIndicators.pending },
+        // the `mintTxid: { $nin: invalidParentTxids }` ensures that an invalid parent tx's outputs aren't marked "unspent"
+        { chain, network, spentTxid: invalidTxid, mintTxid: { $nin: invalidParentTxids }, spentHeight: SpentHeightIndicators.pending },
         { $set: { spentHeight: SpentHeightIndicators.unspent, spentTxid: '' } }
       )
     ]);
