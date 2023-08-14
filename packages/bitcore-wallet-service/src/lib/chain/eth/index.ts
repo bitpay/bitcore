@@ -215,7 +215,7 @@ export class EthChain implements IChain {
               data,
               gasPrice
             });
-            gasLimit = gasLimit + gasLimit * Defaults.MS_GAS_LIMIT_BUFFER_PERCENT;
+            gasLimit += Math.ceil(gasLimit * Defaults.MS_GAS_LIMIT_BUFFER_PERCENT); // gas limit buffer
           } catch (error) {
             logger.error('Error estimating gas for MultiSend contract: %o', error);
           }
