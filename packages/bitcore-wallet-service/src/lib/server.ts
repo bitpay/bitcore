@@ -6025,7 +6025,6 @@ export class WalletService implements IWalletService {
         if (err) return reject(err);
         if (values) return resolve(values);
 
-
         const headers = {
           'Content-Type': 'application/json',
           Accept: 'application/json',
@@ -6220,7 +6219,65 @@ export class WalletService implements IWalletService {
       }
     });
   }
+
+  private coinGeckoGetCredentials() {
+    if (!config.coinGecko) throw new Error('coinGecko missing credentials');
+
+    const credentials = {
+      API: config.coinGecko.api,
+    };
+
+    return credentials;
+  }
+
+  coinGeckoGetRates(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+  
+      const credentials = this.coinGeckoGetCredentials();
+      const chain = req.params?.['chain'];
+      const cacheKey = `coinGeckoRates:${chain}`;
+  
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
+        if (err) return reject(err);
+        if (values) return resolve(values);
+
+        const evmBlockchainNetwork = {
+          eth: 'ethereum',
+          matic: 'polygon-pos',
+        };
+        const contractAddresses = req.params?.['contractAddresses']; // format example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48,0x6b175474e89094c44da98b954eedeac495271d0f,..
+        const altCurrencies = req.params?.['altCurrencies']; // format example ars,aud,usd,...
+        
+        const URL: string = `${credentials.API}/v3/simple/token_price/${
+          evmBlockchainNetwork[chain]
+        }?contract_addresses=${contractAddresses}&vs_currencies=${altCurrencies}&include_24hr_change=true&include_last_updated_at=true`;
+        
+        this.request.get(
+          URL,
+          {
+            json: true
+          },
+          (err, data) => {
+            if (err) {
+              return reject(err.body ?? err);
+            } else {
+              if (!data?.body) {
+                return reject(new Error('Could not get tokens rates'));
+              }
+              this.storage.storeGlobalCache(cacheKey, data.body, err => {
+                if (err) {
+                  this.logw('Could not store tokens rates');
+                }
+                return resolve(data.body);
+              });
+            }
+          }
+        );
+      });
+    });
+  }
 }
+
 
 function checkRequired(obj, args, cb?: (e: any) => void) {
   const missing = Utils.getMissingFields(obj, args);
