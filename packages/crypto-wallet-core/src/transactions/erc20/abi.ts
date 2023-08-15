@@ -346,29 +346,6 @@ const MULTISENDAbi = [
         type: 'address'
       },
       {
-        name: 'amount',
-        type: 'uint256'
-      }
-    ],
-    name: 'withdrawEth',
-    outputs: [
-      {
-        name: 'success',
-        type: 'bool'
-      }
-    ],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    constant: false,
-    inputs: [
-      {
-        name: 'returnee',
-        type: 'address'
-      },
-      {
         name: 'tokenAddress',
         type: 'address'
       },
@@ -377,7 +354,7 @@ const MULTISENDAbi = [
         type: 'uint256'
       }
     ],
-    name: 'withdrawToken',
+    name: 'withdraw',
     outputs: [
       {
         name: 'success',
