@@ -202,6 +202,9 @@ export const Defaults = {
   // Cache time for latest copay version (in ms)
   COPAY_VERSION_CACHE_DURATION: 6 * 60 * 1000,
 
+  // Oneinch token list cache duration (in ms)
+  ONE_INCH_CACHE_DURATION: 1 * 60 * 1000,
+
   // Max allowed timespan for notification queries in seconds
   MAX_NOTIFICATIONS_TIMESPAN: 60 * 60 * 24 * 14, // ~ 2 weeks
   NOTIFICATIONS_TIMESPAN: 60,

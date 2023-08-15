@@ -5938,6 +5938,7 @@ export class WalletService implements IWalletService {
 
     const credentials = {
       API: config.oneInch.api,
+      API_KEY: config.oneInch.apiKey,
       referrerAddress: config.oneInch.referrerAddress,
       referrerFee: config.oneInch.referrerFee
     };
@@ -5994,7 +5995,7 @@ export class WalletService implements IWalletService {
 
       const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
 
-      const URL: string = `${credentials.API}/v3.0/${chainId}/swap/?${qs.join('&')}`;
+      const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -6015,35 +6016,57 @@ export class WalletService implements IWalletService {
 
   oneInchGetTokens(req): Promise<any> {
     return new Promise((resolve, reject) => {
+
       const credentials = this.oneInchGetCredentials();
+      const chain = req.params?.['chain'];
+      const cacheKey = `oneInchTokens:${chain}`;
 
-      const headers = {
-        'Content-Type': 'application/json'
-      };
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.ONE_INCH_CACHE_DURATION, (err, values, oldvalues) => {
+        if (err) return reject(err);
+        if (values) return resolve(values);
 
-      const chainIdMap = {
-        eth: 1,
-        matic: 137
-      };
 
-      const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
+        const headers = {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: 'Bearer ' + credentials.API_KEY,
+        };
 
-      const URL: string = `${credentials.API}/v3.0/${chainId}/tokens`;
+        const chainIdMap = {
+          eth: 1,
+          matic: 137
+        };
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body.tokens);
+        const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
+
+        const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
+
+        this.request.get(
+          URL,
+          {
+            headers,
+            json: true
+          },
+          (err, data) => {
+            if (err) {
+              return reject(err.body ?? err);
+            } else if (data?.statusCode === 429 && oldvalues) {
+              // oneinch rate limit
+               return resolve(oldvalues);
+            } else {
+              if (!data?.body?.tokens) {
+                return reject(new Error('Could not get tokens list'));
+              }
+              this.storage.storeGlobalCache(cacheKey, data.body.tokens, err => {
+                if (err) {
+                  this.logw('Could not store tokens list');
+                }
+                return resolve(data.body.tokens);
+              });
+            }
           }
-        }
-      );
+        );
+      });
     });
   }
 

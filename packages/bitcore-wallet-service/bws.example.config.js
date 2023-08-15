@@ -137,7 +137,8 @@ module.exports = {
   //   api: 'https://api.changelly.com'
   // },
   // oneInch: {
-  //   api: 'https://api.1inch.exchange',
+  //   api: 'https://api.1inch.dev/swap',
+  //   apiKey: 'one_inch_api_key',
   //   referrerAddress: 'one_inch_referrer_address', // ETH
   //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
   // },

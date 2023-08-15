@@ -1846,6 +1846,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/service/oneInch/getTokens/:chain?', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
       let server;
       try {
         server = getServer(req, res);
