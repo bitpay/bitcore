@@ -304,7 +304,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           txid: { $ne: tx.txid },
           blockHeight: SpentHeightIndicators.pending
         },
-        { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+        { $set: { blockHeight: SpentHeightIndicators.conflicting, replacedByTxid: tx.txid } },
         { w: 0, j: false, multi: true }
       );
     }
