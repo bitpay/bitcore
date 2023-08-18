@@ -73,6 +73,15 @@ const ParallaxDiv = styled(Parallax)`
   background-color: ${({theme: {dark}}) => (dark ? '#090909' : Feather)};
 `;
 
+const TestnetDiv = styled.div`
+  width: 100%;
+  background: red;
+  color: white;
+  padding: 6px;
+  text-align: center;
+  border-radius: 10px;
+`;
+
 const Layout = ({children}: {children?: ReactNode}) => {
   const theme = useTheme();
   const url = theme.dark ? PlusBackgroundDark : PlusBackgroundLight;
@@ -82,6 +91,11 @@ const Layout = ({children}: {children?: ReactNode}) => {
 
   const isHomePage = () => {
     return location.pathname === '/';
+  };
+
+  const isTestnet = () => {
+    const network = location.pathname.split('/')[2]?.toLowerCase();
+    return network && network !== 'mainnet';
   };
 
   const searchAnime = {
@@ -140,6 +154,11 @@ const Layout = ({children}: {children?: ReactNode}) => {
                 <motion.div variants={ErrorExitAnime} exit='exit'>
                   <Info message={searchError} type={'error'} />
                 </motion.div>
+              )}
+            </AnimatePresence>
+            <AnimatePresence>
+              {isTestnet() && (
+                <TestnetDiv>This is a test network. Testnet currencies have no real-world value.</TestnetDiv>
               )}
             </AnimatePresence>
             {children}

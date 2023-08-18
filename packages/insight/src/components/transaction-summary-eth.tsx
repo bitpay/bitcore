@@ -3,16 +3,18 @@ import {getConvertedValue, getFormattedDate} from '../utilities/helper-methods';
 import {SharedTile} from './shared';
 
 const TransactionSummaryEth = ({transaction}: {transaction: TransactionEth}) => {
-  const {gasLimit, gasPrice, from, to, blockTime, confirmations} = transaction;
+  const {gasLimit, gasPrice, fee, from, to, nonce, blockTime, confirmations} = transaction;
   return (
     <>
+      <SharedTile title='From' description={from} />
+      <SharedTile title='To' description={to} />
+      <SharedTile title='Nonce' description={nonce} />
       <SharedTile title='Gas Limit' description={gasLimit} />
       <SharedTile
         title='Gas Price'
-        description={`${getConvertedValue(gasPrice, 'ETH').toFixed(8)} ETH`}
+        description={`${(gasPrice / 1e9).toFixed(8)} Gwei`}
       />
-      <SharedTile title='From' description={from} />
-      <SharedTile title='To' description={to} />
+      <SharedTile title='Fee' description={`${getConvertedValue(fee, 'ETH').toFixed(8)} ETH`} />
       {confirmations > 0 ? (
         <SharedTile title='Mined Time' description={getFormattedDate(blockTime)} />
       ) : null}
