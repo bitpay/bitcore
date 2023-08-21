@@ -4686,7 +4686,6 @@ export class WalletService implements IWalletService {
         break;
       case 'post':
         const stringifiedBody = body ? JSON.stringify(_.cloneDeep(body)) : '';
-        console.log('========= stringifiedBody: ', stringifiedBody);
         signature = 'POST' + '\n' + `/api${endpoint}` + '\n' + nonce + '\n' + stringifiedBody;
         break;
       default:
@@ -4794,7 +4793,7 @@ export class WalletService implements IWalletService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
       
-      const UriPath = `/orders`;
+      const UriPath = '/orders';
       const URL: string = API + UriPath;
       const auth = this.getBanxaSignature('post', UriPath, API_KEY, SECRET_KEY, req.body);
 
