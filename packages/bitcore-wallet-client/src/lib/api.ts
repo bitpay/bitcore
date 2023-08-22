@@ -12,6 +12,7 @@ import { PayPro } from './paypro';
 import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
+const Uuid = require('uuid');
 
 var $ = require('preconditions').singleton();
 var util = require('util');
@@ -3304,6 +3305,7 @@ export class API extends EventEmitter {
       );
     };
 
+    let id = Uuid.v4();
     for (let i = 0; i < sets.length; i++) {
       let set: any = sets[i];
       try {
@@ -3312,9 +3314,10 @@ export class API extends EventEmitter {
             set.passphrase = opts.passphrase;
           }
 
-          k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...set });
+          k = new Key({ id, seedData: opts.words, seedType: 'mnemonic', ...set });
         } else {
           k = new Key({
+            id,
             seedData: opts.xPrivKey,
             seedType: 'extendedPrivateKey',
             ...set

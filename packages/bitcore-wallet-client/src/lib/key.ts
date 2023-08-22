@@ -76,6 +76,7 @@ export class Key {
 
   constructor(
     opts: {
+      id?: string;
       seedType: string;
       seedData?: any;
       passphrase?: string; // seed passphrase
@@ -89,7 +90,7 @@ export class Key {
     } = { seedType: 'new' }
   ) {
     this.#version = 1;
-    this.id = Uuid.v4();
+    this.id = opts.id || Uuid.v4();
 
     // bug backwards compatibility flags
     this.use0forBCH = opts.useLegacyCoinType;
