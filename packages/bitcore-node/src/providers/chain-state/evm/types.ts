@@ -224,6 +224,7 @@ export interface EVMTransactionJSON {
   decodedData?: IAbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
+  calls?: Array<IGethTxTraceFlat>;
   receipt?: IEVMTransaction['receipt'];
 }
 

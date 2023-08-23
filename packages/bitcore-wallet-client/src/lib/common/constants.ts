@@ -38,29 +38,22 @@ export const Constants = {
     'wbtc',
     'shib',
     'ape',
-    'euroc'
+    'euroc',
+    'usdt'
   ],
 
   BITPAY_SUPPORTED_ETH_ERC20: [
-    'matic_e',
-    'usdc_e',
-    'pax_e',
-    'gusd_e',
-    'busd_e',
-    'dai_e',
-    'wbtc_e',
-    'shib_e',
-    'ape_e',
-    'euroc_e'
-  ],
-
-  BITPAY_SUPPORTED_MATIC_ERC20: [
-    'usdc_m',
-    'busd_m',
-    'dai_m',
-    'wbtc_m',
-    'shib_m',
-    'ape_m'
+    'matic',
+    'usdc',
+    'pax',
+    'gusd',
+    'busd',
+    'dai',
+    'wbtc',
+    'shib',
+    'ape',
+    'euroc',
+    'usdt'
   ],
 
   CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc'],

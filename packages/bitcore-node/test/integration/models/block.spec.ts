@@ -124,7 +124,7 @@ describe('Block Model', function() {
       expect(ownBlock.transactionCount).to.equal(1);
       expect(ownBlock.processed).to.equal(true);
 
-      logger.info('new block was successfully added with hash', ownBlock.hash);
+      logger.info('new block was successfully added with hash: %o', ownBlock.hash);
 
       const transaction = await TransactionStorage.collection
         .find({

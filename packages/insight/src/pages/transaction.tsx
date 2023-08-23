@@ -14,7 +14,7 @@ import {DisplayFlex, ConfirmationLabel} from '../assets/styles/global';
 import {TransactionBodyCol, TransactionTileBody} from '../assets/styles/transaction';
 import {motion} from 'framer-motion';
 import {routerFadeIn} from '../utilities/animations';
-import {Link, useLocation, useParams, useSearchParams} from 'react-router-dom';
+import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {useAppDispatch} from '../utilities/hooks';
 import React, {useEffect, useState} from 'react';
 import {changeCurrency, changeNetwork} from '../store/app.actions';
@@ -28,26 +28,34 @@ const getTxData = (state: any): Promise<any> => {
 };
 
 const TransactionHash: React.FC = () => {
+  const navigate = useNavigate();
   const params = useParams<{currency: string; network: string; tx: string}>();
   const {tx} = params;
   let {currency, network} = params;
   const [isLoading, setIsLoading] = useState(true);
   const [searchParams] = useSearchParams();
-  const detailsIdx = searchParams.get('detailsIdx');
-  const fromVout = searchParams.get('fromVout');
+  const refvoutParam = searchParams.get('refVout');
+  const reftxidParam = searchParams.get('refTxid');
   const [transaction, setTransaction] = useState<any>();
   const dispatch = useAppDispatch();
   const [error, setError] = useState('');
   const {state} = useLocation();
-  const [inputMintIndex, setInputMintIndex] = useState<number | undefined>();
+  const [refTxid, setRefTxid] = useState<string | undefined>();
+  const [refVout, setRefVout] = useState<number | undefined>();
 
   useEffect(() => {
-    if (detailsIdx !== undefined && fromVout === 'false') {
-      setInputMintIndex(Number(detailsIdx));
-    } else if (inputMintIndex !== undefined) {
-      setInputMintIndex(undefined);
+    if (reftxidParam != null && reftxidParam !== '') {
+      setRefTxid(reftxidParam);
+    } else {
+      setRefTxid(undefined);
     }
-  }, [detailsIdx, fromVout]);
+
+    if (refvoutParam != null && refvoutParam !== '') {
+      setRefVout(Number(refvoutParam));
+    } else {
+      setRefVout(undefined);
+    }
+  }, [reftxidParam, refvoutParam]);
 
   useEffect(() => {
     if (!network || !currency || !tx) return;
@@ -88,6 +96,13 @@ const TransactionHash: React.FC = () => {
       });
   }, [network, currency, tx]);
 
+  const goToTx = (tx: any) => {
+    return navigate({
+      pathname: `/${currency}/${network}/tx/${tx}`,
+      search: '',
+    });
+  };
+
   return (
     <>
       {!isLoading ? (
@@ -115,10 +130,14 @@ const TransactionHash: React.FC = () => {
               <SecondaryTitle>Summary</SecondaryTitle>
 
               {transaction.confirmations === -3 && (
+                transaction.replacedByTxid ?
                 <Info
-                  message={
-                    'This transaction is invalid and will never confirm, because some of its inputs are already spent.'
-                  }
+                  message={`This transaction was replaced by ${transaction.replacedByTxid}`}
+                  type={'error'}
+                  onClick={() => goToTx(transaction.replacedByTxid)}
+                /> :
+                <Info
+                  message={`This transaction was replaced by another transaction that ${transaction.chain === 'ETH' ? 'used the same nonce' : 'spent some of it\'s inputs'}.`}
                   type={'error'}
                 />
               )}
@@ -142,7 +161,7 @@ const TransactionHash: React.FC = () => {
                   </Tile>
 
                   <Tile withBorderBottom>
-                    <TileDescription margin='0 1rem 0 0'>Includes in block</TileDescription>
+                    <TileDescription margin='0 1rem 0 0'>Included in block</TileDescription>
                     <TileDescription value textAlign='right'>
                       <Link to={`/${currency}/${network}/block/${transaction.blockHash}`}>
                         {transaction.blockHash}
@@ -175,7 +194,8 @@ const TransactionHash: React.FC = () => {
                   transaction={transaction}
                   currency={currency}
                   network={network}
-                  mintIndex={inputMintIndex}
+                  refVout={refVout}
+                  refTxid={refTxid}
                 />
               )}
             </motion.div>

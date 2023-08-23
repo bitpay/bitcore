@@ -48,7 +48,7 @@ function startInstance() {
 
   expressApp.start(config, err => {
     if (err) {
-      logger.error('Could not start BWS instance', err);
+      logger.error('Could not start BWS instance: %o', err);
       return;
     }
 

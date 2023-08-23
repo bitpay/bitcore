@@ -1,7 +1,8 @@
 import * as os from 'os';
 import logger from '../logger';
-import { BaseBlock, IBlock } from '../models/baseBlock';
+import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
+import { IBlock } from '../types/Block';
 import { wait } from '../utils/wait';
 import { Config, ConfigService } from './config';
 
@@ -55,7 +56,7 @@ export class P2pManager {
       try {
         p2pWorker.start();
       } catch (e) {
-        logger.error('P2P Worker died with', e);
+        logger.error('P2P Worker died with %o', e);
       }
     }
   }
@@ -144,9 +145,9 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
           lastHeartBeat: this.lastHeartBeat
         });
       }
-    } catch (e) {
+    } catch (e: any) {
       logger.warn('Issue unregistering');
-      logger.error(e);
+      logger.error('%o', e);
     }
   }
 }

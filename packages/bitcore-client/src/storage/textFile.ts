@@ -35,7 +35,7 @@ export class TextFile {
 
   async loadWallet(params: { name: string }) {
     const { name } = params;
-    return new Promise((resolve, reject) => {
+    return new Promise<void | string>((resolve, reject) => {
       const readStream = fs.createReadStream(this.walletFileName, { flags: 'a+', encoding: 'utf8' });
       readStream.on('error', err => {
         reject(err);
@@ -69,7 +69,7 @@ export class TextFile {
         })
         .on('error', err => reject(err));
     });
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       const walletStream = new stream.Readable({ objectMode: true });
       for (const wallet of wallets) {
         walletStream.push(wallet);
@@ -133,7 +133,7 @@ export class TextFile {
     if (walletAlreadyExists) {
       await this.deleteWallet({ name: wallet.name });
     }
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       const walletStream = new stream.Readable({ objectMode: true });
       const writeStream = fs.createWriteStream(this.walletFileName, { flags: 'a' });
       walletStream.push(wallet);
@@ -147,7 +147,7 @@ export class TextFile {
 
   async getKey(params: { address: string; name: string; keepAlive: boolean; open: boolean }) {
     const { address, name } = params;
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' })
         .pipe(StreamUtil.jsonlBufferToObjectMode())
         .on('data', data => {
@@ -164,7 +164,7 @@ export class TextFile {
   async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
     const { name, key, toStore } = params;
     const objectToSave = { name, address: key.address, toStore };
-    return new Promise(resolve => {
+    return new Promise<void>(resolve => {
       const readStream = new stream.Readable({ objectMode: true });
       const writeStream = fs.createWriteStream(this.addressFileName, { flags: 'a' });
       readStream.push(objectToSave);

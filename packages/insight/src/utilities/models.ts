@@ -27,6 +27,7 @@ export interface TransactionEth extends ApiTransaction {
   to: string;
   from: string;
   height?: number;
+  nonce: number;
 }
 
 export interface ApiCoin {

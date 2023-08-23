@@ -48,7 +48,7 @@ export class Stats {
         if (err) return cb(err);
 
         this.client.close(err => {
-          if (err) logger.error(err);
+          if (err) logger.error('%o', err);
           return cb(null, stats);
         });
       });

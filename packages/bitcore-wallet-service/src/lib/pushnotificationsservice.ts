@@ -5,6 +5,7 @@ import 'source-map-support/register';
 
 import request from 'request';
 import { ChainService } from './chain';
+import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
@@ -13,9 +14,9 @@ import { Storage } from './storage';
 const Mustache = require('mustache');
 const defaultRequest = require('request');
 const path = require('path');
-const Utils = require('./common/utils');
-const Defaults = require('./common/defaults');
-const Constants = require('./common/constants');
+const Utils = Common.Utils;
+const Defaults = Common.Defaults;
+const Constants = Common.Constants;
 const sjcl = require('sjcl');
 
 const PUSHNOTIFICATIONS_TYPES = {
@@ -372,7 +373,7 @@ export class PushNotificationsService {
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
-        if (err) logger.error(err);
+        if (err) logger.error('%o', err);
         if (_.isEmpty(preferences)) preferences = [];
 
         const recipientPreferences = _.compact(
@@ -473,7 +474,8 @@ export class PushNotificationsService {
       wbtc: 'WBTC',
       shib: 'SHIB',
       ape: 'APE',
-      euroc: 'EUROC'
+      euroc: 'EUROC',
+      usdt: 'USDT'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -556,7 +558,7 @@ export class PushNotificationsService {
       try {
         return Mustache.render(t, data);
       } catch (e) {
-        logger.error('Could not apply data to template:' + e);
+        logger.error('Could not apply data to template: %o', e);
         error = e;
       }
     });

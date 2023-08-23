@@ -1,9 +1,11 @@
 import * as async from 'async';
+import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
 import { logger, transport } from './logger';
 
+import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
@@ -13,7 +15,6 @@ const bodyParser = require('body-parser');
 const compression = require('compression');
 const config = require('../config');
 const RateLimit = require('express-rate-limit');
-const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
@@ -200,7 +201,13 @@ export class ExpressApp {
         auth.session = credentials.session;
       }
       WalletService.getInstanceWithAuth(auth, (err, server) => {
-        if (err) return returnError(err, res, req);
+        if (err) {
+          if (opts.silentFailure) {
+            return cb(null, err);
+          } else {
+            return returnError(err, res, req);
+          }
+        }
 
         if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
           return returnError(
@@ -265,7 +272,7 @@ export class ExpressApp {
               }),
               res,
               opts,
-              server => (server ? resolve(server) : reject(server))
+              (server, err) => (err ? reject(err) : resolve(server))
             )
           )
       );
@@ -275,8 +282,7 @@ export class ExpressApp {
 
     if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
       logger.info(
-        '',
-        'Limiting wallet creation per IP: %d req/h',
+        'Limiting wallet creation per IP: %o req/h',
         ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       createWalletLimiter = new RateLimit(Defaults.RateLimit.createWallet);
@@ -454,6 +460,7 @@ export class ExpressApp {
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
+          silentFailure: req.query.silentFailure == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
           tokenAddresses: req.query[copayerId]
             ? Array.isArray(req.query[copayerId].tokenAddress)
@@ -468,7 +475,7 @@ export class ExpressApp {
 
       try {
         responses = await Promise.all(
-          getServerWithMultiAuth(req, res).map(promise =>
+          getServerWithMultiAuth(req, res, { silentFailure: req.query.silentFailure == '1' }).map(promise =>
             promise.then(
               (server: any) =>
                 new Promise(resolve => {
@@ -859,8 +866,7 @@ export class ExpressApp {
 
     if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {
       logger.info(
-        '',
-        'Limiting estimate fee per IP: %d req/h',
+        'Limiting estimate fee per IP: %o req/h',
         ((Defaults.RateLimit.estimateFee.max / Defaults.RateLimit.estimateFee.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       estimateFeeLimiter = new RateLimit(Defaults.RateLimit.estimateFee);
@@ -1481,7 +1487,8 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getServicesData((err, response) => {
+      const opts = req.query;
+      server.getServicesData(opts, (err, response) => {
         if (err) return returnError(err, res, req);
         res.json(response);
       });
@@ -1498,6 +1505,160 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/moonpay/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.moonpayGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/moonpay/currencyLimits', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetCurrencyLimits(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/moonpay/signedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        let response;
+        try {
+          response = server.moonpayGetSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/moonpay/transactionDetails', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetTransactionDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/moonpay/accountDetails', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetAccountDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/ramp/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.rampGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/ramp/signedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.rampGetSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/ramp/assets', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.rampGetAssets(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/sardine/quote', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .sardineGetQuote(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/sardine/getToken', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .sardineGetToken(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/sardine/currencyLimits', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .sardineGetCurrencyLimits(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/service/sardine/ordersDetails', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .sardineGetOrdersDetails(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
@@ -1506,7 +1667,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1519,7 +1680,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1533,7 +1694,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1546,7 +1707,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1559,7 +1720,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1577,7 +1738,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1589,7 +1750,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1602,7 +1763,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1615,9 +1776,26 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
+    });
+
+    router.post('/v1/service/changelly/getTransactions', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .changellyGetTransactions(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
     });
 
     router.post('/v1/service/changelly/getStatus', (req, res) => {
@@ -1633,7 +1811,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1650,7 +1828,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1662,7 +1840,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1680,7 +1858,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1716,7 +1894,69 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    const moralisCorsOptions = {
+      origin: (origin, cb) => {
+        const moralisWhiteList = config.moralis?.whitelist ?? [];
+        if (moralisWhiteList.indexOf(origin) !== -1) {
+          cb(null, true);
+        } else {
+          cb(new Error('Not allowed by CORS'));
+        }
+      },
+    };
+
+    router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetWalletTokenBalances(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetTokenAllowance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetNativeBalance', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetNativeBalance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 

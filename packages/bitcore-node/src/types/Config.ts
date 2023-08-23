@@ -35,8 +35,9 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   provider?: IProvider;
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
-  syncStartHeight?: number;
-  threads?: number; // Defaults to your CPU's capabilities. Currently only available for ETH
+  syncStartHeight?: number; // Start syncing from this block height
+  threads?: number; // Defaults to your CPU's capabilities. Currently only available for EVM chains
+  mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
@@ -56,6 +57,7 @@ export interface ConfigType {
   dbPort: string;
   dbUser: string;
   dbPass: string;
+  dbReadPreference?: string;
   numWorkers: number;
 
   chains: {

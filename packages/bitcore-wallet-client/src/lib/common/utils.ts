@@ -41,9 +41,7 @@ export class Utils {
     try {
       // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20.includes(normalizedChain)) {
-        normalizedChain = 'matic';
-      } else if (
+      if (
         Constants.BITPAY_SUPPORTED_ETH_ERC20.includes(normalizedChain) ||
         !Constants.CHAINS.includes(normalizedChain)
       ) {
@@ -464,7 +462,9 @@ export class Utils {
         payProUrl,
         tokenAddress,
         multisigContractAddress,
-        isTokenSwap
+        multiSendContractAddress,
+        isTokenSwap,
+        gasLimit
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -489,16 +489,27 @@ export class Utils {
         ? chainName + 'ERC20'
         : chainName;
 
-      for (let index = 0; index < recipients.length; index++) {
-        const rawTx = Transactions.create({
-          ...txp,
-          ...recipients[index],
-          tag: destinationTag ? Number(destinationTag) : undefined,
+      if (multiSendContractAddress) {
+        let multiSendParams = {
+          nonce: Number(txp.nonce),
+          recipients,
           chain: _chain,
-          nonce: Number(txp.nonce) + Number(index),
-          recipients: [recipients[index]]
-        });
-        unsignedTxs.push(rawTx);
+          contractAddress: multiSendContractAddress,
+          gasLimit
+        };
+        unsignedTxs.push(Transactions.create({ ...txp, ...multiSendParams }));
+      } else {
+        for (let index = 0; index < recipients.length; index++) {
+          const rawTx = Transactions.create({
+            ...txp,
+            ...recipients[index],
+            tag: destinationTag ? Number(destinationTag) : undefined,
+            chain: _chain,
+            nonce: Number(txp.nonce) + Number(index),
+            recipients: [recipients[index]]
+          });
+          unsignedTxs.push(rawTx);
+        }
       }
       return { uncheckedSerialize: () => unsignedTxs };
     }

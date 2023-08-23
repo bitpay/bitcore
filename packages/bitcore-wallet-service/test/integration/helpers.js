@@ -1,5 +1,7 @@
 'use strict';
-
+// Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
+var { setDefaultResultOrder } = require('dns');
+setDefaultResultOrder('ipv4first');
 var _ = require('lodash');
 var async = require('async');
 
@@ -23,7 +25,7 @@ var Bitcore_ = {
 };
 
 var { ChainService } = require('../../ts_build/lib/chain/index');
-var Common = require('../../ts_build/lib/common');
+var { Common } = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;

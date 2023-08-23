@@ -2,9 +2,9 @@ import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
+import { Common } from '../../common';
 import logger from '../../logger';
 
-const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
@@ -176,7 +176,7 @@ export class XrpChain implements IChain {
     try {
       this.getBitcoreTx(txp);
     } catch (ex) {
-      logger.warn('Error building XRP  transaction', ex);
+      logger.warn('Error building XRP transaction: %o', ex);
       return ex;
     }
   }

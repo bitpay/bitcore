@@ -1,9 +1,9 @@
+import { Common } from '../common';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 
 const $ = require('preconditions').singleton();
 const sjcl = require('sjcl');
-const Common = require('../common');
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;

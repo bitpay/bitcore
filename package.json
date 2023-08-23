@@ -16,8 +16,10 @@
     "lint": "lerna run lint",
     "fix": "lerna run fix",
     "precommit": "lerna run --concurrency 1 --stream precommit --since master",
-    "test:ci": "npm run test:ci:build && npm run test:ci:all",
-    "test:ci:build": "docker-compose -f docker-compose.test.yml build",
+    "test:ci:local": "npm run test:ci:build:local && npm run test:ci:all",
+    "test:ci:build:local": "./ci.sh build local",
+    "test:ci": "echo 'This command has been removed. Try running `npm run test:ci:local` to run tests locally using the test_runner docker container as before. The CI pipeline logic is now in .circleci/config.yml.'",
+    "test:ci:build": "./ci.sh build ci",
     "test:ci:all": "./ci.sh 'npm run lerna:ci:all'",
     "test:ci:unit": "./ci.sh 'npm run lerna:ci:unit'",
     "test:ci:integration": "./ci.sh 'npm run lerna:ci:integration'",
@@ -52,10 +54,10 @@
     "ci:bitcore-p2p-doge": "./ci.sh 'npm run test:bitcore-p2p-doge'",
     "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
     "ci:bitcore-mnemonic": "./ci.sh 'npm run test:bitcore-mnemonic'",
-    "lerna:ci:all": "./node_modules/.bin/lerna run test:ci --concurrency 1 --stream",
-    "lerna:ci:unit": "./node_modules/.bin/lerna run test:ci:unit --concurrency 1 --stream",
-    "lerna:ci:integration": "./node_modules/.bin/lerna run test:ci:integration --concurrency 1 --stream",
-    "lerna:ci:coverage": "./node_modules/.bin/lerna run coverage --concurrency 1 --stream"
+    "lerna:ci:all": "npx lerna run test:ci --concurrency 1 --stream",
+    "lerna:ci:unit": "npx run test:ci:unit --concurrency 1 --stream",
+    "lerna:ci:integration": "npx run test:ci:integration --concurrency 1 --stream",
+    "lerna:ci:coverage": "npx run coverage --concurrency 1 --stream"
   },
   "config": {
     "commitizen": {
@@ -76,7 +78,7 @@
   },
   "dependencies": {
     "lerna": "^3.22.1",
-    "typescript": "^4.0.2"
+    "typescript": "4.9.4"
   },
   "husky": {
     "hooks": {

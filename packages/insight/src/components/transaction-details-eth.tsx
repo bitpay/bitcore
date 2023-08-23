@@ -23,7 +23,7 @@ const TransactionDetailsEth = ({
   network: string;
 }) => {
   const navigate = useNavigate();
-  const {txid, blockTime, coinbase, from, to, fee, confirmations, value} = transaction;
+  const {txid, blockTime, blockHeight, coinbase, from, to, fee, confirmations, value} = transaction;
 
   const goToAddress = (address: any) => {
     return navigate(`/${currency}/${network}/address/${address}`);
@@ -41,7 +41,7 @@ const TransactionDetailsEth = ({
         </TileDescription>
 
         <TileDescription textAlign='right' value padding='0 0 0 0.25rem'>
-          Mined on: {getFormattedDate(blockTime)}
+          {`${blockHeight > -1 ? 'Mined' : 'Seen'} on: ${getFormattedDate(blockTime)}`}
         </TileDescription>
       </TransactionTileHeader>
 

@@ -8,7 +8,7 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
-var Common = require('../../ts_build/lib/common');
+var { Common } = require('../../ts_build/lib/common');
 var Defaults = Common.Defaults;
 var Constants = Common.Constants;
 
@@ -623,7 +623,12 @@ describe('Fiat rate service', function() {
           json: true
         })
         .yields(null, null, ape);
-
+      request.get
+        .withArgs({
+          url: 'https://bitpay.com/api/rates/WBTC',
+          json: true
+        })
+        .yields(null, null, btc);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -715,8 +720,19 @@ describe('Fiat rate service', function() {
                                                 should.not.exist(err);
                                                 res.fetchedOn.should.equal(100);
                                                 res.rate.should.equal(6.66);
-                                                clock.restore();
-                                                done();
+                                                service.getRate(
+                                                  {
+                                                    code: 'USD',
+                                                    coin: 'usdc'
+                                                  },
+                                                  function(err, res) {
+                                                    should.not.exist(err);
+                                                    res.fetchedOn.should.equal(100);
+                                                    res.rate.should.equal(1);
+                                                    clock.restore();
+                                                    done();
+                                                  }
+                                                );
                                               }
                                             );
                                           }
@@ -911,7 +927,7 @@ describe('Fiat rate service', function() {
       sinon.spy(service, 'getRatesForStablecoin');
       service.storage.storeFiatRate('btc', btcRates, function(err) {
         should.not.exist(err);
-        service.getRatesByCoin({ coin: 'gusd_e' }, function(err, res) {
+        service.getRatesByCoin({ coin: 'gusd' }, function(err, res) {
           should.not.exist(err);
           should.exist(res);
           res

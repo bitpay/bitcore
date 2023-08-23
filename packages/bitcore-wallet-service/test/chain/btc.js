@@ -10,7 +10,7 @@ const { ChainService } = require('../../ts_build/lib/chain');
 const { BtcChain } = require('../../ts_build/lib/chain/btc');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
 const segWitToAddress = 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'; //'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';

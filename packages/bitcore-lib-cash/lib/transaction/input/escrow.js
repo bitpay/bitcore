@@ -30,7 +30,7 @@ inherits(EscrowInput, Input);
 EscrowInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   if (this.reclaimPublicKey.toString() !== privateKey.publicKey.toString()) return [];
   $.checkState(this.output instanceof Output);
-  sigtype = sigtype || Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+  sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
   const signature = new TransactionSignature({
     publicKey: privateKey.publicKey,
     prevTxId: this.prevTxId,
