@@ -13,15 +13,15 @@ const Message = styled(motion.div)<{type: string}>`
   ${({type}: {type: string}) => {
     if (type === 'error') {
       return css`
-        color: ${Error};
-        background-color: #ffd8de;
+        color: ${({theme: {dark}}) => dark ? '#FFD8DE' : '#870F21'};
+        background-color: ${({theme: {dark}}) => dark ? '#B51B16' : '#FFD8DE'};
       `;
     }
 
     if (type === 'warning') {
       return css`
-        color: #856d42;
-        background-color: #fbf8e5;
+        color: ${({theme: {dark}}) => dark ? '#FCD39E' : '#A35A05'};
+        background-color: ${({theme: {dark}}) => dark ? '#7A4D12' : '#FEECD4'};
       `;
     }
   }}
