@@ -73,15 +73,6 @@ const ParallaxDiv = styled(Parallax)`
   background-color: ${({theme: {dark}}) => (dark ? '#090909' : Feather)};
 `;
 
-const TestnetDiv = styled.div`
-  width: 100%;
-  background: red;
-  color: white;
-  padding: 6px;
-  text-align: center;
-  border-radius: 10px;
-`;
-
 const Layout = ({children}: {children?: ReactNode}) => {
   const theme = useTheme();
   const url = theme.dark ? PlusBackgroundDark : PlusBackgroundLight;
@@ -158,7 +149,7 @@ const Layout = ({children}: {children?: ReactNode}) => {
             </AnimatePresence>
             <AnimatePresence>
               {isTestnet() && (
-                <TestnetDiv>This is a test network. Testnet currencies have no real-world value.</TestnetDiv>
+                <Info message={'This is a test network. Testnet currencies have no real-world value.'} type={'error'} />
               )}
             </AnimatePresence>
             {children}
