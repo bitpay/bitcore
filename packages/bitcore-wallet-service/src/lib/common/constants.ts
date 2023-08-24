@@ -24,6 +24,7 @@ export const Constants = {
     SHIB: 'shib',
     APE: 'ape',
     USDC: 'usdc',
+    PYUSD: 'pyusd',
     USDP: 'usdp',
     PAX: 'pax',
     GUSD: 'gusd',
@@ -38,6 +39,7 @@ export const Constants = {
     // backwards compatability
     MATIC: 'matic',
     USDC: 'usdc',
+    PYUSD: 'pyusd',
     USDP: 'usdp',
     PAX: 'pax', // backwards compatability
     GUSD: 'gusd',
@@ -53,6 +55,7 @@ export const Constants = {
   BITPAY_USD_STABLECOINS: {
     // used for rates
     USDC: 'usdc',
+    PYUSD: 'pyusd',
     USDP: 'usdp',
     PAX: 'pax',
     GUSD: 'gusd',
