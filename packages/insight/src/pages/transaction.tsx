@@ -129,18 +129,23 @@ const TransactionHash: React.FC = () => {
 
               <SecondaryTitle>Summary</SecondaryTitle>
 
-              {transaction.confirmations === -3 && (
-                transaction.replacedByTxid ?
-                <Info
-                  message={`This transaction was replaced by ${transaction.replacedByTxid}`}
-                  type={'error'}
-                  onClick={() => goToTx(transaction.replacedByTxid)}
-                /> :
-                <Info
-                  message={`This transaction was replaced by another transaction that ${transaction.chain === 'ETH' ? 'used the same nonce' : 'spent some of it\'s inputs'}.`}
-                  type={'error'}
-                />
-              )}
+              {transaction.confirmations === -3 &&
+                (transaction.replacedByTxid ? (
+                  <Info
+                    message={`This transaction was replaced by ${transaction.replacedByTxid}`}
+                    type={'error'}
+                    onClick={() => goToTx(transaction.replacedByTxid)}
+                  />
+                ) : (
+                  <Info
+                    message={`This transaction was replaced by another transaction that ${
+                      transaction.chain === 'ETH'
+                        ? 'used the same nonce'
+                        : "spent some of it's inputs"
+                    }.`}
+                    type={'error'}
+                  />
+                ))}
 
               <TransactionTileBody>
                 <TransactionBodyCol

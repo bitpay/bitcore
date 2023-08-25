@@ -149,7 +149,11 @@ const Layout = ({children}: {children?: ReactNode}) => {
             </AnimatePresence>
             <AnimatePresence>
               {isTestnet() && (
-                <Info message={'This is a test network. Testnet currencies have no real-world value.'} type={'error'} />
+                <Info
+                  message={'This is a test network. Testnet currencies have no real-world value.'}
+                  type={'info'}
+                  textAlign={'center'}
+                />
               )}
             </AnimatePresence>
             {children}

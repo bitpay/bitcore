@@ -10,10 +10,7 @@ const TransactionSummaryEth = ({transaction}: {transaction: TransactionEth}) => 
       <SharedTile title='To' description={to} />
       <SharedTile title='Nonce' description={nonce} />
       <SharedTile title='Gas Limit' description={gasLimit} />
-      <SharedTile
-        title='Gas Price'
-        description={`${(gasPrice / 1e9).toFixed(2)} Gwei`}
-      />
+      <SharedTile title='Gas Price' description={`${(gasPrice / 1e9).toFixed(2)} Gwei`} />
       <SharedTile title='Fee' description={`${getConvertedValue(fee, 'ETH').toFixed(8)} ETH`} />
       {confirmations > 0 ? (
         <SharedTile title='Mined Time' description={getFormattedDate(blockTime)} />
