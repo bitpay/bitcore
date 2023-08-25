@@ -1,5 +1,5 @@
 import {CoinsList} from '../utilities/models';
-import {useEffect, useState} from 'react';
+import {FC, useEffect, useState, memo} from 'react';
 import {getApiRoot, getConvertedValue, getFormattedDate} from '../utilities/helper-methods';
 import {fetcher} from '../api/api';
 import {
@@ -13,17 +13,13 @@ import {
 import {Tile, TileDescription, TileLink} from '../assets/styles/tile';
 import {useNavigate} from 'react-router-dom';
 
-const Coin = ({
-  transaction,
-  currency,
-  network,
-  order,
-}: {
+interface CoinProps {
   transaction: CoinsList;
   currency: string;
   network: any;
   order: string;
-}) => {
+}
+const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
   const navigate = useNavigate();
   const [showTimer, setShowTimer] = useState(false);
   const [time, setTime] = useState(null);
@@ -152,4 +148,4 @@ const Coin = ({
   );
 };
 
-export default Coin;
+export default memo(Coin);

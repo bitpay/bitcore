@@ -7,6 +7,7 @@ import {useNavigate, useLocation} from 'react-router-dom';
 import ThemeChanger from './theme-changer';
 import {Feather} from '../assets/styles/colors';
 import {HeaderHeight, HeaderZIndex} from '../assets/styles/global';
+import {memo} from 'react';
 
 const HeaderDiv = styled.div`
   position: fixed;
@@ -95,4 +96,4 @@ const Header = ({setSearchError}: {setSearchError?: any}) => {
   );
 };
 
-export default Header;
+export default memo(Header);

@@ -1,6 +1,14 @@
+import {FC, memo} from 'react';
 import styled, {css} from 'styled-components';
 import {motion} from 'framer-motion';
 import {NeutralSlate, SlateDark} from '../assets/styles/colors';
+
+interface InfoProps {
+  message?: string;
+  type: string;
+  onClick?: () => void;
+  textAlign?: 'center';
+}
 
 const Message = styled(motion.div)<{type: string; align?: 'center'}>`
   font-size: 16px;
@@ -35,17 +43,7 @@ const Message = styled(motion.div)<{type: string; align?: 'center'}>`
   }}
 `;
 
-const Info = ({
-  message,
-  type,
-  onClick,
-  textAlign,
-}: {
-  message?: string;
-  type: string;
-  onClick?: () => void;
-  textAlign?: 'center';
-}) => {
+const Info: FC<InfoProps> = ({message, type, onClick, textAlign}) => {
   const infoAnime = {
     initial: {
       opacity: 0,
@@ -73,4 +71,4 @@ const Info = ({
   );
 };
 
-export default Info;
+export default memo(Info);

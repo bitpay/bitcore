@@ -1,3 +1,4 @@
+import {FC, memo} from 'react';
 import {CoinsListEth, TransactionEth} from '../utilities/models';
 import {getConvertedValue, getFormattedDate} from '../utilities/helper-methods';
 import {
@@ -13,14 +14,15 @@ import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate} from 'react-router-dom';
 
-const TransactionDetailsEth = ({
-  transaction,
-  currency,
-  network,
-}: {
+interface TransactionDetailsEthProps {
   transaction: TransactionEth | CoinsListEth;
   currency: string;
   network: string;
+}
+const TransactionDetailsEth: FC<TransactionDetailsEthProps> = ({
+  transaction,
+  currency,
+  network,
 }) => {
   const navigate = useNavigate();
   const {txid, blockTime, blockHeight, coinbase, from, to, fee, confirmations, value} = transaction;
@@ -102,4 +104,4 @@ const TransactionDetailsEth = ({
   );
 };
 
-export default TransactionDetailsEth;
+export default memo(TransactionDetailsEth);

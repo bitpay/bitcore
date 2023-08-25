@@ -3,7 +3,7 @@ import styled, {useTheme} from 'styled-components';
 import Search from './search';
 import {device} from '../utilities/constants';
 import {MainTitle} from '../assets/styles/titles';
-import {ReactNode, useState} from 'react';
+import {ReactNode, useState, memo} from 'react';
 import Footer from './footer';
 import PlusBackgroundDark from '../assets/images/plus-dark-background.svg';
 import PlusBackgroundLight from '../assets/images/plus-light-background.svg';
@@ -167,4 +167,4 @@ const Layout = ({children}: {children?: ReactNode}) => {
     </div>
   );
 };
-export default Layout;
+export default memo(Layout);

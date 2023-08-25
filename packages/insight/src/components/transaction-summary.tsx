@@ -1,7 +1,11 @@
+import {FC, memo} from 'react';
 import {Transaction} from '../utilities/models';
 import {SharedTile} from './shared';
 
-const TransactionSummary = ({transaction}: {transaction: Transaction}) => {
+interface TransactionSummaryProps {
+  transaction: Transaction;
+}
+const TransactionSummary: FC<TransactionSummaryProps> = ({transaction}) => {
   const {size, fee} = transaction;
   return (
     <>
@@ -14,4 +18,4 @@ const TransactionSummary = ({transaction}: {transaction: Transaction}) => {
   );
 };
 
-export default TransactionSummary;
+export default memo(TransactionSummary);

@@ -1,8 +1,12 @@
+import {FC, memo} from 'react';
 import {TransactionEth} from '../utilities/models';
 import {getConvertedValue, getFormattedDate} from '../utilities/helper-methods';
 import {SharedTile} from './shared';
 
-const TransactionSummaryEth = ({transaction}: {transaction: TransactionEth}) => {
+interface TransactionSummaryEthProps {
+  transaction: TransactionEth;
+}
+const TransactionSummaryEth: FC<TransactionSummaryEthProps> = ({transaction}) => {
   const {gasLimit, gasPrice, fee, from, to, nonce, blockTime, confirmations} = transaction;
   return (
     <>
@@ -19,4 +23,4 @@ const TransactionSummaryEth = ({transaction}: {transaction: TransactionEth}) => 
   );
 };
 
-export default TransactionSummaryEth;
+export default memo(TransactionSummaryEth);

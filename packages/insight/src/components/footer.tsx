@@ -3,6 +3,7 @@ import BitPayLogoDark from '../assets/images/bitpay-logo-white.svg';
 import BitPayLogoLight from '../assets/images/bitpay-logo-blue.svg';
 import {Feather, SlateDark, White} from '../assets/styles/colors';
 import {FooterHeight} from '../assets/styles/global';
+import {memo} from 'react';
 
 const FooterDiv = styled.div`
   display: flex;
@@ -51,4 +52,4 @@ const Footer = () => {
   );
 };
 
-export default Footer;
+export default memo(Footer);

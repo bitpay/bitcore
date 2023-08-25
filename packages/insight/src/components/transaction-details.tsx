@@ -7,7 +7,7 @@ import {
   hasUnconfirmedInputs,
   isRBF,
 } from '../utilities/helper-methods';
-import {useState, useEffect} from 'react';
+import {useState, useEffect, FC, memo} from 'react';
 import {
   TransactionBodyCol,
   TransactionTile,
@@ -43,18 +43,19 @@ const SelectedPill = styled.div`
   font-size: 16px;
 `;
 
-const TransactionDetails = ({
-  transaction,
-  currency,
-  network,
-  refTxid,
-  refVout,
-}: {
+interface TransactionDetailsProps {
   transaction: Transaction;
   currency: string;
   network: string;
   refTxid?: string;
   refVout?: number;
+}
+const TransactionDetails: FC<TransactionDetailsProps> = ({
+  transaction,
+  currency,
+  network,
+  refTxid,
+  refVout,
 }) => {
   const navigate = useNavigate();
   const [formattedInputs, setFormattedInputs] = useState<any[]>();
@@ -303,4 +304,4 @@ const TransactionDetails = ({
   );
 };
 
-export default TransactionDetails;
+export default memo(TransactionDetails);
