@@ -449,13 +449,13 @@ export class TxProposal {
   }
 
   isConfirmed(): boolean {
-    if(this.status != 'broadcasted'){
+    if (this.status != 'broadcasted') {
       return false;
     }
     if (
       Constants.EVM_CHAINS[this.chain.toUpperCase()]
       && (!this.confirmations || this.confirmations == 0)
-    ){
+    ) {
       return false;
     }    
 

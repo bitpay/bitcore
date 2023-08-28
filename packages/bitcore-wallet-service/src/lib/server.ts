@@ -2993,27 +2993,27 @@ export class WalletService implements IWalletService {
 
   /*
   * Updates TxProposal based on tx data found on the blockchain
-  * Sets to broadcasted, records confirmations, and recordes reverts
   */
-  _updateTxpWithOnChainTx(txp: TxProposal, tx, cb){
+  _updateTxpWithOnChainTx(txp: TxProposal, tx, cb) {
     $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_updateTxpWithOnChainTx()>');
     $.checkState(txp.txid == tx.txid, 'Failed state: tx.txid is not equal to txp.txid at <_updateTxpWithOnChainTx()>');
-    if(
+
+    // check for EVM related data
+    if (
       Constants.EVM_CHAINS[txp.chain.toUpperCase()]
       && txp.status == 'broadcasted'
       && tx.confirmations
     ) {
       const processConfs = () => this._processConfirmations(txp, tx.confirmations, cb);
-      // check if EVM transaction is reverted
-      if(!tx.receipt.status || tx.receipt.status === '0x0'){
-        // set txp to reverted. afterwards, process confirmations.
+      // check if tx is reverted
+      if (!tx.receipt.status || tx.receipt.status === '0x0') {
+        // record txp revert. afterwards, process confirmations.
         return this._processRevert(txp, processConfs)
-      } else {
-        // process confirmations
-        return processConfs();
       }
+      // record confirmations
+      return processConfs();
     }
-    // set to broadcasted
+    // txp with a tx on chain should be set to broadcasted
     if (txp.status != 'broadcasted') {
       return this._processBroadcast(
         txp,
