@@ -9,8 +9,13 @@ import '../utils/polyfills';
 import { Config } from './config';
 
 const { CHAIN, NETWORK } = process.env;
-const MEMPOOL_AGE = Number(process.env.MEMPOOL_AGE) || 7;
-const args = parseArgv([], ['EXIT']);
+const args = parseArgv([], ['EXIT', 'DRY', 'MEMPOOL_AGE']);
+const MEMPOOL_AGE =  Number(args.MEMPOOL_AGE || process.env.MEMPOOL_AGE) || 7;
+
+// If --DRY was given w/o a follow arg (i.e. 'true', '0', etc) assume the user wants to run a dry run (safe)
+if (Object.keys(args).includes('DRY') && args.DRY === undefined) {
+  args.DRY = '1';
+}
 
 export class PruningService {
   transactionModel: TransactionModel;
@@ -151,7 +156,10 @@ export class PruningService {
   }
 
   async clearInvalid(invalidTxids: Array<string>) {
-    logger.info(`Invalidating ${invalidTxids.length} txids`);
+    logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${invalidTxids.length} txids`);
+    if (args.DRY) {
+      return;
+    }
     return Promise.all([
       // Set all invalid txs to conflicting status
       this.transactionModel.collection.updateMany(
@@ -172,7 +180,10 @@ export class PruningService {
   }
 
   async removeOldMempool(chain, network, txids: Array<string>) {
-    logger.info(`Removing ${txids.length} txids`);
+    logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Removing ${txids.length} txids`);
+    if (args.DRY) {
+      return;
+    }
     return Promise.all([
       this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: -1 }),
       this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: -1 })

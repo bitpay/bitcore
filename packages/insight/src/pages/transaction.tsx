@@ -14,7 +14,7 @@ import {DisplayFlex, ConfirmationLabel} from '../assets/styles/global';
 import {TransactionBodyCol, TransactionTileBody} from '../assets/styles/transaction';
 import {motion} from 'framer-motion';
 import {routerFadeIn} from '../utilities/animations';
-import {Link, useLocation, useParams, useSearchParams} from 'react-router-dom';
+import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {useAppDispatch} from '../utilities/hooks';
 import React, {useEffect, useState} from 'react';
 import {changeCurrency, changeNetwork} from '../store/app.actions';
@@ -28,6 +28,7 @@ const getTxData = (state: any): Promise<any> => {
 };
 
 const TransactionHash: React.FC = () => {
+  const navigate = useNavigate();
   const params = useParams<{currency: string; network: string; tx: string}>();
   const {tx} = params;
   let {currency, network} = params;
@@ -95,6 +96,13 @@ const TransactionHash: React.FC = () => {
       });
   }, [network, currency, tx]);
 
+  const goToTx = (tx: any) => {
+    return navigate({
+      pathname: `/${currency}/${network}/tx/${tx}`,
+      search: '',
+    });
+  };
+
   return (
     <>
       {!isLoading ? (
@@ -122,10 +130,14 @@ const TransactionHash: React.FC = () => {
               <SecondaryTitle>Summary</SecondaryTitle>
 
               {transaction.confirmations === -3 && (
+                transaction.replacedByTxid ?
                 <Info
-                  message={
-                    'This transaction is invalid and will never confirm, because some of its inputs are already spent.'
-                  }
+                  message={`This transaction was replaced by ${transaction.replacedByTxid}`}
+                  type={'error'}
+                  onClick={() => goToTx(transaction.replacedByTxid)}
+                /> :
+                <Info
+                  message={`This transaction was replaced by another transaction that ${transaction.chain === 'ETH' ? 'used the same nonce' : 'spent some of it\'s inputs'}.`}
                   type={'error'}
                 />
               )}

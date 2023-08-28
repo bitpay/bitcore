@@ -141,6 +141,10 @@ module.exports = {
   //   referrerAddress: 'one_inch_referrer_address', // ETH
   //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
   // },
+  // moralis: {
+  //   apiKey: 'moralis_api_key_here',
+  //   whitelist: []
+  // },
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',

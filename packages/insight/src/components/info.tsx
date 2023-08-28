@@ -27,7 +27,7 @@ const Message = styled(motion.div)<{type: string}>`
   }}
 `;
 
-const Info = ({message, type}: {message?: string; type: string}) => {
+const Info = ({message, type, onClick}: {message?: string; type: string, onClick?: () => void}) => {
   const infoAnime = {
     initial: {
       opacity: 0,
@@ -36,13 +36,14 @@ const Info = ({message, type}: {message?: string; type: string}) => {
     animate: {
       opacity: 1,
       height: 'auto',
+      cursor: onClick ? 'pointer' : 'inherit'
     },
   };
 
   message = message || 'Uh Oh, Something went wrong. Please try again.';
 
   return (
-    <Message type={type} variants={infoAnime} initial='initial' animate='animate'>
+    <Message type={type} variants={infoAnime} initial='initial' animate='animate' onClick={onClick}>
       {message}
     </Message>
   );

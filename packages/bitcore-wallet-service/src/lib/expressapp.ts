@@ -1,4 +1,5 @@
 import * as async from 'async';
+import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
@@ -1596,6 +1597,68 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/sardine/quote', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .sardineGetQuote(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/sardine/getToken', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .sardineGetToken(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/sardine/currencyLimits', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .sardineGetCurrencyLimits(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/service/sardine/ordersDetails', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .sardineGetOrdersDetails(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
@@ -1827,6 +1890,68 @@ export class ExpressApp {
       }
       server
         .discoverPayId(opts)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    const moralisCorsOptions = {
+      origin: (origin, cb) => {
+        const moralisWhiteList = config.moralis?.whitelist ?? [];
+        if (moralisWhiteList.indexOf(origin) !== -1) {
+          cb(null, true);
+        } else {
+          cb(new Error('Not allowed by CORS'));
+        }
+      },
+    };
+
+    router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetWalletTokenBalances(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetTokenAllowance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetNativeBalance', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetNativeBalance(req)
         .then(response => {
           res.json(response);
         })

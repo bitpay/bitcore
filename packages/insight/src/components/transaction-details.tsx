@@ -58,7 +58,7 @@ const TransactionDetails = ({
 }) => {
   const navigate = useNavigate();
   const [formattedInputs, setFormattedInputs] = useState<any[]>();
-  const {outputs, txid, blockTime, coinbase, inputs, confirmations, fee, value} = transaction;
+  const {outputs, txid, blockTime, blockHeight, coinbase, inputs, confirmations, fee, value} = transaction;
   const goToAddress = (address: any) => {
     return navigate(`/${currency}/${network}/address/${address}`);
   };
@@ -120,7 +120,7 @@ const TransactionDetails = ({
         </TileDescription>
 
         <TileDescription textAlign='right' value padding='0 0 0 0.25rem'>
-          Mined on: {getFormattedDate(blockTime)}
+          {`${blockHeight > -1 ? 'Mined' : 'Seen'} on: ${getFormattedDate(blockTime)}`}
         </TileDescription>
       </TransactionTileHeader>
 

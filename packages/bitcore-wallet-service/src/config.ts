@@ -123,6 +123,10 @@ const Config = () => {
           disabled: false,
           removed: false
         },
+        sardine: {
+          disabled: false,
+          removed: false
+        },
         simplex: {
           disabled: false,
           removed: false
@@ -132,7 +136,7 @@ const Config = () => {
           removed: false
         }
       },
-      swapCrypto: { 
+      swapCrypto: {
         disabled: false,
         changelly: {
           disabled: false,
@@ -176,8 +180,8 @@ const Config = () => {
     //   },
     //   production: {
     //     apiKey: 'ramp_production_api_key_here',
-    //     api: 'https://api-instant.ramp.network/api',
-    //     widgetApi: 'https://buy.ramp.network',
+    //     api: 'https://api.ramp.network/api',
+    //     widgetApi: 'https://app.ramp.network',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'ramp_sandbox_web_api_key_here',
@@ -186,8 +190,30 @@ const Config = () => {
     //   },
     //   productionWeb: {
     //     apiKey: 'ramp_production_web_api_key_here',
-    //     api: 'https://api-instant.ramp.network/api',
-    //     widgetApi: 'https://buy.ramp.network',
+    //     api: 'https://api.ramp.network/api',
+    //     widgetApi: 'https://app.ramp.network',
+    //   }
+    // },
+    // sardine: {
+    //   sandbox: {
+    //     api: 'https://api.sandbox.sardine.ai',
+    //     secretKey: 'sardine_sandbox_secret_key_here',
+    //     clientId: 'sardine_sandbox_client_id_here',
+    //   },
+    //   production: {
+    //     api: 'https://api.sardine.ai/v1',
+    //     secretKey: 'sardine_production_secret_key_here',
+    //     clientId: 'sardine_production_client_id_here',
+    //   },
+    //   sandboxWeb: {
+    //     api: 'https://api.sandbox.sardine.ai',
+    //     secretKey: 'sardine_sandbox_web_secret_key_here',
+    //     clientId: 'sardine_sandbox_web_client_id_here',
+    //   },
+    //   productionWeb: {
+    //     api: 'https://api.sardine.ai/v1',
+    //     secretKey: 'sardine_production_web_secret_key_here',
+    //     clientId: 'sardine_production_web_client_id_here',
     //   }
     // },
     // simplex: {
@@ -243,6 +269,10 @@ const Config = () => {
     //   api: 'https://bitpay.api.enterprise.1inch.exchange',
     //   referrerAddress: 'one_inch_referrer_address', // ETH
     //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
+    // },
+    // moralis: {
+    //   apiKey: 'moralis_api_key_here',
+    //   whitelist: []
     // },
     // To use email notifications uncomment this:
     // emailOpts: {

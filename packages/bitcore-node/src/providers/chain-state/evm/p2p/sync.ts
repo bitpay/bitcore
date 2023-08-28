@@ -24,6 +24,7 @@ export class MultiThreadSync extends EventEmitter {
   private config: IEVMNetworkConfig;
   private resolvingGaps: boolean = false;
   private gapsLength: number = 0;
+  private mtSyncTipPad: number;
   protected currentHeight: number = 0;
 
   constructor({ chain, network }) {
@@ -31,10 +32,19 @@ export class MultiThreadSync extends EventEmitter {
     this.chain = chain || 'ETH';
     this.network = network || 'mainnet';
     this.config = Config.chains[chain][network];
+    this.mtSyncTipPad = this.config.mtSyncTipPad || 100;
   }
 
   async addBlockToQueue(blockNum) {
     this.syncQueue.push(blockNum);
+  }
+
+  getRpc() {
+    const providerIdx = threadId % (this.config.providers || []).length;
+    const providerConfig = this.config.provider || this.config.providers![providerIdx];
+    const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
+    const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
+    return rpc;
   }
 
   async sync() {
@@ -59,11 +69,7 @@ export class MultiThreadSync extends EventEmitter {
       }
 
       let startHeight = tip ? tip.height : this.config.syncStartHeight || 0;
-
-      const providerIdx = threadId % (this.config.providers || []).length;
-      const providerConfig = this.config.provider || this.config.providers![providerIdx];
-      const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
-      const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
+      const rpc = this.getRpc();
       this.bestBlock = await rpc.web3!.eth.getBlockNumber();
       this.currentHeight = tip ? tip.height : this.config.syncStartHeight || 0;
       this.syncHeight = this.currentHeight;
@@ -76,7 +82,6 @@ export class MultiThreadSync extends EventEmitter {
       const oneSecond = 1000;
 
       this.syncInterval = setInterval(() => {
-        // TODO account for this.syncQueue
         if (this.resolvingGaps) {
           logger.info(
             `${timestamp()} | Filling gaps... | Chain: ${chain} | Network: ${network} | On gap ${this.gapsLength -
@@ -88,7 +93,7 @@ export class MultiThreadSync extends EventEmitter {
           const blocksProcessed = this.currentHeight - startHeight;
           const elapsedMinutes = (Date.now() - startTime) / (60 * oneSecond);
           logger.info(
-            `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} |${(blocksProcessed / elapsedMinutes)
+            `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} | ${(blocksProcessed / elapsedMinutes)
               .toFixed(2)
               .padStart(8)} blocks/min | Height: ${this.currentHeight.toString().padStart(7)}`
           );
@@ -129,24 +134,28 @@ export class MultiThreadSync extends EventEmitter {
     };
   }
 
-  threadSync(thread: Thread, msg: { blockNum: number; notFound?: boolean; error?: Error }) {
+  async threadSync(thread: Thread, msg: { blockNum: number; notFound?: boolean; error?: Error }) {
     if (msg.error) {
       logger.warn(`Syncing thread ${thread.threadId} returned an error: ${msg.error}`);
     }
 
-    // If last block was found
-    if (!msg.notFound) {
-      // If queue is empty, add next block to queue
-      if (this.syncQueue.length === 0) {
-        this.addBlockToQueue(this.syncHeight++); // syncHeight is incremented until there are no more blocks found
+    const gimmeAnotherBlock = !msg.notFound;
+    const atTip = await this.areWeAtTheTip();
+    const moreBlocksToGive = !atTip || this.syncQueue.length > 0;
+
+    // If last block was found and there's more to sync
+    if (gimmeAnotherBlock && moreBlocksToGive) {
+      // If queue is empty, then !atTip must be true, so add next block to queue
+      if (this.syncQueue.length === 0) {   
+        this.addBlockToQueue(this.syncHeight++);
       }
       const blockNum = this.syncQueue.shift();
       thread.postMessage({ message: 'sync', blockNum });
       this.currentHeight = Math.max(msg.blockNum, this.currentHeight);
-      this.bestBlock = Math.max(msg.blockNum, this.bestBlock);
 
       // If the thread didn't find the block for some reason, but we know it exists
-    } else if (msg.blockNum < this.bestBlock) {
+    } else if (msg.blockNum < this.bestBlock && !atTip) {
+      logger.debug('Known block not found by thread: %o. Retrying.', msg.blockNum);
       thread.postMessage({ message: 'sync', blockNum: msg.blockNum });
 
       // Otherwise, decrement active syncing threads counter
@@ -156,6 +165,18 @@ export class MultiThreadSync extends EventEmitter {
         this.finishSync();
       }
     }
+  }
+
+  async areWeAtTheTip() {
+    if (this.bestBlock > this.syncHeight + this.mtSyncTipPad) {
+      return false;
+    }
+    const rpc = this.getRpc();
+    this.bestBlock = await rpc.web3!.eth.getBlockNumber();
+    if (this.bestBlock > this.syncHeight + this.mtSyncTipPad) {
+      return false;
+    }
+    return true;
   }
 
   getWorkerThread(workerData): Thread {
@@ -205,15 +226,8 @@ export class MultiThreadSync extends EventEmitter {
 
   async getVerifiedBlockHeight() {
     const state = await StateStorage.collection.findOne({}, { sort: { _id: -1 } });
-    if (
-      state &&
-      state.verifiedBlockHeight &&
-      state.verifiedBlockHeight[this.chain] &&
-      state.verifiedBlockHeight[this.chain][this.network]
-    ) {
-      return state.verifiedBlockHeight[this.chain][this.network];
-    }
-    return this.config.syncStartHeight || 0;
+    const savedStartHeight = state?.verifiedBlockHeight?.[this.chain]?.[this.network] || 0;
+    return Math.max(savedStartHeight, this.config.syncStartHeight || 0);
   }
 
   async finishSync() {
@@ -224,9 +238,7 @@ export class MultiThreadSync extends EventEmitter {
 
     const verifiedBlockHeight = await this.getVerifiedBlockHeight();
     logger.info(
-      `Verifying ${this.currentHeight - verifiedBlockHeight} ${this.chain}:${
-        this.network
-      } blocks. This could take a while.`
+      `Verifying ${this.currentHeight - verifiedBlockHeight} ${this.chain}:${this.network} blocks for consistency.`
     );
     const gaps = await EVMBlockStorage.getBlockSyncGaps({
       chain: this.chain,
@@ -245,8 +257,7 @@ export class MultiThreadSync extends EventEmitter {
       this.syncing = false;
       this.sync();
     } else {
-      this.resolvingGaps = false;
-      logger.info(`${this.chain}:${this.network} up to date.`);
+      logger.info(`${this.chain}:${this.network} multi-thread sync is finished. Switching to main process sync.`);
       await StateStorage.collection.updateOne(
         {},
         {
