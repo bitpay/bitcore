@@ -75,6 +75,7 @@ export interface ITxProposal {
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
   confirmations?: number;
+  reverted?: boolean;
 }
 
 export class TxProposal {
@@ -142,6 +143,7 @@ export class TxProposal {
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
   confirmations?: number;
+  reverted?: boolean;
 
   static create(opts) {
     opts = opts || {};
@@ -192,6 +194,7 @@ export class TxProposal {
     x.feeLevel = opts.feeLevel;
     x.feePerKb = opts.feePerKb;
     x.excludeUnconfirmedUtxos = opts.excludeUnconfirmedUtxos;
+    x.confirmations = opts.confirmations;
 
     x.addressType = opts.addressType || (x.walletN > 1 ? Constants.SCRIPT_TYPES.P2SH : Constants.SCRIPT_TYPES.P2PKH);
     $.checkState(
@@ -225,6 +228,7 @@ export class TxProposal {
     x.multiSendContractAddress = opts.multiSendContractAddress;
     x.isTokenSwap = opts.isTokenSwap;
     x.multisigContractAddress = opts.multisigContractAddress;
+    x.reverted = opts.reverted;
 
     // XRP
     x.destinationTag = opts.destinationTag;
@@ -460,6 +464,10 @@ export class TxProposal {
 
   setConfirmations(confirmations: number) {
     this.confirmations = confirmations;
+  }
+
+  setReverted() {
+    this.reverted = true;
   }
 
   isAccepted() {

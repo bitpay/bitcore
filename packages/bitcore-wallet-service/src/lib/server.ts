@@ -2962,6 +2962,15 @@ export class WalletService implements IWalletService {
     });
   }
 
+  _processRevert(txp,cb) {
+    $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processRevert()>');
+    txp.setReverted();
+    this.storage.storeTx(this.walletId, txp, err => {
+      if (err) return cb(err);
+      return cb(null, txp);
+    });
+  }
+
   _processBroadcast(txp, opts, cb) {
     $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processBroadcast()>');
     opts = opts || {};
@@ -2982,6 +2991,40 @@ export class WalletService implements IWalletService {
     });
   }
 
+  /*
+  * Updates TxProposal based on tx data found on the blockchain
+  * Sets to broadcasted, records confirmations, and recordes reverts
+  */
+  _updateTxpWithOnChainTx(txp: TxProposal, tx, cb){
+    $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_updateTxpWithOnChainTx()>');
+    $.checkState(txp.txid == tx.txid, 'Failed state: tx.txid is not equal to txp.txid at <_updateTxpWithOnChainTx()>');
+    if(
+      Constants.EVM_CHAINS[txp.chain.toUpperCase()]
+      && txp.status == 'broadcasted'
+      && tx.confirmations
+    ) {
+      const processConfs = () => this._processConfirmations(txp, tx.confirmations, cb);
+      // check if EVM transaction is reverted
+      if(!tx.receipt.status || tx.receipt.status === '0x0'){
+        // set txp to reverted. afterwards, process confirmations.
+        return this._processRevert(txp, processConfs)
+      } else {
+        // process confirmations
+        return processConfs();
+      }
+    }
+    // set to broadcasted
+    if (txp.status != 'broadcasted') {
+      return this._processBroadcast(
+        txp,
+        {
+          byThirdParty: true
+        },
+        cb
+      );
+    }
+    return cb();
+  }
   /**
    * Broadcast a transaction proposal.
    * @param {Object} opts
@@ -3140,6 +3183,9 @@ export class WalletService implements IWalletService {
 
   /**
    * Retrieves pending transaction proposals.
+   * Pending Tx Criteria:
+   * UTXO = TxProposals with a status of accepted
+   * EVM  = TxProposals with a status of accepted OR broadcasted with no confirmations
    * @param {Object} opts
    * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
    * @param {String} opts.tokenAddress ERC20 Token Contract Address
@@ -3170,27 +3216,17 @@ export class WalletService implements IWalletService {
           txps,
           (txp: TxProposal, next) => {
             if (txp.status != 'accepted' && txp.isConfirmed()) return next();
-
+            // verify pending tx's have txid on chain
             this._getTxInBlockchain(txp, (err, tx) => {
               const isInBlockchain = !!tx;
               
               if (err || !isInBlockchain) return next(err);
-              
-              if(Constants.EVM_CHAINS[txp.chain.toUpperCase()] && txp.status == 'broadcasted' && tx) { 
-                this._processConfirmations(txp, tx.confirmations, next);
-              }
-              if (txp.status != 'broadcasted') {
-                this._processBroadcast(
-                  txp,
-                  {
-                    byThirdParty: true
-                  },
-                  next
-                );
-              }
+              // update txp with tx data
+              return this._updateTxpWithOnChainTx(txp, tx, next)
             });
           },
           err => {
+            // filter txp's that are confirmed. UTXO txp's are considered confirmed when braodcasted
             txps = _.reject(txps, txp => {
               return txp.isConfirmed();
             });
