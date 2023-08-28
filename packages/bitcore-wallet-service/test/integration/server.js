@@ -8399,6 +8399,11 @@ describe('Wallet service', function() {
       server.getPendingTxs({}, function(err, txs) {
         should.not.exist(err);
         txs.length.should.equal(1);
+        sinon.stub(WalletService.prototype, '_updateTxpWithOnChainTx').callsFake(function(txp, tx, cb) {
+          // make sure txid matches everytime
+          tx.txid = txp.txid
+          return WalletService.prototype._updateTxpWithOnChainTx.wrappedMethod.call(this, txp, tx, cb);
+        });
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
           txid: 999
         });

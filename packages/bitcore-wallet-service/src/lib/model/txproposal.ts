@@ -316,6 +316,7 @@ export class TxProposal {
   toObject() {
     const x: any = _.cloneDeep(this);
     x.isPending = this.isPending();
+    x.isPendingConfirm = this.isPendingConfirm();
     return x;
   }
 
@@ -444,8 +445,11 @@ export class TxProposal {
   }
 
   isPending() {
-    return !_.includes(['temporary', 'broadcasted', 'rejected', 'rejected!'], this.status)
-      || !this.isConfirmed();
+    return !_.includes(['temporary', 'broadcasted', 'rejected'], this.status);
+  }
+
+  isPendingConfirm() {
+    return this.isPending() || (this.status == 'broadcasted' && !this.isConfirmed);
   }
 
   isConfirmed(): boolean {

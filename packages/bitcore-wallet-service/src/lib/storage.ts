@@ -80,7 +80,7 @@ export class Storage {
     });
     db.collection(collections.TXS).createIndex({
       walletId: 1,
-      isPending: 1,
+      isPendingConfirm: 1,
       txid: 1
     });
     db.collection(collections.TXS).createIndex({
@@ -427,7 +427,7 @@ export class Storage {
       .collection(collections.TXS)
       .find({
         walletId,
-        isPending: true
+        isPendingConfirm: true
       })
       .sort({
         createdOn: -1
