@@ -2920,6 +2920,15 @@ export class WalletService implements IWalletService {
     });
   }
 
+  _processConfirmations(txp, confirmations: number, cb) {
+    $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processConfirmations()>');
+    txp.setConfirmations(confirmations);
+    this.storage.storeTx(this.walletId, txp, err => {
+      if (err) return cb(err);
+      return cb(null, txp);
+    });
+  }
+
   _processBroadcast(txp, opts, cb) {
     $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processBroadcast()>');
     opts = opts || {};
@@ -3126,8 +3135,8 @@ export class WalletService implements IWalletService {
 
         async.each(
           txps,
-          (txp: ITxProposal, next) => {
-            if (txp.status != 'accepted') return next();
+          (txp: TxProposal, next) => {
+            if (txp.status != 'accepted' && txp.isConfirmed()) return next();
 
             this._getTxInBlockchain(txp, (err, tx) => {
               const isInBlockchain = !!tx;
@@ -3135,16 +3144,17 @@ export class WalletService implements IWalletService {
               if (err || !isInBlockchain) return next(err);
               
               if(Constants.EVM_CHAINS[txp.chain.toUpperCase()] && txp.status == 'broadcasted' && tx) { 
-                txp.confirmations = tx.confirmations; // update confirmations
+                this._processConfirmations(txp, tx.confirmations, next);
               }
-
-              this._processBroadcast(
-                txp,
-                {
-                  byThirdParty: true
-                },
-                next
-              );
+              if (txp.status != 'broadcasted') {
+                this._processBroadcast(
+                  txp,
+                  {
+                    byThirdParty: true
+                  },
+                  next
+                );
+              }
             });
           },
           err => {

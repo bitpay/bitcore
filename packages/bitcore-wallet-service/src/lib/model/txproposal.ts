@@ -440,19 +440,26 @@ export class TxProposal {
   }
 
   isPending() {
-    return !_.includes(['temporary', 'broadcasted', 'rejected'], this.status);
+    return !_.includes(['temporary', 'broadcasted', 'rejected', 'rejected!'], this.status)
+      || !this.isConfirmed();
   }
 
   isConfirmed(): boolean {
     if(this.status != 'broadcasted'){
       return false;
     }
-
-    if (Constants.EVM_CHAINS[this.chain.toUpperCase()] && !this.confirmations){
+    if (
+      Constants.EVM_CHAINS[this.chain.toUpperCase()]
+      && (!this.confirmations || this.confirmations == 0)
+    ){
       return false;
     }    
 
     return true;
+  }
+
+  setConfirmations(confirmations: number) {
+    this.confirmations = confirmations;
   }
 
   isAccepted() {
