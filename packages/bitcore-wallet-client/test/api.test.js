@@ -7036,6 +7036,51 @@ describe('client API', function() {
         );
       });
 
+      it('should be able to restore with equal keyid an old bch wallet and an old multisig btc wallet', function(done) {  
+        var words = 'famous ship happy oyster retire sponsor disease friend parent wise grunt voyage';
+        let k1 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: false, useLegacyPurpose: true}); // old bch wallets: /[44,48]/[0,0]'/
+        let k2 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: true,  useLegacyPurpose: false });  // old BTC/BCH  multisig wallets: /[44]/[0,145]'/
+        helpers.createAndJoinWallet(clients, keys, 2, 2, { key: k1, network: 'livenet'}, () => {
+        // first create a "old" bch wallet (coin = 0).
+        clients[1].fromString(
+          k2.createCredentials(null, {
+            coin: 'bch',
+            network: 'livenet',
+            account: 0,
+            n: 1
+          })
+        );
+        clients[1].createWallet(
+          'mywallet',
+          'creator',
+          1,
+          1,
+          {
+            coin: 'bch',
+            network: 'livenet'
+          },
+          (err, secret) => {
+            should.not.exist(err);
+              Client.serverAssistedImport(
+                { words, includeTestnetWallets: false, includeLegacyWallets: true },
+                {
+                  clientFactory: () => {
+                    return helpers.newClient(app);
+                  }
+                },
+                (err, k, c) => {
+                  should.not.exist(err);
+                  should.exist(k);
+                  should.exist(c[0]);
+                  should.exist(c[1]);
+                  c[0].credentials.keyId.should.equal(c[1].credentials.keyId);
+                  c.length.should.equal(2);
+                  done();
+                });
+            });
+          });
+        });
+
       it('should be able to see txp messages after gaining access', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
           var xPrivKey = keys[0].get().xPrivKey;
