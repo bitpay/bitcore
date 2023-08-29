@@ -5938,6 +5938,7 @@ export class WalletService implements IWalletService {
 
     const credentials = {
       API: config.oneInch.api,
+      API_KEY: config.oneInch.apiKey,
       referrerAddress: config.oneInch.referrerAddress,
       referrerFee: config.oneInch.referrerFee
     };
@@ -5994,7 +5995,7 @@ export class WalletService implements IWalletService {
 
       const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
 
-      const URL: string = `${credentials.API}/v3.0/${chainId}/swap/?${qs.join('&')}`;
+      const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -6015,35 +6016,65 @@ export class WalletService implements IWalletService {
 
   oneInchGetTokens(req): Promise<any> {
     return new Promise((resolve, reject) => {
+
       const credentials = this.oneInchGetCredentials();
+      const chain = req.params?.['chain'] || 'eth';
+      const cacheKey = `oneInchTokens:${chain}`;
 
-      const headers = {
-        'Content-Type': 'application/json'
-      };
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.ONE_INCH_CACHE_DURATION, (err, values, oldvalues) => {
+        if (err) this.logw('Could not get stored tokens list', err);
+        if (values) return resolve(values);
 
-      const chainIdMap = {
-        eth: 1,
-        matic: 137
-      };
+        const headers = {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: 'Bearer ' + credentials.API_KEY,
+        };
 
-      const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
+        const chainIdMap = {
+          eth: 1,
+          matic: 137
+        };
 
-      const URL: string = `${credentials.API}/v3.0/${chainId}/tokens`;
+        const chainId = chainIdMap[chain];
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body.tokens);
+        const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
+
+        this.request.get(
+          URL,
+          {
+            headers,
+            json: true
+          },
+          (err, data) => {
+            if (err) {
+              this.logw('An error occured while retrieving the token list', err);
+              if (oldvalues) {
+               this.logw('Using old cached values');
+               return resolve(oldvalues);
+              }
+              return reject(err.body ?? err);
+            } else if (data?.statusCode === 429 && oldvalues) {
+              // oneinch rate limit
+               return resolve(oldvalues);
+            } else {
+              if (!data?.body?.tokens) {
+                if (oldvalues) {
+                  this.logw('No token list available... using old cached values');
+                  return resolve(oldvalues);
+                }
+                return reject(new Error('Could not get tokens list'));
+              }
+              this.storage.storeGlobalCache(cacheKey, data.body.tokens, err => {
+                if (err) {
+                  this.logw('Could not store tokens list');
+                }
+                return resolve(data.body.tokens);
+              });
+            }
           }
-        }
-      );
+        );
+      });
     });
   }
 
@@ -6197,7 +6228,54 @@ export class WalletService implements IWalletService {
       }
     });
   }
+
+  private coinGeckoGetCredentials() {
+    if (!config.coinGecko) throw new Error('coinGecko missing credentials');
+
+    const credentials = {
+      API: config.coinGecko.api,
+    };
+
+    return credentials;
+  }
+
+  coinGeckoGetRates(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const credentials = this.coinGeckoGetCredentials();
+      const chain = req.params['chain'];
+      const evmBlockchainNetwork = {
+        eth: 'ethereum',
+        matic: 'polygon-pos',
+      };
+      const contractAddresses = req.params['contractAddresses']; // format example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48,0x6b175474e89094c44da98b954eedeac495271d0f,..
+      const altCurrencies = req.params['altCurrencies']; // format example ars,aud,usd,...
+        
+      const URL: string = `${credentials.API}/v3/simple/token_price/${
+        evmBlockchainNetwork[chain]
+      }?contract_addresses=${contractAddresses}&vs_currencies=${altCurrencies}&include_24hr_change=true&include_last_updated_at=true`;
+        
+      this.request.get(
+        URL,
+        {
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            this.logw('An error occured while retrieving the token rates', err);
+            return reject(err.body ?? err);
+          } else {
+            if (!data?.body) {
+              this.logw('No token rates available');
+              return reject(new Error('Could not get tokens rates'));
+            }
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
 }
+
 
 function checkRequired(obj, args, cb?: (e: any) => void) {
   const missing = Utils.getMissingFields(obj, args);

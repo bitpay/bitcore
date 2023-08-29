@@ -25,7 +25,7 @@ const Config = () => {
 
     storageOpts: {
       mongoDb: {
-        uri: 'mongodb://localhost:27017/bws',
+        uri: 'mongodb://0.0.0.0:27017/bws',
         dbname: 'bws'
       }
     },
@@ -145,7 +145,7 @@ const Config = () => {
       },
     },
     suspendedChains: [],
-    staticRoot: '/tmp/static'
+    staticRoot: '/tmp/static',
     // moonpay: {
     //   sandbox: {
     //     apiKey: 'moonpay_sandbox_api_key_here',
@@ -266,9 +266,13 @@ const Config = () => {
     //   }
     // },
     // oneInch: {
-    //   api: 'https://bitpay.api.enterprise.1inch.exchange',
+    //   api: 'https://api.1inch.dev/swap',
+    //   apiKey: 'one_inch_api_key',
     //   referrerAddress: 'one_inch_referrer_address', // ETH
     //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
+    // },
+    // coinGecko: {
+    //   api: 'https://api.coingecko.com/api',
     // },
     // moralis: {
     //   apiKey: 'moralis_api_key_here',

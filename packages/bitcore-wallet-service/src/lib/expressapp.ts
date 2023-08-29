@@ -1846,6 +1846,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/service/oneInch/getTokens/:chain?', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
       let server;
       try {
         server = getServer(req, res);
@@ -1952,6 +1953,24 @@ export class ExpressApp {
       }
 
       server.moralisGetNativeBalance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.get('/v1/service/coinGecko/getRates/:contractAddresses/:altCurrencies/:chain', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .coinGeckoGetRates(req)
         .then(response => {
           res.json(response);
         })
