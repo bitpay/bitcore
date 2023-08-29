@@ -172,7 +172,7 @@ export class ExpressApp {
     };
 
     type ServerCallback = (server: WalletService, err?: Error) => void;
-    type ServerOpts = { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean };
+    interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
     const getServerWithAuth = (req, res, opts: ServerOpts | ServerCallback, cb?: ServerCallback | undefined) => {
       if (_.isFunction(opts)) {
         cb = opts;
