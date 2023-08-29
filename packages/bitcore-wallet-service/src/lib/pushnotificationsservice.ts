@@ -467,6 +467,7 @@ export class PushNotificationsService {
       doge: 'DOGE',
       ltc: 'LTC',
       usdc: 'USDC',
+      pyusd: 'PYUSD',
       usdp: 'USDP',
       gusd: 'GUSD',
       busd: 'BUSD',
