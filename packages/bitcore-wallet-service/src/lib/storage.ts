@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import { BCHAddressTranslator } from './bchaddresstranslator'; // only for migration
 import { Common } from './common';
 import logger from './logger';
 import {
@@ -12,13 +13,11 @@ import {
   Preferences,
   PushNotificationSub,
   Session,
-  TxConfirmationSub,
   TxNote,
   TxProposal,
   Wallet
 } from './model';
 
-const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
 
 const collections = {
