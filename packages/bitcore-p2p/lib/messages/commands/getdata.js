@@ -6,7 +6,6 @@ var bitcore = require('bitcore-lib');
 var utils = require('../utils');
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
-var _ = bitcore.deps._;
 
 /**
  * @param {Object|Array=} - options - If options is an array will use as "inventory"

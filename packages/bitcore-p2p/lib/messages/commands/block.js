@@ -4,7 +4,6 @@ var Message = require('../message');
 var inherits = require('util').inherits;
 var bitcore = require('bitcore-lib');
 var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
 
 /**
  * @param {Block=} arg - An instance of a Block
@@ -18,7 +17,7 @@ function BlockMessage(arg, options) {
   this.Block = options.Block;
   this.command = 'block';
   $.checkArgument(
-    _.isUndefined(arg) || arg instanceof this.Block,
+    arg === undefined || arg instanceof this.Block,
     'An instance of Block or undefined is expected'
   );
   this.block = arg;

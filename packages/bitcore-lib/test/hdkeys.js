@@ -10,7 +10,6 @@
 /* jshint maxstatements: 100 */
 /* jshint unused: false */
 
-var _ = require('lodash');
 var should = require('chai').should();
 var expect = require('chai').expect;
 var sinon = require('sinon');
@@ -20,10 +19,7 @@ var HDPrivateKey = bitcore.HDPrivateKey;
 var HDPublicKey = bitcore.HDPublicKey;
 
 describe('HDKeys building with static methods', function() {
-  var classes = [HDPublicKey, HDPrivateKey];
-  var clazz, index;
-
-  _.each(classes, function(clazz) {
+  [HDPublicKey, HDPrivateKey].forEach(function(clazz) {
     var expectStaticMethodFail = function(staticMethod, argument, message) {
       expect(clazz[staticMethod].bind(null, argument)).to.throw(message);
     };

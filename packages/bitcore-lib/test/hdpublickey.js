@@ -1,8 +1,6 @@
 'use strict';
 
 /* jshint unused: false */
-var _ = require('lodash');
-var assert = require('assert');
 var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
@@ -98,10 +96,7 @@ describe('HDPublicKey interface', function() {
     });
 
     it('can generate a json that has a particular structure', function() {
-      assert(_.isEqual(
-        new HDPublicKey(JSON.parse(json)).toJSON(),
-        new HDPublicKey(xpubkey).toJSON()
-      ));
+      new HDPublicKey(JSON.parse(json)).toJSON().should.deep.equal(new HDPublicKey(xpubkey).toJSON());
     });
 
     it('builds from a buffer object', function() {

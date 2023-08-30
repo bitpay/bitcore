@@ -7,7 +7,6 @@ var PublicKey = require('../publickey');
 var Random = require('./random');
 var Hash = require('./hash');
 var BufferUtil = require('../util/buffer');
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 
 var ECDSA = function ECDSA(obj) {
@@ -73,14 +72,11 @@ ECDSA.prototype.randomK = function() {
 
 
 // https://tools.ietf.org/html/rfc6979#section-3.2
-ECDSA.prototype.deterministicK = function(badrs) {
+ECDSA.prototype.deterministicK = function(badrs = 0) {
   /* jshint maxstatements: 25 */
   // if r or s were invalid when this function was used in signing,
   // we do not want to actually compute r, s here for efficiency, so,
   // we can increment badrs. explained at end of RFC 6979 section 3.2
-  if (_.isUndefined(badrs)) {
-    badrs = 0;
-  }
   var v = Buffer.alloc(32);
   v.fill(0x01);
   var k = Buffer.alloc(32);

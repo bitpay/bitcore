@@ -4,21 +4,16 @@ var chai = require('chai');
 
 /* jshint unused: false */
 var should = chai.should();
-var sinon = require('sinon');
 
 var bitcore = require('bitcore-lib');
-var _ = bitcore.deps._;
 var Random = bitcore.crypto.Random;
 var BN = bitcore.crypto.BN;
-var BufferUtil = bitcore.util.buffer;
 var p2p = require('../');
 var Peer = p2p.Peer;
-var Pool = p2p.Pool;
 var Networks = bitcore.Networks;
 var Messages = p2p.Messages;
 var Inventory = p2p.Inventory;
 var Block = bitcore.Block;
-var Transaction = bitcore.Transaction;
 
 // config 
 var network = process.env.NETWORK === 'testnet' ? Networks.testnet : Networks.livenet;
@@ -74,9 +69,9 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   };
   it('connects', function(cb) {
     connect(function(peer) {
-      peer.version.should.be.above(70000);
-      _.isString(peer.subversion).should.equal(true);
-      _.isNumber(peer.bestHeight).should.equal(true);
+      peer.version.should.be.a('number').above(70000);
+      peer.subversion.should.be.a('string');
+      peer.bestHeight.should.be.a('number');
       cb();
     });
   });

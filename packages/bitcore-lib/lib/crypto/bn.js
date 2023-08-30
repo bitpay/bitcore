@@ -2,7 +2,6 @@
 
 var BN = require('bn.js');
 var $ = require('../util/preconditions');
-var _ = require('lodash');
 
 var reversebuf = function(buf) {
   var buf2 = Buffer.alloc(buf.length);
@@ -17,17 +16,17 @@ BN.One = new BN(1);
 BN.Minus1 = new BN(-1);
 
 BN.fromNumber = function(n) {
-  $.checkArgument(_.isNumber(n));
+  $.checkArgument(typeof n === 'number');
   return new BN(n);
 };
 
 BN.fromString = function(str, base) {
-  $.checkArgument(_.isString(str));
+  $.checkArgument(typeof str === 'string');
   return new BN(str, base);
 };
 
 BN.fromBuffer = function(buf, opts) {
-  if (typeof opts !== 'undefined' && opts.endian === 'little') {
+  if (opts !== undefined && opts.endian === 'little') {
     buf = reversebuf(buf);
   }
   var hex = buf.toString('hex');
@@ -87,7 +86,7 @@ BN.prototype.toBuffer = function(opts) {
     buf = Buffer.from(hex, 'hex');
   }
 
-  if (typeof opts !== 'undefined' && opts.endian === 'little') {
+  if (opts !== undefined && opts.endian === 'little') {
     buf = reversebuf(buf);
   }
 

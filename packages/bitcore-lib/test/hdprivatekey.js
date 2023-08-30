@@ -1,13 +1,10 @@
 'use strict';
 /* jshint unused: false */
-var _ = require('lodash');
-var assert = require('assert');
 var should = require('chai').should();
 var expect = require('chai').expect;
 var bitcore = require('..');
 var errors = bitcore.errors;
 var hdErrors = errors.HDPrivateKey;
-var buffer = require('buffer');
 var Networks = bitcore.Networks;
 var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
@@ -73,10 +70,7 @@ describe('HDPrivate key interface', function() {
   });
 
   it('builds a json keeping the structure and same members', function() {
-    assert(_.isEqual(
-      new HDPrivateKey(json).toJSON(),
-      new HDPrivateKey(xprivkey).toJSON()
-    ));
+    (new HDPrivateKey(json)).toJSON().should.deep.equal(new HDPrivateKey(xprivkey).toJSON());
   });
 
   describe('instantiation', function() {
@@ -290,9 +284,7 @@ describe('HDPrivate key interface', function() {
     it('toObject leaves no Buffer instances', function() {
       var privKey = new HDPrivateKey(xprivkey);
       var object = privKey.toObject();
-      _.each(_.values(object), function(value) {
-        expect(BufferUtil.isBuffer(value)).to.equal(false);
-      });
+      Object.values(object).forEach(value => BufferUtil.isBuffer(value).should.equal(false));
     });
     it('roundtrips toObject', function() {
       expect(HDPrivateKey.fromObject(new HDPrivateKey(xprivkey).toObject()).xprivkey).to.equal(xprivkey);

@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var $ = require('./util/preconditions');
 var errors = require('./errors');
 var Base58Check = require('./encoding/base58check');
@@ -57,7 +56,7 @@ function Address(data, network, type, multisigType) {
     return new Address(data, network, type);
   }
 
-  if (_.isArray(data) && _.isNumber(network)) {
+  if (Array.isArray(data) && typeof network === 'number') {
     return Address.createMultisig(data, network, type, false, multisigType);
   }
 
@@ -116,7 +115,7 @@ Address.prototype._classifyArguments = function(data, network, type) {
     return Address._transformScript(data, network);
   } else if (typeof(data) === 'string') {
     return Address._transformString(data, network, type);
-  } else if (_.isObject(data)) {
+  } else if (typeof data === 'object') {
     return Address._transformObject(data);
   } else {
     throw new TypeError('First argument is an unrecognized data format.');
@@ -334,9 +333,9 @@ Address.createMultisig = function(publicKeys, threshold, network, nestedWitness,
     throw new TypeError('Type must be either scripthash or witnessscripthash to create multisig.');
   }
   if (nestedWitness || type === Address.PayToWitnessScriptHash) {
-    publicKeys = _.map(publicKeys, PublicKey);
-    for (var i = 0; i < publicKeys.length; i++) {
-      if (!publicKeys[i].compressed) {
+    publicKeys = publicKeys.map(pubKey => PublicKey(pubKey));
+    for (let { compressed } of publicKeys) {
+      if (!compressed) {
         throw new TypeError('Witness addresses must use compressed public keys.');
       }
     }

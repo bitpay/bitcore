@@ -2,7 +2,6 @@
 
 var should = require('chai').should();
 var expect = require('chai').expect;
-var _ = require('lodash');
 
 var bitcore = require('../../..');
 var errors = bitcore.errors;
@@ -52,12 +51,10 @@ describe('Transaction.Input', function() {
   });
 
   it('has abstract methods: "getSignatures", "isFullySigned", "addSignature", "clearSignatures"', function() {
-    var input = new Input(output);
-    _.each(['getSignatures', 'isFullySigned', 'addSignature', 'clearSignatures'], function(method) {
-      expect(function() {
-        return input[method]();
-      }).to.throw(errors.AbstractMethodInvoked);
-    });
+    let input = new Input(output);
+    for (let method of ['getSignatures', 'isFullySigned', 'addSignature', 'clearSignatures']) {
+      expect(input[method]).to.throw(errors.AbstractMethodInvoked);
+    }
   });
   it('detects coinbase transactions', function() {
     new Input(output).isNull().should.equal(false);

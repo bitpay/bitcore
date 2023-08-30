@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var Address = require('./address');
 var Base58Check = require('./encoding/base58check');
 var BN = require('./crypto/bn');
@@ -54,7 +53,7 @@ function PrivateKey(data, network) {
   if (!info.bn.lt(Point.getN())) {
     throw new TypeError('Number must be less than N');
   }
-  if (typeof(info.network) === 'undefined') {
+  if (!info.network) {
     throw new TypeError('Must specify the network ("livenet" or "testnet")');
   }
 
@@ -90,7 +89,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
   };
 
   // detect type of data
-  if (_.isUndefined(data) || _.isNull(data)){
+  if (data === undefined || data === null) {
     info.bn = PrivateKey._getRandomBN();
   } else if (data instanceof BN) {
     info.bn = data;
@@ -232,7 +231,7 @@ PrivateKey._transformObject = function(json) {
  * @returns {PrivateKey} A new valid instance of PrivateKey
  */
 PrivateKey.fromString = PrivateKey.fromWIF = function(str) {
-  $.checkArgument(_.isString(str), 'First argument is expected to be a string.');
+  $.checkArgument(typeof str === 'string', 'First argument is expected to be a string.');
   return new PrivateKey(str);
 };
 
@@ -242,7 +241,7 @@ PrivateKey.fromString = PrivateKey.fromWIF = function(str) {
  * @param {Object} obj - The output from privateKey.toObject()
  */
 PrivateKey.fromObject = function(obj) {
-  $.checkArgument(_.isObject(obj), 'First argument is expected to be an object.');
+  $.checkArgument(typeof obj === 'object', 'First argument is expected to be an object.');
   return new PrivateKey(obj);
 };
 

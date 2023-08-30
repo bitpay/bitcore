@@ -33,7 +33,7 @@ Take a look at this modified snippet from [networks.js](https://github.com/bitpa
 
 ```javascript
 var livenet = new Network();
-_.extend(livenet, {
+Object.assign(livenet, {
   name: 'livenet',
   alias: 'mainnet',
   pubkeyhash: 0x00,
@@ -45,7 +45,7 @@ _.extend(livenet, {
 });
 
 var testnet = new Network();
-_.extend(testnet, {
+Object.assign(testnet, {
   name: 'testnet',
   alias: 'testnet',
   pubkeyhash: 0x6f,

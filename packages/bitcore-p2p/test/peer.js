@@ -59,7 +59,7 @@ describe('Peer', function() {
       });
       var check = function(message) {
         received[message.command]++;
-        if (_.isEqual(received, expected)) {
+        if (JSON.stringify(received) === JSON.stringify(expected)) {
           callback();
         }
       };

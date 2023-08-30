@@ -11,7 +11,6 @@ var BN = require('../crypto/bn');
 var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
 var $ = require('../util/preconditions');
-var _ = require('lodash');
 
 /**
  * Returns a buffer of length 32 bytes with the hash that needs to be signed
@@ -140,16 +139,15 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
  * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  signingMethod = signingMethod || 'ecdsa';
+function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer, signingMethod = 'ecdsa') {
+  $.checkArgument(transaction && signature && signature.nhashtype, 'Missing required argument(s)');
 
   if (signingMethod === 'ecdsa') {
     let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
     return ECDSA.verify(hashbuf, signature, publicKey);
   }
-  throw new Error("signingMethod not supported ", signingMethod);
+
+  throw new Error(`signingMethod not supported ${signingMethod}`);
 }
 
 /**

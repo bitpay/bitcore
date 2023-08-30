@@ -6,7 +6,6 @@ var bitcore = require('bitcore-lib');
 var BufferUtil = bitcore.util.buffer;
 var BloomFilter = require('../../bloomfilter');
 var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
 
 /**
  * Request peer to send inv messages based on a bloom filter
@@ -19,7 +18,7 @@ function FilterloadMessage(arg, options) {
   Message.call(this, options);
   this.command = 'filterload';
   $.checkArgument(
-    _.isUndefined(arg) || arg instanceof BloomFilter,
+    arg === undefined || arg instanceof BloomFilter,
     'An instance of BloomFilter or undefined is expected'
   );
   this.filter = arg;

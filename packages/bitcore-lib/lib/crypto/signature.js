@@ -1,7 +1,6 @@
 'use strict';
 
 var BN = require('./bn');
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
@@ -26,8 +25,8 @@ Signature.prototype.set = function(obj) {
   this.r = obj.r || this.r || undefined;
   this.s = obj.s || this.s || undefined;
 
-  this.i = typeof obj.i !== 'undefined' ? obj.i : this.i; //public key recovery parameter in range [0, 3]
-  this.compressed = typeof obj.compressed !== 'undefined' ?
+  this.i = obj.i !== undefined ? obj.i : this.i; //public key recovery parameter in range [0, 3]
+  this.compressed = obj.compressed !== undefined ?
     obj.compressed : this.compressed; //whether the recovered pubkey is compressed
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;
@@ -88,11 +87,8 @@ Signature.fromString = function(str) {
 /**
  * In order to mimic the non-strict DER encoding of OpenSSL, set strict = false.
  */
-Signature.parseDER = function(buf, strict) {
+Signature.parseDER = function(buf, strict = true) {
   $.checkArgument(BufferUtil.isBuffer(buf), new Error('DER formatted signature should be a buffer'));
-  if (_.isUndefined(strict)) {
-    strict = true;
-  }
 
   var header = buf[0];
   $.checkArgument(header === 0x30, new Error('Header byte should be 0x30'));

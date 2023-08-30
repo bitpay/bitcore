@@ -1,7 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
-
 var Script = require('./script');
 var Opcode = require('../opcode');
 var BN = require('../crypto/bn');
@@ -127,23 +125,18 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
  *
  * Translated from bitcoind's VerifyScript
  */
-Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, witness, satoshis) {
-
+Interpreter.prototype.verify = function(
+  scriptSig,
+  scriptPubkey,
+  tx,
+  nin = 0,
+  flags = 0,
+  witness = null,
+  satoshis = 0
+) {
   var Transaction = require('../transaction');
-  if (_.isUndefined(tx)) {
+  if (tx === undefined) {
     tx = new Transaction();
-  }
-  if (_.isUndefined(nin)) {
-    nin = 0;
-  }
-  if (_.isUndefined(flags)) {
-    flags = 0;
-  }
-  if (_.isUndefined(witness)) {
-    witness = null;
-  }
-  if (_.isUndefined(satoshis)) {
-    satoshis = 0;
   }
 
   this.set({
@@ -318,17 +311,17 @@ Interpreter.prototype.initialize = function(obj) {
 Interpreter.prototype.set = function(obj) {
   this.script = obj.script || this.script;
   this.tx = obj.tx || this.tx;
-  this.nin = typeof obj.nin !== 'undefined' ? obj.nin : this.nin;
+  this.nin = obj.nin !== undefined ? obj.nin : this.nin;
   this.stack = obj.stack || this.stack;
   this.altstack = obj.altack || this.altstack;
-  this.pc = typeof obj.pc !== 'undefined' ? obj.pc : this.pc;
-  this.pbegincodehash = typeof obj.pbegincodehash !== 'undefined' ? obj.pbegincodehash : this.pbegincodehash;
-  this.sigversion = typeof obj.sigversion !== 'undefined' ? obj.sigversion : this.sigversion;
-  this.satoshis = typeof obj.satoshis !== 'undefined' ? obj.satoshis : this.satoshis;
-  this.nOpCount = typeof obj.nOpCount !== 'undefined' ? obj.nOpCount : this.nOpCount;
+  this.pc = obj.pc !== undefined ? obj.pc : this.pc;
+  this.pbegincodehash = obj.pbegincodehash !== undefined ? obj.pbegincodehash : this.pbegincodehash;
+  this.sigversion = obj.sigversion !== undefined ? obj.sigversion : this.sigversion;
+  this.satoshis = obj.satoshis !== undefined ? obj.satoshis : this.satoshis;
+  this.nOpCount = obj.nOpCount !== undefined ? obj.nOpCount : this.nOpCount;
   this.vfExec = obj.vfExec || this.vfExec;
   this.errstr = obj.errstr || this.errstr;
-  this.flags = typeof obj.flags !== 'undefined' ? obj.flags : this.flags;
+  this.flags = obj.flags !== undefined ? obj.flags : this.flags;
 };
 
 Interpreter.true = Buffer.from([1]);
@@ -676,7 +669,7 @@ Interpreter.prototype.step = function() {
   var chunk = this.script.chunks[this.pc];
   this.pc++;
   var opcodenum = chunk.opcodenum;
-  if (_.isUndefined(opcodenum)) {
+  if (opcodenum === undefined) {
     this.errstr = 'SCRIPT_ERR_UNDEFINED_OPCODE';
     return false;
   }
@@ -954,7 +947,6 @@ Interpreter.prototype.step = function() {
           this.errstr = 'SCRIPT_ERR_OP_RETURN';
           return false;
         }
-        break;
 
 
         //

@@ -1,7 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
-
 /**
  * Determines whether a string contains only hexadecimal values
  *
@@ -10,7 +8,7 @@ var _ = require('lodash');
  * @return {boolean} true if the string is the hexa representation of a number
  */
 var isHexa = function isHexa(value) {
-  if (!_.isString(value)) {
+  if (typeof value !== 'string') {
     return false;
   }
   return /^[0-9a-fA-F]+$/.test(value);
@@ -29,7 +27,7 @@ module.exports = {
    */
   isValidJSON: function isValidJSON(arg) {
     var parsed;
-    if (!_.isString(arg)) {
+    if (typeof arg !== 'string') {
       return false;
     }
     try {
@@ -80,5 +78,33 @@ module.exports = {
       isFinite(value) &&
       Math.floor(value) === value &&
       value >= 0;
+  },
+
+  /**
+   * @description sort an array in place based on toString values
+   * @param {*[]} array
+   */
+  sort: array => array.sort((a, b) => a.toString() > b.toString() ? 1 : a.toString() < b.toString() ? -1 : 0),
+
+  /**
+   * @description returns true for non-null objects and false otherwise
+   * @param {*} obj 
+   * @returns {Boolean}
+   */
+  isObject: obj => typeof obj === 'object' && !!obj,
+
+  /**
+   * @description an implementation of Fisher-Yates shuffling algorithm
+   * @param {*[]} array 
+   */
+  shuffle: array => {
+    let arr = array, i = arr.length, j, temp;
+    while (--i > 0) {
+      j = Math.floor(Math.random() * (i + 1));
+      temp = arr[j];
+      arr[j] = arr[i];
+      arr[i] = temp;
+    }
+    return arr;
   }
 };
