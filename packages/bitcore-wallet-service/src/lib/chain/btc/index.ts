@@ -1,18 +1,18 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { IChain, INotificationData } from '..';
+import { IChain } from '..';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import logger from '../../logger';
 import { TxProposal } from '../../model';
+import config from '../../../config';
+import { Errors } from '../../errors/errordefinitions';
 
 const $ = require('preconditions').singleton();
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
-const config = require('../../../config');
 
 export class BtcChain implements IChain {
   protected sizeEstimationMargin: number;
@@ -939,10 +939,21 @@ export class BtcChain implements IChain {
     } catch (ex) {
       throw Errors.INVALID_ADDRESS;
     }
-    if (addr.network.toString() != wallet.network) {
+    if (!this._isCorrectNetwork(wallet, addr)) {
       throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
     return;
+  }
+
+  protected _isCorrectNetwork(wallet, addr) {
+    const addrNetwork = addr.network.toString();
+    const walNetwork = wallet.network;
+    const walChain = wallet.chain || wallet.coin; // wallet.coin is for backward compatibility
+
+    if (addrNetwork === 'regtest' && walNetwork === 'testnet') {
+      return config.blockchainExplorerOpts?.[walChain]?.testnet?.regtestEnabled;
+    }
+    return addrNetwork === walNetwork;
   }
 
   // Push notification handling

@@ -360,4 +360,4 @@ const Config = () => {
   return defaultConfig;
 };
 
-module.exports = Config();
+export default module.exports;

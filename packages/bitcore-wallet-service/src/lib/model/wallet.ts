@@ -5,13 +5,15 @@ import logger from '../logger';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
+import config from '../../config';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
-const config = require('../../config');
+
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
+
 const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash'),

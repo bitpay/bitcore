@@ -3,10 +3,10 @@ import * as _ from 'lodash';
 import moment from 'moment';
 import * as mongodb from 'mongodb';
 import logger from './logger';
+import config from '../config';
+import { Storage } from './storage';
 
-const config = require('../config');
 const ObjectID = mongodb.ObjectID;
-const storage = require('./storage');
 
 var objectIdDate = function(date) {
   return Math.floor(date.getTime() / 1000).toString(16) + '0000000000000000';
@@ -89,7 +89,7 @@ export class CleanFiatRates {
     const objectIdToDate = objectIdDate(this.to);
 
     this.db
-      .collection(storage.Storage.collections.FIAT_RATES2)
+      .collection(Storage.collections.FIAT_RATES2)
       .find({
         _id: {
           $gte: new ObjectID(objectIdFromDate),
@@ -140,7 +140,7 @@ export class CleanFiatRates {
   async _cleanFiatRates(datesToKeep, cb) {
     try {
       this.db
-        .collection(storage.Storage.collections.FIAT_RATES2)
+        .collection(Storage.collections.FIAT_RATES2)
         .remove({
           ts: {
             $nin: datesToKeep,

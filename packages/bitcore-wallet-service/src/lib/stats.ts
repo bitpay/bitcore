@@ -3,8 +3,7 @@ import * as _ from 'lodash';
 import moment from 'moment';
 import * as mongodb from 'mongodb';
 import logger from './logger';
-
-const config = require('../config');
+import config from '../config';
 
 const INITIAL_DATE = '2015-01-01';
 

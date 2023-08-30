@@ -1,4 +1,4 @@
-module.exports = (wallet, appName, appVersion) => {
+export const serverMessages = (wallet, appName, appVersion) => {
   if (!appVersion || !appName) return;
 
   const serverMessages = [];

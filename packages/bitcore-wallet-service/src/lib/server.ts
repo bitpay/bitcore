@@ -3,7 +3,9 @@ import * as crypto from 'crypto'
 import * as _ from 'lodash';
 import Moralis from 'moralis';
 import 'source-map-support/register';
+import { Validation } from 'crypto-wallet-core';
 import logger from './logger';
+import config from '../config';
 
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -30,16 +32,15 @@ import {
   Wallet
 } from './model';
 import { Storage } from './storage';
+import { serverMessages } from '../serverMessages';
+import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
+import { BCHAddressTranslator } from './bchaddresstranslator';
+import { Errors } from './errors/errordefinitions';
 
-const config = require('../config');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
-const deprecatedServerMessage = require('../deprecated-serverMessages');
-const serverMessages = require('../serverMessages');
-const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -55,8 +56,6 @@ const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Services = Common.Services;
-
-const Errors = require('./errors/errordefinitions');
 
 let request = require('request');
 let initialized = false;

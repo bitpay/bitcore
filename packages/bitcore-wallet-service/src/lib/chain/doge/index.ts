@@ -5,14 +5,13 @@ import { IChain } from '..';
 import logger from '../../logger';
 import { TxProposal } from '../../model';
 import { BtcChain } from '../btc';
-const $ = require('preconditions').singleton();
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
 
 export class DogeChain extends BtcChain implements IChain {
   constructor(private bitcoreLibDoge = BitcoreLibDoge) {

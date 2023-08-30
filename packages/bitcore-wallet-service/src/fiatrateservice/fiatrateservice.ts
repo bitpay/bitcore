@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 import logger from '../lib/logger';
-const config = require('../config');
-
+import config from '../config';
 import { FiatRateService } from '../lib/fiatrateservice';
 
 const service = new FiatRateService();

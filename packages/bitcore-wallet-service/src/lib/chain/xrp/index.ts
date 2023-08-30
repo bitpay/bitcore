@@ -1,13 +1,12 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
-import { IChain, INotificationData } from '..';
+import { IChain } from '..';
 import { Common } from '../../common';
 import logger from '../../logger';
+import { Errors } from '../../errors/errordefinitions';
 
-const Constants = Common.Constants;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
 
 export class XrpChain implements IChain {
   /**
