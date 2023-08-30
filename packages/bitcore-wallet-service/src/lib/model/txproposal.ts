@@ -13,6 +13,8 @@ const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
+type TxProposalStatus = 'temporary' | 'pending' | 'accepted' | 'rejected' | 'broadcasted';
+
 export interface ITxProposal {
   type: string;
   creatorName: string;
@@ -44,7 +46,7 @@ export interface ITxProposal {
   walletN: number;
   requiredSignatures: number;
   requiredRejections: number;
-  status: string;
+  status: TxProposalStatus;
   actions: [];
   feeLevel: number;
   feePerKb: number;
@@ -108,7 +110,7 @@ export class TxProposal {
   walletN: number;
   requiredSignatures: number;
   requiredRejections: number;
-  status: string;
+  status: TxProposalStatus;
   actions: any[] = [];
   feeLevel: number;
   feePerKb: number;
