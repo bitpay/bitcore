@@ -1,10 +1,10 @@
 #!/usr/bin/env node
+import cluster from 'cluster';
 import * as fs from 'fs';
 import 'source-map-support/register';
-import cluster from 'cluster';
-import logger from './lib/logger';
-import { ExpressApp } from './lib/expressapp';
 import config from './config';
+import { ExpressApp } from './lib/expressapp';
+import logger from './lib/logger';
 
 const port = process.env.BWS_PORT || config.port || 3232;
 const serverModule = config.https ? require('https') : require('http');

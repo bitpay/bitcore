@@ -2,12 +2,12 @@ import * as async from 'async';
 import { BitcoreLibDoge } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
-import logger from '../../logger';
-import { TxProposal } from '../../model';
-import { BtcChain } from '../btc';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
+import logger from '../../logger';
+import { TxProposal } from '../../model';
+import { BtcChain } from '../btc';
 
 const Constants = Common.Constants;
 const Utils = Common.Utils;

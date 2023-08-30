@@ -3,11 +3,11 @@ import * as crypto from 'crypto';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
+import config from '../../config';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
 import { Client } from './v8/client';
-import config from '../../config';
 
 const $ = require('preconditions').singleton();
 const Bitcore = require('bitcore-lib');

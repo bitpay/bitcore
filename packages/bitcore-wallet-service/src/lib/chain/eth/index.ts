@@ -5,10 +5,10 @@ import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
-import { Errors } from '../../errors/errordefinitions';
 
 const { toBN } = Web3.utils;
 const Constants = Common.Constants;

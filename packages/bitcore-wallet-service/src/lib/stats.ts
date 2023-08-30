@@ -2,8 +2,8 @@ import * as async from 'async';
 import * as _ from 'lodash';
 import moment from 'moment';
 import * as mongodb from 'mongodb';
-import logger from './logger';
 import config from '../config';
+import logger from './logger';
 
 const INITIAL_DATE = '2015-01-01';
 

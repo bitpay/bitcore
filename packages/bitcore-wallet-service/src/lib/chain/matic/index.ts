@@ -1,8 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { ClientError } from '../../errors/clienterror';
-import { EthChain } from '../eth';
 import { Errors } from '../../errors/errordefinitions';
+import { EthChain } from '../eth';
 
 
 export class MaticChain extends EthChain {

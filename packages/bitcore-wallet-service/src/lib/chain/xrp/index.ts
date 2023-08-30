@@ -3,8 +3,8 @@ import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
 import { Common } from '../../common';
-import logger from '../../logger';
 import { Errors } from '../../errors/errordefinitions';
+import logger from '../../logger';
 
 const Defaults = Common.Defaults;
 

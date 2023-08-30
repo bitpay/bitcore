@@ -1,11 +1,11 @@
 import _ from 'lodash';
+import config from '../../config';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
-import config from '../../config';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');

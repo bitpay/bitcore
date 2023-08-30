@@ -8,10 +8,10 @@ import { logger, transport } from './logger';
 
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
+import { Errors } from'./errors/errordefinitions';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
-import { Errors } from'./errors/errordefinitions';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
