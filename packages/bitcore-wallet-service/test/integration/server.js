@@ -39,7 +39,7 @@ const Defaults = Common.Defaults;
 const VanillaDefaults = _.cloneDeep(Defaults);
 
 const Model = require('../../ts_build/lib/model');
-const BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
+const { BCHAddressTranslator } = require('../../ts_build/lib/bchaddresstranslator');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
