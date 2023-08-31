@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { logger } from './lib/logger';
 
-const Config = () => {
+const Config = (): any => {
   let defaultConfig = {
     basePath: '/bws/api',
     disableLogs: false,
@@ -360,4 +360,4 @@ const Config = () => {
   return defaultConfig;
 };
 
-export default module.exports;
+export default Config();
