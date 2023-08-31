@@ -7,7 +7,7 @@ const { WalletService } = require('../../ts_build/lib/server');
 const TestData = require('../testdata');
 const helpers = require('./helpers');
 
-let config = require('../../ts_build/config.js');
+let config = require('../../ts_build/config.js').default;
 let server, wallet, fakeRequest, req;
 
 let { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
