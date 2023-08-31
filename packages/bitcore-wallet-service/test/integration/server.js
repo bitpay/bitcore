@@ -14,7 +14,7 @@ const should = chai.should();
 const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
-var config = require('../../ts_build/config.js');
+var config = require('../../ts_build/config.js').default;
 config.moralis = config.moralis ?? {
   apiKey: 'apiKey',
   whitelist: []
