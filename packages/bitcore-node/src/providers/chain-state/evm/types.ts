@@ -153,31 +153,46 @@ export type IEVMBlock = IBlock & {
 };
 
 export type IEVMTransaction = ITransaction & {
-  data: Buffer;
   gasLimit: number;
   gasPrice: number;
   nonce: number;
   to: string;
   from: string;
-  internal: Array<ClassifiedTrace>;
-  calls: Array<IGethTxTraceFlat>;
   transactionIndex: number;
-  abiType?: IAbiDecodedData;
   error?: string;
-  receipt?: {
-    status: boolean;
-    transactionHash: string;
-    transactionIndex: number;
-    blockHash: string;
-    blockNumber: number;
-    contractAddress?: string;
-    cumulativeGasUsed: number;
-    gasUsed: number;
-    logs: Array<any>;
-  };
+  receipt?: TxReceipt;
+  effects?: Effect[] // Meant to replace abiType, internal, calls and data on stored txs
 };
 
-export type IEVMTransactionTransformed = IEVMTransaction & {
+export type Effect = {
+  to: string,
+  from: string,
+  amount: string,
+  type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction' // These are the only txs types we care about
+  contractAddress?: string,
+  callStack?: string
+};
+
+export type IEVMTransactionInProcess = IEVMTransaction & {
+  data: Buffer;
+  internal: Array<ClassifiedTrace>;
+  calls: Array<IGethTxTraceFlat>;
+  abiType?: IAbiDecodedData;
+};
+
+export type TxReceipt = {
+  status: boolean;
+  transactionHash: string;
+  transactionIndex: number;
+  blockHash: string;
+  blockNumber: number;
+  contractAddress?: string;
+  cumulativeGasUsed: number;
+  gasUsed: number;
+  logs: Array<any>;
+};
+
+export type IEVMTransactionTransformed = IEVMTransactionInProcess & {
   initialFrom?: string;
 };
 
@@ -205,6 +220,11 @@ export interface IAbiDecodedData extends IAbiDecodeResponse {
 export type DecodedTrace = ClassifiedTrace & {
   decodedData?: IAbiDecodedData;
 };
+
+export type ParsedAbiParams = {
+  [key: string]: string
+}
+
 export interface EVMTransactionJSON {
   txid: string;
   chain: string;
@@ -221,11 +241,11 @@ export interface EVMTransactionJSON {
   to: string;
   from: string;
   abiType?: IAbiDecodedData;
-  decodedData?: IAbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
   calls?: Array<IGethTxTraceFlat>;
-  receipt?: IEVMTransaction['receipt'];
+  receipt?: TxReceipt;
+  effects?: Effect[];
 }
 
 export interface EventLog<T> {
@@ -243,3 +263,8 @@ export interface ERC20Transfer
   extends EventLog<{
     [key: string]: string;
   }> {}
+
+  export interface IEVMCachedAddress {
+    address: string;
+    tokenAddress?: string;
+  }

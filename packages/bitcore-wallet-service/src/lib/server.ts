@@ -3377,7 +3377,8 @@ export class WalletService implements IWalletService {
             gasPrice: tx.gasPrice,
             gasLimit: tx.gasLimit,
             receipt: tx.receipt,
-            nonce: tx.nonce
+            nonce: tx.nonce,
+            effects: tx.effects
           };
           switch (tx.category) {
             case 'send':

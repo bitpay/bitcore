@@ -6,7 +6,7 @@ import { EventStorage } from '../../../../models/events';
 import { StorageService } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { TransformOptions } from '../../../../types/TransformOptions';
-import { IEVMBlock, IEVMTransaction } from '../types';
+import { IEVMBlock, IEVMTransactionInProcess } from '../types';
 import { EVMTransactionStorage } from './transaction';
 
 @LoggifyClass
@@ -21,7 +21,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
 
   async addBlock(params: {
     block: IEVMBlock;
-    transactions: IEVMTransaction[];
+    transactions: IEVMTransactionInProcess[];
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;
@@ -50,7 +50,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
 
   async processBlock(params: {
     block: IEVMBlock;
-    transactions: IEVMTransaction[];
+    transactions: IEVMTransactionInProcess[];
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;

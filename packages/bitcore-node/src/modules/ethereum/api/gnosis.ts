@@ -12,6 +12,7 @@ import { Config } from '../../../services/config';
 import { IEVMNetworkConfig } from '../../../types/Config';
 import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { ETH } from './csp';
+import { PopulateEffectsTransform } from '../../../providers/chain-state/evm/api/populateEffectsTransform';
 
 interface MULTISIGInstantiation
   extends EventLog<{
@@ -145,8 +146,7 @@ export class GnosisApi {
   }
 
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
-    const { multisigContractAddress, network, res, args } = params;
-    const { web3 } = await ETH.getWeb3(network);
+    const { multisigContractAddress, res, args } = params;
     const transactionQuery = ETH.getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
@@ -163,6 +163,11 @@ export class GnosisApi {
             ...transactionQuery,
             'internal.action.to': args.tokenAddress.toLowerCase(),
             'internal.action.from': multisigContractAddress.toLowerCase()
+          },
+          {
+            ...transactionQuery,
+            'effects.contractAddress': args.tokenAddress,
+            'effects.from': multisigContractAddress
           }
         ]
       };
@@ -170,7 +175,8 @@ export class GnosisApi {
       query = {
         $or: [
           { ...transactionQuery, to: multisigContractAddress },
-          { ...transactionQuery, 'internal.action.to': multisigContractAddress.toLowerCase() }
+          { ...transactionQuery, 'internal.action.to': multisigContractAddress.toLowerCase() },
+          { ...transactionQuery, 'effects.to': multisigContractAddress }
         ]
       };
     }
@@ -178,6 +184,7 @@ export class GnosisApi {
     let transactionStream = new Readable({ objectMode: true });
     const ethTransactionTransform = new EVMListTransactionsStream([multisigContractAddress, args.tokenAddress]);
     const populateReceipt = new PopulateReceiptTransform();
+    const populateEffects = new PopulateEffectsTransform();
 
     transactionStream = EVMTransactionStorage.collection
       .find(query)
@@ -185,12 +192,13 @@ export class GnosisApi {
       .addCursorFlag('noCursorTimeout', true);
 
     if (multisigContractAddress) {
-      const ethMultisigTransform = new MultisigRelatedFilterTransform(web3, multisigContractAddress, args.tokenAddress);
+      const ethMultisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);
       transactionStream = transactionStream.pipe(ethMultisigTransform);
     }
 
     transactionStream
       .pipe(populateReceipt)
+      .pipe(populateEffects) // In case there are old db entries
       .pipe(ethTransactionTransform)
       .pipe(res);
   }

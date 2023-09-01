@@ -7,8 +7,6 @@ export class EVMListTransactionsStream extends Transform {
     super({ objectMode: true });
   }
   async _transform(transaction: MongoBound<IEVMTransactionTransformed>, _, done) {
-    const dataStr = transaction.data ? transaction.data.toString() : '';
-
     let sending = this.walletAddresses.includes(transaction.from);
     if (sending) {
       let sendingToOurself = this.walletAddresses.includes(transaction.to);
@@ -28,14 +26,11 @@ export class EVMListTransactionsStream extends Transform {
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            abiType: transaction.abiType,
             error: transaction.error,
-            internal: transaction.internal,
-            calls: transaction.calls,
             network: transaction.network,
             chain: transaction.chain,
-            data: dataStr,
-            nonce: transaction.nonce
+            nonce: transaction.nonce,
+            effects: transaction.effects
           }) + '\n'
         );
       } else {
@@ -54,14 +49,11 @@ export class EVMListTransactionsStream extends Transform {
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            abiType: transaction.abiType,
             error: transaction.error,
-            internal: transaction.internal,
-            calls: transaction.calls,
             network: transaction.network,
             chain: transaction.chain,
-            data: dataStr,
-            nonce: transaction.nonce
+            nonce: transaction.nonce,
+            effects: transaction.effects
           }) + '\n'
         );
       }
@@ -83,14 +75,11 @@ export class EVMListTransactionsStream extends Transform {
             receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
-            abiType: transaction.abiType,
             error: transaction.error,
-            internal: transaction.internal,
-            calls: transaction.calls,
             network: transaction.network,
             chain: transaction.chain,
-            data: dataStr,
-            nonce: transaction.nonce
+            nonce: transaction.nonce,
+            effects: transaction.effects
           }) + '\n'
         );
       }

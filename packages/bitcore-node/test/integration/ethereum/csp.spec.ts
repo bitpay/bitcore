@@ -12,7 +12,7 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { ETH } from '../../../src/modules/ethereum/api/csp';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
-import { IEVMTransaction } from '../../../src/providers/chain-state/evm/types';
+import { IEVMTransactionInProcess } from '../../../src/providers/chain-state/evm/types';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { ErigonEthBlocks } from '../../data/ETH/erigonDbBlocks';
 import { ErigonEthTransactions } from '../../data/ETH/erigonDbTransactions';
@@ -100,7 +100,7 @@ describe('Ethereum API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await CacheStorage.collection.remove({});
     await EVMTransactionStorage.collection.deleteMany({});
@@ -121,7 +121,7 @@ describe('Ethereum API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await CacheStorage.collection.remove({})
     await EVMTransactionStorage.collection.deleteMany({});
@@ -176,7 +176,7 @@ describe('Ethereum API', function() {
         gasPrice: 10 * 1e9,
         data: Buffer.from(''),
         from: address
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
@@ -213,7 +213,7 @@ describe('Ethereum API', function() {
         blockHeight: 1,
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
@@ -258,7 +258,7 @@ describe('Ethereum API', function() {
         blockHash: '12345',
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
@@ -368,7 +368,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
       gasPrice: 10 * 1e9,
       data: Buffer.from(''),
       from: address
-    } as IEVMTransaction;
+    } as IEVMTransactionInProcess;
   });
   // Invalid Transactions
   _.times(txCount, () => txs.push({

@@ -7,7 +7,6 @@ import { AbiItem } from 'web3-utils';
 import * as worker from 'worker_threads';
 import Config from '../../../../config';
 import logger from '../../../../logger';
-import { MongoBound } from '../../../../models/base';
 import { ITransaction } from '../../../../models/baseTransaction';
 import { CacheStorage } from '../../../../models/cache';
 import { WalletAddressStorage } from '../../../../models/walletAddress';
@@ -34,11 +33,13 @@ import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
-import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
+import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
+import { MongoBound } from '../../../../models/base';
+import { PopulateEffectsTransform } from './populateEffectsTransform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -188,6 +189,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return tx;
   }
 
+  populateEffects(tx: MongoBound<IEVMTransaction>) {
+    if (!tx.effects || (tx.effects && tx.effects.length == 0)) {
+      tx.effects = EVMTransactionStorage.getEffects(tx as IEVMTransactionInProcess);
+    }
+    return tx;
+  }
+
   async getTransaction(params: StreamTransactionParams) {
     try {
       let { chain, network, txId } = params;
@@ -205,6 +213,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           confirmations = tipHeight - found.blockHeight + 1;
         }
         found = await this.populateReceipt(found);
+        // Add effects to old db entries
+        found = this.populateEffects(found);
         const convertedTx = EVMTransactionStorage._apiTransform(found, { object: true }) as EVMTransactionJSON;
         return { ...convertedTx, confirmations };
       } else {
@@ -245,7 +255,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         $or: [
           { chain, network, from: address },
           { chain, network, to: address },
-          { chain, network, 'internal.action.to': address }
+          { chain, network, 'internal.action.to': address }, // Retained for old db entries
+          { chain, network, 'effects.to': address }
         ]
       };
 
@@ -284,6 +295,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       let confirmations = 0;
       if (t.blockHeight !== undefined && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
+      }
+      // Add effects to old db entries
+      if (!t.effects || (t.effects && t.effects.length == 0)) {
+        t.effects = EVMTransactionStorage.getEffects(t as IEVMTransactionInProcess);
       }
       const convertedTx = EVMTransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
       return JSON.stringify({ ...convertedTx, confirmations });
@@ -367,6 +382,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
     const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
     const populateReceipt = new PopulateReceiptTransform();
+    const populateEffects = new PopulateEffectsTransform();
 
     transactionStream = EVMTransactionStorage.collection
       .find(query)
@@ -379,12 +395,14 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
 
     if (args.tokenAddress) {
-      const erc20Transform = new Erc20RelatedFilterTransform(web3, args.tokenAddress);
+      const tokenAddress = web3.utils.toChecksumAddress(args.tokenAddress);
+      const erc20Transform = new Erc20RelatedFilterTransform(tokenAddress);
       transactionStream = transactionStream.pipe(erc20Transform);
     }
 
     transactionStream
       .pipe(populateReceipt)
+      .pipe(populateEffects) // For old db entires
       .pipe(ethTransactionTransform)
       .pipe(res);
   }
@@ -577,9 +595,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           $or: [
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
-            { chain, network, 'internal.action.to': { $in: addressBatchLC } },
-            { chain, network, 'calls.to': { $in: addressBatchLC } },
-            {
+            { chain, network, 'internal.action.to': { $in: addressBatchLC } }, // Support old db entries
+            { chain, network, 'calls.to': { $in: addressBatchLC } }, // Support old db entries
+            { // Support old db entries
               chain,
               network,
               'calls.abiType.type': 'ERC20',
@@ -587,13 +605,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
               'calls.abiType.params.type': 'address',
               'calls.abiType.params.value': { $in: addressBatchLC }
             },
-            {
-              chain,
-              network,
-              'abiType.params.0.value': { $in: addressBatchLC },
-              'abiType.type': 'ERC20',
-              'abiType.name': 'transfer'
-            }
+            { 'effects.to': { $in: addressBatchLC } },
+            { 'effects.from': { $in: addressBatchLC } },
           ]
         },
         { $addToSet: { wallets: params.wallet._id } }
