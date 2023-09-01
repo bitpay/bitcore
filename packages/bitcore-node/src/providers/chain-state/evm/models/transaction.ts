@@ -19,9 +19,9 @@ import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisigAbi } from '../abi/multisig';
 
-import { EVMTransactionJSON, IAbiDecodeResponse, IEVMTransactionInProcess, IEVMTransaction, Effect, IAbiDecodedData, ParsedAbiParams, IEVMCachedAddress } from '../types';
 import Web3 from 'web3';
 import { IEVMNetworkConfig } from '../../../../types/Config';
+import { Effect, EVMTransactionJSON, IAbiDecodedData, IAbiDecodeResponse, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -464,7 +464,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       return {
         type: 'MULTISIG:confirmTransaction',
         to: '0x0',
-        from: from,
+        from,
         amount: '0',
         contractAddress: to,
         callStack

@@ -164,14 +164,14 @@ export type IEVMTransaction = ITransaction & {
   effects?: Effect[] // Meant to replace abiType, internal, calls and data on stored txs
 };
 
-export type Effect = {
+export interface Effect {
   to: string,
   from: string,
   amount: string,
   type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction' // These are the only txs types we care about
   contractAddress?: string,
   callStack?: string
-};
+}
 
 export type IEVMTransactionInProcess = IEVMTransaction & {
   data: Buffer;
@@ -180,7 +180,7 @@ export type IEVMTransactionInProcess = IEVMTransaction & {
   abiType?: IAbiDecodedData;
 };
 
-export type TxReceipt = {
+export interface TxReceipt {
   status: boolean;
   transactionHash: string;
   transactionIndex: number;
@@ -190,7 +190,7 @@ export type TxReceipt = {
   cumulativeGasUsed: number;
   gasUsed: number;
   logs: Array<any>;
-};
+}
 
 export type IEVMTransactionTransformed = IEVMTransactionInProcess & {
   initialFrom?: string;
@@ -221,7 +221,7 @@ export type DecodedTrace = ClassifiedTrace & {
   decodedData?: IAbiDecodedData;
 };
 
-export type ParsedAbiParams = {
+export interface ParsedAbiParams {
   [key: string]: string
 }
 

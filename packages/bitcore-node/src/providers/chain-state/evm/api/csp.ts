@@ -7,6 +7,7 @@ import { AbiItem } from 'web3-utils';
 import * as worker from 'worker_threads';
 import Config from '../../../../config';
 import logger from '../../../../logger';
+import { MongoBound } from '../../../../models/base';
 import { ITransaction } from '../../../../models/baseTransaction';
 import { CacheStorage } from '../../../../models/cache';
 import { WalletAddressStorage } from '../../../../models/walletAddress';
@@ -36,10 +37,9 @@ import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
+import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
-import { MongoBound } from '../../../../models/base';
-import { PopulateEffectsTransform } from './populateEffectsTransform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;

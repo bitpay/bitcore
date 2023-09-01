@@ -3,6 +3,7 @@ import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import { MultisigAbi } from '../../../providers/chain-state/evm/abi/multisig';
 import { MultisigRelatedFilterTransform } from '../../../providers/chain-state/evm/api/multisigTransform';
+import { PopulateEffectsTransform } from '../../../providers/chain-state/evm/api/populateEffectsTransform';
 import { PopulateReceiptTransform } from '../../../providers/chain-state/evm/api/populateReceiptTransform';
 import { EVMListTransactionsStream } from '../../../providers/chain-state/evm/api/transform';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
@@ -12,7 +13,6 @@ import { Config } from '../../../services/config';
 import { IEVMNetworkConfig } from '../../../types/Config';
 import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { ETH } from './csp';
-import { PopulateEffectsTransform } from '../../../providers/chain-state/evm/api/populateEffectsTransform';
 
 interface MULTISIGInstantiation
   extends EventLog<{
