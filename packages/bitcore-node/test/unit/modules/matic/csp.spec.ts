@@ -60,6 +60,8 @@ describe('MATIC Chain State Provider', function() {
     const sandbox = sinon.createSandbox();
     const mockTx = {
       _id: new ObjectId(),
+      chain: 'MATIC', 
+      network: 'testnet',
       txid: '123',
       blockHeight: 1,
       gasPrice: 10,
