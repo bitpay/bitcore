@@ -9,10 +9,12 @@ export interface BuyCryptoConfig {
   disabled?: boolean;
   disabledTitle?: string;
   disabledMessage?: string;
+  banxa?: ExchangeConfig;
   moonpay?: ExchangeConfig;
   ramp?: ExchangeConfig;
   sardine?: ExchangeConfig;
   simplex?: ExchangeConfig;
+  transak?: ExchangeConfig;
   wyre?: ExchangeConfig;
 }
 

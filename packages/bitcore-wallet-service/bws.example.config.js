@@ -21,7 +21,7 @@ module.exports = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
+      uri: 'mongodb://0.0.0.0:27017/bws',
       dbname: 'bws'
     }
   },
@@ -118,6 +118,10 @@ module.exports = {
         removed: false
       },
       simplex: {
+        disabled: false,
+        removed: false
+      },
+      transak: {
         disabled: false,
         removed: false
       },
@@ -248,6 +252,32 @@ module.exports = {
   //     apiKey: 'simplex_production_web_api_key_here',
   //     api: 'https://backend-wallet-api.simplexcc.com',
   //     appProviderId: 'simplex_web_provider_id_here'
+  //   }
+  // },
+  // transak : {
+  //   sandbox: {
+  //     api: 'https://api-stg.transak.com',
+  //     widgetApi: 'https://global-stg.transak.com',
+  //     apiKey: 'transak_sandbox_api_key_here',
+  //     secretKey: 'transak_sandbox_secret_key_here',
+  //   },
+  //   production: {
+  //     api: 'https://api.transak.com',
+  //     widgetApi: 'https://global.transak.com',
+  //     apiKey: 'transak_production_api_key_here',
+  //     secretKey: 'transak_production_secret_key_here',
+  //   },
+  //   sandboxWeb: {
+  //     api: 'https://api-stg.transak.com',
+  //     widgetApi: 'https://global-stg.transak.com',
+  //     apiKey: 'transak_sandbox_web_api_key_here',
+  //     secretKey: 'transak_sandbox_web_secret_key_here',
+  //   },
+  //   productionWeb: {
+  //     api: 'https://api.transak.com',
+  //     widgetApi: 'https://global.transak.com',
+  //     apiKey: 'transak_production_web_api_key_here',
+  //     secretKey: 'transak_production_web_secret_key_here',
   //   }
   // },
   // wyre: {

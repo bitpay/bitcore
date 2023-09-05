@@ -1745,6 +1745,96 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/transak/getAccessToken', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.transakGetAccessToken(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/transak/cryptoCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .transakGetCryptoCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/service/transak/fiatCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .transakGetFiatCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/service/transak/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.transakGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/transak/signedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.transakGetSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/transak/orderDetails', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .transakGetOrderDetails(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
