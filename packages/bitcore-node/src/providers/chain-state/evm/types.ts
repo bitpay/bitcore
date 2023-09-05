@@ -241,8 +241,8 @@ export interface EVMTransactionJSON {
   to: string;
   from: string;
   abiType?: IAbiDecodedData;
-  data: string;
-  internal: Array<DecodedTrace>;
+  data?: string;
+  internal?: Array<DecodedTrace>;
   calls?: Array<IGethTxTraceFlat>;
   receipt?: TxReceipt;
   effects?: Effect[];

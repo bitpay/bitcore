@@ -386,7 +386,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     // Top level tx effects
     if (tx.abiType) {
       // Handle Abi related effects
-      const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from);
+      const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
       if (effect) {
         effects.push(effect);
       }
