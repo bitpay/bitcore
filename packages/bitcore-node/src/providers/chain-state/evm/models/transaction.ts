@@ -102,7 +102,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       { chain: 1, network: 1, 'effects.amount': 1, blockTimeNormalized: 1 },
       {
         background: true,
-        partialFilterExpression: { 'effects.amount': { $ne: '0' } }
+        sparse: true
       }
     );
   }
