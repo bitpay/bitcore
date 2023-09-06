@@ -433,7 +433,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       return {
         type: 'ERC20:transfer',
         to: Web3.utils.toChecksumAddress(_to),
-        from,
+        from: Web3.utils.toChecksumAddress(from),
         amount: Web3.utils.fromWei(_value, 'wei'),
         contractAddress: to,
         callStack
@@ -454,8 +454,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       const { destination, value } = params;
       return {
         type: 'MULTISIG:submitTransaction',
-        to: destination,
-        from,
+        to: Web3.utils.toChecksumAddress(destination),
+        from: Web3.utils.toChecksumAddress(from),
         amount: Web3.utils.fromWei(value, 'wei'),
         contractAddress: to,
         callStack
@@ -464,7 +464,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       return {
         type: 'MULTISIG:confirmTransaction',
         to: '0x0',
-        from,
+        from: Web3.utils.toChecksumAddress(from),
         amount: '0',
         contractAddress: to,
         callStack
@@ -475,8 +475,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
 
   _getEffectForNativeTransfer(value:string, to:string, from:string, callStack: string): Effect {
     const effect = {
-      to,
-      from,
+      to: Web3.utils.toChecksumAddress(to),
+      from: Web3.utils.toChecksumAddress(from),
       amount: Web3.utils.fromWei(value, 'wei'),
       callStack
     }

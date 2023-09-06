@@ -190,6 +190,8 @@ export class GnosisApi {
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
+    transactionStream = transactionStream.pipe(populateEffects); // For old db entires
+
     if (multisigContractAddress) {
       const ethMultisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);
       transactionStream = transactionStream.pipe(ethMultisigTransform);
@@ -197,7 +199,6 @@ export class GnosisApi {
 
     transactionStream
       .pipe(populateReceipt)
-      .pipe(populateEffects) // In case there are old db entries
       .pipe(ethTransactionTransform)
       .pipe(res);
   }

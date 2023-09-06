@@ -1,6 +1,7 @@
 import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
 import { IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';
+import Web3 from 'web3';
 
 export class Erc20RelatedFilterTransform extends Transform {
   constructor(private tokenAddress: string) {
@@ -8,6 +9,7 @@ export class Erc20RelatedFilterTransform extends Transform {
   }
 
   async _transform(tx: MongoBound<IEVMTransactionInProcess>, _, done) {
+    this.tokenAddress = Web3.utils.toChecksumAddress(this.tokenAddress)
     if (tx.effects && tx.effects.length) {
       // Get all effects where contractAddress is tokenAddress
       const tokenRelatedInternalTxs = tx.effects.filter(

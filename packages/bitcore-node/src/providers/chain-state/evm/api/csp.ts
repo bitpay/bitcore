@@ -389,20 +389,20 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
+    transactionStream = transactionStream.pipe(populateEffects); // For old db entires
+
     if (!args.tokenAddress && wallet._id) {
       const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
       transactionStream = transactionStream.pipe(internalTxTransform);
     }
 
     if (args.tokenAddress) {
-      const tokenAddress = web3.utils.toChecksumAddress(args.tokenAddress);
-      const erc20Transform = new Erc20RelatedFilterTransform(tokenAddress);
+      const erc20Transform = new Erc20RelatedFilterTransform(args.tokenAddress);
       transactionStream = transactionStream.pipe(erc20Transform);
     }
 
     transactionStream
       .pipe(populateReceipt)
-      .pipe(populateEffects) // For old db entires
       .pipe(ethTransactionTransform)
       .pipe(res);
   }
