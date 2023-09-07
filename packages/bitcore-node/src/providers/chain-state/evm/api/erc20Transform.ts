@@ -1,7 +1,7 @@
 import { Transform } from 'stream';
+import Web3 from 'web3';
 import { MongoBound } from '../../../../models/base';
 import { IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';
-import Web3 from 'web3';
 
 export class Erc20RelatedFilterTransform extends Transform {
   constructor(private tokenAddress: string) {
