@@ -117,7 +117,7 @@ Promise.all(keyRequests)
     console.log('Importing PGP keys for later use...');
     return Promise.all(
       Object.values(bitpayPgpKeys).map(pgpKeyString => {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           kbpgp.KeyManager.import_from_armored_pgp(
             { armored: pgpKeyString },
             (err, km) => {

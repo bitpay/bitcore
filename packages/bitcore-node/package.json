@@ -2,13 +2,14 @@
   "name": "bitcore-node",
   "description": "A blockchain indexing node with extended capabilities using bitcore",
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=18.0.0"
   },
-  "version": "8.25.27",
+  "version": "10.0.11",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
-    "Micah Riggan <micahriggan@gmail.com>"
+    "Micah Riggan <micahriggan@gmail.com>",
+    "Kenny Joseph <kajoseph2@msn.com>"
   ],
   "main": "build/src/server.js",
   "bin": "bin/start",
@@ -20,7 +21,7 @@
     "docs:build-html": "typedoc --out ./docs/html --tsconfig tsconfig.json ./src",
     "docs:build-json": "typedoc --json ./docs/json --tsconfig tsconfig.json ./src",
     "tsc": "npm run clean && tsc",
-    "test": "npm run test:unit",
+    "test": "npm run test:unit && npm run test:integration",
     "test:ci": "npm run test",
     "test:ci:integration": "npm run test:integration",
     "repair:db": "npm run tsc && node ./build/test/verification/db-repair.js",
@@ -38,12 +39,9 @@
     "pruning": "npm run tsc && node build/src/workers/pruning.js --EXIT true",
     "p2p": "npm run tsc && node build/src/workers/p2p.js",
     "precommit": "npm run fix && npm run lint",
-    "lint": "npm run lint:ts && npm run lint:style",
-    "lint:ts": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "lint:style": "prettier --check 'src/**/*.ts'",
-    "fix": "npm run fix:style && npm run fix:lint",
-    "fix:lint": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "fix:style": "prettier --write 'src/**/*.ts'"
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
+    "test:scripts": "npx mocha scripts/test"
   },
   "nyc": {
     "reporter": [
@@ -69,7 +67,7 @@
     "@types/lodash": "4.14.116",
     "@types/mocha": "5.2.0",
     "@types/mongodb": "3.1.22",
-    "@types/node": "10.0.2",
+    "@types/node": "18.11.18",
     "@types/request": "2.47.0",
     "@types/sinon": "4.3.3",
     "@types/socket.io": "1.4.39",
@@ -87,28 +85,28 @@
     "socket.io-client": "2.1.1",
     "supertest": "3.0.0",
     "ts-node": "^9.0.0",
-    "typescript": "3.3.4000",
+    "typescript": "4.9.4",
     "typescript-eslint-parser": "15.0.0"
   },
   "dependencies": {
     "abi-decoder": "2.4.0",
-    "bitcore-client": "^8.25.27",
-    "bitcore-lib": "^8.25.25",
-    "bitcore-lib-cash": "^8.25.25",
-    "bitcore-lib-doge": "^8.25.27",
-    "bitcore-lib-ltc": "^8.25.27",
-    "bitcore-p2p": "^8.25.25",
-    "bitcore-p2p-cash": "^8.25.25",
-    "bitcore-p2p-doge": "^8.25.27",
-    "bitcore-wallet-client": "^8.25.27",
+    "bitcore-client": "^10.0.11",
+    "bitcore-lib": "^10.0.11",
+    "bitcore-lib-cash": "^10.0.11",
+    "bitcore-lib-doge": "^10.0.11",
+    "bitcore-lib-ltc": "^10.0.11",
+    "bitcore-p2p": "^10.0.11",
+    "bitcore-p2p-cash": "^10.0.11",
+    "bitcore-p2p-doge": "^10.0.11",
+    "bitcore-wallet-client": "^10.0.11",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
-    "crypto-rpc": "^1.1.0",
-    "crypto-wallet-core": "^8.25.27",
+    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#e8106ed18740b0257a90365e830726cd66e912f6",
+    "crypto-wallet-core": "^10.0.11",
     "heapdump": "0.3.15",
     "http": "0.0.0",
     "lodash": "4.17.11",
-    "mongodb": "3.1.1",
+    "mongodb": "3.6.0",
     "request": "2.88.0",
     "ripple-lib": "1.4.2",
     "secp256k1": "4.0.3",
@@ -119,5 +117,5 @@
     "web3": "1.7.0",
     "winston": "3.2.0"
   },
-  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+  "gitHead": "ec2b236995f5208772518fa9e0a48c461ae0b3e3"
 }

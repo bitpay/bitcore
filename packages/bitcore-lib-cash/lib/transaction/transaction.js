@@ -1207,11 +1207,13 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
   var results = [];
 
   var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
-  _.each(this.inputs, function forEachInput(input, index) {
-    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {
+  for (let index = 0; index < this.inputs.length; index++) {
+    var input = this.inputs[index];
+    var signatures = input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod);
+    for (let signature of signatures) {
       results.push(signature);
-    });
-  });
+    }
+  }
   return results;
 };
 
@@ -1415,7 +1417,7 @@ Transaction.prototype.isZceSecured = function(escrowReclaimTx, instantAcceptance
     return false;
   }
 
-  const reclaimSignature = Signature.fromString(reclaimSignatureString);
+  const reclaimSignature = Signature.fromTxString(reclaimSignatureString);
   reclaimSignature.nhashtype = sighashAll;
 
   const reclaimSigValid = reclaimTx.verifySignature(

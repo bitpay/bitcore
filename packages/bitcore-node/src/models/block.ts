@@ -1,11 +1,12 @@
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { StorageService } from '../services/storage';
+import { IBlock } from '../types/Block';
 import { SpentHeightIndicators } from '../types/Coin';
 import { BitcoinBlockType, BitcoinHeaderObj } from '../types/namespaces/Bitcoin';
 import { TransformOptions } from '../types/TransformOptions';
 import { MongoBound } from './base';
-import { BaseBlock, IBlock } from './baseBlock';
+import { BaseBlock } from './baseBlock';
 import { CoinStorage } from './coin';
 import { EventStorage } from './events';
 import { TransactionStorage } from './transaction';
@@ -63,7 +64,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
         { chain, network, hash: previousBlock.hash },
         { $set: { nextBlockHash: convertedBlock.hash } }
       );
-      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+      logger.debug('Updating previous block.nextBlockHash %o', convertedBlock.hash);
     }
 
     await TransactionStorage.batchImport({
@@ -154,7 +155,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       } else {
         logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
       }
-      logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
+      logger.info(`Resetting tip to ${localTip.height - 1}, %o`, { chain, network });
     }
     const reorgOps = [
       this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
@@ -168,7 +169,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.unspent } }
     );
 
-    logger.debug('Removed data from above blockHeight: ', localTip.height);
+    logger.debug('Removed data from above blockHeight: %o', localTip.height);
     return true;
   }
 

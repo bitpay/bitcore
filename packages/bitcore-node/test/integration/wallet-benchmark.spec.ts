@@ -13,6 +13,7 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 import { AsyncRPC } from '../../src/rpc';
 import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
+import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { wait } from '../../src/utils/wait';
 import { createWallet } from '../benchmark/wallet-benchmark';
 import { resetDatabase } from '../helpers';
@@ -20,7 +21,7 @@ import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
 const chain = 'BTC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network];
+const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
@@ -121,7 +122,7 @@ describe('Wallet Benchmark', function() {
     it('should be able to create two wallets and have them interact', async () => {
       const seenCoins = new Set();
       const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
-      const connected = new Promise(r => {
+      const connected = new Promise<void>(r => {
         socket.on('connect', () => {
           const room = `/${chain}/${network}/inv`;
           socket.emit('room', room);
@@ -183,7 +184,7 @@ describe('Wallet Benchmark', function() {
     it('should be able to create two wallets and have them interact, while syncing', async () => {
       const seenCoins = new Set();
       const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
-      const connected = new Promise(r => {
+      const connected = new Promise<void>(r => {
         socket.on('connect', () => {
           const room = `/${chain}/${network}/inv`;
           socket.emit('room', room);

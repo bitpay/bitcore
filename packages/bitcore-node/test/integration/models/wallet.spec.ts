@@ -6,6 +6,7 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { AsyncRPC } from '../../../src/rpc';
 import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
+import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 let lockedWallet: Wallet;
@@ -13,7 +14,7 @@ const walletName = 'Test Wallet';
 const password = 'iamsatoshi';
 const chain = 'BTC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network];
+const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
@@ -95,24 +96,24 @@ describe('Wallet Model', function() {
         name: walletName,
         chain,
         network
-      });
+      }, { sort: { _id: -1 }});
 
-      if (findWalletResult && findWalletResult._id) {
-        const findAddressResult = await WalletAddressStorage.collection
-          .find({
-            wallet: findWalletResult._id,
-            chain,
-            network,
-            address: address1
-          })
-          .toArray();
+      expect(findWalletResult?._id).to.exist;
+      const findAddressResult = await WalletAddressStorage.collection
+        .find({
+          wallet: findWalletResult?._id,
+          chain,
+          network,
+          address: address1
+        })
+        .toArray();
 
-        expect(findAddressResult[0]).to.have.deep.property('chain', chain);
-        expect(findAddressResult[0]).to.have.deep.property('network', network);
-        expect(findAddressResult[0]).to.have.deep.property('wallet', findWalletResult._id);
-        expect(findAddressResult[0]).to.have.deep.property('address', address1);
-        expect(findAddressResult[0]).to.have.deep.property('processed', true);
-      }
+      expect(findAddressResult[0]).to.exist;
+      expect(findAddressResult[0]).to.have.deep.property('chain', chain);
+      expect(findAddressResult[0]).to.have.deep.property('network', network);
+      expect(findAddressResult[0]).to.have.deep.property('wallet', findWalletResult?._id);
+      expect(findAddressResult[0]).to.have.deep.property('address', address1);
+      expect(findAddressResult[0]).to.have.deep.property('processed', true);
     });
   });
 });

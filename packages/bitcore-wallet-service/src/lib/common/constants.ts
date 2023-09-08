@@ -1,58 +1,84 @@
 'use strict';
 import * as CWC from 'crypto-wallet-core';
 
-module.exports = {
+export const Constants = {
   CHAINS: {
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    MATIC: 'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc'
   },
 
-  // TODO rethink COINS. If we want to concatenate CHAINS + ERC20's, we can do that in the implementation.
-  // In the future, ERC20 "coins" may not be specific to ETH, so inferring that a USDC coin is on ETH (for example) may be incorrect.
-  // Perhaps, this should be a nested object, with there being coins nested inside smart chains.
-  COINS: {
+  BITPAY_SUPPORTED_COINS: {
+    // used for rates
     BTC: 'btc',
     BCH: 'bch',
     ETH: 'eth',
+    MATIC: 'matic',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
+    SHIB: 'shib',
+    APE: 'ape',
     USDC: 'usdc',
+    PYUSD: 'pyusd',
+    USDP: 'usdp',
     PAX: 'pax',
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai',
     WBTC: 'wbtc',
-    SHIB: 'shib'
+    EUROC: 'euroc',
+    USDT: 'usdt'
   },
 
-  ERC20: {
+  BITPAY_SUPPORTED_ETH_ERC20: {
+    // backwards compatability
+    MATIC: 'matic',
     USDC: 'usdc',
-    PAX: 'pax',
+    PYUSD: 'pyusd',
+    USDP: 'usdp',
+    PAX: 'pax', // backwards compatability
     GUSD: 'gusd',
     BUSD: 'busd',
     DAI: 'dai',
     WBTC: 'wbtc',
-    SHIB: 'shib'
+    SHIB: 'shib',
+    APE: 'ape',
+    EUROC: 'euroc',
+    USDT: 'usdt'
   },
 
-  USD_STABLECOINS: {
+  BITPAY_USD_STABLECOINS: {
+    // used for rates
     USDC: 'usdc',
+    PYUSD: 'pyusd',
+    USDP: 'usdp',
     PAX: 'pax',
     GUSD: 'gusd',
     BUSD: 'busd',
-    DAI: 'dai'
+    DAI: 'dai',
+    USDT: 'usdt'
   },
 
-  UTXO_COINS: {
+  BITPAY_EUR_STABLECOINS: {
+    // used for rates
+    EUROC: 'euroc'
+  },
+
+  UTXO_CHAINS: {
     BTC: 'btc',
     BCH: 'bch',
     DOGE: 'doge',
     LTC: 'ltc'
+  },
+
+  EVM_CHAINS: {
+    ETH: 'eth',
+    MATIC: 'matic'
   },
 
   NETWORKS: {
@@ -82,5 +108,28 @@ module.exports = {
 
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
-  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS
+  ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
+  MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
+
+  BITPAY_CONTRACTS: {
+    MULTISEND: 'MULTISEND'
+  },
+
+  // Number of confirmations from which tx in history will be cached
+  // There is a default value in defaults.ts that applies to UTXOs
+  CONFIRMATIONS_TO_START_CACHING: {
+    eth: 100,
+    matic: 150
+  },
+
+  // Individual chain settings for block throttling
+  CHAIN_NEW_BLOCK_THROTTLE_TIME_SECONDS: {
+    btc: { testnet: 300, livenet: 0 },
+    bch: { testnet: 300, livenet: 0 },
+    eth: { testnet: 300, livenet: 0 },
+    matic: { testnet: 300, livenet: 12 }, // MATIC set to 12 because blocks normally occur every 1-2 seconds
+    xrp: { testnet: 300, livenet: 0 },
+    doge: { testnet: 300, livenet: 0 },
+    ltc: { testnet: 300, livenet: 0 }
+  } as { [chain: string]: { [network: string]: number } }
 };

@@ -50,7 +50,7 @@ export class RippleEventAdapter {
             if ('chain' in transformedTx) {
               const transformedCoins = csp.transformToCoins(tx, network);
               const { transaction, coins } = await csp.tag(chain, network, transformedTx, transformedCoins);
-              this.services.Event.txEvent.emit('tx', { chain, network, ...transaction });
+              this.services.Event.txEvent.emit('tx', { ...transaction });
               if (coins && coins.length) {
                 for (const coin of coins) {
                   this.services.Event.addressCoinEvent.emit('coin', { address, coin });
@@ -63,8 +63,8 @@ export class RippleEventAdapter {
             method: 'subscribe',
             streams: ['ledger', 'transactions_proposed']
           });
-        } catch (e) {
-          logger.error('Error connecting to XRP', e.message);
+        } catch (e: any) {
+          logger.error('Error connecting to XRP: %o', e);
         }
       }
     });

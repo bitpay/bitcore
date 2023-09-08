@@ -6,7 +6,6 @@ import { Validation } from 'crypto-wallet-core';
 import { ObjectId } from 'mongodb';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { MongoBound } from '../../../models/base';
-import { IBlock } from '../../../models/baseBlock';
 import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
 import { CacheStorage } from '../../../models/cache';
 import { CoinStorage, ICoin } from '../../../models/coin';
@@ -17,7 +16,9 @@ import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddr
 import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
+import { IBlock } from '../../../types/Block';
 import { CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
+import { IUtxoNetworkConfig } from '../../../types/Config';
 import {
   BroadcastTransactionParams,
   CreateWalletParams,
@@ -51,7 +52,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   getRPC(chain: string, network: string) {
-    const RPC_PEER = Config.get().chains[chain][network].rpc;
+    const RPC_PEER = (Config.chainConfig({ chain, network }) as IUtxoNetworkConfig).rpc;
     if (!RPC_PEER) {
       throw new Error(`RPC not configured for ${chain} ${network}`);
     }
@@ -67,6 +68,9 @@ export class InternalStateProvider implements IChainStateService {
     const query = { chain, network: network.toLowerCase(), address } as any;
     if (args.unspent) {
       query.spentHeight = { $lt: SpentHeightIndicators.minimum };
+    }
+    if (args.excludeConflicting) {
+      query.mintHeight = { $gt: SpentHeightIndicators.conflicting };
     }
     return query;
   }

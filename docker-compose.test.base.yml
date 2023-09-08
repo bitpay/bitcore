@@ -1,0 +1,71 @@
+version: "3"
+
+services:
+
+  db:
+    image: mongo:3.6.23
+
+  bitcoin:
+    image: ruimarinho/bitcoin-core:24
+    command:
+      -printtoconsole
+      -regtest=1
+      -txindex=0
+      -listen=1
+      -server=1
+      -dnsseed=0
+      -upnp=0
+      -port=8332
+      -rpcport=8333
+      -rpcallowip=0.0.0.0/0
+      -rpcbind=0.0.0.0
+      -rpcuser=bitcorenodetest
+      -rpcpassword=local321
+      -fallbackfee=0.00001
+
+  erigon:
+    image: thorax/erigon:v2022.10.01
+    command:
+      /usr/local/bin/erigon
+      --chain=dev
+      --datadir=/home/erigon/data
+      --private.api.addr=0.0.0.0:9090
+      --http.addr=0.0.0.0
+      --http.api=eth,erigon,web3,net,debug,trace,txpool
+      --http.port=8545
+      --mine
+      --ws
+
+  geth:
+    image: 0labs/geth:v1.11.5
+    volumes:
+      - ./.docker/geth-keystore:/keystore
+    command:
+      geth
+      --dev
+      --datadir=/home/kjoseph/nodes/dev/geth
+      --keystore=/keystore
+      --http
+      --http.api=web3,eth,debug,personal,net
+      --http.corsdomain='*'
+      --http.vhosts='*'
+      --http.addr=0.0.0.0
+      --http.port=8545
+      --ws
+      --ws.origins='*'
+      --ws.api=web3,eth,debug,personal,net
+      --ws.addr=0.0.0.0
+      --ws.port=8546
+
+  rippled:
+    build:
+      context: .
+      dockerfile: ./.docker/rippled.Dockerfile
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16

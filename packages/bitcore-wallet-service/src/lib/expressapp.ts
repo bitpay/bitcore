@@ -1,8 +1,11 @@
+import * as async from 'async';
+import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
 import { logger, transport } from './logger';
 
+import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
@@ -12,7 +15,6 @@ const bodyParser = require('body-parser');
 const compression = require('compression');
 const config = require('../config');
 const RateLimit = require('express-rate-limit');
-const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
@@ -41,7 +43,7 @@ export class ExpressApp {
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'x-signature,x-identity,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
+        'x-signature,x-identity,x-identities,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
       );
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
@@ -108,6 +110,10 @@ export class ExpressApp {
     const router = express.Router();
 
     const returnError = (err, res, req) => {
+      // make sure headers have not been sent as this leads to an uncaught error
+      if (res.headersSent) {
+        return;
+      }
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
@@ -195,7 +201,13 @@ export class ExpressApp {
         auth.session = credentials.session;
       }
       WalletService.getInstanceWithAuth(auth, (err, server) => {
-        if (err) return returnError(err, res, req);
+        if (err) {
+          if (opts.silentFailure) {
+            return cb(null, err);
+          } else {
+            return returnError(err, res, req);
+          }
+        }
 
         if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
           return returnError(
@@ -229,12 +241,48 @@ export class ExpressApp {
       });
     };
 
+    /**
+     * @description process simultaneous requests based on multiple identities that have the same key, hence, the same signature
+     * @param {Request} req
+     * @param {Response} res
+     * @param {Object} opts
+     * @returns Array<Promise>
+     */
+    const getServerWithMultiAuth = (req, res, opts = {}) => {
+      const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
+      const signature = req.headers['x-signature'];
+      if (!identities || !signature) {
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+      }
+
+      if (!Array.isArray(identities)) {
+        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+      }
+
+      // return a list of promises that we can await or chain
+      return identities.map(
+        id =>
+          new Promise((resolve, reject) =>
+            getServerWithAuth(
+              Object.assign(req, {
+                headers: {
+                  ...req.headers,
+                  'x-identity': id
+                }
+              }),
+              res,
+              opts,
+              (server, err) => (err ? reject(err) : resolve(server))
+            )
+          )
+      );
+    };
+
     let createWalletLimiter;
 
     if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
       logger.info(
-        '',
-        'Limiting wallet creation per IP: %d req/h',
+        'Limiting wallet creation per IP: %o req/h',
         ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       createWalletLimiter = new RateLimit(Defaults.RateLimit.createWallet);
@@ -403,6 +451,86 @@ export class ExpressApp {
           res.json(status);
         });
       });
+    });
+
+    router.get('/v1/wallets/all/', async (req, res) => {
+      let responses;
+
+      const buildOpts = (req, copayerId) => {
+        const opts = {
+          includeExtendedInfo: req.query.includeExtendedInfo == '1',
+          twoStep: req.query.twoStep == '1',
+          silentFailure: req.query.silentFailure == '1',
+          includeServerMessages: req.query.serverMessageArray == '1',
+          tokenAddresses: req.query[copayerId]
+            ? Array.isArray(req.query[copayerId].tokenAddress)
+              ? req.query[copayerId].tokenAddress
+              : [req.query[copayerId].tokenAddress]
+            : null,
+          multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
+          network: req.query[copayerId] ? req.query[copayerId].network : null
+        };
+        return opts;
+      };
+
+      try {
+        responses = await Promise.all(
+          getServerWithMultiAuth(req, res, { silentFailure: req.query.silentFailure == '1' }).map(promise =>
+            promise.then(
+              (server: any) =>
+                new Promise(resolve => {
+                  let options: any = buildOpts(req, server.copayerId);
+                  if (options.tokenAddresses) {
+                    // add a null entry to array so we can get the chain balance
+                    options.tokenAddresses.unshift(null);
+                    return async.concat(
+                      options.tokenAddresses,
+                      (tokenAddress, cb) => {
+                        let optsClone = JSON.parse(JSON.stringify(options));
+                        optsClone.tokenAddresses = null;
+                        optsClone.tokenAddress = tokenAddress;
+                        return server.getStatus(optsClone, (err, status) => {
+                          let result: any = {
+                            walletId: server.walletId,
+                            tokenAddress: optsClone.tokenAddress,
+                            success: true,
+                            ...(err ? { success: false, message: err.message } : {}),
+                            status
+                          };
+                          if (err && err.message)
+                            logger.error(
+                              `An error occurred retrieving wallet status - id: ${server.walletId} - token address: ${optsClone.tokenAddress} - err: ${err.message}`
+                            );
+                          cb(null, result); // do not throw error, continue with next wallets
+                        });
+                      },
+                      (err, result) => {
+                        return resolve(result);
+                      }
+                    );
+                  } else {
+                    return server.getStatus(options, (err, status) => {
+                      return resolve([
+                        {
+                          walletId: server.walletId,
+                          tokenAddress: null,
+                          success: true,
+                          ...(err ? { success: false, message: err.message } : {}),
+                          status
+                        }
+                      ]);
+                    });
+                  }
+                }),
+              ({ message }) => Promise.resolve({ success: false, error: message })
+            )
+          )
+        );
+      } catch (err) {
+        return returnError(err, res, req);
+      }
+
+      return res.json(_.flatten(responses));
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {
@@ -721,10 +849,11 @@ export class ExpressApp {
     router.get('/v1/balance/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};
-        if (req.query.coin) opts.coin = req.query.coin;
+        if (req.query.coin) opts.coin = req.query.coin as string;
         if (req.query.twoStep == '1') opts.twoStep = true;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+        if (req.query.multisigContractAddress)
+          opts.multisigContractAddress = req.query.multisigContractAddress as string;
 
         server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
@@ -737,8 +866,7 @@ export class ExpressApp {
 
     if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {
       logger.info(
-        '',
-        'Limiting estimate fee per IP: %d req/h',
+        'Limiting estimate fee per IP: %o req/h',
         ((Defaults.RateLimit.estimateFee.max / Defaults.RateLimit.estimateFee.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       estimateFeeLimiter = new RateLimit(Defaults.RateLimit.estimateFee);
@@ -754,7 +882,7 @@ export class ExpressApp {
       SetPublicCache(res, 1 * ONE_MINUTE);
       logDeprecated(req);
       const opts: { network?: string } = {};
-      if (req.query.network) opts.network = req.query.network;
+      if (req.query.network) opts.network = req.query.network as string;
       let server;
       try {
         server = getServer(req, res);
@@ -772,10 +900,12 @@ export class ExpressApp {
     });
 
     router.get('/v2/feelevels/', (req, res) => {
-      const opts: { coin?: string; network?: string } = {};
+      const opts: { coin?: string; network?: string; chain?: string } = {};
       SetPublicCache(res, 1 * ONE_MINUTE);
-      if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.network) opts.network = req.query.network;
+
+      if (req.query.coin) opts.coin = req.query.coin as string;
+      if (req.query.chain || req.query.coin) opts.chain = (req.query.chain || req.query.coin) as string;
+      if (req.query.network) opts.network = req.query.network as string;
 
       let server;
       try {
@@ -800,6 +930,7 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/ethmultisig/', (req, res) => {
       getServerWithAuth(req, res, async server => {
         try {
@@ -811,7 +942,30 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/ethmultisig/info', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInfo = await server.getMultisigContractInfo(req.body);
+          res.json(multisigContractInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/multisig/', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInstantiationInfo = await server.getMultisigContractInstantiationInfo(req.body);
+          res.json(multisigContractInstantiationInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/multisig/info', (req, res) => {
       getServerWithAuth(req, res, async server => {
         try {
           const multisigContractInfo = await server.getMultisigContractInfo(req.body);
@@ -843,7 +997,7 @@ export class ExpressApp {
           excludeUnconfirmedUtxos?: boolean;
         } = {};
         if (q.feePerKb) opts.feePerKb = +q.feePerKb;
-        if (q.feeLevel) opts.feeLevel = q.feeLevel;
+        if (q.feeLevel) opts.feeLevel = Number(q.feeLevel);
         if (q.excludeUnconfirmedUtxos == '1') opts.excludeUnconfirmedUtxos = true;
         if (q.returnInputs == '1') opts.returnInputs = true;
         server.getSendMaxInfo(opts, (err, info) => {
@@ -856,7 +1010,7 @@ export class ExpressApp {
     router.get('/v1/utxos/', (req, res) => {
       const opts: { addresses?: string[] } = {};
       const addresses = req.query.addresses;
-      if (addresses && _.isString(addresses)) opts.addresses = req.query.addresses.split(',');
+      if (addresses && _.isString(addresses)) opts.addresses = (req.query.addresses as string).split(',');
       getServerWithAuth(req, res, server => {
         server.getUtxos(opts, (err, utxos) => {
           if (err) return returnError(err, res, req);
@@ -1011,8 +1165,9 @@ export class ExpressApp {
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+        if (req.query.multisigContractAddress)
+          opts.multisigContractAddress = req.query.multisigContractAddress as string;
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
 
         server.getTxHistory(opts, (err, txs) => {
@@ -1044,10 +1199,10 @@ export class ExpressApp {
         to?: string;
       } = {};
 
-      if (req.query.network) opts.network = req.query.network;
-      if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.from) opts.from = req.query.from;
-      if (req.query.to) opts.to = req.query.to;
+      if (req.query.network) opts.network = req.query.network as string;
+      if (req.query.coin) opts.coin = req.query.coin as string;
+      if (req.query.from) opts.from = req.query.from as string;
+      if (req.query.to) opts.to = req.query.to as string;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {
@@ -1244,9 +1399,19 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
+          if (err) return returnError(err, res, req);
+          res.json(response);
+        });
+      });
+    });
+
+    router.post('/v2/pushnotifications/subscriptions/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server.pushNotificationsBrazeSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
@@ -1269,12 +1434,25 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.delete('/v2/pushnotifications/subscriptions/:token', (req, res) => {
       const opts = {
         token: req.params['token']
       };
       getServerWithAuth(req, res, server => {
         server.pushNotificationsUnsubscribe(opts, (err, response) => {
+          if (err) return returnError(err, res, req);
+          res.json(response);
+        });
+      });
+    });
+
+    router.delete('/v3/pushnotifications/subscriptions/:externalUserId', (req, res) => {
+      const opts = {
+        externalUserId: req.params['externalUserId']
+      };
+      getServerWithAuth(req, res, server => {
+        server.pushNotificationsBrazeUnsubscribe(opts, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
@@ -1309,7 +1487,8 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getServicesData((err, response) => {
+      const opts = req.query;
+      server.getServicesData(opts, (err, response) => {
         if (err) return returnError(err, res, req);
         res.json(response);
       });
@@ -1326,6 +1505,206 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/banxa/paymentMethods', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.banxaGetPaymentMethods(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/banxa/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.banxaGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/banxa/createOrder', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.banxaCreateOrder(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/banxa/getOrder', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.banxaGetOrder(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/moonpay/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.moonpayGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/moonpay/currencyLimits', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetCurrencyLimits(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/moonpay/signedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        let response;
+        try {
+          response = server.moonpayGetSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/moonpay/transactionDetails', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetTransactionDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/moonpay/accountDetails', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetAccountDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/ramp/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.rampGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/ramp/signedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.rampGetSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/ramp/assets', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.rampGetAssets(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/sardine/quote', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .sardineGetQuote(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/sardine/getToken', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .sardineGetToken(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/sardine/currencyLimits', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .sardineGetCurrencyLimits(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/service/sardine/ordersDetails', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .sardineGetOrdersDetails(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
@@ -1334,7 +1713,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1347,7 +1726,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1361,7 +1740,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1374,7 +1753,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1387,7 +1766,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1405,7 +1784,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1417,7 +1796,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1430,7 +1809,7 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
@@ -1443,9 +1822,26 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
+    });
+
+    router.post('/v1/service/changelly/getTransactions', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .changellyGetTransactions(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
     });
 
     router.post('/v1/service/changelly/getStatus', (req, res) => {
@@ -1461,7 +1857,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1478,11 +1874,11 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
-    router.post('/v1/service/oneInch/getSwap', (req, res) => {
+    router.post('/v1/service/oneInch/getSwap/:chain?', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
           .oneInchGetSwap(req)
@@ -1490,12 +1886,13 @@ export class ExpressApp {
             res.json(response);
           })
           .catch(err => {
-            if (err) return returnError(err, res, req);
+            return returnError(err ?? 'unknown', res, req);
           });
       });
     });
 
-    router.get('/v1/service/oneInch/getTokens', (req, res) => {
+    router.get('/v1/service/oneInch/getTokens/:chain?', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
       let server;
       try {
         server = getServer(req, res);
@@ -1508,7 +1905,7 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 
@@ -1544,7 +1941,87 @@ export class ExpressApp {
           res.json(response);
         })
         .catch(err => {
-          if (err) return returnError(err, res, req);
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    const moralisCorsOptions = {
+      origin: (origin, cb) => {
+        const moralisWhiteList = config.moralis?.whitelist ?? [];
+        if (moralisWhiteList.indexOf(origin) !== -1) {
+          cb(null, true);
+        } else {
+          cb(new Error('Not allowed by CORS'));
+        }
+      },
+    };
+
+    router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetWalletTokenBalances(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetTokenAllowance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/moralisGetNativeBalance', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetNativeBalance(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.get('/v1/service/coinGecko/getRates/:contractAddresses/:altCurrencies/:chain', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .coinGeckoGetRates(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
         });
     });
 

@@ -175,7 +175,7 @@ export class Wallet {
     } catch (err) {
       console.log(err);
     }
-    return alreadyExists != undefined && alreadyExists != [];
+    return alreadyExists != undefined && alreadyExists.length && alreadyExists.length != 0;
   }
 
   static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
@@ -328,7 +328,7 @@ export class Wallet {
     gasPrice?: number;
     contractAddress?: string;
   }) {
-    const chain = params.token ? 'ERC20' : this.chain;
+    const chain = params.token ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
     if (params.token) {
       const tokenObj = this.tokens.find(tok => tok.symbol === params.token);
@@ -369,6 +369,11 @@ export class Wallet {
     return this.client.broadcast({ payload });
   }
 
+  async getTransactionByTxid(params: { txid: string }) {
+    const { txid } = params;
+    return this.client.getTransaction({ txid });
+  }
+
   async importKeys(params: { keys: KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
@@ -393,7 +398,7 @@ export class Wallet {
     let { tx, keys, utxos, passphrase, signingKeys } = params;
     if (!utxos) {
       utxos = [];
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         this.getUtxos()
           .pipe(new ParseApiStream())
           .on('data', utxo => utxos.push(utxo))

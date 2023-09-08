@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+export const Services = {
   // Recommended whitelist of contracts as spenders for ERC20 tokens
   ERC20_SPENDER_APPROVAL_WHITELIST: [
     {

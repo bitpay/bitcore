@@ -3,7 +3,7 @@ export const unprocessedEthBlocks = [
     txs: [
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28969169,
         blockHash: '0x569aba19407f3d128b261368352814b64b317e5b25133243fe2bae49092debbd',
         data: {
@@ -933,7 +933,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28969169,
         blockHash: '0x569aba19407f3d128b261368352814b64b317e5b25133243fe2bae49092debbd',
         data: {
@@ -3764,7 +3764,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28969169,
         blockHash: '0x569aba19407f3d128b261368352814b64b317e5b25133243fe2bae49092debbd',
         data: {
@@ -3787,7 +3787,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28969169,
         blockHash: '0x569aba19407f3d128b261368352814b64b317e5b25133243fe2bae49092debbd',
         data: {
@@ -19240,14 +19240,14 @@ export const unprocessedEthBlocks = [
     blockTimeNormalized: '2021-12-27T01:25:36.000Z',
     height: 28969169,
     chain: 'ETH',
-    network: 'testnet',
+    network: 'regtest',
     initialSyncComplete: true,
   },
   {
     txs: [
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28979614,
         blockHash: '0x8c712cb354125eb72f019597a40b4b66b9f788b3a7db64d0b5a3e980fa4c3bde',
         data: {
@@ -19421,7 +19421,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28979614,
         blockHash: '0x8c712cb354125eb72f019597a40b4b66b9f788b3a7db64d0b5a3e980fa4c3bde',
         data: {
@@ -19591,7 +19591,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28979614,
         blockHash: '0x8c712cb354125eb72f019597a40b4b66b9f788b3a7db64d0b5a3e980fa4c3bde',
         data: {
@@ -21051,7 +21051,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28979614,
         blockHash: '0x8c712cb354125eb72f019597a40b4b66b9f788b3a7db64d0b5a3e980fa4c3bde',
         data: {
@@ -21221,7 +21221,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28979614,
         blockHash: '0x8c712cb354125eb72f019597a40b4b66b9f788b3a7db64d0b5a3e980fa4c3bde',
         data: {
@@ -22681,7 +22681,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28979614,
         blockHash: '0x8c712cb354125eb72f019597a40b4b66b9f788b3a7db64d0b5a3e980fa4c3bde',
         data: {
@@ -22779,7 +22779,7 @@ export const unprocessedEthBlocks = [
       },
       {
         chain: 'ETH',
-        network: 'testnet',
+        network: 'regtest',
         blockHeight: 28979614,
         blockHash: '0x8c712cb354125eb72f019597a40b4b66b9f788b3a7db64d0b5a3e980fa4c3bde',
         data: {
@@ -23102,7 +23102,7 @@ export const unprocessedEthBlocks = [
     blockTimeNormalized: '2021-12-27T17:53:48.000Z',
     height: 28979614,
     chain: 'ETH',
-    network: 'testnet',
+    network: 'regtest',
     initialSyncComplete: true,
   },
 ];

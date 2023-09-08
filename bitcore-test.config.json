@@ -1,6 +1,6 @@
 {
   "bitcoreNode": {
-    "modules": ["./bitcoin", "./bitcoin-cash", "./ethereum", "./ripple"],
+    "modules": ["./bitcoin", "./bitcoin-cash", "./ethereum", "./matic", "./ripple"],
     "services": {
       "api": {
         "wallets": {
@@ -14,12 +14,12 @@
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "bitcoin",
+              "host": "localhost",
               "port": 8332
             }
           ],
           "rpc": {
-            "host": "bitcoin",
+            "host": "localhost",
             "port": 8333,
             "username": "bitcorenodetest",
             "password": "local321"
@@ -27,29 +27,51 @@
         }
       },
       "ETH": {
-        "testnet": {
+        "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "parity",
-              "port": 30303
+              "host": "localhost",
+              "port": 40404
             }
           ],
-          "provider": {
-            "host": "parity",
+          "providers": [{
+            "host": "localhost",
             "protocol": "ws",
-            "port": 8546
-          }
+            "port": 9545
+          }, {
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 9556
+          }],
+          "threads": 0
+        }
+      },
+      "MATIC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 40404
+            }
+          ],
+          "providers": [{
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 9556
+          }],
+          "threads": 0
         }
       },
       "XRP": {
         "testnet": {
           "chainSource": "rpc",
           "provider": {
-            "host": "rippled",
+            "host": "localhost",
             "protocol": "ws",
-            "port": "6006",
-            "dataHost": "rippled"
+            "port": 6996,
+            "dataHost": "localhost"
           }
         }
       }

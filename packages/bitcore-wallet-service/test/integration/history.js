@@ -15,7 +15,7 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
-var Common = require('../../ts_build/lib/common');
+var { Common } = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
@@ -31,6 +31,8 @@ var storage, blockchainExplorer, request;
 
 
 describe('History', function() {
+  this.timeout(5000);
+  
   before(function(done) {
     helpers.before((res) => {
       done();

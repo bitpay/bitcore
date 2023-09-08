@@ -1,5 +1,7 @@
 'use strict';
-
+// Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
+var { setDefaultResultOrder } = require('dns');
+setDefaultResultOrder('ipv4first');
 var _ = require('lodash');
 var async = require('async');
 
@@ -23,7 +25,7 @@ var Bitcore_ = {
 };
 
 var { ChainService } = require('../../ts_build/lib/chain/index');
-var Common = require('../../ts_build/lib/common');
+var { Common } = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
@@ -591,12 +593,12 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       const privKey = priv.toString('hex');
       let tx = ChainService.getBitcoreTx(txp).uncheckedSerialize();
       const isERC20 = txp.tokenAddress && !txp.payProUrl;
-      const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
+      const chain = isERC20 ? ChainService.getChain(txp.coin) + 'ERC20' : ChainService.getChain(txp.coin);
       tx = typeof tx === 'string'? [tx] : tx;
       signatures = [];
       for (const rawTx of tx) {
         const signed = CWC.Transactions.getSignature({
-          chain,
+          chain: chain.toUpperCase(),
           tx: rawTx,
           key: { privKey: privKey.toString('hex') },
         });

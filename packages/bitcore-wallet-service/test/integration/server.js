@@ -15,6 +15,11 @@ const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
 var config = require('../../ts_build/config.js');
+config.moralis = config.moralis ?? {
+  apiKey: 'apiKey',
+  whitelist: []
+};
+
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -27,7 +32,7 @@ const Bitcore_ = {
 
 const { WalletService } = require('../../ts_build/lib/server');
 const { Storage } = require('../../ts_build/lib/storage')
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
@@ -1033,7 +1038,7 @@ describe('Wallet service', function() {
         });
         server.joinWallet(copayerOpts, function(err) {
           should.exist(err);
-          err.message.should.contain('different coin');
+          err.message.should.contain('different chain');
           done();
         });
       });
@@ -2809,7 +2814,7 @@ describe('Wallet service', function() {
           addresses: ['mrM5kMkqZccK5MxZYSsM3SjqdMaNKLJgrJ']
         }, function(err, utxos) {
           should.not.exist(err);
-          utxos.should.be.empty();
+          utxos.should.be.empty;
           done();
         });
       });
@@ -2825,7 +2830,7 @@ describe('Wallet service', function() {
           addresses: ['CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X']
         }, function(err, utxos) {
           should.not.exist(err);
-          utxos.should.be.empty();
+          utxos.should.be.empty;
           done();
         });
       });
@@ -4719,7 +4724,7 @@ describe('Wallet service', function() {
         describe('Fee levels', function() {
           var level, expected, expectedNormal;
           before(() => {
-            if (Constants.UTXO_COINS[coin.toUpperCase()]) {
+            if (Constants.UTXO_CHAINS[coin.toUpperCase()]) {
               const normal = coin == 'doge' ? 1e8: 200e2;   // normal BCH, DOGE
               helpers.stubFeeLevels({
                 1: 400e2,
@@ -4934,32 +4939,11 @@ describe('Wallet service', function() {
             ltc:0.5
           }
           helpers.stubUtxos(server, wallet, 2, { coin }, function() {
-            var cwcStub = sandbox.stub(CWC.Transactions, 'create');
-            cwcStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub;
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLib, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibCash, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibDoge, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibLtc, 'Transaction');
-            bitcoreStub.throws({
-              name: 'dummy',
-              message: 'dummy exception'
-            });
+            sandbox.stub(CWC.Transactions, 'create').throws(new Error('dummy exception'));
+            sandbox.stub(Bitcore_.btc, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(Bitcore_.bch, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(Bitcore_.doge, 'Transaction').throws(new Error('dummy exception'));
+            sandbox.stub(Bitcore_.ltc, 'Transaction').throws(new Error('dummy exception'));
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4971,8 +4955,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.message.should.equal('dummy exception');
-              if(bitcoreStub) bitcoreStub.restore();
-              cwcStub.restore();
+              sandbox.restore();
               done();
             });
           });
@@ -5435,7 +5418,7 @@ describe('Wallet service', function() {
       });
     });
 
-    if(Constants.UTXO_COINS[coin.toUpperCase()]) {
+    if(Constants.UTXO_CHAINS[coin.toUpperCase()]) {
       describe('UTXO Selection ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
@@ -7208,6 +7191,10 @@ describe('Wallet service', function() {
 
   describe('Check requiredFeeRate  BTC', function() {
     var server, wallet;
+
+    // some of these tests, particularly case 26, can run a bit long
+    //  and cause the ci pipeline to fail
+    this.timeout(4000);
 
     beforeEach(function(done) {
       helpers.stubFeeLevels({
@@ -9872,7 +9859,8 @@ describe('Wallet service', function() {
     it('should start an asynchronous scan', function(done) {
       server.startScan({}, function(err, ret) {
         should.not.exist(err);
-        should.not.exist(ret);
+        should.exist(ret);
+        ret.should.deep.equal({ started: true });
         return done();
       });
     });
@@ -10141,6 +10129,7 @@ describe('Wallet service', function() {
   });
 
   describe('Tx confirmation notifications', function() {
+    this.timeout(5000);
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 3, function(s, w) {
@@ -10155,20 +10144,18 @@ describe('Wallet service', function() {
         should.exist(server);
         server.txConfirmationSubscribe({
           txid: '123',
-        }, function(err) {
+        }, async function(err) {
           should.not.exist(err);
-          server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-            should.not.exist(err);
-            should.exist(subs);
-            subs.length.should.equal(1);
-            var s = subs[0];
-            s.txid.should.equal('123');
-            s.isActive.should.be.true;
-            done();
-          });
+          const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['123']);
+          let txSub = (await stream.next());
+          should.exist(txSub);
+          txSub.txid.should.equal('123');
+          txSub.isActive.should.be.true;
+          done();
         });
       });
     });
+
     it('should overwrite last subscription', function(done) {
       helpers.getAuthServer(wallet.copayers[0].id, function(server) {
         should.exist(server);
@@ -10177,14 +10164,15 @@ describe('Wallet service', function() {
         }, function(err) {
           server.txConfirmationSubscribe({
             txid: '123',
-          }, function(err) {
+          }, async function(err) {
             should.not.exist(err);
-            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-              should.not.exist(err);
-              should.exist(subs);
-              subs.length.should.equal(1);
-              done();
-            });
+            const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['123']);
+            let txSub = (await stream.next());
+            should.exist(txSub);
+            txSub.txid.should.equal('123');
+            txSub = (await stream.next());
+            should.not.exist(txSub);
+            done();
           });
         });
       });
@@ -10210,15 +10198,12 @@ describe('Wallet service', function() {
               txid: '123',
             }, next);
           },
-          function(next) {
-            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-              should.not.exist(err);
-              should.exist(subs);
-              subs.length.should.equal(1);
-              var s = subs[0];
-              s.txid.should.equal('456');
-              next();
-            });
+          async function(next) {
+            const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['456']);
+            let txSub = (await stream.next());
+            should.exist(txSub);
+            txSub.txid.should.equal('456'); 
+            next();
           },
           function(next) {
             helpers.getAuthServer(wallet.copayers[1].id, function(server) {
@@ -10227,15 +10212,12 @@ describe('Wallet service', function() {
               }, next);
             });
           },
-          function(next) {
-            server.storage.fetchActiveTxConfirmationSubs(wallet.copayers[0].id, function(err, subs) {
-              should.not.exist(err);
-              should.exist(subs);
-              subs.length.should.equal(1);
-              var s = subs[0];
-              s.txid.should.equal('456');
-              next();
-            });
+          async function(next) {
+            const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['456']);
+            let txSub = (await stream.next());
+            should.exist(txSub);
+            txSub.txid.should.equal('456');
+            next();
           },
         ], function(err) {
           should.not.exist(err);
@@ -10469,7 +10451,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('ERC20 createTx', function() {
+  describe('ERC20 createTx (ETH)', function() {
     var server, wallet;
     let sandbox;
     let addressStr = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
@@ -10494,7 +10476,7 @@ describe('Wallet service', function() {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
           let txAmount = 1e6;
           var txOpts = {
-            coin: 'usdc',
+            coin: 'usdc_e',
             outputs: [{
               toAddress: addressStr,
               amount: txAmount
@@ -10532,7 +10514,7 @@ describe('Wallet service', function() {
       server.createAddress({}, from => {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
           var txOpts = {
-            coin: 'usdc',
+            coin: 'usdc_e',
             payProUrl: 'payProUrl',
             outputs: [{
               toAddress: addressStr,
@@ -10554,6 +10536,1824 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('ERC20 createTx (MATIC)', function() {
+    var server, wallet;
+    let sandbox;
+    let addressStr = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    beforeEach(function(done) {
+      sandbox = sinon.createSandbox();
+      helpers.createAndJoinWallet(1, 1, {
+        coin: 'matic',
+      }, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    })
+
+   it('should fail with different error for ERC20 txs with insufficient MATIC to cover miner fee', function(done) {
+      const ts = TO_SAT['usdc'];
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
+          let txAmount = 1e6;
+          var txOpts = {
+            chain: 'matic',
+            coin: 'usdc_m',
+            outputs: [{
+              toAddress: addressStr,
+              amount: txAmount
+            }],
+            from,
+            fee: 4e18,
+            tokenAddress: TOKENS[0]
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('INSUFFICIENT_MATIC_FEE');
+            err.message.should.equal('Your linked POLYGON wallet does not have enough MATIC for fee. RequiredFee: 3999999999999990000');
+            err.messageData.should.deep.equal({ requiredFee: 3999999999999990000 });
+            server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, tokenBalance) {
+              should.not.exist(err);
+              tokenBalance.totalAmount.should.equal(2 * ts);
+              tokenBalance.lockedAmount.should.equal(0);
+              txOpts.outputs[0].amount = 1 * ts;
+              server.getBalance({}, function(err, ethBalance) {
+                should.not.exist(err);
+                ethBalance.should.not.equal(tokenBalance);
+                ethBalance.totalAmount.should.equal(2000000000000000000);
+                ethBalance.lockedAmount.should.equal(0);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should decode ouput data correctly to get invoice value when paypro', function(done) {
+      const ts = TO_SAT['usdc'];
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
+          var txOpts = {
+            chain: 'matic',
+            coin: 'usdc_m',
+            payProUrl: 'payProUrl',
+            outputs: [{
+              toAddress: addressStr,
+              amount: 0,
+              data: '0xb6b4af05000000000000000000000000000000000000000000000000000939f52e7b500000000000000000000000000000000000000000000000000000000006a5b66d80000000000000000000000000000000000000000000000000000001758d7da01d546ec66322bb962a8ba8c9c7c1b2ea37f0e4d5e92dfcd938796eeb41fb4aaa6efe746af63df9f38740a10c477b055f4f96fb26962d8d4050dac6d68280c28b60000000000000000000000000000000000000000000000000000000000000001cd7f7eb38ca6bd66b9006c66e42c1400f1921e5134adf77fcf577c267c9210a1d3230a734142b8810a7a7244f14da12fc052904fd68e885ce955f74ed57250bd50000000000000000000000000000000000000000000000000000000000000000'
+            }],
+            from,
+            tokenAddress: TOKENS[0]
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('INSUFFICIENT_FUNDS');
+            err.message.should.equal('Insufficient funds');
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  describe('getServicesData', () => {
+    let server;
+   
+    beforeEach(() => {
+      server = new WalletService();
+    });
+
+    describe('Case with config.services defined in an unusual manner', () => {
+      it('should return config.services if it is included in the config file and no opts provided', () => {
+        const configServices = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: true,
+              disabledMessage: 'Moonpay is out of service',
+              removed: false
+            },
+          },
+          swapCrypto: { 
+            disabled: false,
+            changelly: {
+              disabled: false,
+              removed: false
+            }
+          },
+        }
+        config.services = configServices;
+        const opts = undefined;
+  
+        server.getServicesData(opts, (err, config) => {
+          should.not.exist(err);
+          should.exist(config);
+          config.should.deep.equal(configServices);
+        });
+      });
+  
+      it('should return config.services with swap crypto disabled if it is included in the config file, the user is logged out and located in NY', () => {
+        const configServices = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: true,
+              disabledMessage: 'Moonpay is out of service',
+              removed: false
+            },
+            ramp: {
+              disabled: false,
+              removed: false
+            },
+            simplex: {
+              disabled: false,
+              removed: false
+            },
+            wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          swapCrypto: { 
+            disabled: false,
+            changelly: {
+              disabled: false,
+              removed: false
+            }
+          },
+        }
+        config.services = configServices;
+        const opts = {
+          currentLocationCountry: 'US',
+          currentLocationState: 'NY',
+        };
+  
+        server.getServicesData(opts, (err, config) => {
+          should.not.exist(err);
+          should.exist(config.swapCrypto);
+          config.swapCrypto.disabled.should.equal(true);
+          config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+        });
+      });
+  
+      it('should return config.services with swap crypto disabled if it is included in the config file and incomplete, the user is logged out and located in NY', () => {
+        const configServices = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: true,
+              disabledMessage: 'Moonpay is out of service',
+              removed: false
+            }
+          },
+        }
+        config.services = configServices;
+        const opts = {
+          currentLocationCountry: 'US',
+          currentLocationState: 'NY',
+        };
+  
+        server.getServicesData(opts, (err, config) => {
+          should.not.exist(err);
+          should.exist(config.swapCrypto);
+          config.swapCrypto.disabled.should.equal(true);
+          config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+        });
+      });
+    });
+
+    describe('Case with config.services defined as expected', () => {
+      beforeEach(() => {
+        config.services = {
+          buyCrypto: {
+            disabled: false,
+            moonpay: {
+              disabled: false,
+              removed: false
+            },
+            ramp: {
+              disabled: false,
+              removed: false
+            },
+            sardine: {
+              disabled: false,
+              removed: false
+            },
+            simplex: {
+              disabled: false,
+              removed: false
+            },
+            wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          swapCrypto: { 
+            disabled: false,
+            changelly: {
+              disabled: false,
+              removed: false
+            }
+          }
+        }
+      });
+
+      describe('User logged out', () => {
+        const swapUsaBannedStates = ['HI', 'LA', 'NY'];
+        for (const bannedState of swapUsaBannedStates) {
+          it(`should return swap crypto disabled if the user is located in ${bannedState}`, () => {
+            const opts = {
+              currentLocationCountry: 'US',
+              currentLocationState: bannedState,
+            };
+      
+            server.getServicesData(opts, (err, config) => {
+              should.not.exist(err);
+              should.exist(config.swapCrypto);
+              config.swapCrypto.disabled.should.equal(true);
+              config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+            });
+          });
+        };
+
+        it('should return swap crypto enabled if the user is in USA located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return swap crypto enabled if the user is in other country than USA', () => {
+          const opts = {
+            currentLocationCountry: 'AR',
+            currentLocationState: 'T',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        const buyCryptoUsaBannedStates = ['NY'];
+        for (const bannedState of buyCryptoUsaBannedStates) {
+          it(`should return buy crypto disabled if the user is located in ${bannedState}`, () => {
+            const opts = {
+              currentLocationCountry: 'US',
+              currentLocationState: bannedState,
+            };
+      
+            server.getServicesData(opts, (err, config) => {
+              should.not.exist(err);
+              should.exist(config.buyCrypto);
+              config.buyCrypto.disabled.should.equal(true);
+              config.buyCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+            });
+          });
+        };
+
+        it('should return buy crypto enabled if the user is in USA located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(false);
+          });
+        });
+      });
+
+      describe('User logged in', () => {
+        it('should return swap crypto disabled if the user is registred in NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto disabled if the user is registred in NY and located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto disabled if the user is registred in NY and located in other country than USA', () => {
+          const opts = {
+            currentLocationCountry: 'AR',
+            currentLocationState: 'T',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto enabled if the user is registred outside NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return swap crypto enabled if the user is registred in other country than USA and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'AR',
+            bitpayIdLocationState: 'T',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return swap crypto disabled if platform is ios and version of the app is 14.11.5', () => {
+          const opts = {
+            currentAppVersion: '14.11.5',
+            currentLocationCountry: 'US',
+            currentLocationState: 'GA',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'GA',
+            platform: {
+              os: 'ios',
+              version: '1.1.1'
+            },
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(true);
+            config.swapCrypto.disabledTitle.should.equal('Unavailable');
+            config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
+          });
+        });
+
+        it('should return swap crypto enabled if platform is ios and version of the app is other than 14.11.5', () => {
+          const opts = {
+            currentAppVersion: '14.11.4',
+            currentLocationCountry: 'US',
+            currentLocationState: 'GA',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'GA',
+            platform: {
+              os: 'ios',
+              version: '1.1.1'
+            },
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return swap crypto enabled if platform is other than ios', () => {
+          const opts = {
+            currentAppVersion: '14.11.5',
+            currentLocationCountry: 'US',
+            currentLocationState: 'GA',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'GA',
+            platform: {
+              os: 'android',
+              version: '1.1.2'
+            },
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.swapCrypto);
+            config.swapCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return buy crypto disabled if the user is registred in NY and located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(true);
+            config.buyCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+          });
+        });
+
+        it('should return buy crypto enabled if the user is registred outside NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.buyCrypto);
+            config.buyCrypto.disabled.should.equal(false);
+          });
+        });
+      });
+    });
+  });
+
+  describe('Banxa', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      transport.level= 'info';
+
+      config.banxa = {
+        sandbox: {
+          api: 'api1',
+          apiKey: 'apiKey1',
+          secretKey: 'secretKey1',
+        },
+        production: {
+          api: 'api2',
+          apiKey: 'apiKey2',
+          secretKey: 'secretKey2',
+        },
+        sandboxWeb: {
+          api: 'api3',
+          apiKey: 'apiKey3',
+          secretKey: 'secretKey3',
+        },
+        productionWeb: {
+          api: 'api4',
+          apiKey: 'apiKey4',
+          secretKey: 'secretKey4',
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#banxaGetPaymentMethods', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetPaymentMethods(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetPaymentMethods(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.banxaGetPaymentMethods(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if banxa is commented in config', async() => {
+        config.banxa = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetPaymentMethods(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa missing credentials');
+        }
+      });
+    });
+
+    describe('#banxaGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            source: 'USD',
+            target: 'BTC'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.banxaGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.target;
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if banxa is commented in config', async() => {
+        config.banxa = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa missing credentials');
+        }
+      });
+    });
+
+    describe('#banxaCreateOrder', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            account_reference: 'account_reference1',
+            source: 'USD',
+            target: 'BTC',
+            wallet_address: 'wallet_address1',
+            return_url_on_success: 'return_url_on_success1'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaCreateOrder(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaCreateOrder(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if post returns error', async() => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.banxaCreateOrder(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.source;
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaCreateOrder(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if banxa is commented in config', async() => {
+        config.banxa = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaCreateOrder(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa missing credentials');
+        }
+      });
+    });
+
+    describe('#banxaGetOrder', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            order_id: 'order_id1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetOrder(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetOrder(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.banxaGetOrder(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.order_id;
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetOrder(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa\'s request missing arguments');
+        }
+      });
+
+      it('should return error if banxa is commented in config', async() => {
+        config.banxa = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.banxaGetOrder(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa missing credentials');
+        }
+      });
+    });
+  });
+
+  describe('Moonpay', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      transport.level= 'info';
+
+      config.moonpay = {
+        sandbox: {
+          apiKey: 'apiKey1',
+          api: 'api1',
+          widgetApi: 'widgetApi1',
+          secretKey: 'secretKey1'
+        },
+        production: {
+          apiKey: 'apiKey2',
+          api: 'api2',
+          widgetApi: 'widgetApi2',
+          secretKey: 'secretKey2'
+        },
+        sandboxWeb: {
+          apiKey: 'apiKey3',
+          api: 'api3',
+          widgetApi: 'widgetApi3',
+          secretKey: 'secretKey3'
+        },
+        productionWeb: {
+          apiKey: 'apiKey4',
+          api: 'api4',
+          widgetApi: 'widgetApi4',
+          secretKey: 'secretKey4'
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#moonpayGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            currencyAbbreviation: 'btc',
+            baseCurrencyAmount: 50,
+            extraFeePercentage: 5,
+            baseCurrencyCode: 'usd'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.baseCurrencyAmount;
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetCurrencyLimits', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            currencyAbbreviation: 'btc',
+            baseCurrencyCode: 'usd'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.baseCurrencyCode;
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetSignedPaymentUrl', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'production',
+            currencyCode: 'btc',
+            walletAddress: 'bitcoin:123123',
+            baseCurrencyCode: 'usd',
+            baseCurrencyAmount: '500',
+            externalTransactionId: '123123',
+            redirectURL: 'bitpay://moonpay'
+          }
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK', () => {
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&signature=%2FDnbsboySgE%2FeAvMrwzROCLuuctkhgw5C2t2OofjOzo%3D');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        delete req.body.currencyCode;
+
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+
+      it('should return error if moonpay is commented in config', () => {
+        config.moonpay = undefined;
+
+        try {
+          const data = server.moonpayGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetTransactionDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            transactionId: 'transactionId1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK with transactionId', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK with externalId', async() => {
+        delete req.body.transactionId;
+        req.body.externalId = 'externalId1';
+
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        }
+      });
+  
+      it('should return error if there is no transactionId or externalId', async() => {
+        delete req.body.transactionId;
+        delete req.body.externalId;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetAccountDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetAccountDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetAccountDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetAccountDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+  });
+
+  describe('Sardine', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      transport.level= 'info';
+
+      config.sardine = {
+        sandbox: {
+          api: 'api1',
+          secretKey: 'secretKey1',
+          clientId: 'clientId1',
+        },
+        production: {
+          api: 'api2',
+          secretKey: 'secretKey2',
+          clientId: 'clientId2',
+        },
+        sandboxWeb: {
+          api: 'api3',
+          secretKey: 'secretKey3',
+          clientId: 'clientId3',
+        },
+        productionWeb: {
+          api: 'api4',
+          secretKey: 'secretKey4',
+          clientId: 'clientId4',
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#sardineGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            asset_type: 'BTC',
+            network: 'bitcoin',
+            total: 50,
+            currency: 'USD',
+            paymentType: 'debit',
+            quote_type: 'buy'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.sardineGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.asset_type;
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if sardine is commented in config', async() => {
+        config.sardine = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine missing credentials');
+        }
+      });
+    });
+
+    describe('#sardineGetCurrencyLimits', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetCurrencyLimits(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.sardineGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if sardine is commented in config', async() => {
+        config.sardine = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetCurrencyLimits(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine missing credentials');
+        }
+      });
+    });
+
+    describe('#sardineGetToken', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            referenceId: 'referenceId1',
+            externalUserId: 'externalUserId1',
+            customerId: 'customerId1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetToken(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetToken(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if post returns error', async() => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.sardineGetToken(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.referenceId;
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetToken(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if sardine is commented in config', async() => {
+        config.sardine = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetToken(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine missing credentials');
+        }
+      });
+    });
+
+    describe('#sardineGetOrdersDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            orderId: 'orderId1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetOrdersDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetOrdersDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.sardineGetOrdersDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.orderId;
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetOrdersDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine\'s request missing arguments');
+        }
+      });
+
+      it('should work properly if orderId is not present but externalUserId is', async() => {
+        delete req.body.orderId;
+        req.body.externalUserId = 'externalUserId1';
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetOrdersDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if sardine is commented in config', async() => {
+        config.sardine = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetOrdersDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine missing credentials');
+        }
+      });
+    });
+  });
+
+  describe('Ramp', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      transport.level= 'info';
+
+      config.ramp = {
+        sandbox: {
+          apiKey: 'apiKey1',
+          api: 'api1',
+          widgetApi: 'widgetApi1',
+        },
+        production: {
+          apiKey: 'apiKey2',
+          api: 'api2',
+          widgetApi: 'widgetApi2',
+        },
+        sandboxWeb: {
+          apiKey: 'apiKey3',
+          api: 'api3',
+          widgetApi: 'widgetApi3',
+        },
+        productionWeb: {
+          apiKey: 'apiKey4',
+          api: 'api4',
+          widgetApi: 'widgetApi4',
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#rampGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            cryptoAssetSymbol: 'BTC_BTC',
+            fiatValue: 50,
+            fiatCurrency: 'USD',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if post returns error', async() => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.rampGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.fiatValue;
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Ramp\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if ramp is commented in config', async() => {
+        config.ramp = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Ramp missing credentials');
+        }
+      });
+    });
+
+    describe('#rampGetSignedPaymentUrl', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'production',
+            swapAsset: 'BTC_BTC',
+            swapAmount: '1000000',
+            enabledFlows: 'ONRAMP',
+            defaultFlow: 'ONRAMP',
+            userAddress: 'bitcoin:123123',
+            selectedCountryCode: 'US',
+            defaultAsset: 'BTC_BTC',
+            finalUrl: 'bitpay://ramp',
+          }
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK', () => {
+        try {
+          const data = server.rampGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&swapAsset=BTC_BTC&userAddress=bitcoin%3A123123&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&enabledFlows=ONRAMP&defaultFlow=ONRAMP&swapAmount=1000000&defaultAsset=BTC_BTC');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK for web', () => {
+        try {
+          req.body = {
+            env: 'production',
+            context: 'web',
+            swapAsset: 'BTC_BTC',
+            userAddress: 'bitcoin:123123',
+            selectedCountryCode: 'US',
+            defaultAsset: 'BTC_BTC',
+            finalUrl: 'bitpay://ramp',
+          }
+          const data = server.rampGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi4?hostApiKey=apiKey4&swapAsset=BTC_BTC&userAddress=bitcoin%3A123123&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&defaultAsset=BTC_BTC');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        delete req.body.swapAsset;
+
+        try {
+          const data = server.rampGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Ramp\'s request missing arguments');
+        }
+      });
+
+      it('should return error if ramp is commented in config', () => {
+        config.ramp = undefined;
+
+        try {
+          const data = server.rampGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Ramp missing credentials');
+        }
+      });
+    });
+
+    describe('#rampGetAssets', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            currencyCode: 'USD',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK with currencyCode', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetAssets(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK with useIp', async() => {
+        delete req.body.currencyCode;
+        req.body.useIp = true;
+
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetAssets(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.rampGetAssets(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        }
+      });
+  
+      it('should return error if Ramp is commented in config', async() => {
+        config.ramp = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.rampGetAssets(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Ramp missing credentials');
+        }
+      });
+    });
+  });
+
   describe('Simplex', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
@@ -10566,6 +12366,16 @@ describe('Wallet service', function() {
           appProviderId: 'xxxx'
         },
         production: {
+          apiKey: 'xxxx',
+          api: 'xxxx',
+          appProviderId: 'xxxx'
+        },
+        sandboxWeb: {
+          apiKey: 'xxxx',
+          api: 'xxxx',
+          appProviderId: 'xxxx'
+        },
+        productionWeb: {
           apiKey: 'xxxx',
           api: 'xxxx',
           appProviderId: 'xxxx'
@@ -10609,6 +12419,16 @@ describe('Wallet service', function() {
       });
 
       it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.simplexGetQuote(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should work properly if req is OK for web', () => {
+        req.body.context = 'web';
         server.request = fakeRequest;
         server.simplexGetQuote(req).then(data => {
           should.exist(data);

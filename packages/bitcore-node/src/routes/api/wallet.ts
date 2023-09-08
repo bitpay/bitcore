@@ -1,6 +1,7 @@
 import { Validation } from 'crypto-wallet-core';
-import { Response, Router } from 'express';
+import { Request, Response, Router } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
 const router = Router({ mergeParams: true });
 
@@ -8,7 +9,7 @@ function isTooLong(field, maxLength = 255) {
   return field && field.toString().length >= maxLength;
 }
 // create wallet
-router.post('/', async function(req, res) {
+router.post('/', async function(req: Request, res: Response) {
   try {
     let { chain, network } = req.params;
     let { name, pubKey, path, singleAddress } = req.body;
@@ -53,12 +54,12 @@ router.get('/:pubKey/addresses/missing', Auth.authenticateMiddleware, async (req
   }
 });
 
-router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { wallet } = req;
     let { chain, network } = req.params;
-    let { limit } = req.query;
-    let payload = {
+    let { limit } = req.query as any;
+    let payload: StreamWalletAddressesParams = {
       chain,
       network,
       walletId: wallet!._id!,
@@ -72,7 +73,7 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
   }
 });
 
-router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { chain, network } = req.params;
     const wallet = req.wallet!._id!;
@@ -88,7 +89,7 @@ router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: Authentica
 });
 
 // update wallet
-router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   let keepAlive;
   try {
     let { chain, network } = req.params;
@@ -118,7 +119,7 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
   }
 });
 
-router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     let { chain, network } = req.params;
     return await ChainStateProvider.streamWalletTransactions({
@@ -134,7 +135,7 @@ router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: Aut
   }
 });
 
-router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   let { chain, network } = req.params;
   try {
     const result = await ChainStateProvider.getWalletBalance({
@@ -149,7 +150,7 @@ router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: Authenti
   }
 });
 
-router.get('/:pubKey/balance/:time', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/balance/:time', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   let { chain, network, time } = req.params;
   try {
     const result = await ChainStateProvider.getWalletBalanceAtTime({
@@ -165,9 +166,9 @@ router.get('/:pubKey/balance/:time', Auth.authenticateMiddleware, async (req: Au
   }
 });
 
-router.get('/:pubKey/utxos', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/utxos', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   let { chain, network } = req.params;
-  let { limit } = req.query;
+  let { limit } = req.query as any;
   try {
     return ChainStateProvider.streamWalletUtxos({
       chain,

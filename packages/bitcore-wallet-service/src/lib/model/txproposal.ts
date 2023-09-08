@@ -1,6 +1,7 @@
 import { Transactions } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { ChainService } from '../chain/index';
+import { Common } from '../common';
 import logger from '../logger';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
@@ -8,7 +9,6 @@ import { TxProposalAction } from './txproposalaction';
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
 
-const Common = require('../common');
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
@@ -137,6 +137,7 @@ export class TxProposal {
   lockUntilBlockHeight?: number;
   instantAcceptanceEscrow?: number;
   isTokenSwap?: boolean;
+  multiSendContractAddress?: string;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
 
@@ -162,7 +163,7 @@ export class TxProposal {
     x.walletId = opts.walletId;
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
-    x.chain = opts.chain;
+    x.chain = opts.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
     x.network = opts.network;
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
@@ -219,6 +220,7 @@ export class TxProposal {
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
+    x.multiSendContractAddress = opts.multiSendContractAddress;
     x.isTokenSwap = opts.isTokenSwap;
     x.multisigContractAddress = opts.multisigContractAddress;
 
@@ -242,7 +244,7 @@ export class TxProposal {
     x.walletId = obj.walletId;
     x.creatorId = obj.creatorId;
     x.coin = obj.coin || Defaults.COIN;
-    x.chain = obj.chain ? obj.chain : ChainService.getChain(x.coin);
+    x.chain = obj.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
     x.network = obj.network;
     x.outputs = obj.outputs;
     x.amount = obj.amount;
@@ -290,6 +292,7 @@ export class TxProposal {
     x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
     x.isTokenSwap = obj.isTokenSwap;
+    x.multiSendContractAddress = obj.multiSendContractAddress;
     x.multisigContractAddress = obj.multisigContractAddress;
     x.multisigTxId = obj.multisigTxId;
 
@@ -421,7 +424,7 @@ export class TxProposal {
 
       return true;
     } catch (e) {
-      logger.debug(e);
+      logger.debug('%o', e);
       return false;
     }
   }

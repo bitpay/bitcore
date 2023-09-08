@@ -1,9 +1,9 @@
+import { Common } from '../common';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 
 const $ = require('preconditions').singleton();
 const sjcl = require('sjcl');
-const Common = require('../common');
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
@@ -28,6 +28,7 @@ export class Copayer {
   version: number;
   createdOn: number;
   coin: string;
+  chain: string;
   xPubKey: string;
   id: string;
   name: string;
@@ -52,7 +53,7 @@ export class Copayer {
       .checkArgument(opts.requestPubKey, 'Missing copayer request public key')
       .checkArgument(opts.signature, 'Missing copayer request public key signature');
 
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
+    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.CHAINS));
 
     opts.copayerIndex = opts.copayerIndex || 0;
 
@@ -92,6 +93,7 @@ export class Copayer {
     x.version = obj.version;
     x.createdOn = obj.createdOn;
     x.coin = obj.coin || Defaults.COIN;
+    x.chain = obj.chain || x.coin;
     x.id = obj.id;
     x.name = obj.name;
     x.xPubKey = obj.xPubKey;
@@ -130,7 +132,8 @@ export class Copayer {
       wallet.m,
       wallet.coin,
       wallet.network,
-      isChange
+      isChange,
+      wallet.chain
     );
     return address;
   }

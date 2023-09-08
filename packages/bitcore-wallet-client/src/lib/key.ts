@@ -76,6 +76,7 @@ export class Key {
 
   constructor(
     opts: {
+      id?: string;
       seedType: string;
       seedData?: any;
       passphrase?: string; // seed passphrase
@@ -89,7 +90,7 @@ export class Key {
     } = { seedType: 'new' }
   ) {
     this.#version = 1;
-    this.id = Uuid.v4();
+    this.id = opts.id || Uuid.v4();
 
     // bug backwards compatibility flags
     this.use0forBCH = opts.useLegacyCoinType;
@@ -359,8 +360,8 @@ export class Key {
     return deriveFn(path);
   };
 
-  _checkCoin = function (coin) {
-    if (!_.includes(Constants.COINS, coin)) throw new Error('Invalid coin');
+  _checkChain = function (chain) {
+    if (!_.includes(Constants.CHAINS, chain)) throw new Error('Invalid chain');
   };
 
   _checkNetwork = function (network) {
@@ -381,10 +382,14 @@ export class Key {
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
     var coinCode = '0';
 
-    if (opts.network == 'testnet' && Constants.UTXO_COINS.includes(opts.coin)) {
+    // checking in chains for simplicity
+    if (
+      opts.network == 'testnet' &&
+      Constants.UTXO_CHAINS.includes(opts.coin)
+    ) {
       coinCode = '1';
     } else if (opts.coin == 'bch') {
-      if (this.use0forBCH) {
+      if (this.use0forBCH || opts.use0forBCH) {
         coinCode = '0';
       } else {
         coinCode = '145';
@@ -393,6 +398,8 @@ export class Key {
       coinCode = '0';
     } else if (opts.coin == 'eth') {
       coinCode = '60';
+    } else if (opts.coin == 'matic') {
+      coinCode = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
     } else if (opts.coin == 'xrp') {
       coinCode = '144';
     } else if (opts.coin == 'doge') {
@@ -446,6 +453,7 @@ export class Key {
     return Credentials.fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
       coin: opts.coin,
+      chain: opts.chain?.toLowerCase() || Utils.getChain(opts.coin), // getChain -> backwards compatibility
       network: opts.network,
       account: opts.account,
       n: opts.n,
@@ -493,8 +501,10 @@ export class Key {
 
     var t = Utils.buildTx(txp);
 
-    if (Constants.UTXO_COINS.includes(txp.coin)) {
-      _.each(txp.inputs, function (i) {
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+
+    if (Constants.UTXO_CHAINS.includes(chain)) {
+      for (const i of txp.inputs) {
         $.checkState(
           i.path,
           'Input derivation path not available (signing transaction)'
@@ -503,31 +513,30 @@ export class Key {
           derived[i.path] = xpriv.deriveChild(i.path).privateKey;
           privs.push(derived[i.path]);
         }
-      });
+      };
 
-      var signatures = _.map(privs, function (priv, i) {
+      var signatures = privs.map(function(priv, i) {
         return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
-      signatures = _.map(
-        _.sortBy(_.flatten(signatures), 'inputIndex'),
-        function (s) {
-          return s.signature.toDER(txp.signingMethod).toString('hex');
-        }
-      );
+      signatures = signatures.flat().sort((a, b) => a.inputIndex - b.inputIndex);
+      // DEBUG
+      // for (let sig of signatures) {
+      //   if (!t.isValidSignature(sig)) {
+      //     throw new Error('INVALID SIGNATURE');
+      //   }
+      // }
+      signatures = signatures.map(sig => sig.signature.toDER().toString('hex'));
 
       return signatures;
     } else {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
-      const chain = txp.chain
-        ? txp.chain.toUpperCase()
-        : Utils.getChain(txp.coin);
       const txArray = _.isArray(tx) ? tx : [tx];
       const isChange = false;
       const addressIndex = 0;
       const { privKey, pubKey } = Deriver.derivePrivateKey(
-        chain,
+        chain.toUpperCase(),
         txp.network,
         derived,
         addressIndex,
@@ -536,7 +545,7 @@ export class Key {
       let signatures = [];
       for (const rawTx of txArray) {
         const signed = Transactions.getSignature({
-          chain,
+          chain: chain.toUpperCase(),
           tx: rawTx,
           key: { privKey, pubKey }
         });

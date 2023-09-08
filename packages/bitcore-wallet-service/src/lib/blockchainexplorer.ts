@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
+import { Common } from './common';
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
 const Defaults = Common.Defaults;
 const PROVIDERS = {
   v8: {
@@ -18,6 +18,10 @@ const PROVIDERS = {
     eth: {
       livenet: 'https://api-eth.bitcore.io',
       testnet: 'https://api-eth.bitcore.io'
+    },
+    matic: {
+      livenet: 'https://api-matic.bitcore.io',
+      testnet: 'https://api-matic.bitcore.io'
     },
     xrp: {
       livenet: 'https://api-xrp.bitcore.io',
@@ -38,8 +42,7 @@ export function BlockChainExplorer(opts) {
   $.checkArgument(opts, 'Failed state: opts undefined at <BlockChainExplorer()>');
 
   const provider = opts.provider || 'v8';
-  // TODO require that `chain` be passed in instead of `coin`. Coin could refer to an ERC20 which may not be in our list.
-  const chain = (opts.chain || ChainService.getChain(opts.coin || Defaults.COIN)).toLowerCase();
+  const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
   const network = opts.network || 'livenet';
 
   $.checkState(PROVIDERS[provider], 'Provider ' + provider + ' not supported');

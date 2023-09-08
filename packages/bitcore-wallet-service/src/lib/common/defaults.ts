@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+export const Defaults = {
   MIN_FEE_PER_KB: 0,
 
   MAX_KEYS: 100,
@@ -81,6 +81,33 @@ module.exports = {
         name: 'superEconomy',
         nbBlocks: 4,
         defaultValue: 1000000000
+      }
+    ],
+    matic: [
+      {
+        name: 'urgent',
+        nbBlocks: 1,
+        defaultValue: 300000000000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 2,
+        defaultValue: 250000000000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 3,
+        defaultValue: 200000000000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 4,
+        defaultValue: 200000000000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 4,
+        defaultValue: 200000000000
       }
     ],
     xrp: [
@@ -175,6 +202,12 @@ module.exports = {
   // Cache time for latest copay version (in ms)
   COPAY_VERSION_CACHE_DURATION: 6 * 60 * 1000,
 
+  // Oneinch token list cache duration (in ms)
+  ONE_INCH_CACHE_DURATION: 1 * 60 * 1000,
+
+  // Coingecko token rates cache duration (in ms)
+  COIN_GECKO_CACHE_DURATION: 5 * 60 * 1000,
+
   // Max allowed timespan for notification queries in seconds
   MAX_NOTIFICATIONS_TIMESPAN: 60 * 60 * 24 * 14, // ~ 2 weeks
   NOTIFICATIONS_TIMESPAN: 60,
@@ -203,8 +236,10 @@ module.exports = {
     //   max: 1200 , // 1 post every 3 sec average, max.
     // },
   },
-
   COIN: 'btc',
+  EVM_COIN: 'eth',
+  CHAIN: 'btc',
+  EVM_CHAIN: 'eth',
   INSIGHT_REQUEST_POOL_SIZE: 10,
   INSIGHT_TIMEOUT: 30000,
 
@@ -215,8 +250,6 @@ module.exports = {
   SERVER_EXE_TIME: 40 * 1000 * 1.5,
 
   BE_KEY_SALT: 'bws-auth-keysalt',
-
-  NEW_BLOCK_THROTTLE_TIME_MIN: 5,
 
   BROADCAST_RETRY_TIME: 350, // ms
 
@@ -237,6 +270,7 @@ module.exports = {
     btc: 10000 * 1000, // 10k sat/b
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
+    matic: 1000000000000, // 50 Gwei,
     xrp: 1000000000000,
     doge: 100000000 * 100,
     ltc: 10000 * 1000 // 10k sat/b
@@ -246,6 +280,7 @@ module.exports = {
     btc: 0,
     bch: 0,
     eth: 0,
+    matic: 0,
     xrp: 0,
     doge: 0,
     ltc: 0
@@ -255,6 +290,7 @@ module.exports = {
     btc: 0.05 * 1e8,
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
+    matic: 1 * 1e18, // 1 matic
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
     ltc: 0.05 * 1e8
@@ -263,11 +299,16 @@ module.exports = {
   // ETH
   DEFAULT_GAS_LIMIT: 60000,
   DEFAULT_ERC20_GAS_LIMIT: 160000,
-
+  // Gas Limit per each multisend recipient
+  DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT: 45000,
+  DEFAULT_MULTISEND_RECIPIENT_ERC20_GAS_LIMIT: 65000,
   MIN_GAS_LIMIT: 21000,
 
+  // Added buffer to account for variance between estimateGas and live execution
+  MS_GAS_LIMIT_BUFFER_PERCENT: 10 / 100,
+
   // XRP has a non-refundable mininum activation fee / balance
-  MIN_XRP_BALANCE: 20000000,
+  MIN_XRP_BALANCE: 10000000,
 
   // Time to get the latest push notification subscriptions. In ms.
   PUSH_NOTIFICATION_SUBS_TIME: 10 * 60 * 1000, // 10 min.
@@ -287,5 +328,5 @@ module.exports = {
     { code: 'AUD', name: 'Australian Dollar' },
     { code: 'JPY', name: 'Japanese Yen' },
     { code: 'NZD', name: 'New Zealand Dollar' }
-  ]
+  ],
 };

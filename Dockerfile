@@ -1,4 +1,4 @@
-FROM node:12
+FROM node:18-bullseye
 
 # Install Chrome
 
@@ -18,10 +18,10 @@ ENV CHROME_BIN /usr/bin/google-chrome
 RUN set -x \
     && node -v \
     && npm -v \
-    && google-chrome --version 
+    && google-chrome --version
 
 
-RUN npm i -g npm@6.14.15
+RUN npm i -g npm@8.19.3
 
 WORKDIR /bitcore
 
@@ -62,9 +62,6 @@ COPY  ./packages/bitcore-wallet-service/package-lock.json ./packages/bitcore-wal
 COPY  ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
 COPY  ./packages/bitcore-wallet/package-lock.json ./packages/bitcore-wallet/package-lock.json
 
-COPY  ./packages/insight/package.json ./packages/insight/package.json
-COPY  ./packages/insight/package-lock.json ./packages/insight/package-lock.json
-
 COPY  ./packages/crypto-wallet-core/package.json ./packages/crypto-wallet-core/package.json
 COPY  ./packages/crypto-wallet-core/package-lock.json ./packages/crypto-wallet-core/package-lock.json
 
@@ -78,7 +75,7 @@ COPY  ./packages/bitcore-p2p-doge/package.json ./packages/bitcore-p2p-doge/packa
 COPY  ./packages/bitcore-p2p-doge/package-lock.json ./packages/bitcore-p2p-doge/package-lock.json
 
 
-RUN npm install
+RUN npm install --ignore-scripts
 RUN npm run bootstrap
 ADD . .
 RUN npm run compile

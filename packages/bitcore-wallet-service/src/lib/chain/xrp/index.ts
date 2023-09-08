@@ -2,9 +2,9 @@ import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
+import { Common } from '../../common';
 import logger from '../../logger';
 
-const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
@@ -19,7 +19,7 @@ export class XrpChain implements IChain {
   private convertBitcoreBalance(bitcoreBalance, locked) {
     const { unconfirmed, confirmed, balance } = bitcoreBalance;
     let activatedLocked = locked;
-    // If XRP address has a min balance of 20 XRP, subtract activation fee for true spendable balance.
+    // If XRP address has a min balance of 10 XRP, subtract activation fee for true spendable balance.
     if (balance > 0) {
       activatedLocked = locked + Defaults.MIN_XRP_BALANCE;
     }
@@ -48,7 +48,7 @@ export class XrpChain implements IChain {
   }
 
   getWalletBalance(server, wallet, opts, cb) {
-    const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
@@ -176,7 +176,7 @@ export class XrpChain implements IChain {
     try {
       this.getBitcoreTx(txp);
     } catch (ex) {
-      logger.warn('Error building XRP  transaction', ex);
+      logger.warn('Error building XRP transaction: %o', ex);
       return ex;
     }
   }
@@ -189,7 +189,7 @@ export class XrpChain implements IChain {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      const minXrpBalance = 20000000; // 20 XRP * 1e6
+      const minXrpBalance = Defaults.MIN_XRP_BALANCE;
       if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
@@ -209,7 +209,7 @@ export class XrpChain implements IChain {
     return true;
   }
 
-  isUTXOCoin() {
+  isUTXOChain() {
     return false;
   }
   isSingleAddress() {
@@ -234,7 +234,7 @@ export class XrpChain implements IChain {
       throw new Error('Signatures Required');
     }
 
-    const chain = 'XRP';
+    const chain = 'XRP'; // TODO use lowercase always to avoid confusion
     const network = tx.network;
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
@@ -257,7 +257,7 @@ export class XrpChain implements IChain {
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const chain = 'XRP';
+    const chain = 'xrp';
     const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
     if (!isValidTo) {
       throw Errors.INVALID_ADDRESS;

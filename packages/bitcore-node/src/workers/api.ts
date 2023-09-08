@@ -1,4 +1,4 @@
-import cluster = require('cluster');
+import cluster from 'cluster';
 import 'source-map-support/register';
 import { Modules } from '../modules';
 import { Api } from '../services/api';
@@ -13,7 +13,7 @@ let args = parseArgv([], ['DEBUG', 'CLUSTER']);
 const services: Array<any> = [];
 
 export const ClusteredApiWorker = async () => {
-  process.on('unhandledRejection', error => {
+  process.on('unhandledRejection', (error: any) => {
     console.error('Unhandled Rejection at:', error.stack || error);
     stop();
   });
@@ -21,7 +21,7 @@ export const ClusteredApiWorker = async () => {
   process.on('SIGINT', stop);
 
   services.push(Storage, Event);
-  if (cluster.isMaster) {
+  if (cluster.isPrimary) {
     if (args.DEBUG || !args.CLUSTER) {
       services.push(Api);
     } else {

@@ -1,6 +1,6 @@
-import { IBlock } from '../../models/baseBlock';
 import { ITransaction } from '../../models/baseTransaction';
 import { ICoin } from '../../models/coin';
+import { IBlock } from '../../types/Block';
 
 export type IXrpBlock = IBlock & {};
 export type IXrpTransaction = ITransaction & {

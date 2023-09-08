@@ -1,3 +1,4 @@
+import { Common } from '../common';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
@@ -5,10 +6,11 @@ import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
 import { LtcChain } from './ltc';
+import { MaticChain } from './matic';
 import { XrpChain } from './xrp';
 
-const Common = require('../common');
 const Constants = Common.Constants;
+const Defaults = Common.Defaults;
 
 export interface INotificationData {
   out: {
@@ -47,7 +49,7 @@ export interface IChain {
   selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: { utxosToExclude: any[] } & any, cb);
   checkUtxos(opts: { fee: number; inputs: any[] });
   checkValidTxAmount(output): boolean;
-  isUTXOCoin(): boolean;
+  isUTXOChain(): boolean;
   isSingleAddress(): boolean;
   supportsMultisig(): boolean;
   notifyConfirmations(network: string): boolean;
@@ -66,71 +68,84 @@ export interface IChain {
   onTx(tx: any): INotificationData | null;
 }
 
-const chain: { [chain: string]: IChain } = {
+const chains: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
   ETH: new EthChain(),
+  MATIC: new MaticChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
   LTC: new LtcChain()
 };
 
 class ChainProxy {
-  get(coin: string) {
-    const normalizedChain = this.getChain(coin);
-    return chain[normalizedChain];
+  get(chain: string) {
+    const normalizedChain = chain.toUpperCase();
+    return chains[normalizedChain];
   }
 
+  /**
+   * @deprecated
+   */
   getChain(coin: string): string {
-    let normalizedChain = coin.toUpperCase();
-    if (Constants.ERC20[normalizedChain]) {
-      normalizedChain = 'ETH';
+    try {
+      // TODO add a warning that we are not including chain
+      let normalizedChain = coin.toLowerCase();
+      if (
+        Constants.BITPAY_SUPPORTED_ETH_ERC20[normalizedChain.toUpperCase()] ||
+        !Constants.CHAINS[normalizedChain.toUpperCase()]
+      ) {
+        // default to eth if it's an ETH ERC20 or if we don't know the chain
+        normalizedChain = 'eth';
+      }
+      return normalizedChain;
+    } catch (err) {
+      return Defaults.CHAIN; // coin should always exist but most unit test don't have it -> return btc as default
     }
-    return normalizedChain;
   }
 
   getWalletBalance(server, wallet, opts, cb) {
-    return this.get(wallet.coin).getWalletBalance(server, wallet, opts, cb);
+    return this.get(wallet.chain).getWalletBalance(server, wallet, opts, cb);
   }
 
   getWalletSendMaxInfo(server, wallet, opts, cb) {
-    return this.get(wallet.coin).getWalletSendMaxInfo(server, wallet, opts, cb);
+    return this.get(wallet.chain).getWalletSendMaxInfo(server, wallet, opts, cb);
   }
 
-  getDustAmountValue(coin) {
-    return this.get(coin).getDustAmountValue();
+  getDustAmountValue(chain) {
+    return this.get(chain).getDustAmountValue();
   }
 
   getTransactionCount(server, wallet, from) {
-    return this.get(wallet.coin).getTransactionCount(server, wallet, from);
+    return this.get(wallet.chain).getTransactionCount(server, wallet, from);
   }
 
   getChangeAddress(server, wallet, opts) {
-    return this.get(wallet.coin).getChangeAddress(server, wallet, opts);
+    return this.get(wallet.chain).getChangeAddress(server, wallet, opts);
   }
 
-  checkDust(coin, output, opts) {
-    return this.get(coin).checkDust(output, opts);
+  checkDust(chain, output, opts) {
+    return this.get(chain).checkDust(output, opts);
   }
 
   getFee(server, wallet, opts) {
-    return this.get(wallet.coin).getFee(server, wallet, opts);
+    return this.get(wallet.chain).getFee(server, wallet, opts);
   }
 
   getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
     return this.get(txp.chain).getBitcoreTx(txp, { signed: opts.signed });
   }
 
-  convertFeePerKb(coin, p, feePerKb) {
-    return this.get(coin).convertFeePerKb(p, feePerKb);
+  convertFeePerKb(chain, p, feePerKb) {
+    return this.get(chain).convertFeePerKb(p, feePerKb);
   }
 
-  addressToStorageTransform(coin, network, address) {
-    return this.get(coin).addressToStorageTransform(network, address);
+  addressToStorageTransform(chain, network, address) {
+    return this.get(chain).addressToStorageTransform(network, address);
   }
 
-  addressFromStorageTransform(coin, network, address) {
-    return this.get(coin).addressFromStorageTransform(network, address);
+  addressFromStorageTransform(chain, network, address) {
+    return this.get(chain).addressFromStorageTransform(network, address);
   }
 
   checkTx(server, txp) {
@@ -145,28 +160,28 @@ class ChainProxy {
     return this.get(txp.chain).selectTxInputs(server, txp, wallet, opts, cb);
   }
 
-  checkUtxos(coin, opts) {
-    return this.get(coin).checkUtxos(opts);
+  checkUtxos(chain, opts) {
+    return this.get(chain).checkUtxos(opts);
   }
 
-  checkValidTxAmount(coin: string, output): boolean {
-    return this.get(coin).checkValidTxAmount(output);
+  checkValidTxAmount(chain: string, output): boolean {
+    return this.get(chain).checkValidTxAmount(output);
   }
 
-  isUTXOCoin(coin: string): boolean {
-    return this.get(coin).isUTXOCoin();
+  isUTXOChain(chain: string): boolean {
+    return this.get(chain).isUTXOChain();
   }
 
-  isSingleAddress(coin: string): boolean {
-    return this.get(coin).isSingleAddress();
+  isSingleAddress(chain: string): boolean {
+    return this.get(chain).isSingleAddress();
   }
 
-  notifyConfirmations(coin: string, network: string): boolean {
-    return this.get(coin).notifyConfirmations(network);
+  notifyConfirmations(chain: string, network: string): boolean {
+    return this.get(chain).notifyConfirmations(network);
   }
 
-  supportsMultisig(coin: string): boolean {
-    return this.get(coin).supportsMultisig();
+  supportsMultisig(chain: string): boolean {
+    return this.get(chain).supportsMultisig();
   }
 
   addSignaturesToBitcoreTx(chain, tx, inputs, inputPaths, signatures, xpub, signingMethod) {
@@ -174,15 +189,15 @@ class ChainProxy {
   }
 
   validateAddress(wallet, inaddr, opts) {
-    return this.get(wallet.coin).validateAddress(wallet, inaddr, opts);
+    return this.get(wallet.chain).validateAddress(wallet, inaddr, opts);
   }
 
-  onCoin(coin: string, coinData: any) {
-    return this.get(coin).onCoin(coinData);
+  onCoin(chain: string, coinData: any) {
+    return this.get(chain).onCoin(coinData);
   }
 
-  onTx(coin: string, tx: any) {
-    return this.get(coin).onTx(tx);
+  onTx(chain: string, tx: any) {
+    return this.get(chain).onTx(tx);
   }
 }
 

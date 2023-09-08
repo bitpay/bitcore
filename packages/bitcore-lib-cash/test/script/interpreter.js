@@ -4,9 +4,11 @@ var should = require('chai').should();
 var bitcore = require('../..');
 var Interpreter = bitcore.Script.Interpreter;
 var Transaction = bitcore.Transaction;
+var Output = bitcore.Transaction.Output;
 var PrivateKey = bitcore.PrivateKey;
 var Script = bitcore.Script;
 var BN = bitcore.crypto.BN;
+var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var Opcode = bitcore.Opcode;
 var _ = require('lodash');
@@ -14,6 +16,7 @@ var _ = require('lodash');
 var script_tests = require('../data/bitcoind/script_tests');
 var tx_valid = require('../data/bitcoind/tx_valid');
 var tx_invalid = require('../data/bitcoind/tx_invalid');
+var vmb_tests = require('../data/libauth/vmb_tests');
 
 //the script string format used in bitcoind data tests
 Script.fromBitcoindString = function(str) {
@@ -24,7 +27,9 @@ Script.fromBitcoindString = function(str) {
     if (token === '') {
       continue;
     }
-
+    if (token === '-1') {
+      token = '1NEGATE';
+    }
     var opstr;
     var opcodenum;
     var tbuf;
@@ -219,6 +224,19 @@ describe('Interpreter', function() {
     if (flagstr.indexOf('MINIMALIF') !== -1) {
       flags = flags | Interpreter.SCRIPT_VERIFY_MINIMALIF;
     }
+
+    if (flagstr.indexOf('64_BIT_INTEGERS') !== -1) {
+      flags = flags | Interpreter.SCRIPT_64_BIT_INTEGERS;
+    }
+
+    if (flagstr.indexOf('INPUT_SIGCHECKS') !== -1) {
+      flags = flags | Interpreter.SCRIPT_VERIFY_INPUT_SIGCHECKS;
+    }
+
+    if (flagstr.indexOf('NATIVE_INTROSPECTION') !== -1) {
+      flags = flags | Interpreter.SCRIPT_NATIVE_INTROSPECTION;
+    }
+
     return flags;
   };
 
@@ -250,7 +268,7 @@ describe('Interpreter', function() {
     }));
     credtx.addOutput(new Transaction.Output({
       script: scriptPubkey,
-      satoshis: inputAmount, 
+      satoshis: inputAmount,
     }));
     var idbuf = credtx.id;
 
@@ -272,32 +290,56 @@ describe('Interpreter', function() {
     verified.should.equal(expected);
   };
   describe('bitcoind script evaluation fixtures', function() {
-    var testAllFixtures = function(set) {
-      var c = 0; var l = set.length;
-      set.forEach(function(vector) {
-        if (vector.length === 1) {
-          return;
-        }
-        c++;
+    let c = 0;
+    const l = script_tests.length;
+    for (const vector of script_tests) {
+      if (vector.length === 1) {
+        continue;
+      }
+      c++;
 
-        var extraData;
-        if (_.isArray (vector[0])) {
-          extraData = vector.shift();
-        }
+      let extraData;
+      if (Array.isArray(vector[0])) {
+        extraData = vector.shift();
+      }
 
-        var fullScriptString = vector[0] + ' ' + vector[1];
-        var expected = vector[3] == 'OK';
-        var descstr = vector[4];
-        var comment = descstr ? (' (' + descstr + ')') : '';
-        var txt = 'should ' +( vector[3] == 'OK' ? 'PASS' : 'FAIL') + ' script_tests ' +
-            'vector #' + c + '/ ' + l + ': ' + fullScriptString + comment;
+      const fullScriptString = vector[0] + ' ' + vector[1];
+      const expected = vector[3] == 'OK';
+      const descstr = vector[4];
+      const comment = descstr ? (' (' + descstr + ')') : '';
+      const result = vector[3] == 'OK' ? 'PASS' : 'FAIL';
+      const txt = `should ${result} script_tests vector #${c}/${l}: ${fullScriptString + comment}`;
 
-        it(txt, function() { testFixture(vector, expected, extraData); });
-
+      it(txt, function() {
+        testFixture(vector, expected, extraData);
       });
+    }
+  });
+  describe('libauth vmb evaluation fixtures', () => {
+    const flags = getFlags('P2SH CLEANSTACK MINIMALDATA VERIFY_CHECKLOCKTIMEVERIFY NATIVE_INTROSPECTION 64_BIT_INTEGERS');
+    const getOutputsFromHex = outputsHex => {
+      const reader = new BufferReader(Buffer.from(outputsHex,'hex'));
+      const numOutputs = reader.readVarintNum();
+      const outputs = new Array(numOutputs).fill(1).map(() => Output.fromBufferReader(reader));
+      return outputs;
     };
-    testAllFixtures(script_tests);
-
+    vmb_tests.forEach(test => {
+      const testId = test[0];
+      const txHex = test[4];
+      const sourceOutputsHex = test[5];
+      const labels = test[6];
+      const inputIndex = test[7] || 0;
+      const tx = new Transaction(txHex);
+      const outputs = getOutputsFromHex(sourceOutputsHex);
+      tx.inputs.forEach((input, index) => input.output = outputs[index]);
+      const scriptSig = tx.inputs[inputIndex].script;
+      const scriptPubkey = tx.inputs[inputIndex].output.script;
+      it(`should pass vmb_tests vector ${testId}`, () => {
+        const valid = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
+        const expectedValidity = !labels[0].endsWith('invalid');
+        valid.should.equal(expectedValidity);
+      });
+    });
   });
   describe('bitcoind transaction evaluation fixtures', function() {
     var test_txs = function(set, expected) {

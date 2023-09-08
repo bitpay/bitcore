@@ -4,6 +4,8 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import request from 'request';
+import { ChainService } from './chain';
+import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
@@ -12,9 +14,9 @@ import { Storage } from './storage';
 const Mustache = require('mustache');
 const defaultRequest = require('request');
 const path = require('path');
-const Utils = require('./common/utils');
-const Defaults = require('./common/defaults');
-const Constants = require('./common/constants');
+const Utils = Common.Utils;
+const Defaults = Common.Defaults;
+const Constants = Common.Constants;
 const sjcl = require('sjcl');
 
 const PUSHNOTIFICATIONS_TYPES = {
@@ -66,8 +68,10 @@ export interface IPushNotificationService {
   defaultUnit: string;
   subjectPrefix: string;
   pushServerUrl: string;
+  pushServerUrlBraze: string;
   availableLanguages: string;
   authorizationKey: string;
+  authorizationKeyBraze: string;
   messageBroker: any;
 }
 
@@ -78,8 +82,10 @@ export class PushNotificationsService {
   defaultUnit: string;
   subjectPrefix: string;
   pushServerUrl: string;
+  pushServerUrlBraze: string;
   availableLanguages: string;
   authorizationKey: string;
+  authorizationKeyBraze: string;
   storage: Storage;
   messageBroker: any;
 
@@ -112,8 +118,11 @@ export class PushNotificationsService {
     this.subjectPrefix = opts.pushNotificationsOpts.subjectPrefix || '';
     this.pushServerUrl = opts.pushNotificationsOpts.pushServerUrl;
     this.authorizationKey = opts.pushNotificationsOpts.authorizationKey;
+    this.pushServerUrlBraze = opts.pushNotificationsOpts.pushServerUrlBraze;
+    this.authorizationKeyBraze = opts.pushNotificationsOpts.authorizationKeyBraze;
 
-    if (!this.authorizationKey) return cb(new Error('Missing authorizationKey attribute in configuration.'));
+    if (!this.authorizationKey && !this.authorizationKeyBraze)
+      return cb(new Error('Missing authorizationKey attribute in configuration.'));
 
     async.parallel(
       [
@@ -198,32 +207,85 @@ export class PushNotificationsService {
                     ? notification.data.multisigContractAddress
                     : null;
 
-                const notificationData: any = {
-                  to: sub.token,
-                  priority: 'high',
-                  restricted_package_name: sub.packageName,
-                  data: {
-                    walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId || sub.walletId)),
+                let notificationData: any;
+
+                const walletId = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId || sub.walletId));
+                const copayerId = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId));
+                const notification_type = notification.type;
+                // chain and network are needed for NewBlock notifications
+                const chain = notification?.data?.chain || notification?.data?.coin;
+                const coin = chain; // backwards compatibility
+                const network = notification?.data?.network;
+
+                if (sub.token) {
+                  notificationData = {
+                    to: sub.token,
+                    priority: 'high',
+                    restricted_package_name: sub.packageName,
+                    data: {
+                      walletId,
+                      tokenAddress,
+                      multisigContractAddress,
+                      copayerId,
+                      notification_type,
+                      coin, // not really coin value it's chain
+                      chain,
+                      network
+                    }
+                  };
+
+                  if (!notifType.dataOnly) {
+                    notificationData.data.title = sub?.plain?.subject;
+                    notificationData.data.body = sub?.plain?.body;
+                    notificationData.notification = {
+                      title: sub?.plain?.subject,
+                      body: sub?.plain?.body,
+                      sound: 'default',
+                      click_action: 'FCM_PLUGIN_ACTIVITY',
+                      icon: 'fcm_push_icon'
+                    };
+                  }
+                }
+
+                if (sub.externalUserId) {
+                  const title = sub?.plain?.subject;
+                  const body = sub?.plain?.body;
+                  const extras = {
+                    walletId,
+                    copayerId,
+                    notification_type,
+                    coin, // not really coin value it's chain
+                    chain,
+                    network,
                     tokenAddress,
                     multisigContractAddress,
-                    copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sub.copayerId)),
-                    notification_type: notification.type,
-                    // coin and network are needed for NewBlock notifications
-                    coin: notification?.data?.coin,
-                    network: notification?.data?.network
-                  }
-                };
-
-                if (!notifType.dataOnly) {
-                  notificationData.data.title = sub?.plain?.subject;
-                  notificationData.data.body = sub?.plain?.body;
-                  notificationData.notification = {
-                    title: sub?.plain?.subject,
-                    body: sub?.plain?.body,
-                    sound: 'default',
-                    click_action: 'FCM_PLUGIN_ACTIVITY',
-                    icon: 'fcm_push_icon'
+                    title,
+                    body
                   };
+                  const custom_uri = `bitpay://wallet?walletId=${walletId}&tokenAddress=${tokenAddress}&multisigContractAddress=${multisigContractAddress}&copayerId=${copayerId}&coin=${coin}&chain=${chain}&network=${network}&notification_type=${notification_type}&title=${title}&body=${body}`;
+                  notificationData = {
+                    external_user_ids: [sub.externalUserId],
+                    messages: {
+                      apple_push: {
+                        alert: {
+                          title,
+                          body
+                        },
+                        extra: extras,
+                        custom_uri
+                      },
+                      android_push: {
+                        alert: body,
+                        title,
+                        extra: extras,
+                        custom_uri
+                      }
+                    }
+                  };
+                  if (notifType.dataOnly) {
+                    notificationData.messages.apple_push['content-available'] = true;
+                    notificationData.messages.android_push['send_to_sync'] = true;
+                  }
                 }
                 return notificationData;
               });
@@ -238,22 +300,35 @@ export class PushNotificationsService {
                   `The recipient list for this push notification is greater than the established limit (${Defaults.PUSH_NOTIFICATION_LIMIT})`
                 );
               }
-
               return next(err, notifications);
             },
             (notifications, next) => {
               async.each(
                 notifications,
-                (notification, next) => {
-                  this._makeRequest(notification, (err, response) => {
-                    if (err) logger.error('ERROR:' + err);
-                    if (response) {
-                      //                      logger.debug('Request status:  ' + response.statusCode);
-                      //                      logger.debug('Request message: ' + response.statusMessage);
-                      //                      logger.debug('Request body:  ' + response.request.body);
-                    }
-                    next();
-                  });
+                (notification: any, next) => {
+                  if (notification && notification.external_user_ids) {
+                    this._makeBrazeRequest(notification, (err, response) => {
+                      if (err) logger.error('An error occurred making a braze push notification request:' + err);
+                      if (response) {
+                        //                      logger.debug('Request status:  ' + response.statusCode);
+                        //                      logger.debug('Request message: ' + response.statusMessage);
+                        //                      logger.debug('Request body:  ' + response.request.body);
+                      }
+                      next();
+                    });
+
+                    // if external_user_ids is not set use old version firebase token
+                  } else if (notification && notification.to) {
+                    this._makeRequest(notification, (err, response) => {
+                      if (err) logger.error('An error occurred making a firebase push notification request:' + err);
+                      if (response) {
+                        //                      logger.debug('Request status:  ' + response.statusCode);
+                        //                      logger.debug('Request message: ' + response.statusMessage);
+                        //                      logger.debug('Request body:  ' + response.request.body);
+                      }
+                      next();
+                    });
+                  }
                 },
                 err => {
                   return next(err);
@@ -288,11 +363,17 @@ export class PushNotificationsService {
 
       let unit;
       if (wallet.coin != Defaults.COIN) {
-        unit = wallet.coin;
+        switch (wallet.coin) {
+          case 'pax':
+            unit = 'usdp'; // backwards compatibility
+            break;
+          default:
+            unit = wallet.coin;
+        }
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
-        if (err) logger.error(err);
+        if (err) logger.error('%o', err);
         if (_.isEmpty(preferences)) preferences = [];
 
         const recipientPreferences = _.compact(
@@ -381,16 +462,21 @@ export class PushNotificationsService {
       bit: 'bits',
       bch: 'BCH',
       eth: 'ETH',
+      matic: 'MATIC',
       xrp: 'XRP',
       doge: 'DOGE',
       ltc: 'LTC',
       usdc: 'USDC',
-      pax: 'PAX',
+      pyusd: 'PYUSD',
+      usdp: 'USDP',
       gusd: 'GUSD',
       busd: 'BUSD',
-      wbtc: 'WBTC',
       dai: 'DAI',
-      shib: 'SHIB'
+      wbtc: 'WBTC',
+      shib: 'SHIB',
+      ape: 'APE',
+      euroc: 'EUROC',
+      usdt: 'USDT'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -401,17 +487,21 @@ export class PushNotificationsService {
         let opts = {} as any;
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
-          if (Constants.TOKEN_OPTS[tokenAddress]) {
-            unit = Constants.TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+          if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ETH_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
             try {
-              customTokensData = await this.getTokenData();
+              customTokensData = await this.getTokenData(data.address.coin);
             } catch (error) {
-              throw new Error('Could not get custom tokens data');
+              return cb(new Error('Could not get custom tokens data'));
             }
             if (customTokensData && customTokensData[tokenAddress]) {
+              // check for eth tokens
               unit = customTokensData[tokenAddress].symbol.toLowerCase();
               label = unit.toUpperCase();
               opts.toSatoshis = 10 ** customTokensData[tokenAddress].decimals;
@@ -420,7 +510,7 @@ export class PushNotificationsService {
                 minDecimals: 2
               };
             } else {
-              throw new Error('Notifications for unsupported token are not allowed');
+              return cb(new Error(`Push notifications for unsupported tokens are not allowed: ${tokenAddress}`));
             }
           }
         }
@@ -469,7 +559,7 @@ export class PushNotificationsService {
       try {
         return Mustache.render(t, data);
       } catch (e) {
-        logger.error('Could not apply data to template:' + e);
+        logger.error('Could not apply data to template: %o', e);
         error = e;
       }
     });
@@ -511,12 +601,21 @@ export class PushNotificationsService {
       this.storage.fetchLatestPushNotificationSubs((err, subs) => {
         if (err) return cb(err);
 
-        const allSubs = _.uniqBy(
-          _.reject(subs, sub => !sub.walletId),
+        const allSubsWithToken = _.uniqBy(
+          _.reject(subs, sub => !sub.walletId || sub.externalUserId),
           'token'
         );
+        const allSubsWithExternalId = _.uniqBy(
+          _.reject(subs, sub => !sub.walletId || sub.token),
+          'externalUserId'
+        );
+        // if copayerid is associated to externalUserId use Braze subscriptions
+        // avoid multiple notifications
+        const allSubs = allSubsWithExternalId.length > 0 ? allSubsWithExternalId : allSubsWithToken;
         logger.info(
-          `Sending ${notification.type} [${notification.data.coin}/${notification.data.network}] notifications to: ${allSubs.length} devices`
+          `Sending ${notification.type} [${notification.data.chain || notification.data.coin}/${
+            notification.data.network
+          }] notifications to: ${allSubs.length} devices`
         );
         return cb(null, allSubs);
       });
@@ -530,7 +629,18 @@ export class PushNotificationsService {
             if (err) return next(err);
 
             const subscriptions = subs && subs.length ? subs.map(obj => ({ ...obj, plain: content?.plain })) : subs;
-            return next(err, subscriptions);
+            const allSubsWithToken = _.uniqBy(
+              _.reject(subscriptions, sub => !sub.walletId || sub.externalUserId),
+              'token'
+            );
+            const allSubsWithExternalId = _.uniqBy(
+              _.reject(subscriptions, sub => !sub.walletId || sub.token),
+              'externalUserId'
+            );
+            // if copayerid is associated to externalUserId use Braze subscriptions
+            // avoid multiple notifications
+            const allSubs = allSubsWithExternalId.length > 0 ? allSubsWithExternalId : allSubsWithToken;
+            return next(err, allSubs);
           });
         },
         (err, allSubs) => {
@@ -557,11 +667,32 @@ export class PushNotificationsService {
     );
   }
 
-  getTokenData() {
+  _makeBrazeRequest(opts, cb) {
+    this.request(
+      {
+        url: this.pushServerUrlBraze + '/messages/send',
+        method: 'POST',
+        json: true,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + this.authorizationKeyBraze
+        },
+        body: opts
+      },
+      cb
+    );
+  }
+
+  getTokenData(chain) {
     return new Promise((resolve, reject) => {
+      const chainIdMap = {
+        eth: 1,
+        matic: 137
+      };
+      // Get tokens
       this.request(
         {
-          url: 'https://bitpay.api.enterprise.1inch.exchange/v3.0/1/tokens',
+          url: `https://bitpay.api.enterprise.1inch.exchange/v3.0/${chainIdMap[chain]}/tokens`,
           method: 'GET',
           json: true,
           headers: {
