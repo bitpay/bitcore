@@ -2,10 +2,24 @@ import * as winston from 'winston';
 // const logLevel = args.DEBUG ? 'debug' : 'info';
 //
 export const transport = new winston.transports.Console({
-  level: 'debug' // TODO
+  level: process.env.BWS_LOG_LEVEL || 'debug'
 });
 
 export const logger = winston.createLogger({
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.prettyPrint(),
+    winston.format.splat(),
+    winston.format.simple(),
+    winston.format.printf(function(info) {
+      // fallback in case the above formatters  don't work.
+      // eg: logger.log({ some: 'object' })
+      if (typeof info.message === 'object') {
+        info.message = JSON.stringify(info.message, null, 4);
+      }
+      return `${info.level} :: ${new Date().toISOString()} :: ${info.message}`;
+    })
+  ),
   transports: [transport]
 });
 

@@ -8,8 +8,8 @@
  *** This does a dry run by default. Use "--dryrun false"
  *** to execute outside of dry run.
  *** 
- *** By default this will run for BTC on testnet. To change this
- *** use the --chain [CHAIN] and --network [NETWORk] flags.
+ *** Use the --chain [CHAIN] and --network [NETWORk] flags to 
+ *** select the chain and network to run against.
  *** You must have valid RPC connection specified in bitcore.config.json.
  ********************************************/
 const { CryptoRpc } = require('crypto-rpc');
@@ -113,7 +113,7 @@ class Migration {
       {
         rpcPort: rpcConfig.port,
         host: rpcConfig.host,
-        protocol: rpcConfig.protocol,
+        protocol: rpcConfig.protocol || 'http',
         rpcUser: rpcConfig.username,
         rpcPass: rpcConfig.password,
         chain
@@ -124,7 +124,7 @@ class Migration {
     let data = (await stream.next());
     while (data != null) {
       let isUnspent = false;
-      // If spent (or in mempool) then this returns null with an error otherwise returns data on unspent output
+      // If spent (or in mempool) then this returns an error otherwise returns data on unspent output
       try {
         const coinData = await rpc.getTxOutputInfo({
           txid: data.mintTxid,
@@ -132,7 +132,12 @@ class Migration {
         });
         isUnspent = !!coinData;
       } catch (e) {
-        // Coin must be spent or actually pending in mempool - do nothing
+        if (e.message && e.message.match(`No info found for ${data.mintTxid}`)){
+          // Coin must be spent or actually pending in mempool - do nothing
+        } else {
+          // Lets log the error in case it is config related
+          console.error(e);
+        }
       } finally {
         if (isUnspent) {
           // Log record
@@ -144,7 +149,7 @@ class Migration {
 
           if (!dryrun) {
             // Update record to be unspent (-2)
-            await this.coinModel.collection.updateOne({ _id: data._id }, { $set: { spentHeight: -2 } }); // -2 is unspent status
+            await this.coinModel.collection.updateOne({ _id: data._id }, { $set: { spentHeight: -2, spentTxid: '' } }); // -2 is unspent status
           }
         }
       }
@@ -154,7 +159,7 @@ class Migration {
 
     console.log(`Finished ${dryrun ? 'scanning' : 'updating'} records for ${chain}-${network}`);
     const date = new Date().getTime();
-    const filename = `output-${chain}-${network}-${date}.log`;
+    const filename = `fixUnspentInputs-output-${chain}-${network}-${date}.log`;
     console.log(`Writing output to ${filename}`);
     try {
       await fsPromises.writeFile(filename, JSON.stringify(output));

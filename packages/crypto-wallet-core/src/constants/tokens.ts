@@ -11,6 +11,12 @@ export let ETH_TOKEN_OPTS = {
     decimals: 6,
     address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   },
+  '0x6c3ea9036406852006290770BEdFcAbA0e23A0e8': {
+    name: 'PayPal USD',
+    symbol: 'PYUSD',
+    decimals: 6,
+    address: '0x6c3ea9036406852006290770BEdFcAbA0e23A0e8'
+  },
   '0x8e870d67f660d95d5be530380d0ec0bd388289e1': {
     name: 'Paxos Dollar',
     symbol: 'USDP',
@@ -58,6 +64,12 @@ export let ETH_TOKEN_OPTS = {
     symbol: 'MATIC',
     decimals: 18,
     address: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0'
+  },
+  '0xdac17f958d2ee523a2206206994597c13d831ec7': {
+    name: 'Tether USD',
+    symbol: 'USDT',
+    decimals: 6,
+    address: '0xdac17f958d2ee523a2206206994597c13d831ec7'
   }
 };
 
@@ -97,5 +109,11 @@ export let MATIC_TOKEN_OPTS = {
     symbol: 'APE',
     decimals: 18,
     address: '0xb7b31a6bc18e48888545ce79e83e06003be70930'
+  },
+  '0xc2132d05d31c914a87c6611c10748aeb04b58e8f': {
+    name: 'Tether USD',
+    symbol: 'USDT',
+    decimals: 6,
+    address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f'
   }
 };

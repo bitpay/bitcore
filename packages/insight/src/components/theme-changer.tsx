@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, memo} from 'react';
 import styled, {useTheme} from 'styled-components';
 import {motion, AnimatePresence} from 'framer-motion';
 import MoonSvg from '../assets/images/moon.svg';
@@ -77,4 +77,4 @@ const ThemeChanger = () => {
   );
 };
 
-export default ThemeChanger;
+export default memo(ThemeChanger);

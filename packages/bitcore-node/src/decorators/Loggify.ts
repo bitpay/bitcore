@@ -51,7 +51,7 @@ export function LoggifyFunction(fn: (...args: any[]) => any, logPrefix: string =
     const startTime = new Date();
     logger.debug(`${logPrefix}::called::`);
     let returnVal = copy(...methodargs);
-    if (returnVal && (returnVal.then as Promise<any>)) {
+    if (returnVal && returnVal.then) {
       returnVal
         .catch((err: any) => {
           logger.error(`${logPrefix}::catch::${err}`);

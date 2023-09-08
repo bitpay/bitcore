@@ -49,6 +49,7 @@ describe('Cash address migration', function() {
   });
   after(function(done) {
     helpers.after(done);
+    sinon.restore();
   });
 
   describe('Migrate wallets', function() {
@@ -58,7 +59,7 @@ describe('Cash address migration', function() {
         let spy = sinon.spy(s.storage, 'migrateToCashAddr');
         s.getWallet({}, function(err, w) {
           let calls = spy.getCalls();
-          calls.should.be.empty();
+          calls.should.be.empty;
           helpers.stubUtxos(s, w, 1, function() {
             s.getStatus({}, function(err, a) {
               should.not.exist(err);

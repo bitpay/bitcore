@@ -14,4 +14,5 @@ export interface TransactionJSON {
   inputCount: number;
   outputCount: number;
   value: number;
+  replacedByTxid?: string;
 }

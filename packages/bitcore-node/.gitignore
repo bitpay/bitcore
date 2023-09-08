@@ -26,3 +26,4 @@ config.json
 *bitcore.config.*
 .nyc_output
 coverage
+scripts/*.log

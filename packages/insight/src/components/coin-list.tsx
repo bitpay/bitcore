@@ -1,5 +1,5 @@
 import InfiniteScroll from 'react-infinite-scroll-component';
-import {useEffect, useState, memo} from 'react';
+import {useEffect, useState, memo, FC} from 'react';
 
 import {TransactionEth} from '../utilities/models';
 
@@ -82,19 +82,15 @@ const ProcessData = (data: any, blockTipHeight: number) => {
   return txs;
 };
 
-const CoinList = ({
-  txs,
-  currency,
-  network,
-  tip,
-  transactionsLength,
-}: {
+interface CoinListProps {
   txs: any;
   currency: string;
   network: string;
   tip: any;
   transactionsLength: any;
-}) => {
+}
+
+const CoinList: FC<CoinListProps> = ({txs, currency, network, tip, transactionsLength}) => {
   const [limit, setLimit] = useState(LIMIT);
   const [chunkSize, setChunkSize] = useState(CHUNK_SIZE);
   const [currentOrder, setCurrentOrder] = useState('mostRecent');

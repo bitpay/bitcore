@@ -31,6 +31,7 @@ import {
 import { partition } from '../../../../utils/partition';
 import { StatsUtil } from '../../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
+import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction } from '../types';
@@ -77,6 +78,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return contract;
   }
 
+  async getMultisendContract(network: string, address: string) {
+    const { web3 } = await this.getWeb3(network);
+    const contract = new web3.eth.Contract(MultisendAbi as AbiItem[], address);
+    return contract;
+  }
+
   async getERC20TokenInfo(network: string, tokenAddress: string) {
     const token = await this.erc20For(network, tokenAddress);
     const [name, decimals, symbol] = await Promise.all([
@@ -90,6 +97,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       decimals,
       symbol
     };
+  }
+
+  async getERC20TokenAllowance(network: string, tokenAddress: string, ownerAddress: string, spenderAddress: string) {
+    const token = await this.erc20For(network, tokenAddress);
+    return await token.methods.allowance(ownerAddress, spenderAddress).call();
   }
 
   async getFee(params) {
@@ -216,7 +228,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           .on('transactionHash', resolve)
           .on('error', reject)
           .catch(e => {
-            logger.error(e);
+            logger.error('%o', e);
             reject(e);
           });
       });
@@ -451,13 +463,44 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async estimateGas(params): Promise<number> {
     return new Promise(async (resolve, reject) => {
       try {
-        let { network, value, from, data, gasPrice, to } = params;
+        let { network, value, from, data, /*gasPrice,*/ to } = params;
         const { web3 } = await this.getWeb3(network);
         const dataDecoded = EVMTransactionStorage.abiDecode(data);
 
         if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
           value = dataDecoded.params[0].value;
-          gasPrice = dataDecoded.params[1].value;
+          // gasPrice = dataDecoded.params[1].value;
+        } else if (data && data.type === 'MULTISEND') {
+          try {
+            let method, gasLimit;
+            const contract = await this.getMultisendContract(network, to);
+            const addresses = web3.eth.abi.decodeParameter('address[]', data.addresses);
+            const amounts = web3.eth.abi.decodeParameter('uint256[]', data.amounts);
+
+            switch (data.method) {
+              case 'sendErc20':
+                method = contract.methods.sendErc20(data.tokenAddress, addresses, amounts);
+                gasLimit = method ? await method.estimateGas({ from }) : undefined;
+                break;
+              case 'sendEth':
+                method = contract.methods.sendEth(addresses, amounts);
+                gasLimit = method ? await method.estimateGas({ from, value }) : undefined;
+                break;
+              default:
+                break;
+            }
+            return resolve(Number(gasLimit));
+          } catch (err) {
+            return reject(err);
+          }
+        }
+
+        let _value;
+        if (data) {
+          // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
+          // We want this method to give a blind fee estimation, though, so we should not include the value
+          // unless it's needed for estimating smart contract execution.
+          _value = web3.utils.toHex(value)
         }
 
         const opts = {
@@ -467,18 +510,18 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
               data,
               to: to && to.toLowerCase(),
               from: from && from.toLowerCase(),
-              gasPrice: web3.utils.toHex(gasPrice),
-              value: web3.utils.toHex(value)
+              // gasPrice: web3.utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
+              value: _value
             }
           ],
           jsonrpc: '2.0',
-          id: 1
+          id: 'bitcore-' + Date.now()
         };
 
         let provider = web3.currentProvider as any;
         provider.send(opts, (err, data) => {
           if (err) return reject(err);
-          if (!data.result) return reject(data.message);
+          if (!data.result) return reject(data.error || data);
           return resolve(Number(data.result));
         });
       } catch (err) {
@@ -521,7 +564,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
       try {
         await WalletAddressStorage.collection.bulkWrite(walletAddressInserts);
-      } catch (err) {
+      } catch (err: any) {
         if (err.code !== 11000) {
           throw err;
         }

@@ -2,50 +2,29 @@ version: "3"
 
 services:
 
-  test_runner:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - 8100:8100
-      - 3000:3000
-    environment:
-      - DB_HOST=db
-      - DB_NAME=bitcore-test
-      - BITCORE_CONFIG_PATH=/bitcore/bitcore-test.config.json
-    depends_on:
-      - db
-      - bitcoin
-      - erigon
-      - geth
-      - rippled
-
   db:
     image: mongo:3.6.23
 
   bitcoin:
-    image: ruimarinho/bitcoin-core:0.16
+    image: ruimarinho/bitcoin-core:24
     command:
       -printtoconsole
       -regtest=1
       -txindex=0
       -listen=1
       -server=1
-      -irc=0
       -dnsseed=0
       -upnp=0
       -port=8332
       -rpcport=8333
-      -rpcallowip=172.0.0.0/8
+      -rpcallowip=0.0.0.0/0
       -rpcbind=0.0.0.0
       -rpcuser=bitcorenodetest
       -rpcpassword=local321
+      -fallbackfee=0.00001
 
   erigon:
-    image: thorax/erigon:v2022.08.01
-    ports:
-      - "8545:8545"
-      - "8546:8546"
+    image: thorax/erigon:v2022.10.01
     command:
       /usr/local/bin/erigon
       --chain=dev
@@ -53,16 +32,14 @@ services:
       --private.api.addr=0.0.0.0:9090
       --http.addr=0.0.0.0
       --http.api=eth,erigon,web3,net,debug,trace,txpool
+      --http.port=8545
       --mine
       --ws
 
   geth:
-    image: 0labs/geth:v1.10.21
+    image: 0labs/geth:v1.11.5
     volumes:
       - ./.docker/geth-keystore:/keystore
-    ports:
-      - "8555:8555"
-      - "8556:8556"
     command:
       geth
       --dev
@@ -73,12 +50,12 @@ services:
       --http.corsdomain='*'
       --http.vhosts='*'
       --http.addr=0.0.0.0
-      --http.port=8555
+      --http.port=8545
       --ws
       --ws.origins='*'
       --ws.api=web3,eth,debug,personal,net
       --ws.addr=0.0.0.0
-      --ws.port=8556
+      --ws.port=8546
 
   rippled:
     build:

@@ -55,7 +55,7 @@ export class EVMVerificationPeer extends EVMP2pWorker implements IVerificationPe
       currentHeight++;
 
       if (Date.now() - lastLog > 100) {
-        logger.info('Re-Sync ', {
+        logger.info('Re-Sync: %o', {
           chain,
           network,
           height: currentHeight

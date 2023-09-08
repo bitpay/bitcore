@@ -44,7 +44,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     const txOps = await this.addTransactions({ ...params });
     const coinOps = (await this.addCoins({ ...params })) as Array<any>;
     const batchSize = Config.get().maxPoolSize;
-    logger.debug('Writing Transactions', txOps.length);
+    logger.debug('Writing Transactions: %o', txOps.length);
     await Promise.all(
       partition(txOps, txOps.length / batchSize).map(txBatch =>
         this.collection.bulkWrite(

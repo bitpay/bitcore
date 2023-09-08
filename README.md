@@ -13,22 +13,19 @@
 
 ## Applications
 
-- [Bitcore Node](packages/bitcore-node) - A full node with extended capabilities using Bitcoin Core
+- [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
 - [Bitcore Wallet](packages/bitcore-wallet) - A command-line based wallet client
 - [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
 - [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
-- [Bitpay Wallet](https://github.com/bitpay/copay) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
+- [Bitpay Wallet](https://github.com/bitpay/wallet) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
 - [Insight](packages/insight) - A blockchain explorer web user interface
 
 ## Libraries
 
-- [Bitcore Channel](https://github.com/bitpay/bitcore-channel) - Micropayment channels for rapidly adjusting bitcoin transactions
-- [Bitcore ECIES](https://github.com/bitpay/bitcore-ecies) - Uses ECIES symmetric key negotiation from public keys to encrypt arbitrarily long data streams
 - [Bitcore Lib](packages/bitcore-lib) - A powerful JavaScript library for Bitcoin
 - [Bitcore Lib Cash](packages/bitcore-lib-cash) - A powerful JavaScript library for Bitcoin Cash
 - [Bitcore Lib Doge](packages/bitcore-lib-doge) - A powerful JavaScript library for Dogecoin
 - [Bitcore Lib Litecoin](packages/bitcore-lib-ltc) - A powerful JavaScript library for Litecoin
-- [Bitcore Message](https://github.com/bitpay/bitcore-message) - Bitcoin message verification and signing
 - [Bitcore Mnemonic](packages/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
 - [Bitcore P2P](packages/bitcore-p2p) - The peer-to-peer networking protocol for Bitcoin
 - [Bitcore P2P Cash](packages/bitcore-p2p-cash) - The peer-to-peer networking protocol for Bitcoin Cash
@@ -48,6 +45,6 @@ See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-Copyright 2013-2022 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+Copyright 2013-2023 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
 
 [^1]: The Bitcore P2P Doge library is no longer maintained as all the core functionality is contained in Bitcore P2P

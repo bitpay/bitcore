@@ -84,7 +84,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
         { chain, network, hash: previousBlock.hash },
         { $set: { nextBlockHash: convertedBlock.hash } }
       );
-      logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
+      logger.debug('Updating previous block.nextBlockHash: %o', convertedBlock.hash);
     }
 
     if (initialSyncComplete) {
@@ -111,7 +111,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
     })();
 
     const height = block.height;
-    logger.debug('Setting blockheight', height);
+    logger.debug('Setting blockheight: %o', height);
     return {
       updateOne: {
         filter: {
@@ -152,7 +152,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
     ];
     await Promise.all(reorgOps);
 
-    logger.debug('Removed data from above blockHeight: ', localTip.height);
+    logger.debug('Removed data from above blockHeight: %o', localTip.height);
     return localTip.hash !== prevHash;
   }
 
@@ -183,68 +183,67 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
     return JSON.stringify(transform);
   }
 
-  async getBlockSyncGaps(params: { chain: string; network: string; startHeight?: number }): Promise<number[]> {
-    const { chain, network, startHeight = 0 } = params;
+  async getBlockSyncGaps(params: { chain: string; network: string; startHeight?: number, endHeight?: number }): Promise<number[]> {
+    const { chain, network, startHeight = 0, endHeight } = params;
     const self = this;
     return new Promise(async (resolve, reject) => {
       let timeout;
       try {
-        const maxBlock = await self.collection.findOne(
-          {
-            chain,
-            network,
-            // height and processed are here to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
-            height: { $exists: true },
-            $or: [{ processed: { $exists: true } }, { processed: { $exists: false } }]
-          },
-          {
-            // height all that matters in the sort. The rest is there to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
-            sort: { height: -1, chain: 1, network: 1, processed: 1 },
-            projection: { height: 1 }
-          }
-        );
-        if (!maxBlock) {
-          return resolve([]);
+        const heightQuery = { $gte: startHeight };
+        if (endHeight) {
+          heightQuery['$lte'] = endHeight;
         }
-
         const stream = self.collection
           .find({
             chain,
             network,
-            height: { $gte: startHeight },
-            // processed is here to ensure the `chain_1_network_1_processed_1_height_-1` index is hit
-            $or: [{ processed: { $exists: true } }, { processed: { $exists: false } }]
+            height: heightQuery
           })
-          .sort({ chain: 1, network: 1, height: 1, processed: 1 }) // height is the only sort that matters
+          .sort({ chain: 1, network: 1, processed: 1, height: -1 }) // guarantee index use by using this sort
           .addCursorFlag('noCursorTimeout', true);
 
-        const maxHeight = maxBlock.height;
         let block = (await stream.next()) as IEVMBlock;
+        const maxBlock = block;
+        if (!maxBlock) {
+          return resolve([]);
+        }
+        const maxHeight = maxBlock.height;
         let prevBlock: IEVMBlock | undefined;
         const outOfSync: number[] = [];
         timeout = setInterval(
-          () => logger.info(`${chain}:${network} Block verification height: ${block.height}`),
-          1000 * 10
+          () =>
+            logger.info(
+              `${chain}:${network} Block verification progress: ${(
+                ((maxHeight - block.height) / (maxHeight - startHeight)) *
+                100
+              ).toFixed(1)}%`
+            ),
+          1000 * 2
         );
-
-        for (let syncHeight = startHeight; syncHeight <= maxHeight; syncHeight++) {
+        // we are descending in blockHeight as we iterate
+        for (let syncHeight = maxHeight; syncHeight >= startHeight; syncHeight--) {
           if (!block || block.height !== syncHeight) {
             outOfSync.push(syncHeight);
           } else {
-            if (prevBlock && !prevBlock.nextBlockHash && prevBlock.height === block.height - 1) {
+            // prevBlock should be the next block up in height
+            if (prevBlock && !block.nextBlockHash && block.height === prevBlock.height - 1) {
               const res = await self.collection.updateOne(
-                { chain, network, hash: prevBlock.hash },
-                { $set: { nextBlockHash: block.hash } }
+                { chain, network, hash: block.hash },
+                { $set: { nextBlockHash: prevBlock.hash } }
               );
               if (res.modifiedCount === 1) {
-                prevBlock.nextBlockHash = block.hash;
+                block.nextBlockHash = prevBlock.hash;
               }
             }
             prevBlock = block;
             block = (await stream.next()) as IEVMBlock;
+            while (block && prevBlock && block.height === prevBlock.height) { // uncaught reorg?
+              logger.error('Conflicting blocks found at height %o. %o <-> %o', block.height, block.hash, prevBlock.hash);
+              block = (await stream.next()) as IEVMBlock;
+            }
           }
         }
-        resolve(outOfSync);
+        resolve(outOfSync.reverse()); // reverse order so that they are in ascending order
       } catch (err) {
         reject(err);
       } finally {

@@ -20,6 +20,11 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     if (!fee) {
       return res.status(404).send('not available right now');
     }
+    // As of v0.21.2.2, Litecoin Core has a bug where it returns a fee rate of 0.00000999 which is below the min relay fee (0.00001).
+    // TODO: remove this if statement once https://github.com/litecoin-project/litecoin/issues/908 is fixed.
+    if (chain === 'LTC' && fee.feerate && fee.feerate < 0.00001) {
+      fee.feerate = 0.00001;
+    }
     feeCache[`${chain}:${network}:${target}`] = { fee, date: Date.now() };
     return res.json(fee);
   } catch (err) {

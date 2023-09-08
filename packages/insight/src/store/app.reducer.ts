@@ -16,7 +16,11 @@ interface AppState {
 const initialTheme = window.localStorage.getItem('theme');
 const initialState: AppState = {
   loading: false,
-  theme: initialTheme || 'dark',
+  theme: initialTheme
+    ? initialTheme
+    : window.matchMedia?.('(prefers-color-scheme: dark)').matches // System default theme color
+    ? 'dark'
+    : 'light',
   network: '',
   currency: '',
 };

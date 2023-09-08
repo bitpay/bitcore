@@ -147,6 +147,7 @@ export class Client {
       let dataStream = new stream.Readable({ objectMode: true });
       dataStream
         .pipe(
+          // @ts-ignore TODO: We should rewrite this to be the expected type
           request.post(url, {
             headers: {
               'x-signature': signature,

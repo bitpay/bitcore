@@ -107,7 +107,7 @@ describe('payproV2', () => {
           currency: 'btc'
         })
       }).then(res => {
-        res.should.not.exist();
+        res.should.not.exist;
       }).catch(err => {
         err.toString().should.contain('The invoice is no available.');
         done();
@@ -158,7 +158,7 @@ describe('payproV2', () => {
           currency: 'btc'
         })
       }).then(res => {
-        res.should.not.exist();
+        res.should.not.exist;
       }).catch(err => {
         err.toString().should.contain('The invoice is no longer receiving payments.');
         done();
@@ -209,9 +209,9 @@ describe('payproV2', () => {
           currency: 'btc'
         })
       }).then(res => {
-        res.should.not.exist();
+        res.should.not.exist;
       }).catch(err => {
-        err.toString().should.exist();
+        err.toString().should.exist;
         done();
       });
     });
@@ -229,11 +229,11 @@ describe('payproV2', () => {
           currency: 'btc'
         })
       }).then(res => {
-        res.rawBody.should.exist();
-        res.headers.should.exist();
+        res.rawBody.should.exist;
+        res.headers.should.exist;
         done();
       }).catch(err => {
-        err.should.not.exist();
+        err.should.not.exist;
       });
     });
 
@@ -247,10 +247,10 @@ describe('payproV2', () => {
         paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
       payProV2.getPaymentOptions(opts).then((res) => {
-        res.should.exist();
+        res.should.exist;
         done();
       }).catch(err => {
-        err.shoul.not.exist();
+        err.should.not.exist;
       });
     });
 
@@ -260,7 +260,7 @@ describe('payproV2', () => {
         paymentUrl: 'bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
       payProV2.getPaymentOptions(opts).then((res) => {
-        res.should.not.exist();
+        res.should.not.exist;
       }).catch(err => {
         err.toString().should.contain('Invalid payment protocol url');
         done();
@@ -277,10 +277,10 @@ describe('payproV2', () => {
         paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
       payProV2.selectPaymentOption(opts).then((res) => {
-        res.should.exist();
+        res.should.exist;
         done();
       }).catch(err => {
-        err.shoul.not.exist();
+        err.should.not.exist;
       });
     });
 
@@ -288,7 +288,7 @@ describe('payproV2', () => {
       mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
       var opts = {};
       payProV2.selectPaymentOption(opts).then((res) => {
-        res.should.not.exist();
+        res.should.not.exist;
       }).catch(err => {
         err.toString().should.contain('Parameter requestUrl is required');
         done();
@@ -307,9 +307,9 @@ describe('payproV2', () => {
         unsignedTransactions: [],
       };
       payProV2.verifyUnsignedPayment(opts).then((res) => {
-        res.should.not.exist();
+        res.should.not.exist;
       }).catch(err => {
-        err.should.exist();
+        err.should.exist;
         done();
       });
     });

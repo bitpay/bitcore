@@ -40,7 +40,7 @@ export const P2pWorker = async () => {
     try {
       await service.start();
     } catch (e) {
-      logger.error('P2P Worker died with', e);
+      logger.error('P2P Worker died with %o', e);
     }
   }
 };

@@ -149,8 +149,8 @@ router.post('/send', async function(req: Request, res: Response) {
       rawTx
     });
     return res.send({ txid });
-  } catch (err) {
-    logger.error(err);
+  } catch (err: any) {
+    logger.error('%o', err);
     return res.status(500).send(err.message);
   }
 });

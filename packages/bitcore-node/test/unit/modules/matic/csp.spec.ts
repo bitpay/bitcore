@@ -226,7 +226,18 @@ describe('MATIC Chain State Provider', function() {
         await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err).to.equal('need some param');
+        expect(err).to.deep.equal({ message: 'need some param' });
+      }
+    });
+
+    it('should reject if response body is missing result and has error', async () => {
+      web3Stub.currentProvider.send.callsArgWith(1, null, { error: { code: 2, message: 'need some param' } });
+  
+      try {
+        await MATIC.estimateGas({ network });
+        throw new Error('should have thrown');
+      } catch (err) {
+        expect(err).to.deep.equal({ code: 2, message: 'need some param' });
       }
     });
 
@@ -236,8 +247,8 @@ describe('MATIC Chain State Provider', function() {
       try {
         await MATIC.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
-      } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'providers\' of undefined');
+      } catch (err: any) {
+        expect(err.message).to.equal('Cannot read properties of undefined (reading \'providers\')');
       }
     });
 
@@ -247,8 +258,8 @@ describe('MATIC Chain State Provider', function() {
       try {
         await MATIC.estimateGas({ network });
         throw new Error('should have thrown');
-      } catch (err) {
-        expect(err.message).to.equal('Cannot read property \'result\' of null');
+      } catch (err: any) {
+        expect(err.message).to.equal('Cannot read properties of null (reading \'result\')');
       }
     });
   });

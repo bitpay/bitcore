@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+export const Defaults = {
   MIN_FEE_PER_KB: 0,
 
   MAX_KEYS: 100,
@@ -202,6 +202,12 @@ module.exports = {
   // Cache time for latest copay version (in ms)
   COPAY_VERSION_CACHE_DURATION: 6 * 60 * 1000,
 
+  // Oneinch token list cache duration (in ms)
+  ONE_INCH_CACHE_DURATION: 1 * 60 * 1000,
+
+  // Coingecko token rates cache duration (in ms)
+  COIN_GECKO_CACHE_DURATION: 5 * 60 * 1000,
+
   // Max allowed timespan for notification queries in seconds
   MAX_NOTIFICATIONS_TIMESPAN: 60 * 60 * 24 * 14, // ~ 2 weeks
   NOTIFICATIONS_TIMESPAN: 60,
@@ -244,8 +250,6 @@ module.exports = {
   SERVER_EXE_TIME: 40 * 1000 * 1.5,
 
   BE_KEY_SALT: 'bws-auth-keysalt',
-
-  NEW_BLOCK_THROTTLE_TIME_MIN: 5,
 
   BROADCAST_RETRY_TIME: 350, // ms
 
@@ -295,8 +299,13 @@ module.exports = {
   // ETH
   DEFAULT_GAS_LIMIT: 60000,
   DEFAULT_ERC20_GAS_LIMIT: 160000,
-
+  // Gas Limit per each multisend recipient
+  DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT: 45000,
+  DEFAULT_MULTISEND_RECIPIENT_ERC20_GAS_LIMIT: 65000,
   MIN_GAS_LIMIT: 21000,
+
+  // Added buffer to account for variance between estimateGas and live execution
+  MS_GAS_LIMIT_BUFFER_PERCENT: 10 / 100,
 
   // XRP has a non-refundable mininum activation fee / balance
   MIN_XRP_BALANCE: 10000000,
@@ -319,5 +328,5 @@ module.exports = {
     { code: 'AUD', name: 'Australian Dollar' },
     { code: 'JPY', name: 'Japanese Yen' },
     { code: 'NZD', name: 'New Zealand Dollar' }
-  ]
+  ],
 };

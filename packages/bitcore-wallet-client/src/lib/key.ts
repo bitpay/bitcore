@@ -76,6 +76,7 @@ export class Key {
 
   constructor(
     opts: {
+      id?: string;
       seedType: string;
       seedData?: any;
       passphrase?: string; // seed passphrase
@@ -89,7 +90,7 @@ export class Key {
     } = { seedType: 'new' }
   ) {
     this.#version = 1;
-    this.id = Uuid.v4();
+    this.id = opts.id || Uuid.v4();
 
     // bug backwards compatibility flags
     this.use0forBCH = opts.useLegacyCoinType;
@@ -388,7 +389,7 @@ export class Key {
     ) {
       coinCode = '1';
     } else if (opts.coin == 'bch') {
-      if (this.use0forBCH) {
+      if (this.use0forBCH || opts.use0forBCH) {
         coinCode = '0';
       } else {
         coinCode = '145';
@@ -503,7 +504,7 @@ export class Key {
     var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
-      _.each(txp.inputs, function (i) {
+      for (const i of txp.inputs) {
         $.checkState(
           i.path,
           'Input derivation path not available (signing transaction)'
@@ -512,18 +513,20 @@ export class Key {
           derived[i.path] = xpriv.deriveChild(i.path).privateKey;
           privs.push(derived[i.path]);
         }
-      });
+      };
 
-      var signatures = _.map(privs, function (priv, i) {
+      var signatures = privs.map(function(priv, i) {
         return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
-      signatures = _.map(
-        _.sortBy(_.flatten(signatures), 'inputIndex'),
-        function (s) {
-          return s.signature.toDER(txp.signingMethod).toString('hex');
-        }
-      );
+      signatures = signatures.flat().sort((a, b) => a.inputIndex - b.inputIndex);
+      // DEBUG
+      // for (let sig of signatures) {
+      //   if (!t.isValidSignature(sig)) {
+      //     throw new Error('INVALID SIGNATURE');
+      //   }
+      // }
+      signatures = signatures.map(sig => sig.signature.toDER().toString('hex'));
 
       return signatures;
     } else {

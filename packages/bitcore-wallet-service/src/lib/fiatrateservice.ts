@@ -1,10 +1,10 @@
 import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request';
+import { Common } from './common';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 import logger from './logger';
@@ -33,7 +33,7 @@ export class FiatRateService {
       ],
       err => {
         if (err) {
-          logger.error(err);
+          logger.error('%o', err);
         }
         return cb(err);
       }
@@ -57,7 +57,7 @@ export class FiatRateService {
 
   _fetch(cb?) {
     cb = cb || function() {};
-    const coins = ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc', 'shib', 'ape'];
+    const coins = Object.values(Constants.BITPAY_SUPPORTED_COINS);
     const provider = this.providers[0];
 
     //    async.each(this.providers, (provider, next) => {
@@ -66,12 +66,12 @@ export class FiatRateService {
       (coin, next2) => {
         this._retrieve(provider, coin, (err, res) => {
           if (err) {
-            logger.warn('Error retrieving data for ' + provider.name + coin, err);
+            logger.warn('Error retrieving data for %o: %o', provider.name + coin, err);
             return next2();
           }
           this.storage.storeFiatRate(coin, res, err => {
             if (err) {
-              logger.warn('Error storing data for ' + provider.name, err);
+              logger.warn('Error storing data for %o: %o', provider.name, err);
             }
             return next2();
           });
@@ -83,29 +83,40 @@ export class FiatRateService {
   }
 
   _retrieve(provider, coin, cb) {
-    logger.debug(`Fetching data for ${provider.name} / ${coin} `);
+    logger.debug(`Fetching data for ${provider.name} / ${coin}`);
+
+    const handleCoinsRates = (err, res) => {
+      if (err || !res) {
+        return cb(err);
+      }
+
+      logger.debug(`Data for ${provider.name} / ${coin} fetched successfully`);
+
+      if (!provider.parseFn) {
+        return cb(new Error('No parse function for provider ' + provider.name));
+      }
+      try {
+        const rates = _.filter(provider.parseFn(res), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
+        return cb(null, rates);
+      } catch (e) {
+        return cb(e);
+      }
+    };
+
+    const ts = Date.now();
+    if (Constants.BITPAY_USD_STABLECOINS[coin.toUpperCase()]) {
+      return this.getRatesForStablecoin({ code: 'USD', ts }, handleCoinsRates);
+    }
+
+    if (Constants.BITPAY_EUR_STABLECOINS[coin.toUpperCase()]) {
+      return this.getRatesForStablecoin({ code: 'EUR', ts }, handleCoinsRates);
+    }
     this.request.get(
       {
         url: provider.url + coin.toUpperCase(),
         json: true
       },
-      (err, res, body) => {
-        if (err || !body) {
-          return cb(err);
-        }
-
-        logger.debug(`Data for ${provider.name} /  ${coin} fetched successfully`);
-
-        if (!provider.parseFn) {
-          return cb(new Error('No parse function for provider ' + provider.name));
-        }
-        try {
-          const rates = _.filter(provider.parseFn(body), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
-          return cb(null, rates);
-        } catch (e) {
-          return cb(e);
-        }
-      }
+      (err, res, body) => handleCoinsRates(err, body)
     );
   }
 

@@ -1,8 +1,9 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { Common } from '../../common';
+import { ClientError } from '../../errors/clienterror';
 import { EthChain } from '../eth';
 
-const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
@@ -16,7 +17,15 @@ export class MaticChain extends EthChain {
    */
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, isTokenSwap } = txp;
+    const {
+      data,
+      outputs,
+      payProUrl,
+      tokenAddress,
+      multisigContractAddress,
+      multiSendContractAddress,
+      isTokenSwap
+    } = txp;
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isMATICMULTISIG = multisigContractAddress;
     const chain = isMATICMULTISIG ? 'MATICMULTISIG' : isERC20 ? 'MATICERC20' : 'MATIC';
@@ -33,15 +42,25 @@ export class MaticChain extends EthChain {
       recipients[0].data = data;
     }
     const unsignedTxs = [];
-    for (let index = 0; index < recipients.length; index++) {
-      const rawTx = Transactions.create({
-        ...txp,
-        ...recipients[index],
-        chain,
-        nonce: Number(txp.nonce) + Number(index),
-        recipients: [recipients[index]]
-      });
-      unsignedTxs.push(rawTx);
+
+    if (multiSendContractAddress) {
+      let multiSendParams = {
+        nonce: Number(txp.nonce),
+        recipients,
+        contractAddress: multiSendContractAddress
+      };
+      unsignedTxs.push(Transactions.create({ ...txp, chain, ...multiSendParams }));
+    } else {
+      for (let index = 0; index < recipients.length; index++) {
+        const rawTx = Transactions.create({
+          ...txp,
+          ...recipients[index],
+          chain,
+          nonce: Number(txp.nonce) + Number(index),
+          recipients: [recipients[index]]
+        });
+        unsignedTxs.push(rawTx);
+      }
     }
 
     let tx = {
@@ -101,5 +120,25 @@ export class MaticChain extends EthChain {
       throw Errors.INVALID_ADDRESS;
     }
     return;
+  }
+
+  getInsufficientFeeError(txp) {
+    return new ClientError(
+      Errors.codes.INSUFFICIENT_MATIC_FEE,
+      `${Errors.INSUFFICIENT_MATIC_FEE.message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
+  }
+
+  getLockedFeeError(txp) {
+    return new ClientError(
+      Errors.codes.LOCKED_MATIC_FEE,
+      `${Errors.LOCKED_MATIC_FEE.message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
   }
 }

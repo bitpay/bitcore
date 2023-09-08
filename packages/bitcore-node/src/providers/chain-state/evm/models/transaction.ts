@@ -108,7 +108,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     const operations = [] as Array<Promise<any>>;
     operations.push(this.pruneMempool({ ...params }));
     const txOps = await this.addTransactions({ ...params });
-    logger.debug('Writing Transactions', txOps.length);
+    logger.debug('Writing Transactions: %o', txOps.length);
     operations.push(
       ...partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
         this.collection.bulkWrite(
@@ -304,7 +304,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           txid: { $ne: tx.txid },
           blockHeight: SpentHeightIndicators.pending
         },
-        { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+        { $set: { blockHeight: SpentHeightIndicators.conflicting, replacedByTxid: tx.txid } },
         { w: 0, j: false, multi: true }
       );
     }
@@ -388,6 +388,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
+      calls: tx.calls ? tx.calls.map(t => ({ ...t, decodedData: this.abiDecode(t.input || '0x') })) : [],
       decodedData: valueOrDefault(decodedData, undefined),
       receipt: valueOrDefault(tx.receipt, undefined)
     };

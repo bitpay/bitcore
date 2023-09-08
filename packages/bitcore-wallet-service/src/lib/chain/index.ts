@@ -1,3 +1,4 @@
+import { Common } from '../common';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
@@ -8,7 +9,6 @@ import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { XrpChain } from './xrp';
 
-const Common = require('../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 
@@ -91,9 +91,7 @@ class ChainProxy {
     try {
       // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
-      if (Constants.BITPAY_SUPPORTED_MATIC_ERC20[normalizedChain.toUpperCase()]) {
-        normalizedChain = 'matic';
-      } else if (
+      if (
         Constants.BITPAY_SUPPORTED_ETH_ERC20[normalizedChain.toUpperCase()] ||
         !Constants.CHAINS[normalizedChain.toUpperCase()]
       ) {

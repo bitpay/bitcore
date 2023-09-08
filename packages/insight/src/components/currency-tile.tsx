@@ -1,3 +1,4 @@
+import {FC, memo} from 'react';
 import {buildTime, getApiRoot, getDefaultRefreshInterval} from '../utilities/helper-methods';
 import styled, {css} from 'styled-components';
 import {Tile} from '../assets/styles/tile';
@@ -99,7 +100,10 @@ const ChartContainer = styled.div`
   margin: 2rem -${gutter};
 `;
 
-const CurrencyTile = ({currency}: {currency: string}) => {
+interface CurrencyTileProps {
+  currency: string;
+}
+const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   const navigate = useNavigate();
   const apiRoot = getApiRoot(currency);
   const refreshInterval = getDefaultRefreshInterval(currency);
@@ -227,4 +231,4 @@ const CurrencyTile = ({currency}: {currency: string}) => {
   );
 };
 
-export default CurrencyTile;
+export default memo(CurrencyTile);

@@ -6,6 +6,7 @@ import 'source-map-support/register';
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
 import request from 'request';
+import { Common } from './common';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
@@ -21,9 +22,9 @@ export interface Recipient {
 const Mustache = require('mustache');
 const fs = require('fs');
 const path = require('path');
-const Utils = require('./common/utils');
-const Defaults = require('./common/defaults');
-const Constants = require('./common/constants');
+const Utils = Common.Utils;
+const Defaults = Common.Defaults;
+const Constants = Common.Constants;
 const defaultRequest = require('request');
 
 const EMAIL_TYPES = {
@@ -144,7 +145,7 @@ export class EmailService {
       ],
       err => {
         if (err) {
-          logger.error(err);
+          logger.error('%o', err);
         }
         return cb(err);
       }
@@ -188,7 +189,7 @@ export class EmailService {
       try {
         return Mustache.render(t, data);
       } catch (e) {
-        logger.error('Could not apply data to template', e);
+        logger.error('Could not apply data to template: %o', e);
         error = e;
       }
     });
@@ -257,6 +258,7 @@ export class EmailService {
       doge: 'DOGE',
       ltc: 'LTC',
       usdc: 'USDC',
+      pyusd: 'PYUSD',
       usdp: 'USDP',
       gusd: 'GUSD',
       busd: 'BUSD',
@@ -264,7 +266,8 @@ export class EmailService {
       dai: 'DAI',
       shib: 'SHIB',
       ape: 'APE',
-      euroc: 'EUROC'
+      euroc: 'EUROC',
+      usdt: 'USDT'
     };
 
     const data = _.cloneDeep(notification.data);
@@ -335,7 +338,7 @@ export class EmailService {
           try {
             data.urlForTx = Mustache.render(urlTemplate, data);
           } catch (ex) {
-            logger.warn('Could not render public url for tx', ex);
+            logger.warn('Could not render public url for tx: %o', ex);
           }
         } else {
           logger.warn(`Could not find template for chain "${wallet.chain}" on network "${wallet.network}"`);
@@ -360,7 +363,7 @@ export class EmailService {
     this.mailer
       .send(mailOptions)
       .then(result => {
-        logger.debug('Message sent: ', result || '');
+        logger.debug('Message sent: %o', result || '');
         return cb(null, result);
       })
       .catch(err => {
@@ -369,7 +372,7 @@ export class EmailService {
           errStr = err.toString().substr(0, 100);
         } catch (e) {}
 
-        logger.warn('An error occurred when trying to send email to ' + email.to, errStr || err);
+        logger.warn('An error occurred when trying to send email to %o %o', email.to, (errStr || err));
         return cb(err);
       });
   }
@@ -496,7 +499,7 @@ export class EmailService {
                     errStr = err.toString().substr(0, 100);
                   } catch (e) {}
 
-                  logger.warn('An error ocurred generating email notification', errStr || err);
+                  logger.warn('An error ocurred generating email notification: %o', errStr || err);
                 }
                 return cb(err);
               }

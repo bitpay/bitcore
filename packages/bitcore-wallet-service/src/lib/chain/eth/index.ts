@@ -3,12 +3,13 @@ import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
+import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
+const { toBN } = Web3.utils;
 
-const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
@@ -146,12 +147,24 @@ export class EthChain implements IChain {
         let gasPrice = inFeePerKb;
         const { from } = opts;
         const { coin, network } = wallet;
-        let inGasLimit;
-        let gasLimit;
-        const defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
+        let inGasLimit = 0; // Per recepient gas limit
+        let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
         let fee = 0;
+        const defaultGasLimit = this.getDefaultGasLimit(opts);
+        let outputAddresses = []; // Parameter for MuliSend contract
+        let outputAmounts = []; // Parameter for MuliSend contract
+        let totalValue = toBN(0); // Parameter for MuliSend contract
+
         for (let output of opts.outputs) {
-          if (!output.gasLimit) {
+          if (opts.multiSendContractAddress) {
+            outputAddresses.push(output.toAddress);
+            outputAmounts.push(toBN(output.amount));
+            if (!opts.tokenAddress) {
+              totalValue = totalValue.add(toBN(output.amount));
+            }
+            inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
+            continue;
+          } else if (!output.gasLimit) {
             try {
               const to = opts.payProUrl
                 ? output.toAddress
@@ -184,13 +197,46 @@ export class EthChain implements IChain {
           gasLimit = inGasLimit || defaultGasLimit;
           fee += feePerKb * gasLimit;
         }
+
+        if (opts.multiSendContractAddress) {
+          try {
+            const data = this.encodeContractParameters(
+              Constants.BITPAY_CONTRACTS.MULTISEND,
+              { addresses: outputAddresses, amounts: outputAmounts },
+              opts
+            );
+
+            gasLimit = await server.estimateGas({
+              coin,
+              network,
+              from,
+              to: opts.multiSendContractAddress,
+              value: totalValue.toString(),
+              data,
+              gasPrice
+            });
+            gasLimit += Math.ceil(gasLimit * Defaults.MS_GAS_LIMIT_BUFFER_PERCENT); // gas limit buffer
+          } catch (error) {
+            logger.error('Error estimating gas for MultiSend contract: %o', error);
+          }
+          gasLimit = gasLimit ? gasLimit : inGasLimit;
+          fee += feePerKb * gasLimit;
+        }
         return resolve({ feePerKb, gasPrice, gasLimit, fee });
       });
     });
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress, isTokenSwap } = txp;
+    const {
+      data,
+      outputs,
+      payProUrl,
+      tokenAddress,
+      multisigContractAddress,
+      multiSendContractAddress,
+      isTokenSwap
+    } = txp;
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ETHERC20' : 'ETH';
@@ -207,15 +253,23 @@ export class EthChain implements IChain {
       recipients[0].data = data;
     }
     const unsignedTxs = [];
-    for (let index = 0; index < recipients.length; index++) {
-      const rawTx = Transactions.create({
-        ...txp,
-        ...recipients[index],
-        chain,
-        nonce: Number(txp.nonce) + Number(index),
-        recipients: [recipients[index]]
-      });
-      unsignedTxs.push(rawTx);
+
+    if (multiSendContractAddress) {
+      let multiSendParams = {
+        nonce: Number(txp.nonce),
+        recipients,
+        contractAddress: multiSendContractAddress
+      };
+      unsignedTxs.push(Transactions.create({ ...txp, chain, ...multiSendParams }));
+    } else {
+      for (let index = 0; index < recipients.length; index++) {
+        let params = {
+          ...recipients[index],
+          nonce: Number(txp.nonce) + Number(index),
+          recipients: [recipients[index]]
+        };
+        unsignedTxs.push(Transactions.create({ ...txp, chain, ...params }));
+      }
     }
 
     let tx = {
@@ -242,6 +296,29 @@ export class EthChain implements IChain {
     return tx;
   }
 
+  getDefaultGasLimit(opts) {
+    let defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
+    if (opts.multiSendContractAddress) {
+      defaultGasLimit = opts.tokenAddress
+        ? Defaults.DEFAULT_MULTISEND_RECIPIENT_ERC20_GAS_LIMIT
+        : Defaults.DEFAULT_MULTISEND_RECIPIENT_GAS_LIMIT;
+    }
+    return defaultGasLimit;
+  }
+
+  encodeContractParameters(contract, params, opts) {
+    if (contract === Constants.BITPAY_CONTRACTS.MULTISEND) {
+      const web3 = new Web3();
+      return {
+        addresses: web3.eth.abi.encodeParameter('address[]', params.addresses),
+        amounts: web3.eth.abi.encodeParameter('uint256[]', params.amounts),
+        method: opts.tokenAddress ? 'sendErc20' : 'sendEth',
+        tokenAddress: opts.tokenAddress,
+        type: Constants.BITPAY_CONTRACTS.MULTISEND
+      };
+    }
+  }
+
   convertFeePerKb(p, feePerKb) {
     return [p, feePerKb];
   }
@@ -250,7 +327,7 @@ export class EthChain implements IChain {
     try {
       const tx = this.getBitcoreTx(txp);
     } catch (ex) {
-      logger.debug('Error building Bitcore transaction', ex);
+      logger.debug('Error building Bitcore transaction: %o', ex);
       return ex;
     }
 
@@ -333,25 +410,9 @@ export class EthChain implements IChain {
               if (err) return cb(err);
               const { totalAmount, availableAmount } = ethBalance;
               if (totalAmount < txp.fee) {
-                return cb(
-                  new ClientError(
-                    Errors.codes.INSUFFICIENT_ETH_FEE,
-                    `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
-                    {
-                      requiredFee: txp.fee
-                    }
-                  )
-                );
+                return cb(this.getInsufficientFeeError(txp));
               } else if (availableAmount < txp.fee) {
-                return cb(
-                  new ClientError(
-                    Errors.codes.LOCKED_ETH_FEE,
-                    `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
-                    {
-                      requiredFee: txp.fee
-                    }
-                  )
-                );
+                return cb(this.getLockedFeeError(txp));
               } else {
                 return cb(this.checkTx(txp));
               }
@@ -374,6 +435,22 @@ export class EthChain implements IChain {
     );
   }
 
+  getInsufficientFeeError(txp) {
+    return new ClientError(
+      Errors.codes.INSUFFICIENT_ETH_FEE,
+      `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
+  }
+
+  getLockedFeeError(txp) {
+    return new ClientError(Errors.codes.LOCKED_ETH_FEE, `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`, {
+      requiredFee: txp.fee
+    });
+  }
+
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
@@ -388,7 +465,7 @@ export class EthChain implements IChain {
       }
       return true;
     } catch (err) {
-      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount. Err: ${err.message}`);
+      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: $o`, err);
       return false;
     }
   }
@@ -468,8 +545,15 @@ export class EthChain implements IChain {
       amount = tx.abiType.params[1].value;
     } else if (tx.abiType && tx.abiType.type === 'MULTISIG' && tx.abiType.name === 'confirmTransaction') {
       multisigContractAddress = tx.to;
-      address = Web3.utils.toChecksumAddress(tx.internal[0].action.to);
-      amount = tx.internal[0].action.value;
+      address = '0x0';
+      amount = 0;
+      if (tx.internal && tx.internal.length > 0) {
+        address = Web3.utils.toChecksumAddress(tx.internal[0].action.to);
+        amount = tx.internal[0].action.value;
+      } else if (tx.calls && tx.calls.length > 0) {
+        address = Web3.utils.toChecksumAddress(tx.calls[0].to);
+        amount = tx.calls[0].value;
+      }
     } else {
       address = tx.to;
       amount = tx.value;
