@@ -296,15 +296,31 @@ PublicKey.fromX = function(odd, x) {
   });
 };
 
-PublicKey.fromTaproot = function(buf) {
-  $.checkArgument(_.isBuffer(buf));
-  $.checkArgument(buf.length === 32, 'Taproot public keys must be 32 bytes');
-  return new PublicKey.fromX(false, buf);
+/**
+ * PublicKey instance from a Taproot (32-byte) public key
+ * @param {String|Buffer} hexBuf 
+ * @returns {PublicKey}
+ */
+PublicKey.fromTaproot = function(hexBuf) {
+  if (typeof hexBuf === 'string' && JSUtil.isHexaString(hexBuf)) {
+    hexBuf = Buffer.from(hexBuf, 'hex');
+  }
+  $.checkArgument(Buffer.isBuffer(hexBuf), 'input must be a hex string or buffer');
+  $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
+  return new PublicKey.fromX(false, hexBuf);
 }
 
-PublicKey.isValidTaproot = function(buf) {
-  $.checkArgument(_.isBuffer(buf));
-  $.checkArgument(buf.length === 32, 'Taproot public keys must be 32 bytes');
+/**
+ * Verifies if the input is a valid Taproot public key
+ * @param {String|Buffer} hexBuf 
+ * @returns {Boolean}
+ */
+PublicKey.isValidTaproot = function(hexBuf) {
+  if (typeof hexBuf === 'string' && JSUtil.isHexaString(hexBuf)) {
+    hexBuf = Buffer.from(hexBuf, 'hex');
+  }
+  $.checkArgument(Buffer.isBuffer(hexBuf), 'input must be a hex string or buffer');
+  $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
 
   // TODO: do a more thorough taproot validation
 
@@ -321,16 +337,20 @@ PublicKey.isValidTaproot = function(buf) {
 };
 
 
-PublicKey.prototype.computeTapTweakHash = function(p, merkleRoot) {
-  $.checkArgument(p instanceof PublicKey);
+/**
+ * Get the TapTweak tagged hash of this pub key and the merkleRoot
+ * @param {Buffer} merkleRoot (optional)
+ * @returns {Buffer}
+ */
+PublicKey.prototype.computeTapTweakHash = function(merkleRoot) {
   const taggedWriter = new TaggedHash('TapTweak');
-  taggedWriter.write(p.point.x.toBuffer({ size: 32 }));
+  taggedWriter.write(this.point.x.toBuffer({ size: 32 }));
 
   //  If !merkleRoot, then we have no scripts. The actual tweak does not matter, but 
   //  follow BIP341 here to allow for reproducible tweaking.
 
   if (merkleRoot) {
-    $.checkArgument(_.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be 32 byte buffer');
+    $.checkArgument(Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be 32 byte buffer');
     taggedWriter.write(merkleRoot);
   }
   const tweakHash = taggedWriter.finalize();
@@ -340,8 +360,19 @@ PublicKey.prototype.computeTapTweakHash = function(p, merkleRoot) {
   return tweakHash;
 };
 
+
+/**
+ * Verify a tweaked public key against this key
+ * @param {PublicKey|Buffer} p Tweaked pub key
+ * @param {Buffer} merkleRoot (optional)
+ * @param {Buffer} control 
+ * @returns {Boolean}
+ */
 PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
-  const tweak = this.computeTapTweakHash(p, merkleRoot);
+  if (Buffer.isBuffer(p)) {
+    p = PublicKey.fromTaproot(p);
+  }
+  const tweak = p.computeTapTweakHash(merkleRoot);
 
   const P = p.point.liftX();
   const Q = P.add(this.point.curve.g.mul(BN.fromBuffer(tweak)));
@@ -355,18 +386,25 @@ PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
   return true;
 }
 
+
+/**
+ * Create a tweaked version of this pub key
+ * @param {Buffer} merkleRoot (optional)
+ * @returns {Buffer}
+ */
 PublicKey.prototype.createTapTweak = function(merkleRoot) {
-  $.checkArgument(_.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be a 32 byte buffer');
+  $.checkArgument(merkleRoot == null || (Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32), 'merkleRoot must be a 32 byte buffer');
 
   // TODO
 
-  // secp256k1_xonly_pubkey base_point;
-  // if (!secp256k1_xonly_pubkey_parse(secp256k1_context_verify, &base_point, data())) return std::nullopt;
-  // secp256k1_pubkey out;
-  const tweak = this.computeTapTweakHash(merkleRoot);
-  // if (!secp256k1_xonly_pubkey_tweak_add(secp256k1_context_verify, &out, &base_point, tweak.data())) return std::nullopt;
-  // const ret = secp256k1_xonly_pubkey_serialize(secp256k1_context_verify, ret.first.begin(), &out_xonly);
-  return ret;
+  let t = this.computeTapTweakHash(merkleRoot);
+  t = new BN(t);
+  const Q = this.point.liftX().add(Point.getG().mul(t));
+  const parity = Q.y.isEven() ? 0 : 1;
+  return {
+    parity,
+    tweakedPubKey: Q.x.toBuffer()
+  };
 }
 
 /**

@@ -2,8 +2,7 @@
 
 var should = require('chai').should();
 var expect = require('chai').expect;
-var testVectors = require('../data/bitcoind/wallet_test_vectors.json');
-throw new Error('TODO: write tests for wallet_test_vectors.json');
+const taprootTestVectors = require('../data/bitcoind/wallet_test_vectors.json');
 var bitcore = require('../..');
 
 var BufferUtil = bitcore.util.buffer;
@@ -1076,6 +1075,19 @@ describe('Script', function() {
       var defaultCount = Script(s1).getSignatureOperationsCount();
       trueCount.should.not.equal(falseCount);
       trueCount.should.equal(defaultCount);
+    });
+  });
+
+  describe('Taproot', function() {
+    describe('scriptPubKey', function() {
+      for (let i = 0; i < taprootTestVectors.scriptPubKey.length; i++) {
+        const vec = taprootTestVectors.scriptPubKey[i];
+        it(`vector ${i}: ${vec.given.internalPubkey} -> ${vec.expected.bip350Address}`, function() {
+          const script = Script.buildWitnessV1Out(vec.given.internalPubkey, vec.given.scriptTree);
+          script.toAddress().toString().should.equal(vec.expected.bip350Address);
+          throw new Error('TODO: do intermediary validation');
+        });
+      }
     });
   });
 });

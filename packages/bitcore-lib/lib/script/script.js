@@ -11,9 +11,9 @@ var Networks = require('../networks');
 var $ = require('../util/preconditions');
 var _ = require('lodash');
 var errors = require('../errors');
-var buffer = require('buffer');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
+const TaggedHash = require('../crypto/taggedhash');
 
 /**
  * A bitcoin transaction script. Each transaction's inputs and outputs
@@ -935,23 +935,54 @@ Script.buildWitnessV0Out = function(to) {
 
 /**
  * Build Taproot script output
- * @param {PublicKey} to 
+ * @param {PublicKey} pubKey recipient's pubKey
+ * @param {Array|Object} scriptTree single leaf object OR array of leaves. leaf: { script: String, leafVersion: Integer }
  * @returns {Script}
  */
-Script.buildWitnessV1Out = function(to) {
-  $.checkArgument(!_.isUndefined(to));
-  $.checkArgument(to instanceof PublicKey || to instanceof Address || _.isString(to));
-  
-  if (to instanceof PublicKey) {
-    to = to.toAddress(null, Address.PayToWitnessPublicKeyHash);
-  } else if (_.isString(to)) {
-    to = new Address(to);
+Script.buildWitnessV1Out = function(pubKey, scriptTree) {
+  $.checkArgument(pubKey instanceof PublicKey || pubKey instanceof Address || typeof pubKey === 'string');
+  $.checkArgument(!scriptTree || Array.isArray(scriptTree) || !!scriptTree.script);
+
+  if (typeof pubKey === 'string') {
+    pubKey = PublicKey.fromTaproot(pubKey);
   }
   
-  var s = new Script();
-  s.add(Opcode.OP_1)
-    .add(to.hashBuffer);
-  s._network = to.network;
+  function buildTree(tree) {
+    if (Array.isArray(tree)) {
+      const [left, leftH] = buildTree(tree[0]);
+      const [right, rightH] = buildTree(tree[1]);
+      const ret = [[[left[0], left[1]], rightH], [[right[0], right[1]], leftH]];
+      const hWriter = TaggedHash.TAPBRANCH;
+      if (leftH.compare(rightH) === 1) {
+        hWriter.write(rightH);
+        hWriter.write(leftH);
+      } else {
+        hWriter.write(leftH);
+        hWriter.write(rightH);
+      }
+      return [ret, hWriter.finalize()];
+    } else {
+      const { leafVersion, script } = tree;
+      const scriptBuf = new Script(script).toBuffer();
+      const leafWriter = TaggedHash.TAPLEAF;
+      leafWriter.writeUInt8(leafVersion);
+      leafWriter.writeUInt8(scriptBuf.length);
+      leafWriter.write(scriptBuf);
+      const h = leafWriter.finalize();
+      return [[Buffer.from([leafVersion]), scriptBuf], h];
+    }
+  }
+
+  let taggedHash = null;
+  if (scriptTree) { 
+    const [_, h] = buildTree(scriptTree);
+    taggedHash = h;
+  }
+  
+  const { tweakedPubKey } = pubKey.createTapTweak(taggedHash);
+  const s = new Script();
+  s.add(Opcode.OP_1);
+  s.add(tweakedPubKey);
   return s;
 };
 
@@ -1073,6 +1104,8 @@ Script.fromAddress = function(address) {
     return Script.buildWitnessV0Out(address);
   } else if (address.isPayToWitnessScriptHash()) {
     return Script.buildWitnessV0Out(address);
+  } else if (address.isPayToTaproot()) {
+    return Script.buildWitnessV1Out(address);
   }
   throw new errors.Script.UnrecognizedAddress(address);
 };
