@@ -451,4 +451,8 @@ describe('PublicKey', function() {
 
   });
 
+  describe('#createTapTweak', function() {
+    
+  });
+
 });

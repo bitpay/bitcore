@@ -666,10 +666,12 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
     } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
       clazz = MultiSigScriptHashInput;
     }
-  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
+  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut() || utxo.script.isTaproot()) {
     clazz = PublicKeyHashInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
+  } else if (utxo.script.isTaproot()) {
+    clazz = PublicKeyHashInput;
   } else {
     clazz = Input;
   }
@@ -1180,30 +1182,28 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  */
 Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
-  var self = this;
-  if (_.isArray(privateKey)) {
-    _.each(privateKey, function(privateKey) {
-      self.sign(privateKey, sigtype, signingMethod);
-    });
-    return this;
+
+  if (Array.isArray(privateKey)) {
+    for (const pk of privateKey) {
+      this.sign(pk, sigtype, signingMethod);
+    }
   }
-  _.each(this.getSignatures(privateKey, sigtype, signingMethod), function(signature) {
-    self.applySignature(signature, signingMethod);
-  });
-  return this;
+  for (const signature of this.getSignatures(privateKey, sigtype, signingMethod)) {
+    this.applySignature(signature, signingMethod);
+  }
 };
 
 Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) {
   privKey = new PrivateKey(privKey);
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  var transaction = this;
-  var results = [];
-  var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
-  _.each(this.inputs, function forEachInput(input, index) {
-    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {
+  const results = [];
+  const hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
+  for (let i = 0; i < this.inputs.length; i++) {
+    const input = this.inputs[i];
+    for (const signature of input.getSignatures(this, privKey, i, sigtype, hashData, signingMethod)) {
       results.push(signature);
-    });
-  });
+    }
+  }
   return results;
 };
 
