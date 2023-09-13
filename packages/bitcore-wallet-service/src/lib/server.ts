@@ -3014,7 +3014,7 @@ export class WalletService implements IWalletService {
             }
             this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
               if (err || txid != txp.txid) {
-                logger.warn('Broadcast failed: %o %o %o %o %o', wallet.id, wallet.chain, wallet.network, raw, err);
+                logger.warn('Broadcast failed: %o %o %o %o %o', wallet.id, wallet.chain, wallet.network, raw, err?.stack || err?.message || err);
 
                 const broadcastErr = err;
                 // Check if tx already in blockchain
