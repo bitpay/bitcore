@@ -2802,7 +2802,10 @@ export class WalletService implements IWalletService {
     const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.broadcast(raw, (err, txid) => {
-      if (err) return cb(err);
+      if (err) {
+        logger.info('Error broadcasting tx: %o %o %o %o', chain, network, raw, err);
+        return cb(err);
+      }
       return cb(null, txid);
     });
   }
@@ -3011,11 +3014,7 @@ export class WalletService implements IWalletService {
             }
             this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
               if (err || txid != txp.txid) {
-                if (!err || txp.txid != txid) {
-                  logger.warn('Broadcast failed for: %o', raw);
-                } else {
-                  logger.warn('Broadcast failed: %o', err);
-                }
+                logger.warn('Broadcast failed: %o %o %o %o %o', wallet.id, wallet.chain, wallet.network, raw, err);
 
                 const broadcastErr = err;
                 // Check if tx already in blockchain
