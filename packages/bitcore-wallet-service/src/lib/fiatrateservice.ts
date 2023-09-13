@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request';
 import { Common } from './common';
+import { providers } from './fiatrateproviders';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
@@ -43,7 +44,7 @@ export class FiatRateService {
   startCron(opts, cb) {
     opts = opts || {};
 
-    this.providers = _.values(require('./fiatrateproviders'));
+    this.providers = providers;
     const interval = opts.fetchInterval || Defaults.FIAT_RATE_FETCH_INTERVAL;
     if (interval) {
       this._fetch();
@@ -60,7 +61,6 @@ export class FiatRateService {
     const coins = Object.values(Constants.BITPAY_SUPPORTED_COINS);
     const provider = this.providers[0];
 
-    //    async.each(this.providers, (provider, next) => {
     async.each(
       coins,
       (coin, next2) => {
@@ -77,13 +77,13 @@ export class FiatRateService {
           });
         });
       },
-      //        next),
       cb
     );
   }
 
   _retrieve(provider, coin, cb) {
     logger.debug(`Fetching data for ${provider.name} / ${coin}`);
+    const coinUC = coin = coin.toUpperCase();
 
     const handleCoinsRates = (err, res) => {
       if (err || !res) {
@@ -96,7 +96,7 @@ export class FiatRateService {
         return cb(new Error('No parse function for provider ' + provider.name));
       }
       try {
-        const rates = _.filter(provider.parseFn(res), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
+        const rates = provider.parseFn(res)?.filter(x => Defaults.FIAT_CURRENCIES.some(c => c.code == x.code)) || [];
         return cb(null, rates);
       } catch (e) {
         return cb(e);
@@ -104,16 +104,16 @@ export class FiatRateService {
     };
 
     const ts = Date.now();
-    if (Constants.BITPAY_USD_STABLECOINS[coin.toUpperCase()]) {
+    if (Constants.BITPAY_USD_STABLECOINS[coinUC]) {
       return this.getRatesForStablecoin({ code: 'USD', ts }, handleCoinsRates);
     }
 
-    if (Constants.BITPAY_EUR_STABLECOINS[coin.toUpperCase()]) {
+    if (Constants.BITPAY_EUR_STABLECOINS[coinUC]) {
       return this.getRatesForStablecoin({ code: 'EUR', ts }, handleCoinsRates);
     }
     this.request.get(
       {
-        url: provider.url + coin.toUpperCase(),
+        url: provider.getUrl(coinUC),
         json: true
       },
       (err, res, body) => handleCoinsRates(err, body)
@@ -143,8 +143,8 @@ export class FiatRateService {
 
           return cb(null, {
             ts: +ts,
-            rate: rate ? rate.value : undefined,
-            fetchedOn: rate ? rate.ts : undefined
+            rate: rate?.value,
+            fetchedOn: rate?.ts
           });
         });
       },
@@ -189,8 +189,8 @@ export class FiatRateService {
               if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
               return cb(null, {
                 ts: +ts,
-                rate: rate ? rate.value : undefined,
-                fetchedOn: rate ? rate.ts : undefined,
+                rate: rate?.value,
+                fetchedOn: rate?.ts,
                 code: currency.code,
                 name: currency.name
               });
@@ -246,8 +246,8 @@ export class FiatRateService {
           if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
           return cb(null, {
             ts: +ts,
-            rate: rate ? rate.value : undefined,
-            fetchedOn: rate ? rate.ts : undefined,
+            rate: rate?.value,
+            fetchedOn: rate?.ts,
             code: currency.code,
             name: currency.name
           });

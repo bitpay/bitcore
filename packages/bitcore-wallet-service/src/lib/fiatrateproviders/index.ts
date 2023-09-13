@@ -1,6 +1,8 @@
-var Providers = {
-  BitPay: require('./bitpay')
-  //  Bitstamp: require('./bitstamp'), // no longer used
-};
+import { BitPay } from './bitpay';
+import { IProvider } from './provider';
+// import { Bitstamp } from './bitstamp';
 
-module.exports = Providers;
+
+export const providers: IProvider[] = [
+  BitPay // the first in the array is the default rate source
+];
