@@ -83,7 +83,7 @@ export class FiatRateService {
 
   _retrieve(provider, coin, cb) {
     logger.debug(`Fetching data for ${provider.name} / ${coin}`);
-    const coinUC = coin = coin.toUpperCase();
+    const coinUC = coin.toUpperCase();
 
     const handleCoinsRates = (err, res) => {
       if (err || !res) {
