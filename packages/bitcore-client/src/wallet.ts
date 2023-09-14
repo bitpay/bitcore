@@ -162,7 +162,9 @@ export class Wallet {
     });
 
     if (!xpriv) {
-    console.log(mnemonic.toString());
+      console.log(mnemonic.toString());
+    } else {
+      console.log(hdPrivKey.toString());
     }
 
     await loadedWallet.register().catch(e => {
