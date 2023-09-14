@@ -18,11 +18,12 @@ program
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')
   .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
+  .option('--xpriv [xpriv]', 'optional - Create using an extended private key')
   .option('--lite [lite]', 'optional - Create a wallet lite')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, baseUrl, chain, network, path, phrase, storageType, lite } = program;
+  const { name, baseUrl, chain, network, path, phrase, xpriv, storageType, lite } = program;
   try {
     const password = await promptly.password('Wallet Password:');
     await Wallet.create({
@@ -32,6 +33,7 @@ const main = async () => {
       network,
       path,
       phrase,
+      xpriv,
       password,
       storageType,
       lite
