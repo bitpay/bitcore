@@ -4,7 +4,7 @@ import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
-const { PrivateKey } = require('crypto-wallet-core').BitcoreLib;
+const { PrivateKey, HDPrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
 
@@ -20,6 +20,7 @@ export interface WalletObj {
   network: string;
   path: string;
   phrase: string;
+  xpriv: string;
   password: string;
   storage: Storage;
   storageType: string;
@@ -82,14 +83,20 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, password, path, lite, baseUrl } = params;
+    const { chain, network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
     let { storageType, storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
     // Generate wallet private keys
-    const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network));
+    let hdPrivKey;
+    let mnemonic;
+    if (xpriv) {
+      hdPrivKey = new HDPrivateKey(xpriv, network);
+    } else {
+      mnemonic = new Mnemonic(phrase);
+      hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network));
+    }
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -154,7 +161,9 @@ export class Wallet {
       storageType
     });
 
+    if (!xpriv) {
     console.log(mnemonic.toString());
+    }
 
     await loadedWallet.register().catch(e => {
       console.debug(e);
