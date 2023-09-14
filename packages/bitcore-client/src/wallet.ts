@@ -85,6 +85,9 @@ export class Wallet {
   static async create(params: Partial<WalletObj>) {
     const { chain, network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
     let { storageType, storage } = params;
+    if (phrase && xpriv) {
+      throw new Error('You can only provide either a phrase or a xpriv, not both');
+    }
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
