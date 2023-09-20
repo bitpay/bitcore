@@ -411,7 +411,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       for (let internalTx of tx.calls) {
         if (internalTx.value && BigInt(internalTx.value) > 0) {
           // Handle native asset transfer
-          const effect = this._getEffectForNativeTransfer(BigInt(tx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
+          const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
           effects.push(effect);
         }
         if (internalTx.abiType) {
