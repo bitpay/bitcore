@@ -28,8 +28,10 @@ export class EVMListTransactionsStream extends Transform {
       effects: transaction.effects,
       callStack: transaction.callStack
     } as any;
+
     // Add old properties if leanTxStorage is not enabled
-    if (!(Config.chainConfig({ chain: transaction.chain, network: transaction.network }) as IEVMNetworkConfig).leanTransactionStorage) {
+    const config = Config.chainConfig({ chain: transaction.chain, network: transaction.network }) as IEVMNetworkConfig;
+    if (!config || !config.leanTransactionStorage) {
       baseTx.abiType = transaction.abiType;
       baseTx.internal = transaction.internal;
       baseTx.calls = transaction.calls;
