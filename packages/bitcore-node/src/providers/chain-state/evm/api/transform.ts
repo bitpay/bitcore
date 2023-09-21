@@ -1,8 +1,8 @@
 import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
-import { IEVMTransactionTransformed } from '../types';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
+import { IEVMTransactionTransformed } from '../types';
 
 export class EVMListTransactionsStream extends Transform {
   constructor(private walletAddresses: Array<string>) {
