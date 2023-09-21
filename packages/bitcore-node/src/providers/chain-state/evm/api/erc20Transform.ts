@@ -25,6 +25,8 @@ export class Erc20RelatedFilterTransform extends Transform {
         if (internalTx.from != tx.from) {
           _tx.initialFrom = tx.from
         }
+        // This is how a requester can verify uniqueness in light of duplicated txids
+        _tx.callStack = internalTx.callStack;
         this.push(_tx);
       }
     } 
