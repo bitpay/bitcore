@@ -30,7 +30,7 @@ const PROVIDERS = {
       testnet: 'https://api.bitcore.io'
     },
     ltc: {
-      livenet: 'https://api.bitpay.com',
+      livenet: 'https://api.bitcore.io',
       testnet: 'https://api.bitcore.io'
     }
   }
