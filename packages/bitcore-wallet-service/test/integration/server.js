@@ -14,7 +14,7 @@ const should = chai.should();
 const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
-var config = require('../../ts_build/config.js');
+var config = require('../../ts_build/config.js').default;
 config.moralis = config.moralis ?? {
   apiKey: 'apiKey',
   whitelist: []
@@ -39,7 +39,7 @@ const Defaults = Common.Defaults;
 const VanillaDefaults = _.cloneDeep(Defaults);
 
 const Model = require('../../ts_build/lib/model');
-const BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
+const { BCHAddressTranslator } = require('../../ts_build/lib/bchaddresstranslator');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');

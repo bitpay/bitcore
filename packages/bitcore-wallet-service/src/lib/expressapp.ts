@@ -3,17 +3,18 @@ import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
+import config from '../config';
 import { logger, transport } from './logger';
 
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
+import { Errors } from'./errors/errordefinitions';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
-const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
@@ -600,7 +601,6 @@ export class ExpressApp {
 
     // DEPRECATED
     router.post('/v1/txproposals/', (req, res) => {
-      const Errors = require('./errors/errordefinitions');
       const err = Errors.UPGRADE_NEEDED;
       return returnError(err, res, req);
     });

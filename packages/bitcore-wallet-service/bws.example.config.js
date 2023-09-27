@@ -46,7 +46,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     eth: {
@@ -54,7 +55,8 @@ module.exports = {
         url: 'https://api-eth.bitcore.io'
       },
       testnet: {
-        url: 'https://api-eth.bitcore.io'
+        url: 'https://api-eth.bitcore.io',
+        regtestEnabled: false
       }
     },
     xrp: {
@@ -62,7 +64,8 @@ module.exports = {
         url: 'https://api-xrp.bitcore.io'
       },
       testnet: {
-        url: 'https://api-xrp.bitcore.io'
+        url: 'https://api-xrp.bitcore.io',
+        regtestEnabled: false
       }
     },
     doge: {
@@ -70,7 +73,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     ltc: {
@@ -78,7 +82,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     socketApiKey: 'socketApiKey'

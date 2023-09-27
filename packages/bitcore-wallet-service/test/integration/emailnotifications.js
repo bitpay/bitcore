@@ -9,8 +9,8 @@ var should = chai.should();
 const { logger, transport } = require('../../ts_build/lib/logger.js');
 transport.level= 'error';
 
-var WalletService = require('../../ts_build/lib/server');
-var EmailService = require('../../ts_build/lib/emailservice');
+var WalletService = require('../../ts_build/lib/server').WalletService;
+var EmailService = require('../../ts_build/lib/emailservice').EmailService;
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');

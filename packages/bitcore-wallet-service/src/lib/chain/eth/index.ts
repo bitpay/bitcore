@@ -2,17 +2,17 @@ import { Transactions, Validation } from 'crypto-wallet-core';
 import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
-import { IChain, INotificationData } from '..';
+import { IChain } from '..';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
-const { toBN } = Web3.utils;
 
+const { toBN } = Web3.utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];

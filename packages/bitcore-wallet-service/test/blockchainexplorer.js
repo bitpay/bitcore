@@ -42,12 +42,15 @@ describe('BlockChain explorer', function() {
 
     });
     it('should fail on unsupported provider', function() {
-      (function() {
+      try {
         var exp = new BlockChainExplorer({
           provider: 'dummy',
           coin: 'btc',
         });
-      }).should.throw('not supported');
+        throw new Error('Should have thrown');
+      } catch (err) {
+        err.message.should.equal('No url found for provider: dummy:btc:livenet');
+      }
     });
   });
   describe('#v8', function() {

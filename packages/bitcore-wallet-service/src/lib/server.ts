@@ -1,15 +1,21 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
+import { Validation } from 'crypto-wallet-core';
 import * as _ from 'lodash';
 import Moralis from 'moralis';
 import 'source-map-support/register';
+import config from '../config';
 import logger from './logger';
 
+import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
+import { serverMessages } from '../serverMessages';
+import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
+import { Errors } from './errors/errordefinitions';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
@@ -31,15 +37,10 @@ import {
 } from './model';
 import { Storage } from './storage';
 
-const config = require('../config');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
-const deprecatedServerMessage = require('../deprecated-serverMessages');
-const serverMessages = require('../serverMessages');
-const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -55,8 +56,6 @@ const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Services = Common.Services;
-
-const Errors = require('./errors/errordefinitions');
 
 let request = require('request');
 let initialized = false;

@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import config from '../../config';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
@@ -8,10 +9,11 @@ import { Copayer } from './copayer';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
-const config = require('../../config');
+
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
+
 const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash'),
