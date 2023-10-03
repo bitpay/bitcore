@@ -397,14 +397,23 @@ export class Wallet {
     return this.client.getTransaction({ txid });
   }
 
-  async importKeys(params: { keys: KeyImport[] }) {
-    const { keys } = params;
+  async importKeys(params: { keys: KeyImport[], rederiveAddys?: boolean }) {
     const { encryptionKey } = this.unlocked;
+    const { rederiveAddys } = params;
+    let { keys } = params;
     let keysToSave = keys.filter(key => typeof key.privKey === 'string');
-    keysToSave = keysToSave.map(key => ({
-      ...key,
-      address: Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType)
-    }) as KeyImport);
+
+    if (rederiveAddys) {
+      keysToSave = keysToSave.map(key => ({
+        ...key,
+        address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
+      }) as KeyImport);
+      keys = keys.map(key => ({
+        ...key,
+        address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
+      }) as KeyImport);
+    }
+
     if (keysToSave.length) {
       await this.storage.addKeys({
         keys: keysToSave,
@@ -412,7 +421,7 @@ export class Wallet {
         name: this.name
       });
     }
-    const addedAddresses = keysToSave.map(key => {
+    const addedAddresses = keys.map(key => {
       return { address: key.address };
     });
     return this.client.importAddresses({
@@ -564,9 +573,9 @@ export const AddressTypes = {
     scripthash: 'scripthash',
     p2sh: 'scripthash',
 
-    // witnesskeyhash
-    witnesskeyhash: 'witnesskeyhash',
-    p2wpkh: 'witnesskeyhash',
+    // witnesspubkeyhash
+    witnesspubkeyhash: 'witnesspubkeyhash',
+    p2wpkh: 'witnesspubkeyhash',
     
     // taproot
     taproot: 'taproot',
@@ -590,9 +599,9 @@ export const AddressTypes = {
     scripthash: 'scripthash',
     p2sh: 'scripthash',
 
-    // witnesskeyhash
-    witnesskeyhash: 'witnesskeyhash',
-    p2wpkh: 'witnesskeyhash',
+    // witnesspubkeyhash
+    witnesspubkeyhash: 'witnesspubkeyhash',
+    p2wpkh: 'witnesspubkeyhash',
   },
   DOGE: {
     // pubkeyhash
