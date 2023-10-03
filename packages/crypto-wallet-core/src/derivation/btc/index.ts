@@ -25,7 +25,7 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
     const xpriv = new this.bitcoreLib.HDPrivateKey(xprivKey, network);
     const privKey = xpriv.deriveChild(path).privateKey;
     const pubKey = privKey.publicKey;
-    const address = this.getAddress(pubKey, network, addressType);
+    const address = this.getAddress(network, pubKey, addressType);
     return { address, privKey: privKey.toString(), pubKey: pubKey.toString() };
   }
 
