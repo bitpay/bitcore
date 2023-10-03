@@ -14,9 +14,15 @@ export interface Key {
 }
 
 export interface IDeriver {
-  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean): string;
+  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean, addressType?: string): string;
 
-  derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean): Key;
+  derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Key;
+
+  deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string;
+
+  derivePrivateKeyWithPath(network, xprivKey: string, path: string, addressType: string): Key;
+
+  getAddress(network: string, pubKey, addressType: string): string;
 }
 
 const derivers: { [chain: string]: IDeriver } = {
@@ -34,12 +40,24 @@ export class DeriverProxy {
     return derivers[chain];
   }
 
-  deriveAddress(chain, network, xpubKey, addressIndex, isChange) {
-    return this.get(chain).deriveAddress(network, xpubKey, addressIndex, isChange);
+  deriveAddress(chain, network, xpubKey, addressIndex, isChange, addressType?) {
+    return this.get(chain).deriveAddress(network, xpubKey, addressIndex, isChange, addressType);
   }
 
-  derivePrivateKey(chain, network, privKey, addressIndex, isChange) {
-    return this.get(chain).derivePrivateKey(network, privKey, addressIndex, isChange);
+  derivePrivateKey(chain, network, privKey, addressIndex, isChange, addressType?) {
+    return this.get(chain).derivePrivateKey(network, privKey, addressIndex, isChange, addressType);
+  }
+
+  deriveAddressWithPath(chain, network, xpubKey, path, addressType) {
+    return this.get(chain).deriveAddressWithPath(network, xpubKey, path, addressType);
+  }
+
+  derivePrivateKeyWithPath(chain, network, xprivKey, path, addressType) {
+    return this.get(chain).derivePrivateKeyWithPath(network, xprivKey, path, addressType);
+  }
+
+  getAddress(chain, network, pubKey, addressType) {
+    return this.get(chain).getAddress(network, pubKey, addressType);
   }
 
   pathFor(chain, network, account = 0) {

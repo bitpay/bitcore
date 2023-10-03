@@ -14,6 +14,7 @@ program
     '--network <network>',
     'REQUIRED - Network (livenet/testnet/regtest, etc)'
   )
+  .option('--addressType [type]', 'optional - Specify the address type (default: pubkeyhash)')
   .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')
@@ -23,7 +24,7 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, baseUrl, chain, network, path, phrase, xpriv, storageType, lite } = program;
+  const { name, baseUrl, chain, network, path, phrase, xpriv, storageType, lite, addressType } = program;
   try {
     const password = await promptly.password('Wallet Password:');
     await Wallet.create({
@@ -36,7 +37,8 @@ const main = async () => {
       xpriv,
       password,
       storageType,
-      lite
+      lite,
+      addressType
     });
     console.log('Wallet created!');
   } catch (e) {

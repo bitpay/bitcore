@@ -27,6 +27,7 @@ export interface WalletObj {
   addressIndex: number;
   tokens: Array<any>;
   lite: boolean;
+  addressType: string;
 }
 export class Wallet {
   masterKey: any;
@@ -49,6 +50,7 @@ export class Wallet {
   derivationPath: string;
   tokens?: Array<any>;
   lite: boolean;
+  addressType: string;
 
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
@@ -83,14 +85,20 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
-    let { storageType, storage } = params;
+    const { network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
+    let { chain, storageType, storage, addressType } = params;
     if (phrase && xpriv) {
       throw new Error('You can only provide either a phrase or a xpriv, not both');
     }
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
+    chain = chain.toUpperCase();
+    if (addressType && AddressTypes[chain] && !AddressTypes[chain]?.[addressType]) {
+      throw new Error(`Invalid --addressType for chain. Valid address types are: ${Object.keys(AddressTypes[chain]).join(' | ')}`);
+    }
+    addressType = AddressTypes[chain]?.[addressType] || 'pubkeyhash';
+
     // Generate wallet private keys
     let hdPrivKey;
     let mnemonic;
@@ -147,7 +155,8 @@ export class Wallet {
       pubKey,
       tokens: [],
       storageType,
-      lite
+      lite,
+      addressType
     });
 
     if (lite) {
@@ -391,7 +400,11 @@ export class Wallet {
   async importKeys(params: { keys: KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
-    const keysToSave = keys.filter(key => typeof key.privKey === 'string');
+    let keysToSave = keys.filter(key => typeof key.privKey === 'string');
+    keysToSave = keysToSave.map(key => ({
+      ...key,
+      address: Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType)
+    }) as KeyImport);
     if (keysToSave.length) {
       await this.storage.addKeys({
         keys: keysToSave,
@@ -399,7 +412,7 @@ export class Wallet {
         name: this.name
       });
     }
-    const addedAddresses = keys.map(key => {
+    const addedAddresses = keysToSave.map(key => {
       return { address: key.address };
     });
     return this.client.importAddresses({
@@ -482,7 +495,7 @@ export class Wallet {
   }
 
   deriveAddress(addressIndex, isChange) {
-    const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange);
+    const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange, this.addressType);
     return address;
   }
 
@@ -492,7 +505,8 @@ export class Wallet {
       this.network,
       this.unlocked.masterKey,
       addressIndex || this.addressIndex || 0,
-      isChange
+      isChange,
+      this.addressType
     );
     return keyToImport;
   }
@@ -537,5 +551,56 @@ export class Wallet {
       throw new Error('Unable to get nonce');
     }
     return count.nonce;
+  }
+}
+
+export const AddressTypes = {
+  BTC: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash',
+
+    // witnesskeyhash
+    witnesskeyhash: 'witnesskeyhash',
+    p2wpkh: 'witnesskeyhash',
+    
+    // taproot
+    taproot: 'taproot',
+    p2tr: 'taproot'
+  },
+  BCH: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash'
+  },
+  LTC: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash',
+
+    // witnesskeyhash
+    witnesskeyhash: 'witnesskeyhash',
+    p2wpkh: 'witnesskeyhash',
+  },
+  DOGE: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash'
   }
 }
