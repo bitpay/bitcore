@@ -5,6 +5,6 @@ export class BchDeriver extends AbstractBitcoreLibDeriver {
 
   getAddress(network: string, pubKey, addressType: string) {
     pubKey = new this.bitcoreLib.PublicKey(pubKey);
-    return pubKey.toAddress(network, addressType).toString(true);
+    return new this.bitcoreLib.Address(pubKey, network, addressType).toString(true);
   }
 }

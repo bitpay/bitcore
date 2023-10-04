@@ -31,7 +31,7 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
 
   getAddress(network: string, pubKey, addressType: string) {
     pubKey = new this.bitcoreLib.PublicKey(pubKey);
-    return pubKey.toAddress(network, addressType).toString();
+    return new this.bitcoreLib.Address(pubKey, network, addressType).toString();
   }
 }
 export class BtcDeriver extends AbstractBitcoreLibDeriver {

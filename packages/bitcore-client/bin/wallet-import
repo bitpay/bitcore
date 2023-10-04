@@ -20,7 +20,7 @@ program
   )
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--encrypted', 'optional - Bitcoin Core specific keys in which case we need to decrypt them before import')
-  .option('--storageType [storageType]', 'optional - name of database (default Level)')
+  .option('--storageType [storageType]', 'optional - Name of database (default Level)')
   .option('--rederive', 'optional - Use the pub keys to derive the addresses to match the wallet\'s addressType')
   .parse(process.argv);
 

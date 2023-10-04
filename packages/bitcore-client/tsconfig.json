@@ -14,14 +14,14 @@
     "typeRoots": ["./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
-      "*": ["*", "./src/*"]
+      "*": ["*", "./src/*", "./test/*"]
     },
     "outDir": "ts_build",
     "sourceMap": true
   },
   "include": [
     "./src/**/*.ts",
-    "./tests/**/*.ts"
+    "./test/**/*.ts"
   ],
   "exclude": [
     "node_modules"
