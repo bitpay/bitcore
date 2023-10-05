@@ -14,11 +14,13 @@ program
   .option('--amount <amount>', 'REQUIRED - number amount (in btc/bch/eth/xrp)')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--token [token]', 'optional - ERC-20 token to send')
+  .option('--feeRate [rate]', 'optional - Fee rate in sats/KB (UTXO) or Gwei (EVM)')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
   const { name, path, to, amount, target, token, storageType } = program;
+  let { feeRate: feeRateParam } = program;
   let wallet;
   let data;
   try {
@@ -35,11 +37,17 @@ const main = async () => {
     const scale = Math.pow(10, decimals);
     const lastAddress = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];
-    const feerate = await wallet.getNetworkFee();
-    const feeRate = JSON.parse(feerate).feerate || 20 * scale;
+    let feeRate = feeRateParam;
+    if (!feeRate) {
+      const feerate = await wallet.getNetworkFee();
+      feeRate = JSON.parse(feerate).feerate;
+    }
     let nonce;
     if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
       nonce = await wallet.getNonce();
+      feeRate = Math.ceil(feeRateParam == null ? feeRate : (feeRateParam * 1e9)); // convert feeRateParam from Gwei to Wei
+    } else {
+      feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale / 1000) : feeRateParam); // convert feeRate from BTC to sats/KB
     }
     const utxos = await wallet.getUtxosArray();
     const params = {

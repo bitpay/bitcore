@@ -21,7 +21,7 @@ export class BTCTxProvider {
 
     let index = 0;
     let utxoSum = 0;
-    let recepientSum = recipients.reduce((sum, cur) => sum + Number(cur.amount), fee);
+    let recepientSum = recipients.reduce((sum, cur) => sum + Number(cur.amount), fee || 0);
     while (utxoSum < recepientSum) {
       const utxo = utxos[index];
       utxoSum += Number(utxo.value);
@@ -49,6 +49,7 @@ export class BTCTxProvider {
     if (feeRate) {
       tx.feePerByte(Number(feeRate));
     }
+    console.log(feeRate, btcUtxos);
     if (change) {
       tx.change(change);
     }
