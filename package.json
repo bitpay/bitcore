@@ -54,6 +54,8 @@
     "ci:bitcore-p2p-doge": "./ci.sh 'npm run test:bitcore-p2p-doge'",
     "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
     "ci:bitcore-mnemonic": "./ci.sh 'npm run test:bitcore-mnemonic'",
+    "test:bitcore-client": "cd ./packages/bitcore-client && npm run test",
+    "ci:bitcore-client": "./ci.sh 'npm run test:bitcore-client'",
     "lerna:ci:all": "npx lerna run test:ci --concurrency 1 --stream",
     "lerna:ci:unit": "npx run test:ci:unit --concurrency 1 --stream",
     "lerna:ci:integration": "npx run test:ci:integration --concurrency 1 --stream",

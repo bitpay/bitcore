@@ -3,7 +3,7 @@
 const fs = require('fs');
 const CWC = require('crypto-wallet-core');
 const program = require('commander');
-const { Wallet } = require('../../ts_build/wallet');
+const { Wallet } = require('../../ts_build/src/wallet');
 const promptly = require('promptly');
 const bitcoreLibs = {
   BTC: CWC.BitcoreLib,

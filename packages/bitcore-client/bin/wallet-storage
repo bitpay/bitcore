@@ -2,12 +2,12 @@
 
 'use strict';
 
-const program = require('../ts_build/program');
+const program = require('../ts_build/src/program');
 const fs = require('fs');
 const stream = require('stream');
-const { Wallet } = require('../ts_build/wallet');
-const { Storage } = require('../ts_build/storage');
-const { StreamUtil } = require('../ts_build/stream-util');
+const { Wallet } = require('../ts_build/src/wallet');
+const { Storage } = require('../ts_build/src/storage');
+const { StreamUtil } = require('../ts_build/src/stream-util');
 
 program
   .version(require('../package.json').version)

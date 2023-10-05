@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('../ts_build/src/program');
+const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
 const fs = require('fs');
-const { StreamUtil } = require('../ts_build/stream-util');
+const { StreamUtil } = require('../ts_build/src/stream-util');
 
 /**
  * USAGE -

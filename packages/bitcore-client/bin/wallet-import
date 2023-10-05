@@ -2,10 +2,10 @@
 'use strict';
 
 const fs = require('fs');
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('../ts_build/src/program');
+const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
-const { bitcoinCoreDecrypt } = require('../ts_build/encryption');
+const { bitcoinCoreDecrypt } = require('../ts_build/src/encryption');
 
 program
   .version(require('../package.json').version)

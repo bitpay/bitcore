@@ -2,9 +2,9 @@
 'use strict';
 
 const { Transform } = require('stream');
-const { Storage } = require('../ts_build/storage');
-const { Wallet } = require('../ts_build/wallet');
-const program = require('../ts_build/program');
+const { Storage } = require('../ts_build/src/storage');
+const { Wallet } = require('../ts_build/src/wallet');
+const program = require('../ts_build/src/program');
 
 program
   .version(require('../package.json').version)
