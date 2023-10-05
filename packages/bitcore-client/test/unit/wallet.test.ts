@@ -17,13 +17,14 @@ const libMap = {
 
 describe('Wallet', function() {
   const sandbox = sinon.createSandbox();
+  const storageType = 'Level';
   let walletName;
   let wallet: Wallet;
   beforeEach(function() {
     sandbox.stub(Client.prototype, 'register').resolves();
   });
   afterEach(async function() {
-    await Wallet.deleteWallet({ name: walletName });
+    await Wallet.deleteWallet({ name: walletName, storageType });
     sandbox.restore();
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
@@ -41,7 +42,8 @@ describe('Wallet', function() {
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           lite: false,
-          addressType
+          addressType,
+          storageType
         });
 
         expect(wallet.addressType).to.equal(AddressTypes[chain]?.[addressType] || 'pubkeyhash');
