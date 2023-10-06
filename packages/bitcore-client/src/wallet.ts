@@ -339,7 +339,7 @@ export class Wallet {
     utxos?: any[];
     recipients: { address: string; amount: number }[];
     from?: string;
-    change?: string;
+    change?: string; // 'miner' to have any change go to the miner (i.e. no change).
     invoiceID?: string;
     fee?: number;
     feeRate?: number;
@@ -360,16 +360,23 @@ export class Wallet {
       }
       tokenContractAddress = tokenObj.address;
     }
+    let change = params.change;
+    if (change === 'miner') {
+      change = undefined; // no change
+    } else if (!change) { 
+      const key = await this.derivePrivateKey(true, this.addressIndex);
+      const res = await this.importKeys({ keys: [key] });
+      change = key.address;
+    }
     const payload = {
       network: this.network,
       chain,
       recipients: params.recipients,
       from: params.from,
-      change: params.change,
+      change,
       invoiceID: params.invoiceID,
       fee: params.fee,
       feeRate: params.feeRate,
-      wallet: this,
       utxos: params.utxos,
       nonce: params.nonce,
       tag: params.tag,

@@ -9,15 +9,10 @@ const { bitcoinCoreDecrypt } = require('../ts_build/src/encryption');
 
 program
   .version(require('../package.json').version)
+  .description('Imports keys/addresses from given --json or --file. If neither is given, this will simply sync the wallet\'s addresses with the server')
   .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option(
-    '--parse [parse]',
-    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"}'
-  )
-  .option(
-    '--file [file]',
-    'OPTIONAL - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it'
-  )
+  .option('--json [json]', 'optional - A json string to parse in the form {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"}')
+  .option('--file [file]', 'optional - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--encrypted', 'optional - Bitcoin Core specific keys in which case we need to decrypt them before import')
   .option('--storageType [storageType]', 'optional - Name of database (default Level)')
@@ -45,7 +40,7 @@ const parseKeys = keys => {
 };
 
 const main = async () => {
-  const { name, path, file, parse, storageType, encrypted, rederive } = program;
+  const { name, path, file, json, storageType, encrypted, rederive } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
@@ -54,8 +49,8 @@ const main = async () => {
     let keyInput = [];
     if (file) {
       keyInput = getFileKeys(file);
-    } else if (parse) {
-      keyInput = parseKeys(parse);
+    } else if (json) {
+      keyInput = parseKeys(json);
     }
     if (encrypted) {
       try {
@@ -66,8 +61,13 @@ const main = async () => {
         console.error(e);
       }
     }
-    await wallet.importKeys({ keys: keyInput, rederiveAddys: rederive });
-    console.log(`${keyInput.length} Key(s) Imported`);
+    if (keyInput.length) {
+      await wallet.importKeys({ keys: keyInput, rederiveAddys: rederive });
+      console.log(`${keyInput.length} Key(s) Imported`);
+    } else {
+      const res = await wallet.syncAddresses(true);
+      console.log(res);
+    }
   } catch (e) {
     console.error(e);
   }
