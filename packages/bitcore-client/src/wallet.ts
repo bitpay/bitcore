@@ -363,10 +363,8 @@ export class Wallet {
     let change = params.change;
     if (change === 'miner') {
       change = undefined; // no change
-    } else if (!change) { 
-      const key = await this.derivePrivateKey(true, this.addressIndex);
-      const res = await this.importKeys({ keys: [key] });
-      change = key.address;
+    } else if (!change) {
+      change = await this._getChangeAddress();
     }
     const payload = {
       network: this.network,
@@ -567,6 +565,15 @@ export class Wallet {
       throw new Error('Unable to get nonce');
     }
     return count.nonce;
+  }
+
+  private async _getChangeAddress() {
+    if (['ETH', 'MATIC'].includes(this.chain)) {
+      return;
+    }
+    const key = await this.derivePrivateKey(true, this.addressIndex);
+    await this.importKeys({ keys: [key] });
+    return key.address;
   }
 }
 
