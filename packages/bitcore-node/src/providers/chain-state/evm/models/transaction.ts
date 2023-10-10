@@ -17,6 +17,7 @@ import { partition } from '../../../../utils/partition';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
+import { MultisendAbi } from '../abi/multisend';
 import { MultisigAbi } from '../abi/multisig';
 import { BaseEVMStateProvider } from '../api/csp';
 
@@ -49,6 +50,12 @@ const MultisigDecoder = requireUncached('abi-decoder');
 MultisigDecoder.addABI(MultisigAbi);
 function getMultisigDecoder() {
   return MultisigDecoder;
+}
+
+const MultisendDecoder = requireUncached('abi-decoder');
+MultisendDecoder.addABI(MultisendAbi);
+function getMultisendDecoder() {
+  return MultisendDecoder;
 }
 
 @LoggifyClass
@@ -343,6 +350,15 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         return {
           type: 'INVOICE',
           ...invoiceData
+        };
+      }
+    } catch (e) {}
+    try {
+      const multisendData: IAbiDecodeResponse = getMultisendDecoder().decodeMethod(input);
+      if (multisendData) {
+        return {
+          type: 'MUTLISEND',
+          ...multisendData
         };
       }
     } catch (e) {}
