@@ -57,17 +57,20 @@ const main = async () => {
     // converting gasLimit and value with toString avoids a bigNumber warning
     const params = { nonce, gasLimit: gasLimit.toString(), gasPrice, data, chainId, recipients: [{ address: to, amount: value.toString() }] };
 
+    const noChange = ['ETH', 'MATIC'].includes(wallet.chain); 
+    params.change = noChange ? null : wallet.deriveAddress(wallet.addressIndex, true);
+    const changeIdx = params.change ? wallet.addressIndex : null;
     const tx = await wallet.newTx(params);
     console.log('UnsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
-    const signedTx = await wallet.signTx({ tx, passphrase });
+    const signedTx = await wallet.signTx({ tx, passphrase, changeAddressIdx: changeIdx });
     console.log('SignedRawTx: ', signedTx);
     const confirmed = await promptly.confirm('Broadcast? (y/n)');
     if (!confirmed) {
       return;
     }
-    const transaction = await wallet.broadcast({ tx: signedTx, ignoreNonce: true });
+    const transaction = await wallet.broadcast({ tx: signedTx });
     console.log('Txid: ', transaction.txid);
     console.log('Transaction broadcasted');
   } catch (e) {

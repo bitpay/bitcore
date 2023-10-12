@@ -101,6 +101,9 @@ const main = async () => {
     const utxos = await wallet.getUtxosArray();
     const params = { recipients, feeRate, from, invoiceID, data, value, utxos };
     params.nonce = Number(nonce);
+    const noChange = ['ETH', 'MATIC'].includes(wallet.chain); 
+    params.change = noChange ? null : wallet.deriveAddress(wallet.addressIndex, true);
+    const changeIdx = params.change ? wallet.addressIndex : null;
     const unsignedTx = await wallet.newTx(params);
     console.log(`unsignedRawTx: ${unsignedTx}`);
 
@@ -109,7 +112,7 @@ const main = async () => {
       password = await promptly.password('Wallet Password:');
     }
     wallet = await wallet.unlock(password);
-    const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password });
+    const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password, changeAddressIdx: changeIdx });
     const txid = cwc.Transactions.getHash({chain, tx: signedTx});
     console.log(`signedRawTx: ${signedTx}`);
     signedTransactions.push({ tx: signedTx });

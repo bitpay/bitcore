@@ -436,7 +436,7 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, passphrase, signingKeys } = params;
+    let { tx, keys, utxos, passphrase, signingKeys, changeAddressIdx } = params;
     if (!utxos) {
       utxos = [];
       await new Promise<void>((resolve, reject) => {
@@ -468,6 +468,10 @@ export class Wallet {
       let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
       decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
+    // If changeAddressIdx == null, then save the change key at the current addressIndex (just in case)
+    const changeKey = await this.derivePrivateKey(true, changeAddressIdx == null ? this.addressIndex : changeAddressIdx);
+    await this.importKeys({ keys: [changeKey] });
+
     const payload = {
       chain: this.chain,
       network: this.network,

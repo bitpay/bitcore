@@ -58,11 +58,14 @@ const main = async () => {
       from: lastAddress,
       token
     };
+    const noChange = ['ETH', 'MATIC'].includes(wallet.chain); 
+    params.change = noChange ? null : wallet.deriveAddress(wallet.addressIndex, true);
+    const changeIdx = params.change ? wallet.addressIndex : null;
     const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
-    const signedTx = await wallet.signTx({ tx, passphrase });
+    const signedTx = await wallet.signTx({ tx, passphrase, changeAddressIdx: changeIdx });
     console.log('signedRawTx: ', signedTx);
     const confirmed = await promptly.confirm('broadcast? (y/n)');
     if (!confirmed) {
