@@ -545,7 +545,7 @@ export class EthChain implements IChain {
       
       if (exists.length) {
         // Get the first effect based on priority as determined by order in above array
-        const best = exists[0];
+        const best = tx.effects[exists[0]];
         if (best.type == 'MULTISIG:confirmTransaction' || best.type == 'MULTISIG:submitTransaction') {
           multisigContractAddress = best.contractAddress;
           address = best.to;
