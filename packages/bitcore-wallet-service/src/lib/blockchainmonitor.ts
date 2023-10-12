@@ -91,7 +91,7 @@ export class BlockchainMonitor {
             ) {
               explorer = opts.blockchainExplorers[pair.chain][pair.network];
             } else {
-              let config: { url?: string; provider?: any } = {};
+              let config: { url?: string; provider?: any, regtestEnabled?: boolean } = {};
               if (
                 opts.blockchainExplorerOpts &&
                 opts.blockchainExplorerOpts[pair.chain] &&
@@ -102,10 +102,11 @@ export class BlockchainMonitor {
                 return;
               }
 
+              const bcNetwork = pair.network === 'testnet' && config.regtestEnabled ? 'regtest' : pair.network;
               explorer = BlockChainExplorer({
                 provider: config.provider,
                 chain: pair.chain,
-                network: pair.network,
+                network: bcNetwork,
                 url: config.url,
                 userAgent: WalletService.getServiceVersion()
               });
