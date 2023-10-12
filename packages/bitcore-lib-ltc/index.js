@@ -68,3 +68,4 @@ litecore.deps._ = require('lodash');
 
 // Internal usage, exposed for testing/advanced tweaking
 litecore.Transaction.sighash = require('./lib/transaction/sighash');
+litecore.Transaction.sighashwitness = require('./lib/transaction/sighashwitness');
