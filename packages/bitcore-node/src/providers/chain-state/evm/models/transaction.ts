@@ -435,7 +435,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         to: Web3.utils.toChecksumAddress(_to),
         from: Web3.utils.toChecksumAddress(from),
         amount: Web3.utils.fromWei(_value, 'wei'),
-        contractAddress: to,
+        contractAddress: Web3.utils.toChecksumAddress(to),
         callStack
       };
     } else if (`${abi.type}:${abi.name}` == 'ERC20:transferFrom') {
@@ -446,7 +446,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         to: Web3.utils.toChecksumAddress(_to),
         from: Web3.utils.toChecksumAddress(_from),
         amount: Web3.utils.fromWei(_value, 'wei'),
-        contractAddress: to,
+        contractAddress: Web3.utils.toChecksumAddress(to),
         callStack
       };
     } else if (`${abi.type}:${abi.name}` == 'MULTISIG:submitTransaction') {
@@ -457,7 +457,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         to: Web3.utils.toChecksumAddress(destination),
         from: Web3.utils.toChecksumAddress(from),
         amount: Web3.utils.fromWei(value, 'wei'),
-        contractAddress: to,
+        contractAddress: Web3.utils.toChecksumAddress(to),
         callStack
       };
     } else if (`${abi.type}:${abi.name}` == 'MULTISIG:confirmTransaction') {
@@ -466,7 +466,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         to: '0x0',
         from: Web3.utils.toChecksumAddress(from),
         amount: '0',
-        contractAddress: to,
+        contractAddress: Web3.utils.toChecksumAddress(to),
         callStack
       };
     }
