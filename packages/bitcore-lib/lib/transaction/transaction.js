@@ -1206,6 +1206,19 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
 };
 
 /**
+ * Returns the signature from a signed transaction input
+ * @param {number} inputIndex Index of the input to extract the signature from
+ * @param {Script|Buffer|string} scriptPubKey (optional) required for PublicKeyIn or MultisigIn input that does not have the output attached to it.
+ * @returns {Array<TransactionSignature>}
+ */
+Transaction.prototype.extractSignatures = function(inputIndex, scriptPubKey, satoshis) {
+  $.checkArgument(JSUtil.isNaturalNumber(inputIndex), 'inputIndex must be a natural number');
+  $.checkArgument(inputIndex >= 0 && inputIndex < this.inputs.length, 'inputIndex is out of range');
+  const input = this.inputs[inputIndex];
+  return input.extractSignatures(this, inputIndex, scriptPubKey, satoshis);
+};
+
+/**
  * Add a signature to the transaction
  *
  * @param {Object} signature
