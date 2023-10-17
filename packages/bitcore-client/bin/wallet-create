@@ -10,11 +10,7 @@ program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--chain <chain>', 'REQUIRED - Chain (BTC/BCH/ETH, etc)')
-  .option(
-    '--network <network>',
-    'REQUIRED - Network (livenet/testnet/regtest, etc)'
-  )
-  .option('--addressType [type]', 'optional - Specify the address type (default: pubkeyhash)')
+  .option('--network <network>', 'REQUIRED - Network (livenet/testnet/regtest, etc)')
   .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')

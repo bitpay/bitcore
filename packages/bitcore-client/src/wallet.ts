@@ -19,18 +19,18 @@ export interface WalletObj {
   chain: string;
   network: string;
   path: string;
-  phrase: string;
-  xpriv: string;
+  phrase?: string;
+  xpriv?: string;
   password: string;
-  storage: Storage;
+  storage?: Storage;
   storageType: string;
-  addressIndex: number;
+  addressIndex?: number;
   tokens: Array<any>;
   lite: boolean;
   addressType: string;
 }
 export class Wallet {
-  masterKey: any;
+  masterKey?: any;
   baseUrl: string;
   chain: string;
   network: string;
@@ -41,7 +41,7 @@ export class Wallet {
   password: string;
   encryptionKey: string;
   authPubKey: string;
-  pubKey: string;
+  pubKey?: string;
   xPubKey: string;
   name: string;
   path: string;
@@ -62,6 +62,12 @@ export class Wallet {
       authKey: this.getAuthSigningKey()
     });
     this.addressIndex = this.addressIndex || 0;
+    this.addressType = AddressTypes[this.chain]?.[this.addressType] || 'pubkeyhash';
+    if (params.lite) {
+      delete this.masterKey;
+      delete this.pubKey;
+      this.lite = true;
+    }
   }
 
   getApiUrl() {
@@ -75,6 +81,26 @@ export class Wallet {
       walletInstance.lite = false;
     }
     return this.storage.saveWallet({ wallet: walletInstance });
+  }
+
+  toObject(lite: boolean = this.lite) {
+    return {
+      name: this.name,
+      chain: this.chain,
+      network: this.network,
+      path: this.path,
+      baseUrl: this.baseUrl,
+      encryptionKey: this.encryptionKey,
+      authKey: this.authKey,
+      authPubKey: this.authPubKey,
+      masterKey: lite ? undefined : this.masterKey,
+      password: Bcrypt.hashSync(this.password, 10),
+      xPubKey: this.xPubKey,
+      pubKey: lite ? undefined : this.pubKey,
+      tokens: this.tokens,
+      storageType: this.storageType,
+      lite
+    };
   }
 
   static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
@@ -140,7 +166,7 @@ export class Wallet {
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-    const wallet = Object.assign({
+    const wallet = new Wallet({
       name,
       chain,
       network,
@@ -150,23 +176,18 @@ export class Wallet {
       authKey,
       authPubKey,
       masterKey: encPrivateKey,
-      password: await Bcrypt.hash(password, 10),
+      password,
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
       tokens: [],
+      storage,
       storageType,
       lite,
       addressType
-    });
-
-    if (lite) {
-      delete wallet.masterKey;
-      delete wallet.pubKey;
-      wallet.lite = true;
-    }
+    } as WalletObj);
 
     // save wallet to storage and then bitcore-node
-    await storage.saveWallet({ wallet });
+    await storage.saveWallet({ wallet: wallet.toObject(lite) });
     const loadedWallet = await this.loadWallet({
       storage,
       name,
