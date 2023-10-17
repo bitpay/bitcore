@@ -99,7 +99,8 @@ export class Wallet {
       pubKey: lite ? undefined : this.pubKey,
       tokens: this.tokens,
       storageType: this.storageType,
-      lite
+      lite,
+      addressType: this.addressType
     };
   }
 
