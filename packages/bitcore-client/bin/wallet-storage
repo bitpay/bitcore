@@ -46,7 +46,7 @@ const main = async () => {
         if (!data) {
           throw new Error('Could not read wallet file');
         }
-        const wallet = new Wallet(data);
+        const wallet = new Wallet({ ...data, storageType });
         if (name) {
           wallet.name = name;
         }
