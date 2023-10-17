@@ -11,6 +11,7 @@ program
   .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
   .requiredOption('--chain <chain>', 'REQUIRED - Chain (BTC/BCH/ETH, etc)')
   .requiredOption('--network <network>', 'REQUIRED - Network (livenet/testnet/regtest, etc)')
+  .option('--addressType <type>', 'optional - Specify the address type (default: pubkeyhash)')
   .option('--baseUrl <host>', 'optional - Specify custom Bitcore API URL')
   .option('--phrase <phrase>', 'optional - Seed using existing backup phrase')
   .option('--xpriv <xpriv>', 'optional - Create using an extended private key')
