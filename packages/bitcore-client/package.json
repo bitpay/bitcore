@@ -24,7 +24,7 @@
     "async": "2.5.0",
     "bcrypt": "5.1.0",
     "bitcore-mnemonic": "^10.0.11",
-    "commander": "2.15.1",
+    "commander": "11.1.0",
     "crypto-wallet-core": "^10.0.11",
     "elliptic": "^6.5.3",
     "ethers": "5.7.1",
