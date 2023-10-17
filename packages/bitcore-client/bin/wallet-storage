@@ -24,12 +24,6 @@ const main = async () => {
   const { name, path, lite, file, export: doExport, import: doImport, storageType = 'Level' } = program.opts();
 
   try {
-    console.log('NAME:', name, file);
-    return;
-    if (!name) {
-      throw new Error('--name is required');
-    }
-
     const fileName = file || name + '.enc';
     if (doExport) {
       let wallet = await Wallet.loadWallet({ name, storageType, path });
