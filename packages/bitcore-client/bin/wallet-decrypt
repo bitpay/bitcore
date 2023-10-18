@@ -7,7 +7,7 @@ const promptly = require('promptly');
 program
   .version(require('../package.json').version)
   .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--storageType <storageType>', 'optional - name of the databse to use (default Level)')
+  .option('--storageType <storageType>', 'optional - name of the database to use (default Level)')
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 

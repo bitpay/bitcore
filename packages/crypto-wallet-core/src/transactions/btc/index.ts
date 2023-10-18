@@ -48,7 +48,6 @@ export class BTCTxProvider {
     if (feeRate) {
       tx.feePerByte(Number(feeRate));
     }
-    console.log(feeRate, btcUtxos);
     if (change) {
       tx.change(change);
     }
