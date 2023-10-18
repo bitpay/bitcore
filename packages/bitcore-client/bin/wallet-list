@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 'use strict';
 
-const { Storage } = require('../ts_build/storage');
-const program = require('../ts_build/program');
+const program = require('commander');
+const { Storage } = require('../ts_build/src/storage');
 
 program
   .version(require('../package.json').version)
-  .option('--path [path]', 'optional - Where wallets are stored')
-  .option('--storageType [storageType]', 'optional - default Level - choose the database from where to list wallets')
+  .option('--storageType <storageType>', 'optional - default Level - choose the database from where to list wallets')
+  .option('--path <path>', 'optional - Where wallets are stored')
   .parse(process.argv);
 
 const main = async () => {
-  const { path, storageType } = program;
+  const { path, storageType } = program.opts();
   const storage = new Storage({createIfMissing: false, errorIfExists: false, path, storageType});
   const walletStream = await storage.listWallets();
   walletStream.on('data', (wallet) => {

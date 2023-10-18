@@ -19,17 +19,18 @@ export interface WalletObj {
   chain: string;
   network: string;
   path: string;
-  phrase: string;
-  xpriv: string;
+  phrase?: string;
+  xpriv?: string;
   password: string;
-  storage: Storage;
+  storage?: Storage;
   storageType: string;
-  addressIndex: number;
+  addressIndex?: number;
   tokens: Array<any>;
   lite: boolean;
+  addressType: string;
 }
 export class Wallet {
-  masterKey: any;
+  masterKey?: any;
   baseUrl: string;
   chain: string;
   network: string;
@@ -40,7 +41,7 @@ export class Wallet {
   password: string;
   encryptionKey: string;
   authPubKey: string;
-  pubKey: string;
+  pubKey?: string;
   xPubKey: string;
   name: string;
   path: string;
@@ -49,6 +50,7 @@ export class Wallet {
   derivationPath: string;
   tokens?: Array<any>;
   lite: boolean;
+  addressType: string;
 
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
@@ -60,6 +62,12 @@ export class Wallet {
       authKey: this.getAuthSigningKey()
     });
     this.addressIndex = this.addressIndex || 0;
+    this.addressType = AddressTypes[this.chain]?.[this.addressType] || 'pubkeyhash';
+    if (params.lite) {
+      delete this.masterKey;
+      delete this.pubKey;
+      this.lite = true;
+    }
   }
 
   getApiUrl() {
@@ -75,6 +83,27 @@ export class Wallet {
     return this.storage.saveWallet({ wallet: walletInstance });
   }
 
+  toObject(lite: boolean = this.lite) {
+    return {
+      name: this.name,
+      chain: this.chain,
+      network: this.network,
+      path: this.path,
+      baseUrl: this.baseUrl,
+      encryptionKey: this.encryptionKey,
+      authKey: this.authKey,
+      authPubKey: this.authPubKey,
+      masterKey: lite ? undefined : this.masterKey,
+      password: Bcrypt.hashSync(this.password, 10),
+      xPubKey: this.xPubKey,
+      pubKey: lite ? undefined : this.pubKey,
+      tokens: this.tokens,
+      storageType: this.storageType,
+      lite,
+      addressType: this.addressType
+    };
+  }
+
   static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
     const { name, path, storageType } = params;
     let { storage } = params;
@@ -83,14 +112,20 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
-    let { storageType, storage } = params;
+    const { network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
+    let { chain, storageType, storage, addressType } = params;
     if (phrase && xpriv) {
       throw new Error('You can only provide either a phrase or a xpriv, not both');
     }
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
+    chain = chain.toUpperCase();
+    if (addressType && AddressTypes[chain] && !AddressTypes[chain]?.[addressType]) {
+      throw new Error(`Invalid --addressType for chain. Valid address types are: ${Object.keys(AddressTypes[chain]).join(' | ')}`);
+    }
+    addressType = AddressTypes[chain]?.[addressType] || 'pubkeyhash';
+
     // Generate wallet private keys
     let hdPrivKey;
     let mnemonic;
@@ -132,7 +167,7 @@ export class Wallet {
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-    const wallet = Object.assign({
+    const wallet = new Wallet({
       name,
       chain,
       network,
@@ -142,22 +177,18 @@ export class Wallet {
       authKey,
       authPubKey,
       masterKey: encPrivateKey,
-      password: await Bcrypt.hash(password, 10),
+      password,
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
       tokens: [],
+      storage,
       storageType,
-      lite
-    });
-
-    if (lite) {
-      delete wallet.masterKey;
-      delete wallet.pubKey;
-      wallet.lite = true;
-    }
+      lite,
+      addressType
+    } as WalletObj);
 
     // save wallet to storage and then bitcore-node
-    await storage.saveWallet({ wallet });
+    await storage.saveWallet({ wallet: wallet.toObject(lite) });
     const loadedWallet = await this.loadWallet({
       storage,
       name,
@@ -330,7 +361,7 @@ export class Wallet {
     utxos?: any[];
     recipients: { address: string; amount: number }[];
     from?: string;
-    change?: string;
+    change?: string; // 'miner' to have any change go to the miner (i.e. no change).
     invoiceID?: string;
     fee?: number;
     feeRate?: number;
@@ -351,16 +382,21 @@ export class Wallet {
       }
       tokenContractAddress = tokenObj.address;
     }
+    let change = params.change;
+    if (change === 'miner') {
+      change = undefined; // no change
+    } else if (!change) {
+      change = await this._getChangeAddress();
+    }
     const payload = {
       network: this.network,
       chain,
       recipients: params.recipients,
       from: params.from,
-      change: params.change,
+      change,
       invoiceID: params.invoiceID,
       fee: params.fee,
       feeRate: params.feeRate,
-      wallet: this,
       utxos: params.utxos,
       nonce: params.nonce,
       tag: params.tag,
@@ -388,10 +424,23 @@ export class Wallet {
     return this.client.getTransaction({ txid });
   }
 
-  async importKeys(params: { keys: KeyImport[] }) {
-    const { keys } = params;
+  async importKeys(params: { keys: KeyImport[], rederiveAddys?: boolean }) {
     const { encryptionKey } = this.unlocked;
-    const keysToSave = keys.filter(key => typeof key.privKey === 'string');
+    const { rederiveAddys } = params;
+    let { keys } = params;
+    let keysToSave = keys.filter(key => typeof key.privKey === 'string');
+
+    if (rederiveAddys) {
+      keysToSave = keysToSave.map(key => ({
+        ...key,
+        address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
+      }) as KeyImport);
+      keys = keys.map(key => ({
+        ...key,
+        address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
+      }) as KeyImport);
+    }
+
     if (keysToSave.length) {
       await this.storage.addKeys({
         keys: keysToSave,
@@ -409,7 +458,7 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, passphrase, signingKeys } = params;
+    let { tx, keys, utxos, passphrase, signingKeys, changeAddressIdx } = params;
     if (!utxos) {
       utxos = [];
       await new Promise<void>((resolve, reject) => {
@@ -441,6 +490,12 @@ export class Wallet {
       let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
       decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
+    if (!['ETH', 'MATIC'].includes(this.chain)) {
+      // If changeAddressIdx == null, then save the change key at the current addressIndex (just in case)
+      const changeKey = await this.derivePrivateKey(true, changeAddressIdx == null ? this.addressIndex : changeAddressIdx);
+      await this.importKeys({ keys: [changeKey] });
+    }
+
     const payload = {
       chain: this.chain,
       network: this.network,
@@ -482,17 +537,18 @@ export class Wallet {
   }
 
   deriveAddress(addressIndex, isChange) {
-    const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange);
+    const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange, this.addressType);
     return address;
   }
 
-  async derivePrivateKey(isChange, addressIndex = 0) {
+  async derivePrivateKey(isChange, addressIndex = this.addressIndex) {
     const keyToImport = await Deriver.derivePrivateKey(
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      addressIndex || this.addressIndex || 0,
-      isChange
+      addressIndex || 0,
+      isChange,
+      this.addressType
     );
     return keyToImport;
   }
@@ -537,5 +593,65 @@ export class Wallet {
       throw new Error('Unable to get nonce');
     }
     return count.nonce;
+  }
+
+  private async _getChangeAddress() {
+    if (['ETH', 'MATIC'].includes(this.chain)) {
+      return;
+    }
+    const key = await this.derivePrivateKey(true, this.addressIndex);
+    await this.importKeys({ keys: [key] });
+    return key.address;
+  }
+}
+
+export const AddressTypes = {
+  BTC: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash',
+
+    // witnesspubkeyhash
+    witnesspubkeyhash: 'witnesspubkeyhash',
+    p2wpkh: 'witnesspubkeyhash',
+    
+    // taproot
+    taproot: 'taproot',
+    p2tr: 'taproot'
+  },
+  BCH: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash'
+  },
+  LTC: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash',
+
+    // witnesspubkeyhash
+    witnesspubkeyhash: 'witnesspubkeyhash',
+    p2wpkh: 'witnesspubkeyhash',
+  },
+  DOGE: {
+    // pubkeyhash
+    pubkeyhash: 'pubkeyhash',
+    p2pkh: 'pubkeyhash',
+
+    // scripthash
+    scripthash: 'scripthash',
+    p2sh: 'scripthash'
   }
 }

@@ -165,6 +165,11 @@ jobs:
     steps:
       - run_test:
           package: bitcore-p2p
+  bitcore-client:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-client
       
 workflows:
   version: 2
@@ -199,5 +204,8 @@ workflows:
           requires:
             - build
       - bitcore-p2p:
+          requires:
+            - build
+      - bitcore-client:
           requires:
             - build

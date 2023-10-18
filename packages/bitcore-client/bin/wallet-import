@@ -2,25 +2,22 @@
 'use strict';
 
 const fs = require('fs');
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
-const { bitcoinCoreDecrypt } = require('../ts_build/encryption');
+const { bitcoinCoreDecrypt } = require('../ts_build/src/encryption');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option(
-    '--parse [parse]',
-    'OPTIONAL - A json string to parse in the form {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"}'
-  )
-  .option(
-    '--file [file]',
-    'OPTIONAL - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it'
-  )
-  .option('--path [path]', 'optional - Custom wallet storage path')
+  .description('Imports keys/addresses from given --json or --file. If neither is given, this will simply sync the wallet\'s addresses with the server')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--json <json>', 'optional - A json string to parse in the form {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"}')
+  .option('--file <file>', 'optional - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .option('--encrypted', 'optional - Bitcoin Core specific keys in which case we need to decrypt them before import')
-  .option('--storageType [storageType]', 'optional - name of database (default Level)')
+  .option('--rederive', 'optional - Use the pub keys to derive the addresses to match the wallet\'s addressType')
+  .option('--storageType <storageType>', 'optional - Name of database (default Level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -44,7 +41,7 @@ const parseKeys = keys => {
 };
 
 const main = async () => {
-  const { name, path, file, parse, storageType } = program;
+  const { name, path, file, json, storageType, encrypted, rederive } = program.opts();
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
@@ -53,10 +50,10 @@ const main = async () => {
     let keyInput = [];
     if (file) {
       keyInput = getFileKeys(file);
-    } else if (parse) {
-      keyInput = parseKeys(parse);
+    } else if (json) {
+      keyInput = parseKeys(json);
     }
-    if (program.encrypted) {
+    if (encrypted) {
       try {
         const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
         let decryptedParams = bitcoinCoreDecrypt(keyInput, bitcoinCorePassword);
@@ -65,8 +62,13 @@ const main = async () => {
         console.error(e);
       }
     }
-    await wallet.importKeys({ keys: keyInput });
-    console.log(`${keyInput.length} Key(s) Imported`);
+    if (keyInput.length) {
+      await wallet.importKeys({ keys: keyInput, rederiveAddys: rederive });
+      console.log(`${keyInput.length} Key(s) Imported`);
+    } else {
+      const res = await wallet.syncAddresses(true);
+      console.log(res);
+    }
   } catch (e) {
     console.error(e);
   }

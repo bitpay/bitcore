@@ -2,23 +2,23 @@
 
 'use strict';
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
 const { BitcoreLib } = require('crypto-wallet-core');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--index <index>', 'REQUIRED - address index to sign message with)')
-  .option('--message <message>', 'REQUIRED - message to be signed')
-  .option('--change [change]', 'optional - if the address is a change address')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .requiredOption('--index <index>', 'REQUIRED - Address index to sign message with')
+  .requiredOption('--message <message>', 'REQUIRED - message to be signed')
+  .option('--change', 'optional - If the address is a change address')
+  .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, index, message, change, storageType } = program;
+  const { name, path, index, message, change, storageType } = program.opts();
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
