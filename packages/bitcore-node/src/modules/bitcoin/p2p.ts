@@ -51,7 +51,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
           port: peer.port
         };
       }),
-      dnsSeed: false,
+      dnsSeed: true,
       listenAddr: false,
       network: this.network,
       messages: this.messages
