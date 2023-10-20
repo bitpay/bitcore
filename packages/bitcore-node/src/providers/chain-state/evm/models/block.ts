@@ -197,6 +197,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
           .find({
             chain,
             network,
+            processed: true,
             height: heightQuery
           })
           .sort({ chain: 1, network: 1, processed: 1, height: -1 }) // guarantee index use by using this sort
