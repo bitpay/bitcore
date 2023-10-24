@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p",
-  "version": "10.0.11",
+  "version": "10.0.13",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {
