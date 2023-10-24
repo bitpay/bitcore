@@ -19,9 +19,10 @@ import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisendAbi } from '../abi/multisend';
 import { MultisigAbi } from '../abi/multisig';
-import { BaseEVMStateProvider } from '../api/csp';
 
-import { EVMTransactionJSON, IAbiDecodeResponse, IEVMTransaction } from '../types';
+import Web3 from 'web3';
+import { IEVMNetworkConfig } from '../../../../types/Config';
+import { Effect, EVMTransactionJSON, IAbiDecodedData, IAbiDecodeResponse, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -97,10 +98,24 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         sparse: true
       }
     );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'effects.to': 1, blockTimeNormalized: 1 },
+      {
+        background: true,
+        sparse: true
+      }
+    );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'effects.amount': 1, blockTimeNormalized: 1 },
+      {
+        background: true,
+        sparse: true
+      }
+    );
   }
 
   async batchImport(params: {
-    txs: Array<IEVMTransaction>;
+    txs: Array<IEVMTransactionInProcess>;
     height: number;
     mempoolTime?: Date;
     blockTime?: Date;
@@ -134,7 +149,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     if (params.height < SpentHeightIndicators.minimum) {
       for (let op of txOps) {
         const filter = op.updateOne.filter;
-        const tx = { ...op.updateOne.update.$set, ...filter } as IEVMTransaction;
+        const tx = { ...op.updateOne.update.$set, ...filter } as IEVMTransactionInProcess;
         await EventStorage.signalTx(tx);
         await EventStorage.signalAddressCoin({
           address: tx.to,
@@ -144,31 +159,44 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     }
   }
 
+  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[], froms: IEVMCachedAddress[] }  {
+    const {to, from, effects} = tx;
+    let toBatch = new Set<string>();
+    let fromBatch = new Set<string>();
+    const addToBatch = (batch: Set<string>, obj: IEVMCachedAddress) => {
+      // Adds string representation to batch to guard uniqueness since {} != {} but '{}' == '{}'
+      batch.add(JSON.stringify(obj));
+    };
+    addToBatch(toBatch, { address: to as string });
+    addToBatch(fromBatch, { address: from as string });
+    if (effects && effects.length) {
+      for (const effect of effects) {
+        // Handle internal value transfers
+        if (!effect.contractAddress) {
+          addToBatch(toBatch, { address: effect.to });
+          addToBatch(fromBatch, { address: effect.from });
+        } else if (effect.type == 'ERC20:transfer') {
+          // Handle ERC20s
+          addToBatch(toBatch, { address: effect.to, tokenAddress: effect.contractAddress });
+          addToBatch(fromBatch, { address: effect.from, tokenAddress: effect.contractAddress });
+        } 
+      }
+    }
+
+    // Convert Set made up of unique strings back to object representations
+    const tos: IEVMCachedAddress[] = Array.from(toBatch).map(strObj => JSON.parse(strObj));
+    const froms: IEVMCachedAddress[] = Array.from(fromBatch).map(strObj => JSON.parse(strObj));
+
+    return { tos, froms };
+  }
+
   async expireBalanceCache(txOps: Array<any>) {
     for (const op of txOps) {
-      let batch = new Array<{ multisigContractAdress?: string; tokenAddress?: string; address: string }>();
       const { chain, network } = op.updateOne.filter;
-      const { from, to, abiType, internal } = op.updateOne.update.$set;
-      batch = batch.concat([{ address: from }, { address: to }]);
-      if (abiType && abiType.type === 'ERC20' && abiType.params.length) {
-        batch.push({ address: from, tokenAddress: to });
-        batch.push({ address: abiType.params[0].value, tokenAddress: to });
-      }
 
-      if (internal && internal.length > 0) {
-        internal.forEach(i => {
-          if (i.action.to) {
-            batch.push({ address: i.action.to });
-            batch.push({ address: from, tokenAddress: i.action.to });
-          }
-          if (i.action.from) {
-            batch.push({ address: i.action.from });
-            batch.push({ address: to, tokenAddress: i.action.from });
-          }
-        });
-      }
-
-      for (const payload of batch) {
+      const { tos, froms } = this.getAllTouchedAddresses(op.updateOne.update.$set);
+      const uniqueBatch = tos.concat(froms);
+      for (const payload of uniqueBatch) {
         const lowerAddress = payload.address.toLowerCase();
         const cacheKey = payload.tokenAddress
           ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${payload.tokenAddress.toLowerCase()}`
@@ -179,7 +207,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   }
 
   async addTransactions(params: {
-    txs: Array<IEVMTransaction>;
+    txs: Array<IEVMTransactionInProcess>;
     height: number;
     blockTime?: Date;
     blockHash?: string;
@@ -212,69 +240,35 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         };
       });
     } else {
-      const CSP = new BaseEVMStateProvider(chain);
-      const { web3 } = await CSP.getWeb3(network);
       return Promise.all(
-        params.txs.map(async (tx: IEVMTransaction) => {
-          const { to, txid, from } = tx;
-          const tos = [to];
-          const froms = [from];
-
-          // handle incoming ERC20 transactions
-          if (tx.abiType && tx.abiType.type === 'ERC20' && ['transfer', 'transferFrom'].includes(tx.abiType.name)) {
-            const _to = tx.abiType.params.find(f => f.name === '_to');
-            const _from = tx.abiType.params.find(f => f.name === '_from');
-
-            if (_to && _to.value) {
-              tos.push(web3.utils.toChecksumAddress(_to.value));
-            }
-            if (_from && _from.value) {
-              froms.push(web3.utils.toChecksumAddress(_from.value));
-            }
-          }
-
-          // handle incoming internal transactions ( receiving a token swap from a different wallet )
-          if (tx.internal) {
-            for (let internal of tx.internal) {
-              const { to, from } = internal.action;
-              if (to) {
-                tos.push(web3.utils.toChecksumAddress(to));
-              }
-              if (from) {
-                froms.push(web3.utils.toChecksumAddress(from));
-              }
-            }
-          }
-
-          if (tx.calls) {
-            for (let call of tx.calls) {
-              const { to, from } = call;
-              if (to) {
-                tos.push(web3.utils.toChecksumAddress(to));
-              }
-              if (from) {
-                froms.push(web3.utils.toChecksumAddress(from));
-              }
-            }
-          }
+        // Get all "to" and "from" addresses so we can add the any corresponding wallets
+        params.txs.map(async (tx: IEVMTransactionInProcess) => {
+          const { tos, froms } = this.getAllTouchedAddresses(tx);
+          const toAddresses = tos.map(a => a.address);
+          const fromAddresses = froms.map(a => a.address);
 
           const sentWallets = await WalletAddressStorage.collection
-            .find({ chain, network, address: { $in: froms } })
+            .find({ chain, network, address: { $in: fromAddresses } })
             .toArray();
           const receivedWallets = await WalletAddressStorage.collection
-            .find({ chain, network, address: { $in: tos } })
+            .find({ chain, network, address: { $in: toAddresses } })
             .toArray();
           const wallets = _.uniqBy(
             sentWallets.concat(receivedWallets).map(w => w.wallet),
             w => w.toHexString()
           );
-
+          
+          // If config value is set then only store needed tx properties
+          let leanTx: IEVMTransaction | IEVMTransactionInProcess = tx;
+          if ((Config.chainConfig({ chain, network }) as IEVMNetworkConfig).leanTransactionStorage) {
+            leanTx = EVMTransactionStorage.toLeanTransaction(tx);
+          }
           return {
             updateOne: {
-              filter: { txid, chain, network },
+              filter: { txid: tx.txid, chain, network },
               update: {
                 $set: {
-                  ...tx,
+                  ...leanTx,
                   blockTimeNormalized,
                   wallets
                 }
@@ -289,7 +283,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   }
 
   async pruneMempool(params: {
-    txs: Array<IEVMTransaction>;
+    txs: Array<IEVMTransactionInProcess>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -373,18 +367,160 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     } catch (e) {}
     return undefined;
   }
+  
+  /**
+   * Creates an object with param names as keys instead of an array of objects
+   * @param abi 
+   * @returns object of abi param values that can be accessed with the name as a key
+   */
+  parseAbiParams(abi: IAbiDecodedData): ParsedAbiParams {
+    const params = abi.params;
+    const parsed = {} as ParsedAbiParams;
+    for (let param of params) {
+      const { value } = param;
+      parsed[param.name] = value;
+    }
+    return parsed;
+  }
+
+  /**
+   * Adds effects details object to in process txs
+   */
+  addEffectsToTxs(txs: IEVMTransactionInProcess[]) {
+    for (let tx of txs) {
+      tx.effects = this.getEffects(tx);
+    }
+  }
+
+  /**
+   * Creates an array of all effects for a given tx
+   * @param tx A tx object that contains extra data that we don't want to store long term
+   * @returns An array of all effects for the transaction
+   */
+  getEffects(tx: IEVMTransactionInProcess): Effect[] {
+    const effects = [] as Effect[];
+    // Top level tx effects
+    if (tx.abiType) {
+      // Handle Abi related effects
+      const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
+      if (effect) {
+        effects.push(effect);
+      }
+    }
+    // Internal tx effects
+    if (tx.internal && tx.internal.length) {
+      for (let internalTx of tx.internal) {
+        if (internalTx.action.value && BigInt(internalTx.action.value) > 0) {
+          // Handle native asset transfer
+          const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
+          effects.push(effect);
+        }
+        if (internalTx.abiType) {
+          // Handle Abi related effects
+          const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
+          if (effect) {
+            effects.push(effect);
+          }
+        }
+      }
+    } else if (tx.calls && tx.calls.length) {
+      for (let internalTx of tx.calls) {
+        if (internalTx.value && BigInt(internalTx.value) > 0) {
+          // Handle native asset transfer
+          const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
+          effects.push(effect);
+        }
+        if (internalTx.abiType) {
+          // Handle Abi related effects
+          const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.to, internalTx.from, internalTx.depth);
+          if (effect) {
+            effects.push(effect);
+          }
+        }
+      }
+    }
+    return effects;
+  }
+
+  _getEffectForAbiType(abi: IAbiDecodedData, to: string, from: string, callStack: string): Effect | undefined {
+    if (`${abi.type}:${abi.name}` == 'ERC20:transfer') {
+      const params = this.parseAbiParams(abi);
+      const { _to, _value } = params;
+      return {
+        type: 'ERC20:transfer',
+        to: Web3.utils.toChecksumAddress(_to),
+        from: Web3.utils.toChecksumAddress(from),
+        amount: Web3.utils.fromWei(_value, 'wei'),
+        contractAddress: Web3.utils.toChecksumAddress(to),
+        callStack
+      };
+    } else if (`${abi.type}:${abi.name}` == 'ERC20:transferFrom') {
+      const params = this.parseAbiParams(abi);
+      const { _to, _from, _value } = params;
+      return {
+        type: 'ERC20:transfer',
+        to: Web3.utils.toChecksumAddress(_to),
+        from: Web3.utils.toChecksumAddress(_from),
+        amount: Web3.utils.fromWei(_value, 'wei'),
+        contractAddress: Web3.utils.toChecksumAddress(to),
+        callStack
+      };
+    } else if (`${abi.type}:${abi.name}` == 'MULTISIG:submitTransaction') {
+      const params = this.parseAbiParams(abi);
+      const { destination, value } = params;
+      return {
+        type: 'MULTISIG:submitTransaction',
+        to: Web3.utils.toChecksumAddress(destination),
+        from: Web3.utils.toChecksumAddress(from),
+        amount: Web3.utils.fromWei(value, 'wei'),
+        contractAddress: Web3.utils.toChecksumAddress(to),
+        callStack
+      };
+    } else if (`${abi.type}:${abi.name}` == 'MULTISIG:confirmTransaction') {
+      return {
+        type: 'MULTISIG:confirmTransaction',
+        to: '0x0',
+        from: Web3.utils.toChecksumAddress(from),
+        amount: '0',
+        contractAddress: Web3.utils.toChecksumAddress(to),
+        callStack
+      };
+    }
+    return;
+  }
+
+  _getEffectForNativeTransfer(value:string, to:string, from:string, callStack: string): Effect {
+    const effect = {
+      to: Web3.utils.toChecksumAddress(to),
+      from: Web3.utils.toChecksumAddress(from),
+      amount: Web3.utils.fromWei(value, 'wei'),
+      callStack
+    }
+    return effect;
+  }
+  /**
+   * Receives any type of TX and returns a lean version without unused properties
+   * @param tx - transaction to leanify
+   */
+  toLeanTransaction(tx: IEVMTransactionInProcess | IEVMTransaction): IEVMTransaction {
+    const removableProperties = ['data', 'internal', 'calls', 'abiType'];
+    for (let prop of removableProperties) {
+      if (tx[prop]) {
+        delete tx[prop];
+      }
+    }
+    return tx;
+  }
 
   // Correct tx.data.toString() => 0xa9059cbb00000000000000000000000001503dfc5ad81bf630d83697e98601871bb211b60000000000000000000000000000000000000000000000000000000000002710
   // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
 
   _apiTransform(
-    tx: IEVMTransaction | Partial<MongoBound<IEVMTransaction>>,
+    tx: IEVMTransactionInProcess | Partial<MongoBound<IEVMTransactionInProcess>>,
     options?: TransformOptions
   ): EVMTransactionJSON | string {
-    const dataStr = tx.data ? tx.data.toString() : '';
-    const decodedData = this.abiDecode(dataStr);
-
-    const transaction: EVMTransactionJSON = {
+    
+    let transaction: EVMTransactionJSON = {
       txid: tx.txid || '',
       network: tx.network || '',
       chain: tx.chain || '',
@@ -394,20 +530,30 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
       fee: valueOrDefault(tx.fee, -1),
       value: valueOrDefault(tx.value, -1),
-      data: dataStr,
       gasLimit: valueOrDefault(tx.gasLimit, -1),
       gasPrice: valueOrDefault(tx.gasPrice, -1),
       nonce: valueOrDefault(tx.nonce, 0),
       to: tx.to || '',
       from: tx.from || '',
-      abiType: tx.abiType,
-      internal: tx.internal
-        ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
-        : [],
-      calls: tx.calls ? tx.calls.map(t => ({ ...t, decodedData: this.abiDecode(t.input || '0x') })) : [],
-      decodedData: valueOrDefault(decodedData, undefined),
-      receipt: valueOrDefault(tx.receipt, undefined)
+      effects: tx.effects || []
     };
+    
+    // Add non-lean properties if we aren't excluding them
+    const config = (Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig);
+    if (config && !config.leanTransactionStorage) {
+      const dataStr = tx.data ? tx.data.toString() : '';
+      const decodedData = this.abiDecode(dataStr);
+      const nonLeanProperties = {
+        data: dataStr,
+        abiType: tx.abiType || valueOrDefault(decodedData, undefined),
+        internal: tx.internal
+          ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
+          : [],
+        calls: tx.calls ? tx.calls.map(t => ({ ...t, decodedData: this.abiDecode(t.input || '0x') })) : []
+      };
+      transaction = Object.assign(transaction, nonLeanProperties);
+    }
+
     if (options && options.object) {
       return transaction;
     }

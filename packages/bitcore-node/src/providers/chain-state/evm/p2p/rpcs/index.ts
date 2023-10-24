@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import { ErigonBlock, GethBlock, IEVMBlock, IEVMTransaction } from '../../types';
+import { ErigonBlock, GethBlock, IEVMBlock, IEVMTransactionInProcess } from '../../types';
 import { ClassifiedTrace, ErigonRPC } from './erigonRpc';
 import { GethRPC, IGethTxTrace } from './gethRpc';
 
@@ -32,5 +32,5 @@ export interface IRpc {
   getBlock(blockNumber: number): Promise<ErigonBlock | GethBlock>;
   getTransactionsFromBlock(blockNumber: number): Promise<Array<ClassifiedTrace | IGethTxTrace>>;
   send<T>(data: IJsonRpcRequest): Promise<T>;
-  reconcileTraces(block: IEVMBlock, transactions: IEVMTransaction[], traces: Array<ClassifiedTrace | IGethTxTrace>);
+  reconcileTraces(block: IEVMBlock, transactions: IEVMTransactionInProcess[], traces: Array<ClassifiedTrace | IGethTxTrace>);
 }

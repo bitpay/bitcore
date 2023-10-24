@@ -3353,6 +3353,21 @@ export class WalletService implements IWalletService {
         _.map([].concat(txs), tx => {
           const t = new Date(tx.blockTime).getTime() / 1000;
           const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
+          
+          // This adapter rebuilds the abiType property from data contained in the effects so that it returns what wallet is used to
+          // If we remove the slight reliance in the wallet on abiType then we can remove this adapter
+          function recreateAbiType(effects) {
+            // Check if any top level effects are ERC20 transfers
+            if (effects && effects.length) {
+              const erc20Transfer = effects.find(e => e.type == 'ERC20:transfer' && e.callStack == '');
+              if (erc20Transfer) {
+                // This is the only data used in old wallet and bitpay-app
+                return { name: 'transfer' };
+              }
+            }
+            return undefined;
+          }
+
           const ret = {
             id: tx.id,
             txid: tx.txid,
@@ -3371,11 +3386,12 @@ export class WalletService implements IWalletService {
             network: tx.network,
             chain: tx.chain,
             data: tx.data,
-            abiType: tx.abiType,
+            abiType: tx.abiType || recreateAbiType(tx.effects),
             gasPrice: tx.gasPrice,
             gasLimit: tx.gasLimit,
             receipt: tx.receipt,
-            nonce: tx.nonce
+            nonce: tx.nonce,
+            effects: tx.effects
           };
           switch (tx.category) {
             case 'send':
