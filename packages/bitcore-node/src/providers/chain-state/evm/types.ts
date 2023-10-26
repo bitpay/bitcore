@@ -86,7 +86,7 @@ export interface GethTraceCall {
   input: string;
   output: string;
   to: string;
-  type: 'CALL' | 'STATICALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT';
+  type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2';
   value?: string;
 }
 

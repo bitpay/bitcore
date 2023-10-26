@@ -15,7 +15,7 @@ interface IGethTxTraceBase {
   input: string;
   output: string;
   to: string;
-  type: 'CREATE';
+  type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2';
   value: string;
   abiType?: IAbiDecodedData;
 }
