@@ -8,8 +8,10 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
 
-const { CHAIN, NETWORK } = process.env;
+const { PRUNING_CHAIN, PRUNING_NETWORK, PRUNING_MEMPOOL_AGE, PRUNING_INTERVAL_HRS } = process.env;
 const args = parseArgv([], [
+  { arg: 'CHAIN', type: 'string' },
+  { arg: 'NETWORK', type: 'string' },
   { arg: 'OLD', type: 'bool' },
   { arg: 'INVALID', type: 'bool' },
   { arg: 'EXIT', type: 'bool' },
@@ -17,10 +19,15 @@ const args = parseArgv([], [
   { arg: 'MEMPOOL_AGE', type: 'int' },
   { arg: 'INTERVAL_HRS', type: 'float' }
 ]);
-const MEMPOOL_AGE = Number(args.MEMPOOL_AGE || process.env.MEMPOOL_AGE) || 7;
+
 const ONE_MIN = 1000 * 60;
 const ONE_HOUR = 60 * ONE_MIN;
 const ONE_DAY = 24 * ONE_HOUR;
+
+const CHAIN = args.CHAIN || PRUNING_CHAIN;
+const NETWORK = args.NETWORK || PRUNING_NETWORK;
+const INTERVAL_HRS = args.INTERVAL_HRS || Number(PRUNING_INTERVAL_HRS) || 12;
+const MEMPOOL_AGE = args.MEMPOOL_AGE || Number(PRUNING_MEMPOOL_AGE) || 7;
 
 // If --DRY was given w/o a follow arg (i.e. 'true', '0', etc) assume the user wants to run a dry run (safe)
 if (Object.keys(args).includes('DRY') && args.DRY === undefined) {
@@ -40,12 +47,18 @@ export class PruningService {
   }
 
   async start() {
+    logger.info('Starting Pruning Service');
+    args.OLD && logger.info(`Pruning mempool txs older than ${MEMPOOL_AGE} day(s)`);
+    args.INVALID && logger.info('Pruning conflicting mempool txs');
+    args.DRY && logger.info('Pruning service DRY RUN');
+    
     if (args.EXIT) {
       this.detectAndClear().then(() => {
         process.emit('SIGINT', 'SIGINT');
       });
     } else {
-      this.interval = setInterval(this.detectAndClear.bind(this), args.INTERVAL_HRS * ONE_HOUR);
+      logger.info('Pruning service interval (hours): ' + INTERVAL_HRS);
+      this.interval = setInterval(this.detectAndClear.bind(this), INTERVAL_HRS * ONE_HOUR);
     }
   }
 

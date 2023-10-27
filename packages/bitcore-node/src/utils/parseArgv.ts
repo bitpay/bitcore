@@ -18,8 +18,8 @@ export default function parseArgv(required: Arg<Required>[], optional: Arg<Optio
     }
     const argIndex = process.argv.indexOf(`--${arg}`);
     if (argIndex === -1) throw new Error(arg + ' is a required command argument');
-    let argValue = convertType(argIndex >= 0 ? process.argv[argIndex + 1] : '', type);
-    if (argValue == null) throw new Error(arg + ' is missing a value of ' + type + ' type');
+    const argValue = convertType(argIndex >= 0 ? process.argv[argIndex + 1] : '', type);
+    if (argValue == null || argValue === '') throw new Error(arg + ' is missing a value of ' + type + ' type');
     Object.assign(parsed, { [arg as string]: argValue });
   }
   for (let arg of optional) {
@@ -28,8 +28,8 @@ export default function parseArgv(required: Arg<Required>[], optional: Arg<Optio
       ({ arg, type } = arg);
     }
     const argIndex = process.argv.indexOf(`--${arg}`);
-    let argValue = convertType(argIndex >= 0 ? process.argv[argIndex + 1] : '', type);
-    if (argValue == null) throw new Error(arg + ' is missing a value of ' + type + ' type');
+    const argValue = convertType(argIndex >= 0 ? process.argv[argIndex + 1] : '', type);
+    if (argIndex > -1 && (argValue == null || argValue === '')) throw new Error(arg + ' is missing a value of ' + type + ' type');
     Object.assign(parsed, { [arg as string]: argValue });
   }
   return parsed;
@@ -46,12 +46,14 @@ function convertType(val, type) {
       const givenWithoutVal = val == null || val?.startsWith('--');
       return Boolean(val === 'true' || parseInt(val) || givenWithoutVal);
     case 'int':
+      if (!val) { return }
       if (isNaN(parseInt(val))) {
         throw new Error(`Invalid arg type. Expected int but got "${val}"`);
       }
       return parseInt(val);
     case 'number':
     case 'float':
+      if (!val) { return }
       if (isNaN(parseFloat(val))) {
         throw new Error(`Invalid arg type. Expected float but got "${val}"`);
       }
