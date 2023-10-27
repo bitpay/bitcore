@@ -9,7 +9,13 @@ import '../utils/polyfills';
 import { Config } from './config';
 
 const { CHAIN, NETWORK } = process.env;
-const args = parseArgv([], ['EXIT', 'DRY', 'MEMPOOL_AGE']);
+const args = parseArgv([], [
+  { arg: 'OLD', type: 'bool' },
+  { arg: 'INVALID', type: 'bool' },
+  { arg: 'EXIT', type: 'bool' },
+  { arg: 'DRY', type: 'bool' },
+  { arg: 'MEMPOOL_AGE', type: 'int' }
+]);
 const MEMPOOL_AGE =  Number(args.MEMPOOL_AGE || process.env.MEMPOOL_AGE) || 7;
 
 // If --DRY was given w/o a follow arg (i.e. 'true', '0', etc) assume the user wants to run a dry run (safe)
@@ -42,16 +48,16 @@ export class PruningService {
 
   async detectAndClear() {
     if (CHAIN && NETWORK) {
-      await this.processOldMempoolTxs(CHAIN, NETWORK, MEMPOOL_AGE);
-      await this.processAllInvalidTxs(CHAIN, NETWORK);
+      args.OLD && await this.processOldMempoolTxs(CHAIN, NETWORK, MEMPOOL_AGE);
+      args.INVALID && await this.processAllInvalidTxs(CHAIN, NETWORK);
     } else {
       for (let chainNetwork of Config.chainNetworks()) {
         const { chain, network } = chainNetwork;
         if (!chain || !network) {
           throw new Error('Config structure should contain both a chain and network');
         }
-        await this.processOldMempoolTxs(chain, network, MEMPOOL_AGE);
-        await this.processAllInvalidTxs(chain, network);
+        args.OLD && await this.processOldMempoolTxs(chain, network, MEMPOOL_AGE);
+        args.INVALID && await this.processAllInvalidTxs(chain, network);
       }
     }
   }
