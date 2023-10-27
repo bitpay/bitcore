@@ -605,8 +605,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
               'calls.abiType.params.type': 'address',
               'calls.abiType.params.value': { $in: addressBatchLC }
             },
-            { 'effects.to': { $in: addressBatchLC } },
-            { 'effects.from': { $in: addressBatchLC } },
+            { chain, network, 'effects.to': { $in: addressBatch } },
+            { chain, network, 'effects.from': { $in: addressBatch } },
           ]
         },
         { $addToSet: { wallets: params.wallet._id } }

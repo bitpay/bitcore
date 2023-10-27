@@ -102,14 +102,14 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       { chain: 1, network: 1, 'effects.to': 1, blockTimeNormalized: 1 },
       {
         background: true,
-        sparse: true
+        partialFilterExpression: { 'effects.0': { $exists: true } }
       }
     );
     this.collection.createIndex(
-      { chain: 1, network: 1, 'effects.amount': 1, blockTimeNormalized: 1 },
+      { chain: 1, network: 1, 'effects.from': 1, blockTimeNormalized: 1 },
       {
         background: true,
-        sparse: true
+        partialFilterExpression: { 'effects.0': { $exists: true } }
       }
     );
   }
