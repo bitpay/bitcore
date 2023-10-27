@@ -3,7 +3,7 @@ import { describe } from 'mocha';
 import sinon from 'sinon';
 import parseArgv from '../../../src/utils/parseArgv';
 
-describe.only('parseArgv Util', () => {
+describe('parseArgv Util', () => {
   let argv;
   const sandbox = sinon.createSandbox();
   
@@ -155,7 +155,7 @@ describe.only('parseArgv Util', () => {
         parseArgv([{ arg: 'DAYS', type: 'int' }], []);
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Invalid arg type. Expected int but got "undefined"');
+        expect(err.message).to.equal('DAYS is missing a value of int type');
       }
     });
 
@@ -181,7 +181,7 @@ describe.only('parseArgv Util', () => {
         parseArgv([{ arg: 'DAYS', type: 'int' }], []);
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Invalid arg type. Expected int but got "undefined"');
+        expect(err.message).to.equal('DAYS is missing a value of int type');
       }
     });
 
@@ -219,7 +219,7 @@ describe.only('parseArgv Util', () => {
         parseArgv([{ arg: 'DAYS', type: 'number' }], []);
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Invalid arg type. Expected float but got "undefined"');
+        expect(err.message).to.equal('DAYS is missing a value of number type');
       }
     });
 
@@ -245,7 +245,7 @@ describe.only('parseArgv Util', () => {
         parseArgv([{ arg: 'DAYS', type: 'number' }], []);
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Invalid arg type. Expected float but got "undefined"');
+        expect(err.message).to.equal('DAYS is missing a value of number type');
       }
     });
 
