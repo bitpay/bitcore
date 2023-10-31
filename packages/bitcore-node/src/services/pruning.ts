@@ -34,6 +34,10 @@ if (Object.keys(args).includes('DRY') && args.DRY === undefined) {
   args.DRY = '1';
 }
 
+if (INTERVAL_HRS > 72) {
+  throw new Error('INTERVAL_HRS cannot be over 72. Consider using a cron job.');
+}
+
 export class PruningService {
   transactionModel: TransactionModel;
   coinModel: CoinModel;
