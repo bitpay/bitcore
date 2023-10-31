@@ -136,9 +136,9 @@ export class EthChain implements IChain {
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
@@ -158,9 +158,9 @@ export class EthChain implements IChain {
         for (let output of opts.outputs) {
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
-            outputAmounts.push(toBN(output.amount));
+            outputAmounts.push(toBN(BigInt(output.amount).toString()));
             if (!opts.tokenAddress) {
-              totalValue = totalValue.add(toBN(output.amount));
+              totalValue = totalValue.add(toBN(BigInt(output.amount).toString()));
             }
             inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
             continue;
@@ -169,10 +169,10 @@ export class EthChain implements IChain {
               const to = opts.payProUrl
                 ? output.toAddress
                 : opts.tokenAddress
-                ? opts.tokenAddress
-                : opts.multisigContractAddress
-                ? opts.multisigContractAddress
-                : output.toAddress;
+                  ? opts.tokenAddress
+                  : opts.multisigContractAddress
+                    ? opts.multisigContractAddress
+                    : output.toAddress;
               const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               inGasLimit = await server.estimateGas({
                 coin,
@@ -451,7 +451,7 @@ export class EthChain implements IChain {
     });
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     try {
@@ -459,7 +459,7 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toBN(output.amount).toString() !== output.amount.toString()
+        Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }
