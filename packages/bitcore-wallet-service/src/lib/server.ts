@@ -4806,6 +4806,8 @@ export class WalletService implements IWalletService {
       if (!checkRequired(req.body, ['account_reference', 'source', 'target', 'wallet_address', 'return_url_on_success'])) {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
+
+      delete req.body.payment_method_id;
       
       const UriPath = '/orders';
       const URL: string = API + UriPath;
