@@ -29,7 +29,7 @@ const CHAIN = args.CHAIN || PRUNING_CHAIN;
 const NETWORK = args.NETWORK || PRUNING_NETWORK;
 const INTERVAL_HRS = args.INTERVAL_HRS || Number(PRUNING_INTERVAL_HRS) || 12;
 const MEMPOOL_AGE = args.MEMPOOL_AGE || Number(PRUNING_MEMPOOL_AGE) || 7;
-const DESCENDANT_LIMIT = args.DESCENDANT_LIMIT || Number(PRUNING_DESCENDANT_LIMIT) || 50;
+const DESCENDANT_LIMIT = args.DESCENDANT_LIMIT || Number(PRUNING_DESCENDANT_LIMIT) || 10;
 
 // If --DRY was given w/o a follow arg (i.e. 'true', '0', etc) assume the user wants to run a dry run (safe)
 if (Object.keys(args).includes('DRY') && args.DRY === undefined) {
@@ -127,13 +127,12 @@ export class PruningService {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
-                count++;
-                if (count > DESCENDANT_LIMIT) {
-                  logger.warn(`${tx.txid} has too many decendents`);
-                  return cb();
-                }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
+                  if (spentTxids.size > DESCENDANT_LIMIT) {
+                    logger.warn(`${tx.txid} has too many decendants`);
+                    return cb();
+                  }
                 }
               }
               spentTxids.add(tx.txid);
