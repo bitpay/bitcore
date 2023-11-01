@@ -1,4 +1,4 @@
-import rippleKeypairs from 'ripple-keypairs';
+import { deriveAddress } from 'xrpl';
 import { IDeriver } from '..';
 
 import BitcoreLib from 'bitcore-lib';
@@ -19,7 +19,7 @@ export class XrpDeriver implements IDeriver {
   deriveAddressWithPath(network: string, xpubKey: string, path: string) {
     const xpub = new BitcoreLib.HDPublicKey(xpubKey, network);
     const pubKey = xpub.derive(path).toObject().publicKey;
-    const address = rippleKeypairs.deriveAddress(pubKey);
+    const address = deriveAddress(pubKey);
     return address;
   }
 
@@ -28,13 +28,13 @@ export class XrpDeriver implements IDeriver {
     const derivedXPriv = xpriv.derive(path);
     const privKey = derivedXPriv.toObject().privateKey.toUpperCase();
     const pubKey = derivedXPriv.hdPublicKey.toObject().publicKey.toUpperCase();
-    const address = rippleKeypairs.deriveAddress(pubKey);
+    const address = deriveAddress(pubKey);
     return { address, privKey, pubKey };
   }
 
   getAddress(network: string, pubKey) {
     pubKey = new BitcoreLib.PublicKey(pubKey, network);
-    const address = rippleKeypairs.deriveAddress(pubKey.publicKey);
+    const address = deriveAddress(pubKey.publicKey);
     return address;
   }
 }

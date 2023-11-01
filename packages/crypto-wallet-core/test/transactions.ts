@@ -480,7 +480,7 @@ describe('Transaction Creation', () => {
       Transactions.create(xrpParams);
     } catch (err) {
       expect(err).to.exist;
-      expect(err.message).to.equal('instance.payment.invoiceID does not match pattern "^[A-F0-9]{64}$"');
+      expect(err.message).to.equal('Invalid Hash length 28');
     }
   });
 
@@ -499,9 +499,7 @@ describe('Transaction Creation', () => {
       Transactions.create(xrpParams);
     } catch (err) {
       expect(err).to.exist;
-      expect(err.message).to.equal(
-        'instance.address is not exactly one from <xAddress>,<classicAddress>,instance.payment.source is not exactly one from <sourceExactAdjustment>,<maxAdjustment>'
-      );
+      expect(err.message).to.equal('checksum_invalid');
     }
   });
 
