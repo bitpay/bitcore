@@ -122,7 +122,6 @@ export class PruningService {
               logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
               const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
               let spentTxids = new Set<string>();
-              let count = 0;
               for await (const coin of outputGenerator) {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
@@ -138,7 +137,7 @@ export class PruningService {
               spentTxids.add(tx.txid);
               const uniqueTxids = Array.from(spentTxids);
               await this.removeOldMempool(chain, network, uniqueTxids);
-              logger.info(`Removed ${tx.txid} transaction and ${count} dependent txs`);
+              logger.info(`Removed ${tx.txid} transaction and ${spentTxids.size - 1} dependent txs`);
               return cb();
             }
           })
