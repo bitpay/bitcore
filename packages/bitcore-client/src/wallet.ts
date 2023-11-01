@@ -236,11 +236,12 @@ export class Wallet {
   }
 
   /**
-   * Certain chains don't 
+   * Does this wallet use UTXOs?
    * @returns {Boolean}
    */
   isUtxoChain() {
-    return ['BTC', 'BCH', 'DOGE', 'LTC'].includes(this.chain)
+    // the toUpperCase() should not be necessary, but it's here just in case.
+    return ['BTC', 'BCH', 'DOGE', 'LTC'].includes(this.chain?.toUpperCase() || 'BTC');
   }
 
   lock() {
