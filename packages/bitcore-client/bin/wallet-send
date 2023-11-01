@@ -57,9 +57,8 @@ const main = async () => {
       recipients,
       from: lastAddress,
       token
-    };
-    const noChange = ['ETH', 'MATIC'].includes(wallet.chain); 
-    params.change = noChange ? null : wallet.deriveAddress(wallet.addressIndex, true);
+    }; 
+    params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
     const changeIdx = params.change ? wallet.addressIndex : null;
     const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);

@@ -101,8 +101,7 @@ const main = async () => {
     const utxos = await wallet.getUtxosArray();
     const params = { recipients, feeRate, from, invoiceID, data, value, utxos };
     params.nonce = Number(nonce);
-    const noChange = ['ETH', 'MATIC'].includes(wallet.chain); 
-    params.change = noChange ? null : wallet.deriveAddress(wallet.addressIndex, true);
+    params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
     const changeIdx = params.change ? wallet.addressIndex : null;
     const unsignedTx = await wallet.newTx(params);
     console.log(`unsignedRawTx: ${unsignedTx}`);
