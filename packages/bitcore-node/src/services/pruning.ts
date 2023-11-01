@@ -8,7 +8,7 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
 
-const { PRUNING_CHAIN, PRUNING_NETWORK, PRUNING_MEMPOOL_AGE, PRUNING_INTERVAL_HRS } = process.env;
+const { PRUNING_CHAIN, PRUNING_NETWORK, PRUNING_MEMPOOL_AGE, PRUNING_INTERVAL_HRS, PRUNING_DESCENDANT_LIMIT } = process.env;
 const args = parseArgv([], [
   { arg: 'CHAIN', type: 'string' },
   { arg: 'NETWORK', type: 'string' },
@@ -17,7 +17,8 @@ const args = parseArgv([], [
   { arg: 'EXIT', type: 'bool' },
   { arg: 'DRY', type: 'bool' },
   { arg: 'MEMPOOL_AGE', type: 'int' },
-  { arg: 'INTERVAL_HRS', type: 'float' }
+  { arg: 'INTERVAL_HRS', type: 'float' },
+  { arg: 'DESCENDANT_LIMIT', type: 'int' }
 ]);
 
 const ONE_MIN = 1000 * 60;
@@ -28,6 +29,7 @@ const CHAIN = args.CHAIN || PRUNING_CHAIN;
 const NETWORK = args.NETWORK || PRUNING_NETWORK;
 const INTERVAL_HRS = args.INTERVAL_HRS || Number(PRUNING_INTERVAL_HRS) || 12;
 const MEMPOOL_AGE = args.MEMPOOL_AGE || Number(PRUNING_MEMPOOL_AGE) || 7;
+const DESCENDANT_LIMIT = args.DESCENDANT_LIMIT || Number(PRUNING_DESCENDANT_LIMIT) || 50;
 
 // If --DRY was given w/o a follow arg (i.e. 'true', '0', etc) assume the user wants to run a dry run (safe)
 if (Object.keys(args).includes('DRY') && args.DRY === undefined) {
@@ -126,8 +128,9 @@ export class PruningService {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
                 count++;
-                if (count > 50) {
-                  throw new Error(`${tx.txid} has too many decendents`);
+                if (count > DESCENDANT_LIMIT) {
+                  logger.warn(`${tx.txid} has too many decendents`);
+                  return cb();
                 }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
@@ -137,7 +140,7 @@ export class PruningService {
               const uniqueTxids = Array.from(spentTxids);
               await this.removeOldMempool(chain, network, uniqueTxids);
               logger.info(`Removed ${tx.txid} transaction and ${count} dependent txs`);
-              cb();
+              return cb();
             }
           })
         )
