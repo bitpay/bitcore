@@ -108,6 +108,7 @@ export class PruningService {
       blockTimeNormalized: { $lt: oldTime }
     });
     logger.info(`Found ${count} outdated ${chain} ${network} mempool txs`);
+    let rmCount = 0;
     await new Promise((resolve, reject) => {
       this.transactionModel.collection
         .find({ chain, network, blockHeight: -1, blockTimeNormalized: { $lt: oldTime } })
@@ -135,9 +136,10 @@ export class PruningService {
                 }
               }
               spentTxids.add(tx.txid);
+              rmCount += spentTxids.size;
               const uniqueTxids = Array.from(spentTxids);
               await this.removeOldMempool(chain, network, uniqueTxids);
-              logger.info(`Removed ${tx.txid} transaction and ${spentTxids.size - 1} dependent txs`);
+              logger.info(`Removed tx ${tx.txid} and ${spentTxids.size - 1} dependent txs`);
               return cb();
             }
           })
@@ -145,7 +147,7 @@ export class PruningService {
         .on('finish', resolve)
         .on('error', reject);
     });
-    logger.info(`Removed all old mempool txs within the last ${days} days`);
+    logger.info(`Removed all pending txs older than ${days} days: ${rmCount}`);
   }
 
   async processAllInvalidTxs(chain, network) {
@@ -169,23 +171,22 @@ export class PruningService {
               logger.info(`Invalidating ${tx.txid} outputs and dependent outputs`);
               const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
               let spentTxids = new Set<string>();
-              let count = 0;
               for await (const coin of outputGenerator) {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
-                count++;
-                if (count > 50) {
-                  throw new Error(`${tx.txid} has too many decendents`);
-                }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
+                  if (spentTxids.size > DESCENDANT_LIMIT) {
+                    logger.warn(`${tx.txid} has too many decendants`);
+                    return cb();
+                  }
                 }
               }
               spentTxids.add(tx.txid);
               const uniqueTxids = Array.from(spentTxids);
               await this.clearInvalid(uniqueTxids);
-              logger.info(`Invalidated ${tx.txid} and ${count} dependent txs`);
+              logger.info(`Invalidated tx ${tx.txid} and ${spentTxids.size - 1} dependent txs`);
               cb();
             }
           })
