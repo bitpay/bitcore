@@ -399,55 +399,63 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
    */
   getEffects(tx: IEVMTransactionInProcess): Effect[] {
     const effects = [] as Effect[];
-    // Top level tx effects
-    if (tx.abiType) {
-      // Handle Abi related effects
-      const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
-      if (effect) {
-        effects.push(effect);
-      }
-    }
-    // Internal tx effects
-    if (tx.internal && tx.internal.length) {
-      for (let internalTx of tx.internal) {
-        if (internalTx.action.value && BigInt(internalTx.action.value) > 0) {
-          // Handle native asset transfer
-          const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
+    try {
+      // Top level tx effects
+      if (tx.abiType) {
+        // Handle Abi related effects
+        const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
+        if (effect) {
           effects.push(effect);
         }
-        // Ignoring delegated calls because they are redundant
-        if (internalTx.abiType && internalTx.type != 'delegatecall') {
-          // Handle Abi related effects
-          const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
-          if (effect) {
+      }
+      // Internal tx effects
+      if (tx.internal && tx.internal.length) {
+        for (let internalTx of tx.internal) {
+          if (internalTx.action.value && BigInt(internalTx.action.value) > 0) {
+            // Handle native asset transfer
+            const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             effects.push(effect);
+          }
+          // Ignoring delegated calls because they are redundant
+          if (internalTx.abiType && internalTx.type != 'delegatecall') {
+            // Handle Abi related effects
+            const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
+            if (effect) {
+              effects.push(effect);
+            }
+          }
+        }
+      } else if (tx.calls && tx.calls.length) {
+        for (let internalTx of tx.calls) {
+          if (internalTx.value && BigInt(internalTx.value) > 0) {
+            // Handle native asset transfer
+            const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
+            effects.push(effect);
+          }
+          // Ignoring delegated calls because they are redundant
+          if (internalTx.abiType && internalTx.type != 'DELEGATECALL') {
+            // Handle Abi related effects
+            const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.to, internalTx.from, internalTx.depth);
+            if (effect) {
+              effects.push(effect);
+            }
           }
         }
       }
-    } else if (tx.calls && tx.calls.length) {
-      for (let internalTx of tx.calls) {
-        if (internalTx.value && BigInt(internalTx.value) > 0) {
-          // Handle native asset transfer
-          const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
-          effects.push(effect);
-        }
-        // Ignoring delegated calls because they are redundant
-        if (internalTx.abiType && internalTx.type != 'DELEGATECALL') {
-          // Handle Abi related effects
-          const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.to, internalTx.from, internalTx.depth);
-          if (effect) {
-            effects.push(effect);
-          }
-        }
-      }
+    } catch (err) {
+      logger.error('Error Getting Effects For TxId: %o ::%o', tx.txid, err);
     }
     return effects;
   }
 
   _getEffectForAbiType(abi: IAbiDecodedData, to: string, from: string, callStack: string): Effect | undefined {
+    // Check that the params are valid before parsing
+    if (!to || !from) return;
     if (`${abi.type}:${abi.name}` == 'ERC20:transfer') {
       const params = this.parseAbiParams(abi);
       const { _to, _value } = params;
+      // Check that the params are valid before parsing
+      if (!_to || !_value) return;
       return {
         type: 'ERC20:transfer',
         to: Web3.utils.toChecksumAddress(_to),
@@ -459,6 +467,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     } else if (`${abi.type}:${abi.name}` == 'ERC20:transferFrom') {
       const params = this.parseAbiParams(abi);
       const { _to, _from, _value } = params;
+      // Check that the params are valid before parsing
+      if (!_to || !_from || !_value) return;
       return {
         type: 'ERC20:transfer',
         to: Web3.utils.toChecksumAddress(_to),
@@ -470,6 +480,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     } else if (`${abi.type}:${abi.name}` == 'MULTISIG:submitTransaction') {
       const params = this.parseAbiParams(abi);
       const { destination, value } = params;
+      // Check that the params are valid before parsing
+      if (!destination || !value) return;
       return {
         type: 'MULTISIG:submitTransaction',
         to: Web3.utils.toChecksumAddress(destination),
