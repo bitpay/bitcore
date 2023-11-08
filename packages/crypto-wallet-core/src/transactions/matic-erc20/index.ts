@@ -42,13 +42,13 @@ export class MATICERC20TxProvider extends MATICTxProvider {
       const amounts = [];
       for (let recipient of recipients) {
         addresses.push(recipient.address);
-        amounts.push(toBN(recipient.amount));
+        amounts.push(toBN(BigInt(recipient.amount).toString()));
       }
       const multisendContract = this.getMultiSendContract(contractAddress);
       return multisendContract.methods.sendErc20(tokenAddress, addresses, amounts).encodeABI();
     } else {
       const [{ address, amount }] = params.recipients;
-      const amountBN = toBN(amount);
+      const amountBN = toBN(BigInt(amount).toString());
       const data = this.getERC20Contract(tokenAddress)
         .methods.transfer(address, amountBN)
         .encodeABI();

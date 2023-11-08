@@ -2,7 +2,7 @@ import util from 'util';
 import logger from '../logger';
 import parseArgv from '../utils/parseArgv';
 export const PerformanceTracker = {};
-let args = parseArgv([], ['DEBUG']);
+let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 
 export function SavePerformance(logPrefix, startTime, endTime) {
   const totalTime = endTime.getTime() - startTime.getTime();

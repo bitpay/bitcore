@@ -1,10 +1,6 @@
 import { createHash } from 'crypto';
-import rippleBinaryCodec from 'ripple-binary-codec';
-import { RippleAPI } from 'ripple-lib';
-// tslint:disable-next-line:no-submodule-imports
-import { Payment } from 'ripple-lib/dist/npm/transaction/payment';
-// tslint:disable-next-line:no-submodule-imports
-import { Instructions, TransactionJSON } from 'ripple-lib/dist/npm/transaction/types';
+import { decode, encode, Wallet as XrpWallet } from 'xrpl';
+import { Payment } from 'xrpl/src/models/transactions';
 import { Key } from '../../derivation';
 
 enum HashPrefix {
@@ -23,36 +19,10 @@ export class XRPTxProvider {
     feeRate: number;
     nonce: number;
   }) {
-    const { recipients, tag, from, invoiceID, fee, feeRate, nonce } = params;
+    const { recipients, tag, from, invoiceID, fee, nonce } = params;
     const { address, amount } = recipients[0];
-    const rippleAPI = new RippleAPI();
-    const { schemaValidate } = RippleAPI._PRIVATE.schemaValidator;
     const Flags = 2147483648;
-    const amountStr = rippleAPI.dropsToXrp(amount);
-    const feeNum = fee || feeRate;
-    const feeStr = rippleAPI.dropsToXrp(feeNum.toString());
-    const payment: Payment = {
-      source: {
-        address: from,
-        maxAmount: {
-          value: amountStr,
-          currency: 'XRP'
-        }
-      },
-      destination: {
-        address,
-        amount: {
-          value: amountStr,
-          currency: 'XRP'
-        }
-      }
-    };
-    const instructions: Instructions = {
-      fee: feeStr,
-      sequence: nonce,
-      maxLedgerVersion: null
-    };
-    const txJSON: TransactionJSON = {
+    const txJSON: Payment = {
       TransactionType: 'Payment',
       Account: from,
       Destination: address,
@@ -62,27 +32,19 @@ export class XRPTxProvider {
       Sequence: nonce
     };
     if (invoiceID) {
-      payment.invoiceID = invoiceID;
       txJSON.InvoiceID = invoiceID;
     }
     if (tag) {
-      payment.destination.tag = tag;
       txJSON.DestinationTag = tag;
     }
-    schemaValidate('preparePaymentParameters', { address: from, payment, instructions });
-    schemaValidate('tx-json', txJSON);
-    return rippleBinaryCodec.encode(txJSON);
+    return encode(txJSON);
   }
 
   getSignatureObject(params: { tx: string; key: Key }) {
     const { tx, key } = params;
-    const txJSON = rippleBinaryCodec.decode(tx);
-    let rippleAPI = new RippleAPI();
-    const signedTx = rippleAPI.sign(JSON.stringify(txJSON), {
-      privateKey: key.privKey.toUpperCase(),
-      publicKey: key.pubKey.toUpperCase()
-    });
-    return signedTx;
+    const txJSON = (decode(tx) as unknown) as Payment;
+    const signedTx = new XrpWallet(key.pubKey.toUpperCase(), key.privKey.toUpperCase()).sign(txJSON);
+    return { signedTransaction: signedTx.tx_blob, hash: signedTx.hash };
   }
 
   getSignature(params: { tx: string; key: Key }): string {

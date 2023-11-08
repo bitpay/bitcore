@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
 import { ETH } from '../../../../src/modules/ethereum/api/csp';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
-import { IEVMBlock, IEVMTransaction } from '../../../../src/providers/chain-state/evm/types';
+import { IEVMBlock, IEVMTransactionInProcess } from '../../../../src/providers/chain-state/evm/types';
 import { mockModel } from '../../../helpers';
 
 describe('ETH Chain State Provider', function() {
@@ -60,11 +60,13 @@ describe('ETH Chain State Provider', function() {
     const sandbox = sinon.createSandbox();
     const mockTx = {
       _id: new ObjectId(),
+      chain: 'ETH', 
+      network: 'testnet',
       txid: '123',
       blockHeight: 1,
       gasPrice: 10,
       data: Buffer.from('')
-    } as MongoBound<IEVMTransaction>;
+    } as MongoBound<IEVMTransactionInProcess>;
     sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);

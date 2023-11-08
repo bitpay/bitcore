@@ -7,7 +7,7 @@ import { CallbackType } from '../types/Callback';
 import { WorkerType } from '../types/Worker';
 import parseArgv from '../utils/parseArgv';
 
-let args = parseArgv([], ['DEBUG']);
+let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 
 @LoggifyClass
 export class WorkerService extends EventEmitter {

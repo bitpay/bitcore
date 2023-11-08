@@ -8,7 +8,7 @@ import { valueOrDefault } from '../../../../utils/check';
 import { wait } from '../../../../utils/wait';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
-import { AnyBlock, ErigonTransaction, GethTransaction, IEVMBlock, IEVMTransaction } from '../types';
+import { AnyBlock, ErigonTransaction, GethTransaction, IEVMBlock, IEVMTransactionInProcess } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 
 export class SyncWorker {
@@ -115,7 +115,7 @@ export class SyncWorker {
     return { web3: this.web3, rpc: this.rpc };
   }
 
-  async processBlock(block: IEVMBlock, transactions: IEVMTransaction[]): Promise<any> {
+  async processBlock(block: IEVMBlock, transactions: IEVMTransactionInProcess[]): Promise<any> {
     await EVMBlockStorage.addBlock({
       chain: this.chain,
       network: this.network,
@@ -166,13 +166,13 @@ export class SyncWorker {
     const transactions = block.transactions as Array<ErigonTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     const traceTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
-
+    EVMTransactionStorage.addEffectsToTxs(convertedTxs);
     this.rpc!.reconcileTraces(convertedBlock, convertedTxs, traceTxs);
 
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransaction {
+  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
     const txid = tx.hash || '';
     const to = tx.to || '';
     const from = tx.from || '';
@@ -180,7 +180,7 @@ export class SyncWorker {
     const fee = Number(tx.gas) * Number(tx.gasPrice);
     const abiType = EVMTransactionStorage.abiDecode(tx.input!);
     const nonce = tx.nonce || 0;
-    const convertedTx: IEVMTransaction = {
+    const convertedTx: IEVMTransactionInProcess = {
       chain: this.chain,
       network: this.network,
       blockHeight: valueOrDefault(tx.blockNumber, -1),
@@ -197,7 +197,6 @@ export class SyncWorker {
       from,
       gasLimit: Number(tx.gas),
       gasPrice: Number(tx.gasPrice),
-      // gasUsed: Number(tx.gasUsed),
       nonce,
       internal: [],
       calls: []

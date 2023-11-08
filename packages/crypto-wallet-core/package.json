@@ -1,6 +1,6 @@
 {
   "name": "crypto-wallet-core",
-  "version": "10.0.11",
+  "version": "10.0.17",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -23,16 +23,14 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "bitcore-lib": "^10.0.11",
-    "bitcore-lib-cash": "^10.0.11",
-    "bitcore-lib-doge": "^10.0.11",
-    "bitcore-lib-ltc": "^10.0.11",
+    "bitcore-lib": "^10.0.17",
+    "bitcore-lib-cash": "^10.0.17",
+    "bitcore-lib-doge": "^10.0.17",
+    "bitcore-lib-ltc": "^10.0.17",
     "ethers": "^5.7.0",
     "info": "0.0.6-beta.0",
-    "ripple-binary-codec": "0.2.6",
-    "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#8d3a4643a8ddfce8222786e1e5a3e85a89a5b7f5",
-    "ripple-lib": "^1.8.0",
-    "web3": "1.4.0"
+    "web3": "1.4.0",
+    "xrpl": "2.13.0"
   },
   "devDependencies": {
     "@types/chai": "4.1.7",

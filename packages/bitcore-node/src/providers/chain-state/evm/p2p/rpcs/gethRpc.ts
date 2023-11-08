@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import logger from '../../../../../logger';
 import { EVMTransactionStorage } from '../../models/transaction';
-import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransaction } from '../../types';
+import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransactionInProcess } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 interface IGethTxTraceResponse {
@@ -15,7 +15,7 @@ interface IGethTxTraceBase {
   input: string;
   output: string;
   to: string;
-  type: 'CREATE';
+  type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2';
   value: string;
   abiType?: IAbiDecodedData;
 }
@@ -80,7 +80,7 @@ export class GethRPC implements IRpc {
     return convertedTx;
   }
 
-  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransaction[], traces: IGethTxTrace[]) {
+  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransactionInProcess[], traces: IGethTxTrace[]) {
     // TODO calculate total block reward including fees
     block;
 

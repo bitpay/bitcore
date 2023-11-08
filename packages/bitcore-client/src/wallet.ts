@@ -235,6 +235,15 @@ export class Wallet {
     }
   }
 
+  /**
+   * Does this wallet use UTXOs?
+   * @returns {Boolean}
+   */
+  isUtxoChain() {
+    // the toUpperCase() should not be necessary, but it's here just in case.
+    return ['BTC', 'BCH', 'DOGE', 'LTC'].includes(this.chain?.toUpperCase() || 'BTC');
+  }
+
   lock() {
     this.unlocked = undefined;
     return this;
@@ -490,7 +499,7 @@ export class Wallet {
       let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
       decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
-    if (!['ETH', 'MATIC'].includes(this.chain)) {
+    if (this.isUtxoChain()) {
       // If changeAddressIdx == null, then save the change key at the current addressIndex (just in case)
       const changeKey = await this.derivePrivateKey(true, changeAddressIdx == null ? this.addressIndex : changeAddressIdx);
       await this.importKeys({ keys: [changeKey] });
@@ -596,7 +605,7 @@ export class Wallet {
   }
 
   private async _getChangeAddress() {
-    if (['ETH', 'MATIC'].includes(this.chain)) {
+    if (!this.isUtxoChain()) {
       return;
     }
     const key = await this.derivePrivateKey(true, this.addressIndex);

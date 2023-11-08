@@ -9,7 +9,7 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 require('heapdump');
 
-let args = parseArgv([], ['DEBUG', 'CLUSTER']);
+let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }, { arg: 'CLUSTER', type: 'bool' }]);
 const services: Array<any> = [];
 
 export const ClusteredApiWorker = async () => {

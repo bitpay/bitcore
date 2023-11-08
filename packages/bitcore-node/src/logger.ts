@@ -1,6 +1,6 @@
 import * as winston from 'winston';
 import parseArgv from './utils/parseArgv';
-let args = parseArgv([], ['DEBUG']);
+let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 const logLevel = args.DEBUG ? 'debug' : (process.env.BCN_LOG_LEVEL || 'info');
 
 
