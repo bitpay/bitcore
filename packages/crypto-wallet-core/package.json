@@ -27,7 +27,7 @@
     "bitcore-lib-cash": "^10.0.11",
     "bitcore-lib-doge": "^10.0.11",
     "bitcore-lib-ltc": "^10.0.11",
-    "ethers": "^5.0.12",
+    "ethers": "^5.7.0",
     "info": "0.0.6-beta.0",
     "ripple-binary-codec": "0.2.6",
     "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#8d3a4643a8ddfce8222786e1e5a3e85a89a5b7f5",

@@ -14,13 +14,15 @@ export class ERC20TxProvider extends ETHTxProvider {
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
     nonce: number;
-    gasPrice: number;
+    gasPrice?: number;
     data: string;
     gasLimit: number;
     tokenAddress: string;
     network: string;
     chainId?: number;
     contractAddress?: string;
+    maxGasFee?: number;
+    priorityGasFee?: number;
   }) {
     const { tokenAddress, contractAddress } = params;
     const data = this.encodeData(params);
