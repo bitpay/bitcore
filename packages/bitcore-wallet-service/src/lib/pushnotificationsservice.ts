@@ -4,7 +4,7 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import request from 'request';
-import { ChainService } from './chain';
+import config from '../config';
 import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
@@ -683,27 +683,50 @@ export class PushNotificationsService {
     );
   }
 
-  getTokenData(chain) {
+  private oneInchGetCredentials() {
+    if (!config.oneInch) throw new Error('1Inch missing credentials');
+
+    const credentials = {
+      API: config.oneInch.api,
+      API_KEY: config.oneInch.apiKey,
+      referrerAddress: config.oneInch.referrerAddress,
+      referrerFee: config.oneInch.referrerFee
+    };
+
+    return credentials;
+  }
+
+  getTokenData(chain: string) {
     return new Promise((resolve, reject) => {
-      const chainIdMap = {
-        eth: 1,
-        matic: 137
-      };
-      // Get tokens
-      this.request(
-        {
-          url: `https://bitpay.api.enterprise.1inch.exchange/v3.0/${chainIdMap[chain]}/tokens`,
-          method: 'GET',
-          json: true,
-          headers: {
-            'Content-Type': 'application/json'
+      try {
+        const credentials = this.oneInchGetCredentials();
+        const chainIdMap = {
+          eth: 1,
+          matic: 137
+        };
+        this.request(
+          {
+            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            method: 'GET',
+            json: true,
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: 'Bearer ' + credentials.API_KEY,
+            }
+          },
+          (err, data) => {
+            if (err) return reject(err);
+            if (data?.statusCode === 429) {
+              // oneinch rate limit
+              return reject();
+            }
+            return resolve(data?.body?.tokens);
           }
-        },
-        (err, data: any) => {
-          if (err) return reject(err);
-          return resolve(data.body.tokens);
-        }
-      );
+        );
+      } catch (err) {
+        return reject(err);
+      }
     });
   }
 }

@@ -812,7 +812,7 @@ describe('Push notifications', function() {
             pushNotificationsService = new PushNotificationsService();
             requestStub = sinon.stub(pushNotificationsService, '_makeRequest').callsFake(()=>{});
             requestStub.yields();
-            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(()=>TestData.OneInch_ETH_Tokens.tokens);
+            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.OneInch_ETH_Tokens.tokens);
             pushNotificationsService.start({
               lockOpts: {},
               messageBroker: server.messageBroker,
@@ -908,6 +908,7 @@ describe('Push notifications', function() {
             requestStub.yields();
 
             pushNotificationsService = new PushNotificationsService();
+            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.OneInch_ETH_Tokens.tokens);
             pushNotificationsService.start({
               lockOpts: {},
               messageBroker: server.messageBroker,
@@ -1047,7 +1048,7 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(2);
+              calls.length.should.equal(1);
               done();
             }, 100);
           });
