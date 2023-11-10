@@ -73,6 +73,10 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     if (!satoshisBN) {
       throw new Error('internal error - need satoshisBN to verify FORKID transactions');
     }
+
+    if (tx.toBuffer().length < 65) {
+      throw new Error('bad-txns-undersize');
+    }
   }
 
   this.set({
@@ -126,7 +130,8 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
   }
 
   // Additional validation for spend-to-script-hash transactions:
-  if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) && scriptPubkey.isScriptHashOut()) {
+  const fEnableP2SH32 = (flags & Interpreter.SCRIPT_ENABLE_P2SH_32) !== 0;
+  if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) && scriptPubkey.isScriptHashOut(fEnableP2SH32)) {
     // scriptSig must be literals-only or validation fails
     if (!scriptSig.isPushOnly()) {
       this.errstr = 'SCRIPT_ERR_SIG_PUSHONLY';
@@ -384,6 +389,13 @@ Interpreter.SCRIPT_64_BIT_INTEGERS = (1 << 24);
 
 // Native Introspection opcodes.
 Interpreter.SCRIPT_NATIVE_INTROSPECTION = (1 << 25);
+
+// Enable p2sh32 (uses OP_HASH256 rather than OP_HASH160)
+Interpreter.SCRIPT_ENABLE_P2SH_32 = (1 << 26);
+
+// Enable native tokens support, including all consensus rules & native
+// introspection op-codes related to them.
+Interpreter.SCRIPT_ENABLE_TOKENS = (1 << 27);
 
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
@@ -835,6 +847,7 @@ Interpreter.prototype.step = function() {
   const fRequireMinimal = (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALDATA) !== 0;
   const f64BitIntegers = (this.flags & Interpreter.SCRIPT_64_BIT_INTEGERS) !== 0;
   const fNativeIntrospection = (this.flags & Interpreter.SCRIPT_NATIVE_INTROSPECTION) !== 0;
+  const fNativeTokens = (this.flags & Interpreter.SCRIPT_ENABLE_TOKENS) !== 0;
   const maxScriptIntegerSize = f64BitIntegers ? 8 : 4;
 
   //bool fExec = !count(vfExec.begin(), vfExec.end(), false);
@@ -2225,6 +2238,16 @@ Interpreter.prototype.step = function() {
         } break; // end of Native Introspection opcodes (Nullary)
 
         // Native Introspection opcodes (Unary)
+        case Opcode.OP_UTXOTOKENCATEGORY:
+        case Opcode.OP_UTXOTOKENCOMMITMENT:
+        case Opcode.OP_UTXOTOKENAMOUNT:
+        case Opcode.OP_OUTPUTTOKENCATEGORY:
+        case Opcode.OP_OUTPUTTOKENCOMMITMENT:
+        case Opcode.OP_OUTPUTTOKENAMOUNT:
+          if (!fNativeTokens) {
+            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+            return false;
+          }
         case Opcode.OP_UTXOVALUE:
         case Opcode.OP_UTXOBYTECODE:
         case Opcode.OP_OUTPOINTTXHASH:
@@ -2245,7 +2268,14 @@ Interpreter.prototype.step = function() {
           const index = bn.toNumber();
           this.stack.pop();
 
-          const indexType = [Opcode.OP_OUTPUTVALUE, Opcode.OP_OUTPUTBYTECODE].includes(opcodenum) ? 'OUTPUT' : 'INPUT'
+          const indexType = [
+            Opcode.OP_OUTPUTVALUE,
+            Opcode.OP_OUTPUTBYTECODE,
+            Opcode.OP_OUTPUTTOKENCATEGORY,
+            Opcode.OP_OUTPUTTOKENCOMMITMENT,
+            Opcode.OP_OUTPUTTOKENAMOUNT
+          ].includes(opcodenum) ? 'OUTPUT' : 'INPUT';
+
           const maxIndex = indexType === 'OUTPUT' 
             ? this.tx.outputs.length 
             : this.tx.inputs.length;
@@ -2254,6 +2284,11 @@ Interpreter.prototype.step = function() {
             this.errstr = `SCRIPT_ERR_INVALID_TX_${indexType}_INDEX`;
             return false;
           }
+
+          const tokenCapabilities = {
+            mutable: 1,
+            minting: 2,
+          };
 
           switch (opcodenum) {
             case Opcode.OP_UTXOVALUE: {
@@ -2308,6 +2343,73 @@ Interpreter.prototype.step = function() {
                 return false;
               }
               this.stack.push(bytecode);
+            } break;
+            // Token introspection
+            case Opcode.OP_UTXOTOKENCATEGORY: {
+              const tokenData = this.tx.inputs[index].output.tokenData;
+              if (!tokenData) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const category = tokenData.category;
+              const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
+              const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
+              const categoryBuf = Buffer.from(category, 'hex').reverse();
+              const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
+              this.stack.push(fullBuffer);
+            } break;
+            case Opcode.OP_UTXOTOKENCOMMITMENT: {
+              const tokenData = this.tx.inputs[index].output.tokenData;
+              if (!tokenData || !tokenData.nft) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const commitment = tokenData.nft.commitment;
+              this.stack.push(Buffer.from(commitment, 'hex'));
+            } break;
+            case Opcode.OP_UTXOTOKENAMOUNT: {
+              const tokenData = this.tx.inputs[index].output.tokenData;
+              if (!tokenData || !tokenData.amount) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              this.stack.push(tokenData.amount.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_OUTPUTTOKENCATEGORY: {
+              const tokenData = this.tx.outputs[index].tokenData;
+              if (!tokenData) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const category = tokenData.category;
+              const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
+              const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
+              const categoryBuf = Buffer.from(category, 'hex').reverse();
+              const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
+              this.stack.push(fullBuffer);
+            } break;
+            case Opcode.OP_OUTPUTTOKENCOMMITMENT: {
+              const tokenData = this.tx.outputs[index].tokenData;
+              if (!tokenData || !tokenData.nft) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const commitment = tokenData.nft.commitment;
+              this.stack.push(Buffer.from(commitment, 'hex'));
+            } break;
+            case Opcode.OP_OUTPUTTOKENAMOUNT: {
+              const tokenData = this.tx.outputs[index].tokenData;
+              if (!tokenData || !tokenData.amount) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              this.stack.push(tokenData.amount.toScriptNumBuffer());
             } break;
             default: {
               this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
