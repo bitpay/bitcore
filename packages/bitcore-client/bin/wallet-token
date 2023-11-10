@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const program = require('commander');
+const promptly = require('promptly');
 const { Wallet } = require('../ts_build/src/wallet');
 
 program
@@ -23,6 +24,15 @@ const main = async () => {
       symbol: token.symbol,
       address: contractAddress,
       decimals: token.decimals
+    }
+    const existing = wallet.tokens.find(f => f.symbol === token.symbol);
+    if (existing) {
+      console.log(`This wallet already has token ${existing.symbol} (${existing.address})`);
+      const ans = await promptly.confirm('Would you like to replace it? (y/n)');
+      if (!ans) {
+        return;
+      }
+      wallet.tokens = wallet.tokens.filter(f => f.symbol !== token.symbol);
     }
     await wallet.addToken(tokenObj);
     console.log(`Successfully added ${token.symbol}`);
