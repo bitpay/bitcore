@@ -32,11 +32,12 @@ export const Constants = {
     DAI: 'dai',
     WBTC: 'wbtc',
     EUROC: 'euroc',
-    USDT: 'usdt'
+    USDT: 'usdt',
+    WETH: 'weth'
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
-    // backwards compatability
+    // there is no need to add new entries here ( only for backwards compatibility )
     MATIC: 'matic',
     USDC: 'usdc',
     PYUSD: 'pyusd',

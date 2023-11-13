@@ -267,7 +267,8 @@ export class EmailService {
       shib: 'SHIB',
       ape: 'APE',
       euroc: 'EUROC',
-      usdt: 'USDT'
+      usdt: 'USDT',
+      weth: 'WETH'
     };
 
     const data = _.cloneDeep(notification.data);
