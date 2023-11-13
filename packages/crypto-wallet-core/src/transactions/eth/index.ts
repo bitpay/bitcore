@@ -54,6 +54,7 @@ export class ETHTxProvider {
     if (maxGasFee) {
       txData.maxFeePerGas = utils.toHex(maxGasFee);
       txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || 0);
+      txData.type = 2;
     } else {
       txData.gasPrice = utils.toHex(gasPrice);
     }
