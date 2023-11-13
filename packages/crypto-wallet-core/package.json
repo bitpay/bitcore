@@ -27,7 +27,7 @@
     "bitcore-lib-cash": "^10.0.17",
     "bitcore-lib-doge": "^10.0.17",
     "bitcore-lib-ltc": "^10.0.17",
-    "ethers": "^5.0.12",
+    "ethers": "^5.7.0",
     "info": "0.0.6-beta.0",
     "web3": "1.4.0",
     "xrpl": "2.13.0"
