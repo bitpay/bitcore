@@ -629,6 +629,12 @@ describe('Fiat rate service', function() {
           json: true
         })
         .yields(null, null, btc);
+      request.get
+        .withArgs({
+          url: 'https://bitpay.com/api/rates/WETH?p=bws',
+          json: true
+        })
+        .yields(null, null, eth);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -729,8 +735,19 @@ describe('Fiat rate service', function() {
                                                     should.not.exist(err);
                                                     res.fetchedOn.should.equal(100);
                                                     res.rate.should.equal(1);
-                                                    clock.restore();
-                                                    done();
+                                                    service.getRate(
+                                                      {
+                                                        code: 'USD',
+                                                        coin: 'weth'
+                                                      },
+                                                      function(err, res) {
+                                                        should.not.exist(err);
+                                                        res.fetchedOn.should.equal(100);
+                                                        res.rate.should.equal(121);
+                                                        clock.restore();
+                                                        done();
+                                                      }
+                                                    );
                                                   }
                                                 );
                                               }

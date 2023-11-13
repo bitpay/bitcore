@@ -115,5 +115,11 @@ export let MATIC_TOKEN_OPTS = {
     symbol: 'USDT',
     decimals: 6,
     address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f'
+  },
+  '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619': {
+    name: 'Wrapped Ether',
+    symbol: 'weth',
+    decimals: 18,
+    address: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
   }
 };
