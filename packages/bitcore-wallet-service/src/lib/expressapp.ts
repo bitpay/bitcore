@@ -172,7 +172,9 @@ export class ExpressApp {
       return WalletService.getInstance(opts);
     };
 
-    const getServerWithAuth = (req, res, opts, cb?: (err: any, data?: any) => void) => {
+    type ServerCallback = (server: WalletService, err?: Error) => void;
+    interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
+    const getServerWithAuth = (req, res, opts: ServerOpts | ServerCallback, cb?: ServerCallback | undefined) => {
       if (_.isFunction(opts)) {
         cb = opts;
         opts = {};
@@ -202,6 +204,7 @@ export class ExpressApp {
         auth.session = credentials.session;
       }
       WalletService.getInstanceWithAuth(auth, (err, server) => {
+        opts = opts as ServerOpts;
         if (err) {
           if (opts.silentFailure) {
             return cb(null, err);
@@ -391,7 +394,7 @@ export class ExpressApp {
 
     router.post('/v2/wallets/:id/copayers/', (req, res) => {
       req.body.walletId = req.params['id'];
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
