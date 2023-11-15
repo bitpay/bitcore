@@ -6540,7 +6540,7 @@ describe('client API', function() {
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
-                    recoveryClient2.credentials.coin.should.equal('usdc');
+                    recoveryClient2.credentials.coin.should.equal('usdc.e');
                     should.exist(recoveryClient2.credentials.chain);
                     recoveryClient2.credentials.chain.should.equal('matic');
                     recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[0]}`);
