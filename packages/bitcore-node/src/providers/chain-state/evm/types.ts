@@ -168,7 +168,7 @@ export interface Effect {
   to: string,
   from: string,
   amount: string,
-  type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction' // These are the only txs types we care about
+  type?: 'INVOICE:pay' | 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction' // These are the only txs types we care about
   contractAddress?: string,
   callStack?: string
 }

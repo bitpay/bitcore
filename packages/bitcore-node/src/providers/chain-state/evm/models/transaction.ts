@@ -451,7 +451,20 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   _getEffectForAbiType(abi: IAbiDecodedData, to: string, from: string, callStack: string): Effect | undefined {
     // Check that the params are valid before parsing
     if (!to || !from) return;
-    if (`${abi.type}:${abi.name}` == 'ERC20:transfer') {
+    if (`${abi.type}:${abi.name}` == 'INVOICE:pay') {
+      const params = this.parseAbiParams(abi);
+      const { value, tokenContract } = params;
+      // Check that the params are valid before parsing
+      if (!value || !tokenContract) return;
+      return {
+        type: 'INVOICE:pay',
+        to: Web3.utils.toChecksumAddress(to),
+        from: Web3.utils.toChecksumAddress(from),
+        amount: Web3.utils.fromWei(value, 'wei'),
+        contractAddress: Web3.utils.toChecksumAddress(tokenContract),
+        callStack
+      };
+    } else if (`${abi.type}:${abi.name}` == 'ERC20:transfer') {
       const params = this.parseAbiParams(abi);
       const { _to, _value } = params;
       // Check that the params are valid before parsing
