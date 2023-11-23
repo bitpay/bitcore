@@ -310,15 +310,16 @@ export class WalletService {
       return cb();
     };
 
-    const initPushNotification = cb => {
-      pushNotifications = new PushNotificationsService();
-      pushNotifications.start(config, err => {
-        if (err) throw err;
+    // TODO: when implement appreciation check again
+    // const initPushNotification = cb => {
+    //   pushNotifications = new PushNotificationsService();
+    //   pushNotifications.start(config, err => {
+    //     if (err) throw err;
 
-        logger.info('Push Notification Service started');
-        return cb();
-      });
-    };
+    //     logger.info('Push Notification Service started');
+    //     return cb();
+    //   });
+    // };
 
     const initFiatRateService = cb => {
       if (opts.fiatRateService) {
@@ -365,9 +366,10 @@ export class WalletService {
         next => {
           initMessageBroker(next);
         },
-        next => {
-          initPushNotification(next);
-        },
+        // TODO: when implement appreciation check again
+        // next => {
+        //   initPushNotification(next);
+        // },
         next => {
           initFiatRateService(next);
         },
