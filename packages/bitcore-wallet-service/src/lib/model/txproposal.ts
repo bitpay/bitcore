@@ -65,6 +65,8 @@ export interface ITxProposal {
   lowFees: boolean;
   nonce?: number;
   gasPrice?: number;
+  maxGasFee?: number;
+  priorityGasFee?: number;
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
@@ -129,6 +131,8 @@ export class TxProposal {
   raw?: Array<string> | string;
   nonce?: number;
   gasPrice?: number;
+  maxGasFee?: number;
+  priorityGasFee?: number;
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
@@ -216,7 +220,9 @@ export class TxProposal {
     x.replaceTxByFee = opts.replaceTxByFee;
 
     // ETH
-    x.gasPrice = opts.gasPrice;
+    x.gasPrice = opts.gasPrice; // type 0 txs
+    x.maxGasFee = opts.maxGasFee; // type 2 txs
+    x.priorityGasFee = opts.priorityGasFee; // type 2 txs
     x.from = opts.from;
     x.nonce = opts.nonce;
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
@@ -288,6 +294,8 @@ export class TxProposal {
 
     // ETH
     x.gasPrice = obj.gasPrice;
+    x.maxGasFee = obj.maxGasFee; // type 2 txs
+    x.priorityGasFee = obj.priorityGasFee; // type 2 txs
     x.from = obj.from;
     x.nonce = obj.nonce;
     x.gasLimit = obj.gasLimit; // Backward compatibility for BWC <= 8.9.0

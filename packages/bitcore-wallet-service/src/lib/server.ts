@@ -1946,7 +1946,7 @@ export class WalletService implements IWalletService {
   _sampleFeeLevels(chain, network, points, cb) {
     const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-    bc.estimateFee(points, (err, result) => {
+    bc.estimateFee(points, (err, result) => {// get this tto take in type 2
       if (err) {
         this.logw('Error estimating fee', err);
         return cb(err);
@@ -2415,7 +2415,7 @@ export class WalletService implements IWalletService {
     this._runLocked(
       cb,
       cb => {
-        let changeAddress, feePerKb, gasPrice, gasLimit, fee;
+        let changeAddress, feePerKb, gasPrice, gasLimit, fee, maxGasFee, proiorityGasFee;
         this.getWallet({}, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
@@ -2463,9 +2463,8 @@ export class WalletService implements IWalletService {
                 },
                 async next => {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
-
                   try {
-                    ({ feePerKb, gasPrice, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
+                    ({ feePerKb, gasPrice, maxGasFee, proiorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
                   } catch (error) {
                     return next(error);
                   }
@@ -2532,6 +2531,8 @@ export class WalletService implements IWalletService {
                     fee: txOptsFee,
                     noShuffleOutputs: opts.noShuffleOutputs,
                     gasPrice,
+                    maxGasFee,
+                    proiorityGasFee,
                     nonce: opts.nonce,
                     gasLimit, // Backward compatibility for BWC < v7.1.1
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
@@ -3388,6 +3389,8 @@ export class WalletService implements IWalletService {
             data: tx.data,
             abiType: tx.abiType || recreateAbiType(tx.effects),
             gasPrice: tx.gasPrice,
+            maxGasFee: tx.maxGasFee, 
+            proiorityGasFee: tx.proiorityGasFee,
             gasLimit: tx.gasLimit,
             receipt: tx.receipt,
             nonce: tx.nonce,
