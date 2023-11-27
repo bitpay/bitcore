@@ -305,9 +305,10 @@ export class Wallet {
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
 
-  getNetworkFee(params: { target?: number } = {}) {
+  getNetworkFee(params: { target?: number, txType?: number } = {}) {
     const target = params.target || 2;
-    return this.client.getFee({ target });
+    const txType = params.txType || 0;
+    return this.client.getFee({ target, txType });
   }
 
   getUtxos(params: { includeSpent?: boolean } = {}) {

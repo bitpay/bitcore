@@ -131,7 +131,7 @@ export class Client {
   }
 
   async getFee(params) {
-    const { target } = params;
+    const { target, txType } = params;
     const url = `${this.apiUrl}/fee/${target}`;
     return new Promise(resolve =>
       request
