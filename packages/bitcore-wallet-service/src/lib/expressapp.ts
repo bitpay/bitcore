@@ -466,13 +466,13 @@ export class ExpressApp {
           twoStep: req.query.twoStep == '1',
           silentFailure: req.query.silentFailure == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
-          tokenAddresses: req.query[copayerId]
-            ? Array.isArray(req.query[copayerId].tokenAddress)
-              ? req.query[copayerId].tokenAddress
-              : [req.query[copayerId].tokenAddress]
+          tokenAddresses: req.query[`${copayerId}.tokenAddress`]
+            ? Array.isArray(req.query[`${copayerId}.tokenAddress`])
+              ? req.query[`${copayerId}.tokenAddress`]
+              : [req.query[`${copayerId}.tokenAddress`]]
             : null,
-          multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
-          network: req.query[copayerId] ? req.query[copayerId].network : null
+          multisigContractAddress: req.query[`${copayerId}.multisigContractAddress`] ? req.query[`${copayerId}.multisigContractAddress`] : null,
+          network: req.query[`${copayerId}.network`] ? req.query[`${copayerId}.network`] : null
         };
         return opts;
       };
