@@ -2,6 +2,7 @@ import * as BitcoreLib from 'bitcore-lib';
 import * as BitcoreLibCash from 'bitcore-lib-cash';
 import * as BitcoreLibDoge from 'bitcore-lib-doge';
 import * as BitcoreLibLtc from 'bitcore-lib-ltc';
+import { ethers } from 'ethers';
 import Web3 from 'web3';
 import { Constants } from './constants';
 import Deriver from './derivation';
@@ -15,6 +16,7 @@ export {
   Deriver,
   Transactions,
   Validation,
+  ethers,
   Web3,
   Constants
 };
