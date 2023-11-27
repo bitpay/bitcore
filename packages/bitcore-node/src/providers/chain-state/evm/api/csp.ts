@@ -106,12 +106,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getFee(params) {
-    let { network, target = 4 } = params;
+    let { network, target = 4, txType } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
     }
-
+    if (txType.toString() === '2') {
+      const { rpc } = await this.getWeb3(network);
+      const feerate = await rpc.estimateFee({ nBlocks: target, txType });
+      return { feerate, blocks: target };
+    }
     const cacheKey = `getFee-${chain}-${network}-${target}`;
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
