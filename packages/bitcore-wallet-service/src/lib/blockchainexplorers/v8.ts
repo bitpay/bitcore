@@ -517,7 +517,7 @@ export class V8 {
     );
   }
 
-  _estimateFee(opts, cb) {
+  estimateFeeV2(opts, cb) {
     const nbBlocks = opts.nbBlocks || [1, 2, 6, 24];
     const txType = opts.txType;
     if(!txType || txType.toString() !== '2') {

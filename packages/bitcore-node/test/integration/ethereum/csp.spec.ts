@@ -91,6 +91,17 @@ describe('Ethereum API', function() {
     }
   });
 
+  it('should be able to get type 2 fees', async () => {
+    const chain = 'ETH';
+    const network = 'testnet';
+    const target = 1;
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    const fee = await ETH.getFee({ chain, network, target, txType: 2 });
+    expect(fee).to.exist;
+    const cached = await CacheStorage.getGlobal(cacheKey);
+    expect(fee).to.not.eq(cached);
+  });
+
   it('should estimate fees by most recent transactions', async () => {
     const chain = 'ETH';
     const network = 'testnet';

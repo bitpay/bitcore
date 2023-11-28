@@ -60,8 +60,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     if (!BaseEVMStateProvider.rpcs[this.chain] || !BaseEVMStateProvider.rpcs[this.chain][network]) {
       logger.info(`Making a new connection for ${this.chain}:${network}`);
-      const providerIdx = worker.threadId % (this.config[network].providers || []).length;
-      const providerConfig = this.config[network].provider || this.config[network].providers![providerIdx];
+      const providerIdx = worker.threadId % (this.config[network]?.providers || []).length; 
+      const providerConfig = this.config[network]?.provider || this.config[network]?.providers![providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
       if (BaseEVMStateProvider.rpcs[this.chain]) {
@@ -111,7 +111,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    if (txType.toString() === '2') {
+    if (txType?.toString() === '2') {
       const { rpc } = await this.getWeb3(network);
       const feerate = await rpc.estimateFee({ nBlocks: target, txType });
       return { feerate, blocks: target };

@@ -1979,7 +1979,7 @@ export class WalletService implements IWalletService {
     return new Promise((resolve, reject) => {
       const bc = this._getBlockchainExplorer(opts.chain, opts.network);
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
-      bc._estimateFee(opts, (err, result) => {
+      bc.estimateFeeV2(opts, (err, result) => {
         if (err) {
           this.logw('Error estimating fee', err);
           return reject(err);

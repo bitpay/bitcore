@@ -225,7 +225,7 @@ export class EthChain implements IChain {
           fee += feePerKb * gasLimit;
         }
 
-        if (txType.toString() == '2') {
+        if (txType?.toString() == '2') {
           maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin});
           proiorityGasFee = proiorityGasFee || 0;
         }
