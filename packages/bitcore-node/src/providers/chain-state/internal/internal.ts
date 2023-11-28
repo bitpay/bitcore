@@ -459,12 +459,12 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async getFee(params: GetEstimateSmartFeeParams) {
-    const { chain, network, target } = params;
-    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    const { chain, network, target, mode } = params;
+    const cacheKey = `getFee-${chain}-${network}-${target}${mode ? '-' + mode.toLowerCase() : ''}`;
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
-        return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
+        return this.getRPC(chain, network).getEstimateSmartFee(Number(target), mode);
       },
       5 * CacheStorage.Times.Minute
     );

@@ -2,21 +2,44 @@ import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { CacheTimes } from '../middleware';
 import { CacheMiddleware } from '../middleware';
+import config from '../../config';
+import logger from '../../logger';
+import { IUtxoNetworkConfig } from '../../types/Config';
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
 
+const feeModes = {
+  BTC: ['CONSERVATIVE', 'ECONOMICAL'],
+  LTC: ['CONSERVATIVE', 'ECONOMICAL']
+};
+
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
   let { target, chain, network } = req.params;
+  let { mode } = req.query as any;
+  if (!chain || !network) {
+    return res.status(400).send('Missing required param');
+  }
+  chain = chain.toUpperCase();
+  network = network.toLowerCase();
+  mode = mode?.toUpperCase();
   const targetNum = Number(target);
   if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
   }
-  const cachedFee = feeCache[`${chain}:${network}:${target}`];
+  if (!mode) {
+    mode = (config.chains[chain]?.[network] as IUtxoNetworkConfig)?.defaultFeeMode;
+  } else if (!feeModes[chain]) {
+    mode = undefined;
+  } else if (!feeModes[chain]?.includes(mode)) {
+    return res.status(400).send('invalid mode specified');
+  }
+  const feeCacheKey = `${chain}:${network}:${target}${mode ? ':' + mode : ''}`;
+  const cachedFee = feeCache[feeCacheKey];
   if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum });
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode });
     if (!fee) {
       return res.status(404).send('not available right now');
     }
@@ -25,9 +48,10 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     if (chain === 'LTC' && fee.feerate && fee.feerate < 0.00001) {
       fee.feerate = 0.00001;
     }
-    feeCache[`${chain}:${network}:${target}`] = { fee, date: Date.now() };
+    feeCache[feeCacheKey] = { fee, date: Date.now() };
     return res.json(fee);
-  } catch (err) {
+  } catch (err: any) {
+    logger.error('Fee Error: %o', err.message || err);
     return res.status(500).send('Error getting fee from RPC');
   }
 });

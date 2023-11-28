@@ -20,6 +20,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     username: string;
     password: string;
   };
+  defaultFeeMode?: 'CONSERVATIVE' | 'ECONOMICAL';
 }
 
 interface IProvider {
