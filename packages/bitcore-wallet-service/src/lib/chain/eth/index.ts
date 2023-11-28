@@ -145,7 +145,9 @@ export class EthChain implements IChain {
       server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
         let gasPrice = inFeePerKb;
-        const { from } = opts;
+        let maxGasFee;
+        let proiorityGasFee;
+        const { from, txType } = opts;
         const { coin, network } = wallet;
         let inGasLimit = 0; // Per recepient gas limit
         let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
@@ -222,7 +224,12 @@ export class EthChain implements IChain {
           gasLimit = gasLimit ? gasLimit : inGasLimit;
           fee += feePerKb * gasLimit;
         }
-        return resolve({ feePerKb, gasPrice, gasLimit, fee });
+
+        if (txType.toString() == '2') {
+          maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin});
+          proiorityGasFee = proiorityGasFee || 0;
+        }
+        return resolve({ feePerKb, gasPrice, gasLimit, maxGasFee, proiorityGasFee, fee });
       });
     });
   }

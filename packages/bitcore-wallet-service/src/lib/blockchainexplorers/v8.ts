@@ -517,6 +517,30 @@ export class V8 {
     );
   }
 
+  _estimateFee(opts, cb) {
+    const nbBlocks = opts.nbBlocks || [1, 2, 6, 24];
+    const txType = opts.txType;
+    if(!txType || txType.toString() !== '2') {
+     return this.estimateFee(nbBlocks, cb);
+    }
+    let result;
+    const url = this.baseUrl + `/fee/10/${txType}`;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   getBlockchainHeight(cb) {
     const url = this.baseUrl + '/block/tip';
 

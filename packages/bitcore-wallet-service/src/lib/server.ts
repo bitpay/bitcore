@@ -1946,7 +1946,7 @@ export class WalletService implements IWalletService {
   _sampleFeeLevels(chain, network, points, cb) {
     const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-    bc.estimateFee(points, (err, result) => {// get this tto take in type 2
+    bc.estimateFee(points, (err, result) => {
       if (err) {
         this.logw('Error estimating fee', err);
         return cb(err);
@@ -1971,6 +1971,21 @@ export class WalletService implements IWalletService {
       }
 
       return cb(null, levels, failed.length);
+    });
+  }
+
+  estimateFee(opts) {
+    let ots = opts || {};    
+    return new Promise((resolve, reject) => {
+      const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc._estimateFee(opts, (err, result) => {
+        if (err) {
+          this.logw('Error estimating fee', err);
+          return reject(err);
+        }
+        return resolve(result);
+      });
     });
   }
 
