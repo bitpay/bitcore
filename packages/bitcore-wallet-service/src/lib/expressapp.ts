@@ -5,14 +5,12 @@ import _ from 'lodash';
 import 'source-map-support/register';
 import config from '../config';
 import { logger, transport } from './logger';
-
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from'./errors/errordefinitions';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
-import { query } from 'winston';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
