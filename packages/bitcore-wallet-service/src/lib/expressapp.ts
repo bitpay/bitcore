@@ -12,6 +12,7 @@ import { Errors } from'./errors/errordefinitions';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import { query } from 'winston';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -461,18 +462,25 @@ export class ExpressApp {
       let responses;
 
       const buildOpts = (req, copayerId) => {
+        const getParam = (param, returnArray = false) => {
+          // Handle old client params
+          const value = req.query[`${copayerId}:${param}`] || req.query[copayerId]?.[param];
+          if (returnArray) {
+            return Array.isArray(value) ? value : value ? [value] : null;
+          }
+          return value ? value : null;
+        };
+        const tokenAddresses = getParam('tokenAddress', true);
+        const multisigContractAddress = getParam('multisigContractAddress'); 
+        const network = getParam('network');
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
           silentFailure: req.query.silentFailure == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
-          tokenAddresses: req.query[`${copayerId}:tokenAddress`]
-            ? Array.isArray(req.query[`${copayerId}:tokenAddress`])
-              ? req.query[`${copayerId}:tokenAddress`]
-              : [req.query[`${copayerId}:tokenAddress`]]
-            : null,
-          multisigContractAddress: req.query[`${copayerId}:multisigContractAddress`] ? req.query[`${copayerId}:multisigContractAddress`] : null,
-          network: req.query[`${copayerId}:network`] ? req.query[`${copayerId}:network`] : null
+          tokenAddresses,
+          multisigContractAddress,
+          network
         };
         return opts;
       };
