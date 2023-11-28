@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { ChainStateProvider } from '../../providers/chain-state';
-import { CacheTimes } from '../middleware';
-import { CacheMiddleware } from '../middleware';
 import config from '../../config';
 import logger from '../../logger';
+import { ChainStateProvider } from '../../providers/chain-state';
 import { IUtxoNetworkConfig } from '../../types/Config';
+import { CacheTimes } from '../middleware';
+import { CacheMiddleware } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
 
