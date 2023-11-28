@@ -5,18 +5,22 @@ import { CacheMiddleware } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
 
-router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
-  let { target, chain, network } = req.params;
+const getFee = async (req: Request, res: Response) => {
+  let { target, chain, network, txType } = req.params;
   const targetNum = Number(target);
   if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
   }
   const cachedFee = feeCache[`${chain}:${network}:${target}`];
-  if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
+  if (
+    cachedFee 
+    && cachedFee.date > Date.now() - 10 * 1000
+    && (!txType || txType.toString() !== '2')
+    ) {
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum });
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, txType});
     if (!fee) {
       return res.status(404).send('not available right now');
     }
@@ -30,6 +34,14 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   } catch (err) {
     return res.status(500).send('Error getting fee from RPC');
   }
+}
+
+router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
+  getFee(req, res);
+});
+
+router.get('/:target/:txType', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
+  getFee(req, res);
 });
 
 module.exports = {

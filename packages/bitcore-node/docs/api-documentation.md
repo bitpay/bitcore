@@ -736,6 +736,27 @@ curl -v localhost:3000/api/BTC/mainnet/fee/22
 
 </details>
 
+GET `/api/BTC/mainnet/fee/:target/:txType`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Use Curl command in terminal to get a response</b>
+
+```sh
+curl -v localhost:3000/api/ETH/mainnet/fee/10/2
+```
+
+```json
+{
+    "blocks": "10",
+    "feerate": "0.02003"
+}
+```
+
+</details>
+
 ## Stats
 
 ### Get Daily Transactions

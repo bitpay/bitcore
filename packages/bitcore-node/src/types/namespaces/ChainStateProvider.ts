@@ -55,6 +55,7 @@ export type StreamBlocksParams = ChainNetwork & {
 };
 export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
+  txType?: number | string;
 };
 export type BroadcastTransactionParams = ChainNetwork & {
   rawTx: string | Array<string>;
