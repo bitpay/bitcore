@@ -468,17 +468,14 @@ export class ExpressApp {
           }
           return value ? value : null;
         };
-        const tokenAddresses = getParam('tokenAddress', true);
-        const multisigContractAddress = getParam('multisigContractAddress'); 
-        const network = getParam('network');
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
           silentFailure: req.query.silentFailure == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
-          tokenAddresses,
-          multisigContractAddress,
-          network
+          tokenAddresses: getParam('tokenAddress', true),
+          multisigContractAddress: getParam('multisigContractAddress'),
+          network: getParam('network')
         };
         return opts;
       };
