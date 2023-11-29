@@ -103,8 +103,12 @@ export class RPC {
     return this.asyncCall('getaddressesbyaccount', [account]);
   }
 
-  async getEstimateSmartFee(target: number) {
-    return this.asyncCall('estimatesmartfee', [target]);
+  async getEstimateSmartFee(target: number, mode?: string) {
+    const args: any[] = [target];
+    if (mode) {
+      args.push(mode);
+    }
+    return this.asyncCall('estimatesmartfee', args);
   }
 
   async getEstimateFee() {
