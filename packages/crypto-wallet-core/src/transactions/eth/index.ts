@@ -121,8 +121,10 @@ export class ETHTxProvider {
     let { tx, signature } = params;
     const parsedTx = ethers.utils.parseTransaction(tx);
     const { nonce, gasPrice, gasLimit, to, value, data, chainId, maxFeePerGas, maxPriorityFeePerGas } = parsedTx;
-    let txData: any = { nonce, gasPrice, gasLimit, to, value, data, chainId, maxFeePerGas, maxPriorityFeePerGas };
+    let txData: any = { nonce, gasPrice, gasLimit, to, value, data, chainId };
     if (maxFeePerGas) {
+      txData.maxFeePerGas = maxFeePerGas;
+      txData.maxPriorityFeePerGas = maxPriorityFeePerGas;
       txData.type = 2;
     } else if (!gasPrice) {
       throw new Error('either gasPrice or maxFeePerGas is required');
