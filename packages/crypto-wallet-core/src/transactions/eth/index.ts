@@ -126,7 +126,7 @@ export class ETHTxProvider {
       txData.maxFeePerGas = maxFeePerGas;
       txData.maxPriorityFeePerGas = maxPriorityFeePerGas;
       txData.type = 2;
-    } else if (!gasPrice) {
+    } else if (!gasPrice || !gasPrice.toNumber()) {
       throw new Error('either gasPrice or maxFeePerGas is required');
     }
     if (typeof signature == 'string') {
