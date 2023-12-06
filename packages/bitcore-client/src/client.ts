@@ -141,8 +141,9 @@ export class Client {
   }
 
   async getFee(params) {
-    const { target } = params;
-    const url = `${this.apiUrl}/fee/${target}`;
+    const { target, txType} = params;
+    let url = `${this.apiUrl}/fee/${target}`;
+    url += txType ? `?txType=${txType}` : '';
     const result = await this._request({ method: 'GET', url, json: true });
     if (result.errors?.length) {
       throw new Error(result.errors[0]);
