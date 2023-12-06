@@ -106,16 +106,31 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getFee(params) {
-    let { network, target = 4 } = params;
+    let { network, target = 4, txType, priorityFee } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
     }
 
-    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    let cacheKey = `getFee-${chain}-${network}`;
+    if (priorityFee) {
+      txType = txType || 2;
+    }
+    if (txType) {
+      cacheKey += `-type${txType}${priorityFee ? '-' + priorityFee : ''}`;
+    } else {
+      cacheKey += `-${target}`;
+    }
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
+        if (txType?.toString() === '2') {
+          const { rpc } = await this.getWeb3(network);
+          let feerate = priorityFee ? await rpc.estimateMaxPriorityFee({
+            percentile: priorityFee }) : null;
+          feerate = feerate ? feerate : await rpc.estimateFee({ nBlocks: target, txType });
+          return { feerate, blocks: target };
+        }
         const txs = await EVMTransactionStorage.collection
           .find({ chain, network, blockHeight: { $gt: 0 } })
           .project({ gasPrice: 1, blockHeight: 1 })
