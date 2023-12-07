@@ -91,6 +91,29 @@ describe('Ethereum API', function() {
     }
   });
 
+  it('should be able to get type 2 fees', async () => {
+    const chain = 'ETH';
+    const network = 'mainnet';
+    const cacheKey = `getFee-${chain}-${network}-type2`;
+    try {
+      const fee = await ETH.getFee({ chain, network, target: 2, txType: 2});
+      expect(fee).to.exist;
+      const cached = await CacheStorage.getGlobal(cacheKey);
+      expect(fee).to.deep.eq(cached);
+      /*
+      const cacheKeyPriorityFee = `getFee-${chain}-${network}-type2-15`;
+      const priorityFee  = await ETH.getFee({ chain, network, target: 2, priorityFee: 15 });
+      expect(priorityFee).to.exist;
+      expect(priorityFee.feeRate).to.not.equal(fee.feeRate);
+      const cachedPriorityFee  = await CacheStorage.getGlobal(cacheKeyPriorityFee);
+      expect(priorityFee).to.deep.eq(cachedPriorityFee);
+      */
+    } catch (err) {
+      console.log(err);
+      expect(err).to.be.undefined;
+    }
+  });
+
   it('should estimate fees by most recent transactions', async () => {
     const chain = 'ETH';
     const network = 'testnet';
