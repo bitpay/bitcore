@@ -37,7 +37,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   if (priorityFee) {
     txType = txType || 2;
   }
-  if (!txType && txType.toString() != '2') {
+  if (txType && txType.toString() != '2') {
     return res.status(400).send('invalid txType specified');
   }
   let feeCacheKey = `${chain}:${network}`;
