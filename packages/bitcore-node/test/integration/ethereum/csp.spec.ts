@@ -93,7 +93,7 @@ describe('Ethereum API', function() {
 
   it('should be able to get type 2 fees', async () => {
     const chain = 'ETH';
-    const network = 'mainnet';
+    const network = 'testnet';
     const cacheKey = `getFee-${chain}-${network}-type2`;
     try {
       const fee = await ETH.getFee({ chain, network, target: 2, txType: 2});
@@ -109,7 +109,6 @@ describe('Ethereum API', function() {
       expect(priorityFee).to.deep.eq(cachedPriorityFee);
       */
     } catch (err) {
-      console.log(err);
       expect(err).to.be.undefined;
     }
   });
