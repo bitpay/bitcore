@@ -75,6 +75,36 @@ Opcode.smallInt = function(n) {
   return new Opcode(Opcode.map.OP_1 + n - 1);
 };
 
+/**
+ * Converts OP_0 - OP_16 to an int
+ * @param {Number} opcode Opcode
+ * @returns {Number}
+ */
+Opcode.decodeOpN = function(opcode) {
+  if (opcode === Opcode.OP_0) {
+    return 0;
+  }
+  $.checkArgument(opcode >= Opcode.OP_1 && opcode <= Opcode.OP_16, new Error('Invalid opcode: ' + JSON.stringify(opcode)));
+  return opcode - (Opcode.OP_1 - 1);
+};
+
+/**
+ * Returns true if given opcode is classified as a "success".
+ * This was taken from commit https://github.com/bitcoin/bitcoin/commit/72422ce396b8eba7b1a72c171c2f07dae691d1b5
+ * @param {Number|String} opcode 
+ * @returns {Boolean}
+ */
+Opcode.isOpSuccess = function(opcode) {
+  if (typeof opcode === 'string') {
+    opcode = Opcode[opcode];
+  }
+  return opcode == 80 || opcode == 98 || (opcode >= 126 && opcode <= 129) ||
+        (opcode >= 131 && opcode <= 134) || (opcode >= 137 && opcode <= 138) ||
+        (opcode >= 141 && opcode <= 142) || (opcode >= 149 && opcode <= 153) ||
+        (opcode >= 187 && opcode <= 254);
+};
+
+
 Opcode.map = {
   // push value
   OP_FALSE: 0,
@@ -210,6 +240,9 @@ Opcode.map = {
   OP_NOP8: 183,
   OP_NOP9: 184,
   OP_NOP10: 185,
+
+  // Opcode added by BIP 342 (Tapscript)
+  OP_CHECKSIGADD: 186, // 0xba
 
   // template matching params
   OP_PUBKEYHASH: 253,

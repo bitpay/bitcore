@@ -2,25 +2,26 @@
 
 /* jshint unused: false */
 /* jshint latedef: false */
-var should = require('chai').should();
-var expect = require('chai').expect;
-var _ = require('lodash');
-var sinon = require('sinon');
+const should = require('chai').should();
+const expect = require('chai').expect;
+const _ = require('lodash');
+const sinon = require('sinon');
 
-var bitcore = require('../..');
-var BN = bitcore.crypto.BN;
-var Transaction = bitcore.Transaction;
-var Input = bitcore.Transaction.Input;
-var Output = bitcore.Transaction.Output;
-var PrivateKey = bitcore.PrivateKey;
-var Script = bitcore.Script;
-var Interpreter = bitcore.Script.Interpreter;
-var Address = bitcore.Address;
-var Networks = bitcore.Networks;
-var Opcode = bitcore.Opcode;
-var errors = bitcore.errors;
+const bitcore = require('../..');
+const BN = bitcore.crypto.BN;
+const Transaction = bitcore.Transaction;
+const Input = bitcore.Transaction.Input;
+const Output = bitcore.Transaction.Output;
+const PrivateKey = bitcore.PrivateKey;
+const Script = bitcore.Script;
+const Interpreter = bitcore.Script.Interpreter;
+const Address = bitcore.Address;
+const Networks = bitcore.Networks;
+const Opcode = bitcore.Opcode;
+const errors = bitcore.errors;
 
-var transactionVector = require('../data/tx_creation');
+const transactionVector = require('../data/tx_creation');
+const taprootVectors = require('../data/bitcoind/wallet_test_vectors.json');
 
 describe('Transaction', function() {
 
@@ -1966,6 +1967,33 @@ describe('Transaction', function() {
         tx.toBuffer().toString('hex').should.equal('010000000001035884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4010000006b483045022100d2ca7e63a454c9131dbc9e30e8f7868806f256f6972f0b2465a0473e30d3ac6a0220788ab0e23eb5d2a3e954fcf3fd6815d2b21152bbdacdc8e5563459a5577db76101210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff73d805aff043ff9a0d080a1cafeffbff9553651bcf66452858afc87937606b7e0000000000ffffffffd73e3975c556eab0ba28acfb79fae4e504723a113898a8d1ffc7d0a5a4535182000000001716001488d9931ea73d60eaf7e5671efc0552b912911f2affffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc095de11000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac00024730440220595ff4c358b4f888b6a8f032cd8c9660fbae9e032de2765d8043c30fe58b577a0220498951337c63632777b99f0a3d9df467f104ce62ba87c1d95ac75e932e56ab9401210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e024730440220237ef7a9380ddc38f0d7e6b90d06ec843a4f6be5f68d193678abaa21dc911fe402202e1dcc424f94286f72bf6cb33134971312f5adf2cefa7f71f79e57ab401514f701210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e00000000');
       });
     });
+  });
+
+  throw new Error('TODO: write tests for wallet_test_vectors.json');
+
+  describe('Taproot', function() {
+    for (let i = 0; i < taprootVectors.keyPathSpending.length; i++) {
+      const vec = taprootVectors.keyPathSpending[i];
+      it(`vector ${i}`, function() {
+        const tx = new Transaction(vec.given.rawUnsignedTx);
+        const t = new Transaction();
+        for (let j = 0; j < vec.given.utxosSpent.length; j++) {
+          tx.inputs[j].setScript(vec.given.utxosSpent[j].scriptPubKey);
+          tx.inputs[j].satoshis = vec.given.utxosSpent[j].amountSats;
+          const utxo = new Transaction.UnspentOutput({
+            satoshis: vec.given.utxosSpent[j].amountSats,
+            script: vec.given.utxosSpent[j].scriptPubKey,
+            txid: tx.inputs[j].prevTxId.toString('hex'),
+            outputIndex: tx.inputs[j].outputIndex
+          });
+          t.from(utxo);
+        }
+        for (const output of tx.outputs) {
+          t.addOutput(output);
+        }
+        t.sign(vec.inputSpending.map(i => i.given.internalPrivkey));
+      });
+    }
   });
 
 });
