@@ -1,5 +1,5 @@
 import through2 from 'through2';
-import { StreamTransactionParams } from '../../../types/namespaces/ChainStateProvider';
+import { GetBlockBeforeTimeParams, StreamTransactionParams } from '../../../types/namespaces/ChainStateProvider';
 import { StreamBlocksParams } from '../../../types/namespaces/ChainStateProvider';
 
 import { Validation } from 'crypto-wallet-core';
@@ -179,18 +179,19 @@ export class InternalStateProvider implements IChainStateService {
     return blocks[0];
   }
 
-  async getBlockBeforeTime(params: { chain: string; network: string; time: Date }) {
+  async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
     const { chain, network, time } = params;
+    const date = new Date(time || Date.now());
     const [block] = await BitcoinBlockStorage.collection
       .find({
         chain,
         network,
-        timeNormalized: { $lte: new Date(time) }
+        timeNormalized: { $lte: date }
       })
       .limit(1)
       .sort({ timeNormalized: -1 })
       .toArray();
-    return block as IBlock;
+    return block;
   }
 
   async streamTransactions(params: StreamTransactionsParams) {
