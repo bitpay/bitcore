@@ -145,8 +145,8 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       if (timeGap > 1000 * 60 * 2) { // if more than a 2 min gap...
         nextIdx += Math.floor(timeGap / 10000); // ...jump forward assuming a block every 10 seconds
       }
-      ledger = await this.getDataHostLedger(nextIdx, network);
-      nextLedger = ledger;
+      nextLedger = await this.getDataHostLedger(nextIdx, network);
+      ledger = nextLedger || ledger;
     }
 
     // the timeGap above might have overshot
@@ -336,7 +336,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       hash: ledger.ledger_hash,
       height: Number(ledger.ledger_index),
       previousBlockHash: ledger.parent_hash,
-      processed: true,
+      processed: ledger.closed,
       time: new Date(ledger.close_time_human),
       timeNormalized: new Date(ledger.close_time_human),
       reward: 0,
