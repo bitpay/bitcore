@@ -161,6 +161,7 @@ describe('Ripple Api', function() {
           parent_hash: 'abc122',
           close_time: getCloseTime(12).getTime() / 1000,
           close_time_human: getCloseTime(12).toUTCString(),
+          closed: true
         }
       }
     };

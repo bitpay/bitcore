@@ -110,8 +110,8 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   }
 
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams) {
-    const { chain, network, time } = params;
-    const date = new Date(time || Date.now());
+    const { chain, network, time = Date.now() } = params;
+    const date = new Date(Math.min(new Date(time).getTime(), new Date().getTime())); // Date is at the most right now. This prevents excessive loop iterations below.
 
     if (date.toString() == 'Invalid Date') {
       throw new Error('Invalid time value');
@@ -136,24 +136,25 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       return null;
     }
 
-    // Check if our DB has gaps. block might not be the latest block before `time`
-    let nextLedger = await this.getDataHostLedger(Number(block.height) + 1, network);
-    while (nextLedger && new Date(nextLedger.close_time_human) < date) {
+    // Check if our DB has gaps. `block` might not be the latest block before `date`
+    let workingIdx = Number(ledger.ledger_index) + 1; // +1 to check if the next block is < date
+    ledger = await this.getDataHostLedger(workingIdx, network);
+    while (ledger && new Date(ledger.close_time_human) < date) {
       // a gap exists
-      let nextIdx = Number(ledger.ledger_index) + 1;
-      const timeGap = date.getTime() - new Date(nextLedger.close_time_human).getTime();
+      workingIdx = Number(ledger.ledger_index) + 1;
+      const timeGap = date.getTime() - new Date(ledger.close_time_human).getTime();
       if (timeGap > 1000 * 60 * 2) { // if more than a 2 min gap...
-        nextIdx += Math.floor(timeGap / 10000); // ...jump forward assuming a block every 10 seconds
+        workingIdx += Math.floor(timeGap / 10000); // ...jump forward assuming a block every 10 seconds
       }
-      nextLedger = await this.getDataHostLedger(nextIdx, network);
-      ledger = nextLedger || ledger;
+      ledger = await this.getDataHostLedger(workingIdx, network);
     }
 
     // the timeGap above might have overshot
-    while (new Date(ledger.close_time_human) > date) {
+    while (!ledger || new Date(ledger.close_time_human) > date) {
       // walk it back
-      ledger = await this.getDataHostLedger(Number(ledger.ledger_index) - 1, network);
-    } 
+      workingIdx--;
+      ledger = await this.getDataHostLedger(workingIdx, network);
+    }
 
     return this.transformRawLedger(ledger, network);
   }
