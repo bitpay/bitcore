@@ -102,6 +102,7 @@ export class GethRPC implements IRpc {
     trace.abiType = trace.input ? EVMTransactionStorage.abiDecode(trace.input) : undefined;
     if (trace.abiType) {
       for (let param of trace.abiType.params) {
+        param.value = typeof param.value === 'string' ? param.value : JSON.stringify(param.value);
         if (param.value && param.value.length > 100) {
           // Need to truncate this so it doesn't blow up the index.
           param.value = param.value.substring(0, 100) + '...';
