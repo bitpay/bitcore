@@ -96,6 +96,12 @@ export const Constants = {
     P2PKH: 'P2PKH',
     P2WPKH: 'P2WPKH'
   },
+
+  NATIVE_SEGWIT_CHAINS: {
+    BTC: 'btc',
+    LTC: 'ltc'
+  },
+
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',
     BIP45: 'BIP45'
