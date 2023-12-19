@@ -74,7 +74,7 @@ export class RPC {
   }
 
   getBlock(hash: string, verbose: boolean) {
-    return this.asyncCall('getblock', [hash, verbose]);
+    return this.asyncCall<RPCBlock<RPCTransaction>>('getblock', [hash, verbose]);
   }
 
   getBlockHash(height: number) {
@@ -87,7 +87,7 @@ export class RPC {
   }
 
   getTransaction(txid: string) {
-    return this.asyncCall('getrawtransaction', [txid, true]);
+    return this.asyncCall<RPCTransaction>('getrawtransaction', [txid, true]);
   }
 
   sendTransaction(rawTx: string | Array<string>) {
