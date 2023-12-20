@@ -3,12 +3,12 @@ import logger from '../logger';
 import { ITransaction } from '../models/baseTransaction';
 import { CoinModel, CoinStorage } from '../models/coin';
 import { TransactionModel, TransactionStorage } from '../models/transaction';
+import { RPC, RPCTransaction } from '../rpc';
 import { SpentHeightIndicators } from '../types/Coin';
+import { IUtxoNetworkConfig } from '../types/Config';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
-import { RPC, RPCTransaction } from '../rpc';
-import { IUtxoNetworkConfig } from '../types/Config';
 
 const { PRUNING_CHAIN, PRUNING_NETWORK, PRUNING_MEMPOOL_AGE, PRUNING_INTERVAL_HRS, PRUNING_DESCENDANT_LIMIT } = process.env;
 const args = parseArgv([], [
