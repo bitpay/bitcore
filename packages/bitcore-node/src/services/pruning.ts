@@ -128,6 +128,7 @@ export class PruningService {
     await new Promise((resolve, reject) => {
       this.transactionModel.collection
         .find({ chain, network, blockHeight: -1, blockTimeNormalized: { $lt: oldTime } })
+        .sort({ chain: 1, network: 1, blockTimeNormalized: 1 })
         .pipe(
           new Transform({
             objectMode: true,
@@ -143,7 +144,7 @@ export class PruningService {
                   return cb();
                 }
               } catch (err: any) {
-                if (err.code !== -5) {
+                if (err.code !== -5) { // -5: No such mempool or blockchain transaction. Use gettransaction for wallet transactions.
                   logger.error(`Error checking tx ${tx.txid} in the mempool: ${err.message}`);
                   return cb();
                 }
