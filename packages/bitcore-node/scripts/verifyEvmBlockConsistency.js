@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-'use scrict';
+'use strict';
 
 const { Storage } = require('../build/src/services/storage');
 const { EVMBlockStorage } = require('../build/src/providers/chain-state/evm/models/block');
