@@ -20,6 +20,7 @@ describe('Pruning Service', function() {
   beforeEach(async () => {
     await resetDatabase();
     Pruning.registerRpcs();
+    Pruning.rpcs['BTC:mainnet'] = new RPC('user', 'pw', 'host', 'port');
     process.env.DRYRUN = 'false';
   });
   afterEach(() => {
