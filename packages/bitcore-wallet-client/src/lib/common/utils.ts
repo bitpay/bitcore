@@ -522,6 +522,12 @@ export class Utils {
     const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
     const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
     if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
+       // Special handling for usdc.e and usdc on matic
+      if (coin.toLowerCase() === 'usdc.e') {
+        return 'USDC_m';
+      } else if (coin.toLowerCase() === 'usdc') {
+        return 'USDCn_m';
+      }
       return `${coin.toUpperCase()}_${suffix}`;
     }
     return coin.toUpperCase();
