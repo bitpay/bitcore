@@ -563,30 +563,42 @@ export class Wallet {
   }
 
   async nextAddressPair(withChangeAddress?: boolean) {
+    return this.generateAddressPair(this.addressIndex, withChangeAddress);
+  }
+
+  async generateAddressPair(addressIndex: number, withChangeAddress?: boolean) {
     if (this.lite) {
       return this.nextAddressPairLite(withChangeAddress);
     }
-    this.addressIndex = this.addressIndex || 0;
-    const newPrivateKey = await this.derivePrivateKey(false);
+    addressIndex = addressIndex || 0;
+    const newPrivateKey = await this.derivePrivateKey(false, addressIndex);
     const keys = [newPrivateKey];
     if (withChangeAddress) {
-      const newChangePrivateKey = await this.derivePrivateKey(true);
+      const newChangePrivateKey = await this.derivePrivateKey(true, addressIndex);
       keys.push(newChangePrivateKey);
     }
-    this.addressIndex++;
+    if (addressIndex === this.addressIndex) {
+      this.addressIndex++;
+    }
     await this.importKeys({ keys });
     await this.saveWallet();
     return keys.map(key => key.address.toString());
   }
 
   async nextAddressPairLite(withChangeAddress?: boolean) {
-    this.addressIndex = this.addressIndex || 0;
+    return this.generateAddressPairLite(this.addressIndex, withChangeAddress);
+  }
+
+  async generateAddressPairLite(addressIndex: number, withChangeAddress?: boolean) {
+    addressIndex = addressIndex || 0;
     const addresses = [];
     addresses.push(this.deriveAddress(this.addressIndex, false));
     if (withChangeAddress) {
       addresses.push(this.deriveAddress(this.addressIndex, true));
     }
-    this.addressIndex++;
+    if (addressIndex === this.addressIndex) {
+      this.addressIndex++;
+    }
     await this.client.importAddresses({
       pubKey: this.authPubKey,
       payload: addresses
