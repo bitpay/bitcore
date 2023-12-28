@@ -648,7 +648,9 @@ Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts
     const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
     indexes.push(index);
     if(index >= 0) {
+      const sequenceNumber = this.inputs[index].sequenceNumber; // preserve the set sequence number
       this.inputs[index] = this._getInputFrom(utxo, pubkeys, threshold, opts);
+      this.inputs[index].sequenceNumber = sequenceNumber;
     }
   }
   return indexes;
