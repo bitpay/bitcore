@@ -14,6 +14,18 @@ export class Client {
     Object.assign(this, params);
   }
 
+  async _request(params: request.OptionsWithUrl) {
+    try {
+      return await request(params);
+    } catch (err) {
+      if (err.statusCode) {
+        throw new Error(`${err.statusCode} - ${params.url} - "${err.error}"`);
+      }
+      throw err;
+    }
+
+  }
+
   getMessage(params: { method: string; url: string; payload?: any }) {
     const { method, url, payload = {} } = params;
     const parsedUrl = new URLClass(url);
@@ -33,20 +45,18 @@ export class Client {
     const { baseUrl = this.apiUrl } = payload;
     const url = `${baseUrl}/wallet`;
     const signature = this.sign({ method: 'POST', url, payload });
-    try {
-      return await request.post(url, {
-        headers: { 'x-signature': signature },
-        body: payload,
-        json: true
-      });
-    } catch (err) {
-      throw new Error(`${err.statusCode} - ${url} - "${err.error}"`);
-    }
+    return this._request({
+      method: 'POST',
+      url,
+      headers: { 'x-signature': signature },
+      body: payload,
+      json: true
+    });
   }
 
   async getToken(contractAddress) {
     const url = `${this.apiUrl}/token/${contractAddress}`;
-    return request.get(url, { json: true });
+    return this._request({ method: 'GET', url, json: true });
   }
 
   async getBalance(params: { payload?: any; pubKey: string; time?: string }) {
@@ -59,31 +69,31 @@ export class Client {
       url += `?tokenAddress=${payload.tokenContractAddress}`;
     }
     const signature = this.sign({ method: 'GET', url });
-    return request.get(url, {
+    return this._request({
+      method: 'GET',
+      url,
       headers: { 'x-signature': signature },
       json: true
     });
   }
 
-  async getTransaction(params: { txid: string }) {
-    const { txid } = params;
-    let url = `${this.apiUrl}/tx/${txid}`;
-    return request.get(url);
+  async getTransaction(params: { txid: string, populated?: boolean }) {
+    const { txid, populated } = params;
+    let url = `${this.apiUrl}/tx/${txid}${populated ? '/populated' : ''}`;
+    return this._request({ method: 'GET', url, json: true });
   }
 
   async getNonce(params) {
     const { address } = params;
     const url = `${this.apiUrl}/address/${address}/txs/count`;
-    return request.get(url, { json: true });
+    return this._request({ method: 'GET', url, json: true });
   }
 
   getAddressTxos = async function(params) {
     const { unspent, address } = params;
     const args = unspent ? `?unspent=${unspent}` : '';
     const url = `${this.apiUrl}/address/${address}${args}`;
-    return request.get(url, {
-      json: true
-    });
+    return this._request({ method: 'GET', url, json: true });
   };
 
   getCoins(params: { payload?: any; pubKey: string; includeSpent: boolean }) {
@@ -133,13 +143,11 @@ export class Client {
   async getFee(params) {
     const { target } = params;
     const url = `${this.apiUrl}/fee/${target}`;
-    return new Promise(resolve =>
-      request
-        .get(url, {
-          json: true
-        })
-        .on('data', d => resolve(d))
-    );
+    const result = await this._request({ method: 'GET', url, json: true });
+    if (result.errors?.length) {
+      throw new Error(result.errors[0]);
+    }
+    return result;
   }
 
   async importAddresses(params) {
@@ -147,36 +155,28 @@ export class Client {
     const url = `${this.apiUrl}/wallet/${pubKey}`;
     const signature = this.sign({ method: 'POST', url, payload });
 
-    return new Promise(resolve => {
-      let dataStream = new stream.Readable({ objectMode: true });
-      dataStream
-        .pipe(
-          // @ts-ignore TODO: We should rewrite this to be the expected type
-          request.post(url, {
-            headers: {
-              'x-signature': signature,
-              'content-type': 'application/octet-stream'
-            }
-          })
-        )
-        .on('end', resolve);
-      let jsonData = JSON.stringify(payload);
-      dataStream.push(jsonData);
-      dataStream.push(null);
+    return this._request({
+      method: 'POST',
+      url,
+      headers: { 'x-signature': signature },
+      body: payload,
+      json: true
     });
   }
 
   async broadcast(params) {
     const { payload } = params;
     const url = `${this.apiUrl}/tx/send`;
-    return request.post(url, { body: payload, json: true });
+    return this._request({ method: 'POST', url, body: payload, json: true });
   }
 
   async checkWallet(params) {
     const { pubKey } = params;
     const url = `${this.apiUrl}/wallet/${pubKey}/check`;
     const signature = this.sign({ method: 'GET', url });
-    return request.get(url, {
+    return this._request({
+      method: 'GET',
+      url,
       headers: { 'x-signature': signature },
       json: true
     });
@@ -186,7 +186,9 @@ export class Client {
     const { pubKey } = params;
     const url = `${this.apiUrl}/wallet/${pubKey}/addresses`;
     const signature = this.sign({ method: 'GET', url });
-    return request.get(url, {
+    return this._request({
+      method: 'GET',
+      url,
       headers: { 'x-signature': signature },
       json: true
     });

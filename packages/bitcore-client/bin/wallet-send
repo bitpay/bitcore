@@ -40,7 +40,7 @@ const main = async () => {
     let feeRate = feeRateParam;
     if (!feeRate) {
       const feerate = await wallet.getNetworkFee();
-      feeRate = JSON.parse(feerate).feerate;
+      feeRate = feerate.feerate;
     }
     let nonce;
     if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
