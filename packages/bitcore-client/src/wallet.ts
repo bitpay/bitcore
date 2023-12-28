@@ -1,12 +1,22 @@
 import * as Bcrypt from 'bcrypt';
-import { Deriver, Transactions } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, Transactions, Web3 } from 'crypto-wallet-core';
+import { ethers } from 'ethers'; // TODO import from CWC once PR is merged
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
-const { PrivateKey, HDPrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
+
+const { PrivateKey, HDPrivateKey } = BitcoreLib;
+const chainLibs = {
+  BTC: BitcoreLib,
+  BCH: BitcoreLibCash,
+  DOGE: BitcoreLibDoge,
+  LTC: BitcoreLibLtc,
+  ETH: { Web3, ethers },
+  MATIC: { Web3, ethers }
+};
 
 export interface KeyImport {
   address: string;
@@ -72,6 +82,10 @@ export class Wallet {
 
   getApiUrl() {
     return `${this.baseUrl}/${this.chain}/${this.network}`;
+  }
+
+  getLib() {
+    return chainLibs[this.chain.toUpperCase()];
   }
 
   saveWallet() {
@@ -381,6 +395,9 @@ export class Wallet {
     gasLimit?: number;
     gasPrice?: number;
     contractAddress?: string;
+    replaceByFee?: boolean;
+    lockUntilBlock?: number;
+    lockUntilDate?: Date;
   }) {
     const chain = params.token ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
@@ -413,7 +430,10 @@ export class Wallet {
       gasLimit: params.gasLimit || 200000,
       data: params.data,
       tokenAddress: tokenContractAddress,
-      contractAddress: params.contractAddress
+      contractAddress: params.contractAddress,
+      replaceByFee: params.replaceByFee,
+      lockUntilBlock: params.lockUntilBlock,
+      lockUntilDate: params.lockUntilDate
     };
     return Transactions.create(payload);
   }
@@ -428,9 +448,9 @@ export class Wallet {
     return this.client.broadcast({ payload });
   }
 
-  async getTransactionByTxid(params: { txid: string }) {
-    const { txid } = params;
-    return this.client.getTransaction({ txid });
+  async getTransactionByTxid(params: { txid: string, populated?: boolean }) {
+    const { txid, populated } = params;
+    return this.client.getTransaction({ txid, populated });
   }
 
   async importKeys(params: { keys: KeyImport[], rederiveAddys?: boolean }) {
