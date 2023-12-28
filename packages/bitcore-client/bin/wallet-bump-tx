@@ -80,20 +80,21 @@ const main = async () => {
       params.type = type;
       params.recipients = [{ address: to, amount: value.toString() }];
       
-      if (existingTx.type === 2) {
+      // TODO fix type2 support
+      if (false && existingTx.type === 2) {
         if (feeRate) {
           params.maxGasFee = Web3.utils.toWei(feeRate.toString(), 'gwei');
         } else {
-          // TODO change to maxFeePerGas once PR is merged
-          params.maxGasFee = (await wallet.getNetworkFee({ target: feeTarget })).feerate;
-          console.log(`Bumping max gas price to ${Web3.utils.fromWei(params.maxGasFee.toString(), 'gwei')} gwei`);
+          // TODO placeholder until for type2 support is merged in another PR
+          // params.maxGasFee = (await wallet.getNetworkFee({ target: feeTarget })).feerate;
+          // console.log(`Bumping max gas price to ${Web3.utils.fromWei(params.maxGasFee.toString(), 'gwei')} gwei`);
         }
         if (feePriority) {    
           params.maxPriorityFee = Web3.utils.toWei(feePriority.toString(), 'gwei');
         } else {
-          // TODO api call for priority fee once PR is merged
-          params.maxPriorityFee = existingTx.maxPriorityFeePerGas;
-          console.log(`Bumping max priority fee to ${Web3.utils.fromWei(params.maxPriorityFee.toString(), 'gwei')} gwei`);
+          // TODO placeholder until for type2 support is merged in another PR
+          // params.maxPriorityFee = existingTx.maxPriorityFeePerGas;
+          // console.log(`Bumping max priority fee to ${Web3.utils.fromWei(params.maxPriorityFee.toString(), 'gwei')} gwei`);
         }
 
       // type 0
