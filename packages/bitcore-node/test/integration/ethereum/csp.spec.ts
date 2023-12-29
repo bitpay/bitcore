@@ -91,7 +91,7 @@ describe('Ethereum API', function() {
       target++;
     }
     cacheKey = `getFee-${chain}-${network}-type2`;
-    const fee = await ETH.getFee({ chain, network, target, txType: 2});
+    const fee = await ETH.getFee({ chain, network, target, txType: 2 });
     expect(fee).to.exist;
     const cached = await CacheStorage.getGlobal(cacheKey);
     expect(fee).to.deep.eq(cached);
@@ -102,13 +102,13 @@ describe('Ethereum API', function() {
     const network = 'testnet';
     const cacheKey = `getFee-${chain}-${network}-type2`;
     try {
-      const fee = await ETH.getFee({ chain, network, target: 2, txType: 2});
+      const fee = await ETH.getFee({ chain, network, target: 2, txType: 2 });
       expect(fee).to.exist;
       const cached = await CacheStorage.getGlobal(cacheKey);
       expect(fee).to.deep.eq(cached);
 
       const cacheKeyPriorityFee = `getFee-${chain}-${network}-type2-15`;
-      const priorityFee  = await ETH.getFee({ chain, network, target: 2, priorityFee: 15 });
+      const priorityFee  = await ETH.getFee({ chain, network, target: 2, priorityFeePercentile: 15 });
       expect(priorityFee).to.exist;
       expect(priorityFee.feeRate).to.not.equal(fee.feeRate);
       const cachedPriorityFee  = await CacheStorage.getGlobal(cacheKeyPriorityFee);

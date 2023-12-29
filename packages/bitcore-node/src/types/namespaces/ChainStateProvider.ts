@@ -57,7 +57,7 @@ export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
   mode?: 'ECONOMICAL' | 'CONSERVATIVE';
   txType?: number | string;
-  priorityFee?: number;
+  priorityFeePercentile?: number;
 };
 export type BroadcastTransactionParams = ChainNetwork & {
   rawTx: string | Array<string>;

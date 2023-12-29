@@ -332,11 +332,11 @@ export class Wallet {
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
 
-  getNetworkFee(params: { target?: number, txType?:number, priorityFee?:number } = {}) {
+  getNetworkFee(params: { target?: number, txType?: number, priorityFeePercentile?: number } = {}) {
     const target = params.target || 2;
     const txType = params.txType;
-    const priorityFee = params.priorityFee;
-    return this.client.getFee({ target, txType, priorityFee });
+    const priorityFeePercentile = params.priorityFeePercentile;
+    return this.client.getFee({ target, txType, priorityFeePercentile });
   }
 
   getUtxos(params: { includeSpent?: boolean } = {}) {

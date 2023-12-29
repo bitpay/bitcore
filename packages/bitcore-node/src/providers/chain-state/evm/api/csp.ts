@@ -106,18 +106,18 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getFee(params) {
-    let { network, target = 4, txType, priorityFee } = params;
+    let { network, target = 4, txType, priorityFeePercentile } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
     }
 
     let cacheKey = `getFee-${chain}-${network}`;
-    if (priorityFee) {
+    if (priorityFeePercentile) {
       txType = txType || 2;
     }
     if (txType) {
-      cacheKey += `-type${txType}${priorityFee ? '-' + priorityFee : ''}`;
+      cacheKey += `-type${txType}${priorityFeePercentile ? '-' + priorityFeePercentile : ''}`;
     } else {
       cacheKey += `-${target}`;
     }
@@ -126,8 +126,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       async () => {
         if (txType?.toString() === '2') {
           const { rpc } = await this.getWeb3(network);
-          let feerate = priorityFee ? await rpc.estimateMaxPriorityFee({
-            percentile: priorityFee }) : null;
+          let feerate = priorityFeePercentile ? await rpc.estimateMaxPriorityFee({
+            percentile: priorityFeePercentile }) : null;
           feerate = feerate ? feerate : await rpc.estimateFee({ nBlocks: target, txType });
           return { feerate, blocks: target };
         }

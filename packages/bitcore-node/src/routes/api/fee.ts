@@ -15,7 +15,7 @@ const feeModes = {
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
   let { target, chain, network } = req.params;
-  let { mode, txType, priorityFee } = req.query;
+  let { mode, txType, priorityFeePercentile } = req.query;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -34,7 +34,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   } else if (!feeModes[chain]?.includes(mode)) {
     return res.status(400).send('invalid mode specified');
   }
-  if (priorityFee) {
+  if (priorityFeePercentile) {
     txType = txType || 2;
   }
   if (txType && txType.toString() != '2') {
@@ -42,16 +42,16 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   }
   let feeCacheKey = `${chain}:${network}`;
   if (txType){
-    feeCacheKey += `:type${txType}${priorityFee ? ':' + priorityFee : ''}`
+    feeCacheKey += `:type${txType}${priorityFeePercentile ? ':' + priorityFeePercentile : ''}`
   } else {
-    feeCacheKey += `:${target}${mode ? ':' + mode : ''}${txType ? ':' + txType : ''}`;
+    feeCacheKey += `:${target}${mode ? ':' + mode : ''}`;
   }
   const cachedFee = feeCache[feeCacheKey];
   if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType, priorityFee });
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType, priorityFeePercentile });
     if (!fee) {
       return res.status(404).send('not available right now');
     }
