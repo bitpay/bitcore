@@ -131,10 +131,13 @@ export class Client {
   }
 
   async getFee(params) {
-    const { target, txType, priorityFee } = params;
+    const { target, txType, priorityFeePercentile } = params;
+    const query = [];
     let url = `${this.apiUrl}/fee/${target}`;
-    url += txType ? `?txType=${txType}` : '';
-    url += priorityFee ?`?priorityFee=${priorityFee}` : '';
+    txType && query.push(`txType=${txType}`);
+    priorityFeePercentile && query.push(`priorityFeePercentile=${priorityFeePercentile}`);
+    url += query.length ? `?${query.join('&')}` : '';
+
     return new Promise(resolve =>
       request
         .get(url, {
