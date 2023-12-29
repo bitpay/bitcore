@@ -90,16 +90,11 @@ describe('Ethereum API', function() {
       expect(fee).to.deep.eq(cached);
       target++;
     }
-    cacheKey = `getFee-${chain}-${network}-type2`;
-    const fee = await ETH.getFee({ chain, network, target, txType: 2 });
-    expect(fee).to.exist;
-    const cached = await CacheStorage.getGlobal(cacheKey);
-    expect(fee).to.deep.eq(cached);
   });
 
   it('should be able to get type 2 fees', async () => {
     const chain = 'ETH';
-    const network = 'testnet';
+    const network = 'mainnet';
     const cacheKey = `getFee-${chain}-${network}-type2`;
     try {
       const fee = await ETH.getFee({ chain, network, target: 2, txType: 2 });
