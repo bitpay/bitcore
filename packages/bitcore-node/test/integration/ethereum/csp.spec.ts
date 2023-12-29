@@ -97,7 +97,7 @@ describe('Ethereum API', function() {
     expect(fee).to.deep.eq(cached);
   });
 
-/*  it('should be able to get type 2 fees', async () => {
+  it('should be able to get type 2 fees', async () => {
     const chain = 'ETH';
     const network = 'testnet';
     const cacheKey = `getFee-${chain}-${network}-type2`;
@@ -117,7 +117,7 @@ describe('Ethereum API', function() {
       expect(err).to.be.undefined;
     }
   });
-*/
+
   it('should estimate fees by most recent transactions', async () => {
     const chain = 'ETH';
     const network = 'testnet';
