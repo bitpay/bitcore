@@ -94,7 +94,7 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/transactions/:multisigContractA
   }
 });
 
-MaticRoutes.get('/api/ETH/:network/priorityFee/:percentile', async (req, res) => {
+MaticRoutes.get('/api/MATIC/:network/priorityFee/:percentile', async (req, res) => {
   let { percentile, network } = req.params;
   const priorityFeePercentile = Number(percentile) || 15;
 
