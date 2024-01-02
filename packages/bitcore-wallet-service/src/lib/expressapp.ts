@@ -3,17 +3,17 @@ import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
-import { logger, transport } from './logger';
-
+import config from '../config';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
+import { Errors } from'./errors/errordefinitions';
+import { logger, transport } from './logger';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
-const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
@@ -171,7 +171,9 @@ export class ExpressApp {
       return WalletService.getInstance(opts);
     };
 
-    const getServerWithAuth = (req, res, opts, cb?: (err: any, data?: any) => void) => {
+    type ServerCallback = (server: WalletService, err?: Error) => void;
+    interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
+    const getServerWithAuth = (req, res, opts: ServerOpts | ServerCallback, cb?: ServerCallback | undefined) => {
       if (_.isFunction(opts)) {
         cb = opts;
         opts = {};
@@ -201,6 +203,7 @@ export class ExpressApp {
         auth.session = credentials.session;
       }
       WalletService.getInstanceWithAuth(auth, (err, server) => {
+        opts = opts as ServerOpts;
         if (err) {
           if (opts.silentFailure) {
             return cb(null, err);
@@ -390,7 +393,7 @@ export class ExpressApp {
 
     router.post('/v2/wallets/:id/copayers/', (req, res) => {
       req.body.walletId = req.params['id'];
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -457,18 +460,22 @@ export class ExpressApp {
       let responses;
 
       const buildOpts = (req, copayerId) => {
+        const getParam = (param, returnArray = false) => {
+          // Handle old client params
+          const value = req.query[`${copayerId}:${param}`] || req.query[copayerId]?.[param];
+          if (returnArray) {
+            return Array.isArray(value) ? value : value ? [value] : null;
+          }
+          return value ? value : null;
+        };
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
           silentFailure: req.query.silentFailure == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
-          tokenAddresses: req.query[copayerId]
-            ? Array.isArray(req.query[copayerId].tokenAddress)
-              ? req.query[copayerId].tokenAddress
-              : [req.query[copayerId].tokenAddress]
-            : null,
-          multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
-          network: req.query[copayerId] ? req.query[copayerId].network : null
+          tokenAddresses: getParam('tokenAddress', true),
+          multisigContractAddress: getParam('multisigContractAddress'),
+          network: getParam('network')
         };
         return opts;
       };
@@ -600,7 +607,6 @@ export class ExpressApp {
 
     // DEPRECATED
     router.post('/v1/txproposals/', (req, res) => {
-      const Errors = require('./errors/errordefinitions');
       const err = Errors.UPGRADE_NEEDED;
       return returnError(err, res, req);
     });
@@ -1743,6 +1749,96 @@ export class ExpressApp {
             return returnError(err ?? 'unknown', res, req);
           });
       });
+    });
+
+    router.post('/v1/service/transak/getAccessToken', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.transakGetAccessToken(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/transak/cryptoCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .transakGetCryptoCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/service/transak/fiatCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .transakGetFiatCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/service/transak/quote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.transakGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/transak/signedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.transakGetSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/transak/orderDetails', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .transakGetOrderDetails(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
     });
 
     router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {

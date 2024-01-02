@@ -2,7 +2,7 @@ import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../../models/base';
 import { IWalletAddress, WalletAddressStorage } from '../../../../models/walletAddress';
-import { IEVMTransaction, IEVMTransactionTransformed } from '../types';
+import { Effect, IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';
 
 export class InternalTxRelatedFilterTransform extends Transform {
   private walletAddresses: IWalletAddress[] = [];
@@ -18,19 +18,48 @@ export class InternalTxRelatedFilterTransform extends Transform {
    * @param done Callback
    * @returns
    */
-  async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
+  async _transform(tx: MongoBound<IEVMTransactionInProcess>, _, done) {
     const walletAddresses = await this.getWalletAddresses(tx);
     // TODO: rethink how we handle complex smart contracts. Creating objects w/ dup txid's doesn't seem right.
+    let internalTxsToProcess: Effect[] = [];
+    if (tx.effects && tx.effects.length) {
+      const walletRelatedInternalTxs = tx.effects.filter((internalTx: any) =>
+        walletAddresses.includes(internalTx.to) && !internalTx.contractAddress
+      );
+      
+      const refundTxs = walletRelatedInternalTxs.filter(i => i.to === tx.from);
+      const nonRefundTxs = walletRelatedInternalTxs.filter(i => i.to != tx.from);
+      const refundTotal = refundTxs.reduce((a,b) => a + Number(b.amount), 0);
+      // Only consider it a refund if the amount refunded is less than or equal to tx value
+      const hasRefund = refundTotal <= tx.value;
+      
+      if (hasRefund) {
+        // Subtract refund from tx.value
+        tx.value -= refundTotal;
+        // Handle any remaining internal txs
+        internalTxsToProcess = nonRefundTxs;
+      } else {
+        // Treat all txs normal
+        internalTxsToProcess = refundTxs.concat(nonRefundTxs);
+      }
 
-    let numInternalTxs = 0;
-    if (tx.internal && tx.internal.length > 0) {
-      numInternalTxs = this.erigonTransform(tx, walletAddresses);
-    } else if (tx.calls && tx.calls.length > 0) {
-      numInternalTxs = this.gethTransform(tx, walletAddresses);
+      for (let internalTx of internalTxsToProcess) {
+          const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
+          _tx.value = Number(internalTx.amount);
+          _tx.to = internalTx.to;
+          if (internalTx.from != tx.from) {
+            _tx.initialFrom = tx.from;
+            _tx.from = internalTx.from;
+            
+          }
+          // This is how a requester can verify uniqueness in light of duplicated txids
+          _tx.callStack = internalTx.callStack;
+          this.push(_tx);
+      }
     }
 
-    // Discard original tx if original value is 0
-    if (numInternalTxs > 0 && tx.value === 0) {
+    // Discard original tx if original value is 0 - perhaps after refunds
+    if (internalTxsToProcess.length > 0 && tx.value === 0) {
       return done();
     }
 
@@ -44,52 +73,6 @@ export class InternalTxRelatedFilterTransform extends Transform {
         .find({ chain: tx.chain, network: tx.network, wallet: this.walletId })
         .toArray();
     }
-    return this.walletAddresses.map(walletAddress => walletAddress.address.toLowerCase());
-  }
-
-  erigonTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {
-    const walletRelatedInternalTxs = tx.internal.filter((internalTx: any) =>
-      walletAddresses.includes(internalTx.action.to)
-    );
-    for (let internalTx of walletRelatedInternalTxs) {
-      // Contract will refund the excess back to the sender
-      const isRefund = tx.value && internalTx.action.to === tx.from.toLowerCase();
-      const internalValue = Number(internalTx.action.value);
-      if (isRefund) {
-        tx.value -= internalValue;
-      } else {
-        const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
-        _tx.value = internalValue;
-        _tx.to = this.web3.utils.toChecksumAddress(internalTx.action.to);
-        if (internalTx.action.from) {
-          _tx.initialFrom = tx.from;
-          _tx.from = this.web3.utils.toChecksumAddress(internalTx.action.from);
-        }
-        this.push(_tx);
-      }
-    }
-    return walletRelatedInternalTxs.length;
-  }
-
-  gethTransform(tx: MongoBound<IEVMTransaction>, walletAddresses: string[]) {
-    const walletRelatedInternalTxs = tx.calls.filter((call: any) => walletAddresses.includes(call.to));
-    for (let call of walletRelatedInternalTxs) {
-      // Contract will refund the excess back to the sender
-      const isRefund = tx.value && call.to === tx.from.toLowerCase();
-      const internalValue = Number(call.value);
-      if (isRefund) {
-        tx.value -= internalValue;
-      } else {
-        const _tx: IEVMTransactionTransformed = JSON.parse(JSON.stringify(tx));
-        _tx.value = internalValue;
-        _tx.to = this.web3.utils.toChecksumAddress(call.to);
-        if (call.from) {
-          _tx.initialFrom = tx.from;
-          _tx.from = this.web3.utils.toChecksumAddress(call.from);
-        }
-        this.push(_tx);
-      }
-    }
-    return walletRelatedInternalTxs.length;
+    return this.walletAddresses.map(walletAddress => this.web3.utils.toChecksumAddress(walletAddress.address));
   }
 }

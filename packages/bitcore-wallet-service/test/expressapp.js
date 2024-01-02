@@ -7,7 +7,7 @@ var request = require('request');
 var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
-var config = require('../ts_build/config.js');
+var config = require('../ts_build/config.js').default;
 var log = require('npmlog');
 
 var { Common } = require('../ts_build/lib/common');

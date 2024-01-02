@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 
 try {
   program
     .version(require('../package.json').version)
-    .option('--name <name>', 'REQUIRED - Wallet name')
-    .option('--time [time]', 'optional - Get balance at specific time')
-    .option('--path [path]', 'optional - Custom wallet storage path')
-    .option('--storageType [storageType]', 'optional - name of the database to use (default level)')
-    .option('--token [token]', 'optional - Get balance of an ERC20 token')
+    .requiredOption('--name <name>', 'REQUIRED - Wallet name')
+    .option('--time <time>', 'optional - Get balance at specific time')
+    .option('--path <path>', 'optional - Custom wallet storage path')
+    .option('--storageType <storageType>', 'optional - name of the database to use (default level)')
+    .option('--token <token>', 'optional - Get balance of an ERC20 token')
     .parse(process.argv);
 } catch (e) {
   console.log(e.message);
@@ -18,7 +18,7 @@ try {
 }
 
 async function main() {
-  const { name, path, time, storageType, token } = program;
+  const { name, path, time, storageType, token } = program.opts();
   const wallet = await Wallet.loadWallet({ name, path, storageType });
   const balance = await wallet.getBalance(time, token);
   return Object.assign(balance, {

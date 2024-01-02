@@ -9,14 +9,16 @@ export class ETHTxProvider {
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
     nonce: number;
-    gasPrice: number;
+    gasPrice?: number;
     data: string;
     gasLimit: number;
     network: string;
     chainId?: number;
     contractAddress?: string;
+    maxGasFee?: number;
+    priorityGasFee?: number;
   }) {
-    const { recipients, nonce, gasPrice, gasLimit, network, contractAddress } = params;
+    const { recipients, nonce, gasPrice, gasLimit, network, contractAddress, maxGasFee, priorityGasFee } = params;
     let { data } = params;
     let to;
     let amount;
@@ -41,15 +43,22 @@ export class ETHTxProvider {
     }
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
-    const txData = {
+    let txData: any = {
       nonce: utils.toHex(nonce),
       gasLimit: utils.toHex(gasLimit),
-      gasPrice: utils.toHex(gasPrice),
       to,
       data,
       value: utils.toHex(amount),
       chainId
     };
+    if (maxGasFee) {
+      txData.maxFeePerGas = utils.toHex(maxGasFee);
+      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || 0);
+      txData.type = 2;
+    } else {
+      txData.gasPrice = utils.toHex(gasPrice);
+    }
+
     return ethers.utils.serializeTransaction(txData);
   }
 
@@ -111,8 +120,15 @@ export class ETHTxProvider {
   applySignature(params: { tx: string; signature: any }) {
     let { tx, signature } = params;
     const parsedTx = ethers.utils.parseTransaction(tx);
-    const { nonce, gasPrice, gasLimit, to, value, data, chainId } = parsedTx;
-    const txData = { nonce, gasPrice, gasLimit, to, value, data, chainId };
+    const { nonce, gasPrice, gasLimit, to, value, data, chainId, maxFeePerGas, maxPriorityFeePerGas } = parsedTx;
+    let txData: any = { nonce, gasPrice, gasLimit, to, value, data, chainId };
+    if (maxFeePerGas) {
+      txData.maxFeePerGas = maxFeePerGas;
+      txData.maxPriorityFeePerGas = maxPriorityFeePerGas;
+      txData.type = 2;
+    } else if (!gasPrice || !gasPrice.toNumber()) {
+      throw new Error('either gasPrice or maxFeePerGas is required');
+    }
     if (typeof signature == 'string') {
       signature = ethers.utils.splitSignature(signature);
     }

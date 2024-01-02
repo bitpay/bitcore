@@ -138,9 +138,15 @@ router.get('/:txid/coins', (req: Request, res: Response, next) => {
 });
 
 router.post('/send', async function(req: Request, res: Response) {
+  let { chain, network } = req.params;
+  let { rawTx } = req.body;
   try {
-    let { chain, network } = req.params;
-    let { rawTx } = req.body;
+    if (typeof rawTx !== 'string' && !Array.isArray(rawTx)) {
+      return res.status(400).send('Invalid rawTx');
+    }
+    if (Array.isArray(rawTx) && !rawTx.every(tx => typeof tx === 'string')) {
+      return res.status(400).send('Invalid array of rawTx');
+    }
     chain = chain.toUpperCase();
     network = network.toLowerCase();
     let txid = await ChainStateProvider.broadcastTransaction({
@@ -150,7 +156,7 @@ router.post('/send', async function(req: Request, res: Response) {
     });
     return res.send({ txid });
   } catch (err: any) {
-    logger.error('%o', err);
+    logger.error('Broadcast error: %o %o %o %o', chain, network, rawTx, err);
     return res.status(500).send(err.message);
   }
 });

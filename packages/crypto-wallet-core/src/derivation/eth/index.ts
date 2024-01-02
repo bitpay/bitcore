@@ -20,7 +20,7 @@ export class EthDeriver implements IDeriver {
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
     const derived = xpub.derive(path).publicKey;
-    return this.addressFromPublicKeyBuffer(derived.toBuffer());
+    return this.deriveAddressWithPath(network, xpubkey, path);
   }
 
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
@@ -33,9 +33,19 @@ export class EthDeriver implements IDeriver {
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
-    const xpriv = new BitcoreLib.HDPrivateKey(xPriv, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
+    return this.derivePrivateKeyWithPath(network, xPriv, path);
+  }
+
+  deriveAddressWithPath(network: string, xpubKey: string, path: string) {
+    const xpub = new BitcoreLib.HDPublicKey(xpubKey, network);
+    const derived = xpub.derive(path).publicKey;
+    return this.addressFromPublicKeyBuffer(derived.toBuffer());
+  }
+
+  derivePrivateKeyWithPath(network: string, xprivKey: string, path: string) {
+    const xpriv = new BitcoreLib.HDPrivateKey(xprivKey, network);
     const derivedPrivKey = xpriv.derive(path);
     const privKey = derivedPrivKey.privateKey.toString('hex');
     const pubKeyObj = derivedPrivKey.publicKey;
@@ -43,5 +53,10 @@ export class EthDeriver implements IDeriver {
     const pubKeyBuffer = pubKeyObj.toBuffer();
     const address = this.addressFromPublicKeyBuffer(pubKeyBuffer);
     return { address, privKey, pubKey };
+  }
+
+  getAddress(network: string, pubKey) {
+    pubKey = new BitcoreLib.PublicKey(pubKey, network); // network not needed here since ETH doesn't differentiate addresses by network.
+    return this.addressFromPublicKeyBuffer(pubKey.toBuffer());
   }
 }

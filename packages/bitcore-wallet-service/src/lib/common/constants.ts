@@ -32,11 +32,12 @@ export const Constants = {
     DAI: 'dai',
     WBTC: 'wbtc',
     EUROC: 'euroc',
-    USDT: 'usdt'
+    USDT: 'usdt',
+    WETH: 'weth'
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
-    // backwards compatability
+    // there is no need to add new entries here ( only for backwards compatibility )
     MATIC: 'matic',
     USDC: 'usdc',
     PYUSD: 'pyusd',
@@ -83,7 +84,8 @@ export const Constants = {
 
   NETWORKS: {
     LIVENET: 'livenet',
-    TESTNET: 'testnet'
+    TESTNET: 'testnet',
+    REGTEST: 'regtest'
   },
 
   ADDRESS_FORMATS: ['copay', 'cashaddr', 'legacy'],
@@ -94,6 +96,12 @@ export const Constants = {
     P2PKH: 'P2PKH',
     P2WPKH: 'P2WPKH'
   },
+
+  NATIVE_SEGWIT_CHAINS: {
+    BTC: 'btc',
+    LTC: 'ltc'
+  },
+
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',
     BIP45: 'BIP45'

@@ -55,6 +55,7 @@ export type StreamBlocksParams = ChainNetwork & {
 };
 export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
+  mode?: 'ECONOMICAL' | 'CONSERVATIVE';
 };
 export type BroadcastTransactionParams = ChainNetwork & {
   rawTx: string | Array<string>;

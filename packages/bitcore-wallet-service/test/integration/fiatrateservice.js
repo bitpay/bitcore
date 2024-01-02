@@ -571,64 +571,70 @@ describe('Fiat rate service', function() {
 
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/BTC',
+          url: 'https://bitpay.com/api/rates/BTC?p=bws',
           json: true
         })
         .yields(null, null, btc);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/BCH',
+          url: 'https://bitpay.com/api/rates/BCH?p=bws',
           json: true
         })
         .yields(null, null, bch);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/ETH',
+          url: 'https://bitpay.com/api/rates/ETH?p=bws',
           json: true
         })
         .yields(null, null, eth);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/MATIC',
+          url: 'https://bitpay.com/api/rates/MATIC?p=bws',
           json: true
         })
         .yields(null, null, matic);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/XRP',
+          url: 'https://bitpay.com/api/rates/XRP?p=bws',
           json: true
         })
         .yields(null, null, xrp);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/DOGE',
+          url: 'https://bitpay.com/api/rates/DOGE?p=bws',
           json: true
         })
         .yields(null, null, doge);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/LTC',
+          url: 'https://bitpay.com/api/rates/LTC?p=bws',
           json: true
         })
         .yields(null, null, ltc);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/SHIB',
+          url: 'https://bitpay.com/api/rates/SHIB?p=bws',
           json: true
         })
         .yields(null, null, shib);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/APE',
+          url: 'https://bitpay.com/api/rates/APE?p=bws',
           json: true
         })
         .yields(null, null, ape);
       request.get
         .withArgs({
-          url: 'https://bitpay.com/api/rates/WBTC',
+          url: 'https://bitpay.com/api/rates/WBTC?p=bws',
           json: true
         })
         .yields(null, null, btc);
+      request.get
+        .withArgs({
+          url: 'https://bitpay.com/api/rates/WETH?p=bws',
+          json: true
+        })
+        .yields(null, null, eth);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -729,8 +735,19 @@ describe('Fiat rate service', function() {
                                                     should.not.exist(err);
                                                     res.fetchedOn.should.equal(100);
                                                     res.rate.should.equal(1);
-                                                    clock.restore();
-                                                    done();
+                                                    service.getRate(
+                                                      {
+                                                        code: 'USD',
+                                                        coin: 'weth'
+                                                      },
+                                                      function(err, res) {
+                                                        should.not.exist(err);
+                                                        res.fetchedOn.should.equal(100);
+                                                        res.rate.should.equal(121);
+                                                        clock.restore();
+                                                        done();
+                                                      }
+                                                    );
                                                   }
                                                 );
                                               }

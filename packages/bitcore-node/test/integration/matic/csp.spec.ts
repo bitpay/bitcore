@@ -10,7 +10,7 @@ import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { MATIC } from '../../../src/modules/matic/api/csp';
-import { IEVMTransaction } from '../../../src/providers/chain-state/evm//types';
+import { IEVMTransactionInProcess } from '../../../src/providers/chain-state/evm//types';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
@@ -98,7 +98,7 @@ describe('Polygon/MATIC API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await CacheStorage.collection.remove({});
     await EVMTransactionStorage.collection.deleteMany({});
@@ -119,7 +119,7 @@ describe('Polygon/MATIC API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await CacheStorage.collection.remove({})
     await EVMTransactionStorage.collection.deleteMany({});
@@ -174,7 +174,7 @@ describe('Polygon/MATIC API', function() {
         gasPrice: 10 * 1e9,
         data: Buffer.from(''),
         from: address
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
@@ -211,7 +211,7 @@ describe('Polygon/MATIC API', function() {
         blockHeight: 1,
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
@@ -256,7 +256,7 @@ describe('Polygon/MATIC API', function() {
         blockHash: '12345',
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEVMTransaction;
+      } as IEVMTransactionInProcess;
     });
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
@@ -359,7 +359,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
       gasPrice: 10 * 1e9,
       data: Buffer.from(''),
       from: address
-    } as IEVMTransaction;
+    } as IEVMTransactionInProcess;
   });
   // Invalid Transactions
   _.times(txCount, () => txs.push({

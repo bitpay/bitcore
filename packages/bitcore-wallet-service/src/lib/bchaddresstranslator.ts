@@ -58,5 +58,3 @@ export class BCHAddressTranslator {
     else return ret[0];
   }
 }
-
-module.exports = BCHAddressTranslator;

@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet name')
-  .option('--tx <tx>', 'REQUIRED - Signed transaction to broadcast')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet name')
+  .requiredOption('--tx <tx>', 'REQUIRED - Signed transaction to broadcast')
+  .option('--storageType <storageType>', 'optional - name of the database to use (default Level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { tx, name, path, storageType } = program;
+  const { tx, name, path, storageType = 'Level' } = program.opts();
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });

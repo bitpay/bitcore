@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 const request = require('request-promise-native');
 const promptly = require('promptly');
 const cwc = require('crypto-wallet-core');
@@ -14,18 +14,18 @@ const libs = {
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--nonce [nonce]', 'optional - Nonce')
-  .option('--from [from]', 'optional - from account for XRP')
-  .option('--payProUri [payProUri]', 'REQUIRED - payment protocol URI')
-  .option('--token, [token]', 'optional - ERC-20 token to pay with')
-  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .requiredOption('--payProUri <payProUri>', 'REQUIRED - payment protocol URI')
+  .option('--nonce <nonce>', 'optional - Nonce')
+  .option('--from <from>', 'optional - From account for XRP')
+  .option('--token, <token>', 'optional - ERC-20 token to pay with')
+  .option('--storageType <storageType>', 'optional - name of the database to use (Mongo | Level | TextFile)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program;
-  let { payProUri } = program;
+  const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program.opts();
+  let { payProUri } = program.opts();
   if (payProUri.includes('=')) {
     const split = payProUri.split('=');
     console.log(split.length);
@@ -101,6 +101,8 @@ const main = async () => {
     const utxos = await wallet.getUtxosArray();
     const params = { recipients, feeRate, from, invoiceID, data, value, utxos };
     params.nonce = Number(nonce);
+    params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
+    const changeIdx = params.change ? wallet.addressIndex : null;
     const unsignedTx = await wallet.newTx(params);
     console.log(`unsignedRawTx: ${unsignedTx}`);
 
@@ -109,7 +111,7 @@ const main = async () => {
       password = await promptly.password('Wallet Password:');
     }
     wallet = await wallet.unlock(password);
-    const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password });
+    const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password, changeAddressIdx: changeIdx });
     const txid = cwc.Transactions.getHash({chain, tx: signedTx});
     console.log(`signedRawTx: ${signedTx}`);
     signedTransactions.push({ tx: signedTx });

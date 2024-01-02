@@ -33,11 +33,15 @@ export class Client {
     const { baseUrl = this.apiUrl } = payload;
     const url = `${baseUrl}/wallet`;
     const signature = this.sign({ method: 'POST', url, payload });
-    return request.post(url, {
-      headers: { 'x-signature': signature },
-      body: payload,
-      json: true
-    });
+    try {
+      return await request.post(url, {
+        headers: { 'x-signature': signature },
+        body: payload,
+        json: true
+      });
+    } catch (err) {
+      throw new Error(`${err.statusCode} - ${url} - "${err.error}"`);
+    }
   }
 
   async getToken(contractAddress) {

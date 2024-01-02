@@ -20,6 +20,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     username: string;
     password: string;
   };
+  defaultFeeMode?: 'CONSERVATIVE' | 'ECONOMICAL';
 }
 
 interface IProvider {
@@ -38,6 +39,7 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   syncStartHeight?: number; // Start syncing from this block height
   threads?: number; // Defaults to your CPU's capabilities. Currently only available for EVM chains
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
+  leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {

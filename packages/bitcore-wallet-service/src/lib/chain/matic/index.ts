@@ -1,12 +1,9 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import { EthChain } from '../eth';
 
-const Constants = Common.Constants;
-const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
 
 export class MaticChain extends EthChain {
   /**

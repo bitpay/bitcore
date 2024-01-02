@@ -12,7 +12,7 @@ import { wait } from '../../../../utils/wait';
 import { BaseEVMStateProvider } from '../api/csp';
 import { EVMBlockModel, EVMBlockStorage } from '../models/block';
 import { EVMTransactionModel, EVMTransactionStorage } from '../models/transaction';
-import { AnyBlock, ErigonTransaction, GethTransaction, IEVMBlock, IEVMTransaction } from '../types';
+import { AnyBlock, ErigonTransaction, GethTransaction, IEVMBlock, IEVMTransactionInProcess } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
 
@@ -192,7 +192,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
     return this.rpc!.getBlock(height);
   }
 
-  async processBlock(block: IEVMBlock, transactions: IEVMTransaction[]): Promise<any> {
+  async processBlock(block: IEVMBlock, transactions: IEVMTransactionInProcess[]): Promise<any> {
     await this.blockModel.addBlock({
       chain: this.chain,
       network: this.network,
@@ -352,16 +352,14 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<ErigonTransaction | GethTransaction>;
-    const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
+    const convertedTxs = block.transactions.map(t => this.convertTx(t, convertedBlock));
     const traceTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
-
     this.rpc!.reconcileTraces(convertedBlock, convertedTxs, traceTxs);
-
+    EVMTransactionStorage.addEffectsToTxs(convertedTxs);
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransaction {
+  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
     if (!block) {
       const txid = tx.hash || '';
       const to = tx.to || '';
@@ -370,7 +368,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
       const fee = Number(tx.gas) * Number(tx.gasPrice);
       const abiType = this.txModel.abiDecode(tx.input!);
       const nonce = tx.nonce || 0;
-      const convertedTx: IEVMTransaction = {
+      const convertedTx: IEVMTransactionInProcess = {
         chain: this.chain,
         network: this.network,
         blockHeight: valueOrDefault(tx.blockNumber, -1),
@@ -387,7 +385,6 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
         from,
         gasLimit: Number(tx.gas),
         gasPrice: Number(tx.gasPrice),
-        // gasUsed: Number(tx.gasUsed),
         nonce,
         internal: [],
         calls: []
