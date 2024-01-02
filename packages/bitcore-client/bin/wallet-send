@@ -6,6 +6,7 @@ const program = require('commander');
 const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
 const https = require('https');
+const { Web3, xrpl } = require('crypto-wallet-core');
 
 program
   .version(require('../package.json').version)
@@ -13,13 +14,15 @@ program
   .requiredOption('--to <to>', 'REQUIRED - String address')
   .requiredOption('--amount <amount>', 'REQUIRED - Number amount (in btc/bch/eth/xrp)')
   .option('--token <token>', 'optional - ERC-20 token to send')
-  .option('--feeRate <rate>', 'optional - Fee rate in sats/KB (UTXO) or Gwei (EVM)')
+  .option('--feeRate <rate>', 'optional - Fee rate in sats/byte (UTXO) or Gwei (EVM) or XRP (XRP)')
+  .option('--rbf', 'optional - Enable Replace-by-Fee')
+  .option('--tag <tag>', 'optional - Destination tag (XRP only)')
   .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, to, amount, token, storageType } = program.opts();
+  const { name, path, to, amount, token, storageType, rbf, tag } = program.opts();
   let { feeRate: feeRateParam } = program.opts();
   let wallet;
   let data;
@@ -43,11 +46,18 @@ const main = async () => {
       feeRate = feerate.feerate;
     }
     let nonce;
-    if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
+    let feeUnit;
+    if (wallet.chain.toUpperCase() === 'XRP') {
+      feeRate = feeRateParam == null ? feeRate : xrpl.xrpToDrops(feeRateParam); // convert feeRateParam from XRP to drops
+      console.log('Fee rate:', feeRate, 'drops');
+    } else if (!wallet.isUtxoChain()) {
       nonce = await wallet.getNonce();
-      feeRate = Math.ceil(feeRateParam == null ? feeRate : (feeRateParam * 1e9)); // convert feeRateParam from Gwei to Wei
+      feeRate = feeRateParam == null ? feeRate : Web3.utils.toWei(feeRateParam.toString(), 'gwei').toNumber(); // convert feeRateParam from Gwei to Wei
+      console.log('Fee rate:', Web3.utils.fromWei(feeRate.toString(), 'Gwei'), 'Gwei');
     } else {
-      feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale / 1000) : feeRateParam); // convert feeRate from BTC to sats/KB
+      feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale) : feeRateParam); // convert feeRate from BTC to sats/B
+      feeUnit = 'sats/byte';
+      console.log('Fee rate:', feeRate, 'sats/byte');
     }
     const utxos = await wallet.getUtxosArray();
     const params = {
@@ -56,7 +66,9 @@ const main = async () => {
       utxos,
       recipients,
       from: lastAddress,
-      token
+      token,
+      replaceByFee: rbf,
+      tag
     }; 
     params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
     const changeIdx = params.change ? wallet.addressIndex : null;
