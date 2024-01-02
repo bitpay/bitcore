@@ -35,9 +35,8 @@ const main = async () => {
 
     let unusedAddressCounter = 0;
 
-    let index = parseInt(startIdx) !== NaN ? parseInt(startIdx) : (wallet.addressIndex || 0);
-    console.log(index, wallet.addressIndex, startIdx);
-    gap = parseInt(gap) != NaN ? parseInt(gap) : 20;
+    let index = !isNaN(parseInt(startIdx)) ? parseInt(startIdx) : (wallet.addressIndex || 0);
+    gap = !isNaN(parseInt(gap)) ? parseInt(gap) : 20;
     if (!wallet.isUtxoChain()) {
       gap = 1;
       noChange = true;
