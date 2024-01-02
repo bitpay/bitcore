@@ -47,7 +47,7 @@ const main = async () => {
     }
     if (txid) {
       existingTx = await wallet.getTransactionByTxid({ txid, populated: wallet.isUtxoChain() });
-    } else {
+    } else if (!existingTx) {
       throw new Error('Must provide either --raw or --txid.');
     }
 
