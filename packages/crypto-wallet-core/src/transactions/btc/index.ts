@@ -31,7 +31,7 @@ export class BTCTxProvider {
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, feeRate, fee }) {
+  create({ recipients, utxos = [], change, feeRate, fee, replaceByFee, lockUntilDate, lockUntilBlock }) {
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
@@ -53,6 +53,14 @@ export class BTCTxProvider {
     }
     for (const recipient of recipients) {
       tx.to(recipient.address, parseInt(recipient.amount));
+    }
+    if (replaceByFee && typeof tx.enableRBF === 'function') {
+      tx.enableRBF();
+    }
+    if (lockUntilBlock > 0) {
+      tx.lockUntilBlockHeight(lockUntilBlock);
+    } else if (lockUntilDate > 0) {
+      tx.lockUntilDate(lockUntilDate);
     }
     return tx.uncheckedSerialize();
   }
