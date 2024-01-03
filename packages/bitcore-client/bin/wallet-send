@@ -59,7 +59,7 @@ const main = async () => {
     if (wallet.chain.toUpperCase() === 'XRP') {
       params.nonce = parseInt(await wallet.getNonce());
       params.fee = feeRateParam == null ? feeRate : feeRateParam;
-      console.log('Fee:', params.fee, 'drops');
+      console.log('Fee:', params.fee, 'drops'); // XRP doesn't really have a fee "rate"
     } else if (!wallet.isUtxoChain()) {
       params.nonce = parseInt(await wallet.getNonce());
       params.feeRate = feeRateParam == null ? feeRate : parseInt(Web3.utils.toWei(feeRateParam.toString(), 'gwei')); // convert feeRateParam from Gwei to Wei
