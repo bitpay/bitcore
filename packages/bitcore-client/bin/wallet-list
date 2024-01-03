@@ -8,8 +8,8 @@ program
   .version(require('../package.json').version)
   .option('--chain <chain>', 'optional - filter the wallets by chain')
   .option('--network <network>', 'optional - filter the wallets by network')
-  .option('--storageType <storageType>', 'optional - default Level - choose the database from where to list wallets')
-  .option('--path <path>', 'optional - Where wallets are stored')
+  .option('--storageType <storageType>', 'optional - choose the database from where to list wallets')
+  .option('--path <path>', 'optional - where wallets are stored')
   .parse(process.argv);
 
 const main = async () => {
