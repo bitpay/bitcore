@@ -60,7 +60,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     if (!BaseEVMStateProvider.rpcs[this.chain] || !BaseEVMStateProvider.rpcs[this.chain][network]) {
       logger.info(`Making a new connection for ${this.chain}:${network}`);
+
+      logger.info(`network: ${this.config[network] ? Object.keys(this.config[network]) : 'null'}`);      
+      logger.info(`network.providers: ${this.config[network]?.providers}`);
+      logger.info(`network.provider: ${this.config[network]?.provider}`);
+      logger.info(`network keys: ${this.config[network] ? Object.keys(this.config[network]) : 'null'}`);
       const providerIdx = worker.threadId % (this.config[network].providers || []).length;
+      logger.info(`providerIdx: ${providerIdx}`);
+      // logger.info(`network keys ${Object.keys(this.config[network])}`);
+      // logger.info(`network.providers: ${this.config[network]?.providers}`);
+      // logger.info(`network.provider: ${this.config[network]?.provider}`);
       const providerConfig = this.config[network].provider || this.config[network].providers![providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
@@ -111,7 +120,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (network === 'livenet') {
       network = 'mainnet';
     }
-
+    logger.info(`params keys: ${Object.keys(params)}`);
+    logger.info(`params values: ${Object.values(params)}`);
     let cacheKey = `getFee-${chain}-${network}`;
     if (priorityFeePercentile) {
       txType = txType || 2;
@@ -121,14 +131,20 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     } else {
       cacheKey += `-${target}`;
     }
+
+    logger.info(`cache key: ${cacheKey}`);
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
         if (txType?.toString() === '2') {
           const { rpc } = await this.getWeb3(network);
+          logger.info(`rpc: ${rpc}`);
+          logger.info(`priorityFeePercentile: ${priorityFeePercentile}`);
           let feerate = priorityFeePercentile ? await rpc.estimateMaxPriorityFee({
             percentile: priorityFeePercentile }) : null;
+          logger.info(`feerate: ${feerate}`);
           feerate = feerate ? feerate : await rpc.estimateFee({ nBlocks: target, txType });
+          logger.info(`feerate2: ${feerate}`);
           return { feerate, blocks: target };
         }
         const txs = await EVMTransactionStorage.collection
