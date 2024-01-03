@@ -14,7 +14,7 @@ program
   .requiredOption('--to <to>', 'REQUIRED - String address')
   .requiredOption('--amount <amount>', 'REQUIRED - Number amount (in btc/bch/eth/xrp)')
   .option('--token <token>', 'optional - ERC-20 token to send')
-  .option('--feeRate <rate>', 'optional - Fee rate in sats/byte (UTXO) or Gwei (EVM) or XRP (XRP)')
+  .option('--feeRate <rate>', 'optional - Fee rate in sats/byte (UTXO), Gwei (EVM), or drops (XRP)')
   .option('--rbf', 'optional - Enable Replace-by-Fee')
   .option('--tag <tag>', 'optional - Destination tag (XRP only)')
   .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
@@ -40,36 +40,34 @@ const main = async () => {
     const scale = Math.pow(10, decimals);
     const lastAddress = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];
-    let feeRate = feeRateParam;
-    if (!feeRate) {
-      const feerate = await wallet.getNetworkFee();
-      feeRate = feerate.feerate;
-    }
-    let nonce;
-    let feeUnit;
-    if (wallet.chain.toUpperCase() === 'XRP') {
-      feeRate = feeRateParam == null ? feeRate : xrpl.xrpToDrops(feeRateParam); // convert feeRateParam from XRP to drops
-      console.log('Fee rate:', feeRate, 'drops');
-    } else if (!wallet.isUtxoChain()) {
-      nonce = await wallet.getNonce();
-      feeRate = feeRateParam == null ? feeRate : Web3.utils.toWei(feeRateParam.toString(), 'gwei').toNumber(); // convert feeRateParam from Gwei to Wei
-      console.log('Fee rate:', Web3.utils.fromWei(feeRate.toString(), 'Gwei'), 'Gwei');
-    } else {
-      feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale) : feeRateParam); // convert feeRate from BTC to sats/B
-      feeUnit = 'sats/byte';
-      console.log('Fee rate:', feeRate, 'sats/byte');
-    }
     const utxos = await wallet.getUtxosArray();
     const params = {
-      feeRate,
-      nonce: Number(nonce),
       utxos,
       recipients,
       from: lastAddress,
       token,
       replaceByFee: rbf,
       tag
-    }; 
+    };
+    
+    let feeRate = feeRateParam;
+    if (!feeRate) {
+      const feerate = await wallet.getNetworkFee();
+      feeRate = feerate.feerate;
+    }
+
+    if (wallet.chain.toUpperCase() === 'XRP') {
+      params.nonce = parseInt(await wallet.getNonce());
+      params.fee = feeRateParam == null ? feeRate : feeRateParam;
+      console.log('Fee rate:', params.fee, 'drops');
+    } else if (!wallet.isUtxoChain()) {
+      params.nonce = parseInt(await wallet.getNonce());
+      params.feeRate = feeRateParam == null ? feeRate : parseInt(Web3.utils.toWei(feeRateParam.toString(), 'gwei')); // convert feeRateParam from Gwei to Wei
+      console.log('Fee rate:', Web3.utils.fromWei(params.feeRate.toString(), 'Gwei'), 'Gwei');
+    } else {
+      params.feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale) : feeRateParam); // convert feeRate from BTC to sats/B
+      console.log('Fee rate:', params.feeRate, 'sats/byte');
+    }
     params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
     const changeIdx = params.change ? wallet.addressIndex : null;
     const tx = await wallet.newTx(params);
