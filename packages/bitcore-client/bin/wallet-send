@@ -58,7 +58,7 @@ const main = async () => {
 
     if (wallet.chain.toUpperCase() === 'XRP') {
       params.nonce = parseInt(await wallet.getNonce());
-      params.fee = feeRateParam == null ? feeRate : feeRateParam;
+      params.fee = feeRateParam == null ? feeRate : parseInt(feeRateParam);
       console.log('Fee:', params.fee, 'drops'); // XRP doesn't really have a fee "rate"
     } else if (!wallet.isUtxoChain()) {
       params.nonce = parseInt(await wallet.getNonce());
