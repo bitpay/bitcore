@@ -398,6 +398,7 @@ export class Wallet {
     replaceByFee?: boolean;
     lockUntilBlock?: number;
     lockUntilDate?: Date;
+    isSweep?: boolean;
   }) {
     const chain = params.token ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
@@ -433,7 +434,8 @@ export class Wallet {
       contractAddress: params.contractAddress,
       replaceByFee: params.replaceByFee,
       lockUntilBlock: params.lockUntilBlock,
-      lockUntilDate: params.lockUntilDate
+      lockUntilDate: params.lockUntilDate,
+      isSweep: params.isSweep
     };
     return Transactions.create(payload);
   }

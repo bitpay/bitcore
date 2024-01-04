@@ -19,12 +19,13 @@ program
   .option('-P, --feePriority <rate>', 'optional - Priority fee for EVM type 2 txs in Gwei')
   .option('-q, --quiet', 'optional - Do not prompt for confirmation or show raw tx data')
   .option('--noRbf', 'optional - Disable replace-by-fee')
+  .option('--isSweep', 'optional - Force treat the transaction as a sweep. Useful for when the --change is not an address controlled by the wallet')
   .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, storageType = 'Level', raw: rawTx, change, feeRate, feeTarget = 2, feePriority, quiet, noRbf } = program.opts();
+  const { name, path, storageType = 'Level', raw: rawTx, change, feeRate, feeTarget = 2, feePriority, quiet, noRbf, isSweep } = program.opts();
   let { txid } = program.opts();
   let wallet;
   
@@ -61,6 +62,7 @@ const main = async () => {
       params.recipients = outputs.filter(o => o.mintIndex != change).map(o => ({ address: o.address, amount: o.value }));
       params.lockUntilBlock = locktime > 0 ? locktime : undefined;
       params.replaceByFee = !noRbf;
+      params.isSweep = isSweep ?? outputs.length === 1;
       if (feeRate) {
         params.feeRate = feeRate;
       } else {

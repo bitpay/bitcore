@@ -31,8 +31,8 @@ export class BTCTxProvider {
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, feeRate, fee, replaceByFee, lockUntilDate, lockUntilBlock }) {
-    const filteredUtxos = this.selectCoins(recipients, utxos, fee);
+  create({ recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock }) {
+    const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
         amount: utxo.value / 1e8,
