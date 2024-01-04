@@ -646,6 +646,90 @@ export class Wallet {
     await this.importKeys({ keys: [key] });
     return key.address;
   }
+
+  async bumpTxFee({ txid, rawTx, changeIdx, feeRate, feeTarget, feePriority, noRbf, isSweep }) {
+    if (changeIdx == null && this.isUtxoChain()) {
+      throw new Error('Must provide changeIdx for UTXO chains');
+    }
+
+    const lib = this.getLib();
+    let existingTx;
+    if (rawTx) {
+      if (lib.ethers) {
+        existingTx = lib.ethers.utils.parseTransaction(rawTx);
+      } else {
+        const tx = new lib.Transaction(rawTx);
+        txid = tx.id;
+      }
+    }
+    if (txid) {
+      existingTx = await this.getTransactionByTxid({ txid, populated: this.isUtxoChain() });
+    } else if (!existingTx) {
+      throw new Error('Must provide either rawTx or txid');
+    }
+
+    const params: any = {};
+
+    if (this.isUtxoChain()) {
+      const { coins: { inputs, outputs }, locktime } = existingTx;
+
+      params.utxos = inputs;
+      params.change = outputs.find(o => o.mintIndex == changeIdx).address;
+      params.recipients = outputs.filter(o => o.mintIndex != changeIdx).map(o => ({ address: o.address, amount: o.value }));
+      params.lockUntilBlock = locktime > 0 ? locktime : undefined;
+      params.replaceByFee = !noRbf;
+      params.isSweep = isSweep ?? outputs.length === 1;
+      if (feeRate) {
+        params.feeRate = feeRate;
+      } else {
+        params.feeRate = (await this.getNetworkFee({ target: feeTarget })).feerate;
+        console.log(`Bumping fee rate to ${params.feeRate} sats/byte`);
+      }
+
+    // EVM chains
+    } else {
+      const { nonce, gasLimit, gasPrice, to, data, value, chainId, type } = existingTx;
+      // converting gasLimit and value with toString avoids a bigNumber warning
+      params.nonce = nonce
+      params.gasLimit = gasLimit?.toString();
+      params.gasPrice = gasPrice;
+      params.data = data;
+      params.chainId = chainId;
+      params.type = type;
+      params.recipients = [{ address: to, amount: value.toString() }];
+      
+      // TODO fix type2 support
+      if (false && existingTx.type === 2) {
+        if (feeRate) {
+          params.maxGasFee = Web3.utils.toWei(feeRate.toString(), 'gwei');
+        } else {
+          // TODO placeholder until for type2 support is merged in another PR
+          // params.maxGasFee = (await wallet.getNetworkFee({ target: feeTarget })).feerate;
+          // console.log(`Bumping max gas price to ${Web3.utils.fromWei(params.maxGasFee.toString(), 'gwei')} gwei`);
+        }
+        if (feePriority) {    
+          params.maxPriorityFee = Web3.utils.toWei(feePriority.toString(), 'gwei');
+        } else {
+          // TODO placeholder until for type2 support is merged in another PR
+          // params.maxPriorityFee = existingTx.maxPriorityFeePerGas;
+          // console.log(`Bumping max priority fee to ${Web3.utils.fromWei(params.maxPriorityFee.toString(), 'gwei')} gwei`);
+        }
+
+      // type 0
+      } else {
+        if (feeRate) {
+          params.gasPrice = Web3.utils.toWei(feeRate.toString(), 'gwei');
+        } else {
+          params.gasPrice = (await this.getNetworkFee({ target: feeTarget })).feerate;
+          console.log(`Bumping gas price to ${Web3.utils.fromWei(params.gasPrice.toString(), 'gwei')} gwei`);
+        }
+      }
+      
+    }
+
+    const tx = await this.newTx(params);
+    return { tx, params };
+  }
 }
 
 export const AddressTypes = {
