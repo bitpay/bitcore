@@ -40,7 +40,7 @@ export interface WalletObj {
   addressType: string;
 }
 
-export type BumpTxFeeType = {
+export interface BumpTxFeeType {
   txid?: string;
   rawTx?: string;
   changeIdx?: number;
@@ -49,7 +49,7 @@ export type BumpTxFeeType = {
   feePriority?: number;
   noRbf?: boolean;
   isSweep?: boolean;
-};
+}
 
 
 export class Wallet {
