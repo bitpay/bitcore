@@ -39,6 +39,19 @@ export interface WalletObj {
   lite: boolean;
   addressType: string;
 }
+
+export type BumpTxFeeType = {
+  txid?: string;
+  rawTx?: string;
+  changeIdx?: number;
+  feeRate?: number;
+  feeTarget?: number;
+  feePriority?: number;
+  noRbf?: boolean;
+  isSweep?: boolean;
+};
+
+
 export class Wallet {
   masterKey?: any;
   baseUrl: string;
@@ -647,7 +660,7 @@ export class Wallet {
     return key.address;
   }
 
-  async bumpTxFee({ txid, rawTx, changeIdx, feeRate, feeTarget, feePriority, noRbf, isSweep }) {
+  async bumpTxFee({ txid, rawTx, changeIdx, feeRate, feeTarget, feePriority, noRbf, isSweep } = {} as BumpTxFeeType) {
     if (changeIdx == null && this.isUtxoChain()) {
       throw new Error('Must provide changeIdx for UTXO chains');
     }
@@ -682,7 +695,8 @@ export class Wallet {
       if (feeRate) {
         params.feeRate = feeRate;
       } else {
-        params.feeRate = (await this.getNetworkFee({ target: feeTarget })).feerate;
+        const scale = 1e5; // convert from sat/kb to sat/byte
+        params.feeRate = Math.ceil((await this.getNetworkFee({ target: feeTarget })).feerate * scale);
         console.log(`Bumping fee rate to ${params.feeRate} sats/byte`);
       }
 
@@ -727,7 +741,7 @@ export class Wallet {
       
     }
 
-    const tx = await this.newTx(params);
+    const tx: string = await this.newTx(params);
     return { tx, params };
   }
 }
