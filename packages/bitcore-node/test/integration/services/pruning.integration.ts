@@ -10,7 +10,7 @@ import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { RPC } from '../../../src/rpc';
 
-describe('Pruning Service', function() {
+describe.only('Pruning Service', function() {
   const suite = this;
   this.timeout(30000);
   const sandbox = sinon.createSandbox();
@@ -65,7 +65,7 @@ describe('Pruning Service', function() {
     blockTimeNormalized: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   } as MongoBound<IBtcTransaction>;
 
-  const oldMempoolCoin = {
+  const oldMempoolTxOutput = {
     chain: 'BTC',
     network: 'mainnet',
     mintHeight: -1,
@@ -73,12 +73,30 @@ describe('Pruning Service', function() {
     spentTxid: 'oldMempoolTx2'
   } as ICoin;
 
-  const oldMempoolCoin2 = {
+  const oldMempoolTx2Output = { // output that spends oldMempoolTxOutput
     chain: 'BTC',
     network: 'mainnet',
     mintHeight: -1,
     mintTxid: 'oldMempoolTx2',
     spentTxid: ''
+  } as ICoin;
+
+  const parentTxOutput1 = {
+    chain: 'BTC',
+    network: 'mainnet',
+    mintHeight: 1234,
+    mintTxid: 'parentTx',
+    spentHeight: -1,
+    spentTxid: 'oldMempoolTx' // this output is an input for oldMempoolTx
+  } as ICoin;
+
+  const parentTxOutput2 = {
+    chain: 'BTC',
+    network: 'mainnet',
+    mintHeight: 1234,
+    mintTxid: 'parentTx',
+    spentHeight: -1,
+    spentTxid: 'imaginaryTx' // another imaginary tx spent this output. This is here to make sure we don't mark this output as unspent
   } as ICoin;
 
   function modTxid(orig, i) {
@@ -95,9 +113,11 @@ describe('Pruning Service', function() {
   }
 
   async function insertOldTx(i: any = 0) {
+    await CoinStorage.collection.insertOne({ ...parentTxOutput1, spentTxid: modTxid(parentTxOutput1.spentTxid, i) });
+    await CoinStorage.collection.insertOne({ ...parentTxOutput2, spentTxid: modTxid(parentTxOutput2.spentTxid, i) });
     await TransactionStorage.collection.insertOne({ ...oldMempoolTx, txid: modTxid(oldMempoolTx.txid, i) });
-    await CoinStorage.collection.insertOne({ ...oldMempoolCoin, mintTxid: modTxid(oldMempoolCoin.mintTxid, i), spentTxid: modTxid(oldMempoolCoin.spentTxid, i) });
-    await CoinStorage.collection.insertOne({ ...oldMempoolCoin2, mintTxid: modTxid(oldMempoolCoin2.mintTxid, i) });
+    await CoinStorage.collection.insertOne({ ...oldMempoolTxOutput, mintTxid: modTxid(oldMempoolTxOutput.mintTxid, i), spentTxid: modTxid(oldMempoolTxOutput.spentTxid, i) });
+    await CoinStorage.collection.insertOne({ ...oldMempoolTx2Output, mintTxid: modTxid(oldMempoolTx2Output.mintTxid, i) });
   }
 
   it('should detect coins that should be invalid but are not', async () => {
@@ -144,11 +164,16 @@ describe('Pruning Service', function() {
       .find({ chain, network, txid: { $in: [oldMempoolTx.txid] } })
       .toArray();
     const shouldBeGoneCoins = await CoinStorage.collection
-      .find({ chain, network, mintTxid: { $in: [oldMempoolCoin.mintTxid, oldMempoolCoin2.mintTxid] } })
+      .find({ chain, network, mintTxid: { $in: [oldMempoolTxOutput.mintTxid, oldMempoolTx2Output.mintTxid] } })
+      .toArray();
+    const parentTxOutputs = await CoinStorage.collection
+      .find({ chain, network, mintTxid: parentTxOutput1.mintTxid })
       .toArray();
 
     expect(shouldBeGoneTx.length).eq(0);
     expect(shouldBeGoneCoins.length).eq(0);
+    expect(parentTxOutputs.length).eq(2);
+    expect(parentTxOutputs.filter(coin => coin.spentHeight === -2).length).to.equal(1);
   });
 
   it('should skip removing transactions still in mempool', async () => {
@@ -174,7 +199,7 @@ describe('Pruning Service', function() {
       .find({ chain, network, txid: { $in: [modTxid(oldMempoolTx.txid, 0), modTxid(oldMempoolTx.txid, 1), modTxid(oldMempoolTx.txid, 2)] } })
       .toArray();
     const shouldBeGoneCoins = await CoinStorage.collection
-      .find({ chain, network, mintTxid: { $in: [modTxid(oldMempoolCoin.mintTxid, 0), modTxid(oldMempoolCoin2.mintTxid, 0), modTxid(oldMempoolCoin.mintTxid, 1), modTxid(oldMempoolCoin2.mintTxid, 1), modTxid(oldMempoolCoin.mintTxid, 2), modTxid(oldMempoolCoin2.mintTxid, 2)] } })
+      .find({ chain, network, mintTxid: { $in: [modTxid(oldMempoolTxOutput.mintTxid, 0), modTxid(oldMempoolTx2Output.mintTxid, 0), modTxid(oldMempoolTxOutput.mintTxid, 1), modTxid(oldMempoolTx2Output.mintTxid, 1), modTxid(oldMempoolTxOutput.mintTxid, 2), modTxid(oldMempoolTx2Output.mintTxid, 2)] } })
       .toArray();
 
     expect(shouldBeGoneTx.length).eq(1);
@@ -200,7 +225,7 @@ describe('Pruning Service', function() {
       .find({ chain, network, txid: { $in: [oldMempoolTx.txid] } })
       .toArray();
     const shouldBeGoneCoins = await CoinStorage.collection
-      .find({ chain, network, mintTxid: { $in: [oldMempoolCoin.mintTxid, oldMempoolCoin2.mintTxid] } })
+      .find({ chain, network, mintTxid: { $in: [oldMempoolTxOutput.mintTxid, oldMempoolTx2Output.mintTxid] } })
       .toArray();
 
     expect(shouldBeGoneTx.length).eq(1);
@@ -210,10 +235,10 @@ describe('Pruning Service', function() {
   it('should skip removing transactions if coin has >0 confs', async () => {
     const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
     rpcStub.onCall(0).rejects({ code: -5, message: 'already exists' });
-    const oldMempoolCoin2Height = oldMempoolCoin2.mintHeight;
-    oldMempoolCoin2.mintHeight = 1;
+    const oldMempoolTx2OutputHeight = oldMempoolTx2Output.mintHeight;
+    oldMempoolTx2Output.mintHeight = 1;
     await insertOldTx();
-    oldMempoolCoin2.mintHeight = oldMempoolCoin2Height; // reset
+    oldMempoolTx2Output.mintHeight = oldMempoolTx2OutputHeight; // reset
     const { chain, network } = oldMempoolTx;
 
     const count = await TransactionStorage.collection.countDocuments({
@@ -229,7 +254,7 @@ describe('Pruning Service', function() {
       .find({ chain, network, txid: { $in: [oldMempoolTx.txid] } })
       .toArray();
     const shouldBeGoneCoins = await CoinStorage.collection
-      .find({ chain, network, mintTxid: { $in: [oldMempoolCoin.mintTxid, oldMempoolCoin2.mintTxid] } })
+      .find({ chain, network, mintTxid: { $in: [oldMempoolTxOutput.mintTxid, oldMempoolTx2Output.mintTxid] } })
       .toArray();
 
     expect(shouldBeGoneTx.length).eq(1);

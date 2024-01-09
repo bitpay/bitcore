@@ -256,8 +256,12 @@ export class PruningService {
       return;
     }
     return Promise.all([
-      this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: -1 }),
-      this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: -1 })
+      this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: SpentHeightIndicators.pending }),
+      this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: SpentHeightIndicators.pending }),
+      this.coinModel.collection.updateMany(
+        { chain, network, spentTxid: { $in: txids }, spentHeight: SpentHeightIndicators.pending },
+        { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.unspent } }
+      )
     ]);
   }
 }
