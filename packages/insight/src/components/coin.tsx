@@ -83,7 +83,7 @@ const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
             {showTimer ? (
               <TileDescription value width='auto'>
                 {' '}
-                Mined on {getFormattedDate(time)}{' '}
+                {confirmations > 0 ? 'Mined' : 'Seen'} on {getFormattedDate(time)}{' '}
               </TileDescription>
             ) : (
               <TileLink value width='auto' onClick={() => getTxData(mintTxid)}>
@@ -134,7 +134,7 @@ const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
             {showTimer ? (
               <TileDescription value width='auto'>
                 {' '}
-                Mined on {getFormattedDate(time)}{' '}
+                {confirmations > 0 ? 'Mined' : 'Seen'} on {getFormattedDate(time)}{' '}
               </TileDescription>
             ) : (
               <TileLink value width='auto' onClick={() => getTxData(spentTxid)}>

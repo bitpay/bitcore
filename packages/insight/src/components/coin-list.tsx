@@ -58,14 +58,14 @@ const ToUiFriendlyEthCoin = (coin: TransactionEth, blockTipHeight: number) => {
 
 const ProcessData = (data: any, blockTipHeight: number) => {
   const txs: any = [];
-  data.map((tx: any) => {
+  for (const tx of data) {
     const {mintHeight, mintTxid, value, spentHeight, spentTxid} = tx;
     if (spentHeight >= -1) {
       txs.push({
         height: spentHeight,
         spentTxid,
         value,
-        confirmations: blockTipHeight - spentHeight + 1,
+        confirmations: spentHeight > -1 ? (blockTipHeight - spentHeight + 1) : spentHeight,
       });
     }
     if (mintHeight >= -1) {
@@ -73,11 +73,10 @@ const ProcessData = (data: any, blockTipHeight: number) => {
         height: mintHeight,
         mintTxid,
         value,
-        confirmations: blockTipHeight - mintHeight + 1,
+        confirmations: mintHeight > -1 ? (blockTipHeight - mintHeight + 1) : mintHeight,
       });
     }
-    return tx;
-  });
+  }
 
   return txs;
 };
