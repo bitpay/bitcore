@@ -104,7 +104,6 @@ const CoinList: FC<CoinListProps> = ({txs, currency, network, tip, transactionsL
 
   useEffect(() => {
     setIsLoading(true);
-    transactionsLength(txs.length);
 
     let _txs;
     if (currency === 'ETH') {
@@ -112,6 +111,7 @@ const CoinList: FC<CoinListProps> = ({txs, currency, network, tip, transactionsL
     } else {
       _txs = ProcessData(txs, height);
     }
+    transactionsLength(_txs.length);
     _txs = _txs.sort((a: any, b: any) => b.height - a.height);
     setTxsCopy(_txs);
     const _transactions = _txs.slice(0, limit);
