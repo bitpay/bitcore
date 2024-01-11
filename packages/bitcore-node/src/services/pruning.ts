@@ -120,15 +120,15 @@ export class PruningService {
     const count = await this.transactionModel.collection.countDocuments({
       chain,
       network,
-      blockHeight: -1,
+      blockHeight: SpentHeightIndicators.pending,
       blockTimeNormalized: { $lt: oldTime }
     });
     logger.info(`Found ${count} outdated ${chain} ${network} mempool txs`);
     let rmCount = 0;
     await new Promise((resolve, reject) => {
       this.transactionModel.collection
-        .find({ chain, network, blockHeight: -1, blockTimeNormalized: { $lt: oldTime } })
-        .sort({ chain: 1, network: 1, blockTimeNormalized: 1 })
+        .find({ chain, network, blockHeight: SpentHeightIndicators.pending, blockTimeNormalized: { $lt: oldTime } })
+        .sort(count > 5000 ? { chain: 1, network: 1, blockTimeNormalized: 1 } : {})
         .pipe(
           new Transform({
             objectMode: true,
@@ -184,12 +184,12 @@ export class PruningService {
     const count = await this.transactionModel.collection.countDocuments({
       chain,
       network,
-      blockHeight: -3
+      blockHeight: SpentHeightIndicators.conflicting
     });
     logger.info(`Found ${count} invalid ${chain} ${network} txs`);
     await new Promise((resolve, reject) => {
       this.transactionModel.collection
-        .find({ chain, network, blockHeight: -3 })
+        .find({ chain, network, blockHeight: SpentHeightIndicators.conflicting })
         .pipe(
           new Transform({
             objectMode: true,
@@ -256,8 +256,14 @@ export class PruningService {
       return;
     }
     return Promise.all([
-      this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: SpentHeightIndicators.pending }),
-      this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: SpentHeightIndicators.pending }),
+      this.transactionModel.collection.updateMany(
+        { chain, network, txid: { $in: txids }, blockHeight: SpentHeightIndicators.pending },
+        { $set: { blockHeight: SpentHeightIndicators.expired } }
+      ),
+      this.coinModel.collection.updateMany(
+        { chain, network, mintTxid: { $in: txids }, mintHeight: SpentHeightIndicators.pending },
+        { $set: { mintHeight: SpentHeightIndicators.expired } }
+      ),
       this.coinModel.collection.updateMany(
         { chain, network, spentTxid: { $in: txids }, spentHeight: SpentHeightIndicators.pending },
         { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.unspent } }
