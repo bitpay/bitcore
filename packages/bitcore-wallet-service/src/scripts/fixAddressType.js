@@ -70,10 +70,10 @@ storage.connect(config.storageOpts, async (err) => {
           $set: { type: 'P2PKH' }
         });
 
-        if (res?.result?.nModified > 0) {
-          if (wallet.addressType === 'P2WPKH') {
-            await storage.db.collection(Storage.collections.WALLETS).updateOne({ _id: wallet._id }, { $set: { addressType: 'P2PKH' } });
-          }
+        if (wallet.addressType === 'P2WPKH') {
+          await storage.db.collection(Storage.collections.WALLETS).updateOne({ _id: wallet._id }, { $set: { addressType: 'P2PKH' } });
+          fixCount++;
+        } else if (res?.result?.nModified > 0) {
           fixCount++;
         } else if (!res?.result?.ok) {
           console.log(JSON.stringify(res));
