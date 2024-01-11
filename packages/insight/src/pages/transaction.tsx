@@ -98,6 +98,7 @@ const TransactionHash: React.FC = () => {
     // clear interval on nav to new tx or unmount
     return () => {
       clearInterval(confInterval);
+      confInterval = 0;
     };  
   }, [network, currency, tx]);
 
