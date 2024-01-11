@@ -14,18 +14,15 @@ import {DisplayFlex, ConfirmationLabel} from '../assets/styles/global';
 import {TransactionBodyCol, TransactionTileBody} from '../assets/styles/transaction';
 import {motion} from 'framer-motion';
 import {routerFadeIn} from '../utilities/animations';
-import {Link, useLocation, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {useAppDispatch} from '../utilities/hooks';
 import React, {useEffect, useState} from 'react';
 import {changeCurrency, changeNetwork} from '../store/app.actions';
 import nProgress from 'nprogress';
+import ConfirmedWav from '../assets/sounds/confirmed.wav';
+import NotConfirmedWav from '../assets/sounds/notConfirmed.wav';
+import {playSoundEffect} from 'src/utilities/sound';
 
-const getTxData = (state: any): Promise<any> => {
-  // Tx data from search
-  return new Promise(resolve => {
-    resolve(state.transactionData);
-  });
-};
 
 const TransactionHash: React.FC = () => {
   const navigate = useNavigate();
@@ -39,9 +36,50 @@ const TransactionHash: React.FC = () => {
   const [transaction, setTransaction] = useState<any>();
   const dispatch = useAppDispatch();
   const [error, setError] = useState('');
-  const {state} = useLocation();
   const [refTxid, setRefTxid] = useState<string | undefined>();
   const [refVout, setRefVout] = useState<number | undefined>();
+
+  let confInterval: number;
+  function listenForConfs(baseUrl: string, transaction: any) {
+    if (confInterval) {
+      // already listening for confs
+      console.log('already listening for confs');
+      return;
+    }
+    confInterval = setInterval(() => {
+      Promise.all([
+        fetcher(`${baseUrl}/tx/${tx}`),
+        fetcher(`${baseUrl}/block/tip`)
+      ])
+        .then(([_txRefresh, _newTip]) => {
+          console.log('Transaction updating...');
+          const {blockHeight} = _txRefresh;
+          const {height} = _newTip;
+          const confirmations = blockHeight > 0 ? height - blockHeight + 1 : blockHeight;
+          if (confirmations !== -1) { // conf status has changed from unconfirmed
+            clearInterval(confInterval);
+            // setConfirmations(confirmations);
+            transaction.confirmations = confirmations;
+            if (confirmations > -1) {
+              transaction.blockHash = _txRefresh.blockHash;
+              transaction.blockTime = _txRefresh.blockTime;
+              playSoundEffect(ConfirmedWav);
+            } else if (confirmations < -1) {
+              transaction.replacedByTxid = _txRefresh.replacedByTxid;
+              playSoundEffect(NotConfirmedWav);
+            }
+            setIsLoading(true);
+            nProgress.start();
+            setTransaction(transaction);
+            // setConfirmations(confirmations);
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+          nProgress.done();
+        })
+    }, 10000);
+  }
 
   useEffect(() => {
     if (reftxidParam != null && reftxidParam !== '') {
@@ -70,8 +108,7 @@ const TransactionHash: React.FC = () => {
     dispatch(changeNetwork(network));
 
     Promise.all([
-      // @ts-ignore
-      state?.transactionData ? getTxData(state) : fetcher(`${baseUrl}/tx/${tx}`),
+      fetcher(`${baseUrl}/tx/${tx}`),
       fetcher(`${baseUrl}/block/tip`),
       fetcher(`${baseUrl}/tx/${tx}/coins`),
     ])
@@ -86,6 +123,10 @@ const TransactionHash: React.FC = () => {
         _transaction.confirmations = blockHeight > 0 ? height - blockHeight + 1 : blockHeight;
 
         setTransaction(_transaction);
+
+        if (_transaction.confirmations === -1) {
+          listenForConfs(baseUrl, _transaction);
+        }
       })
       .catch((e: any) => {
         setError(e.message || 'Error getting transaction.');
@@ -141,7 +182,7 @@ const TransactionHash: React.FC = () => {
                     message={`This transaction was replaced by another transaction that ${
                       transaction.chain === 'ETH'
                         ? 'used the same nonce'
-                        : "spent some of it's inputs"
+                        : 'spent some of it\'s inputs'
                     }.`}
                     type={'error'}
                   />
