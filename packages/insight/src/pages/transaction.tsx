@@ -96,6 +96,14 @@ const TransactionHash: React.FC = () => {
       });
   }, [network, currency, tx]);
 
+  // On mount & unmount/cleanup effect
+  useEffect(() => {
+    // cleanup function for unmount
+    return () => {
+      clearInterval(confInterval);
+    };
+  }, []);
+
   const goToTx = (tx: any) => {
     return navigate({
       pathname: `/${currency}/${network}/tx/${tx}`,
@@ -133,6 +141,7 @@ const TransactionHash: React.FC = () => {
             setTransaction(transaction);
           }
         })
+        .catch(() => {/**/})
         .finally(() => {
           setIsLoading(false);
           nProgress.done();
