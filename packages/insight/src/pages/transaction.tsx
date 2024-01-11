@@ -38,44 +38,7 @@ const TransactionHash: React.FC = () => {
   const [error, setError] = useState('');
   const [refTxid, setRefTxid] = useState<string | undefined>();
   const [refVout, setRefVout] = useState<number | undefined>();
-
   let confInterval: number;
-  function listenForConfs(baseUrl: string, transaction: any) {
-    if (confInterval) {
-      // already listening for confs
-      return;
-    }
-    confInterval = setInterval(() => {
-      Promise.all([
-        fetcher(`${baseUrl}/tx/${tx}`),
-        fetcher(`${baseUrl}/block/tip`)
-      ])
-        .then(([_txRefresh, _newTip]) => {
-          const {blockHeight} = _txRefresh;
-          const {height} = _newTip;
-          const confirmations = blockHeight > 0 ? height - blockHeight + 1 : blockHeight;
-          if (confirmations !== -1) { // conf status has changed from unconfirmed
-            clearInterval(confInterval);
-            transaction.confirmations = confirmations;
-            if (confirmations > -1) { // if confirmed
-              transaction.blockHash = _txRefresh.blockHash;
-              transaction.blockTime = _txRefresh.blockTime;
-              playSoundEffect(ConfirmedWav);
-            } else if (confirmations < -1) { // if invalid
-              transaction.replacedByTxid = _txRefresh.replacedByTxid;
-              playSoundEffect(NotConfirmedWav);
-            }
-            setIsLoading(true);
-            nProgress.start();
-            setTransaction(transaction);
-          }
-        })
-        .finally(() => {
-          setIsLoading(false);
-          nProgress.done();
-        })
-    }, 10000);
-  }
 
   useEffect(() => {
     if (reftxidParam != null && reftxidParam !== '') {
@@ -120,7 +83,7 @@ const TransactionHash: React.FC = () => {
 
         setTransaction(_transaction);
 
-        if (_transaction.confirmations === -1) {
+        if (_transaction.confirmations === -1) { // unconfirmed
           listenForConfs(baseUrl, _transaction);
         }
       })
@@ -139,6 +102,44 @@ const TransactionHash: React.FC = () => {
       search: '',
     });
   };
+
+  const listenForConfs = (baseUrl: string, transaction: any) => {
+    if (confInterval) {
+      // already listening for confs
+      return;
+    }
+    confInterval = setInterval(() => {
+      Promise.all([
+        fetcher(`${baseUrl}/tx/${tx}`),
+        fetcher(`${baseUrl}/block/tip`)
+      ])
+        .then(([_txRefresh, _newTip]) => {
+          const {blockHeight} = _txRefresh;
+          const {height} = _newTip;
+          const confirmations = blockHeight > 0 ? height - blockHeight + 1 : blockHeight;
+          if (confirmations !== -1) { // conf status has changed from unconfirmed
+            clearInterval(confInterval);
+            transaction.confirmations = confirmations;
+            if (confirmations > -1) { // if confirmed
+              transaction.blockHash = _txRefresh.blockHash;
+              transaction.blockTime = _txRefresh.blockTime;
+              playSoundEffect(ConfirmedWav);
+            } else if (confirmations < -1) { // if invalid
+              transaction.replacedByTxid = _txRefresh.replacedByTxid;
+              playSoundEffect(NotConfirmedWav);
+            }
+            setIsLoading(true);
+            nProgress.start();
+            setTransaction(transaction);
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+          nProgress.done();
+        })
+    }, 10000);
+  };
+
 
   return (
     <>
