@@ -43,7 +43,6 @@ const TransactionHash: React.FC = () => {
   function listenForConfs(baseUrl: string, transaction: any) {
     if (confInterval) {
       // already listening for confs
-      console.log('already listening for confs');
       return;
     }
     confInterval = setInterval(() => {
@@ -52,26 +51,23 @@ const TransactionHash: React.FC = () => {
         fetcher(`${baseUrl}/block/tip`)
       ])
         .then(([_txRefresh, _newTip]) => {
-          console.log('Transaction updating...');
           const {blockHeight} = _txRefresh;
           const {height} = _newTip;
           const confirmations = blockHeight > 0 ? height - blockHeight + 1 : blockHeight;
           if (confirmations !== -1) { // conf status has changed from unconfirmed
             clearInterval(confInterval);
-            // setConfirmations(confirmations);
             transaction.confirmations = confirmations;
-            if (confirmations > -1) {
+            if (confirmations > -1) { // if confirmed
               transaction.blockHash = _txRefresh.blockHash;
               transaction.blockTime = _txRefresh.blockTime;
               playSoundEffect(ConfirmedWav);
-            } else if (confirmations < -1) {
+            } else if (confirmations < -1) { // if invalid
               transaction.replacedByTxid = _txRefresh.replacedByTxid;
               playSoundEffect(NotConfirmedWav);
             }
             setIsLoading(true);
             nProgress.start();
             setTransaction(transaction);
-            // setConfirmations(confirmations);
           }
         })
         .finally(() => {
