@@ -45,5 +45,10 @@ export const enum SpentHeightIndicators {
   /**
    * An internal error occurred. (The database appears to be inconsistent.)
    */
-  error = -4
+  error = -4,
+
+  /**
+   * The coin was minted by a transaction that has expired from the mempool.
+   */
+  expired = -5
 }
