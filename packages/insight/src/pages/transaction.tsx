@@ -94,15 +94,12 @@ const TransactionHash: React.FC = () => {
         setIsLoading(false);
         nProgress.done();
       });
-  }, [network, currency, tx]);
 
-  // On mount & unmount/cleanup effect
-  useEffect(() => {
-    // cleanup function for unmount
+    // clear interval on nav to new tx or unmount
     return () => {
       clearInterval(confInterval);
-    };
-  }, []);
+    };  
+  }, [network, currency, tx]);
 
   const goToTx = (tx: any) => {
     return navigate({
