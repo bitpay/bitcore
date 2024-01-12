@@ -160,18 +160,20 @@ describe('Pruning Service', function() {
     expect(count).eq(1);
     await Pruning.processOldMempoolTxs(chain, network, 29);
 
-    const shouldBeGoneTx = await TransactionStorage.collection
+    const shouldBeExpiredTx = await TransactionStorage.collection
       .find({ chain, network, txid: { $in: [oldMempoolTx.txid] } })
       .toArray();
-    const shouldBeGoneCoins = await CoinStorage.collection
+    const shouldBeExpiredCoins = await CoinStorage.collection
       .find({ chain, network, mintTxid: { $in: [oldMempoolTxOutput.mintTxid, oldMempoolTx2Output.mintTxid] } })
       .toArray();
     const parentTxOutputs = await CoinStorage.collection
       .find({ chain, network, mintTxid: parentTxOutput1.mintTxid })
       .toArray();
 
-    expect(shouldBeGoneTx.length).eq(0);
-    expect(shouldBeGoneCoins.length).eq(0);
+    expect(shouldBeExpiredTx.length).eq(1);
+    expect(shouldBeExpiredTx.every(tx => tx.blockHeight === -5)).to.equal(true);
+    expect(shouldBeExpiredCoins.length).eq(2);
+    expect(shouldBeExpiredCoins.every(coin => coin.mintHeight === -5)).to.equal(true);
     expect(parentTxOutputs.length).eq(2);
     expect(parentTxOutputs.filter(coin => coin.spentHeight === -2).length).to.equal(1);
   });
@@ -195,15 +197,19 @@ describe('Pruning Service', function() {
     expect(count).eq(3);
     await Pruning.processOldMempoolTxs(chain, network, 29);
 
-    const shouldBeGoneTx = await TransactionStorage.collection
+    const processedTxs = await TransactionStorage.collection
       .find({ chain, network, txid: { $in: [modTxid(oldMempoolTx.txid, 0), modTxid(oldMempoolTx.txid, 1), modTxid(oldMempoolTx.txid, 2)] } })
       .toArray();
-    const shouldBeGoneCoins = await CoinStorage.collection
+    const processedCoins = await CoinStorage.collection
       .find({ chain, network, mintTxid: { $in: [modTxid(oldMempoolTxOutput.mintTxid, 0), modTxid(oldMempoolTx2Output.mintTxid, 0), modTxid(oldMempoolTxOutput.mintTxid, 1), modTxid(oldMempoolTx2Output.mintTxid, 1), modTxid(oldMempoolTxOutput.mintTxid, 2), modTxid(oldMempoolTx2Output.mintTxid, 2)] } })
       .toArray();
 
-    expect(shouldBeGoneTx.length).eq(1);
-    expect(shouldBeGoneCoins.length).eq(2);
+    expect(processedTxs.length).eq(3);
+    expect(processedTxs.filter(tx => tx.blockHeight === -5).length).eq(2);
+    expect(processedTxs.filter(tx => tx.blockHeight === -1).length).eq(1); // still in mempool
+    expect(processedCoins.length).eq(6);
+    expect(processedCoins.filter(coin => coin.mintHeight === -5).length).eq(4);
+    expect(processedCoins.filter(coin => coin.mintHeight === -1).length).eq(2); // still in mempool
   });
 
   it('should skip removing transactions on rpc error', async () => {
