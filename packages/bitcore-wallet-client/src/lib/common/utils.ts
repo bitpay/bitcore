@@ -523,9 +523,9 @@ export class Utils {
     const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
     if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
        // Special handling for usdc.e and usdc on matic
-      if (coin.toLowerCase() === 'usdc.e') {
+      if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc.e') {
         return 'USDC_m';
-      } else if (coin.toLowerCase() === 'usdc') {
+      } else if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc') {
         return 'USDCn_m';
       }
       return `${coin.toUpperCase()}_${suffix}`;
