@@ -84,7 +84,7 @@ storage.connect(config.storageOpts, async (err) => {
           createdOn: { $gte: startDate.getTime() / 1000, $lte: endDate.getTime() / 1000 },
           type: 'P2WPKH'
         });
-        fixCount += count > 0 ? 1 : 0;
+        fixCount += (count > 0 || wallet.addressType === 'P2WPKH') ? 1 : 0;
       }
       await new Promise(resolve => setTimeout(resolve, 80)); // sleep 80ms
     }
