@@ -112,8 +112,8 @@ describe('Ethereum API', function() {
       const cached = await CacheStorage.getGlobal(cacheKey);
       expect(fee).to.deep.eq(cached);
       // priority fee
-      const cacheKeyPriorityFee = `getFee-${chain}-${network}-type2-15`;
-      const priorityFee  = await ETH.getFee({ chain, network, target: 2, priorityFeePercentile: 15 });
+      const cacheKeyPriorityFee = `getFee-${chain}-${network}-priorityFee-15`;
+      const priorityFee  = await ETH.getPriorityFee({ chain, network, percentile: 15 });
       expect(priorityFee).to.exist;
       expect(priorityFee.feerate).to.equal(2);
       const cachedPriorityFee  = await CacheStorage.getGlobal(cacheKeyPriorityFee);

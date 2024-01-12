@@ -15,7 +15,7 @@ const feeModes = {
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
   let { target, chain, network } = req.params;
-  let { mode, txType, priorityFeePercentile } = req.query;
+  let { mode, txType } = req.query;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -34,15 +34,12 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   } else if (!feeModes[chain]?.includes(mode)) {
     return res.status(400).send('invalid mode specified');
   }
-  if (priorityFeePercentile) {
-    txType = txType || 2;
-  }
   if (txType && txType.toString() != '2') {
     return res.status(400).send('invalid txType specified');
   }
   let feeCacheKey = `${chain}:${network}`;
   if (txType){
-    feeCacheKey += `:type${txType}${priorityFeePercentile ? ':' + priorityFeePercentile : ''}`
+    feeCacheKey += `:type${txType}`
   } else {
     feeCacheKey += `:${target}${mode ? ':' + mode : ''}`;
   }
@@ -51,7 +48,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType, priorityFeePercentile });
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType });
     if (!fee) {
       return res.status(404).send('not available right now');
     }
@@ -68,6 +65,31 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   }
 });
 
+// router.get('/priorityFee/:priorityFeePercentile', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
+//   let { priorityFeePercentile, chain, network } = req.params;
+//   if (!chain || !network) {
+//     return res.status(400).send('Missing required param');
+//   }
+//   chain = chain.toUpperCase();
+//   network = network.toLowerCase();
+//   const percentile = Number(priorityFeePercentile) ? Number(priorityFeePercentile) : 15;
+//   let feeCacheKey = `${chain}:${network}:priorityFee:${priorityFeePercentile}`;
+//   const cachedFee = feeCache[feeCacheKey];
+//   if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
+//     return res.json(cachedFee.fee);
+//   }
+//   try {
+//     let fee = await ChainStateProvider.getPriorityFee({ chain, network, priorityFeePercentile: percentile });
+//     if (!fee) {
+//       return res.status(404).send('not available right now');
+//     }
+//     feeCache[feeCacheKey] = { fee, date: Date.now() };
+//     return res.json(fee);
+//   } catch (err: any) {
+//     logger.error('Fee Error: %o', err.message || err);
+//     return res.status(500).send('Error getting priority fee from RPC');
+//   }
+// });
 module.exports = {
   router,
   path: '/fee'

@@ -111,7 +111,7 @@ EthRoutes.get('/api/ETH/:network/priorityFee/:percentile', async (req, res) => {
 
   network = network.toLowerCase();
   try {
-    let fee = await ETH.getFee({ network, target: 2, txType: 2, priorityFeePercentile });
+    let fee = await ETH.getPriorityFee({ network, percentile: priorityFeePercentile });
     if (!fee) {
       return res.status(404).send('not available right now');
     }

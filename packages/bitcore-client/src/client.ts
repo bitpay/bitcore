@@ -141,9 +141,21 @@ export class Client {
   }
 
   async getFee(params) {
-    const { target, txType} = params;
+    const { target, txType } = params;
+    const query = [];
     let url = `${this.apiUrl}/fee/${target}`;
-    url += txType ? `?txType=${txType}` : '';
+    txType && query.push(`txType=${txType}`);
+    url += query.length ? `?${query.join('&')}` : '';
+    const result = await this._request({ method: 'GET', url, json: true });
+    if (result.errors?.length) {
+      throw new Error(result.errors[0]);
+    }
+    return result;
+  }
+
+  async getPriorityFee(params) {
+    const { percentile } = params;
+    let url = `${this.apiUrl}/priorityFee/${percentile}`;
     const result = await this._request({ method: 'GET', url, json: true });
     if (result.errors?.length) {
       throw new Error(result.errors[0]);

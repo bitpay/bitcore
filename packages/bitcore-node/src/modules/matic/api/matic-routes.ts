@@ -100,7 +100,7 @@ MaticRoutes.get('/api/MATIC/:network/priorityFee/:percentile', async (req, res) 
 
   network = network.toLowerCase();
   try {
-    let fee = await MATIC.getFee({ network, target: 2, txType: 2, priorityFeePercentile });
+    let fee = await MATIC.getPriorityFee({ network, percentile: priorityFeePercentile });
     if (!fee) {
       return res.status(404).send('not available right now');
     }

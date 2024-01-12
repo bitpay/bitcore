@@ -106,29 +106,22 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getFee(params) {
-    let { network, target = 4, txType, priorityFeePercentile } = params;
+    let { network, target = 4, txType } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
     }
-
     let cacheKey = `getFee-${chain}-${network}`;
-    if (priorityFeePercentile) {
-      txType = txType || 2;
-    }
     if (txType) {
-      cacheKey += `-type${txType}${priorityFeePercentile ? '-' + priorityFeePercentile : ''}`;
-    } else {
-      cacheKey += `-${target}`;
+      cacheKey += `-type${txType}`;
     }
+
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
         if (txType?.toString() === '2') {
           const { rpc } = await this.getWeb3(network);
-          let feerate = priorityFeePercentile ? await rpc.estimateMaxPriorityFee({
-            percentile: priorityFeePercentile }) : null;
-          feerate = feerate ? feerate : await rpc.estimateFee({ nBlocks: target, txType });
+          let feerate = await rpc.estimateFee({ nBlocks: target, txType });
           return { feerate, blocks: target };
         }
         const txs = await EVMTransactionStorage.collection
@@ -150,6 +143,26 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         const gwei = Number(roundedGwei) || 0;
         const feerate = gwei * 1e9;
         return { feerate, blocks: target };
+      },
+      CacheStorage.Times.Minute
+    );
+  }
+
+  async getPriorityFee(params) {
+    let { network, percentile } = params;
+    const chain = this.chain;
+    const priorityFeePercentile = percentile || 15;
+    if (network === 'livenet') {
+      network = 'mainnet';
+    }
+    let cacheKey = `getFee-${chain}-${network}-priorityFee-${priorityFeePercentile}`;
+
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        const { rpc } = await this.getWeb3(network);
+        let feerate = await rpc.estimateMaxPriorityFee({ percentile: priorityFeePercentile });
+        return { feerate };
       },
       CacheStorage.Times.Minute
     );
