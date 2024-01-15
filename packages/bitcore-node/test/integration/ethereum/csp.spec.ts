@@ -81,9 +81,8 @@ describe('Ethereum API', function() {
     const chain = 'ETH';
     const network = 'testnet';
     let target = 1;
-    let cacheKey;
     while (target <= 4) {
-      cacheKey = `getFee-${chain}-${network}-${target}`;
+      const cacheKey = `getFee-${chain}-${network}-${target}`;
       const fee = await ETH.getFee({ chain, network, target });
       expect(fee).to.exist;
       const cached = await CacheStorage.getGlobal(cacheKey);
@@ -105,7 +104,7 @@ describe('Ethereum API', function() {
     sandbox.stub(ETH, 'getWeb3').resolves({ rpc });
     try {
       // max fee
-      const cacheKey = `getFee-${chain}-${network}-type2`;
+      const cacheKey = `getFee-${chain}-${network}-2-type2`;
       const fee = await ETH.getFee({ chain, network, target: 2, txType: 2 });
       expect(fee).to.exist;
       expect(fee.feerate).to.equal(4);

@@ -112,7 +112,7 @@ class ChainStateProxy implements IChainStateProvider {
   }
 
   async getPriorityFee(params: GetEstimatePriorityFeeParams) {
-    return this.get?.(params).getPriorityFee?.(params);
+    return this.get(params).getPriorityFee?.(params);
   }
 
   streamWalletUtxos(params: StreamWalletUtxosParams) {

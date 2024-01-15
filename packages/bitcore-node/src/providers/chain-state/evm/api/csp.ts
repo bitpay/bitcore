@@ -111,7 +111,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    let cacheKey = `getFee-${chain}-${network}`;
+    let cacheKey = `getFee-${chain}-${network}-${target}`;
     if (txType) {
       cacheKey += `-type${txType}`;
     }
