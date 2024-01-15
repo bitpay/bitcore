@@ -27,7 +27,7 @@ export class Client {
   }
 
   _buildQueryString( params: any) {
-    const query = [];
+    let query = [];
     for (const [key, value] of Object.entries(params)) {
       value && query.push(`${key}=${value}`);
     }
