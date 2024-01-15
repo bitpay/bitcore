@@ -172,6 +172,8 @@ export const ArrowDiv = styled.div<ArrowDivProps>`
 
 export const ScriptText = styled.p`
   margin: 0.2rem 0;
+  white-space: normal;
+  word-wrap: break-word;
 `;
 
 export const SpanLink = styled.span`

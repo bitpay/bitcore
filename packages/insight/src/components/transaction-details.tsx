@@ -6,6 +6,7 @@ import {
   getFormattedDate,
   hasUnconfirmedInputs,
   isRBF,
+  getLib
 } from '../utilities/helper-methods';
 import {useState, useEffect, FC, memo} from 'react';
 import {
@@ -28,7 +29,8 @@ import {Slate, SlateDark} from '../assets/styles/colors';
 
 const TextElipsis = styled(ScriptText)`
   overflow: hidden;
-  text-overflow: ellipsis; ;
+  text-overflow: ellipsis;
+  word-wrap: normal;
 `;
 
 const SelectedPill = styled.div`
@@ -59,6 +61,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 }) => {
   const navigate = useNavigate();
   const [formattedInputs, setFormattedInputs] = useState<any[]>();
+  const [lib, setLib] = useState<any>(getLib(currency));
   const {outputs, txid, blockTime, blockHeight, coinbase, inputs, confirmations, fee, value} =
     transaction;
   const goToAddress = (address: any) => {
@@ -100,6 +103,17 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
     return outputIndex == refVout;
   };
 
+  const isOpReturn = (vout: any) => {
+    const s = new lib.Script(vout.script);
+    return s.toASM().includes('OP_RETURN');
+  };
+  
+  const getOpReturnText = (vout: any) => {
+    const s = new lib.Script(vout.script);
+    const hex = s.toASM().split('OP_RETURN')[1]?.trim();
+    return Buffer.from(hex, 'hex').toString('utf8');
+  };
+
   const outputsLength = outputs.length;
 
   const [showDetails, setShowDetails] = useState(false);
@@ -110,6 +124,10 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
     }
     setFormattedInputs(aggregateItems(inputs));
   }, [inputs]);
+
+  useEffect(() => {
+    setLib(getLib(currency));
+  }, [currency]);
 
   return (
     <TransactionTile key={txid}>
@@ -163,12 +181,6 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                             {showDetails && (
                               <>
-                                {item.uiConfirmations && confirmations > 0 ? (
-                                  <ScriptText>
-                                    <b>Confirmations</b> {item.uiConfirmations + confirmations}
-                                  </ScriptText>
-                                ) : null}
-
                                 <TextElipsis>
                                   <b>Tx ID </b>
                                   <SpanLink
@@ -183,7 +195,20 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                   <b>Tx Index</b> {item.mintIndex}
                                 </TextElipsis>
 
-                                {item.scriptSig && <ScriptText>{item.scriptSig.asm}</ScriptText>}
+                                {item.uiConfirmations && confirmations > 0 ? (
+                                  <ScriptText>
+                                    <b>Confirmations</b> {item.uiConfirmations + confirmations}
+                                  </ScriptText>
+                                ) : null}
+
+                                {item.script &&
+                                  <>
+                                    <b>Script Hex</b>
+                                    <ScriptText>{item.script}</ScriptText>
+                                    <b>Script ASM</b>
+                                    <ScriptText>{new lib.Script(item.script).toASM()}</ScriptText>
+                                  </>
+                                }
                               </>
                             )}
                           </TileDescription>
@@ -217,39 +242,38 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                         {getAddress(vo)}
                       </SpanLink>
                     ) : (
-                      <span>Unparsed address</span>
+                      <span>{isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}</span>
                     )}
 
                     {showDetails && (
                       <>
-                        {vo.script.type ? (
-                          <ScriptText>
-                            <b>Script Template</b>
-                            <i>{vo.script.type}</i>
-                          </ScriptText>
-                        ) : null}
-                        {vo.script.asm ? <ScriptText>{vo.script.asm}</ScriptText> : null}
-                        {showDetails &&
-                        vo.spentTxid &&
-                        vo.spentTxid !== '' &&
-                        vo.spentHeight >= 0 ? (
+                        {vo.spentTxid &&
                           <TextElipsis>
-                            <b>Tx ID </b>
+                            <b>Spent By </b>
                             <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
                               {vo.spentTxid}
                             </SpanLink>
                           </TextElipsis>
-                        ) : null}
+                        }
+                        {isOpReturn(vo) &&
+                          <ScriptText>{getOpReturnText(vo)}</ScriptText>
+                        }
+                        {vo.script &&
+                          <>
+                          <b>Script Hex</b><ScriptText>{new lib.Script(vo.script).toHex()}</ScriptText>
+                          <b>Script ASM</b><ScriptText>{new lib.Script(vo.script).toASM()}</ScriptText>
+                          </>
+                        }
                       </>
                     )}
                   </TileDescription>
 
                   <TileDescription value textAlign='right'>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
-                    {vo.spentHeight >= 0 ? '(S)' : '(U)'}
+                    {vo.spentTxid ? '(S)' : '(U)'}
                   </TileDescription>
 
-                  {showDetails && vo.spentTxid && vo.spentTxid !== '' && vo.spentHeight >= 0 && (
+                  {showDetails && vo.spentTxid && (
                     <ArrowDiv margin='auto 0 auto .5rem'>
                       <img
                         src={ArrowSvg}
@@ -277,6 +301,8 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
         </div>
 
         <TransactionTileFlex>
+          {confirmations === -5 && <TransactionChip error>Expired</TransactionChip>}
+
           {confirmations === -3 && <TransactionChip error>Invalid</TransactionChip>}
 
           {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}
