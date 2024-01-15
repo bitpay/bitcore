@@ -26,6 +26,14 @@ export class Client {
 
   }
 
+  _buildQueryString( params: any) {
+    const query = [];
+    for (const [key, value] of Object.entries(params)) {
+      value && query.push(`${key}=${value}`);
+    }
+    return query.length ? `?${query.join('&')}` : '';
+  }
+
   getMessage(params: { method: string; url: string; payload?: any }) {
     const { method, url, payload = {} } = params;
     const parsedUrl = new URLClass(url);
@@ -142,10 +150,7 @@ export class Client {
 
   async getFee(params) {
     const { target, txType } = params;
-    const query = [];
-    let url = `${this.apiUrl}/fee/${target}`;
-    txType && query.push(`txType=${txType}`);
-    url += query.length ? `?${query.join('&')}` : '';
+    const url = `${this.apiUrl}/fee/${target}${this._buildQueryString({ txType })}`;
     const result = await this._request({ method: 'GET', url, json: true });
     if (result.errors?.length) {
       throw new Error(result.errors[0]);

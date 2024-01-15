@@ -37,12 +37,9 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   if (txType && txType.toString() != '2') {
     return res.status(400).send('invalid txType specified');
   }
-  let feeCacheKey = `${chain}:${network}`;
-  if (txType){
-    feeCacheKey += `:type${txType}`
-  } else {
-    feeCacheKey += `:${target}${mode ? ':' + mode : ''}`;
-  }
+  let feeCacheKey = `${chain}:${network}:${target}`;
+  feeCacheKey += `${mode ? ':' + mode : ''}`;
+  feeCacheKey += `${txType ? ':type' + txType : ''}`;
   const cachedFee = feeCache[feeCacheKey];
   if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
     return res.json(cachedFee.fee);
