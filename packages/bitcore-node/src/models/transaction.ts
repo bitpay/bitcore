@@ -25,6 +25,7 @@ function shouldFire(obj: { wallets?: Array<ObjectID> }) {
   return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
 }
 const MAX_BATCH_SIZE = 50000;
+const MAX_DESCENDANTS = 25;
 
 export type IBtcTransaction = ITransaction & {
   coinbase: boolean;
@@ -678,6 +679,10 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     invalidParentTxids?: string[] // empty at the beginning of the ancestral tree. 
   }) {
     const { chain, network, invalidTxid, replacedByTxid, invalidParentTxids = [] } = params;
+    if (invalidParentTxids.length > MAX_DESCENDANTS) {
+      return;
+    }
+
     const spentOutputsQuery = {
       chain,
       network,
