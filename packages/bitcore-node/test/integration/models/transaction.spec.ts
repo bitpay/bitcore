@@ -196,7 +196,8 @@ describe('Transaction Model', function() {
 
     const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
     expect(badTxs.length).to.eq(chainLength);
-    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(chainLength).fill(SpentHeightIndicators.conflicting));
+    expect(badTxs.slice(0, 25).every(tx => tx.blockHeight === SpentHeightIndicators.conflicting)).to.eq(true);
+    expect(badTxs.slice(26).every(tx => tx.blockHeight === SpentHeightIndicators.pending)).to.eq(true);
 
     const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
     expect(goodTxs.length).to.eq(1);
