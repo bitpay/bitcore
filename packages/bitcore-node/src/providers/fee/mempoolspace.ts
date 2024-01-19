@@ -1,8 +1,8 @@
 import request from 'request';
 import util from 'util';
+import logger from '../../logger';
 import { NetworkType } from '../../types/ChainNetwork';
 import { FeeCacheType, IFeeProvider } from '../../types/FeeProvider';
-import logger from '../../logger';
 
 
 export class MempoolSpaceClass implements IFeeProvider {

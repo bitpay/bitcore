@@ -1,9 +1,9 @@
 import { CacheStorage } from '../../../models/cache';
-import { GetEstimateSmartFeeParams } from '../../../types/namespaces/ChainStateProvider';
-import { InternalStateProvider } from '../internal/internal';
-import * as FeeProviders from '../../fee';
 import { NetworkType } from '../../../types/ChainNetwork';
 import { SmartFeeResponse } from '../../../types/FeeProvider';
+import { GetEstimateSmartFeeParams } from '../../../types/namespaces/ChainStateProvider';
+import * as FeeProviders from '../../fee';
+import { InternalStateProvider } from '../internal/internal';
 
 export class BTCStateProvider extends InternalStateProvider {
   constructor(chain: string = 'BTC') {

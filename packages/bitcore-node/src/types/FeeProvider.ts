@@ -1,15 +1,15 @@
-import { NetworkType } from "./ChainNetwork";
+import { NetworkType } from './ChainNetwork';
 
 export interface IFeeProvider {
   getFee(network: NetworkType, nblocks: number): Promise<number>;
 };
 
-export type FeeCacheType = {
+export interface FeeCacheType {
   timestamp: number;
   response: any;
-};
+}
 
-export type SmartFeeResponse = {
+export interface SmartFeeResponse {
   feerate: number;
   blocks: number;
-};
+}
