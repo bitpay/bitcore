@@ -75,8 +75,8 @@ export let ETH_TOKEN_OPTS = {
 
 export let MATIC_TOKEN_OPTS = {
   '0x2791bca1f2de4661ed88a30c99a7a9449aa84174': {
-    name: 'USD Coin (PoS)',
-    symbol: 'USDC',
+    name: 'USDC.e',
+    symbol: 'USDC.e',
     decimals: 6,
     address: '0x2791bca1f2de4661ed88a30c99a7a9449aa84174'
   },
@@ -118,8 +118,14 @@ export let MATIC_TOKEN_OPTS = {
   },
   '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619': {
     name: 'Wrapped Ether',
-    symbol: 'weth',
+    symbol: 'WETH',
     decimals: 18,
     address: '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+  },
+  '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359': {
+    name: 'USDC',
+    symbol: 'USDC',
+    decimals: 6,
+    address: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359',
   }
 };

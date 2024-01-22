@@ -39,7 +39,7 @@ const Address: React.FC = () => {
   const {address} = params;
   let {currency, network} = params;
   const dispatch = useAppDispatch();
-  const [nroTransactionsLength, setNroTransactionsLength] = useState(0);
+  const [numTransactions, setNumTransactions] = useState(0);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [balance, setBalance] = useState<any>();
@@ -85,20 +85,14 @@ const Address: React.FC = () => {
           {currency && balance && tip && txs && address && network ? (
             <motion.div variants={routerFadeIn} animate='animate' initial='initial'>
               <MainTitle>
-                Summary
+                Address
                 <SupCurrencyLogo currency={currency} />
               </MainTitle>
 
+              <SecondaryTitle>{address} <CopyText text={address}></CopyText></SecondaryTitle>
+
               <TransactionTileBody>
                 <TransactionBodyCol type='Nine' backgroundColor='transparent' padding='1rem 0'>
-                  <Tile withBorderBottom>
-                    <TileDescription margin='0 1rem 0 0'>Address</TileDescription>
-                    <TileDescription value textAlign='right'>
-                      <CopyText text={address}></CopyText>
-
-                      {address}
-                    </TileDescription>
-                  </Tile>
 
                   <Tile withBorderBottom>
                     <TileDescription margin='0 1rem 0 0'>Confirmed Balance</TileDescription>
@@ -117,9 +111,9 @@ const Address: React.FC = () => {
                   )}
 
                   <Tile withBorderBottom>
-                    <TileDescription margin='0 1rem 0 0'>Nro. Transactions</TileDescription>
+                    <TileDescription margin='0 1rem 0 0'>No. Transactions</TileDescription>
                     <TileDescription value textAlign='right'>
-                      {nroTransactionsLength || 0}
+                      {numTransactions || 0}
                     </TileDescription>
                   </Tile>
                 </TransactionBodyCol>
@@ -143,7 +137,7 @@ const Address: React.FC = () => {
                 currency={currency}
                 network={network}
                 tip={tip}
-                transactionsLength={setNroTransactionsLength}
+                transactionsLength={setNumTransactions}
               />
             </motion.div>
           ) : null}

@@ -4,6 +4,7 @@ import { RippleAPI } from 'ripple-lib';
 import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { Readable } from 'stream';
+import util from 'util';
 import Config from '../../../config';
 import { CacheStorage } from '../../../models/cache';
 import { ICoin } from '../../../models/coin';
@@ -109,39 +110,75 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   }
 
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams) {
-    const { network, time } = params;
-    const date = new Date(time || Date.now()).toISOString();
-    const ledger = await new Promise((resolve, reject) => {
-      try {
-        const url = this.config[network].provider.dataHost + '/v2/ledgers/' + date;
-        request.get({ url, json: true }, (err, _, body) => {
-          try {
-            if (err) {
-              return reject(err);
-            } else if (body == null) {
-              return resolve(body);
-            } else if (body.result === 'error') {
-              return reject(body);
-            } else {
-              return resolve({
-                ...body.ledger,
-                chain: this.chain,
-                network,
-                hash: body.ledger.ledger_hash,
-                height: body.ledger.ledger_index,
-                previousBlockHash: body.ledger.parent_hash,
-                timeNormalized: new Date(body.ledger.close_time * 1000)
-              });
-            }
-          } catch (e) {
-            return reject(e);
+    const { chain, network, time = Date.now() } = params;
+    const date = new Date(Math.min(new Date(time).getTime(), new Date().getTime())); // Date is at the most right now. This prevents excessive loop iterations below.
+
+    if (date.toString() == 'Invalid Date') {
+      throw new Error('Invalid time value');
+    }
+
+    const [block] = await XrpBlockStorage.collection
+      .find({
+        chain,
+        network,
+        timeNormalized: { $lte: date }
+      })
+      .limit(1)
+      .sort({ timeNormalized: -1 })
+      .toArray();
+
+    if (!block) {
+      return null;
+    }
+
+    let ledger = await this.getDataHostLedger(block.height, network);
+    if (!ledger) {
+      return null;
+    }
+
+    // Check if our DB has gaps. `block` might not be the latest block before `date`
+    let workingIdx = Number(ledger.ledger_index) + 1; // +1 to check if the next block is < date
+    ledger = await this.getDataHostLedger(workingIdx, network);
+    while (ledger && new Date(ledger.close_time_human) < date) {
+      // a gap exists
+      workingIdx = Number(ledger.ledger_index) + 1;
+      const timeGap = date.getTime() - new Date(ledger.close_time_human).getTime();
+      if (timeGap > 1000 * 60 * 2) { // if more than a 2 min gap...
+        workingIdx += Math.floor(timeGap / 10000); // ...jump forward assuming a block every 10 seconds
+      }
+      ledger = await this.getDataHostLedger(workingIdx, network);
+    }
+
+    // the timeGap above might have overshot
+    while (!ledger || new Date(ledger.close_time_human) > date) {
+      // walk it back
+      workingIdx--;
+      ledger = await this.getDataHostLedger(workingIdx, network);
+    }
+
+    return this.transformRawLedger(ledger, network);
+  }
+
+  async getDataHostLedger(index, network) {
+    const ledger = await util.promisify(request.post).call(request, {
+      url: this.config[network].provider.dataHost,
+      json: true,
+      body: {
+        method: 'ledger',
+        params: [
+          {
+            ledger_index: index,
+            transactions: true,
+            expand: false
           }
-        });
-      } catch (err) {
-        return reject(err);
+        ]
       }
     });
-    return ledger as IBlock;
+
+    if (ledger?.body?.result?.status !== 'success') {
+      return null;
+    }
+    return ledger.body.result.ledger;
   }
 
   async getFee(params: GetEstimateSmartFeeParams) {
@@ -285,6 +322,24 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       processed: true,
       time: new Date(ledger.closeTime),
       timeNormalized: new Date(ledger.closeTime),
+      reward: 0,
+      size: txs.length,
+      transactionCount: txs.length,
+      nextBlockHash: ''
+    };
+  }
+
+  transformRawLedger(ledger: any, network: string): IBlock {
+    const txs = ledger.transactions || [];
+    return {
+      chain: this.chain,
+      network,
+      hash: ledger.ledger_hash,
+      height: Number(ledger.ledger_index),
+      previousBlockHash: ledger.parent_hash,
+      processed: ledger.closed,
+      time: new Date(ledger.close_time_human),
+      timeNormalized: new Date(ledger.close_time_human),
       reward: 0,
       size: txs.length,
       transactionCount: txs.length,

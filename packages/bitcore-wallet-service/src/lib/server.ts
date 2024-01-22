@@ -572,7 +572,7 @@ export class WalletService implements IWalletService {
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
     let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
 
-    if (opts.useNativeSegwit) {
+    if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
       addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
     }
 

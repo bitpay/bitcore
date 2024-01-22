@@ -104,3 +104,20 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/transactions/:multisigContractAddre
     return res.status(500).send(err);
   }
 });
+
+EthRoutes.get('/api/ETH/:network/priorityFee/:percentile', async (req, res) => {
+  let { percentile, network } = req.params;
+  const priorityFeePercentile = Number(percentile) || 15;
+
+  network = network.toLowerCase();
+  try {
+    let fee = await ETH.getPriorityFee({ network, percentile: priorityFeePercentile });
+    if (!fee) {
+      return res.status(404).send('not available right now');
+    }
+    return res.json(fee);
+  } catch (err: any) {
+    logger.error('Fee Error: %o', err.message || err);
+    return res.status(500).send('Error getting priority fee from RPC');
+  }
+});

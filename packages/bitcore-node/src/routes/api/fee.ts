@@ -1,26 +1,51 @@
 import { Request, Response } from 'express';
+import config from '../../config';
+import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { IUtxoNetworkConfig } from '../../types/Config';
 import { CacheTimes } from '../middleware';
 import { CacheMiddleware } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
 
-const getFee = async (req: Request, res: Response) => {
-  let { target, chain, network, txType } = req.params;
+const feeModes = {
+  BTC: ['CONSERVATIVE', 'ECONOMICAL'],
+  LTC: ['CONSERVATIVE', 'ECONOMICAL']
+};
+
+router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
+  let { target, chain, network } = req.params;
+  let { mode, txType } = req.query;
+  if (!chain || !network) {
+    return res.status(400).send('Missing required param');
+  }
+
+  chain = chain.toUpperCase();
+  network = network.toLowerCase();
+  mode = mode?.toUpperCase();
   const targetNum = Number(target);
   if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
   }
-  const cachedFee = feeCache[`${chain}:${network}:${target}`];
-  if (
-    cachedFee 
-    && cachedFee.date > Date.now() - 10 * 1000
-    && (!txType || txType.toString() !== '2')
-    ) {
+  if (!mode) {
+    mode = (config.chains[chain]?.[network] as IUtxoNetworkConfig)?.defaultFeeMode;
+  } else if (!feeModes[chain]) {
+    mode = undefined;
+  } else if (!feeModes[chain]?.includes(mode)) {
+    return res.status(400).send('invalid mode specified');
+  }
+  if (txType && txType.toString() != '2') {
+    return res.status(400).send('invalid txType specified');
+  }
+  let feeCacheKey = `${chain}:${network}:${target}`;
+  feeCacheKey += `${mode ? ':' + mode : ''}`;
+  feeCacheKey += `${txType ? ':type' + txType : ''}`;
+  const cachedFee = feeCache[feeCacheKey];
+  if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, txType});
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType });
     if (!fee) {
       return res.status(404).send('not available right now');
     }
@@ -29,20 +54,13 @@ const getFee = async (req: Request, res: Response) => {
     if (chain === 'LTC' && fee.feerate && fee.feerate < 0.00001) {
       fee.feerate = 0.00001;
     }
-    feeCache[`${chain}:${network}:${target}`] = { fee, date: Date.now() };
+    feeCache[feeCacheKey] = { fee, date: Date.now() };
     return res.json(fee);
-  } catch (err) {
+  } catch (err: any) {
+    logger.error('Fee Error: %o', err.message || err);
     return res.status(500).send('Error getting fee from RPC');
   }
 }
-
-router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
-  getFee(req, res);
-});
-
-router.get('/:target/:txType', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
-  getFee(req, res);
-});
 
 module.exports = {
   router,

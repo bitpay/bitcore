@@ -247,14 +247,11 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           const toAddresses = tos.map(a => a.address);
           const fromAddresses = froms.map(a => a.address);
 
-          const sentWallets = await WalletAddressStorage.collection
-            .find({ chain, network, address: { $in: fromAddresses } })
-            .toArray();
-          const receivedWallets = await WalletAddressStorage.collection
-            .find({ chain, network, address: { $in: toAddresses } })
+          const walletsAddys = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: [...fromAddresses, ...toAddresses] } })
             .toArray();
           const wallets = _.uniqBy(
-            sentWallets.concat(receivedWallets).map(w => w.wallet),
+            walletsAddys.map(w => w.wallet),
             w => w.toHexString()
           );
           

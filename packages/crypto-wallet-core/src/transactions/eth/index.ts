@@ -120,8 +120,15 @@ export class ETHTxProvider {
   applySignature(params: { tx: string; signature: any }) {
     let { tx, signature } = params;
     const parsedTx = ethers.utils.parseTransaction(tx);
-    const { nonce, gasPrice, gasLimit, to, value, data, chainId } = parsedTx;
-    const txData = { nonce, gasPrice, gasLimit, to, value, data, chainId };
+    const { nonce, gasPrice, gasLimit, to, value, data, chainId, maxFeePerGas, maxPriorityFeePerGas } = parsedTx;
+    let txData: any = { nonce, gasPrice, gasLimit, to, value, data, chainId };
+    if (maxFeePerGas) {
+      txData.maxFeePerGas = maxFeePerGas;
+      txData.maxPriorityFeePerGas = maxPriorityFeePerGas;
+      txData.type = 2;
+    } else if (!gasPrice || !gasPrice.toNumber()) {
+      throw new Error('either gasPrice or maxFeePerGas is required');
+    }
     if (typeof signature == 'string') {
       signature = ethers.utils.splitSignature(signature);
     }

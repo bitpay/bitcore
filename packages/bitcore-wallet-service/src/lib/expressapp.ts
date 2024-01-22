@@ -4,11 +4,10 @@ import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
 import config from '../config';
-import { logger, transport } from './logger';
-
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from'./errors/errordefinitions';
+import { logger, transport } from './logger';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
@@ -461,18 +460,22 @@ export class ExpressApp {
       let responses;
 
       const buildOpts = (req, copayerId) => {
+        const getParam = (param, returnArray = false) => {
+          // Handle old client params
+          const value = req.query[`${copayerId}:${param}`] || req.query[copayerId]?.[param];
+          if (returnArray) {
+            return Array.isArray(value) ? value : value ? [value] : null;
+          }
+          return value ? value : null;
+        };
         const opts = {
           includeExtendedInfo: req.query.includeExtendedInfo == '1',
           twoStep: req.query.twoStep == '1',
           silentFailure: req.query.silentFailure == '1',
           includeServerMessages: req.query.serverMessageArray == '1',
-          tokenAddresses: req.query[copayerId]
-            ? Array.isArray(req.query[copayerId].tokenAddress)
-              ? req.query[copayerId].tokenAddress
-              : [req.query[copayerId].tokenAddress]
-            : null,
-          multisigContractAddress: req.query[copayerId] ? req.query[copayerId].multisigContractAddress : null,
-          network: req.query[copayerId] ? req.query[copayerId].network : null
+          tokenAddresses: getParam('tokenAddress', true),
+          multisigContractAddress: getParam('multisigContractAddress'),
+          network: getParam('network')
         };
         return opts;
       };

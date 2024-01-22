@@ -7,6 +7,7 @@ import {
   GetBalanceForAddressParams,
   GetBlockBeforeTimeParams,
   GetBlockParams,
+  GetEstimatePriorityFeeParams,
   GetEstimateSmartFeeParams,
   GetWalletBalanceAtTimeParams,
   GetWalletBalanceParams,
@@ -108,6 +109,10 @@ class ChainStateProxy implements IChainStateProvider {
 
   async getFee(params: GetEstimateSmartFeeParams) {
     return this.get(params).getFee(params);
+  }
+
+  async getPriorityFee(params: GetEstimatePriorityFeeParams) {
+    return this.get(params).getPriorityFee?.(params);
   }
 
   streamWalletUtxos(params: StreamWalletUtxosParams) {

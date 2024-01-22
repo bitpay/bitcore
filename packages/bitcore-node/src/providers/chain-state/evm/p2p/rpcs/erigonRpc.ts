@@ -65,7 +65,7 @@ export class ErigonRPC implements IRpc {
       method: 'trace_block',
       params: [this.web3.utils.toHex(blockNumber)],
       jsonrpc: '2.0',
-      id: 1
+      id: Date.now() + Math.round(Math.random() * 1000)
     });
     return txs;
   }

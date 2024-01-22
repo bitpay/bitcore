@@ -93,3 +93,20 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/transactions/:multisigContractA
     return res.status(500).send(err);
   }
 });
+
+MaticRoutes.get('/api/MATIC/:network/priorityFee/:percentile', async (req, res) => {
+  let { percentile, network } = req.params;
+  const priorityFeePercentile = Number(percentile) || 15;
+
+  network = network.toLowerCase();
+  try {
+    let fee = await MATIC.getPriorityFee({ network, percentile: priorityFeePercentile });
+    if (!fee) {
+      return res.status(404).send('not available right now');
+    }
+    return res.json(fee);
+  } catch (err: any) {
+    logger.error('Fee Error: %o', err.message || err);
+    return res.status(500).send('Error getting priority fee from RPC');
+  }
+});

@@ -3,7 +3,9 @@ import logger from '../logger';
 import { ITransaction } from '../models/baseTransaction';
 import { CoinModel, CoinStorage } from '../models/coin';
 import { TransactionModel, TransactionStorage } from '../models/transaction';
+import { RPC, RPCTransaction } from '../rpc';
 import { SpentHeightIndicators } from '../types/Coin';
+import { IUtxoNetworkConfig } from '../types/Config';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
@@ -46,6 +48,7 @@ export class PruningService {
   stopping = false;
   running = false;
   interval;
+  rpcs: RPC[] = [];
 
   constructor({ transactionModel = TransactionStorage, coinModel = CoinStorage } = {}) {
     this.transactionModel = transactionModel;
@@ -58,6 +61,8 @@ export class PruningService {
     args.INVALID && logger.info('Pruning conflicting mempool txs');
     args.DRY && logger.info('Pruning service DRY RUN');
     
+    this.registerRpcs();
+
     if (args.EXIT) {
       this.detectAndClear().then(() => {
         process.emit('SIGINT', 'SIGINT');
@@ -72,6 +77,17 @@ export class PruningService {
     logger.info('Stopping Pruning Service');
     this.stopping = true;
     clearInterval(this.interval);
+  }
+
+  registerRpcs() {
+    const chainNetworks = CHAIN ? [{ chain: CHAIN, network: NETWORK }] : Config.chainNetworks();
+    for (const chainNetwork of chainNetworks) {
+      const config: IUtxoNetworkConfig = Config.chainConfig(chainNetwork) as IUtxoNetworkConfig;
+      if (!config.rpc) {
+        continue;
+      }
+      this.rpcs[`${chainNetwork.chain}:${chainNetwork.network}`] = new RPC(config.rpc.username, config.rpc.password, config.rpc.host, config.rpc.port);
+    }
   }
 
   async detectAndClear() {
@@ -104,14 +120,15 @@ export class PruningService {
     const count = await this.transactionModel.collection.countDocuments({
       chain,
       network,
-      blockHeight: -1,
+      blockHeight: SpentHeightIndicators.pending,
       blockTimeNormalized: { $lt: oldTime }
     });
     logger.info(`Found ${count} outdated ${chain} ${network} mempool txs`);
     let rmCount = 0;
     await new Promise((resolve, reject) => {
       this.transactionModel.collection
-        .find({ chain, network, blockHeight: -1, blockTimeNormalized: { $lt: oldTime } })
+        .find({ chain, network, blockHeight: SpentHeightIndicators.pending, blockTimeNormalized: { $lt: oldTime } })
+        .sort(count > 5000 ? { chain: 1, network: 1, blockTimeNormalized: 1 } : {})
         .pipe(
           new Transform({
             objectMode: true,
@@ -120,12 +137,25 @@ export class PruningService {
                 return cb(new Error('Stopping'));
               }
               const tx = data as ITransaction;
+              try {
+                const nodeTx: RPCTransaction = await this.rpcs[`${chain}:${network}`].getTransaction(tx.txid);
+                if (nodeTx) {
+                  logger.warn(`Tx ${tx.txid} is still in the mempool: %o`, nodeTx);
+                  return cb();
+                }
+              } catch (err: any) {
+                if (err.code !== -5) { // -5: No such mempool or blockchain transaction. Use gettransaction for wallet transactions.
+                  logger.error(`Error checking tx ${tx.txid} in the mempool: ${err.message}`);
+                  return cb();
+                }
+              }
               logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
               const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
               let spentTxids = new Set<string>();
               for await (const coin of outputGenerator) {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
-                  return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
+                  logger.error(`Cannot prune coin! ${coin.mintTxid}`);
+                  return cb();
                 }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
@@ -154,12 +184,12 @@ export class PruningService {
     const count = await this.transactionModel.collection.countDocuments({
       chain,
       network,
-      blockHeight: -3
+      blockHeight: SpentHeightIndicators.conflicting
     });
     logger.info(`Found ${count} invalid ${chain} ${network} txs`);
     await new Promise((resolve, reject) => {
       this.transactionModel.collection
-        .find({ chain, network, blockHeight: -3 })
+        .find({ chain, network, blockHeight: SpentHeightIndicators.conflicting })
         .pipe(
           new Transform({
             objectMode: true,
@@ -226,8 +256,18 @@ export class PruningService {
       return;
     }
     return Promise.all([
-      this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: -1 }),
-      this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: -1 })
+      this.transactionModel.collection.updateMany(
+        { chain, network, txid: { $in: txids }, blockHeight: SpentHeightIndicators.pending },
+        { $set: { blockHeight: SpentHeightIndicators.expired } }
+      ),
+      this.coinModel.collection.updateMany(
+        { chain, network, mintTxid: { $in: txids }, mintHeight: SpentHeightIndicators.pending },
+        { $set: { mintHeight: SpentHeightIndicators.expired } }
+      ),
+      this.coinModel.collection.updateMany(
+        { chain, network, spentTxid: { $in: txids }, spentHeight: SpentHeightIndicators.pending },
+        { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.unspent } }
+      )
     ]);
   }
 }

@@ -92,14 +92,36 @@ describe('Ethereum API', function() {
   });
 
   it('should be able to get type 2 fees', async () => {
+    const sandbox = sinon.createSandbox();
     const chain = 'ETH';
-    const network = 'testnet';
-    const target = 1;
-    const cacheKey = `getFee-${chain}-${network}-${target}`;
-    const fee = await ETH.getFee({ chain, network, target, txType: 2 });
-    expect(fee).to.exist;
-    const cached = await CacheStorage.getGlobal(cacheKey);
-    expect(fee).to.not.eq(cached);
+    const network = 'mainnet';
+    const rpc = {
+      estimateMaxPriorityFee: ({}) => { return 2; },
+      estimateFee: ({}) => { return 4; }
+    };
+    let err;
+
+    sandbox.stub(ETH, 'getWeb3').resolves({ rpc });
+    try {
+      // max fee
+      const cacheKey = `getFee-${chain}-${network}-2-type2`;
+      const fee = await ETH.getFee({ chain, network, target: 2, txType: 2 });
+      expect(fee).to.exist;
+      expect(fee.feerate).to.equal(4);
+      const cached = await CacheStorage.getGlobal(cacheKey);
+      expect(fee).to.deep.eq(cached);
+      // priority fee
+      const cacheKeyPriorityFee = `getFee-${chain}-${network}-priorityFee-15`;
+      const priorityFee  = await ETH.getPriorityFee({ chain, network, percentile: 15 });
+      expect(priorityFee).to.exist;
+      expect(priorityFee.feerate).to.equal(2);
+      const cachedPriorityFee  = await CacheStorage.getGlobal(cacheKeyPriorityFee);
+      expect(priorityFee).to.deep.eq(cachedPriorityFee);
+    } catch (error) {
+      err = error;
+    }
+    sandbox.restore();
+    expect(err).to.be.undefined;
   });
 
   it('should estimate fees by most recent transactions', async () => {
