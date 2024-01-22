@@ -60,7 +60,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     logger.error('Fee Error: %o', err.message || err);
     return res.status(500).send('Error getting fee from RPC');
   }
-}
+});
 
 module.exports = {
   router,

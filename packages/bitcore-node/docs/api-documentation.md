@@ -736,7 +736,9 @@ curl -v localhost:3000/api/BTC/mainnet/fee/22
 
 </details>
 
-GET `/api/BTC/mainnet/fee/:target/:txType`
+### Get Priority Fee estimate at a percentile level (type 2 EVM transactions)
+
+GET `/api/ETH/mainnet/priorityFee/:percentile`
 
 <details>
 <summary><b>Response</b></summary>
@@ -745,12 +747,11 @@ GET `/api/BTC/mainnet/fee/:target/:txType`
 <b>Use Curl command in terminal to get a response</b>
 
 ```sh
-curl -v localhost:3000/api/ETH/mainnet/fee/10/2
+curl -v localhost:3000/api/ETH/mainnet/priorityFee/15
 ```
 
 ```json
 {
-    "blocks": "10",
     "feerate": "0.02003"
 }
 ```

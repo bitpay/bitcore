@@ -989,7 +989,8 @@ describe('History', function() {
           receipt: undefined,
           lowFees: false,
           maxGasFee: undefined,
-          proiorityGasFee: undefined
+          priorityGasFee: undefined,
+          txType: undefined,
         });
         done();
       });

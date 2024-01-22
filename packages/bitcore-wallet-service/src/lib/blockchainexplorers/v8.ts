@@ -518,13 +518,13 @@ export class V8 {
   }
 
   estimateFeeV2(opts, cb) {
-    const nbBlocks = opts.nbBlocks || [1, 2, 6, 24];
     const txType = opts.txType;
-    if(!txType || txType.toString() !== '2') {
-     return this.estimateFee(nbBlocks, cb);
+    if(Number(txType) !== 2) {
+     return this.estimateFee(opts, cb);
     }
+    const nbBlocks = Number(opts.nbBlocks) || 2;
+    const url = this.baseUrl + `/fee/${nbBlocks}?txType=${txType}`;
     let result;
-    const url = this.baseUrl + `/fee/10/${txType}`;
     this.request
       .get(url, {})
       .then(ret => {
@@ -533,6 +533,26 @@ export class V8 {
           result = ret.feerate;
         } catch (e) {
           logger.warn('[v8.js] Fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  estimatePriorityFee(opts, cb) {
+    const percentile = opts.percentile;
+    let result;
+    const url = this.baseUrl + `/priorityFee/${percentile}`;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Priority fee error: %o', e);
         }
         return cb(null, result);
       })
