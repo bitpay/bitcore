@@ -20,7 +20,8 @@ const args = parseArgv([], [
   { arg: 'DRY', type: 'bool' },
   { arg: 'MEMPOOL_AGE', type: 'int' },
   { arg: 'INTERVAL_HRS', type: 'float' },
-  { arg: 'DESCENDANT_LIMIT', type: 'int' }
+  { arg: 'DESCENDANT_LIMIT', type: 'int' },
+  { arg: 'VERBOSE', type: 'bool' }
 ]);
 
 const ONE_MIN = 1000 * 60;
@@ -32,6 +33,7 @@ const NETWORK = args.NETWORK || PRUNING_NETWORK;
 const INTERVAL_HRS = args.INTERVAL_HRS || Number(PRUNING_INTERVAL_HRS) || 12;
 const MEMPOOL_AGE = args.MEMPOOL_AGE || Number(PRUNING_MEMPOOL_AGE) || 7;
 const DESCENDANT_LIMIT = args.DESCENDANT_LIMIT || Number(PRUNING_DESCENDANT_LIMIT) || 10;
+const VERBOSE = Boolean(args.VERBOSE ?? false);
 
 // If --DRY was given w/o a follow arg (i.e. 'true', '0', etc) assume the user wants to run a dry run (safe)
 if (Object.keys(args).includes('DRY') && args.DRY === undefined) {
@@ -140,7 +142,7 @@ export class PruningService {
               try {
                 const nodeTx: RPCTransaction = await this.rpcs[`${chain}:${network}`].getTransaction(tx.txid);
                 if (nodeTx) {
-                  logger.warn(`Tx ${tx.txid} is still in the mempool: %o`, nodeTx);
+                  logger.warn(`Tx ${tx.txid} is still in the mempool${VERBOSE ? ': %o' : ''}`, nodeTx);
                   return cb();
                 }
               } catch (err: any) {
