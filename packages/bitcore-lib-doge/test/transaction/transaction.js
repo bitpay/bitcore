@@ -206,7 +206,7 @@ describe('Transaction', function() {
   describe('transaction creation test vector', function() {
     this.timeout(5000);
     var index = 0;
-    transactionVector.forEach(function(vector) {
+    for (const vector of transactionVector) {
       index++;
       it('case ' + index, function() {
         var i = 0;
@@ -222,7 +222,7 @@ describe('Transaction', function() {
           i += 2;
         }
       });
-    });
+    }
   });
 
   // TODO: Migrate this into a test for inputs
@@ -362,7 +362,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.getFee();
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(4973500000);
+      transaction.outputs[1].satoshis.should.equal(4985300000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -431,8 +431,8 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(10e8 - 80000 - 10000);
     });
     it('fee per kb can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -442,13 +442,13 @@ describe('Transaction', function() {
         .feePerKb(8000)
         .change(changeAddress)
         .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
+      transaction.vsize.should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(9999037584);
+      transaction.outputs[1].satoshis.should.equal(9999045872);
     });
     it('fee per byte (low fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -458,13 +458,13 @@ describe('Transaction', function() {
         .feePerByte(1)
         .change(changeAddress)
         .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
+      transaction.vsize.should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(9999048001, 9999049000);
+      transaction.outputs[1].satoshis.should.equal(9999049484);
     });
     it('fee per byte (high fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -474,13 +474,13 @@ describe('Transaction', function() {
         .feePerByte(2)
         .change(changeAddress)
         .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
+      transaction.vsize.should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(9999046002, 9999048000);
+      transaction.outputs[1].satoshis.should.equal(9999048968);
     });
     it('fee per byte can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -490,13 +490,13 @@ describe('Transaction', function() {
         .feePerByte(13)
         .change(changeAddress)
         .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
+      transaction.vsize.should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(9999024013, 9999037000);
+      transaction.outputs[1].satoshis.should.equal(9999043292);
     });
     it('fee per byte not enough for change', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -506,7 +506,7 @@ describe('Transaction', function() {
         .feePerByte(1)
         .change(changeAddress)
         .sign(privateKey);
-      transaction._estimateSize().should.be.within(1000, 1999);
+      transaction.vsize.should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(1);
     });
     it('if satoshis are invalid', function() {
@@ -1070,7 +1070,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1e8);
       transaction.inputAmount.should.equal(1000e8);
-      transaction.outputAmount.should.equal(99973500000);
+      transaction.outputAmount.should.equal(99985300000);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see testnet tx 41245c59aa4f06bc0f13f92ea65e275926591376dffb396a5c0efb7b8c2d0c21
@@ -1162,7 +1162,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(tenth);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89973500000);
+      tx.outputs[1].satoshis.should.equal(89985300000);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
@@ -1235,7 +1235,7 @@ describe('Transaction', function() {
           return original.indexOf(value);
         });
       };
-      fixture.inputs.forEach(function(inputSet) {
+      for (const inputSet of fixture.inputs) {
         it(inputSet.description, function() {
           var tx = new Transaction();
           inputSet.inputs = inputSet.inputs.map(function(input) {
@@ -1252,8 +1252,8 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(inputSet.inputs, tx.inputs).should.deep.equal(inputSet.expected);
         });
-      });
-      fixture.outputs.forEach(function(outputSet) {
+      }
+      for (const outputSet of fixture.outputs) {
         it(outputSet.description, function() {
           var tx = new Transaction();
           outputSet.outputs = outputSet.outputs.map(function(output) {
@@ -1266,7 +1266,7 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
         });
-      });
+      }
 
     });
   });

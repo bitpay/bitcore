@@ -125,6 +125,14 @@ ioProperty.get = function() {
 };
 Object.defineProperty(Transaction.prototype, 'outputAmount', ioProperty);
 
+Object.defineProperty(Transaction.prototype, 'size', {
+  configurable: false,
+  enumerable: false,
+  get: function() {
+    return this._calculateSize();
+  }
+});
+
 /**
  * Retrieve the little endian hash of the transaction (used for serialization)
  * @return {Buffer}
@@ -283,13 +291,13 @@ Transaction.prototype.toBuffer = function() {
 Transaction.prototype.toBufferWriter = function(writer) {
   writer.writeInt32LE(this.version);
   writer.writeVarintNum(this.inputs.length);
-  _.each(this.inputs, function(input) {
+  for (const input of this.inputs) {
     input.toBufferWriter(writer);
-  });
+  }
   writer.writeVarintNum(this.outputs.length);
-  _.each(this.outputs, function(output) {
+  for (const output of this.outputs) {
     output.toBufferWriter(writer);
-  });
+  }
   writer.writeUInt32LE(this.nLockTime);
   return writer;
 };
@@ -1017,14 +1025,14 @@ Transaction.prototype.getFee = function() {
  * Estimates fee from serialized transaction size in bytes.
  */
 Transaction.prototype._estimateFee = function () {
-  var estimatedSize = this._estimateSize();
-  var available = this._getUnspentValue();
-  var feeRate = this._feePerByte || (this._feePerKb || Transaction.FEE_PER_KB) / 1000;
+  const size = this.size;
+  const available = this._getUnspentValue();
+  const feeRate = this._feePerByte || (this._feePerKb || Transaction.FEE_PER_KB) / 1000;
   function getFee(size) {
     return size * feeRate;
   }
-  var fee = Math.ceil(getFee(estimatedSize));
-  var feeWithChange = Math.ceil(getFee(estimatedSize) + getFee(Transaction.CHANGE_OUTPUT_MAX_SIZE));
+  const fee = Math.ceil(getFee(size));
+  const feeWithChange = Math.ceil(getFee(size) + getFee(Transaction.CHANGE_OUTPUT_MAX_SIZE));
   if (!this._changeScript || available <= feeWithChange) {
     return fee;
   }
@@ -1036,22 +1044,30 @@ Transaction.prototype._getUnspentValue = function() {
 };
 
 Transaction.prototype._clearSignatures = function() {
-  _.each(this.inputs, function(input) {
+  for (const input of this.inputs) {
     input.clearSignatures();
-  });
+  }
 };
 
+/**
+ * @deprecated This is subject to be removed in a future version.
+ * Use the size property instead.
+ */
 Transaction.prototype._estimateSize = function() {
-  var result = Transaction.MAXIMUM_EXTRA_SIZE;
-  _.each(this.inputs, function(input) {
+  let result = Transaction.MAXIMUM_EXTRA_SIZE;
+  for (const input of this.inputs) {
     let scriptSigLen = input._estimateSize();
     let varintLen = BufferWriter.varintBufNum(scriptSigLen).length;
     result += 36 + varintLen + scriptSigLen;
-  });
-  _.each(this.outputs, function(output) {
+  }
+  for (const output of this.outputs) {
     result += output.script.toBuffer().length + 9;
-  });
+  }
   return result;
+};
+
+Transaction.prototype._calculateSize = function() {
+  return this.toBuffer().length;
 };
 
 Transaction.prototype._removeOutput = function(index) {

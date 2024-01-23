@@ -132,6 +132,30 @@ ioProperty.get = function() {
 };
 Object.defineProperty(Transaction.prototype, 'outputAmount', ioProperty);
 
+Object.defineProperty(Transaction.prototype, 'size', {
+  configurable: false,
+  enumerable: false,
+  get: function() {
+    return this._calculateSize();
+  }
+});
+
+Object.defineProperty(Transaction.prototype, 'vsize', {
+  configurable: false,
+  enumerable: false,
+  get: function() {
+    return this._calculateVSize();
+  }
+});
+
+Object.defineProperty(Transaction.prototype, 'weight', {
+  configurable: false,
+  enumerable: false,
+  get: function() {
+    return this._calculateWeight();
+  }
+});
+
 /**
  * Retrieve the little endian hash of the transaction (used for serialization)
  * @return {Buffer}
@@ -309,7 +333,7 @@ Transaction.prototype.hasWitnesses = function() {
 Transaction.prototype.toBufferWriter = function(writer, noWitness) {
   writer.writeInt32LE(this.version);
 
-  var hasWitnesses = this.hasWitnesses();
+  const hasWitnesses = this.hasWitnesses();
 
   if (hasWitnesses && !noWitness) {
     writer.write(Buffer.from('0001', 'hex'));
@@ -317,24 +341,24 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
 
   writer.writeVarintNum(this.inputs.length);
 
-  _.each(this.inputs, function(input) {
+  for (const input of this.inputs) {
     input.toBufferWriter(writer);
-  });
+  }
 
   writer.writeVarintNum(this.outputs.length);
-  _.each(this.outputs, function(output) {
+  for (const output of this.outputs) {
     output.toBufferWriter(writer);
-  });
+  }
 
   if (hasWitnesses && !noWitness) {
-    _.each(this.inputs, function(input) {
-      var witnesses = input.getWitnesses();
+    for (const input of this.inputs) {
+      const witnesses = input.getWitnesses();
       writer.writeVarintNum(witnesses.length);
-      for (var j = 0; j < witnesses.length; j++) {
+      for (let j = 0; j < witnesses.length; j++) {
         writer.writeVarintNum(witnesses[j].length);
         writer.write(witnesses[j]);
       }
-    });
+    }
   }
 
   writer.writeUInt32LE(this.nLockTime);
@@ -1014,14 +1038,14 @@ Transaction.prototype.getFee = function() {
  * Estimates fee from serialized transaction size in bytes.
  */
 Transaction.prototype._estimateFee = function () {
-  var estimatedSize = this._estimateSize();
-  var available = this._getUnspentValue();
-  var feeRate = this._feePerByte || (this._feePerKb || Transaction.FEE_PER_KB) / 1000;
+  const vsize = this.vsize;
+  const available = this._getUnspentValue();
+  const feeRate = this._feePerByte || (this._feePerKb || Transaction.FEE_PER_KB) / 1000;
   function getFee(size) {
     return size * feeRate;
   }
-  var fee = Math.ceil(getFee(estimatedSize));
-  var feeWithChange = Math.ceil(getFee(estimatedSize) + getFee(Transaction.CHANGE_OUTPUT_MAX_SIZE));
+  const fee = Math.ceil(getFee(vsize));
+  const feeWithChange = Math.ceil(getFee(vsize) + getFee(Transaction.CHANGE_OUTPUT_MAX_SIZE));
   if (!this._changeScript || available <= feeWithChange) {
     return fee;
   }
@@ -1033,21 +1057,38 @@ Transaction.prototype._getUnspentValue = function() {
 };
 
 Transaction.prototype._clearSignatures = function() {
-  _.each(this.inputs, function(input) {
+  for (const input of this.inputs) {
     input.clearSignatures();
-  });
+  }
 };
 
+/**
+ * @deprecated This is subject to be removed in a future version.
+ * Use the size or vsize properties instead.
+ */
 Transaction.prototype._estimateSize = function() {
-  var result = Transaction.MAXIMUM_EXTRA_SIZE;
-  _.each(this.inputs, function(input) {
+  let result = Transaction.MAXIMUM_EXTRA_SIZE;
+  for (const input of this.inputs) {
     result += 32 + 4;  // prevout size:w
     result += input._estimateSize();
-  });
-  _.each(this.outputs, function(output) {
+  }
+  for (const output of this.outputs) {
     result += output.script.toBuffer().length + 9;
-  });
+  }
   return Math.ceil(result);
+};
+
+Transaction.prototype._calculateSize = function() {
+  return this.toBuffer().length;
+};
+
+Transaction.prototype._calculateVSize = function(noRound) {
+  const vsize = this._calculateWeight() / 4;
+  return noRound ? vsize : Math.ceil(vsize);
+};
+
+Transaction.prototype._calculateWeight = function() {
+  return (this.toBuffer(true).length * 3) + this.toBuffer(false).length;
 };
 
 Transaction.prototype._removeOutput = function(index) {
