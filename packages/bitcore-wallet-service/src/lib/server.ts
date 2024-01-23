@@ -1975,7 +1975,7 @@ export class WalletService implements IWalletService {
   }
 
   estimateFee(opts) {
-    let ots = opts || {};
+    opts = opts || {};
     return new Promise((resolve, reject) => {
       const bc = this._getBlockchainExplorer(opts.chain, opts.network);
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
@@ -1990,7 +1990,7 @@ export class WalletService implements IWalletService {
   }
 
   estimatePriorityFee(opts) {
-    let ots = opts || {};
+    opts = opts || {};
     return new Promise((resolve, reject) => {
       const bc = this._getBlockchainExplorer(opts.chain, opts.network);
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
@@ -3424,6 +3424,7 @@ export class WalletService implements IWalletService {
             gasPrice: tx.gasPrice,
             maxGasFee: tx.maxGasFee, 
             priorityGasFee: tx.priorityGasFee,
+            txType: tx.txType,
             gasLimit: tx.gasLimit,
             receipt: tx.receipt,
             nonce: tx.nonce,

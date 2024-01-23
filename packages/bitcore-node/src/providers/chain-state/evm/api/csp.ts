@@ -60,7 +60,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     if (!BaseEVMStateProvider.rpcs[this.chain] || !BaseEVMStateProvider.rpcs[this.chain][network]) {
       logger.info(`Making a new connection for ${this.chain}:${network}`);
-      const providerIdx = worker.threadId % (this.config[network]?.providers || []).length; 
+      const providerIdx = worker.threadId % (this.config[network]?.providers || []).length;
       const providerConfig = this.config[network]?.provider || this.config[network]?.providers![providerIdx];
       const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);

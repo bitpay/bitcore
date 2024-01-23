@@ -146,7 +146,7 @@ export class EthChain implements IChain {
         let feePerKb = inFeePerKb;
         let gasPrice = inFeePerKb;
         let maxGasFee;
-        let proiorityGasFee;
+        let priorityGasFee;
         const { from, txType, priorityFeePercentile } = opts;
         const { coin, network } = wallet;
         let inGasLimit = 0; // Per recepient gas limit
@@ -227,9 +227,9 @@ export class EthChain implements IChain {
 
         if (Number(txType) === 2) {
           maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2});
-          proiorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15});
+          priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15});
         }
-        return resolve({ feePerKb, gasPrice, gasLimit, maxGasFee, proiorityGasFee, fee });
+        return resolve({ feePerKb, gasPrice, gasLimit, maxGasFee, priorityGasFee, fee });
       });
     });
   }
