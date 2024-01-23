@@ -1,6 +1,6 @@
-import { BTCStateProvider } from '../btc/btc';
+import { InternalStateProvider } from '../internal/internal';
 
-export class LTCStateProvider extends BTCStateProvider {
+export class LTCStateProvider extends InternalStateProvider {
   constructor(chain: string = 'LTC') {
     super(chain);
   }
