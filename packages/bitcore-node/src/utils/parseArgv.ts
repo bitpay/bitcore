@@ -1,6 +1,6 @@
 type Required = 'string' | 'int' | 'number' | 'float'
 type Optional = Required | 'bool' | 'boolean';
-type Arg<T> = string | { arg: string; type: T }
+type Arg<T> = string | { arg: string; type: T; }
 
 /**
  * parseArgv
