@@ -25,9 +25,12 @@ export class BTCStateProvider extends InternalStateProvider {
           .then(results => results.filter(result => result.status === 'fulfilled')) as PromiseFulfilledResult<number>[])
           .map(result => result.value);
 
-        let feerate = rpcEstimate.feerate;
-        feerate = feerate * 1e5 + estimates.reduce((acc, v) => acc += v, 0);
+        // NOTE: rpcEstimate is in BTC per kilobyte, estimates is in sats per byte
+
+        let feerate = rpcEstimate.feerate * 1e5; // convert to sats per byte
+        feerate = feerate + estimates.reduce((acc, v) => acc += v, 0);
         feerate = Math.ceil(feerate / (estimates.length + 1));
+        feerate = Number((feerate / 1e5).toFixed(8)); // convert to BTC per KB
 
         return {
           feerate,
