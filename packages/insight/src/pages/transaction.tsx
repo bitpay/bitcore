@@ -38,7 +38,7 @@ const TransactionHash: React.FC = () => {
   const [error, setError] = useState('');
   const [refTxid, setRefTxid] = useState<string | undefined>();
   const [refVout, setRefVout] = useState<number | undefined>();
-  let confInterval: number;
+  let confInterval: NodeJS.Timer | null = null;
 
   useEffect(() => {
     if (reftxidParam != null && reftxidParam !== '') {
@@ -97,8 +97,8 @@ const TransactionHash: React.FC = () => {
 
     // clear interval on nav to new tx or unmount
     return () => {
-      clearInterval(confInterval);
-      confInterval = 0;
+      clearInterval(confInterval as NodeJS.Timer);
+      confInterval = null;
     };  
   }, [network, currency, tx]);
 
@@ -124,7 +124,8 @@ const TransactionHash: React.FC = () => {
           const {height} = _newTip;
           const confirmations = blockHeight > 0 ? height - blockHeight + 1 : blockHeight;
           if (confirmations !== -1) { // conf status has changed from unconfirmed
-            clearInterval(confInterval);
+            clearInterval(confInterval as NodeJS.Timer);
+            confInterval = null;
             transaction.confirmations = confirmations;
             if (confirmations > -1) { // if confirmed
               transaction.blockHash = _txRefresh.blockHash;
@@ -190,7 +191,15 @@ const TransactionHash: React.FC = () => {
                     }.`}
                     type={'error'}
                   />
-                ))}
+                ))
+              }
+
+              {transaction.confirmations === -5 &&
+                <Info
+                  message={'This transaction was dropped from the mempool'}
+                  type={'error'}
+                />
+              }
 
               <TransactionTileBody>
                 <TransactionBodyCol

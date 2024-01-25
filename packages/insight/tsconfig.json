@@ -20,7 +20,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "baseUrl": ".", // To import directly from the root of the project
-    "types": ["cypress", "cypress-axe"]
+    "types": ["cypress", "cypress-axe", "node"]
   },
   "include": ["**/*.ts", "**/*.tsx", "."],
   "exclude": ["node_modules"]

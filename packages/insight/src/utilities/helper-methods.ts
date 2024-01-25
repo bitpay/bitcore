@@ -7,6 +7,10 @@ import {
   UTXO_DEFAULT_REFRESH_INTERVAL,
 } from './constants';
 import {BlockTransactionDetails} from './models';
+import BitcoreLib from 'bitcore-lib';
+import BitcoreLibCash from 'bitcore-lib-cash';
+import BitcoreLibDoge from 'bitcore-lib-doge';
+import BitcoreLibLtc from 'bitcore-lib-ltc';
 
 export const buildTime = (time: string): string => {
   const diffMs = Math.abs(Date.now() - Date.parse(time));
@@ -163,4 +167,18 @@ export const normalizeParams = (
   network: string,
 ): {currency: string; network: string} => {
   return {currency: currency.toUpperCase(), network: network.toLowerCase()};
+};
+
+export const getLib = (currency: string) => {
+  switch (currency.toUpperCase()) {
+    case 'BTC':
+    default:
+      return BitcoreLib;
+    case 'BCH':
+      return BitcoreLibCash;
+    case 'DOGE':
+      return BitcoreLibDoge;
+    case 'LTC':
+      return BitcoreLibLtc;
+  }
 };
