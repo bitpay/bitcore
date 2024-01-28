@@ -147,7 +147,7 @@ describe('Address Derivation', () => {
     expect(result.pubKey).to.equal(expectedResult.pubKey);
   });
 
-  it.only('should be able to generate a valid SOL address', () => {
+  it('should be able to generate a valid SOL address', () => {
     const privKey =
       'xprv9s21ZrQH143K2VdCqJ2diz96YnG9Ax8s9RbSsKDvHDRbkb7hULWyP3VHuwH8SfrS45bNrEqzhjY7Xr8XJWs5uJA5JbCzmHJ8Asdi1LoptzL';
 

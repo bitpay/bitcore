@@ -8,38 +8,22 @@ const BitcoreLib = require('bitcore-lib');
 const Base58 = BitcoreLib.encoding.Base58;
 
 export class SolDeriver implements IDeriver {
-  padTo32(msg) {
-    while (msg.length < 32) {
-      msg = Buffer.concat([new Buffer([0]), msg]);
-    }
-    if (msg.length !== 32) {
-      throw new Error(`invalid key length: ${msg.length}`);
-    }
-    return msg;
-  }
-
   deriveAddress(network, xpubkey, addressIndex, isChange) {
-    const xpub = new BitcoreLib.HDPublicKey(xpubkey, network);
-    const changeNum = isChange ? 1 : 0;
-    const path = `m/${changeNum}/${addressIndex}`;
-    const derived = xpub.derive(path).publicKey;
-    return this.deriveAddressWithPath(network, xpubkey, path);
+    throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
   }
 
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
     return Base58.fromBuffer(pubKey).toString();
   }
 
-  derivePrivateKey(network, xPriv, addressIndex, isChange) {
-    const changeNum = isChange ? 1 : 0;
-    const path = `m/${changeNum}/${addressIndex}`;
-    return this.derivePrivateKeyWithPath(network, xPriv, path);
+  deriveAddressWithPath(network: string, xpubKey: string, path: string) {
+    throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
   }
 
-  deriveAddressWithPath(network: string, xpubKey: string, path: string) {
-    const xpub = new BitcoreLib.HDPublicKey(xpubKey, network);
-    const derived = xpub.derive(path).publicKey;
-    return this.addressFromPublicKeyBuffer(derived.toBuffer());
+  derivePrivateKey(network, xPriv, addressIndex, isChange) {
+    const changeNum = isChange ? 1 : 0;
+    const path = `m/${changeNum}'/${addressIndex}'`;
+    return this.derivePrivateKeyWithPath(network, xPriv, path);
   }
 
   derivePrivateKeyWithPath(network: string, seed: string, path: string) {
