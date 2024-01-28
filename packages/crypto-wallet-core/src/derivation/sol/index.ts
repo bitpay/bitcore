@@ -2,7 +2,6 @@ import * as web3 from '@solana/web3.js';
 import { IDeriver } from '..';
 
 import { derivePath, getPublicKey } from 'ed25519-hd-key';
-import * as nacl from 'tweetnacl';
 
 const BitcoreLib = require('bitcore-lib');
 const Base58 = BitcoreLib.encoding.Base58;
