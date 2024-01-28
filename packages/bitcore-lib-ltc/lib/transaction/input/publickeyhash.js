@@ -157,7 +157,7 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
-    var scriptCode = this.getScriptCode();
+    var scriptCode = this.getScriptCode(signature.publicKey);
     var satoshisBuffer = this.getSatoshisBuffer();
     return SighashWitness.verify(
       transaction,

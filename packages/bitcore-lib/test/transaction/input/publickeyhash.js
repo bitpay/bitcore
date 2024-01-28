@@ -81,6 +81,72 @@ describe('PublicKeyHashInput', function() {
     signatures.length.should.equal(0);
   });
 
+  it('should validate a SIGHASH_ALL signature', function() {
+    const transaction = new Transaction()
+      .from(output)
+      .to(address, 1000000);
+    const input = transaction.inputs[0];
+
+    transaction.sign(privateKey); // SIGHASH_ALL by default
+    input.isFullySigned().should.equal(true);
+    const sig = transaction.extractSignatures(0)[0];
+    sig.sigtype.should.equal(Signature.SIGHASH_ALL);
+    input.isValidSignature(transaction, sig).should.equal(true);
+  });
+
+  it('should validate a SIGHASH_NONE signature', function() {
+    const transaction = new Transaction()
+      .from(output)
+      .to(address, 1000000);
+    const input = transaction.inputs[0];
+
+    transaction.sign(privateKey, Signature.SIGHASH_NONE);
+    input.isFullySigned().should.equal(true);
+    const sig = transaction.extractSignatures(0)[0];
+    sig.sigtype.should.equal(Signature.SIGHASH_NONE);
+    input.isValidSignature(transaction, sig).should.equal(true);
+  });
+
+  it('should validate a SIGHASH_SINGLE signature', function() {
+    const transaction = new Transaction()
+      .from(output)
+      .to(address, 1000000);
+    const input = transaction.inputs[0];
+
+    transaction.sign(privateKey, Signature.SIGHASH_SINGLE);
+    input.isFullySigned().should.equal(true);
+    const sig = transaction.extractSignatures(0)[0];
+    sig.sigtype.should.equal(Signature.SIGHASH_SINGLE);
+    input.isValidSignature(transaction, sig).should.equal(true);
+  });
+
+  it('should validate a SIGHASH_ANYONECANPAY signature', function() {
+    const transaction = new Transaction()
+      .from(output)
+      .to(address, 1000000);
+    const input = transaction.inputs[0];
+
+    transaction.sign(privateKey, Signature.SIGHASH_ANYONECANPAY);
+    input.isFullySigned().should.equal(true);
+    const sig = transaction.extractSignatures(0)[0];
+    sig.sigtype.should.equal(Signature.SIGHASH_ANYONECANPAY);
+    input.isValidSignature(transaction, sig).should.equal(true);
+  });
+
+  it('should validate a signature from a raw tx', function() {
+    const transaction = new Transaction()
+      .from(output)
+      .to(address, 1000000);
+    const input = transaction.inputs[0];
+
+    transaction.sign(privateKey);
+    input.isFullySigned().should.equal(true);
+    const anonymousTx = new Transaction(transaction.uncheckedSerialize());
+    const sig = anonymousTx.extractSignatures(0)[0];
+    sig.sigtype.should.equal(Signature.SIGHASH_ALL);
+    input.isValidSignature(transaction, sig).should.equal(true);
+  });
+
   describe('P2WPKH', function () {
     it('can count missing signatures', function() {
       var transaction = new Transaction()
@@ -119,7 +185,7 @@ describe('PublicKeyHashInput', function() {
     });
     it('will get the scriptCode', function() {
       var transaction = new Transaction()
-        .from(wrappedOutput)
+        .from(witnessOutput)
         .to(address, 1000000);
       var input = transaction.inputs[0];
       var scriptCode = input.getScriptCode(publicKey);
@@ -127,11 +193,76 @@ describe('PublicKeyHashInput', function() {
     });
     it('will get the satoshis buffer', function() {
       var transaction = new Transaction()
-        .from(wrappedOutput)
+        .from(witnessOutput)
         .to(address, 1000000);
       var input = transaction.inputs[0];
       var satoshisBuffer = input.getSatoshisBuffer();
       satoshisBuffer.toString('hex').should.equal('40420f0000000000');
+    });
+    it('should validate a SIGHASH_ALL signature', function() {
+      const transaction = new Transaction()
+        .from(witnessOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey); // SIGHASH_ALL by default
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_ALL);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+  
+    it('should validate a SIGHASH_NONE signature', function() {
+      const transaction = new Transaction()
+        .from(witnessOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey, Signature.SIGHASH_NONE);
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_NONE);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+  
+    it('should validate a SIGHASH_SINGLE signature', function() {
+      const transaction = new Transaction()
+        .from(witnessOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey, Signature.SIGHASH_SINGLE);
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_SINGLE);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+  
+    it('should validate a SIGHASH_ANYONECANPAY signature', function() {
+      const transaction = new Transaction()
+        .from(witnessOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey, Signature.SIGHASH_ANYONECANPAY);
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_ANYONECANPAY);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+
+    it('should validate a signature from a raw tx', function() {
+      const transaction = new Transaction()
+        .from(witnessOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey);
+      input.isFullySigned().should.equal(true);
+      const anonymousTx = new Transaction(transaction.uncheckedSerialize());
+      const sig = anonymousTx.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_ALL);
+      input.isValidSignature(transaction, sig).should.equal(true);
     });
   });
 
@@ -186,6 +317,71 @@ describe('PublicKeyHashInput', function() {
       var input = transaction.inputs[0];
       var satoshisBuffer = input.getSatoshisBuffer();
       satoshisBuffer.toString('hex').should.equal('40420f0000000000');
+    });
+    it('should validate a SIGHASH_ALL signature', function() {
+      const transaction = new Transaction()
+        .from(wrappedOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey); // SIGHASH_ALL by default
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_ALL);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+  
+    it('should validate a SIGHASH_NONE signature', function() {
+      const transaction = new Transaction()
+        .from(wrappedOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey, Signature.SIGHASH_NONE);
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_NONE);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+  
+    it('should validate a SIGHASH_SINGLE signature', function() {
+      const transaction = new Transaction()
+        .from(wrappedOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey, Signature.SIGHASH_SINGLE);
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_SINGLE);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+  
+    it('should validate a SIGHASH_ANYONECANPAY signature', function() {
+      const transaction = new Transaction()
+        .from(wrappedOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey, Signature.SIGHASH_ANYONECANPAY);
+      input.isFullySigned().should.equal(true);
+      const sig = transaction.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_ANYONECANPAY);
+      input.isValidSignature(transaction, sig).should.equal(true);
+    });
+
+    it('should validate a signature from a raw tx', function() {
+      const transaction = new Transaction()
+        .from(wrappedOutput)
+        .to(address, 1000000);
+      const input = transaction.inputs[0];
+  
+      transaction.sign(privateKey);
+      input.isFullySigned().should.equal(true);
+      const anonymousTx = new Transaction(transaction.uncheckedSerialize());
+      const sig = anonymousTx.extractSignatures(0)[0];
+      sig.sigtype.should.equal(Signature.SIGHASH_ALL);
+      input.isValidSignature(transaction, sig).should.equal(true);
     });
   });
 });

@@ -235,7 +235,7 @@ describe('Signature', function() {
   });
 
 
-  describe('@isTxDER', function() {
+  describe('#isTxDER', function() {
     it('should know this is a DER signature', function() {
       var sighex = '3042021e17cfe77536c3fb0526bd1a72d7a8e0973f463add210be14063c8a9c37632022061bfa677f825ded82ba0863fb0c46ca1388dd3e647f6a93c038168b59d131a5101';
       var sigbuf =  Buffer.from(sighex, 'hex');
