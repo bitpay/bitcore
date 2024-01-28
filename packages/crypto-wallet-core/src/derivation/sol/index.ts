@@ -11,12 +11,17 @@ export class SolDeriver implements IDeriver {
     throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
   }
 
-  addressFromPublicKeyBuffer(pubKey: Buffer): string {
-    return Base58.fromBuffer(pubKey).toString();
-  }
-
   deriveAddressWithPath(network: string, xpubKey: string, path: string) {
     throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
+  }
+
+  getAddress(network: string, pubKey) {
+    pubKey = new BitcoreLib.PublicKey(pubKey, network);
+    return this.addressFromPublicKeyBuffer(pubKey.toBuffer());
+  }
+
+  addressFromPublicKeyBuffer(pubKey: Buffer): string {
+    return Base58.fromBuffer(pubKey).toString();
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
@@ -31,10 +36,5 @@ export class SolDeriver implements IDeriver {
     const pubKey = keypair.publicKey.toBase58();
     const address = pubKey;
     return { address, privKey, pubKey };
-  }
-
-  getAddress(network: string, pubKey) {
-    pubKey = new BitcoreLib.PublicKey(pubKey, network); // network not needed here since ETH doesn't differentiate addresses by network.
-    return this.addressFromPublicKeyBuffer(pubKey.toBuffer());
   }
 }
