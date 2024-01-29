@@ -423,7 +423,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(485300);
+      transaction.outputs[1].satoshis.should.equal(477400);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -521,9 +521,9 @@ describe('Transaction', function() {
         .feePerKb(8000)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(45872);
+      transaction.outputs[1].satoshis.should.equal(37536);
     });
     it('fee per byte (low fee) can be set up manually', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -537,9 +537,9 @@ describe('Transaction', function() {
         .feePerByte(1)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(49484);
+      transaction.outputs[1].satoshis.should.be.within(48001, 49000);
     });
     it('fee per byte (high fee) can be set up manually', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -553,9 +553,9 @@ describe('Transaction', function() {
         .feePerByte(2)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(48968);
+      transaction.outputs[1].satoshis.should.be.within(46002, 48000);
     });
     it('fee per byte can be set up manually', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -569,9 +569,9 @@ describe('Transaction', function() {
         .feePerByte(13)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(43292);
+      transaction.outputs[1].satoshis.should.be.within(24013, 37000);
     });
     it('fee per byte not enough for change', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -585,7 +585,7 @@ describe('Transaction', function() {
         .feePerByte(1)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(1);
     });
     it('if satoshis are invalid', function() {
@@ -624,6 +624,23 @@ describe('Transaction', function() {
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 1000);
       transaction.getFee().should.equal(99000);
+    });
+    it('should not under calculate fee', function () {
+      var inputs = Array(10).fill(0).map(function (_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
+        utxo.outputIndex = i;
+        return utxo;
+      });
+      const feeRate = 1;
+      var transaction = new Transaction()
+        .from(inputs)
+        .to(toAddress, 950000)
+        .feePerByte(feeRate)
+        .change(changeAddress)
+        .sign(privateKey);
+      // actual fee rate should never be *less* than the given
+      //  fee rate and should only be over by 1% at most.
+      (transaction.getFee() / transaction.size).should.be.within(feeRate * 1, feeRate * 1.01);
     });
   });
 
@@ -1160,7 +1177,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1000);
       transaction.inputAmount.should.equal(100000000);
-      transaction.outputAmount.should.equal(99985300);
+      transaction.outputAmount.should.equal(99977400);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718
@@ -1252,7 +1269,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(10000000);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89985300);
+      tx.outputs[1].satoshis.should.equal(89977400);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
@@ -1988,6 +2005,96 @@ describe('Transaction', function() {
       t.size.should.equal(881);
       t.vsize.should.equal(587);
       t.weight.should.equal(2348);
+    });
+  });
+
+  describe('_estimateSize', function() {
+    it('estimate an accurate size - non-segwit', function() {
+      const t = new Transaction();
+      t.from(simpleUtxoWith1BTC);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(privateKey);
+      // 225, 225, 900
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - segwit', function() {
+      const t = new Transaction();
+      t.from(simpleWitnessUtxoWith1BTC);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(privateKey);
+      // 229, 147, 586
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - wrapped segwit', function() {
+      const t = new Transaction();
+      t.from(simpleWrappedWitnessUtxoWith1BTC);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(privateKey);
+      // 252, 170, 678
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2sh 2:2 multisig', function() {
+      const t = new Transaction();
+      t.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 374, 374, 1496
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2sh 2:2 multisig', function() {
+      const t = new Transaction();
+      t.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 374, 374, 1496
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2wsh multisig', function() {
+      const t = new Transaction();
+      t.from(p2wshUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 374, 183, 731
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2wsh multisig change', function() {
+      const t = new Transaction();
+      t.from(p2wshUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(p2wshAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 384, 192, 768
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
     });
   });
 });

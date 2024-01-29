@@ -60,7 +60,7 @@ describe('PublicKeyHashInput', function() {
       .from(output)
       .to(address, 1000000);
     var input = transaction.inputs[0];
-    input._estimateSize().should.equal(107);
+    input._estimateSize().should.equal(148);
   });
   it('it\'s signature can be removed', function() {
     var transaction = new Transaction()
@@ -97,7 +97,7 @@ describe('PublicKeyHashInput', function() {
         .from(witnessOutput)
         .to(address, 1000000);
       var input = transaction.inputs[0];
-      input._estimateSize().should.equal(26.75);
+      input._estimateSize().should.equal(67.75);
     });
     it('it\'s signature can be removed', function() {
       var transaction = new Transaction()
@@ -151,7 +151,7 @@ describe('PublicKeyHashInput', function() {
         .from(wrappedOutput)
         .to(address, 1000000);
       var input = transaction.inputs[0];
-      input._estimateSize().should.equal(48.75);
+      input._estimateSize().should.equal(90.75);
     });
     it('it\'s signature can be removed', function() {
       var transaction = new Transaction()

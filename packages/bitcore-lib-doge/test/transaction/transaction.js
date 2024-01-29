@@ -362,7 +362,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.getFee();
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(4985300000);
+      transaction.outputs[1].satoshis.should.equal(4977400000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -436,15 +436,17 @@ describe('Transaction', function() {
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 8000;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerKb(8000)
+        .feePerKb(feeRate)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate / 1000 * 1, feeRate / 1000 * 1.01);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(9999045872);
+      transaction.outputs[1].satoshis.should.equal(9999037536);
     });
     it('fee per byte (low fee) can be set up manually', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -452,15 +454,17 @@ describe('Transaction', function() {
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 1;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(1)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(9999049484);
+      transaction.outputs[1].satoshis.should.be.within(9999048001, 9999049000);
     });
     it('fee per byte (high fee) can be set up manually', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -468,15 +472,17 @@ describe('Transaction', function() {
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 2;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(2)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(9999048968);
+      transaction.outputs[1].satoshis.should.be.within(9999046002, 9999048000);
     });
     it('fee per byte can be set up manually', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -484,15 +490,17 @@ describe('Transaction', function() {
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 13;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(13)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(9999043292);
+      transaction.outputs[1].satoshis.should.be.within(9999024013, 9999037000);
     });
     it('fee per byte not enough for change', function () {
       var inputs = new Array(10).fill(0).map(function(_, i) {
@@ -506,7 +514,7 @@ describe('Transaction', function() {
         .feePerByte(1)
         .change(changeAddress)
         .sign(privateKey);
-      transaction.vsize.should.be.within(1000, 1999);
+      transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(1);
     });
     it('if satoshis are invalid', function() {
@@ -545,6 +553,23 @@ describe('Transaction', function() {
         .from(simpleUtxoWith100DOGE)
         .to(toAddress, 1e8);
       transaction.getFee().should.equal(99e8);
+    });
+    it('should not under calculate fee', function () {
+      var inputs = Array(10).fill(0).map(function (_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
+        utxo.outputIndex = i;
+        return utxo;
+      });
+      const feeRate = 1;
+      var transaction = new Transaction()
+        .from(inputs)
+        .to(toAddress, 95000)
+        .feePerByte(feeRate)
+        .change(changeAddress)
+        .sign(privateKey);
+      // actual fee rate should never be *less* than the given
+      //  fee rate and should only be over by 1% at most.
+      (transaction.getFee() / transaction.size).should.be.within(feeRate * 1, feeRate * 1.01);
     });
   });
 
@@ -1070,7 +1095,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1e8);
       transaction.inputAmount.should.equal(1000e8);
-      transaction.outputAmount.should.equal(99985300000);
+      transaction.outputAmount.should.equal(99977400000);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see testnet tx 41245c59aa4f06bc0f13f92ea65e275926591376dffb396a5c0efb7b8c2d0c21
@@ -1162,7 +1187,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(tenth);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89985300000);
+      tx.outputs[1].satoshis.should.equal(89977400000);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
