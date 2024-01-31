@@ -61,7 +61,7 @@
     "lodash": "4.17.19",
     "moment": "2.29.4",
     "mongodb": "3.5.9",
-    "moralis": "2.22.4",
+    "moralis": "2.24.0",
     "mustache": "2.3.2",
     "nodemailer": "5.1.1",
     "preconditions": "2.2.3",

@@ -6739,6 +6739,65 @@ export class WalletService implements IWalletService {
     });
   }
 
+  moralisGetTokenPrice(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getTokenPrice({
+          address: req.body.address,
+          chain: req.body.chain,
+          include: req.body.include,
+          exchange: req.body.exchange,
+          toBlock: req.body.toBlock,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetMultipleERC20TokenPrices(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let keys, headers;
+
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['tokens'])) {
+        return reject(new ClientError('moralisGetMultipleERC20TokenPrices request missing arguments'));
+      }
+
+      let qs = [];
+      if (req.body.chain) qs.push('chain=' + req.body.chain);
+      if (req.body.include) qs.push('include=' + req.body.include);
+
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/erc20/prices${qs.length > 0 ? '?' + qs.join('&') : ''}`
+
+      headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
+
+      const message = {tokens: req.body.tokens};
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
   private coinGeckoGetCredentials() {
     if (!config.coinGecko) throw new Error('coinGecko missing credentials');
 
