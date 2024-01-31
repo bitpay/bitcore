@@ -290,14 +290,17 @@ Transaction.prototype.toBuffer = function() {
 
 Transaction.prototype.toBufferWriter = function(writer) {
   writer.writeInt32LE(this.version);
-  writer.writeVarintNum(this.inputs.length);
-  for (const input of this.inputs) {
+  
+  writer.writeVarintNum(this.inputs ? this.inputs.length : 0);
+  for (const input of this.inputs || []) {
     input.toBufferWriter(writer);
   }
-  writer.writeVarintNum(this.outputs.length);
-  for (const output of this.outputs) {
+
+  writer.writeVarintNum(this.outputs ? this.outputs.length : 0);
+  for (const output of this.outputs || []) {
     output.toBufferWriter(writer);
   }
+
   writer.writeUInt32LE(this.nLockTime);
   return writer;
 };

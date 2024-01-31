@@ -72,6 +72,7 @@ Input.prototype._fromObject = function(params) {
   this.outputIndex = params.outputIndex == null ? params.txoutnum : params.outputIndex;
   this.sequenceNumber = params.sequenceNumber == null ?
     (params.seqnum == null ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
+  // null script is allowed in setScript()
   if (params.script === undefined && params.scriptBuffer === undefined) {
     throw new errors.Transaction.Input.MissingScript();
   }

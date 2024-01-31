@@ -340,14 +340,13 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
     writer.write(Buffer.from('0001', 'hex'));
   }
 
-  writer.writeVarintNum(this.inputs.length);
-
-  for (const input of this.inputs) {
+  writer.writeVarintNum(this.inputs ? this.inputs.length : 0);
+  for (const input of this.inputs || []) {
     input.toBufferWriter(writer);
   }
 
-  writer.writeVarintNum(this.outputs.length);
-  for (const output of this.outputs) {
+  writer.writeVarintNum(this.outputs ? this.outputs.length : 0);
+  for (const output of this.outputs || []) {
     output.toBufferWriter(writer);
   }
 

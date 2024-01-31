@@ -345,14 +345,13 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
     writer.write(Buffer.from('0001', 'hex'));
   }
 
-  writer.writeVarintNum(this.inputs.length);
-
-  for (const input of this.inputs) {
+  writer.writeVarintNum(this.inputs ? this.inputs.length : 0);
+  for (const input of this.inputs || []) {
     input.toBufferWriter(writer);
   }
 
-  writer.writeVarintNum(this.outputs.length);
-  for (const output of this.outputs) {
+  writer.writeVarintNum(this.outputs ? this.outputs.length : 0);
+  for (const output of this.outputs || []) {
     output.toBufferWriter(writer);
   }
 
@@ -458,7 +457,7 @@ Transaction.prototype.fromObject = function fromObject(arg, opts) {
   for (const input of transaction.inputs || []) {
     if (!input.output || !input.output.script) {
       this.uncheckedAddInput(new Input(input));
-      continue
+      continue;
     }
     var script = new Script(input.output.script);
     var txin;
