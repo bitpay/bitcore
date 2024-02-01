@@ -518,6 +518,7 @@ export class WalletService implements IWalletService {
    * @param {number} opts.m - Required copayers.
    * @param {number} opts.n - Total copayers.
    * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
+   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
@@ -621,7 +622,8 @@ export class WalletService implements IWalletService {
             derivationStrategy,
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
-            usePurpose48: opts.n > 1 && !!opts.usePurpose48
+            usePurpose48: opts.n > 1 && !!opts.usePurpose48,
+            hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -925,6 +927,7 @@ export class WalletService implements IWalletService {
       name: opts.name,
       copayerIndex: wallet.copayers.length,
       xPubKey: opts.xPubKey,
+      hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
       requestPubKey: opts.requestPubKey,
       signature: opts.copayerSignature,
       customData: opts.customData,
@@ -1075,15 +1078,15 @@ export class WalletService implements IWalletService {
    * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.chain[='btc'] - The expected chain for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.name - The copayer name.
-   * @param {string} opts.xPubKey - Extended Public Key for this copayer.
+   * @param {string} opts.xPubKey - Extended Public Key for this copayer
+   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
    * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
    * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
    * @param {string} opts.customData - (optional) Custom data for this copayer.
    * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
-    if (!checkRequired(opts, ['walletId', 'name', 'xPubKey', 'requestPubKey', 'copayerSignature'], cb)) return;
-
+    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
     if (_.isEmpty(opts.name)) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -1093,13 +1096,16 @@ export class WalletService implements IWalletService {
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
-    try {
-      xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
-    } catch (ex) {
-      return cb(new ClientError('Invalid extended public key'));
-    }
-    if (_.isUndefined(xPubKey.network)) {
-      return cb(new ClientError('Invalid extended public key'));
+    if (!opts.hardwareSourcePublicKey) {
+      if (!checkRequired(opts, ['xPubKey'], cb)) return;
+      try {
+        xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
+      } catch (ex) {
+        return cb(new ClientError('Invalid extended public key'));
+      }
+      if (_.isUndefined(xPubKey.network)) {
+        return cb(new ClientError('Invalid extended public key'));
+      }
     }
 
     this.walletId = opts.walletId;
@@ -1108,6 +1114,11 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
+        if (opts.hardwareSourcePublicKey) {
+          this._addCopayerToWallet(wallet, opts, cb);
+          return;
+        }
+        
         if (opts.chain === 'bch' && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
@@ -2666,11 +2677,34 @@ export class WalletService implements IWalletService {
   /**
    * Retrieves a tx from storage.
    * @param {Object} opts
-   * @param {string} opts.txProposalId - The tx id.
+   * @param {string} opts.txProposalId - The tx proposal id.
    * @returns {Object} txProposal
    */
   getTx(opts, cb) {
     this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+      if (err) return cb(err);
+      if (!txp) return cb(Errors.TX_NOT_FOUND);
+
+      if (!txp.txid) return cb(null, txp);
+
+      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+        if (err) {
+          this.logw('Error fetching tx note for ' + txp.txid);
+        }
+        txp.note = note;
+        return cb(null, txp);
+      });
+    });
+  }
+
+  /**
+   * Retrieves a tx from storage using txid
+   * @param {Object} opts
+   * @param {string} opts.txid - The tx blockchain id.
+   * @returns {Object} txProposal
+   */
+  getTxByHash(opts, cb) {
+    this.storage.fetchTxByHash(opts.txid, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
 
@@ -2825,7 +2859,6 @@ export class WalletService implements IWalletService {
 
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
-
     this._broadcastRawTx(opts.chain, opts.network, opts.rawTx, cb);
   }
 
@@ -4644,11 +4677,11 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.'}};
     }
 
     if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.'}};
     }
 
     // Buy crypto rules
@@ -4659,7 +4692,7 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && buyCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'This service is currently unavailable in your area.'}};
+      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
     }
 
     return cb(null, externalServicesConfig);
@@ -5426,7 +5459,7 @@ export class WalletService implements IWalletService {
 
       if (req.body.orderId) {
         URL = API + `/v1/orders/${req.body.orderId}`;
-      } else if (req.body.externalUserId || req.body.referenceId){
+      } else if (req.body.externalUserId || req.body.referenceId) {
         if (req.body.externalUserId) qs.push('externalUserId=' + req.body.externalUserId);
         if (req.body.referenceId) qs.push('referenceId=' + req.body.referenceId);
         if (req.body.startDate) qs.push('startDate=' + req.body.startDate);

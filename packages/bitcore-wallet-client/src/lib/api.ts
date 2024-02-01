@@ -763,6 +763,7 @@ export class API extends EventEmitter {
   // * @param {Object} Optional args
   // * @param {String} opts.customData
   // * @param {String} opts.coin
+  // * @param {String} opts.hardwareSourcePublicKey
   // * @param {Callback} cb
   // */
   _doJoinWallet(
@@ -796,7 +797,8 @@ export class API extends EventEmitter {
       name: encCopayerName,
       xPubKey,
       requestPubKey,
-      customData: encCustomData
+      customData: encCustomData,
+      hardwareSourcePublicKey: opts.hardwareSourcePublicKey
     };
     if (opts.dryRun) args.dryRun = true;
 
@@ -944,7 +946,8 @@ export class API extends EventEmitter {
       singleAddress: !!opts.singleAddress,
       id: opts.id,
       usePurpose48: n > 1,
-      useNativeSegwit: !!opts.useNativeSegwit
+      useNativeSegwit: !!opts.useNativeSegwit,
+      hardwareSourcePublicKey: c.hardwareSourcePublicKey
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
@@ -967,7 +970,8 @@ export class API extends EventEmitter {
         c.requestPubKey,
         copayerName,
         {
-          coin
+          coin,
+          hardwareSourcePublicKey: c.hardwareSourcePublicKey
         },
         (err, wallet) => {
           if (err) return cb(err);
@@ -2249,18 +2253,39 @@ export class API extends EventEmitter {
   }
 
   // /**
-  // * getTx
+  // * getTxWithTransactionId
   // *
-  // * @param {String} TransactionId
+  // * @param {String} txid
   // * @return {Callback} cb - Return error or transaction
   // */
-  getTx(id, cb) {
+  getTxByHash(txid, cb) {
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getTxByHash()>'
+    );
+
+    const url = '/v1/txproposalsbyhash/' + txid;
+    this.request.get(url, (err, txp) => {
+      if (err) return cb(err);
+
+      this._processTxps(txp);
+      return cb(null, txp);
+    });
+  }
+
+  // /**
+  // * getTx
+  // *
+  // * @param {String} txProposalId
+  // * @return {Callback} cb - Return error or transaction
+  // */
+  getTx(txProposalId, cb) {
     $.checkState(
       this.credentials && this.credentials.isComplete(),
       'Failed state: this.credentials at <getTx()>'
     );
 
-    var url = '/v1/txproposals/' + id;
+    var url = '/v1/txproposals/' + txProposalId;
     this.request.get(url, (err, txp) => {
       if (err) return cb(err);
 

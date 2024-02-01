@@ -34,8 +34,8 @@
     "compile": "npm run clean && npm run build",
     "pub": "npm run build && npm publish",
     "precommit": "npm run fix && npm run lint",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
     "update:stats": "npm run clean && npm run tsc && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js ",
     "clean:fiatrates": "npm run clean && npm run tsc && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js "
   },

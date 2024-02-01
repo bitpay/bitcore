@@ -184,9 +184,19 @@ export class Utils {
     m,
     network,
     chain,
-    escrowInputs?
+    escrowInputs?,
+    hardwareSourcePublicKey?
   ) {
     $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
+
+    if (hardwareSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+      return {
+        address: bitcoreAddress.toString(),
+        path,
+        publicKeys: [hardwareSourcePublicKey]
+      }
+    }
 
     chain = chain || 'btc';
     var bitcore = Bitcore_[chain];

@@ -72,10 +72,10 @@
     "tsc": "npm run clean && tsc",
     "build": "tsc && npm run lint",
     "clean": "rm -rf ./ts_build",
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
     "pub": "npm run build && npm publish",
-    "precommit": "npm run fix && npm run lint",
-    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'"
+    "precommit": "npm run fix && npm run lint"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }

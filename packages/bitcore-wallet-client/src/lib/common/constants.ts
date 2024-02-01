@@ -12,7 +12,8 @@ export const Constants = {
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',
     BIP45: 'BIP45',
-    BIP48: 'BIP48'
+    BIP48: 'BIP48',
+    BIP84: 'BIP84'
   },
   PATHS: {
     SINGLE_ADDRESS: 'm/0/0',

@@ -32,9 +32,8 @@ export class XrpDeriver implements IDeriver {
     return { address, privKey, pubKey };
   }
 
-  getAddress(network: string, pubKey) {
-    pubKey = new BitcoreLib.PublicKey(pubKey, network);
-    const address = deriveAddress(pubKey.publicKey);
+  getAddress(network: string, pubKey: string) {
+    const address = deriveAddress(pubKey);
     return address;
   }
 }

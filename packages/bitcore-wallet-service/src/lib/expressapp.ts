@@ -6,7 +6,7 @@ import 'source-map-support/register';
 import config from '../config';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
-import { Errors } from'./errors/errordefinitions';
+import { Errors } from './errors/errordefinitions';
 import { logger, transport } from './logger';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
@@ -1153,6 +1153,17 @@ export class ExpressApp {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.getTx(req.body, (err, tx) => {
+          if (err) return returnError(err, res, req);
+          res.json(tx);
+          res.end();
+        });
+      });
+    });
+
+    router.get('/v1/txproposalsbyhash/:id/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txid = req.params['id'];
+        server.getTxByHash(req.body, (err, tx) => {
           if (err) return returnError(err, res, req);
           res.json(tx);
           res.end();
