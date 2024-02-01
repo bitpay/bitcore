@@ -34,6 +34,7 @@ export interface IWallet {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
+  hardwareSourcePublicKey: string;
   addressIndex: number;
   copayers: string[];
   pubKey: string;
@@ -62,6 +63,7 @@ export class Wallet {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
+  hardwareSourcePublicKey: string;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -125,6 +127,8 @@ export class Wallet {
     // x.nativeCashAddr opts is only for testing
     x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
 
+    // hardware wallet related
+    x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
     return x;
   }
 
@@ -163,6 +167,9 @@ export class Wallet {
 
     x.nativeCashAddr = obj.nativeCashAddr;
     x.usePurpose48 = obj.usePurpose48;
+
+    // hardware wallet related
+    x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
 
     return x;
   }
@@ -284,7 +291,8 @@ export class Wallet {
       isChange,
       this.chain,
       !this.nativeCashAddr,
-      escrowInputs
+      escrowInputs,
+      this.hardwareSourcePublicKey,
     );
     return address;
   }

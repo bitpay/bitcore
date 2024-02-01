@@ -1160,6 +1160,17 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/txproposalsbyhash/:id/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txid = req.params['id'];
+        server.getTxByHash(req.body, (err, tx) => {
+          if (err) return returnError(err, res, req);
+          res.json(tx);
+          res.end();
+        });
+      });
+    });
+
     router.get('/v1/txhistory/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts: {

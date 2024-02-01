@@ -96,8 +96,17 @@ export class Address {
     return x;
   }
 
-  static _deriveAddress(scriptType, publicKeyRing, path, m, chain, network, noNativeCashAddr, escrowInputs?) {
+  static _deriveAddress(scriptType, publicKeyRing, path, m, chain, network, noNativeCashAddr, escrowInputs?, hardwareSourcePublicKey?) {
     $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
+
+    if (hardwareSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+      return {
+        address: bitcoreAddress.toString(),
+        path,
+        publicKeys: [hardwareSourcePublicKey]
+      }
+    }
 
     let publicKeys = _.map(publicKeyRing, item => {
       const xpub = Address.Bitcore[chain]
@@ -172,7 +181,8 @@ export class Address {
     isChange,
     chain,
     noNativeCashAddr = false,
-    escrowInputs?
+    escrowInputs?,
+    hardwareSourcePublicKey?
   ) {
     const raw = Address._deriveAddress(
       scriptType,
@@ -182,7 +192,8 @@ export class Address {
       chain || ChainService.getChain(coin), // getChain -> backwards compatibility
       network,
       noNativeCashAddr,
-      escrowInputs
+      escrowInputs,
+      hardwareSourcePublicKey,
     );
     return Address.create(
       _.extend(raw, {
