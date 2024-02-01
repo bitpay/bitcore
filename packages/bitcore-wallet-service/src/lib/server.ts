@@ -1985,6 +1985,36 @@ export class WalletService implements IWalletService {
     });
   }
 
+  estimateFee(opts) {
+    opts = opts || {};
+    return new Promise((resolve, reject) => {
+      const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.estimateFeeV2(opts, (err, result) => {
+        if (err) {
+          this.logw('Error estimating fee', err);
+          return reject(err);
+        }
+        return resolve(result);
+      });
+    });
+  }
+
+  estimatePriorityFee(opts) {
+    opts = opts || {};
+    return new Promise((resolve, reject) => {
+      const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.estimatePriorityFee(opts, (err, result) => {
+        if (err) {
+          this.logw('Error estimating priority fee', err);
+          return reject(err);
+        }
+        return resolve(result);
+      });
+    });
+  }
+
   /**
    * Returns fee levels for the current state of the network.
    * @param {Object} opts
@@ -2413,6 +2443,8 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
    * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
    * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
+   * @param {number} opts.txType - Optional. Type of EVM transaction
+   * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2426,7 +2458,7 @@ export class WalletService implements IWalletService {
     this._runLocked(
       cb,
       cb => {
-        let changeAddress, feePerKb, gasPrice, gasLimit, fee;
+        let changeAddress, feePerKb, gasPrice, gasLimit, fee, maxGasFee, priorityGasFee;
         this.getWallet({}, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
@@ -2474,9 +2506,8 @@ export class WalletService implements IWalletService {
                 },
                 async next => {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
-
                   try {
-                    ({ feePerKb, gasPrice, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
+                    ({ feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
                   } catch (error) {
                     return next(error);
                   }
@@ -2543,6 +2574,9 @@ export class WalletService implements IWalletService {
                     fee: txOptsFee,
                     noShuffleOutputs: opts.noShuffleOutputs,
                     gasPrice,
+                    maxGasFee,
+                    priorityGasFee,
+                    txType: opts.txType,
                     nonce: opts.nonce,
                     gasLimit, // Backward compatibility for BWC < v7.1.1
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
@@ -3421,6 +3455,9 @@ export class WalletService implements IWalletService {
             data: tx.data,
             abiType: tx.abiType || recreateAbiType(tx.effects),
             gasPrice: tx.gasPrice,
+            maxGasFee: tx.maxGasFee, 
+            priorityGasFee: tx.priorityGasFee,
+            txType: tx.txType,
             gasLimit: tx.gasLimit,
             receipt: tx.receipt,
             nonce: tx.nonce,

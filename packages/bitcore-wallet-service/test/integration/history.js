@@ -988,6 +988,9 @@ describe('History', function() {
           gasLimit: 163759,
           receipt: undefined,
           lowFees: false,
+          maxGasFee: undefined,
+          priorityGasFee: undefined,
+          txType: undefined,
         });
         done();
       });

@@ -517,6 +517,50 @@ export class V8 {
     );
   }
 
+  estimateFeeV2(opts, cb) {
+    const txType = opts.txType;
+    if (Number(txType) !== 2) {
+     return this.estimateFee(opts, cb);
+    }
+    const nbBlocks = Number(opts.nbBlocks) || 2;
+    const url = this.baseUrl + `/fee/${nbBlocks}?txType=${txType}`;
+    let result;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  estimatePriorityFee(opts, cb) {
+    const percentile = opts.percentile;
+    let result;
+    const url = this.baseUrl + `/priorityFee/${percentile}`;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Priority fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   getBlockchainHeight(cb) {
     const url = this.baseUrl + '/block/tip';
 

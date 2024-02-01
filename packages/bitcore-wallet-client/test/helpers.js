@@ -337,6 +337,12 @@ const blockchainExplorerMock = {
 
         return cb(null, levels);
     },
+    estimateFeeV2: (opts, cb) => {
+        return cb(null, 20000);
+    },
+    estimatePriorityFee: (opts, cb) => {
+        return cb(null, 5000);
+    },
     estimateGas: (nbBlocks, cb) => {
         return cb(null, '20000000000');
     },
