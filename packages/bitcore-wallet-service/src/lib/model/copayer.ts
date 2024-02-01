@@ -50,7 +50,7 @@ export class Copayer {
 
   static create(opts) {
     opts = opts || {};
-    if(!opts.hardwareSourcePublicKey) {
+    if (!opts.hardwareSourcePublicKey) {
       $.checkArgument(opts.xPubKey, 'Missing copayer extended public key')
     }
     $.checkArgument(opts.requestPubKey, 'Missing copayer request public key')

@@ -6,7 +6,7 @@ import 'source-map-support/register';
 import config from '../config';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
-import { Errors } from'./errors/errordefinitions';
+import { Errors } from './errors/errordefinitions';
 import { logger, transport } from './logger';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';

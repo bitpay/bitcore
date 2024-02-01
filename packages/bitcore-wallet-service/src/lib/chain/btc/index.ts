@@ -914,10 +914,12 @@ export class BtcChain implements IChain {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
+        // tslint:disable-next-line:no-bitwise
+        const SIGHASH_TYPE = this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID;
         const s = {
           inputIndex: i,
           signature,
-          sigtype: this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
+          sigtype: SIGHASH_TYPE,
           publicKey: pub
         };
         tx.inputs[i].addSignature(tx, s, signingMethod);

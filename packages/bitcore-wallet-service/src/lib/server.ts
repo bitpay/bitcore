@@ -1096,7 +1096,7 @@ export class WalletService implements IWalletService {
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
-    if(!opts.hardwareSourcePublicKey) {
+    if (!opts.hardwareSourcePublicKey) {
       if (!checkRequired(opts, ['xPubKey'], cb)) return;
       try {
         xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
@@ -1114,7 +1114,7 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if(opts.hardwareSourcePublicKey) {
+        if (opts.hardwareSourcePublicKey) {
           this._addCopayerToWallet(wallet, opts, cb);
           return;
         }
@@ -1170,19 +1170,19 @@ export class WalletService implements IWalletService {
           );
         }
 
-          const hash = WalletService._getCopayerHash(opts.name, opts.xPubKey, opts.requestPubKey);
-          if (!this._verifySignature(hash, opts.copayerSignature, wallet.pubKey)) {
-            return cb(new ClientError());
-          }
+        const hash = WalletService._getCopayerHash(opts.name, opts.xPubKey, opts.requestPubKey);
+        if (!this._verifySignature(hash, opts.copayerSignature, wallet.pubKey)) {
+          return cb(new ClientError());
+        }
 
-          if (
-            _.find(wallet.copayers, {
-              xPubKey: opts.xPubKey
-            })
-          )
-            return cb(Errors.COPAYER_IN_WALLET);
-  
-          if (wallet.copayers.length == wallet.n) return cb(Errors.WALLET_FULL);
+        if (
+          _.find(wallet.copayers, {
+            xPubKey: opts.xPubKey
+          })
+        )
+          return cb(Errors.COPAYER_IN_WALLET);
+
+        if (wallet.copayers.length == wallet.n) return cb(Errors.WALLET_FULL);
 
         this._addCopayerToWallet(wallet, opts, cb);
       });
@@ -2859,7 +2859,6 @@ export class WalletService implements IWalletService {
 
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
-
     this._broadcastRawTx(opts.chain, opts.network, opts.rawTx, cb);
   }
 
@@ -4678,11 +4677,11 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.'}};
     }
 
     if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.'}};
     }
 
     // Buy crypto rules
@@ -4693,7 +4692,7 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && buyCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'This service is currently unavailable in your area.'}};
+      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
     }
 
     return cb(null, externalServicesConfig);
@@ -5460,7 +5459,7 @@ export class WalletService implements IWalletService {
 
       if (req.body.orderId) {
         URL = API + `/v1/orders/${req.body.orderId}`;
-      } else if (req.body.externalUserId || req.body.referenceId){
+      } else if (req.body.externalUserId || req.body.referenceId) {
         if (req.body.externalUserId) qs.push('externalUserId=' + req.body.externalUserId);
         if (req.body.referenceId) qs.push('referenceId=' + req.body.referenceId);
         if (req.body.startDate) qs.push('startDate=' + req.body.startDate);

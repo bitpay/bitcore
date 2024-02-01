@@ -500,7 +500,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return;
   }
 
-  _getEffectForNativeTransfer(value:string, to:string, from:string, callStack: string): Effect {
+  _getEffectForNativeTransfer(value: string, to: string, from: string, callStack: string): Effect {
     const effect = {
       to: Web3.utils.toChecksumAddress(to),
       from: Web3.utils.toChecksumAddress(from),
