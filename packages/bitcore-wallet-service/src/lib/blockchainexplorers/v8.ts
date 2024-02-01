@@ -519,7 +519,7 @@ export class V8 {
 
   estimateFeeV2(opts, cb) {
     const txType = opts.txType;
-    if(Number(txType) !== 2) {
+    if (Number(txType) !== 2) {
      return this.estimateFee(opts, cb);
     }
     const nbBlocks = Number(opts.nbBlocks) || 2;
