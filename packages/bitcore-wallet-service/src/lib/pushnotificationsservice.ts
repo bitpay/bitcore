@@ -44,6 +44,10 @@ const PUSHNOTIFICATIONS_TYPES = {
   NewAddress: {
     dataOnly: true
   },
+  ScanFinished: {
+    dataOnly: true,
+    broadcastToActiveUsers: true
+  },
   NewBlock: {
     dataOnly: true,
     broadcastToActiveUsers: true
@@ -613,10 +617,13 @@ export class PushNotificationsService {
         // if copayerid is associated to externalUserId use Braze subscriptions
         // avoid multiple notifications
         const allSubs = allSubsWithExternalId.length > 0 ? allSubsWithExternalId : allSubsWithToken;
+        const chainOrCoin = notification.data.chain || notification.data.coin;
+        const networkInfo = notification.data.network;
+        const hasChainNetworkInfo = chainOrCoin && networkInfo;
+        const chainNetworkMessage = hasChainNetworkInfo ? ` [${chainOrCoin}/${networkInfo}]` : '';
+
         logger.info(
-          `Sending ${notification.type} [${notification.data.chain || notification.data.coin}/${
-            notification.data.network
-          }] notifications to: ${allSubs.length} devices`
+          `Sending ${notification.type}${chainNetworkMessage} notifications to: ${allSubs.length} devices`
         );
         return cb(null, allSubs);
       });
