@@ -5144,31 +5144,32 @@ export class WalletService {
               try {
                 // check valid signature if order payment type is burn
                 if (merchantOrder.paymentType === PaymentType.BURN) {
-                  if (!merchantOrder.signature) {
-                    saveError(merchantOrder, data, new Error('Missing signature'));
-                    return;
-                  }
-                  const messageSignature =
-                    merchantOrder.txIdFromUser + '-' + merchantOrder.merchantCode + '-' + merchantOrder.amount;
+                  // TANTMP: tmp disalbe signature for testing qpay from miniapp
+                  // if (!merchantOrder.signature) {
+                  //   saveError(merchantOrder, data, new Error('Missing signature'));
+                  //   return;
+                  // }
+                  // const messageSignature =
+                  //   merchantOrder.txIdFromUser + '-' + merchantOrder.merchantCode + '-' + merchantOrder.amount;
 
-                  let messagePrefix = '';
-                  let bchAddress = '';
-                  if (merchantOrder.coin === 'xec') {
-                    const decoded = ecashaddr.decode(merchantOrder.userAddress);
-                    bchAddress = ecashaddr.encode('bitcoincash', decoded.type, decoded.hash);
-                  } else {
-                    bchAddress = Bitcore_[merchantOrder.coin].Address(merchantOrder.userAddress).toCashAddress();
-                  }
-                  let legacyAddress = bchjs.SLP.Address.toLegacyAddress(bchAddress);
-                  if (merchantOrder.coin === 'xec') {
-                    messagePrefix = Constants.MESSAGE_PREFIX.XEC;
-                  } else {
-                    messagePrefix = Constants.MESSAGE_PREFIX.XPI;
-                  }
-                  if (!messageLib.verify(messageSignature, legacyAddress, merchantOrder.signature, messagePrefix)) {
-                    saveError(merchantOrder, data, new Error('Invalid signature'));
-                    return;
-                  }
+                  // let messagePrefix = '';
+                  // let bchAddress = '';
+                  // if (merchantOrder.coin === 'xec') {
+                  //   const decoded = ecashaddr.decode(merchantOrder.userAddress);
+                  //   bchAddress = ecashaddr.encode('bitcoincash', decoded.type, decoded.hash);
+                  // } else {
+                  //   bchAddress = Bitcore_[merchantOrder.coin].Address(merchantOrder.userAddress).toCashAddress();
+                  // }
+                  // let legacyAddress = bchjs.SLP.Address.toLegacyAddress(bchAddress);
+                  // if (merchantOrder.coin === 'xec') {
+                  //   messagePrefix = Constants.MESSAGE_PREFIX.XEC;
+                  // } else {
+                  //   messagePrefix = Constants.MESSAGE_PREFIX.XPI;
+                  // }
+                  // if (!messageLib.verify(messageSignature, legacyAddress, merchantOrder.signature, messagePrefix)) {
+                  //   saveError(merchantOrder, data, new Error('Invalid signature'));
+                  //   return;
+                  // }
                 }
                 const txDetail = await this.getTxDetailForWalletWithPromise(
                   merchantOrder.txIdFromUser,
@@ -5518,7 +5519,8 @@ export class WalletService {
       let contentEmail = merchantOrder.listEmailContent[2];
       bot.sendMessage(config.merchantOrder.channelSuccessId, contentEmail, { parse_mode: 'HTML' });
     }
-    await this._handleEmailNotificationForMerchantOrder(merchantOrder);
+    // TANTMP: tmp disable send email for testing qpay mini app
+    // await this._handleEmailNotificationForMerchantOrder(merchantOrder);
   }
 
   _getPaymentTypeString(paymentType: PaymentType): string {
@@ -6259,10 +6261,9 @@ export class WalletService {
       !opts.coin ||
       !opts.merchantCode ||
       !opts.userAddress ||
-      !opts.amount ||
-      !opts.listEmailContent ||
-      !opts.listSubject
+      !opts.amount
     ) {
+      // TANTMP: temp not check email list and subject.
       return cb(new Error('Missing required parameter'));
     }
     try {
@@ -6297,9 +6298,10 @@ export class WalletService {
       } else {
         if (!merchantSelected.isElpsAccepted) {
           merchantOrder.paymentType = PaymentType.BURN;
-          if (!opts.signature) {
-            return cb(new Error('Missing signature'));
-          }
+          // TANTMP: disable checking signature for qpay mini app
+          // if (!opts.signature) {
+          //   return cb(new Error('Missing signature'));
+          // }
         } else {
           merchantOrder.paymentType = PaymentType.SEND;
         }
