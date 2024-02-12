@@ -913,8 +913,8 @@ export class API extends EventEmitter {
       return cb(new Error('Invalid coin'));
 
     var network = opts.network || 'livenet';
-    if (!_.includes(['testnet', 'livenet'], network))
-      return cb(new Error('Invalid network'));
+    if (!_.includes(['testnet', 'livenet', 'regtest'], network))
+      return cb(new Error('Invalid network: ' + network));
 
     if (!this.credentials) {
       return cb(new Error('Import credentials first with setCredentials()'));
