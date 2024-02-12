@@ -263,7 +263,7 @@ Address._transformBuffer = function(buffer, network, type) {
   } else {
     info.hashBuffer = buffer.slice(1);
   }
-  info.network = bufferVersion.network;
+  info.network = networkObj || bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
 };
