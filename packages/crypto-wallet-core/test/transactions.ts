@@ -1098,6 +1098,6 @@ describe('MATIC Transaction getChainId', () => {
     expect(testId).to.equal(80001);
 
     const regtestId = Transactions.get({ chain: 'MATIC' }).getChainId('regtest');
-    expect(regtestId).to.equal(1337);
+    expect(regtestId).to.equal(13375);
   });
 });
