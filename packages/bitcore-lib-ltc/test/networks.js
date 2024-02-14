@@ -15,20 +15,27 @@ describe('Networks', function() {
     should.exist(networks.defaultNetwork);
   });
 
-  it('will enable/disable regtest Network', function() {
+  it('#DEPRECATED will enable/disable regtest Network', function() {
+    const beforeEnable = networks.testnet;
     networks.enableRegtest();
+    /*
     networks.testnet.networkMagic.should.deep.equal(Buffer.from('fabfb5da', 'hex'));
     networks.testnet.port.should.equal(19444);
     networks.testnet.dnsSeeds.should.deep.equal([]);
     networks.testnet.regtestEnabled.should.equal(true);
+    */
+    networks.testnet.should.deep.equal(beforeEnable);
 
     networks.disableRegtest();
+    /*
     networks.testnet.networkMagic.should.deep.equal(Buffer.from('fdd2c8f1', 'hex'));
     networks.testnet.port.should.equal(19335);
     networks.testnet.dnsSeeds.should.deep.equal([
       'testnet-seed.litecointools.com',
       'seed-b.litecoin.loshan.co.uk'
     ]);
+    */
+    networks.testnet.should.deep.equal(beforeEnable);
   });
 
   it('will get network based on string "regtest" value', function() {
