@@ -44,7 +44,11 @@ function get(arg, keys) {
     }
     return undefined;
   }
-  return networkMaps[arg];
+  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
 }
 
 /**
@@ -108,7 +112,10 @@ function addNetwork(data) {
 
   _.each(network, function(value) {
     if (!_.isUndefined(value) && !_.isObject(value)) {
-      networkMaps[value] = network;
+      if(!networkMaps[value]) {
+        networkMaps[value] = [];
+      }
+      networkMaps[value].push(network);
     }
   });
 
@@ -177,7 +184,7 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'regtest',
+  alias: 'test',
   pubkeyhash: 0x6f, // 111
   privatekey: 0xef, // 239
   scripthash: 0x3a, // 58
