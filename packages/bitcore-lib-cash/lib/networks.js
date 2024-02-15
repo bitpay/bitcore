@@ -39,12 +39,11 @@ function get(arg, keys) {
       var filteredNet = _.pick(network, keys);
       var netValues = _.values(filteredNet);
       if(~netValues.indexOf(arg)) {
-	return network;
+	      return network;
       }
     }
     return undefined;
   }
-  return networkMaps[arg];
 }
 
 /***
