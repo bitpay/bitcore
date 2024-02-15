@@ -40,7 +40,7 @@ describe('Networks', function() {
 
   it('will get network based on string "regtest" value', function() {
     var network = networks.get('regtest');
-    network.should.equal(networks.testnet);
+    network.should.equal(networks.regtest);
   });
 
   it('should be able to define a custom Network', function() {
