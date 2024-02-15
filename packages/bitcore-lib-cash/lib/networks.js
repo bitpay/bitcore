@@ -44,6 +44,11 @@ function get(arg, keys) {
     }
     return undefined;
   }
+  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
 }
 
 /***
@@ -127,7 +132,10 @@ function indexNetworkBy(network, keys) {
     var key = keys[i];
     var networkValue = network[key];
     if(!_.isUndefined(networkValue) && !_.isObject(networkValue)) {
-      networkMaps[networkValue] = network;
+      if(!networkMaps[networkValue]) {
+        networkMaps[networkValue] = [];
+      }
+      networkMaps[networkValue].push(network);
     }
   }
 }
