@@ -5310,15 +5310,14 @@ export class WalletService implements IWalletService {
     return new Promise((resolve, reject) => {
       const keys = this.moonpayGetKeys(req);
       const API = keys.API;
-      const API_KEY = keys.API_KEY;
+      const SECRET_KEY = keys.SECRET_KEY;
 
       if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
         return reject(new ClientError("Moonpay's request missing arguments"));
       }
 
       const headers = {
-        Authorization: API_KEY,
-        'Content-Type': 'application/json',
+        Authorization: 'Api-Key ' + SECRET_KEY,
         Accept: 'application/json'
       };
       let URL: string;
