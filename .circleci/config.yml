@@ -5,7 +5,7 @@ version: 2.1
 executors:
   main:
     machine:
-      image: ubuntu-2004:202201-02
+      image: default # https://discuss.circleci.com/t/linux-image-deprecations-and-eol-for-2024/50177
       docker_layer_caching: true
     resource_class: large
     working_directory: ~/bitcore
@@ -30,6 +30,15 @@ commands:
       - run:
           name: Build & start blockchain containers
           command: docker-compose -f docker-compose.test.base.yml -f docker-compose.test.ci.yml up --detach
+  use_python2:
+    description: Set python 2.7 as global python version on the executor machine
+    steps:
+      - run:
+          name: Use Python 2
+          command: |
+            pyenv versions
+            pyenv install -s 2.7
+            pyenv global 2.7
   use_node:
     description: Force usage of correct node version on the executor machine
     steps:
@@ -68,6 +77,7 @@ jobs:
     executor: main
     steps:
       - checkout
+      - use_python2
       - use_node
     #   - run:
     #       name: Install Chrome
@@ -81,7 +91,7 @@ jobs:
           name: Print versions
           command: |
             nvm use default
-            set -x && node -v && npm -v && google-chrome --version && docker version
+            set -x && node -v && npm -v && google-chrome --version && docker version && python --version
       - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
