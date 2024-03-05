@@ -183,18 +183,21 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
 
 
 PublicKeyHashInput.SCRIPT_MAX_SIZE = 73 + 34; // sigsize (1 + 72) + pubkey (1 + 33)
-PublicKeyHashInput.REDEEM_SCRIPT_SIZE = 22; // OP_0 (1) pubkeyhash (1 + 20)
+PublicKeyHashInput.REDEEM_SCRIPT_SIZE = 1 + 22; // len (1) OP_0 (1) pubkeyhash (1 + 20)
 
 PublicKeyHashInput.prototype._estimateSize = function() {
-  var WITNESS_DISCOUNT = 4;
+  let result = this._getBaseSize();
+  result += 1; // script size
+  const WITNESS_DISCOUNT = 4;
   const witnessSize = PublicKeyHashInput.SCRIPT_MAX_SIZE / WITNESS_DISCOUNT;
   if (this.output.script.isWitnessPublicKeyHashOut()) {
-    return witnessSize;
+    result += witnessSize;
   } else if (this.output.script.isScriptHashOut()) {
-    return witnessSize + PublicKeyHashInput.REDEEM_SCRIPT_SIZE;
+    result += witnessSize + PublicKeyHashInput.REDEEM_SCRIPT_SIZE;
   } else {
-    return PublicKeyHashInput.SCRIPT_MAX_SIZE;
+    result += PublicKeyHashInput.SCRIPT_MAX_SIZE;
   }
+  return result;
 };
 
 module.exports = PublicKeyHashInput;
