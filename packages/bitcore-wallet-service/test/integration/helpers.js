@@ -75,6 +75,7 @@ helpers.before = function(cb) {
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
     be.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
     be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
+    be.getReserve = sinon.stub().callsArgWith(0, null, Defaults.MIN_XRP_BALANCE);
 
     // just a number >0 (xrp does not accept 0)
     be.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
