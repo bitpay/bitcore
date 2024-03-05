@@ -8,6 +8,7 @@ import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
+import logger from '../logger';
 require('heapdump');
 let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 const services: Array<any> = [];
@@ -39,12 +40,23 @@ export const FullClusteredWorker = async () => {
   }
 };
 
+let stopping = false;
 const stop = async () => {
-  console.log(`Shutting down ${process.pid}`);
+  if (stopping) {
+    logger.error('Force stopping all workers');
+    process.exit(1);
+  }
+  stopping = true;
+
+  logger.info(`Shutting down ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
   }
-  process.exit();
+
+  setTimeout(() => {
+    logger.error('All workers did not shut down gracefully after 30 seconds, exiting');
+    process.exit(1);
+  }, 30 * 1000).unref();
 };
 
 if (require.main === module) {

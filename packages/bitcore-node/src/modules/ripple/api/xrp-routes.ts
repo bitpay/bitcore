@@ -11,3 +11,13 @@ XrpRoutes.get('/api/XRP/:network/address/:address/txs/count', async (req, res) =
     res.status(500).send(err);
   }
 });
+
+XrpRoutes.get('/api/XRP/:network/reserve', async (req, res) => {
+  let { network } = req.params;
+  try {
+    const reserve = await XRP.getReserve(network);
+    res.json({ reserve });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});

@@ -1,33 +1,44 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
 import { ChainStateProvider } from '../../providers/chain-state';
+import logger from '../../logger';
 
 function streamCoins(req, res) {
-  let { address, chain, network } = req.params;
-  let { unspent, limit = 10, since } = req.query;
-  let payload = {
-    chain,
-    network,
-    address,
-    req,
-    res,
-    args: { ...req.query, unspent, limit, since }
-  };
-  ChainStateProvider.streamAddressTransactions(payload);
+  try {
+    let { address, chain, network } = req.params;
+    let { unspent, limit = 10, since } = req.query;
+    let payload = {
+      chain,
+      network,
+      address,
+      req,
+      res,
+      args: { ...req.query, unspent, limit, since }
+    };
+    ChainStateProvider.streamAddressTransactions(payload);
+  } catch (err) {
+    logger.error('Error streaming coins: %o', err);
+    return res.status(500).send(err);
+  }
 }
 
 router.get('/:address', function(req, res) {
-  let { address, chain, network } = req.params;
-  let { unspent, limit = 10, since } = req.query;
-  let payload = {
-    chain,
-    network,
-    address,
-    req,
-    res,
-    args: { unspent, limit, since }
-  };
-  ChainStateProvider.streamAddressUtxos(payload);
+  try {
+    let { address, chain, network } = req.params;
+    let { unspent, limit = 10, since } = req.query;
+    let payload = {
+      chain,
+      network,
+      address,
+      req,
+      res,
+      args: { unspent, limit, since }
+    };
+    return ChainStateProvider.streamAddressUtxos(payload);
+  } catch (err) {
+    logger.error('Error getting address: %o', err);
+    return res.status(500).send(err);
+  }
 });
 
 router.get('/:address/txs', streamCoins);
@@ -44,6 +55,7 @@ router.get('/:address/balance', async function(req, res) {
     });
     return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
   } catch (err) {
+    logger.error('Error getting address balance: %o', err);
     return res.status(500).send(err);
   }
 });

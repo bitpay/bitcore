@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import * as _ from 'lodash';
 import * as sinon from 'sinon';
 import request from 'request';
-import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { XRP } from '../../../src/modules/ripple/api/csp';
 import { XrpBlockStorage } from '../../../src/modules/ripple/models/block';
@@ -22,7 +21,7 @@ describe('Ripple Api', function() {
   after(async () => {
     await intAfterHelper(suite);
     const client = await XRP.getClient(network);
-    await client.disconnect();
+    client.rpc.disconnect();
   });
 
   beforeEach(async () => {
@@ -31,9 +30,9 @@ describe('Ripple Api', function() {
 
   it('should be able to get the ledger', async () => {
     const client = await XRP.getClient(network);
-    const ledger = await client.getLedger();
+    const { ledger } = await client.getBlock();
     expect(ledger).to.exist;
-    expect(ledger.ledgerHash).to.exist;
+    expect(ledger.ledger_hash).to.exist;
   });
 
   it('should be able to get local tip', async () => {
@@ -60,28 +59,32 @@ describe('Ripple Api', function() {
     expect(tip.hash).to.eq('528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7');
   });
 
-  it('should transform a ripple rpc response into a bitcore transaction', async () => {
-    const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
-    for (const tx of txs) {
-      const bitcoreTx = (await XRP.transform(tx, 'testnet')) as IXrpTransaction;
+  for (const tx of RippleTxs) {
+    it('should transform a ripple rpc response into a bitcore transaction: ' + tx.hash, async () => {
+      const bitcoreTx = await XRP.transform(tx, 'testnet');
       expect(bitcoreTx).to.have.property('chain');
-      expect(tx.address).to.eq(bitcoreTx.from);
-      expect(tx.outcome.ledgerVersion).to.eq(bitcoreTx.blockHeight);
-      expect(tx.outcome.fee).to.eq((bitcoreTx.fee / 1e6).toString());
-      expect(Number(tx.outcome.balanceChanges[bitcoreTx.from][0].value)).to.be.lt(0);
-      if (tx.outcome.deliveredAmount) {
-        expect(Object.keys(tx.outcome.balanceChanges)).to.contain(bitcoreTx.to!);
-        expect(tx.outcome.deliveredAmount!.value).to.eq((bitcoreTx.value / 1e6).toString());
-        expect(Number(tx.outcome.balanceChanges[bitcoreTx.to!][0].value)).to.be.gt(0);
+      expect(tx.Account).to.eq(bitcoreTx.from);
+      expect(tx.ledger_index).to.eq(bitcoreTx.blockHeight);
+      expect(tx.Fee).to.eq((bitcoreTx.fee).toString());
+      const nodes = tx.meta.AffectedNodes.filter(node => 'ModifiedNode' in node && node.ModifiedNode.FinalFields?.Account == tx.Account);
+      const sentVal = nodes.reduce((acc, node) => acc += 'ModifiedNode' in node ? Number(node.ModifiedNode.FinalFields?.Balance) - Number(node.ModifiedNode.PreviousFields?.Balance) : 0, 0);
+      expect(sentVal).to.be.lt(0);
+      if (tx.meta.delivered_amount) {
+        const modNodes = tx.meta.AffectedNodes.filter(n => 'ModifiedNode' in n && n.ModifiedNode.FinalFields?.Account === bitcoreTx.to);
+        const createNodes = tx.meta.AffectedNodes.filter(n => 'CreatedNode' in n && n.CreatedNode.NewFields.Account === bitcoreTx.to);
+        expect(modNodes.length + createNodes.length > 0).to.equal(true);
+        expect(tx.meta.delivered_amount).to.eq(bitcoreTx.value.toString());
+        let receivedVal = modNodes.reduce((acc, node) => acc += 'ModifiedNode' in node ? Number(node.ModifiedNode.FinalFields?.Balance) - Number(node.ModifiedNode.PreviousFields?.Balance) : 0, 0);
+        receivedVal += createNodes.reduce((acc, node) => acc += 'CreatedNode' in node ? Number(node.CreatedNode.NewFields.Balance) : 0, 0);
+        expect(receivedVal).to.be.gt(0);
       }
-    }
-  });
+    });
+  }
 
   it('should tag txs from a wallet', async () => {
     const chain = 'XRP';
     const network = 'testnet';
 
-    const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
     const wallet = new ObjectId();
     const address = 'rN33DVnneYUUgTmcxXnXvgAL1BECuLZ8pm';
     await WalletAddressStorage.collection.insertOne({
@@ -91,7 +94,7 @@ describe('Ripple Api', function() {
       address,
       processed: true
     });
-    for (const tx of txs) {
+    for (const tx of RippleTxs) {
       const bitcoreTx = (await XRP.transform(tx, network)) as IXrpTransaction;
       const bitcoreCoins = XRP.transformToCoins(tx, network);
       const { transaction, coins } = await XRP.tag(chain, network, bitcoreTx, bitcoreCoins);
@@ -123,11 +126,10 @@ describe('Ripple Api', function() {
       processed: true
     });
 
-    const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
     const blockTxs = new Array<IXrpTransaction>();
     const blockCoins = new Array<IXrpCoin>();
 
-    for (const tx of txs) {
+    for (const tx of RippleTxs) {
       const bitcoreTx = XRP.transform(tx, network) as IXrpTransaction;
       const bitcoreCoins = XRP.transformToCoins(tx, network);
       const { transaction, coins } = await XRP.tag(chain, network, bitcoreTx, bitcoreCoins);
@@ -143,7 +145,7 @@ describe('Ripple Api', function() {
     });
     const walletTxs = await XrpTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
 
-    expect(walletTxs.length).eq(txs.length);
+    expect(walletTxs.length).eq(RippleTxs.length);
   });
 
   describe('getBlockBeforeTime', () => {
