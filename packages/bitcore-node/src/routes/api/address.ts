@@ -1,7 +1,7 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
-import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
+import { ChainStateProvider } from '../../providers/chain-state';
 
 function streamCoins(req, res) {
   try {

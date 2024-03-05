@@ -1,9 +1,9 @@
 import 'source-map-support/register';
+import logger from '../logger';
 import { Event } from '../services/event';
 import { Pruning } from '../services/pruning';
 import { Storage } from '../services/storage';
 import '../utils/polyfills';
-import logger from '../logger';
 require('heapdump');
 const services: Array<any> = [];
 

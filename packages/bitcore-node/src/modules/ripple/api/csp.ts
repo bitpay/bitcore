@@ -3,6 +3,14 @@ import { ObjectId } from 'mongodb';
 import request from 'request';
 import { Readable } from 'stream';
 import util from 'util';
+import { AccountTxRequest, AccountTxResponse } from 'xrpl/dist/npm/models';
+import { Ledger } from 'xrpl/dist/npm/models/ledger';
+import {
+  CheckCreate,
+  Payment,
+  TransactionMetadata
+} from 'xrpl/dist/npm/models/transactions';
+import { Node } from 'xrpl/dist/npm/models/transactions/metadata';
 import Config from '../../../config';
 import logger from '../../../logger';
 import { CacheStorage } from '../../../models/cache';
@@ -27,14 +35,6 @@ import { GetBlockParams } from '../../../types/namespaces/ChainStateProvider';
 import { XrpBlockStorage } from '../models/block';
 import { AccountTransaction, BlockTransaction, IXrpTransaction, RpcTransaction } from '../types';
 import { RippleDbWalletTransactions } from './wallet-tx-transform';
-import { Ledger } from 'xrpl/dist/npm/models/ledger';
-import {
-  TransactionMetadata,
-  Payment,
-  CheckCreate
-} from 'xrpl/dist/npm/models/transactions';
-import { Node } from 'xrpl/dist/npm/models/transactions/metadata';
-import { AccountTxRequest, AccountTxResponse } from 'xrpl/dist/npm/models';
 
 
 export class RippleStateProvider extends InternalStateProvider implements IChainStateService {

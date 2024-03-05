@@ -2,8 +2,8 @@ import { Transform } from 'stream';
 import { ITransaction } from '../../../models/baseTransaction';
 import { IWallet } from '../../../models/wallet';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
-import { RippleStateProvider } from './csp';
 import { BlockTransaction } from '../types';
+import { RippleStateProvider } from './csp';
 export class RippleWalletTransactions extends Transform {
   walletAddresses?: Array<IWalletAddress>;
   constructor(private wallet: IWallet, private csp: RippleStateProvider) {

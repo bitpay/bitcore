@@ -1,5 +1,6 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
+import logger from '../logger';
 import { Modules } from '../modules';
 import { Api } from '../services/api';
 import { Event } from '../services/event';
@@ -7,7 +8,6 @@ import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
-import logger from '../logger';
 require('heapdump');
 
 let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }, { arg: 'CLUSTER', type: 'bool' }]);

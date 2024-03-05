@@ -1,5 +1,5 @@
-import { ObjectId } from 'mongodb';
 import { CryptoRpc } from 'crypto-rpc';
+import { ObjectId } from 'mongodb';
 import { BaseModule } from '../..';
 import logger from '../../../logger';
 import { RippleStateProvider } from './csp';
