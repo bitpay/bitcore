@@ -46,6 +46,8 @@ export class V8 {
   baseUrl: string;
   request: request;
   Client: typeof Client;
+  private _cachedReserve: number;
+  private _cachedReserveTs: number;
 
   constructor(opts) {
     $.checkArgument(opts);
@@ -588,6 +590,29 @@ export class V8 {
           return cb(null, res);
         } catch (err) {
           return cb(new Error('Could not get height from block explorer'));
+        }
+      })
+      .catch(cb);
+  }
+
+  getReserve(cb) {
+    if (this._cachedReserveTs && Date.now() - this._cachedReserveTs < 20 * 60 * 1000) { // cache for 20 mins
+      return cb(null, this._cachedReserve);
+    }
+    const url = this.baseUrl + '/reserve';
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          if (ret.reserve != null) {
+            this._cachedReserve = ret.reserve;
+            this._cachedReserveTs = Date.now();
+          }
+          return cb(null, ret.reserve ?? Defaults.MIN_XRP_BALANCE);
+        } catch (err) {
+          logger.error('[v8.js] Error getting reserve: %o', err);
+          return cb(null, Defaults.MIN_XRP_BALANCE);
         }
       })
       .catch(cb);

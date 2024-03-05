@@ -2593,6 +2593,17 @@ export class WalletService implements IWalletService {
                   txp = TxProposal.create(txOpts);
                   next();
                 },
+                async next => {
+                  if (opts.chain != 'xrp') return next();
+                  this.getBalance({ chain: opts.chain, wallet }, async (err, bal) => {
+                    if (err) return next(err);
+                    ChainService.getReserve(this, wallet, (err, reserve) => {
+                      if (err) return next(err);
+                      if (reserve > bal.totalConfirmedAmount - txp.getTotalAmount() - txp.fee) return next(Errors.BALANCE_BELOW_RESERVE);
+                      return next();
+                    });
+                  });
+                },
                 next => {
                   return ChainService.selectTxInputs(this, txp, wallet, opts, next);
                 },
