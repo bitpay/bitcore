@@ -3395,6 +3395,15 @@ export class API extends EventEmitter {
     });
   }
 
+  moonpayGetSellQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/moonpay/sellQuote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   moonpayGetSignedPaymentUrl(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post(
@@ -3405,6 +3414,28 @@ export class API extends EventEmitter {
           return resolve(data);
         }
       );
+    });
+  }
+
+  moonpayGetSellSignedPaymentUrl(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/moonpay/sellSignedPaymentUrl',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  moonpayCancelSellTransaction(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/moonpay/cancelSellTransaction', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
     });
   }
 
