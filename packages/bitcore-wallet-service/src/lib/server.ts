@@ -439,6 +439,7 @@ export class WalletService implements IWalletService {
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
         message += ' %o';
+        args[i] = args[i]?.stack || args[i]?.message || args[i];
       }
     }
 
@@ -568,6 +569,10 @@ export class WalletService implements IWalletService {
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) {
       return cb(new ClientError('Invalid network'));
+    }
+
+    if (opts.network === 'regtest' && !config.allowRegtest) {
+      return cb(new ClientError('Regtest is not allowed for this environment'));
     }
 
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
@@ -1159,7 +1164,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (wallet.network != xPubKey.network.name) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 

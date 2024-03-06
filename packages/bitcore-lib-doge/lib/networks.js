@@ -171,7 +171,12 @@ addNetwork({
   privatekey: 0xf1,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
-  xprivkey: 0x04358394
+  xprivkey: 0x04358394,
+  networkMagic: 0xfcc1b7dc,
+  port: 44556,
+  dnsSeeds: [
+    'testseed.jrn.me.uk'
+  ]
 });
 
 /**
@@ -189,99 +194,17 @@ addNetwork({
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
+  networkMagic: 0xfabfb5da,
+  port: 18444,
+  dnsSeeds: []
 });
 
 var regtest = get('regtest');
 
 
-// Add configurable values for testnet/regtest
-
-var TESTNET = {
-  PORT: 44556,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfcc1b7dc),
-  DNS_SEEDS: [
-    'testseed.jrn.me.uk'
-  ]
-};
-
-for (var key in TESTNET) {
-  if (!_.isObject(TESTNET[key])) {
-    networkMaps[TESTNET[key]] = testnet;
-  }
-}
-
-var REGTEST = {
-  PORT: 18444,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfabfb5da),
-  DNS_SEEDS: []
-};
-
-for (var key in REGTEST) {
-  if (!_.isObject(REGTEST[key])) {
-    networkMaps[REGTEST[key]] = testnet;
-  }
-}
-
-Object.defineProperty(testnet, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PORT;
-    } else {
-      return TESTNET.PORT;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.NETWORK_MAGIC;
-    } else {
-      return TESTNET.NETWORK_MAGIC;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.DNS_SEEDS;
-    } else {
-      return TESTNET.DNS_SEEDS;
-    }
-  }
-});
-
-Object.defineProperty(regtest, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    return REGTEST.NETWORK_MAGIC;
-  }
-});
-Object.defineProperty(regtest, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    return REGTEST.DNS_SEEDS;
-  }
-});
-Object.defineProperty(regtest, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    return REGTEST.PORT;
-  }
-});
-
 /**
  * @function
+ * @deprecated
  * @member Networks#enableRegtest
  * Will enable regtest features for testnet
  */
@@ -291,6 +214,7 @@ function enableRegtest() {
 
 /**
  * @function
+ * @deprecated
  * @member Networks#disableRegtest
  * Will disable regtest features for testnet
  */

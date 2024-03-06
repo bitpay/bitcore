@@ -15,25 +15,18 @@ describe('Networks', function() {
     should.exist(networks.defaultNetwork);
   });
 
-  it('will enable/disable regtest Network', function() {
+  it('should not replace testnet network with regtest', function() {
+    const beforeEnable = networks.testnet;
     networks.enableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(Buffer.from('fabfb5da', 'hex'));
-    networks.testnet.port.should.equal(19444);
-    networks.testnet.dnsSeeds.should.deep.equal([]);
-    networks.testnet.regtestEnabled.should.equal(true);
+    networks.testnet.should.deep.equal(beforeEnable);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(Buffer.from('fdd2c8f1', 'hex'));
-    networks.testnet.port.should.equal(19335);
-    networks.testnet.dnsSeeds.should.deep.equal([
-      'testnet-seed.litecointools.com',
-      'seed-b.litecoin.loshan.co.uk'
-    ]);
+    networks.testnet.should.deep.equal(beforeEnable);
   });
 
   it('will get network based on string "regtest" value', function() {
     var network = networks.get('regtest');
-    network.should.equal(networks.testnet);
+    network.should.equal(networks.regtest);
   });
 
   it('should be able to define a custom Network', function() {

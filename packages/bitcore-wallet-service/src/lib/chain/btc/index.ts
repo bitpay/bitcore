@@ -950,10 +950,9 @@ export class BtcChain implements IChain {
   protected _isCorrectNetwork(wallet, addr) {
     const addrNetwork = addr.network.toString();
     const walNetwork = wallet.network;
-    const walChain = wallet.chain || wallet.coin; // wallet.coin is for backward compatibility
 
-    if (addrNetwork === 'regtest' && walNetwork === 'testnet') {
-      return config.blockchainExplorerOpts?.[walChain]?.testnet?.regtestEnabled;
+    if (addrNetwork === 'testnet' && walNetwork === 'regtest') {
+      return !!config.allowRegtest;
     }
     return addrNetwork === walNetwork;
   }
