@@ -101,7 +101,7 @@
     "bitcore-wallet-client": "^10.0.27",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
-    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#b1c30f6981f1115dfbc2ba55b993b383d1ba0e1b",
+    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#2c94b2a671021ff8c76d08233147fe197f0794de",
     "crypto-wallet-core": "^10.0.27",
     "heapdump": "0.3.15",
     "http": "0.0.0",
