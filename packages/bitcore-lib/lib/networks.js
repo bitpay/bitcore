@@ -113,7 +113,6 @@ function addNetwork(data) {
   networks.push(network);
 
   return network;
-
 }
 
 /**

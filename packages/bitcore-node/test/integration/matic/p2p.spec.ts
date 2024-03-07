@@ -1,6 +1,6 @@
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
-import { Web3 } from 'crypto-wallet-core';
+import { Web3, Transactions } from 'crypto-wallet-core';
 import sinon from 'sinon';
 import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
@@ -65,16 +65,19 @@ async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
 describe('Polygon', function() {
   const suite = this;
   this.timeout(50000);
+  const sandbox = sinon.createSandbox();
 
   before(async () => {
     await intBeforeHelper();
     await resetDatabase();
     await Api.start();
+    sandbox.stub(Transactions.get({ chain }), 'getChainId').returns(1337);
   });
 
   after(async () => {
     await Api.stop();
     await intAfterHelper(suite);
+    sandbox.restore();
   });
 
   it('should be able to create a wallet with an address', async () => {

@@ -15,19 +15,13 @@ describe('Networks', function() {
     should.exist(networks.defaultNetwork);
   });
 
-  it('will enable/disable regtest Network', function() {
+  it('should not replace testnet network with regtest', function() {
+    const beforeEnable = networks.testnet;
     networks.enableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fabfb5da', 'hex'));
-    networks.testnet.port.should.equal(18444);
-    networks.testnet.dnsSeeds.should.deep.equal([]);
-    networks.testnet.regtestEnabled.should.equal(true);
+    networks.testnet.should.deep.equal(beforeEnable);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fcc1b7dc', 'hex'));
-    networks.testnet.port.should.equal(44556);
-    networks.testnet.dnsSeeds.should.deep.equal([
-      'testseed.jrn.me.uk',
-    ]);
+    networks.testnet.should.deep.equal(beforeEnable);
   });
 
   it('will get network based on string "regtest" value', function() {
