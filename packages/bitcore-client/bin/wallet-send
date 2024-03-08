@@ -72,17 +72,17 @@ const main = async () => {
     params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
     const changeIdx = params.change ? wallet.addressIndex : null;
     const tx = await wallet.newTx(params);
-    console.log('unsignedRawTx: ', tx);
+    console.log('UnsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
     const signedTx = await wallet.signTx({ tx, passphrase, changeAddressIdx: changeIdx });
-    console.log('signedRawTx: ', signedTx);
-    const confirmed = await promptly.confirm('broadcast? (y/n)');
+    console.log('SignedRawTx: ', signedTx);
+    const confirmed = await promptly.confirm('Broadcast? (y/n)');
     if (!confirmed) {
       return;
     }
-    const transaction = await wallet.broadcast({ tx:signedTx });
-    console.log('txid: ', transaction.txid);
+    const transaction = await wallet.broadcast({ tx: signedTx });
+    console.log('Txid: ', transaction.txid);
     console.log('Transaction broadcasted');
   } catch (e) {
     console.error(e);
