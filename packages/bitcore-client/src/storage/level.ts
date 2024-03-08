@@ -112,11 +112,11 @@ export class Level {
 
   async getAddress(params: { name: string; address: string; keepAlive: boolean; open: boolean }) {
     const { name, address, keepAlive, open } = params;
-    const key: any = await this.getKey({ address, name, keepAlive, open });
-    if (!key) {
+    const data: string = (await this.getKey({ address, name, keepAlive, open })).toString();
+    if (!data) {
       return null;
     }
-    const { pubKey, path } = JSON.parse(key.toStore);
+    const { pubKey, path } = JSON.parse(data);
     return { address, pubKey, path };
   }
   

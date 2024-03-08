@@ -182,7 +182,7 @@ export class TextFile {
     if (!key) {
       return null;
     }
-    const { pubKey, path } = JSON.parse(key.toStore);
+    const { pubKey, path } = JSON.parse(key);
     return { address, pubKey, path };
   }
 

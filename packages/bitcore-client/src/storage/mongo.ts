@@ -145,7 +145,7 @@ export class Mongo {
     if (!params.keepAlive) {
       await this.close();
     }
-    return key.data;
+    return key?.data;
   }
 
   async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
@@ -165,11 +165,11 @@ export class Mongo {
 
   async getAddress(params: { name: string; address: string, keepAlive: boolean; open: boolean}) {
     const { name, address, keepAlive, open } = params;
-    const key = await this.getKey({ address, name, keepAlive, open });
-    if (!key) {
+    const data = await this.getKey({ address, name, keepAlive, open });
+    if (!data) {
       return null;
     }
-    const { pubKey, path } = JSON.parse(key.data);
+    const { pubKey, path } = data;
     return { address, pubKey, path };
   }
 

@@ -54,6 +54,12 @@ export class Storage {
     return dbs;
   }
 
+  async close() {
+    if (typeof this.storageType.close === 'function') {
+      await this.storageType.close();
+    }
+  }
+
   async loadWallet(params: { name: string }) {
     const { name } = params;
     let wallet;
