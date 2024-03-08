@@ -147,7 +147,7 @@ export class TextFile {
 
   async getKey(params: { address: string; name: string; keepAlive: boolean; open: boolean }) {
     const { address, name } = params;
-    return new Promise<void>(resolve => {
+    return new Promise(resolve => {
       fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' })
         .pipe(StreamUtil.jsonlBufferToObjectMode())
         .on('data', data => {
@@ -156,7 +156,7 @@ export class TextFile {
           }
         })
         .on('end', () => {
-          resolve();
+          resolve(null);
         });
     });
   }
@@ -173,6 +173,48 @@ export class TextFile {
       writeStream.once('close', () => {
         resolve();
       });
+    });
+  }
+
+  async getAddress(params: { name: string; address: string; keepAlive: boolean; open: boolean }) {
+    const { name, address, keepAlive, open } = params;
+    const key: any = await this.getKey({ name, address, keepAlive, open });
+    if (!key) {
+      return null;
+    }
+    const { pubKey, path } = JSON.parse(key.toStore);
+    return { address, pubKey, path };
+  }
+
+  async getAddresses(params: { name: string; limit?: number; skip?: number }) {
+    const { name, limit, skip } = params;
+    const addresses = [];
+    let skipped = 0;
+    return new Promise((resolve, reject) => {
+      const stream = fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' });
+      stream.pipe(StreamUtil.jsonlBufferToObjectMode())
+        .on('data', data => {
+          if (data.name === name) {
+            if (skipped <= skip) {
+              skipped++;
+              return;
+            }
+            if (limit && addresses.length >= limit) {
+              stream.destroy();
+              resolve(addresses);
+            }
+
+            const address = data.address;
+            const valJSON = JSON.parse(data.toStore.toString());
+            addresses.push({ address, pubKey: valJSON.pubKey, path: valJSON.path });
+          }
+        })
+        .on(('error'), err => {
+          reject(err);
+        })
+        .on('end', () => {
+          resolve(addresses);
+        });
     });
   }
 }

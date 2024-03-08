@@ -1,6 +1,5 @@
 import * as Bcrypt from 'bcrypt';
-import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, Transactions, Web3 } from 'crypto-wallet-core';
-import { ethers } from 'ethers'; // TODO import from CWC once PR is merged
+import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, ethers, Transactions, Web3, xrpl } from 'crypto-wallet-core';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
@@ -15,13 +14,15 @@ const chainLibs = {
   DOGE: BitcoreLibDoge,
   LTC: BitcoreLibLtc,
   ETH: { Web3, ethers },
-  MATIC: { Web3, ethers }
+  MATIC: { Web3, ethers },
+  XRP: xrpl
 };
 
 export interface KeyImport {
   address: string;
   privKey?: string;
   pubKey?: string;
+  path?: string;
 }
 export interface WalletObj {
   name: string;
@@ -74,6 +75,8 @@ export class Wallet {
   tokens?: Array<any>;
   lite: boolean;
   addressType: string;
+
+  static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
@@ -418,6 +421,8 @@ export class Wallet {
     lockUntilBlock?: number;
     lockUntilDate?: Date;
     isSweep?: boolean;
+    type?: string;
+    flags?: number;
   }) {
     const chain = params.token ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
@@ -454,7 +459,9 @@ export class Wallet {
       replaceByFee: params.replaceByFee,
       lockUntilBlock: params.lockUntilBlock,
       lockUntilDate: params.lockUntilDate,
-      isSweep: params.isSweep
+      isSweep: params.isSweep,
+      type: params.type,
+      flags: params.flags
     };
     return Transactions.create(payload);
   }
@@ -584,6 +591,19 @@ export class Wallet {
       pubKey: this.authPubKey
     });
     return walletAddresses.map(walletAddress => walletAddress.address);
+  }
+
+  async getLocalAddress(address) {
+    return this.storage.getAddress({ name: this.name, address });
+  }
+
+  async getLocalAddresses(limit?: number, skip?: number) {
+    return this.storage.getAddresses({ name: this.name, limit, skip });
+  }
+
+  async checkAddressOnServer(address) {
+    const walletAddresses = await this.getAddresses();
+    return !!walletAddresses.find(a => a === address);
   }
 
   deriveAddress(addressIndex, isChange) {
@@ -749,6 +769,11 @@ export class Wallet {
 
     const tx: string = await this.newTx(params);
     return { tx, params };
+  }
+
+  async getAccountFlags({ index }) {
+    const account = this.deriveAddress(index ?? 0, false);
+    return this.client.getAccountFlags({ address: account });
   }
 }
 

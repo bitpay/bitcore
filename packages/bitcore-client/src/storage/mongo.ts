@@ -162,4 +162,23 @@ export class Mongo {
       console.error(error);
     }
   }
+
+  async getAddress(params: { name: string; address: string, keepAlive: boolean; open: boolean}) {
+    const { name, address, keepAlive, open } = params;
+    const key = await this.getKey({ address, name, keepAlive, open });
+    if (!key) {
+      return null;
+    }
+    const { pubKey, path } = JSON.parse(key.data);
+    return { address, pubKey, path };
+  }
+
+  async getAddresses(params: { name: string; limit?: number; skip?: number }) {
+    const { name, limit, skip } = params;
+    const keys = await this.collection.find({ name }, {}, { $limit: limit, $skip: skip }).toArray();
+    return keys.map(k => {
+      const { pubKey, path } = JSON.parse(k.data);
+      return { address: k.address, pubKey, path };
+    });
+  }
 }

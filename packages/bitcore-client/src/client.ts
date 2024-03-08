@@ -19,7 +19,9 @@ export class Client {
       return await request(params);
     } catch (err) {
       if (err.statusCode) {
-        throw new Error(`${err.statusCode} - ${params.url} - "${err.error}"`);
+        throw new Error(`${err.statusCode} - ${params.url} - "${JSON.stringify(err.error)}"`);
+      } else if (err.error instanceof Error) {
+        throw err.error;
       }
       throw err;
     }
@@ -210,5 +212,11 @@ export class Client {
       headers: { 'x-signature': signature },
       json: true
     });
+  }
+
+  getAccountFlags(params: { address: string }) {
+    const { address } = params;
+    const url = `${this.apiUrl}/address/${address}/flags`;
+    return this._request({ method: 'GET', url, json: true });
   }
 }
