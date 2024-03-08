@@ -21,10 +21,11 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, to, amount, token, storageType, rbf, tag } = program.opts();
   let { feeRate: feeRateParam } = program.opts();
-  let wallet;
   let data;
   try {
     data = await getCurrencies();
@@ -104,4 +105,6 @@ function getCurrencies() {
   });
 }
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

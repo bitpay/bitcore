@@ -27,11 +27,13 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
-(async () => {
+let wallet;
+
+const main = async () => {
   const { name, set, index, path, storageType = 'Level' } = program.opts();
   let { fee } = program.opts();
 
-  const wallet = await Wallet.loadWallet({ name, path, storageType });
+  wallet = await Wallet.loadWallet({ name, path, storageType });
   if (wallet.chain.toLowerCase() !== 'xrp') {
     console.log('Wallet is not an XRP wallet');
     return;
@@ -75,5 +77,8 @@ program
   const transaction = await wallet.broadcast({ tx: signedTx });
   console.log('Txid: ', transaction.txid);
   console.log('Transaction broadcasted');
-})()
-  .catch(console.error);
+};
+
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

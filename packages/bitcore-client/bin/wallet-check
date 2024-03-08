@@ -11,29 +11,31 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, index, storageType = 'Level' } = program.opts();
   try {
-    const wallet = await Wallet.loadWallet({ name, path, storageType });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     await wallet.syncAddresses();
     const registered = await wallet.checkWallet();
     console.log(`Last server address: ${registered.lastAddress} (checksum: ${registered.sum})`);
     
     if (!wallet.addressIndex) {
-      console.log('No local addresses. Derive an address with `wallet derive --name <name>`');
+      console.log('No local addresses. Derive an address with `wallet derive --name <name> --gap 1`');
       return;
     } else {
       const address = wallet.deriveAddress(wallet.addressIndex - 1, false);
-      console.log(`Last local address: ${address} (m/0/${wallet.addressIndex - 1})`);
+      const addressObj = await wallet.getLocalAddress(address);
+      console.log(`Last local address: ${address} (${addressObj?.path || `m/0/${wallet.addressIndex - 1}`})`);
     }
 
     if (index) {
       console.log();
       const address = wallet.deriveAddress(index, false);
       const chgAddress = wallet.deriveAddress(index, true);
-      const allAddresses = await wallet.getLocalAddresses();
-      const addressObj = allAddresses.find(a => a.address === address);
-      const chgAddressObj = allAddresses.find(a => a.address === chgAddress);
+      const addressObj = await wallet.getLocalAddress(address);
+      const chgAddressObj = await wallet.getLocalAddress(chgAddress);
       const path = addressObj?.path || `m/0/${index}`;
       if (!addressObj) {
         console.log('Local address not found at index ' + index);
@@ -50,4 +52,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

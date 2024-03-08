@@ -17,9 +17,11 @@ try {
   return program.help();
 }
 
+let wallet;
+
 async function main() {
   const { name, path, time, storageType, token } = program.opts();
-  const wallet = await Wallet.loadWallet({ name, path, storageType });
+  wallet = await Wallet.loadWallet({ name, path, storageType });
   const balance = await wallet.getBalance(time, token);
   return Object.assign(balance, {
     currency: token || wallet.chain,
@@ -29,4 +31,5 @@ async function main() {
 
 main()
   .then(res => console.log(res))
-  .catch(err => console.error(err));
+  .catch(err => console.error(err))
+  .finally(() => wallet?.storage?.close());

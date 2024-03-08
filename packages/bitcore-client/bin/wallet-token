@@ -12,10 +12,12 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, contractAddress, storageType } = program.opts();
   try {
-    const wallet = await Wallet.loadWallet({ name, path, storageType });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     if (!['MATIC', 'ETH'].includes(wallet.chain)) {
       throw new Error('Cannot add token to non-ETH wallet.');
     }
@@ -41,4 +43,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());
