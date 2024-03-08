@@ -81,6 +81,16 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     }
   }
 
+  async getAccountFlags(network: string, address: string) {
+    const client = await this.getClient(network);
+    try {
+      const info = await client.getAccountInfo({ address });
+      return info?.account_flags;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
     const { chain, network, address } = params;
     const lowerAddress = address.toLowerCase();
