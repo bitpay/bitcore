@@ -57,7 +57,29 @@ export class Level {
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    await this.db.del(`wallet|${name}`);
+    // await this.db.del(`wallet|${name}`);
+    const keysToDelete = await new Promise<string[]>((resolve, reject) => {
+      let walletKeys = [];
+      this.db.createKeyStream()
+        .on('data', (key: Buffer) => {
+          if (key.toString().startsWith(`wallet|${name}`)) {
+            walletKeys.push(key);
+          } else if (key.toString().startsWith(`key|${name}|`)) {
+            walletKeys.push(key);
+          }
+        })
+        .on('error', (err: Error) => {
+          reject(err);
+        })
+        .on('end', () => {
+          resolve(walletKeys);
+        });
+    });
+    let batch = this.db.batch();
+    for (let key of keysToDelete) {
+      batch = batch.del(key);
+    }
+    await batch.write();
   }
 
   async listWallets() {

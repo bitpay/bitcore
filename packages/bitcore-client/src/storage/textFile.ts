@@ -69,7 +69,7 @@ export class TextFile {
         })
         .on('error', err => reject(err));
     });
-    return new Promise<void>(resolve => {
+    await new Promise<void>(resolve => {
       const walletStream = new stream.Readable({ objectMode: true });
       for (const wallet of wallets) {
         walletStream.push(wallet);
@@ -77,6 +77,32 @@ export class TextFile {
       walletStream.push(null);
       const writeStream = fs.createWriteStream(this.walletFileName, { flags: 'w', encoding: 'utf8' });
       walletStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
+      writeStream.once('close', () => {
+        resolve();
+      });
+    });
+    const addresses: Array<object> = await new Promise((resolve, reject) => {
+      const addressArray = [];
+      fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' })
+        .pipe(StreamUtil.jsonlBufferToObjectMode())
+        .on('data', address => {
+          if (address.name === name) {
+            addressArray.push(address);
+          }
+        })
+        .on('end', () => {
+          resolve(addressArray);
+        })
+        .on('error', err => reject(err));
+    });
+    return new Promise<void>(resolve => {
+      const addressStream = new stream.Readable({ objectMode: true });
+      for (const address of addresses) {
+        addressStream.push(address);
+      }
+      addressStream.push(null);
+      const writeStream = fs.createWriteStream(this.addressFileName, { flags: 'w', encoding: 'utf8' });
+      addressStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
       writeStream.once('close', () => {
         resolve();
       });
