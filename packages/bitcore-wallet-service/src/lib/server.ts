@@ -6986,6 +6986,7 @@ export class WalletService implements IWalletService {
           chain: req.body.chain,
           toBlock: req.body.toBlock,
           tokenAddresses: req.body.tokenAddresses,
+          excludeSpam: req.body.excludeSpam,
         });
       
         return resolve(response.raw ?? response);
@@ -7047,19 +7048,42 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetMultipleERC20TokenPrices(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getMultipleTokenPrices({
+          chain: req.body.chain,
+          include: req.body.include,
+        },
+        {
+          tokens: req.body.tokens,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetERC20TokenBalancesWithPricesByWallet(req): Promise<any> {
     return new Promise((resolve, reject) => {
       let keys, headers;
 
       if (!config.moralis) return reject(new Error('Moralis missing credentials'));
-      if (!checkRequired(req.body, ['tokens'])) {
-        return reject(new ClientError('moralisGetMultipleERC20TokenPrices request missing arguments'));
+      if (!checkRequired(req.body, ['address'])) {
+        return reject(new ClientError('moralisGetERC20TokenBalancesWithPricesByWallet request missing arguments'));
       }
 
       let qs = [];
       if (req.body.chain) qs.push('chain=' + req.body.chain);
-      if (req.body.include) qs.push('include=' + req.body.include);
+      if (req.body.toBlock) qs.push('to_block=' + req.body.toBlock);
+      if (req.body.tokenAddresses) qs.push('token_addresses=' + req.body.tokenAddresses);
+      if (req.body.excludeSpam) qs.push('exclude_spam=' + req.body.excludeSpam);
+      if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+      if (req.body.excludeNative) qs.push('exclude_native=' + req.body.excludeNative);
 
-      const URL: string = `https://deep-index.moralis.io/api/v2.2/erc20/prices${qs.length > 0 ? '?' + qs.join('&') : ''}`
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${req.body.address}/tokens${qs.length > 0 ? '?' + qs.join('&') : ''}`
 
       headers = {
         'Accept': 'application/json',
@@ -7067,20 +7091,17 @@ export class WalletService implements IWalletService {
         'X-Api-Key': config.moralis.apiKey,
       };
 
-      const message = {tokens: req.body.tokens};
-
-      this.request.post(
+      this.request.get(
         URL,
         {
           headers,
-          body: message,
           json: true
         },
         (err, data) => {
           if (err) {
             return reject(err.body ?? err);
           } else {
-            return resolve(data.body);
+            return resolve(data.body ?? data);
           }
         }
       );

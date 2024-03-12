@@ -418,13 +418,13 @@ export class API extends EventEmitter {
     return this.fromObj(c);
   }
 
-  decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, opts, cb) {
+  decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, progressCallback, cb) {
     var Bip38 = require('bip38');
     var bip38 = new Bip38();
 
     var privateKeyWif;
     try {
-      privateKeyWif = bip38.decrypt(encryptedPrivateKeyBase58, passphrase);
+      privateKeyWif = bip38.decrypt(encryptedPrivateKeyBase58, passphrase, progressCallback);
     } catch (ex) {
       return cb(new Error('Could not decrypt BIP38 private key' + ex));
     }
