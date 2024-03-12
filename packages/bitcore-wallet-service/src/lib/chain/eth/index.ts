@@ -1,7 +1,9 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
+import { WalletService } from 'src/lib/server';
 import { IChain } from '..';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
@@ -584,5 +586,9 @@ export class EthChain implements IChain {
         multisigContractAddress
       }
     };
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return cb(null, 0);
   }
 }

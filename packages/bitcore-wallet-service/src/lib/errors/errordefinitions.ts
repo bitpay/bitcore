@@ -4,6 +4,7 @@ import { ClientError } from './clienterror';
 interface Errors<T> {
   AD_ALREADY_EXISTS: T;
   BAD_SIGNATURES: T;
+  BALANCE_BELOW_RESERVE: T;
   COPAYER_DATA_MISMATCH: T;
   COPAYER_IN_WALLET: T;
   COPAYER_REGISTERED: T;
@@ -50,6 +51,7 @@ interface Errors<T> {
 const errors: Errors<string> = {
   AD_ALREADY_EXISTS: 'Ad already exists',
   BAD_SIGNATURES: 'Bad signatures',
+  BALANCE_BELOW_RESERVE: 'Balance below reserve limit',
   COPAYER_DATA_MISMATCH: 'Copayer data mismatch',
   COPAYER_IN_WALLET: 'Copayer already in wallet',
   COPAYER_REGISTERED: 'Copayer ID already registered on server',
