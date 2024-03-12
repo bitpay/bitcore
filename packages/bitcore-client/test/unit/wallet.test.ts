@@ -209,6 +209,10 @@ describe('Wallet', function() {
         
         before(async function() {
           this.timeout(5000);
+          let path;
+          if (storageType === 'Mongo' && (process.env.DB_NAME || process.env.DB_HOST || process.env.DB_PORT)) {
+            path = `mongodb://${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 27017}/${process.env.DB_NAME || 'bitcoreWallets-test'}`;
+          }
           try {
             wallet = await Wallet.create({
               name: walletName,
@@ -216,6 +220,7 @@ describe('Wallet', function() {
               network: 'testnet',
               password: 'abc123',
               storageType,
+              path
             });
             await wallet.unlock('abc123');
             // 3 address pairs
