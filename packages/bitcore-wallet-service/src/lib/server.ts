@@ -5519,8 +5519,7 @@ export class WalletService {
       let contentEmail = merchantOrder.listEmailContent[2];
       bot.sendMessage(config.merchantOrder.channelSuccessId, contentEmail, { parse_mode: 'HTML' });
     }
-    // TANTMP: tmp disable send email for testing qpay mini app
-    // await this._handleEmailNotificationForMerchantOrder(merchantOrder);
+    await this._handleEmailNotificationForMerchantOrder(merchantOrder);
   }
 
   _getPaymentTypeString(paymentType: PaymentType): string {
