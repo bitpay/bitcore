@@ -2,20 +2,20 @@ import { Request, Response } from 'express';
 import { CoinStorage, ICoin } from '../../models/coin';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { CacheTimes, Confirmations, SetCache } from '../middleware';
+import { AliasDataRequest, CacheTimes, Confirmations, SetCache } from '../middleware';
 
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
-  let { chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
   let { sinceBlock, date, limit, since, direction, paging } = req.query as any;
   if (limit) {
     limit = parseInt(limit);
   }
   try {
     let payload = {
-      chain,
-      network,
+      chain: chain as string,
+      network: network as string,
       sinceBlock,
       args: { date, limit, since, direction, paging },
       req,
@@ -28,7 +28,7 @@ router.get('/', async function(req: Request, res: Response) {
 });
 
 router.get('/tip', async function(req: Request, res: Response) {
-  let { chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
   try {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
@@ -39,9 +39,10 @@ router.get('/tip', async function(req: Request, res: Response) {
 });
 
 router.get('/:blockId', async function(req: Request, res: Response) {
-  let { blockId, chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { blockId } = req.params;
   try {
-    let block = await ChainStateProvider.getBlock({ chain, network, blockId });
+    let block = await ChainStateProvider.getBlock({ chain: chain as string, network: network as string, blockId });
     if (!block) {
       return res.status(404).send('block not found');
     }
@@ -57,7 +58,8 @@ router.get('/:blockId', async function(req: Request, res: Response) {
 
 // return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
 router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: Response) {
-  let { chain, network, blockHash, limit, pgnum } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { blockHash, limit, pgnum } = req.params;
 
   let pageNumber;
   let maxLimit;
@@ -125,9 +127,10 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 });
 
 router.get('/before-time/:time', async function(req: Request, res: Response) {
-  let { time, chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { time } = req.params;
   try {
-    const block = await ChainStateProvider.getBlockBeforeTime({ chain, network, time });
+    const block = await ChainStateProvider.getBlockBeforeTime({ chain: chain as string, network: network as string, time });
     if (!block) {
       return res.status(404).send('block not found');
     }

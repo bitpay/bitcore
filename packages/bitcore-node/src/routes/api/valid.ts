@@ -1,9 +1,11 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
 import { ChainStateProvider } from '../../providers/chain-state';
+import { AliasDataRequest } from '../middleware';
 
 router.get('/:input', async function(req, res) {
-  let { input, chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { input } = req.params;
   try {
     let isValid = await ChainStateProvider.isValid({
       chain,

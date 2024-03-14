@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import logger from '../../../logger';
+import { AliasDataRequest } from '../../../routes/middleware';
 import { MATIC } from './csp';
 import { Gnosis } from './gnosis';
 export const MaticRoutes = Router();
 
-MaticRoutes.get('/api/MATIC/:network/address/:address/txs/count', async (req, res) => {
-  let { address, network } = req.params;
+MaticRoutes.get('/api/:chain/:network/address/:address/txs/count', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  let { address } = req.params;
   try {
-    const nonce = await MATIC.getAccountNonce(network, address);
+    const nonce = await MATIC.getAccountNonce(network as string, address);
     res.json({ nonce });
   } catch (err) {
     logger.error('Nonce Error::%o', err);
@@ -15,9 +17,9 @@ MaticRoutes.get('/api/MATIC/:network/address/:address/txs/count', async (req, re
   }
 });
 
-MaticRoutes.post('/api/MATIC/:network/gas', async (req, res) => {
+MaticRoutes.post('/api/:chain/:network/gas', async (req, res) => {
   const { from, to, value, data, gasPrice } = req.body;
-  const { network } = req.params;
+  let { network } = req as AliasDataRequest;
   try {
     const gasLimit = await MATIC.estimateGas({ network, from, to, value, data, gasPrice });
     res.json(gasLimit);
@@ -31,10 +33,11 @@ MaticRoutes.post('/api/MATIC/:network/gas', async (req, res) => {
   }
 });
 
-MaticRoutes.get('/api/MATIC/:network/token/:tokenAddress', async (req, res) => {
-  const { network, tokenAddress } = req.params;
+MaticRoutes.get('/api/:chain/:network/token/:tokenAddress', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { tokenAddress } = req.params;
   try {
-    const tokenInfo = await MATIC.getERC20TokenInfo(network, tokenAddress);
+    const tokenInfo = await MATIC.getERC20TokenInfo(network as string, tokenAddress);
     res.json(tokenInfo);
   } catch (err) {
     logger.error('Token Info Error::%o', err);
@@ -42,10 +45,11 @@ MaticRoutes.get('/api/MATIC/:network/token/:tokenAddress', async (req, res) => {
   }
 });
 
-MaticRoutes.get('/api/MATIC/:network/ethmultisig/info/:multisigContractAddress', async (req, res) => {
-  const { network, multisigContractAddress } = req.params;
+MaticRoutes.get('/api/:chain/:network/ethmultisig/info/:multisigContractAddress', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { multisigContractAddress } = req.params;
   try {
-    const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
+    const multisigInfo = await Gnosis.getMultisigEthInfo(network as string, multisigContractAddress);
     res.json(multisigInfo);
   } catch (err) {
     logger.error('Multisig Info Error::%o', err);
@@ -53,10 +57,11 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/info/:multisigContractAddress',
   }
 });
 
-MaticRoutes.get('/api/MATIC/:network/ethmultisig/:sender/instantiation/:txId', async (req, res) => {
-  const { network, sender, txId } = req.params;
+MaticRoutes.get('/api/:chain/:network/ethmultisig/:sender/instantiation/:txId', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { sender, txId } = req.params;
   try {
-    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender, txId);
+    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network as string, sender, txId);
     res.json(multisigInstantiationInfo);
   } catch (err) {
     logger.error('Multisig Instantiation Error::%o', err);
@@ -64,10 +69,11 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/:sender/instantiation/:txId', a
   }
 });
 
-MaticRoutes.get('/api/MATIC/:network/ethmultisig/txps/:multisigContractAddress', async (req, res) => {
-  const { network, multisigContractAddress } = req.params;
+MaticRoutes.get('/api/:chain/:network/ethmultisig/txps/:multisigContractAddress', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { multisigContractAddress } = req.params;
   try {
-    const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
+    const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network as string, multisigContractAddress);
     res.json(multisigTxpsInfo);
   } catch (err) {
     logger.error('Multisig Txps Error::%o', err);
@@ -75,13 +81,14 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/txps/:multisigContractAddress',
   }
 });
 
-MaticRoutes.get('/api/MATIC/:network/ethmultisig/transactions/:multisigContractAddress', async (req, res) => {
-  let { network, multisigContractAddress } = req.params;
-  const chain = 'MATIC';
+MaticRoutes.get('/api/:chain/:network/ethmultisig/transactions/:multisigContractAddress', async (req, res) => {
+  let { chain, network } = req as AliasDataRequest;
+  let { multisigContractAddress } = req.params;
+
   try {
     return await Gnosis.streamGnosisWalletTransactions({
-      chain,
-      network,
+      chain: chain as string,
+      network: network as string,
       multisigContractAddress,
       wallet: {} as any,
       req,
@@ -94,11 +101,12 @@ MaticRoutes.get('/api/MATIC/:network/ethmultisig/transactions/:multisigContractA
   }
 });
 
-MaticRoutes.get('/api/MATIC/:network/priorityFee/:percentile', async (req, res) => {
-  let { percentile, network } = req.params;
+MaticRoutes.get('/api/:chain/:network/priorityFee/:percentile', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  let { percentile } = req.params;
   const priorityFeePercentile = Number(percentile) || 15;
 
-  network = network.toLowerCase();
+  network = (network as string).toLowerCase();
   try {
     let fee = await MATIC.getPriorityFee({ network, percentile: priorityFeePercentile });
     if (!fee) {

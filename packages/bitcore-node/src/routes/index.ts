@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import express from 'express';
 import config from '../config';
 import { Config } from '../services/config';
-import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
+import { AliasDataRequest, AliasResolution, CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
 import { Web3Proxy } from './web3';
 
 const app = express();
@@ -60,13 +60,14 @@ app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api', getRouterFromFile('status'));
-
+app.use('/api/:chain/:network', AliasResolution());
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
-  let { chain, network } = req.params;
-  const hasChain = chains.includes(chain);
-  const chainNetworks = networks[chain] || null;
+  let { chain, network } = req as AliasDataRequest;
+
+  const hasChain = chains.includes(chain as string);
+  const chainNetworks = networks[chain as string] || null;
   const hasChainNetworks = chainNetworks != null;
-  const hasNetworkForChain = hasChainNetworks ? chainNetworks[network] : false;
+  const hasNetworkForChain = hasChainNetworks ? chainNetworks[network as string] : false;
 
   if (chain && !hasChain) {
     return resp.status(500).send(`This node is not configured for the chain ${chain}`);
@@ -78,6 +79,7 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
 });
 
 app.use('/api/:chain/:network', bootstrap('api'));
+app.use('/web3/:chain/:network', AliasResolution());
 app.use('/web3/:chain/:network', Web3Proxy);
 
 export default app;

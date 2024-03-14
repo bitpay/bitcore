@@ -65,6 +65,14 @@ export interface ConfigType {
   chains: {
     [currency: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
   };
+  aliasMapping: {
+    chains: {
+      [alias: string]: string;
+    };
+    networks: {
+      [currency: string]: { [alias: string]: string; }
+    };
+  },
   modules?: string[];
   services: {
     api: {

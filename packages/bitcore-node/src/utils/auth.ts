@@ -4,6 +4,7 @@ import logger from '../logger';
 import { MongoBound } from '../models/base';
 import { IWallet } from '../models/wallet';
 import { ChainStateProvider } from '../providers/chain-state';
+import { AliasDataRequest } from '../routes/middleware';
 import { Config } from '../services/config';
 import { ChainNetwork } from '../types/ChainNetwork';
 
@@ -38,11 +39,12 @@ export type AuthenticatedRequest = {
 } & PreAuthRequest;
 
 const authenticateMiddleware: RequestHandler = async (req: Request, res: Response, next: any) => {
-  const { chain, network, pubKey } = (req.params as unknown) as SignedApiRequest;
+  let { chain, network } = req as AliasDataRequest;
+  const { pubKey } = (req.params as unknown) as SignedApiRequest;
   logger.debug('Authenticating request with pubKey: %o', pubKey);
   let wallet;
   try {
-    wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
+    wallet = await ChainStateProvider.getWallet({ chain: chain as string, network: network as string, pubKey });
   } catch (err) {
     return res.status(500).send('Problem authenticating wallet');
   }

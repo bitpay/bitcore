@@ -3,6 +3,7 @@ import config from '../config';
 import { PerformanceTracker } from '../decorators/Loggify';
 import { StateStorage } from '../models/state';
 import { ChainNetwork } from '../types/ChainNetwork';
+import { AliasDataRequest } from './middleware';
 const router = express.Router({ mergeParams: true });
 
 router.get('/enabled-chains', function(_, res) {
@@ -20,7 +21,7 @@ router.get('/performance', function(_, res) {
 });
 
 router.get('/:chain/:network/sync', async function(req, res) {
-  let { chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
   const state = await StateStorage.collection.findOne({});
   const initialSyncComplete =
     state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);

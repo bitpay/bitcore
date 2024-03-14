@@ -3,7 +3,7 @@ import config from '../../config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { IUtxoNetworkConfig } from '../../types/Config';
-import { CacheTimes } from '../middleware';
+import { AliasDataRequest, CacheTimes } from '../middleware';
 import { CacheMiddleware } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
@@ -14,7 +14,8 @@ const feeModes = {
 };
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
-  let { target, chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { target } = req.params;
   let { mode, txType } = req.query;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');

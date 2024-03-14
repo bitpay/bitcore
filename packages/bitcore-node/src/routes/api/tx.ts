@@ -4,13 +4,13 @@ import { ICoin } from '../../models/coin';
 import { ITransaction } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamTransactionsParams } from '../../types/namespaces/ChainStateProvider';
-import { SetCache } from '../middleware';
+import { AliasDataRequest, SetCache } from '../middleware';
 import { CacheTimes } from '../middleware';
 
 const router = Router({ mergeParams: true });
 
 router.get('/', function(req: Request, res: Response) {
-  let { chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
   let { blockHeight, blockHash, limit, since, direction, paging } = req.query as any;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
@@ -38,7 +38,8 @@ router.get('/', function(req: Request, res: Response) {
 });
 
 router.get('/:txId', async (req: Request, res: Response) => {
-  let { chain, network, txId } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { txId } = req.params;
   if (typeof txId !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -67,7 +68,8 @@ router.get('/:txId', async (req: Request, res: Response) => {
 
 // Get transaction with input and outputs, assigned to key coins
 router.get('/:txId/populated', async (req: Request, res: Response) => {
-  let { chain, network, txId } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { txId } = req.params;
   let txid = txId;
   if (typeof txid !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
@@ -103,7 +105,8 @@ router.get('/:txId/populated', async (req: Request, res: Response) => {
 });
 
 router.get('/:txId/authhead', async (req: Request, res: Response) => {
-  let { chain, network, txId } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { txId } = req.params;
   if (typeof txId !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -122,7 +125,8 @@ router.get('/:txId/authhead', async (req: Request, res: Response) => {
 });
 
 router.get('/:txid/coins', (req: Request, res: Response, next) => {
-  let { chain, network, txid } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { txid } = req.params;
   if (typeof txid !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
     res.status(400).send('Missing required param');
   } else {
@@ -138,7 +142,7 @@ router.get('/:txid/coins', (req: Request, res: Response, next) => {
 });
 
 router.post('/send', async function(req: Request, res: Response) {
-  let { chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
   let { rawTx } = req.body;
   try {
     if (typeof rawTx !== 'string' && !Array.isArray(rawTx)) {
@@ -147,8 +151,8 @@ router.post('/send', async function(req: Request, res: Response) {
     if (Array.isArray(rawTx) && !rawTx.every(tx => typeof tx === 'string')) {
       return res.status(400).send('Invalid array of rawTx');
     }
-    chain = chain.toUpperCase();
-    network = network.toLowerCase();
+    chain = (chain as string).toUpperCase();
+    network = (network as string).toLowerCase();
     let txid = await ChainStateProvider.broadcastTransaction({
       chain,
       network,

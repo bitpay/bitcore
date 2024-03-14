@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import logger from '../../../logger';
+import { AliasDataRequest } from '../../../routes/middleware';
 import { ETH } from './csp';
 import { Gnosis } from './gnosis';
 export const EthRoutes = Router();
 
-EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) => {
-  let { address, network } = req.params;
+EthRoutes.get('/api/:chain/:network/address/:address/txs/count', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  let { address } = req.params;
   try {
-    const nonce = await ETH.getAccountNonce(network, address);
+    const nonce = await ETH.getAccountNonce(network as string, address);
     res.json({ nonce });
   } catch (err) {
     logger.error('Nonce Error::%o', err);
@@ -15,9 +17,9 @@ EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) =
   }
 });
 
-EthRoutes.post('/api/ETH/:network/gas', async (req, res) => {
+EthRoutes.post('/api/:chain/:network/gas', async (req, res) => {
   const { from, to, value, data, gasPrice } = req.body;
-  const { network } = req.params;
+  let { network } = req as AliasDataRequest;
   try {
     const gasLimit = await ETH.estimateGas({ network, from, to, value, data, gasPrice });
     res.json(gasLimit);
@@ -31,10 +33,11 @@ EthRoutes.post('/api/ETH/:network/gas', async (req, res) => {
   }
 });
 
-EthRoutes.get('/api/ETH/:network/token/:tokenAddress', async (req, res) => {
-  const { network, tokenAddress } = req.params;
+EthRoutes.get('/api/:chain/:network/token/:tokenAddress', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { tokenAddress } = req.params;
   try {
-    const tokenInfo = await ETH.getERC20TokenInfo(network, tokenAddress);
+    const tokenInfo = await ETH.getERC20TokenInfo(network as string, tokenAddress);
     res.json(tokenInfo);
   } catch (err) {
     logger.error('Token Info Error::%o', err);
@@ -42,10 +45,11 @@ EthRoutes.get('/api/ETH/:network/token/:tokenAddress', async (req, res) => {
   }
 });
 
-EthRoutes.get('/api/ETH/:network/token/:tokenAddress/allowance/:ownerAddress/for/:spenderAddress', async (req, res) => {
-  const { network, tokenAddress, ownerAddress, spenderAddress } = req.params;
+EthRoutes.get('/api/:chain/:network/token/:tokenAddress/allowance/:ownerAddress/for/:spenderAddress', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { tokenAddress, ownerAddress, spenderAddress } = req.params;
   try {
-    const allowance = await ETH.getERC20TokenAllowance(network, tokenAddress, ownerAddress, spenderAddress);
+    const allowance = await ETH.getERC20TokenAllowance(network as string, tokenAddress, ownerAddress, spenderAddress);
     res.json(allowance);
   } catch (err) {
     logger.error('Token Allowance Error::%o', err);
@@ -53,10 +57,11 @@ EthRoutes.get('/api/ETH/:network/token/:tokenAddress/allowance/:ownerAddress/for
   }
 });
 
-EthRoutes.get('/api/ETH/:network/ethmultisig/info/:multisigContractAddress', async (req, res) => {
-  const { network, multisigContractAddress } = req.params;
+EthRoutes.get('/api/:chain/:network/ethmultisig/info/:multisigContractAddress', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { multisigContractAddress } = req.params;
   try {
-    const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
+    const multisigInfo = await Gnosis.getMultisigEthInfo(network as string, multisigContractAddress);
     res.json(multisigInfo);
   } catch (err) {
     logger.error('Multisig Info Error::%o', err);
@@ -64,10 +69,11 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/info/:multisigContractAddress', asy
   }
 });
 
-EthRoutes.get('/api/ETH/:network/ethmultisig/:sender/instantiation/:txId', async (req, res) => {
-  const { network, sender, txId } = req.params;
+EthRoutes.get('/api/:chain/:network/ethmultisig/:sender/instantiation/:txId', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { sender, txId } = req.params;
   try {
-    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender, txId);
+    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network as string, sender, txId);
     res.json(multisigInstantiationInfo);
   } catch (err) {
     logger.error('Multisig Instantiation Error::%o', err);
@@ -75,10 +81,11 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/:sender/instantiation/:txId', async
   }
 });
 
-EthRoutes.get('/api/ETH/:network/ethmultisig/txps/:multisigContractAddress', async (req, res) => {
-  const { network, multisigContractAddress } = req.params;
+EthRoutes.get('/api/:chain/:network/ethmultisig/txps/:multisigContractAddress', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  const { multisigContractAddress } = req.params;
   try {
-    const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
+    const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network as string, multisigContractAddress);
     res.json(multisigTxpsInfo);
   } catch (err) {
     logger.error('Multisig Txps Error::%o', err);
@@ -86,13 +93,14 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/txps/:multisigContractAddress', asy
   }
 });
 
-EthRoutes.get('/api/ETH/:network/ethmultisig/transactions/:multisigContractAddress', async (req, res) => {
-  let { network, multisigContractAddress } = req.params;
-  const chain = 'ETH';
+EthRoutes.get('/api/:chain/:network/ethmultisig/transactions/:multisigContractAddress', async (req, res) => {
+  let { chain, network } = req as AliasDataRequest;
+  let { multisigContractAddress } = req.params;
+
   try {
     return await Gnosis.streamGnosisWalletTransactions({
-      chain,
-      network,
+      chain: chain as string,
+      network: network as string,
       multisigContractAddress,
       wallet: {} as any,
       req,
@@ -105,11 +113,12 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/transactions/:multisigContractAddre
   }
 });
 
-EthRoutes.get('/api/ETH/:network/priorityFee/:percentile', async (req, res) => {
-  let { percentile, network } = req.params;
+EthRoutes.get('/api/:chain/:network/priorityFee/:percentile', async (req, res) => {
+  let { network } = req as AliasDataRequest;
+  let { percentile } = req.params;
   const priorityFeePercentile = Number(percentile) || 15;
 
-  network = network.toLowerCase();
+  network = (network as string).toLowerCase();
   try {
     let fee = await ETH.getPriorityFee({ network, percentile: priorityFeePercentile });
     if (!fee) {

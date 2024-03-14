@@ -7,6 +7,11 @@ type TimedRequest = {
   startTime?: Date;
 } & express.Request;
 
+export type AliasDataRequest = {
+  chain?: string;
+  network?: string;
+} & express.Request;
+
 function LogObj(logOut: { [key: string]: string }) {
   logger.info(
     `${logOut.time} | ${logOut.ip} | ${logOut.phase} | ${logOut.took} | ${logOut.method} | ${logOut.status} | ${logOut.url} | ${logOut.openConnections} open`
@@ -107,5 +112,16 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
       logger.error('Rate Limiter failed');
     }
     return next();
+  };
+}
+
+export function AliasResolution() {
+  return (req: AliasDataRequest, _: express.Response, next: express.NextFunction) => {
+    const { chain, network } = req.params;
+    const resolved = Config.aliasFor({ chain, network });
+    req.chain = resolved.chain;
+    req.network = resolved.network;
+  
+    next();
   };
 }

@@ -2,10 +2,12 @@ import express = require('express');
 const router = express.Router({ mergeParams: true });
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { AliasDataRequest } from '../middleware';
 
 function streamCoins(req, res) {
   try {
-    let { address, chain, network } = req.params;
+    let { chain, network } = req as AliasDataRequest;
+    let { address } = req.params;
     let { unspent, limit = 10, since } = req.query;
     let payload = {
       chain,
@@ -24,7 +26,8 @@ function streamCoins(req, res) {
 
 router.get('/:address', function(req, res) {
   try {
-    let { address, chain, network } = req.params;
+    let { chain, network } = req as AliasDataRequest;
+    let { address } = req.params;
     let { unspent, limit = 10, since } = req.query;
     let payload = {
       chain,
@@ -45,11 +48,12 @@ router.get('/:address/txs', streamCoins);
 router.get('/:address/coins', streamCoins);
 
 router.get('/:address/balance', async function(req, res) {
-  let { address, chain, network } = req.params;
+  let { chain, network } = req as AliasDataRequest;
+  let { address } = req.params;
   try {
     let result = await ChainStateProvider.getBalanceForAddress({
-      chain,
-      network,
+      chain: chain as string,
+      network: network as string,
       address,
       args: req.query
     });
