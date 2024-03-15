@@ -55,9 +55,7 @@ export class Storage {
   }
 
   async close() {
-    if (typeof this.storageType.close === 'function') {
-      await this.storageType.close();
-    }
+    this.storageType?.close?.();
   }
 
   async loadWallet(params: { name: string }) {
