@@ -8,6 +8,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "bin": "bin/wallet",
   "scripts": {
     "build": "npm run compile",
     "clean": "rm -rf ./ts_build",
