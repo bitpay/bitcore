@@ -112,6 +112,18 @@ describe('Ripple Api', function() {
     }
   });
 
+  it('should get sequence', async () => {
+    const sequence = await XRP.getAccountNonce(network, 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
+    expect(sequence).to.exist;
+    expect(sequence).to.be.a('number');
+  });
+
+  it('should get flags', async () => {
+    const flags = await XRP.getAccountFlags(network, 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh');
+    expect(flags).to.exist;
+    expect(flags).to.haveOwnProperty('requireDestinationTag');
+  });
+
   it('should save tagged transactions to the database', async () => {
     const chain = 'XRP';
     const network = 'testnet';

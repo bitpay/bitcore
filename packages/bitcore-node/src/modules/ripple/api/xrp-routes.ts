@@ -12,6 +12,16 @@ XrpRoutes.get('/api/XRP/:network/address/:address/txs/count', async (req, res) =
   }
 });
 
+XrpRoutes.get('/api/XRP/:network/address/:address/flags', async (req, res) => {
+  let { address, network } = req.params;
+  try {
+    const flags = await XRP.getAccountFlags(network, address);
+    res.json({ flags });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
 XrpRoutes.get('/api/XRP/:network/reserve', async (req, res) => {
   let { network } = req.params;
   try {

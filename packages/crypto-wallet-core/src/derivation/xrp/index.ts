@@ -29,7 +29,7 @@ export class XrpDeriver implements IDeriver {
     const privKey = derivedXPriv.toObject().privateKey.toUpperCase();
     const pubKey = derivedXPriv.hdPublicKey.toObject().publicKey.toUpperCase();
     const address = deriveAddress(pubKey);
-    return { address, privKey, pubKey };
+    return { address, privKey, pubKey, path };
   }
 
   getAddress(network: string, pubKey: string) {

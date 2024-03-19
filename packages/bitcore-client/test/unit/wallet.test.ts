@@ -199,5 +199,53 @@ describe('Wallet', function() {
       });
     });
   });
+
+  describe('getLocalAddress', function() {
+    for (const storageType of ['Level', 'Mongo', 'TextFile']) {
+      describe(storageType, function() {
+        let wallet;
+        let walletName = 'BitcoreClientTestGetLocalAddress' + storageType;
+        let address1, caddress1, address2, caddress2, address3, caddress3;
+        let path;
+        if (storageType === 'Mongo' && (process.env.DB_NAME || process.env.DB_HOST || process.env.DB_PORT)) {
+          path = `mongodb://${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 27017}/${process.env.DB_NAME || 'bitcoreWallets-test'}`;
+        }
+
+        before(async function() {
+          this.timeout(5000);
+          try {
+            wallet = await Wallet.create({
+              name: walletName,
+              chain: 'BTC',
+              network: 'testnet',
+              password: 'abc123',
+              storageType,
+              path
+            });
+            await wallet.unlock('abc123');
+            // 3 address pairs
+            [address1, caddress1] = await wallet.nextAddressPair(true);
+            [address2, caddress2] = await wallet.nextAddressPair(true);
+            [address3, caddress3] = await wallet.nextAddressPair(true);
+          } catch (e) {
+            wallet?.storage.close();
+            throw e;
+          }
+        });
+
+        after(async function() {
+          await Wallet.deleteWallet({ name: walletName, storageType, path });
+          wallet?.storage.close();
+        });
+
+        it('should return the local address', async function() {
+          const localAddress = await wallet.getLocalAddress(address2);
+          expect(localAddress.address).to.equal(address2);
+          expect(localAddress.path).to.equal('m/0/1');
+          expect(localAddress.pubKey).to.exist;
+        });
+      });
+    }
+  });
 });
 

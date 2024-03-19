@@ -17,14 +17,18 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token, tokenContractAddress } = program.opts();
   try {
-    const wallet = await Wallet.loadWallet({ name, path, storageType });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, token, tokenContractAddress }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

@@ -11,9 +11,10 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { tx, name, path, storageType = 'Level' } = program.opts();
-  let wallet;
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
     const transaction = await wallet.broadcast({ tx });
@@ -29,4 +30,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

@@ -24,9 +24,10 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, tx, txfile, keys, utxos, storageType } = program.opts();
-  let wallet;
   let encryptedKeys;
   let bitcoinCorePassword;
   try {
@@ -58,4 +59,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());
