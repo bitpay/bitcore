@@ -8,6 +8,7 @@ program
   .version(require('../package.json').version)
   .requiredOption('--name <name>', 'REQUIRED - Wallet name')
   .requiredOption('--contractAddress <contractAddress>', 'REQUIRED - Token contract address')
+  .option('--tokenName <tokenName>', 'optional - Custom name for token')
   .option('--storageType <storageType>', 'optional - Name of the database to use (Mongo | Level | TextFile)')
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
@@ -15,7 +16,7 @@ program
 let wallet;
 
 const main = async () => {
-  const { name, path, contractAddress, storageType } = program.opts();
+  const { name, path, contractAddress, storageType, tokenName } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
     if (!['MATIC', 'ETH'].includes(wallet.chain)) {
@@ -25,16 +26,17 @@ const main = async () => {
     const tokenObj = {
       symbol: token.symbol,
       address: contractAddress,
-      decimals: token.decimals
-    }
-    const existing = wallet.tokens.find(f => f.symbol === token.symbol);
+      decimals: token.decimals,
+      name: tokenName
+    };
+    const existing = wallet.tokens.find(f => f.address === contractAddress);
     if (existing) {
       console.log(`This wallet already has token ${existing.symbol} (${existing.address})`);
       const ans = await promptly.confirm('Would you like to replace it? (y/n)');
       if (!ans) {
         return;
       }
-      wallet.tokens = wallet.tokens.filter(f => f.symbol !== token.symbol);
+      wallet.tokens = wallet.tokens.filter(f => f.address !== contractAddress);
     }
     await wallet.addToken(tokenObj);
     console.log(`Successfully added ${token.symbol}`);

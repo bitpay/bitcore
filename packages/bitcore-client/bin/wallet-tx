@@ -14,7 +14,8 @@ program
   .option('--from <from>', 'optional - From address')
   .option('--nonce <nonce>', 'optional - Nonce')
   .option('--invoiceID <invoiceID>', 'optional - InvoiceId for XRP transactions')
-  .option('--token <currency>', 'optional - ERC20 token')
+  .option('--token <currency>', 'optional - ERC20 token symbol')
+  .option('--tokenName <currency>', 'optional - ERC20 token custom name')
   .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
@@ -26,7 +27,7 @@ const main = async () => {
   let totalTransactionFee;
   let walletNonce;
   try {
-    const { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program.opts();
+    const { recipients, utxos, change, fee, target, from, nonce, invoiceID, token, tokenName } = program.opts();
     wallet = await Wallet.loadWallet({ name, path, storageType });
 
     function tryParse(json) {
@@ -71,7 +72,7 @@ const main = async () => {
       }
     }
 
-    let params = { recipients, utxos, change, fee, from, nonce, token };
+    let params = { recipients, utxos, change, fee, from, nonce, token, tokenName };
     params.fee = Number(fee) || totalTransactionFee;
     params.nonce = Number(nonce) || walletNonce;
     params.recipients = parsedRecipients;

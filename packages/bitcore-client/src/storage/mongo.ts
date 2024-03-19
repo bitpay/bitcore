@@ -80,7 +80,7 @@ export class Mongo {
       }
     });
     const cursor = this.walletCollection
-      .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 })
+      .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1, tokens: 1 })
       .pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
