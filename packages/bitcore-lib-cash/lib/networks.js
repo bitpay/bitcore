@@ -197,6 +197,7 @@ var liveNetwork = {
 
 var testnet3 = {
   name: 'testnet3',
+  alias: 'testnet',
   prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
