@@ -4748,6 +4748,17 @@ export class WalletService implements IWalletService {
       externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
     }
 
+    // Sell crypto rules
+    const sellCryptoUsaBannedStates = ['NY'];
+    if (
+      // Logged in with bitpayId
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      // Logged out (IP restriction)
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
+    ) {
+      externalServicesConfig.sellCrypto = {...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
+    }
+
     return cb(null, externalServicesConfig);
   }
 

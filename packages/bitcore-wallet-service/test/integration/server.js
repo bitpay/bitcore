@@ -10641,6 +10641,13 @@ describe('Wallet service', function() {
               removed: false
             },
           },
+          sellCrypto: { 
+            disabled: false,
+            moonpay: {
+              disabled: false,
+              removed: false
+            }
+          },
           swapCrypto: { 
             disabled: false,
             changelly: {
@@ -10677,6 +10684,13 @@ describe('Wallet service', function() {
               removed: false
             },
             wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          sellCrypto: { 
+            disabled: false,
+            moonpay: {
               disabled: false,
               removed: false
             }
@@ -10734,6 +10748,10 @@ describe('Wallet service', function() {
         config.services = {
           buyCrypto: {
             disabled: false,
+            banxa: {
+              disabled: false,
+              removed: false
+            },
             moonpay: {
               disabled: false,
               removed: false
@@ -10750,7 +10768,18 @@ describe('Wallet service', function() {
               disabled: false,
               removed: false
             },
+            transak: {
+              disabled: false,
+              removed: false
+            },
             wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          sellCrypto: { 
+            disabled: false,
+            moonpay: {
               disabled: false,
               removed: false
             }
@@ -10836,6 +10865,36 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(config.buyCrypto);
             config.buyCrypto.disabled.should.equal(false);
+          });
+        });
+
+        const sellCryptoUsaBannedStates = ['NY'];
+        for (const bannedState of sellCryptoUsaBannedStates) {
+          it(`should return sell crypto disabled if the user is located in ${bannedState}`, () => {
+            const opts = {
+              currentLocationCountry: 'US',
+              currentLocationState: bannedState,
+            };
+      
+            server.getServicesData(opts, (err, config) => {
+              should.not.exist(err);
+              should.exist(config.sellCrypto);
+              config.sellCrypto.disabled.should.equal(true);
+              config.sellCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+            });
+          });
+        };
+
+        it('should return sell crypto enabled if the user is in USA located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.sellCrypto);
+            config.sellCrypto.disabled.should.equal(false);
           });
         });
       });
@@ -11009,6 +11068,37 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(config.buyCrypto);
             config.buyCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return sell crypto disabled if the user is registred in NY and located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.sellCrypto);
+            config.sellCrypto.disabled.should.equal(true);
+            config.sellCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+          });
+        });
+
+        it('should return sell crypto enabled if the user is registred outside NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.sellCrypto);
+            config.sellCrypto.disabled.should.equal(false);
           });
         });
       });
