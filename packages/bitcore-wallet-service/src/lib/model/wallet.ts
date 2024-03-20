@@ -92,7 +92,7 @@ export class Wallet {
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.CHAINS)); // checking in chains for simplicity
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.coin]));
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);

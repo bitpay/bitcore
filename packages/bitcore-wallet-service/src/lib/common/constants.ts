@@ -83,10 +83,51 @@ export const Constants = {
   },
 
   NETWORKS: {
-    LIVENET: 'livenet',
-    TESTNET: 'testnet',
-    REGTEST: 'regtest'
-  },
+    btc: {
+      LIVENET: 'livenet',
+      TESTNET: 'testnet',
+      TESTNET3: 'testnet3',
+      SIGNET: 'signet',
+      REGTEST: 'regtest'
+    },
+    bch: {
+      LIVENET: 'livenet',
+      TESTNET: 'testnet',
+      TESTNET3: 'testnet3',
+      TESTNET4: 'testnet4',
+      SCALENET: 'scalenet',
+      CHIPNET: 'chipnet',
+      REGTEST: 'regtest'
+    },
+    eth: {
+      LIVENET: 'livenet',
+      TESTNET: 'testnet',
+      SEPOLIA: 'sepolia',
+      HOLESKY: 'holesky',
+      REGTEST: 'regtest'
+    },
+    matic: {
+      LIVENET: 'livenet',
+      TESTNET: 'testnet',
+      MUMBAI: 'mumbai',
+      REGTEST: 'regtest'
+    },
+    ltc: {
+      LIVENET: 'livenet',
+      TESTNET: 'testnet',
+      REGTEST: 'regtest'
+    },
+    doge: {
+      LIVENET: 'livenet',
+      TESTNET: 'testnet',
+      REGTEST: 'regtest'
+    },
+    xrp: {
+      LIVENET: 'livenet',
+      TESTNET: 'testnet',
+      REGTEST: 'regtest'
+    },
+  } as { [chain: string]: { [network: string]: string } },
 
   ADDRESS_FORMATS: ['copay', 'cashaddr', 'legacy'],
 

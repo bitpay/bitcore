@@ -51,8 +51,8 @@ export class V8 {
 
   constructor(opts) {
     $.checkArgument(opts);
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
     $.checkArgument(Utils.checkValueInCollection(opts.chain, Constants.CHAINS));
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain]));
     $.checkArgument(opts.url);
 
     this.apiPrefix = opts.apiPrefix == null ? '/api' : opts.apiPrefix;

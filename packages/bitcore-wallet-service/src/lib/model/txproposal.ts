@@ -151,8 +151,9 @@ export class TxProposal {
 
   static create(opts) {
     opts = opts || {};
-
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
+  
+    const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]));
 
     const x = new TxProposal();
 
@@ -171,7 +172,7 @@ export class TxProposal {
     x.walletId = opts.walletId;
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
-    x.chain = opts.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
+    x.chain = chain;
     x.network = opts.network;
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
