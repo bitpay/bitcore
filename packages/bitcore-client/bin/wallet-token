@@ -29,27 +29,18 @@ const main = async () => {
       decimals: token.decimals,
       name: tokenName || token.symbol
     };
-    const nameNotUnique = wallet.tokens.find(t => t.name === tokenObj.name || (t.symbol === tokenObj.name && t.name === undefined));
-    if (nameNotUnique) {
-      if (nameNotUnique.address === contractAddress) {
-        console.log('Token already in wallet');
-        return;
-      }
-      console.log(`tokenName ${tokenObj.name} already exists in this wallet (symbol: ${nameNotUnique.symbol}. contractAddress: ${nameNotUnique.address})`);
-      console.log('Try again with a unique tokenName');
-      return;
-    }
-    const existing = wallet.tokens.find(f => f.address === contractAddress);
+
+    const existing = wallet.tokens.find(t => t.address === contractAddress || t.name === tokenObj.name || (t.name === undefined && t.symbol === tokenObj.name));
     if (existing) {
-      console.log(`This wallet already has token ${existing.symbol} (${existing.address})`);
-      const ans = await promptly.confirm('Would you like to replace it? (y/n)');
+      console.log(`This wallet already has ${existing.name || existing.symbol} (symbol: ${existing.symbol}, contractAddress: ${existing.address})`);
+      const ans = await promptly.confirm('Would you like to replace it? (y/N)', { default: 'n' });
       if (!ans) {
         return;
       }
-      wallet.tokens = wallet.tokens.filter(f => f.address !== contractAddress);
+      wallet.tokens = wallet.tokens.filter(t => t.address !== existing.address);
     }
     await wallet.addToken(tokenObj);
-    console.log(`Successfully added ${token.symbol}`);
+    console.log(`Successfully added ${token.name} (${token.symbol})`);
   } catch (e) {
     console.error(e);
   }
