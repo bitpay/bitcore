@@ -625,7 +625,7 @@ describe('Transaction', function() {
     it('fails if a dust output is created', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1000DOGE)
-        .to(toAddress, 0.9e8)
+        .to(toAddress, 999999) // Less than 0.01 DOGE
         .change(changeAddress)
         .sign(privateKey);
       expect(function() {
