@@ -195,8 +195,8 @@ var liveNetwork = {
   dnsSeeds: dnsSeeds
 };
 
-var testNetwork = {
-  name: 'testnet',
+var testnet3 = {
+  name: 'testnet3',
   prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -205,6 +205,45 @@ var testNetwork = {
   xprivkey: 0x04358394,
   networkMagic: 0xf4e5f3f4,
   port: 18333,
+  dnsSeeds: dnsSeeds
+};
+
+var testnet4 = {
+  name: 'testnet4',
+  prefix: 'bchtest',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xe2b7daaf,
+  port: 28333,
+  dnsSeeds: dnsSeeds
+};
+
+var scalenet = {
+  name: 'scalenet',
+  prefix: 'bchtest',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xc3afe1a2,
+  port: 38333,
+  dnsSeeds: dnsSeeds
+};
+
+var chipnet = {
+  name: 'chipnet',
+  prefix: 'bchtest',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xe2b7daaf,
+  port: 48333,
   dnsSeeds: dnsSeeds
 };
 
@@ -231,13 +270,19 @@ var regtestNetwork = {
 // Add configurable values for testnet/regtest
 
 
-addNetwork(testNetwork);
+addNetwork(testnet3);
+addNetwork(testnet4);
+addNetwork(scalenet);
+addNetwork(chipnet);
 addNetwork(regtestNetwork);
 addNetwork(liveNetwork);
 
 var livenet = get('livenet');
 var regtest = get('regtest');
-var testnet = get('testnet');
+var testnet3 = get('testnet3');
+var testnet4 = get('testnet4');
+var scalenet = get('scalenet');
+var chipnet = get('chipnet');
 
 /**
  * @function
@@ -246,7 +291,7 @@ var testnet = get('testnet');
  * Will enable regtest features for testnet
  */
 function enableRegtest() {
-  testnet.regtestEnabled = true;
+  testnet3.regtestEnabled = true;
 }
 
 /**
@@ -256,7 +301,7 @@ function enableRegtest() {
  * Will disable regtest features for testnet
  */
 function disableRegtest() {
-  testnet.regtestEnabled = false;
+  testnet3.regtestEnabled = false;
 }
 
 /**
@@ -268,7 +313,11 @@ module.exports = {
   defaultNetwork: livenet,
   livenet: livenet,
   mainnet: livenet,
-  testnet: testnet,
+  testnet: testnet3,
+  testnet3: testnet3,
+  testnet4: testnet4,
+  scalenet: scalenet,
+  chipnet: chipnet,
   regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,

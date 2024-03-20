@@ -173,7 +173,7 @@ addNetwork({
 var livenet = get('livenet');
 
 addNetwork({
-  name: 'testnet',
+  name: 'testnet3',
   alias: 'test',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -195,7 +195,32 @@ addNetwork({
  * @instance
  * @member Networks#testnet
  */
-var testnet = get('testnet');
+var testnet3 = get('testnet3');
+
+addNetwork({
+  name: 'signet',
+  alias: 'signet',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  bech32prefix: 'tb',
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0x0a03cf40,
+  port: 38332,
+  dnsSeeds: [
+    '178.128.221.177',
+    '103.16.128.63',
+    '153.126.143.201',
+    '192.241.163.142'
+  ]
+});
+
+/**
+ * @instance
+ * @member Networks#testnet
+ */
+var signet = get('signet');
 
 addNetwork({
   name: 'regtest',
@@ -246,7 +271,9 @@ module.exports = {
   defaultNetwork: livenet,
   livenet: livenet,
   mainnet: livenet,
-  testnet: testnet,
+  testnet: testnet3,
+  testnet3: testnet3,
+  signet: signet,
   regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,
