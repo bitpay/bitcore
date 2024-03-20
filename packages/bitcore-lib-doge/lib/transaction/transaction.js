@@ -64,8 +64,8 @@ var DEFAULT_NLOCKTIME = 0;
 var MAX_BLOCK_SIZE = 1000000;
 
 // Minimum amount for an output for it not to be considered a dust output
-// https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/primitives/transaction.h#L197
-Transaction.DUST_AMOUNT = 100000000;
+// https://github.com/dogecoin/dogecoin/blob/a758fa798217ea7c12e08224596dc0ae9c03b2a8/doc/fee-recommendation.md
+Transaction.DUST_AMOUNT = 1000000; // 0.01 DOGE
 
 // Margin of error to allow fees in the vecinity of the expected value but doesn't allow a big difference
 Transaction.FEE_SECURITY_MARGIN = 15;
