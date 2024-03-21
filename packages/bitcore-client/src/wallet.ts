@@ -323,22 +323,15 @@ export class Wallet {
 
   getBalance(time?: string, token?: string, tokenName?: string) {
     let payload;
-    let tokenContractAddress;
-    if (token && !tokenName) {
-      const tokenObj = this.tokens.find(tok => tok.name === token || (tok.symbol === token && tok.name === undefined));
+    if (token || tokenName) {
+      let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
+      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
       if (!tokenObj) {
-        throw new Error(`${token} not found on wallet ${this.name}`);
+        throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
       }
-      tokenContractAddress = tokenObj.address;
-      payload = { tokenContractAddress };
-    }
-    if (tokenName) {
-      const tokenObj = this.tokens.find(tok => tok.name === tokenName);
-      if (!tokenObj) {
-        throw new Error(`${tokenName} not found on wallet ${this.name}`);
-      }
-      tokenContractAddress = tokenObj.address;
-      payload = { tokenContractAddress };
+      payload = {
+        tokenContractAddress: tokenObj.address
+      };
     }
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
@@ -380,17 +373,11 @@ export class Wallet {
 
   listTransactions(params) {
     const { token, tokenName } = params;
-    if (token && !tokenName) {
-      const tokenObj = this.tokens.find(tok => tok.name === token || (tok.symbol === token && tok.name === undefined));
+    if (token || tokenName) {
+      let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
+      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
       if (!tokenObj) {
-        throw new Error(`${token} not found on wallet ${this.name}`);
-      }
-      params.tokenContractAddress = tokenObj.address;
-    }
-    if (tokenName) {
-      const tokenObj = this.tokens.find(tok => tok.name === tokenName);
-      if (!tokenObj) {
-        throw new Error(`${tokenName} not found on wallet ${this.name}`);
+        throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
       }
       params.tokenContractAddress = tokenObj.address;
     }
@@ -442,17 +429,11 @@ export class Wallet {
   }) {
     const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
-    if (params.token && !params.tokenName) {
-      const tokenObj = this.tokens.find(tok => tok.name === params.token || (tok.symbol === params.token && tok.name === undefined));
+    if (params.token || params.tokenName) {
+      let tokenObj = params.tokenName && this.tokens.find(tok => tok.name === params.tokenName);
+      tokenObj = tokenObj || (params.token && this.tokens.find(tok => tok.symbol === params.token && [params.token, undefined].includes(tok.name)));
       if (!tokenObj) {
-        throw new Error(`${params.token} not found on wallet ${this.name}`);
-      }
-      tokenContractAddress = tokenObj.address;
-    }
-    if (params.tokenName) {
-      const tokenObj = this.tokens.find(tok => tok.name === params.tokenName);
-      if (!tokenObj) {
-        throw new Error(`${params.tokenName} not found on wallet ${this.name}`);
+        throw new Error(`${params.tokenName || params.token} not found on wallet ${this.name}`);
       }
       tokenContractAddress = tokenObj.address;
     }
