@@ -325,7 +325,7 @@ export class Wallet {
     let payload;
     if (token || tokenName) {
       let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
-      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && tok.name == undefined));
+      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
       if (!tokenObj) {
         throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
       }
@@ -375,7 +375,7 @@ export class Wallet {
     const { token, tokenName } = params;
     if (token || tokenName) {
       let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
-      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && tok.name == undefined));
+      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
       if (!tokenObj) {
         throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
       }
@@ -431,7 +431,7 @@ export class Wallet {
     let tokenContractAddress;
     if (params.token || params.tokenName) {
       let tokenObj = params.tokenName && this.tokens.find(tok => tok.name === params.tokenName);
-      tokenObj = tokenObj || (params.token && this.tokens.find(tok => tok.symbol === params.token && tok.name == undefined));
+      tokenObj = tokenObj || (params.token && this.tokens.find(tok => tok.symbol === params.token && [params.token, undefined].includes(tok.name)));
       if (!tokenObj) {
         throw new Error(`${params.tokenName || params.token} not found on wallet ${this.name}`);
       }
