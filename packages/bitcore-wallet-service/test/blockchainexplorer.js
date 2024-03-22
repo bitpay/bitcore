@@ -11,7 +11,7 @@ describe('BlockChain explorer', function() {
     it('should return a blockchain explorer with basic methods', function() {
       var exp = new BlockChainExplorer({
         coin: 'btc',
-        network: 'testnet',
+        network: 'testnet3',
       });
       should.exist(exp);
       exp.should.respondTo('broadcast');

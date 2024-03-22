@@ -155,7 +155,7 @@ export class Wallet {
     x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
     x.network = obj.network;
     if (!x.network) {
-      x.network = obj.isTestnet ? 'testnet' : 'livenet';
+      x.network = obj.isTestnet ? Utils.getNetworkAlias(x.chain, 'testnet') : 'livenet';
     }
     x.derivationStrategy = obj.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = obj.addressType || Constants.SCRIPT_TYPES.P2SH;
@@ -213,7 +213,7 @@ export class Wallet {
       _.map(this.copayers, 'xPubKey')
         .sort()
         .join('') +
-      this.network +
+      Utils.getGenericName(this.network) + // Maintaining compatibility with previous versions
       this.coin +
       salt;
     seed = bitcore.crypto.Hash.sha256(Buffer.from(seed));

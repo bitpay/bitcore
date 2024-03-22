@@ -83,51 +83,42 @@ export const Constants = {
   },
 
   NETWORKS: {
+    btc: ['livenet', 'testnet3', 'signet', 'regtest'],
+    bch: ['livenet', 'testnet3', 'testnet4', 'scalenet', 'chipnet', 'regtest'],
+    eth: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    matic: ['livenet', 'mumbai', 'regtest'],
+    ltc: ['livenet', 'testnet', 'regtest'],
+    doge: ['livenet', 'testnet', 'regtest'],
+    xrp: ['livenet', 'testnet', 'regtest']
+  } as { [chain: string]: Array<string> },
+
+  NETWORK_ALIASES: {
     btc: {
-      LIVENET: 'livenet',
-      TESTNET: 'testnet',
-      TESTNET3: 'testnet3',
-      SIGNET: 'signet',
-      REGTEST: 'regtest'
+      mainnet: 'livenet',
+      testnet: 'testnet3'
     },
     bch: {
-      LIVENET: 'livenet',
-      TESTNET: 'testnet',
-      TESTNET3: 'testnet3',
-      TESTNET4: 'testnet4',
-      SCALENET: 'scalenet',
-      CHIPNET: 'chipnet',
-      REGTEST: 'regtest'
+      mainnet: 'livenet',
+      testnet: 'testnet3'
     },
     eth: {
-      LIVENET: 'livenet',
-      TESTNET: 'testnet',
-      SEPOLIA: 'sepolia',
-      HOLESKY: 'holesky',
-      REGTEST: 'regtest'
+      mainnet: 'livenet',
+      testnet: 'sepolia'
     },
     matic: {
-      LIVENET: 'livenet',
-      TESTNET: 'testnet',
-      MUMBAI: 'mumbai',
-      REGTEST: 'regtest'
+      mainnet: 'livenet',
+      testnet: 'mumbai'
     },
     ltc: {
-      LIVENET: 'livenet',
-      TESTNET: 'testnet',
-      REGTEST: 'regtest'
+      mainnet: 'livenet',
     },
     doge: {
-      LIVENET: 'livenet',
-      TESTNET: 'testnet',
-      REGTEST: 'regtest'
+      mainnet: 'livenet',
     },
     xrp: {
-      LIVENET: 'livenet',
-      TESTNET: 'testnet',
-      REGTEST: 'regtest'
-    },
-  } as { [chain: string]: { [network: string]: string } },
+      mainnet: 'livenet',
+    }
+  },
 
   ADDRESS_FORMATS: ['copay', 'cashaddr', 'legacy'],
 

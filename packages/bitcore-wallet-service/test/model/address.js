@@ -30,7 +30,19 @@ describe('Address', function() {
         path: 'm/0/1',
         publicKeys: ['123', '456'],
       });
-      x.network.should.equal('testnet');
+      x.network.should.equal('testnet3');
+    });
+    it('should create testnet address from legacy client passing "testnet"', function() {
+      var x = Address.create({
+        address: 'mp5xaa4uBj16DJt1fuA3D9fejHuCzeb7hj',
+        coin: 'btc',
+        network: 'testnet',
+        walletId: '123',
+        isChange: false,
+        path: 'm/0/1',
+        publicKeys: ['123', '456'],
+      });
+      x.network.should.equal('testnet3');
     });
   });
   describe('#derive', function() {
@@ -73,11 +85,27 @@ describe('Address', function() {
       }, {
         xPubKey: 'xpub68tpbrfk747AvDUCdtEUgK2yDPmtGKf7YXzEcUUqnF3jmAMeZgcpoZqgXwwoi8CpwDkyzVX6wxUktTw2wh9EhhVjh5S71MLL3FkZDGF5GeY'
         // PubKey(xPubKey/0/0) -> 03162179906dbe6a67979d4f8f46ee1db6ff81715f465e6615a4f5969478ad2171
+      }], 'm/0/0', 1, 'btc', 'testnet3', false);
+      should.exist(address);
+      address.walletId.should.equal('wallet-id');
+      address.address.should.equal('tb1qeg99m00dh3tl62dkaml5xma0kek2czwy65enlc7vnwgdddas9qksrc0gw5');
+      address.network.should.equal('testnet3');
+      address.isChange.should.be.false;
+      address.path.should.equal('m/0/0');
+      address.type.should.equal('P2WSH');
+    });
+    it('should derive multi-sig P2WSH testnet address from legacy client passing "testnet"', function() {
+      var address = Address.derive('wallet-id', 'P2WSH', [{
+        xPubKey: 'xpub686v8eJUJEqxzAtkWPyQ9nvpBHfucVsB8Q8HQHw5mxYPQtBact2rmA8wRXFYaVESK8f7WrxeU4ayALaEhicdXCX5ZHktNeRFnvFeffztiY1'
+        // PubKey(xPubKey/0/0) -> 03fe466ea829aa4c9a1c289f9ba61ebc26a61816500860c8d23f94aad9af152ecd
+      }, {
+        xPubKey: 'xpub68tpbrfk747AvDUCdtEUgK2yDPmtGKf7YXzEcUUqnF3jmAMeZgcpoZqgXwwoi8CpwDkyzVX6wxUktTw2wh9EhhVjh5S71MLL3FkZDGF5GeY'
+        // PubKey(xPubKey/0/0) -> 03162179906dbe6a67979d4f8f46ee1db6ff81715f465e6615a4f5969478ad2171
       }], 'm/0/0', 1, 'btc', 'testnet', false);
       should.exist(address);
       address.walletId.should.equal('wallet-id');
       address.address.should.equal('tb1qeg99m00dh3tl62dkaml5xma0kek2czwy65enlc7vnwgdddas9qksrc0gw5');
-      address.network.should.equal('testnet');
+      address.network.should.equal('testnet3');
       address.isChange.should.be.false;
       address.path.should.equal('m/0/0');
       address.type.should.equal('P2WSH');
@@ -123,11 +151,23 @@ describe('Address', function() {
     it('should derive 1-of-1 P2WPKH testnet address', function() {
       var address = Address.derive('wallet-id', 'P2WPKH', [{
         xPubKey: 'xpub686v8eJUJEqxzAtkWPyQ9nvpBHfucVsB8Q8HQHw5mxYPQtBact2rmA8wRXFYaVESK8f7WrxeU4ayALaEhicdXCX5ZHktNeRFnvFeffztiY1'
+      }], 'm/1/2', 1, 'btc', 'testnet3', true);
+      should.exist(address);
+      address.walletId.should.equal('wallet-id');
+      address.address.should.equal('tb1q54yvs7zxv7djqnxtlfpw9efw4kwlj7qzudg3eq');
+      address.network.should.equal('testnet3');
+      address.isChange.should.be.true;
+      address.path.should.equal('m/1/2');
+      address.type.should.equal('P2WPKH');
+    });
+    it('should derive 1-of-1 P2WPKH testnet address from legacy client passing "testnet"', function() {
+      var address = Address.derive('wallet-id', 'P2WPKH', [{
+        xPubKey: 'xpub686v8eJUJEqxzAtkWPyQ9nvpBHfucVsB8Q8HQHw5mxYPQtBact2rmA8wRXFYaVESK8f7WrxeU4ayALaEhicdXCX5ZHktNeRFnvFeffztiY1'
       }], 'm/1/2', 1, 'btc', 'testnet', true);
       should.exist(address);
       address.walletId.should.equal('wallet-id');
       address.address.should.equal('tb1q54yvs7zxv7djqnxtlfpw9efw4kwlj7qzudg3eq');
-      address.network.should.equal('testnet');
+      address.network.should.equal('testnet3');
       address.isChange.should.be.true;
       address.path.should.equal('m/1/2');
       address.type.should.equal('P2WPKH');

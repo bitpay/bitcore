@@ -167,7 +167,7 @@ export class PushNotificationsService {
     if (!notifType) return cb();
 
     if (notification.type === 'NewIncomingTx') {
-      notifType.filename = notification.data.network === 'testnet' ? notifType.filename[0] : notifType.filename[1];
+      notifType.filename = Utils.getGenericName(notification.data.network) === 'testnet' ? notifType.filename[0] : notifType.filename[1];
     } else if (notification.type === 'NewOutgoingTx') {
       // Handle zero amount ETH transactions to contract addresses
       notifType.filename = notification.data.amount !== 0 ? notifType.filename[0] : notifType.filename[1];

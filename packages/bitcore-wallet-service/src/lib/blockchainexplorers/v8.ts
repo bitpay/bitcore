@@ -26,8 +26,8 @@ const Constants = Common.Constants,
   Utils = Common.Utils;
 
 function v8network(bwsNetwork, chain = 'btc') {
-  if (bwsNetwork == 'livenet') return 'mainnet';
-  if (bwsNetwork == 'testnet' && config.blockchainExplorerOpts?.[chain.toLowerCase()]?.testnet?.regtestEnabled) {
+  if (Utils.getGenericName(bwsNetwork) == 'livenet') return 'mainnet';
+  if (Utils.getGenericName(bwsNetwork) == 'testnet' && config.blockchainExplorerOpts?.[chain.toLowerCase()]?.[Utils.getNetworkAlias(chain.toLowerCase(), 'testnet')]?.regtestEnabled) {
     return 'regtest';
   }
   return bwsNetwork;

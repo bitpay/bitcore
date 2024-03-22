@@ -1,6 +1,7 @@
 import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
 import Config from '../../config';
+import { Constants } from './constants';
 import { logger } from '../logger';
 
 const $ = require('preconditions').singleton();
@@ -275,12 +276,28 @@ export class Utils {
     return coin == 'bch' ? result.toLegacyAddress() : result.toString();
   }
 
-  static compareNetworks(network1, network2) {
+  static compareNetworks(network1, network2, chain) {
     network1 = network1?.toLowerCase();
     network2 = network2?.toLowerCase();
 
-    if (network1 == network2) return true;
-    if (Config.allowRegtest && ['testnet', 'regtest'].includes(network1) && ['testnet', 'regtest'].includes(network2)) return true;
+    if (this.getNetworkAlias(chain, network1) == network2) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(Utils.getGenericName(network1)) && ['testnet', 'regtest'].includes(Utils.getGenericName(network2))) return true;
     return false;
+  }
+  // Good for going from generic 'testnet' to specific 'testnet3', 'sepolia', etc
+  static getNetworkAlias(chain, network) {
+    const aliases = Constants.NETWORK_ALIASES[chain];
+    if (aliases && aliases[network]) {
+      return aliases[network];
+    }
+    return network;
+  }
+
+  // Good for going from specific 'testnet3', 'sepolia', etc to generic 'testnet'
+  static getGenericName(network) {
+    if (network == 'mainnet') return 'livenet';
+    const testnets = ['testnet3', 'sepolia', 'mumbai'];
+    if (testnets.includes(network)) return 'testnet';
+    return network;
   }
 }

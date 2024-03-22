@@ -51,6 +51,17 @@ function get(arg, keys) {
   }
 }
 
+/**
+ * @function
+ * @member Networks#is
+ * Returns true if the string is the network name or alias
+ * @param {string} str - A string to check
+ * @return boolean
+ */
+function is(str) {
+  return this.name == str || this.alias == str;
+}
+
 /***
  * Derives an array from the given prefix to be used in the computation
  * of the address' checksum.
@@ -89,6 +100,7 @@ function addNetwork(data) {
   JSUtil.defineImmutable(network, {
     name: data.name,
     alias: data.alias,
+    is: data.is,
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
@@ -184,6 +196,7 @@ var dnsSeeds = [
 var liveNetwork = {
   name: 'livenet',
   alias: 'mainnet',
+  is,
   prefix: 'bitcoincash',
   pubkeyhash: 28,
   privatekey: 0x80,
@@ -198,6 +211,7 @@ var liveNetwork = {
 var testnet3 = {
   name: 'testnet3',
   alias: 'testnet',
+  is,
   prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -211,6 +225,7 @@ var testnet3 = {
 
 var testnet4 = {
   name: 'testnet4',
+  is,
   prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -224,6 +239,7 @@ var testnet4 = {
 
 var scalenet = {
   name: 'scalenet',
+  is,
   prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -237,6 +253,7 @@ var scalenet = {
 
 var chipnet = {
   name: 'chipnet',
+  is,
   prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -250,6 +267,7 @@ var chipnet = {
 
 var regtestNetwork = {
   name: 'regtest',
+  is,
   prefix: 'bchreg',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -321,6 +339,7 @@ module.exports = {
   chipnet: chipnet,
   regtest: regtest,
   get: get,
+  is: is,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest
 };

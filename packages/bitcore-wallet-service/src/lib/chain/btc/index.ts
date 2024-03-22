@@ -952,7 +952,7 @@ export class BtcChain implements IChain {
     const addrNetwork = addr.network.toString();
     const walNetwork = wallet.network;
 
-    if (addrNetwork === 'testnet' && walNetwork === 'regtest') {
+    if (Utils.getGenericName(addrNetwork) === 'testnet' && walNetwork === 'regtest') {
       return !!config.allowRegtest;
     }
     return addrNetwork === walNetwork;

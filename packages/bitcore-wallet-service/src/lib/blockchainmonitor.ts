@@ -11,6 +11,7 @@ import { MessageBroker } from './messagebroker';
 import { Notification, TxConfirmationSub } from './model';
 import { WalletService } from './server';
 import { Storage } from './storage';
+import { Utils } from './common/utils';
 
 const $ = require('preconditions').singleton();
 const Constants = Common.Constants;
@@ -102,7 +103,7 @@ export class BlockchainMonitor {
                 return;
               }
 
-              const bcNetwork = pair.network === 'testnet' && config.regtestEnabled ? 'regtest' : pair.network;
+              const bcNetwork = Utils.getGenericName(pair.network) === 'testnet' && config.regtestEnabled ? 'regtest' : pair.network;
               explorer = BlockChainExplorer({
                 provider: config.provider,
                 chain: pair.chain,
@@ -279,7 +280,7 @@ export class BlockchainMonitor {
           },
           walletId
         });
-        if (network !== 'testnet') {
+        if (Utils.getGenericName(network) !== 'testnet') {
           this.storage.fetchWallet(walletId, (err, wallet) => {
             if (err) return;
             async.each(

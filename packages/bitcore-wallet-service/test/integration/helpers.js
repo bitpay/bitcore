@@ -265,8 +265,8 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       var copayerData = TestData.copayers[i + offset];
 
       var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
-
-      if (opts.network == 'testnet') {
+      const aliases = Constants.NETWORK_ALIASES[walletOpts.coin];
+      if ((aliases && aliases.testnet && aliases.testnet == opts.network) || opts.network == 'testnet') {
         if (opts.coin == 'btc' || opts.coin == 'bch') {
           pub = copayerData.xPubKey_44H_0H_0Ht;
         } else {

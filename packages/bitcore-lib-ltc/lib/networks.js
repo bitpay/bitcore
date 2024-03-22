@@ -53,6 +53,17 @@ function get(arg, keys) {
 
 /**
  * @function
+ * @member Networks#is
+ * Returns true if the string is the network name or alias
+ * @param {string} str - A string to check
+ * @return boolean
+ */
+function is(str) {
+  return this.name == str || this.alias == str;
+}
+
+/**
+ * @function
  * @member Networks#add
  * Will add a custom Network
  * @param {Object} data
@@ -76,6 +87,7 @@ function addNetwork(data) {
   JSUtil.defineImmutable(network, {
     name: data.name,
     alias: data.alias,
+    is,
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
@@ -157,6 +169,7 @@ function removeNetwork(network) {
 addNetwork({
   name: 'livenet',
   alias: 'mainnet',
+  is,
   pubkeyhash: 0x30, // 48
   privatekey: 0xb0, // 176
   scripthash: 0x32, // 50
@@ -185,6 +198,7 @@ var livenet = get('livenet');
 addNetwork({
   name: 'testnet',
   alias: 'test',
+  is,
   pubkeyhash: 0x6f, // 111
   privatekey: 0xef, // 239
   scripthash: 0x3a, // 58
@@ -209,6 +223,7 @@ var testnet = get('testnet');
 addNetwork({
   name: 'regtest',
   alias: 'dev',
+  is,
   pubkeyhash: 0x6f, // 111
   privatekey: 0xef, // 239
   scripthash: 0x3a, // 58
@@ -259,6 +274,7 @@ module.exports = {
   testnet: testnet,
   regtest: regtest,
   get: get,
+  is: is,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest
 };
