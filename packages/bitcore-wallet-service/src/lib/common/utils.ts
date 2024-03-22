@@ -1,8 +1,8 @@
 import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
 import Config from '../../config';
-import { Constants } from './constants';
 import { logger } from '../logger';
+import { Constants } from './constants';
 
 const $ = require('preconditions').singleton();
 const bitcore = require('bitcore-lib');

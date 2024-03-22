@@ -5,13 +5,13 @@ import 'source-map-support/register';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { ChainService } from './chain/index';
 import { Common } from './common';
+import { Utils } from './common/utils';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { Notification, TxConfirmationSub } from './model';
 import { WalletService } from './server';
 import { Storage } from './storage';
-import { Utils } from './common/utils';
 
 const $ = require('preconditions').singleton();
 const Constants = Common.Constants;
