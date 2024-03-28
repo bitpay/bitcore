@@ -219,7 +219,7 @@ export class PushNotificationsService {
                 // chain and network are needed for NewBlock notifications
                 const chain = notification?.data?.chain || notification?.data?.coin;
                 const coin = chain; // backwards compatibility
-                const network = notification?.data?.network;
+                const network = notification?.data?.network ? Utils.getNetworkAlias(chain, notification.data.network) : null;
 
                 if (sub.token) {
                   notificationData = {
