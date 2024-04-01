@@ -22,6 +22,6 @@ export const Paths = {
     default: "m/44'/2'/"
   },
   MATIC: {
-    default: "m/44'/60'/", // the official matic derivation path is 966 but users will expect address to be same as ETH
+    default: "m/44'/60'/" // the official matic derivation path is 966 but users will expect address to be same as ETH
   }
 };

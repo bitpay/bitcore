@@ -85,7 +85,7 @@ describe('Polygon', function() {
     const addresses = await wallet.getAddresses();
     expect(addresses).to.exist;
     expect(addresses.length).to.eq(1);
-    expect(addresses[0].toLowerCase()).to.equal('0xb875c670b079cce8f6ab4f013bd471359c877ac0');
+    expect(addresses[0].toLowerCase()).to.equal('0xa4e131D8c33FC059E9d245489DB03a4A61A2F32B');
   });
 
   it('should be able to get block events from geth', async () => {
@@ -117,7 +117,7 @@ describe('Polygon', function() {
     const balance = await wallet.getBalance();
     expect(balance.confirmed).to.be.gt(0);
 
-    const key = 'getBalanceForAddress-MATIC-regtest-0xb875c670b079cce8f6ab4f013bd471359c877ac0';
+    const key = 'getBalanceForAddress-MATIC-regtest-0xa4e131D8c33FC059E9d245489DB03a4A61A2F32B';
     const cached = await CacheStorage.collection.findOne({ key });
     expect(cached).to.exist;
     expect(cached!.value).to.deep.eq(balance);
