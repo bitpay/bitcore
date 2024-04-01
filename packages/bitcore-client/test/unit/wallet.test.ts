@@ -183,7 +183,7 @@ describe('Wallet', function() {
           feeTarget: 2
         });
         params.gasPrice.should.equal(26550000000);
-        expect(newTx).to.equal('0xed8085062e80d98083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a764000080058080');
+        expect(newTx).to.equal('0xf08085062e80d98083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
       });
 
       it('should bump the fee of a transaction with feeRate', async function() {
@@ -195,7 +195,7 @@ describe('Wallet', function() {
           feeRate: 300
         });
         params.gasPrice.should.equal(CWC.Web3.utils.toWei('300', 'gwei'));
-        expect(newTx).to.equal('0xed808545d964b80083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a764000080058080');
+        expect(newTx).to.equal('0xf0808545d964b80083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
       });
     });
   });
