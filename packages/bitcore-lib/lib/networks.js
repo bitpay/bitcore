@@ -265,7 +265,7 @@ var regtest = get('regtest');
  * Will enable regtest features for testnet
  */
 function enableRegtest() {
-  testnet.regtestEnabled = true;
+  testnet3.regtestEnabled = true;
 }
 
 /**
@@ -275,7 +275,7 @@ function enableRegtest() {
  * Will disable regtest features for testnet
  */
 function disableRegtest() {
-  testnet.regtestEnabled = false;
+  testnet3.regtestEnabled = false;
 }
 
 /**

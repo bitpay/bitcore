@@ -118,7 +118,7 @@ describe('Networks', function() {
   });
 
   it('network object should be immutable', function() {
-    expect(networks.testnet.name).to.equal('testnet')
+    expect(networks.testnet.name).to.equal('testnet3')
     var fn = function() { networks.testnet.name = 'livenet' }
     expect(fn).to.throw(TypeError)
   });

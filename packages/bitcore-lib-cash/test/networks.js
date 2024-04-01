@@ -110,7 +110,11 @@ describe('Networks', function() {
   });
 
   it('should have testnet network', function() {
-    expect(networks.get('testnet').name).to.equal('testnet');
+    expect(networks.get('testnet3').name).to.equal('testnet3');
+  });
+
+  it('should get testnet network with name "testnet"', function() {
+    expect(networks.get('testnet').name).to.equal('testnet3');
   });
 
   it('should have livenet network', function() {
@@ -143,7 +147,7 @@ describe('Networks', function() {
   });
 
   it('network object should be immutable', function() {
-    expect(networks.testnet.name).to.equal('testnet')
+    expect(networks.testnet.name).to.equal('testnet3')
     var fn = function() { networks.testnet.name = 'livenet' }
     expect(fn).to.throw(TypeError)
   });
