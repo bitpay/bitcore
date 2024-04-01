@@ -4884,7 +4884,7 @@ describe('Wallet service', function() {
             bch: 3800,
             xrp: 3800,
             eth: 210000000,
-            doge: 1e8,
+            doge: 1e6,
             ltc: 3800
           }
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
