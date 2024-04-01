@@ -2,6 +2,7 @@ import express = require('express');
 const router = express.Router({ mergeParams: true });
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { StreamAddressUtxosParams } from '../../types/namespaces/ChainStateProvider';
 import { AliasDataRequest } from '../middleware';
 
 function streamCoins(req, res) {
@@ -16,7 +17,7 @@ function streamCoins(req, res) {
       req,
       res,
       args: { ...req.query, unspent, limit, since }
-    };
+    } as StreamAddressUtxosParams;
     ChainStateProvider.streamAddressTransactions(payload);
   } catch (err) {
     logger.error('Error streaming coins: %o', err);
@@ -36,7 +37,7 @@ router.get('/:address', function(req, res) {
       req,
       res,
       args: { unspent, limit, since }
-    };
+    } as StreamAddressUtxosParams;
     return ChainStateProvider.streamAddressUtxos(payload);
   } catch (err) {
     logger.error('Error getting address: %o', err);
