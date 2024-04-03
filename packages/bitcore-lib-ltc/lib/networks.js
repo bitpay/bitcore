@@ -1,6 +1,4 @@
 'use strict';
-var _ = require('lodash');
-
 var BufferUtil = require('./util/buffer');
 var JSUtil = require('./util/js');
 var networks = [];
@@ -31,20 +29,17 @@ function get(arg, keys) {
     return arg;
   }
   if (keys) {
-    if (!_.isArray(keys)) {
+    if (!Array.isArray(keys)) {
       keys = [keys];
     }
-    var containsArg = function(key) {
-      return networks[index][key] === arg;
-    };
-    for (var index in networks) {
-      if (_.some(keys, containsArg)) {
+    for (const index in networks) {
+      if (keys.some(key => networks[index][key] === arg)) {
         return networks[index];
       }
     }
     return undefined;
   }
-  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+  if (networkMaps[arg] && networkMaps[arg].length >= 1) {
     return networkMaps[arg][0];
   } else {
     return networkMaps[arg];
@@ -75,9 +70,11 @@ function is(str) {
  * @param {string} data.bech32prefix - The native segwit prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
- * @param {Number} data.networkMagic - The network magic number
- * @param {Number} data.port - The network port
- * @param {Array}  data.dnsSeeds - An array of dns seeds
+ * @param {Array}  data.variants - An array of variants
+ * @param {string} data.variants.name - The name of the variant
+ * @param {Number} data.variants.networkMagic - The network magic number
+ * @param {Number} data.variants.port - The network port
+ * @param {Array}  data.variants.dnsSeeds - An array of dns seeds
  * @return Network
  */
 function addNetwork(data) {
@@ -87,7 +84,7 @@ function addNetwork(data) {
   JSUtil.defineImmutable(network, {
     name: data.name,
     alias: data.alias,
-    is,
+    is: data.is,
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
@@ -122,19 +119,26 @@ function addNetwork(data) {
     });
   }
 
-  _.each(network, function(value) {
-    if (!_.isUndefined(value) && !_.isObject(value)) {
-      if(!networkMaps[value]) {
+  for (const value of Object.values(network)) {
+    if (value != null && typeof value !== 'object') {
+      if (!networkMaps[value]) {
         networkMaps[value] = [];
       }
       networkMaps[value].push(network);
     }
-  });
+  };
 
   networks.push(network);
 
-  return network;
+  for (const variant of data.variants || []) {
+    addNetwork({
+      ...data,
+      variants: undefined,
+      ...variant,
+    });
+  }
 
+  return network;
 }
 
 /**
@@ -164,7 +168,8 @@ function removeNetwork(network) {
     } else if (networkMaps[key] === network) {
       delete networkMaps[key];
     }
-  }}
+  }
+}
 
 addNetwork({
   name: 'livenet',
@@ -197,7 +202,7 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'test',
+  alias: 'testnet',
   is,
   pubkeyhash: 0x6f, // 111
   privatekey: 0xef, // 239
@@ -206,12 +211,15 @@ addNetwork({
   bech32prefix: 'tltc',
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0xfdd2c8f1,
-  port: 19335,
-  dnsSeeds: [
-    'testnet-seed.litecointools.com',
-    'seed-b.litecoin.loshan.co.uk'
-  ]
+  variants: [{
+    name: 'testnet4',
+    networkMagic: 0xfdd2c8f1,
+    port: 19335,
+    dnsSeeds: [
+      'testnet-seed.litecointools.com',
+      'seed-b.litecoin.loshan.co.uk'
+   ]
+  }]
 });
 
 /**
@@ -219,6 +227,7 @@ addNetwork({
  * @member Networks#testnet
  */
 var testnet = get('testnet');
+var testnet4 = get('testnet4');
 
 addNetwork({
   name: 'regtest',
@@ -238,7 +247,7 @@ addNetwork({
 
 /**
  * @instance
- * @member Networks#testnet
+ * @member Networks#regtest
  */
 var regtest = get('regtest');
 
@@ -272,9 +281,9 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  testnet4: testnet4,
   regtest: regtest,
   get: get,
-  is: is,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest
 };
