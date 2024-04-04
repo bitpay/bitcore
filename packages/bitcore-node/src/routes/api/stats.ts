@@ -11,8 +11,8 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   try {
     let dailyTxs = await ChainStateProvider.getDailyTransactions({
-      chain: chain,
-      network: network,
+      chain,
+      network,
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string
     });

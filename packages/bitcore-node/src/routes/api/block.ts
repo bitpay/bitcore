@@ -14,8 +14,8 @@ router.get('/', async function(req: Request, res: Response) {
   }
   try {
     let payload = {
-      chain: chain,
-      network: network,
+      chain,
+      network,
       sinceBlock,
       args: { date, limit, since, direction, paging },
       req,
