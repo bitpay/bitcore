@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { AliasDataRequest, CacheTimes, SetCache } from '../middleware';
+import { CacheTimes, SetCache } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(_: Request, res: Response) {
@@ -8,11 +8,11 @@ router.get('/', async function(_: Request, res: Response) {
 });
 
 router.get('/daily-transactions', async function(req: Request, res: Response) {
-  let { chain, network } = req as AliasDataRequest;
+  let { chain, network } = req.params;
   try {
     let dailyTxs = await ChainStateProvider.getDailyTransactions({
-      chain: chain as string,
-      network: network as string,
+      chain: chain,
+      network: network,
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string
     });

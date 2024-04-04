@@ -70,7 +70,7 @@ export interface ConfigType {
       [alias: string]: string;
     };
     networks: {
-      [currency: string]: { [alias: string]: string; }
+      [chain: string]: { [alias: string]: string; }
     };
   },
   modules?: string[];

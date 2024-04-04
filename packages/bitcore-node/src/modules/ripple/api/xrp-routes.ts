@@ -1,13 +1,11 @@
 import { Router } from 'express';
-import { AliasDataRequest } from '../../../routes/middleware';
 import { XRP } from './csp';
 export const XrpRoutes = Router();
 
-XrpRoutes.get('/api/:chain/:network/address/:address/txs/count', async (req, res) => {
-  let { network } = req as AliasDataRequest;
-  let { address } = req.params;
+XrpRoutes.get('/api/XRP/:network/address/:address/txs/count', async (req, res) => {
+  let { network, address } = req.params;
   try {
-    const nonce = await XRP.getAccountNonce(network as string, address);
+    const nonce = await XRP.getAccountNonce(network, address);
     res.json({ nonce });
   } catch (err) {
     res.status(500).send(err);

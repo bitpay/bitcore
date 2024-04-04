@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import express from 'express';
 import config from '../config';
 import { Config } from '../services/config';
-import { AliasDataRequest, AliasResolution, CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
+import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
 import { Web3Proxy } from './web3';
 
 const app = express();
@@ -60,9 +60,16 @@ app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api', getRouterFromFile('status'));
-app.use('/api/:chain/:network', AliasResolution());
+// Change aliased chain and network params
+app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
+  const { chain: beforeChain, network: beforeNetwork } = req.params;
+  const { chain, network } = Config.aliasFor({ chain: beforeChain, network: beforeNetwork });
+  req.params.chain = chain;
+  req.params.network = network;
+  next();
+});
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
-  let { chain, network } = req as AliasDataRequest;
+  let { chain, network } = req.params;
 
   const hasChain = chains.includes(chain as string);
   const chainNetworks = networks[chain as string] || null;
@@ -79,7 +86,6 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
 });
 
 app.use('/api/:chain/:network', bootstrap('api'));
-app.use('/web3/:chain/:network', AliasResolution());
 app.use('/web3/:chain/:network', Web3Proxy);
 
 export default app;

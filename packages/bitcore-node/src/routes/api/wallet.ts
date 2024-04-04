@@ -3,7 +3,6 @@ import { Request, Response, Router } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
-import { AliasDataRequest } from '../middleware';
 const router = Router({ mergeParams: true });
 
 function isTooLong(field, maxLength = 255) {
@@ -12,12 +11,12 @@ function isTooLong(field, maxLength = 255) {
 // create wallet
 router.post('/', async function(req: Request, res: Response) {
   try {
-    let { chain, network } = req as AliasDataRequest;
+    let { chain, network } = req.params;
     let { name, pubKey, path, singleAddress } = req.body;
 
     const existingWallet = await ChainStateProvider.getWallet({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       pubKey
     });
     if (existingWallet) {
@@ -27,8 +26,8 @@ router.post('/', async function(req: Request, res: Response) {
       return res.status(413).send('String length exceeds limit');
     }
     let result = await ChainStateProvider.createWallet({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       singleAddress,
       name,
       pubKey,
@@ -42,8 +41,7 @@ router.post('/', async function(req: Request, res: Response) {
 
 router.get('/:pubKey/addresses/missing', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
-    let { chain, network } = req as AliasDataRequest;
-    let { pubKey } = req.params;
+    let { chain, network, pubKey } = req.params;
     let payload = {
       chain,
       network,
@@ -59,11 +57,11 @@ router.get('/:pubKey/addresses/missing', Auth.authenticateMiddleware, async (req
 router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { wallet } = req;
-    let { chain, network } = req as AliasDataRequest;
+    let { chain, network } = req.params;
     let { limit } = req.query as any;
     let payload: StreamWalletAddressesParams = {
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       walletId: wallet!._id!,
       limit,
       req,
@@ -77,11 +75,11 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
 
 router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    let { chain, network } = req as AliasDataRequest;
+    let { chain, network } = req.params;
     const wallet = req.wallet!._id!;
     const result = await ChainStateProvider.walletCheck({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       wallet
     });
     return res.send(result);
@@ -94,7 +92,7 @@ router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: Authentica
 router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   let keepAlive;
   try {
-    let { chain, network } = req as AliasDataRequest;
+    let { chain, network } = req.params;
     let addressLines: { address: string }[] = req.body.filter(line => !!line.address);
 
     let addresses = addressLines.map(({ address }) => address);
@@ -108,8 +106,8 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
       res.write('\n');
     }, 1000);
     await ChainStateProvider.updateWallet({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       wallet: req.wallet!,
       addresses
     });
@@ -123,10 +121,10 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
 
 router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    let { chain, network } = req as AliasDataRequest;
+    let { chain, network } = req.params;
     return await ChainStateProvider.streamWalletTransactions({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       wallet: req.wallet!,
       req,
       res,
@@ -138,11 +136,11 @@ router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: Aut
 });
 
 router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-  let { chain, network } = req as AliasDataRequest;
+  let { chain, network } = req.params;
   try {
     const result = await ChainStateProvider.getWalletBalance({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       wallet: req.wallet!,
       args: req.query
     });
@@ -153,12 +151,11 @@ router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: Authenti
 });
 
 router.get('/:pubKey/balance/:time', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-  let { chain, network } = req as AliasDataRequest;
-  let { time } = req.params;
+  let { chain, network, time } = req.params;
   try {
     const result = await ChainStateProvider.getWalletBalanceAtTime({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       wallet: req.wallet!,
       time,
       args: req.query
@@ -170,12 +167,12 @@ router.get('/:pubKey/balance/:time', Auth.authenticateMiddleware, async (req: Au
 });
 
 router.get('/:pubKey/utxos', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-  let { chain, network } = req as AliasDataRequest;
+  let { chain, network } = req.params;
   let { limit } = req.query as any;
   try {
     return ChainStateProvider.streamWalletUtxos({
-      chain: chain as string,
-      network: network as string,
+      chain,
+      network,
       wallet: req.wallet!,
       limit,
       req,
