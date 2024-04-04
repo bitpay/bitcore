@@ -129,7 +129,8 @@ function addNetwork(data) {
     });
   }
 
-  for (const value of Object.values(network)) {
+  const indexBy = data.indexBy || Object.values(network); 
+  for (const value of indexBy) {
     if (value != null && typeof value !== 'object') {
       if (!networkMaps[value]) {
         networkMaps[value] = [];

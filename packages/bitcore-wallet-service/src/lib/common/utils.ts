@@ -277,13 +277,14 @@ export class Utils {
   }
 
   static compareNetworks(network1, network2, chain) {
-    network1 = network1?.toLowerCase();
-    network2 = network2?.toLowerCase();
+    network1 = network1 ? this.getNetworkName(chain, network1.toLowerCase()) : null;
+    network2 = network2 ? this.getNetworkName(chain, network2.toLowerCase()) : null;
 
-    if (this.getNetworkName(chain, network1) == network2) return true;
-    if (Config.allowRegtest && ['testnet', 'regtest'].includes(Utils.getGenericName(network1)) && ['testnet', 'regtest'].includes(Utils.getGenericName(network2))) return true;
+    if (network1 == network2) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(network1) && ['testnet', 'regtest'].includes(network2)) return true;
     return false;
   }
+
   // Good for going from generic 'testnet' to specific 'testnet3', 'sepolia', etc
   static getNetworkName(chain, network) {
     const aliases = Constants.NETWORK_ALIASES[chain];
