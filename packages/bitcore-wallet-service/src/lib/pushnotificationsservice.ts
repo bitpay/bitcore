@@ -33,7 +33,7 @@ const PUSHNOTIFICATIONS_TYPES = {
     filename: ['new_outgoing_tx', 'new_zero_outgoing_tx']
   },
   NewIncomingTx: {
-    filename: ['new_incoming_tx_testnet', 'new_incoming_tx']
+    filename: ['new_incoming_tx']
   },
   TxProposalFinallyRejected: {
     filename: 'txp_finally_rejected'
@@ -167,7 +167,12 @@ export class PushNotificationsService {
     if (!notifType) return cb();
 
     if (notification.type === 'NewIncomingTx') {
-      notifType.filename = Utils.getGenericName(notification.data.network) === 'testnet' ? notifType.filename[0] : notifType.filename[1];
+      notifType.filename = notifType.filename[0];
+      if (notification.data.network && notification.data.network !== 'mainnet') {
+        notification.data.networkStr = ' on ' + notification.data.network;
+      } else {
+        notification.data.networkStr = '';
+      }
     } else if (notification.type === 'NewOutgoingTx') {
       // Handle zero amount ETH transactions to contract addresses
       notifType.filename = notification.data.amount !== 0 ? notifType.filename[0] : notifType.filename[1];

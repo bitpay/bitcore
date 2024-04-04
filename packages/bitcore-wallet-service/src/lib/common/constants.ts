@@ -92,6 +92,7 @@ export const Constants = {
     xrp: ['livenet', 'testnet', 'regtest']
   } as { [chain: string]: Array<string> },
 
+  // These aliases are here to support legacy clients so don't change them lightly
   NETWORK_ALIASES: {
     btc: {
       mainnet: 'livenet',
