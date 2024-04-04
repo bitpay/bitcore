@@ -111,9 +111,11 @@ export const Constants = {
     },
     ltc: {
       mainnet: 'livenet',
+      testnet: 'testnet4'
     },
     doge: {
       mainnet: 'livenet',
+      testnet: 'testnet3'
     },
     xrp: {
       mainnet: 'livenet',

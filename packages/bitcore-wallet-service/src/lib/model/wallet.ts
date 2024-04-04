@@ -155,7 +155,7 @@ export class Wallet {
     x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
     x.network = obj.network;
     if (!x.network) {
-      x.network = obj.isTestnet ? Utils.getNetworkAlias(x.chain, 'testnet') : 'livenet';
+      x.network = obj.isTestnet ? Utils.getNetworkName(x.chain, 'testnet') : 'livenet';
     }
     x.derivationStrategy = obj.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = obj.addressType || Constants.SCRIPT_TYPES.P2SH;

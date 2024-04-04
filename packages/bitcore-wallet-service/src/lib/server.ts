@@ -566,7 +566,7 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Invalid chain'));
     }
 
-    opts.network = Utils.getNetworkAlias(opts.chain, opts.network) || 'livenet';
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) {
       return cb(new ClientError('Invalid network'));
     }
@@ -1595,7 +1595,7 @@ export class WalletService implements IWalletService {
     }
     opts.provider = provider;
     opts.chain = chain;
-    opts.network = Utils.getNetworkAlias(chain, network);
+    opts.network = Utils.getNetworkName(chain, network);
     opts.userAgent = WalletService.getServiceVersion();
     let bc;
     try {
@@ -2034,7 +2034,7 @@ export class WalletService implements IWalletService {
     opts.chain = opts.chain || Defaults.CHAIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
-    opts.network = Utils.getNetworkAlias(opts.chain, opts.network) || 'livenet';
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) return cb(new ClientError('Invalid network'));
 
     const cacheKey = 'feeLevel:' + opts.chain + ':' + opts.network;
@@ -2907,7 +2907,7 @@ export class WalletService implements IWalletService {
     opts.chain = opts.chain || opts.coin || Defaults.COIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
-    opts.network = Utils.getNetworkAlias(opts.chain, opts.network) || 'livenet';
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) return cb(new ClientError('Invalid network'));
     this._broadcastRawTx(opts.chain, opts.network, opts.rawTx, cb);
   }

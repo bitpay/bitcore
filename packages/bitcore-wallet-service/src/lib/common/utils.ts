@@ -280,12 +280,12 @@ export class Utils {
     network1 = network1?.toLowerCase();
     network2 = network2?.toLowerCase();
 
-    if (this.getNetworkAlias(chain, network1) == network2) return true;
+    if (this.getNetworkName(chain, network1) == network2) return true;
     if (Config.allowRegtest && ['testnet', 'regtest'].includes(Utils.getGenericName(network1)) && ['testnet', 'regtest'].includes(Utils.getGenericName(network2))) return true;
     return false;
   }
   // Good for going from generic 'testnet' to specific 'testnet3', 'sepolia', etc
-  static getNetworkAlias(chain, network) {
+  static getNetworkName(chain, network) {
     const aliases = Constants.NETWORK_ALIASES[chain];
     if (aliases && aliases[network]) {
       return aliases[network];
@@ -295,9 +295,9 @@ export class Utils {
 
   // Good for going from specific 'testnet3', 'sepolia', etc to generic 'testnet'
   static getGenericName(network) {
-    if (network == 'mainnet') return 'livenet';
-    const testnets = ['testnet3', 'sepolia', 'mumbai'];
-    if (testnets.includes(network)) return 'testnet';
+    if (network === 'mainnet') return 'livenet';
+    const isTestnet = !!Object.keys(Constants.NETWORK_ALIASES).find(key => Constants.NETWORK_ALIASES[key].testnet === network);
+    if (isTestnet) return 'testnet';
     return network;
   }
 }
