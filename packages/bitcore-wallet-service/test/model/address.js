@@ -30,7 +30,19 @@ describe('Address', function() {
         path: 'm/0/1',
         publicKeys: ['123', '456'],
       });
-      x.network.should.equal('testnet3');
+      x.network.should.equal('testnet');
+    });
+    it('should create testnet address when given explicit network name', function() {
+      var x = Address.create({
+        address: 'mp5xaa4uBj16DJt1fuA3D9fejHuCzeb7hj',
+        coin: 'btc',
+        network: 'testnet3',
+        walletId: '123',
+        isChange: false,
+        path: 'm/0/1',
+        publicKeys: ['123', '456'],
+      });
+      x.network.should.equal('testnet');
     });
     it('should create testnet address from legacy client passing "testnet"', function() {
       var x = Address.create({
@@ -42,7 +54,7 @@ describe('Address', function() {
         path: 'm/0/1',
         publicKeys: ['123', '456'],
       });
-      x.network.should.equal('testnet3');
+      x.network.should.equal('testnet');
     });
   });
   describe('#derive', function() {
@@ -89,7 +101,7 @@ describe('Address', function() {
       should.exist(address);
       address.walletId.should.equal('wallet-id');
       address.address.should.equal('tb1qeg99m00dh3tl62dkaml5xma0kek2czwy65enlc7vnwgdddas9qksrc0gw5');
-      address.network.should.equal('testnet3');
+      address.network.should.equal('testnet');
       address.isChange.should.be.false;
       address.path.should.equal('m/0/0');
       address.type.should.equal('P2WSH');
@@ -105,7 +117,7 @@ describe('Address', function() {
       should.exist(address);
       address.walletId.should.equal('wallet-id');
       address.address.should.equal('tb1qeg99m00dh3tl62dkaml5xma0kek2czwy65enlc7vnwgdddas9qksrc0gw5');
-      address.network.should.equal('testnet3');
+      address.network.should.equal('testnet');
       address.isChange.should.be.false;
       address.path.should.equal('m/0/0');
       address.type.should.equal('P2WSH');
@@ -155,7 +167,7 @@ describe('Address', function() {
       should.exist(address);
       address.walletId.should.equal('wallet-id');
       address.address.should.equal('tb1q54yvs7zxv7djqnxtlfpw9efw4kwlj7qzudg3eq');
-      address.network.should.equal('testnet3');
+      address.network.should.equal('testnet');
       address.isChange.should.be.true;
       address.path.should.equal('m/1/2');
       address.type.should.equal('P2WPKH');
@@ -167,7 +179,7 @@ describe('Address', function() {
       should.exist(address);
       address.walletId.should.equal('wallet-id');
       address.address.should.equal('tb1q54yvs7zxv7djqnxtlfpw9efw4kwlj7qzudg3eq');
-      address.network.should.equal('testnet3');
+      address.network.should.equal('testnet');
       address.isChange.should.be.true;
       address.path.should.equal('m/1/2');
       address.type.should.equal('P2WPKH');

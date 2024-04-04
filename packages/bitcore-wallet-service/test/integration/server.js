@@ -2102,7 +2102,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           should.exist(address);
           address.walletId.should.equal(wallet.id);
-          address.network.should.equal('testnet3');
+          address.network.should.equal('testnet');
           address.address.should.equal('qpmvku3x8j9pz7mee89c590xsl3k5l02mqeyfhf3ce');
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
