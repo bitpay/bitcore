@@ -281,7 +281,7 @@ export class Utils {
     network2 = network2 ? this.getNetworkName(chain, network2.toLowerCase()) : null;
 
     if (network1 == network2) return true;
-    if (Config.allowRegtest && ['testnet', 'regtest'].includes(network1) && ['testnet', 'regtest'].includes(network2)) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(this.getGenericName(network1)) && ['testnet', 'regtest'].includes(this.getGenericName(network2))) return true;
     return false;
   }
 

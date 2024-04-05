@@ -1164,7 +1164,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (!xPubKey.network.is(Utils.getGenericName(wallet.network))) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 

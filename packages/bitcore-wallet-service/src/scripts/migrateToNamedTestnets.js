@@ -15,6 +15,15 @@ const networkMapping = {
   bch: {
     testnet: 'testnet3'
   },
+  doge: {
+    testnet: 'testnet3'
+  },
+  ltc: {
+    testnet: 'testnet4',
+  },
+  matic: {
+    testnet: 'mumbai'
+  }
 };
 
 const doit = process.argv[2] === '--doit';

@@ -24,6 +24,15 @@ const networkMapping = {
   },
   BCH: {
     testnet: 'testnet3'
+  },
+  DOGE: {
+    testnet: 'testnet3'
+  },
+  LTC: {
+    testnet: 'testnet4',
+  },
+  MATIC: {
+    testnet: 'mumbai'
   }
 };
 
