@@ -281,7 +281,7 @@ export class Utils {
     network2 = network2 ? this.getNetworkName(chain, network2.toLowerCase()) : null;
 
     if (network1 == network2) return true;
-    if (Config.allowRegtest && ['testnet', 'regtest'].includes(this.getGenericName(network1)) && ['testnet', 'regtest'].includes(this.getGenericName(network2))) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(this.getNetworkType(network1)) && ['testnet', 'regtest'].includes(this.getNetworkType(network2))) return true;
     return false;
   }
 
@@ -300,5 +300,15 @@ export class Utils {
     const isTestnet = !!Object.keys(Constants.NETWORK_ALIASES).find(key => Constants.NETWORK_ALIASES[key].testnet === network);
     if (isTestnet) return 'testnet';
     return network;
+  }
+
+  static getNetworkType(network) {
+    if (['mainnet', 'livenet'].includes(network)) {
+      return 'mainnet';
+    }
+    if (network === 'regtest') {
+       return 'regtest';
+    }
+    return 'testnet';
   }
 }
