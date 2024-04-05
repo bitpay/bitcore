@@ -103,7 +103,7 @@ export class BlockchainMonitor {
                 return;
               }
 
-              const bcNetwork = Utils.getGenericName(pair.network) === 'testnet' && config.regtestEnabled ? 'regtest' : pair.network;
+              const bcNetwork = Utils.getNetworkType(pair.network) === 'testnet' && config.regtestEnabled ? 'regtest' : pair.network;
               explorer = BlockChainExplorer({
                 provider: config.provider,
                 chain: pair.chain,
@@ -280,7 +280,7 @@ export class BlockchainMonitor {
           },
           walletId
         });
-        if (Utils.getGenericName(network) !== 'testnet') {
+        if (Utils.getNetworkType(network) !== 'testnet') {
           this.storage.fetchWallet(walletId, (err, wallet) => {
             if (err) return;
             async.each(
