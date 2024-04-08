@@ -137,7 +137,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           return { feerate, blocks: target };
         }
         let feerate;
-        if (!this.isExternal(network)) {
+        if (!this.isExternallyProvided(network)) {
           const txs = await EVMTransactionStorage.collection
             .find({ chain, network, blockHeight: { $gt: 0 } })
             .project({ gasPrice: 1, blockHeight: 1 })
@@ -611,12 +611,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     });
   }
 
-  isExternal(network: string) {
+  isExternallyProvided(network: string) {
     return this.config[network]?.chainSource === 'external';
   }
 
   execute(funcName: string, network: string): (...args: any[]) => any {
-    if (this.isExternal(network)) {
+    if (this.isExternallyProvided(network)) {
       // historical data via external provider + sparse mongo data
       return this.ecsp[funcName];
     }

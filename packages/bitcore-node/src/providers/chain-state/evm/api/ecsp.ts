@@ -15,12 +15,12 @@ import {
   StreamTransactionParams,
   StreamTransactionsParams
 } from '../../../../types/namespaces/ChainStateProvider';
-import { BaseEVMStateProvider } from './csp';
 import { StatsUtil } from '../../../../utils/stats';
 import MoralisAPI from '../../external/moralis';
 import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON } from '../types';
+import { BaseEVMStateProvider } from './csp';
 import { getProvider } from './provider';
 
 export class BaseEVMExternalStateProvider extends InternalStateProvider implements IChainStateService {
