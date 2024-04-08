@@ -67,6 +67,15 @@ describe('ETH Chain State Provider', function() {
       gasPrice: 10,
       data: Buffer.from('')
     } as MongoBound<IEVMTransactionInProcess>;
+    const mockBlock = {
+      _id: new ObjectId(),
+      chain: 'ETH', 
+      network: 'testnet',
+      hash: '55555',
+      height: 1,
+      processed: true
+    } as MongoBound<IEVMBlock>;
+    mockModel('blocks', mockBlock);
     sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);

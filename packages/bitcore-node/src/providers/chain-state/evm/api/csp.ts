@@ -4,8 +4,12 @@ import { Readable } from 'stream';
 import Web3 from 'web3';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
-import * as worker from 'worker_threads';
 import Config from '../../../../config';
+import { 
+  historical,
+  internal,
+  realtime
+ } from '../../../../decorators/decorators';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
 import { ITransaction } from '../../../../models/baseTransaction';
@@ -13,8 +17,9 @@ import { CacheStorage } from '../../../../models/cache';
 import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { InternalStateProvider } from '../../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../../services/storage';
+import { IBlock } from '../../../../types/Block';
 import { SpentHeightIndicators } from '../../../../types/Coin';
-import { IChainConfig, IEVMNetworkConfig } from '../../../../types/Config';
+import { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
 import {
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
@@ -35,22 +40,26 @@ import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
+import { BaseEVMExternalStateProvider } from './ecsp';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
+import { getProvider } from './provider';
 import { EVMListTransactionsStream } from './transform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
   static rpcs = {} as { [chain: string]: { [network: string]: { rpc: CryptoRpc; web3: Web3 } } };
+  ecsp: BaseEVMExternalStateProvider;
 
   constructor(public chain: string = 'ETH') {
     super(chain);
     this.config = Config.chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
+    this.ecsp = new BaseEVMExternalStateProvider(chain);
   }
 
-  async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
+  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
     try {
       if (BaseEVMStateProvider.rpcs[this.chain] && BaseEVMStateProvider.rpcs[this.chain][network]) {
         await BaseEVMStateProvider.rpcs[this.chain][network].web3.eth.getBlockNumber();
@@ -60,10 +69,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     if (!BaseEVMStateProvider.rpcs[this.chain] || !BaseEVMStateProvider.rpcs[this.chain][network]) {
       logger.info(`Making a new connection for ${this.chain}:${network}`);
-      const providerIdx = worker.threadId % (this.config[network]?.providers || []).length;
-      const providerConfig = this.config[network]?.provider || this.config[network]?.providers![providerIdx];
-      const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
-      const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
+      const dataType = params?.type;
+      const providerConfig = getProvider({ network, dataType, config: this.config });
+      // EVM Chains other than MATIC will have both web3 configured by provider config and use ETH CryptoRpc
+      const chain = !['ETH', 'MATIC'].includes(this.chain) ? 'ETH' : this.chain;
+      const rpcConfig = { ...providerConfig, chain, currencyConfig: {} };
+      const rpc = new CryptoRpc(rpcConfig, {}).get(chain);
       if (BaseEVMStateProvider.rpcs[this.chain]) {
         BaseEVMStateProvider.rpcs[this.chain][network] = { rpc, web3: rpc.web3 };
       } else {
@@ -105,6 +116,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return await token.methods.allowance(ownerAddress, spenderAddress).call();
   }
 
+  @historical
   async getFee(params) {
     let { network, target = 4, txType } = params;
     const chain = this.chain;
@@ -120,28 +132,33 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       cacheKey,
       async () => {
         if (txType?.toString() === '2') {
-          const { rpc } = await this.getWeb3(network);
+          const { rpc } = await this.getWeb3(network, { type: 'historical'});
           let feerate = await rpc.estimateFee({ nBlocks: target, txType });
           return { feerate, blocks: target };
         }
-        const txs = await EVMTransactionStorage.collection
-          .find({ chain, network, blockHeight: { $gt: 0 } })
-          .project({ gasPrice: 1, blockHeight: 1 })
-          .sort({ blockHeight: -1 })
-          .limit(20 * 200)
-          .toArray();
+        let feerate;
+        if (!this.isExternal(network)) {
+          const txs = await EVMTransactionStorage.collection
+            .find({ chain, network, blockHeight: { $gt: 0 } })
+            .project({ gasPrice: 1, blockHeight: 1 })
+            .sort({ blockHeight: -1 })
+            .limit(20 * 200)
+            .toArray();
 
-        const blockGasPrices = txs
-          .map(tx => Number(tx.gasPrice))
-          .filter(gasPrice => gasPrice)
-          .sort((a, b) => b - a);
+          const blockGasPrices = txs
+            .map(tx => Number(tx.gasPrice))
+            .filter(gasPrice => gasPrice)
+            .sort((a, b) => b - a);
 
-        const whichQuartile = Math.min(target, 4) || 1;
-        const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
+          const whichQuartile = Math.min(target, 4) || 1;
+          const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
 
-        const roundedGwei = (quartileMedian / 1e9).toFixed(2);
-        const gwei = Number(roundedGwei) || 0;
-        const feerate = gwei * 1e9;
+          const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+          const gwei = Number(roundedGwei) || 0;
+          feerate = gwei * 1e9;
+        } else {
+          return await this.ecsp.getFee(params);
+        }
         return { feerate, blocks: target };
       },
       CacheStorage.Times.Minute
@@ -170,7 +187,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
     const { chain, network, address } = params;
-    const { web3 } = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network, { type: 'realtime'});
     const tokenAddress = params.args && params.args.tokenAddress;
     const addressLower = address.toLowerCase();
     const cacheKey = tokenAddress
@@ -195,12 +212,17 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return balances;
   }
 
+  @realtime
   async getLocalTip({ chain, network }) {
+    return this.execute('getLocalTip', network)({ chain, network });
+  }
+
+  _getLocalTip = async ({ chain, network }) : Promise<IBlock> => {
     return EVMBlockStorage.getLocalTip({ chain, network });
   }
 
   async getReceipt(network: string, txid: string) {
-    const { web3 } = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network, { type: 'historical'});
     return web3.eth.getTransactionReceipt(txid);
   }
 
@@ -224,7 +246,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return tx;
   }
 
+  @historical
   async getTransaction(params: StreamTransactionParams) {
+    let { network } = params;
+    return await this.execute('getTransaction', network)(params);
+  }
+
+  _getTransaction = async (params: StreamTransactionParams) => {
     try {
       let { chain, network, txId } = params;
       if (typeof txId !== 'string' || !chain || !network) {
@@ -232,7 +260,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       }
       network = network.toLowerCase();
       let query = { chain, network, txid: txId };
-      const tip = await this.getLocalTip(params);
+      const tip = await this._getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
       let found = await EVMTransactionStorage.collection.findOne(query);
       if (found) {
@@ -256,7 +284,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async broadcastTransaction(params: BroadcastTransactionParams) {
     const { network, rawTx } = params;
-    const { web3 } = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network, { type: 'realtime'});
     const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
     const txids = new Array<string>();
     for (const tx of rawTxs) {
@@ -275,6 +303,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return txids.length === 1 ? txids[0] : txids;
   }
 
+  @historical
+  @internal
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
     const { limit, /*since,*/ tokenAddress } = args;
@@ -301,6 +331,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
   }
 
+  @historical
+  @internal
   async streamTransactions(params: StreamTransactionsParams) {
     const { chain, network, req, res, args } = params;
     let { blockHash, blockHeight } = args;
@@ -317,7 +349,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (blockHash !== undefined) {
       query.blockHash = blockHash;
     }
-    const tip = await this.getLocalTip(params);
+    const tip = await this._getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(EVMTransactionStorage, query, args, req, res, t => {
       let confirmations = 0;
@@ -333,6 +365,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     });
   }
 
+  @realtime
   async getWalletBalance(params: GetWalletBalanceParams) {
     const { network } = params;
     if (params.wallet._id === undefined) {
@@ -475,8 +508,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     } as Partial<Transaction>;
   }
 
+  @realtime
   async getAccountNonce(network: string, address: string) {
-    const { web3 } = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network, { type: 'realtime'});
     const count = await web3.eth.getTransactionCount(address);
     return count;
     /*
@@ -506,11 +540,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
   }
 
+  @realtime
   async estimateGas(params): Promise<number> {
     return new Promise(async (resolve, reject) => {
       try {
         let { network, value, from, data, /*gasPrice,*/ to } = params;
-        const { web3 } = await this.getWeb3(network);
+        const { web3 } = await this.getWeb3(network, { type: 'realtime'});
         const dataDecoded = EVMTransactionStorage.abiDecode(data);
 
         if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
@@ -576,14 +611,33 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     });
   }
 
+  isExternal(network: string) {
+    return this.config[network]?.chainSource === 'external';
+  }
+
+  execute(funcName: string, network: string): (...args: any[]) => any {
+    if (this.isExternal(network)) {
+      // historical data via external provider + sparse mongo data
+      return this.ecsp[funcName];
+    }
+    // historical data via full mongo data      
+    return this[`_${funcName}`];
+  }
+
+  @historical
   async getBlocks(params: GetBlockParams) {
+    const { network } = params;
+    return this.execute('getBlocks', network)(params);
+  }
+
+  _getBlocks = async (params: GetBlockParams) => {
     const { query, options } = this.getBlocksQuery(params);
     let cursor = EVMBlockStorage.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
     if (options.sort) {
       cursor = cursor.sort(options.sort);
     }
     let blocks = await cursor.toArray();
-    const tip = await this.getLocalTip(params);
+    const tip = await this._getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     const blockTransform = (b: IEVMBlock) => {
       let confirmations = 0;

@@ -42,6 +42,15 @@ export type GetBlockParams = ChainNetwork & {
   args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
 };
 
+export interface ExternalGetBlockResults {
+  block?: number | string;
+  height?: number;
+  startDateBlock?: number;
+  endDateBlock?: number;
+  startBlock: number;
+  endBlock: number;
+}
+
 export type GetBlockBeforeTimeParams = ChainNetwork & {
   time?: Date | string;
 };
