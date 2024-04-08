@@ -82,7 +82,7 @@ export class EVMRouter {
   };
 
   private getERC20TokenAllowance (router: Router) {
-    router.get(`/api/ETH/${this.chain}/token/:tokenAddress/allowance/:ownerAddress/for/:spenderAddress`, async (req, res) => {
+    router.get(`/api/${this.chain}/:network/token/:tokenAddress/allowance/:ownerAddress/for/:spenderAddress`, async (req, res) => {
       const { network, tokenAddress, ownerAddress, spenderAddress } = req.params;
       try {
         const allowance = await this.csp.getERC20TokenAllowance(network, tokenAddress, ownerAddress, spenderAddress);

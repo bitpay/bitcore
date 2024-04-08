@@ -1,5 +1,5 @@
 // list of supported chains: https://docs.moralis.io/supported-chains?list
-const moarlisChains = {
+const moralisChains = {
   ETH: {
     mainnet: '0x1',
     testnet: 'sepolia',
@@ -28,4 +28,4 @@ const moarlisChains = {
   },
 }
 
-export default moarlisChains;
+export default moralisChains;

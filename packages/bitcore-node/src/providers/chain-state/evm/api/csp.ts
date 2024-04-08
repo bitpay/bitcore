@@ -50,7 +50,7 @@ import { EVMListTransactionsStream } from './transform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
-  static rpcs = {} as { [chain: string]: { [network: string]: { rpc: CryptoRpc; web3: Web3 } } };
+  static rpcs = {} as { [chain: string]: { [network: string]: { rpc: CryptoRpc; web3: Web3; dataType: string } } };
   ecsp: BaseEVMExternalStateProvider;
 
   constructor(public chain: string = 'ETH') {
@@ -59,9 +59,14 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     this.ecsp = new BaseEVMExternalStateProvider(chain);
   }
 
-  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
+  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<{ rpc: CryptoRpc; web3: Web3; dataType: string }> {
     try {
-      if (BaseEVMStateProvider.rpcs[this.chain] && BaseEVMStateProvider.rpcs[this.chain][network]) {
+      const validTypes = params?.type ? ['combined', params.type]  : ['combined'];
+      if (
+        BaseEVMStateProvider.rpcs[this.chain] 
+        && BaseEVMStateProvider.rpcs[this.chain][network]
+        && validTypes.includes(BaseEVMStateProvider.rpcs[this.chain][network].dataType)
+      ) {
         await BaseEVMStateProvider.rpcs[this.chain][network].web3.eth.getBlockNumber();
       }
     } catch (e) {
@@ -76,9 +81,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const rpcConfig = { ...providerConfig, chain, currencyConfig: {} };
       const rpc = new CryptoRpc(rpcConfig, {}).get(chain);
       if (BaseEVMStateProvider.rpcs[this.chain]) {
-        BaseEVMStateProvider.rpcs[this.chain][network] = { rpc, web3: rpc.web3 };
+        BaseEVMStateProvider.rpcs[this.chain][network] = { rpc, web3: rpc.web3, dataType: dataType || 'combinded' };
       } else {
-        BaseEVMStateProvider.rpcs[this.chain] = { [network]: { rpc, web3: rpc.web3 } };
+        BaseEVMStateProvider.rpcs[this.chain] = { [network]: { rpc, web3: rpc.web3, dataType: dataType || 'combinded'  } };
       }
     }
     return BaseEVMStateProvider.rpcs[this.chain][network];

@@ -1,7 +1,7 @@
 import request = require('request');
 import config from '../../../config';
 import { isDateValid } from '../../../utils/check';
-import moarlisChains from './defaults';
+import moralisChains from './defaults';
 
 const version = config.externalProviders?.moralis.apiVersion;
 
@@ -9,7 +9,7 @@ const getBlockByDate = async ({ chain, network, date }) => {
   if (!date || !isDateValid(date) ) {
     return new Error('Invalid date');
   }  
-  const chainId = moarlisChains[chain][network];
+  const chainId = moralisChains[chain][network];
   const unixTime = new Date(date).getTime();
   return new Promise((resolve, reject) => {
     request({
@@ -62,13 +62,13 @@ const getMoralisChainId = (chain, network) : string | Error => {
   network = network.toLowerCase();
 
   if (network === 'testnet') {
-    network = moarlisChains[chain]?.testnet;
+    network = moralisChains[chain]?.testnet;
   }
-  if (!moarlisChains[chain][network]) {
+  if (!moralisChains[chain][network]) {
     return new Error('Invalid network');
   }
 
-  return moarlisChains[chain][network];
+  return moralisChains[chain][network];
 }
 
 const MoralisAPI = {
