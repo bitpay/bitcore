@@ -45,7 +45,10 @@ import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
-import { getProvider } from './provider';
+import { 
+  getProvider,
+  isValidProviderType
+ } from './provider';
 import { EVMListTransactionsStream } from './transform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
@@ -61,12 +64,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<{ rpc: CryptoRpc; web3: Web3; dataType: string }> {
     try {
-      const validTypes = params?.type ? ['combined', params.type]  : ['combined'];
-      if (
-        BaseEVMStateProvider.rpcs[this.chain] 
-        && BaseEVMStateProvider.rpcs[this.chain][network]
-        && validTypes.includes(BaseEVMStateProvider.rpcs[this.chain][network].dataType)
-      ) {
+      if (isValidProviderType(params?.type, BaseEVMStateProvider.rpcs[this.chain]?.[network]?.dataType)) {
         await BaseEVMStateProvider.rpcs[this.chain][network].web3.eth.getBlockNumber();
       }
     } catch (e) {
@@ -136,7 +134,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       cacheKey,
       async () => {
         if (txType?.toString() === '2') {
-          const { rpc } = await this.getWeb3(network, { type: 'historical'});
+          const { rpc } = await this.getWeb3(network, { type: 'historical' });
           let feerate = await rpc.estimateFee({ nBlocks: target, txType });
           return { feerate, blocks: target };
         }
@@ -191,7 +189,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
     const { chain, network, address } = params;
-    const { web3 } = await this.getWeb3(network, { type: 'realtime'});
+    const { web3 } = await this.getWeb3(network, { type: 'realtime' });
     const tokenAddress = params.args && params.args.tokenAddress;
     const addressLower = address.toLowerCase();
     const cacheKey = tokenAddress
@@ -226,7 +224,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getReceipt(network: string, txid: string) {
-    const { web3 } = await this.getWeb3(network, { type: 'historical'});
+    const { web3 } = await this.getWeb3(network, { type: 'historical' });
     return web3.eth.getTransactionReceipt(txid);
   }
 
@@ -288,7 +286,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async broadcastTransaction(params: BroadcastTransactionParams) {
     const { network, rawTx } = params;
-    const { web3 } = await this.getWeb3(network, { type: 'realtime'});
+    const { web3 } = await this.getWeb3(network, { type: 'realtime' });
     const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
     const txids = new Array<string>();
     for (const tx of rawTxs) {
@@ -514,7 +512,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @realtime
   async getAccountNonce(network: string, address: string) {
-    const { web3 } = await this.getWeb3(network, { type: 'realtime'});
+    const { web3 } = await this.getWeb3(network, { type: 'realtime' });
     const count = await web3.eth.getTransactionCount(address);
     return count;
     /*
@@ -549,7 +547,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return new Promise(async (resolve, reject) => {
       try {
         let { network, value, from, data, /*gasPrice,*/ to } = params;
-        const { web3 } = await this.getWeb3(network, { type: 'realtime'});
+        const { web3 } = await this.getWeb3(network, { type: 'realtime' });
         const dataDecoded = EVMTransactionStorage.abiDecode(data);
 
         if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {

@@ -21,7 +21,10 @@ import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON } from '../types';
 import { BaseEVMStateProvider } from './csp';
-import { getProvider } from './provider';
+import { 
+  getProvider,
+  isValidProviderType
+ } from './provider';
 
 export class BaseEVMExternalStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -33,12 +36,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
 
   async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<{ rpc: CryptoRpc; web3: Web3; dataType: string }> {
     try {
-      const validTypes = params?.type ? ['combined', params.type]  : ['combined'];
-      if (
-        BaseEVMStateProvider.rpcs[this.chain] 
-        && BaseEVMStateProvider.rpcs[this.chain][network]
-        && validTypes.includes(BaseEVMStateProvider.rpcs[this.chain][network].dataType)
-      ) {
+      if (isValidProviderType(params?.type, BaseEVMStateProvider.rpcs[this.chain]?.[network]?.dataType)) {
         await BaseEVMStateProvider.rpcs[this.chain][network].web3.eth.getBlockNumber();
       }
     } catch (e) {
@@ -68,7 +66,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
 
   async getFee(params) {
     let { network, target = 4 } = params;
-    const { web3 } = await this.getWeb3(network, { type: 'historical'});
+    const { web3 } = await this.getWeb3(network, { type: 'historical' });
     const latestBlock = await web3.eth.getBlockNumber();
     // Getting the 25th percentile gas prices from the last 4k blocks
     const feeHistory = await web3.eth.getFeeHistory(20 * 200, latestBlock, [25]);
@@ -87,7 +85,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     try {
       const { chain, network } = params;
       const { query } = await this.getBlocksParams(params);
-      const { web3 } = await this.getWeb3(network, { type: 'historical'});
+      const { web3 } = await this.getWeb3(network, { type: 'historical' });
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
       const blockTransform = async (block) => {
@@ -135,7 +133,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         throw new Error('Missing required param');
       }
       network = network.toLowerCase();
-      const { web3 } = await this.getWeb3(network, { type: 'historical'});
+      const { web3 } = await this.getWeb3(network, { type: 'historical' });
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
       const tx : any = await web3.eth.getTransaction(txId);

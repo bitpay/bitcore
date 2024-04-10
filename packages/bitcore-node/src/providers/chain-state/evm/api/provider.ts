@@ -36,7 +36,13 @@ const matchProviderType = (provider : IProvider | undefined, type : string | und
   return false;
 }
 
+const isValidProviderType = (expectedType, type) => {
+  const validTypes = expectedType ? ['combined', expectedType]  : ['combined'];
+  return validTypes.includes(type);
+}
+
 export {
   getProvider,
-  matchProviderType
+  matchProviderType,
+  isValidProviderType
 };

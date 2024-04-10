@@ -30,7 +30,7 @@ export class EVMRouter {
     this.getPriorityFee(router);
   };
   
-  private setMultiSigRoutes(router: Router) {1
+  private setMultiSigRoutes(router: Router) {
     this.getMultisigEthInfo(router);
     this.getMultisigContractInstantiationInfo(router);
     this.getMultisigTxpsInfo(router);

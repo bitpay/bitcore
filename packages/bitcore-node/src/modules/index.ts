@@ -57,7 +57,7 @@ class ModuleManager extends BaseModule {
     XRP: './ripple',
     ARB: './arbitrum',
     BASE: './base',
-    OP: './op',
+    OP: './optimism',
   };
 
   loadConfigured() {
