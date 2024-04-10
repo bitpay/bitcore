@@ -21,7 +21,7 @@ function Output(args) {
       this._scriptBuffer = args.script;
     } else {
       var script;
-      if (_.isString(args.script) && JSUtil.isHexa(args.script)) {
+      if (typeof args.script === 'string' && JSUtil.isHexa(args.script)) {
         script = Buffer.from(args.script, 'hex');
       } else {
         script = args.script;
@@ -57,7 +57,7 @@ Object.defineProperty(Output.prototype, 'satoshis', {
     if (num instanceof BN) {
       this._satoshisBN = num;
       this._satoshis = num.toNumber();
-    } else if (_.isString(num)) {
+    } else if (typeof num === 'string') {
       this._satoshis = parseInt(num);
       this._satoshisBN = BN.fromNumber(this._satoshis);
     } else {
@@ -119,7 +119,7 @@ Output.prototype.setScript = function(script) {
     this._scriptBuffer = script.toBuffer();
     this._script = script;
     this._script._isOutput = true;
-  } else if (_.isString(script)) {
+  } else if (typeof script === 'string') {
     this._script = Script.fromString(script);
     this._scriptBuffer = this._script.toBuffer();
     this._script._isOutput = true;
@@ -162,6 +162,13 @@ Output.prototype.toBufferWriter = function(writer) {
   writer.writeVarintNum(script.length);
   writer.write(script);
   return writer;
+};
+
+Output.prototype.calculateSize = function() {
+  let result = 8; // satoshis
+  result += BufferWriter.varintBufNum(this._scriptBuffer.length).length;
+  result += this._scriptBuffer.length;
+  return result;
 };
 
 module.exports = Output;

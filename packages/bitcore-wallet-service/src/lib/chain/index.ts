@@ -66,6 +66,7 @@ export interface IChain {
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void);
 }
 
 const chains: { [chain: string]: IChain } = {
@@ -198,6 +199,10 @@ class ChainProxy {
 
   onTx(chain: string, tx: any) {
     return this.get(chain).onTx(tx);
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return this.get(wallet.chain).getReserve(server, wallet, cb);
   }
 }
 

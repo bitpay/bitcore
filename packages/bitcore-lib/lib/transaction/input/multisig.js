@@ -214,7 +214,7 @@ MultiSigInput.OPCODES_SIZE = 1; // 0
 MultiSigInput.SIGNATURE_SIZE = 73; // size (1) + DER (<=72)
 
 MultiSigInput.prototype._estimateSize = function() {
-  return MultiSigInput.OPCODES_SIZE +
+  return this._getBaseSize() + MultiSigInput.OPCODES_SIZE +
     this.threshold * MultiSigInput.SIGNATURE_SIZE;
 };
 

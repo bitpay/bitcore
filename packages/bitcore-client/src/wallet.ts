@@ -1,6 +1,5 @@
 import * as Bcrypt from 'bcrypt';
-import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, Transactions, Web3 } from 'crypto-wallet-core';
-import { ethers } from 'ethers'; // TODO import from CWC once PR is merged
+import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, ethers, Transactions, Web3, xrpl } from 'crypto-wallet-core';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
@@ -15,13 +14,15 @@ const chainLibs = {
   DOGE: BitcoreLibDoge,
   LTC: BitcoreLibLtc,
   ETH: { Web3, ethers },
-  MATIC: { Web3, ethers }
+  MATIC: { Web3, ethers },
+  XRP: xrpl
 };
 
 export interface KeyImport {
   address: string;
   privKey?: string;
   pubKey?: string;
+  path?: string;
 }
 export interface WalletObj {
   name: string;
@@ -74,6 +75,8 @@ export class Wallet {
   tokens?: Array<any>;
   lite: boolean;
   addressType: string;
+
+  static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
@@ -318,16 +321,17 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string, token?: string) {
+  getBalance(time?: string, token?: string, tokenName?: string) {
     let payload;
-    if (token) {
-      let tokenContractAddress;
-      const tokenObj = this.tokens.find(tok => tok.symbol === token);
+    if (token || tokenName) {
+      let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
+      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
       if (!tokenObj) {
-        throw new Error(`${token} not found on wallet ${this.name}`);
+        throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
       }
-      tokenContractAddress = tokenObj.address;
-      payload = { tokenContractAddress };
+      payload = {
+        tokenContractAddress: tokenObj.address
+      };
     }
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
@@ -368,12 +372,12 @@ export class Wallet {
   }
 
   listTransactions(params) {
-    const { token } = params;
-    if (token) {
-      let tokenContractAddress;
-      const tokenObj = this.tokens.find(tok => tok.symbol === token);
+    const { token, tokenName } = params;
+    if (token || tokenName) {
+      let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
+      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
       if (!tokenObj) {
-        throw new Error(`${token} not found on wallet ${this.name}`);
+        throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
       }
       params.tokenContractAddress = tokenObj.address;
     }
@@ -394,7 +398,8 @@ export class Wallet {
     this.tokens.push({
       symbol: params.symbol,
       address: params.address,
-      decimals: params.decimals
+      decimals: params.decimals,
+      name: params.name
     });
     await this.saveWallet();
   }
@@ -411,6 +416,7 @@ export class Wallet {
     tag?: number;
     data?: string;
     token?: string;
+    tokenName?: string;
     gasLimit?: number;
     gasPrice?: number;
     contractAddress?: string;
@@ -418,13 +424,16 @@ export class Wallet {
     lockUntilBlock?: number;
     lockUntilDate?: Date;
     isSweep?: boolean;
+    type?: string;
+    flags?: number;
   }) {
-    const chain = params.token ? this.chain + 'ERC20' : this.chain;
+    const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
-    if (params.token) {
-      const tokenObj = this.tokens.find(tok => tok.symbol === params.token);
+    if (params.token || params.tokenName) {
+      let tokenObj = params.tokenName && this.tokens.find(tok => tok.name === params.tokenName);
+      tokenObj = tokenObj || (params.token && this.tokens.find(tok => tok.symbol === params.token && [params.token, undefined].includes(tok.name)));
       if (!tokenObj) {
-        throw new Error(`${params.token} not found on wallet ${this.name}`);
+        throw new Error(`${params.tokenName || params.token} not found on wallet ${this.name}`);
       }
       tokenContractAddress = tokenObj.address;
     }
@@ -454,7 +463,9 @@ export class Wallet {
       replaceByFee: params.replaceByFee,
       lockUntilBlock: params.lockUntilBlock,
       lockUntilDate: params.lockUntilDate,
-      isSweep: params.isSweep
+      isSweep: params.isSweep,
+      type: params.type,
+      flags: params.flags
     };
     return Transactions.create(payload);
   }
@@ -584,6 +595,19 @@ export class Wallet {
       pubKey: this.authPubKey
     });
     return walletAddresses.map(walletAddress => walletAddress.address);
+  }
+
+  async getLocalAddress(address) {
+    return this.storage.getAddress({ name: this.name, address });
+  }
+
+  async getLocalAddresses(limit?: number, skip?: number) {
+    return this.storage.getAddresses({ name: this.name, limit, skip });
+  }
+
+  async checkAddressOnServer(address) {
+    const walletAddresses = await this.getAddresses();
+    return !!walletAddresses.find(a => a === address);
   }
 
   deriveAddress(addressIndex, isChange) {
@@ -749,6 +773,11 @@ export class Wallet {
 
     const tx: string = await this.newTx(params);
     return { tx, params };
+  }
+
+  async getAccountFlags({ index }) {
+    const account = this.deriveAddress(index ?? 0, false);
+    return this.client.getAccountFlags({ address: account });
   }
 }
 

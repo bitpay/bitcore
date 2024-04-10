@@ -144,6 +144,13 @@ const Config = (): any => {
           removed: false
         }
       },
+      sellCrypto: {
+        disabled: false,
+        moonpay: {
+          disabled: false,
+          removed: false
+        }
+      },
       swapCrypto: {
         disabled: false,
         changelly: {
@@ -181,24 +188,28 @@ const Config = (): any => {
     //     apiKey: 'moonpay_sandbox_api_key_here',
     //     api: 'https://api.moonpay.com',
     //     widgetApi: 'https://buy-sandbox.moonpay.com',
+    //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
     //     secretKey: 'moonpay_sandbox_secret_key_here',
     //   },
     //   production: {
     //     apiKey: 'moonpay_production_api_key_here',
     //     api: 'https://api.moonpay.com',
     //     widgetApi: 'https://buy.moonpay.com',
+    //     sellWidgetApi: 'https://sell.moonpay.com',
     //     secretKey: 'moonpay_production_secret_key_here',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'moonpay_sandbox_web_api_key_here',
     //     api: 'https://api.moonpay.com',
     //     widgetApi: 'https://buy-sandbox.moonpay.com',
+    //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
     //     secretKey: 'moonpay_sandbox_web_secret_key_here',
     //   },
     //   productionWeb: {
     //     apiKey: 'moonpay_production_web_api_key_here',
     //     api: 'https://api.moonpay.com',
     //     widgetApi: 'https://buy.moonpay.com',
+    //     sellWidgetApi: 'https://sell.moonpay.com',
     //     secretKey: 'moonpay_production_web_secret_key_here',
     //   }
     // },

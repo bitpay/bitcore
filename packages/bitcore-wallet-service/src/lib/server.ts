@@ -439,6 +439,7 @@ export class WalletService implements IWalletService {
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
         message += ' %o';
+        args[i] = args[i]?.stack || args[i]?.message || args[i];
       }
     }
 
@@ -568,6 +569,10 @@ export class WalletService implements IWalletService {
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) {
       return cb(new ClientError('Invalid network'));
+    }
+
+    if (opts.network === 'regtest' && !config.allowRegtest) {
+      return cb(new ClientError('Regtest is not allowed for this environment'));
     }
 
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
@@ -1159,7 +1164,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (wallet.network != xPubKey.network.name) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 
@@ -2592,6 +2597,17 @@ export class WalletService implements IWalletService {
                   };
                   txp = TxProposal.create(txOpts);
                   next();
+                },
+                async next => {
+                  if (opts.chain != 'xrp') return next();
+                  this.getBalance({ chain: opts.chain, wallet }, async (err, bal) => {
+                    if (err) return next(err);
+                    ChainService.getReserve(this, wallet, (err, reserve) => {
+                      if (err) return next(err);
+                      if (reserve > bal.totalConfirmedAmount - txp.getTotalAmount() - txp.fee) return next(Errors.BALANCE_BELOW_RESERVE);
+                      return next();
+                    });
+                  });
                 },
                 next => {
                   return ChainService.selectTxInputs(this, txp, wallet, opts, next);
@@ -4732,6 +4748,17 @@ export class WalletService implements IWalletService {
       externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
     }
 
+    // Sell crypto rules
+    const sellCryptoUsaBannedStates = ['NY'];
+    if (
+      // Logged in with bitpayId
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      // Logged out (IP restriction)
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
+    ) {
+      externalServicesConfig.sellCrypto = {...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
+    }
+
     return cb(null, externalServicesConfig);
   }
 
@@ -4961,16 +4988,46 @@ export class WalletService implements IWalletService {
     const keys: {
       API: string;
       WIDGET_API: string;
+      SELL_WIDGET_API: string;
       API_KEY: string;
       SECRET_KEY: string;
     } = {
       API: config.moonpay[env].api,
       WIDGET_API: config.moonpay[env].widgetApi,
+      SELL_WIDGET_API: config.moonpay[env].sellWidgetApi,
       API_KEY: config.moonpay[env].apiKey,
       SECRET_KEY: config.moonpay[env].secretKey
     };
 
     return keys;
+  }
+
+  moonpayGetCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const URL = API + '/v3/currencies/'
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
   }
 
   moonpayGetQuote(req): Promise<any> {
@@ -4997,6 +5054,47 @@ export class WalletService implements IWalletService {
       if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + req.body.areFeesIncluded);
 
       const URL: string = API + `/v3/currencies/${req.body.currencyAbbreviation}/buy_quote/?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayGetSellQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['currencyAbbreviation', 'quoteCurrencyCode', 'baseCurrencyAmount'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      let qs = [];
+      qs.push('apiKey=' + API_KEY);
+      qs.push('quoteCurrencyCode=' + req.body.quoteCurrencyCode);
+      qs.push('baseCurrencyAmount=' + req.body.baseCurrencyAmount);
+
+      if (req.body.extraFeePercentage) qs.push('extraFeePercentage=' + req.body.extraFeePercentage);
+      if (req.body.payoutMethod) qs.push('payoutMethod=' + req.body.payoutMethod);
+
+      const URL: string = API + `/v3/currencies/${req.body.currencyAbbreviation}/sell_quote?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -5102,6 +5200,59 @@ export class WalletService implements IWalletService {
     return { urlWithSignature };
   }
 
+  moonpayGetSellSignedPaymentUrl(req): { urlWithSignature: string } {
+    const keys = this.moonpayGetKeys(req);
+    const SECRET_KEY = keys.SECRET_KEY;
+    const API_KEY = keys.API_KEY;
+    const SELL_WIDGET_API = keys.SELL_WIDGET_API;
+
+    if (
+      !checkRequired(req.body, [
+        'baseCurrencyCode',
+        'baseCurrencyAmount',
+        'externalTransactionId',
+        'redirectURL',
+      ])
+    ) {
+      throw new ClientError("Moonpay's request missing arguments");
+    }
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    let qs = [];
+    qs.push('apiKey=' + API_KEY);
+    qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
+    qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));
+    qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
+    qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
+
+    if (req.body.quoteCurrencyCode) qs.push('quoteCurrencyCode=' + encodeURIComponent(req.body.quoteCurrencyCode));
+    if (req.body.refundWalletAddress) qs.push('refundWalletAddress=' + encodeURIComponent(req.body.refundWalletAddress));
+    if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
+    if (req.body.colorCode) qs.push('colorCode=' + encodeURIComponent(req.body.colorCode));
+    if (req.body.theme) qs.push('theme=' + encodeURIComponent(req.body.theme));
+    if (req.body.language) qs.push('language=' + encodeURIComponent(req.body.language));
+    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
+    if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
+    if (req.body.showWalletAddressForm)
+      qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
+    if (req.body.unsupportedRegionRedirectUrl) qs.push('unsupportedRegionRedirectUrl=' + encodeURIComponent(req.body.unsupportedRegionRedirectUrl));
+    if (req.body.skipUnsupportedRegionScreen) qs.push('skipUnsupportedRegionScreen=' + encodeURIComponent(req.body.skipUnsupportedRegionScreen));
+
+    const URL_SEARCH: string = `?${qs.join('&')}`;
+
+    const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
+      Buffer.from(URL_SEARCH),
+      Buffer.from(SECRET_KEY)
+    ).toString('base64');
+
+    const urlWithSignature = `${SELL_WIDGET_API}${URL_SEARCH}&signature=${encodeURIComponent(URLSignatureHash)}`;
+
+    return { urlWithSignature };
+  }
+
   moonpayGetTransactionDetails(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.moonpayGetKeys(req);
@@ -5126,6 +5277,85 @@ export class WalletService implements IWalletService {
       }
 
       this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayGetSellTransactionDetails(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      let URL: string;
+
+      let qs = [];
+      qs.push('apiKey=' + API_KEY);
+      if (req.body.transactionId) {
+        URL = API + `/v3/sell_transactions/${req.body.transactionId}?${qs.join('&')}`;
+      } else if (req.body.externalId) {
+        URL = API + `/v3/sell_transactions/ext/${req.body.externalId}?${qs.join('&')}`;
+      }
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayCancelSellTransaction(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const headers = {
+        Authorization: 'Api-Key ' + SECRET_KEY,
+        Accept: 'application/json'
+      };
+      let URL: string;
+
+      if (req.body.transactionId) {
+        URL = API + `/v3/sell_transactions/${req.body.transactionId}`;
+      } else if (req.body.externalId) {
+        URL = API + `/v3/sell_transactions/ext/${req.body.externalId}`;
+      }
+
+      this.request.delete(
         URL,
         {
           headers,
@@ -6767,6 +6997,7 @@ export class WalletService implements IWalletService {
           chain: req.body.chain,
           toBlock: req.body.toBlock,
           tokenAddresses: req.body.tokenAddresses,
+          excludeSpam: req.body.excludeSpam,
         });
       
         return resolve(response.raw ?? response);
@@ -6828,19 +7059,42 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetMultipleERC20TokenPrices(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getMultipleTokenPrices({
+          chain: req.body.chain,
+          include: req.body.include,
+        },
+        {
+          tokens: req.body.tokens,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetERC20TokenBalancesWithPricesByWallet(req): Promise<any> {
     return new Promise((resolve, reject) => {
       let keys, headers;
 
       if (!config.moralis) return reject(new Error('Moralis missing credentials'));
-      if (!checkRequired(req.body, ['tokens'])) {
-        return reject(new ClientError('moralisGetMultipleERC20TokenPrices request missing arguments'));
+      if (!checkRequired(req.body, ['address'])) {
+        return reject(new ClientError('moralisGetERC20TokenBalancesWithPricesByWallet request missing arguments'));
       }
 
       let qs = [];
       if (req.body.chain) qs.push('chain=' + req.body.chain);
-      if (req.body.include) qs.push('include=' + req.body.include);
+      if (req.body.toBlock) qs.push('to_block=' + req.body.toBlock);
+      if (req.body.tokenAddresses) qs.push('token_addresses=' + req.body.tokenAddresses);
+      if (req.body.excludeSpam) qs.push('exclude_spam=' + req.body.excludeSpam);
+      if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+      if (req.body.excludeNative) qs.push('exclude_native=' + req.body.excludeNative);
 
-      const URL: string = `https://deep-index.moralis.io/api/v2.2/erc20/prices${qs.length > 0 ? '?' + qs.join('&') : ''}`
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${req.body.address}/tokens${qs.length > 0 ? '?' + qs.join('&') : ''}`
 
       headers = {
         'Accept': 'application/json',
@@ -6848,20 +7102,17 @@ export class WalletService implements IWalletService {
         'X-Api-Key': config.moralis.apiKey,
       };
 
-      const message = {tokens: req.body.tokens};
-
-      this.request.post(
+      this.request.get(
         URL,
         {
           headers,
-          body: message,
           json: true
         },
         (err, data) => {
           if (err) {
             return reject(err.body ?? err);
           } else {
-            return resolve(data.body);
+            return resolve(data.body ?? data);
           }
         }
       );

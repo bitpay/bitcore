@@ -365,8 +365,8 @@ export class Key {
   };
 
   _checkNetwork = function (network) {
-    if (!_.includes(['livenet', 'testnet'], network))
-      throw new Error('Invalid network');
+    if (!_.includes(['livenet', 'testnet', 'regtest'], network))
+      throw new Error('Invalid network ' + network);
   };
 
   /*
@@ -384,7 +384,7 @@ export class Key {
 
     // checking in chains for simplicity
     if (
-      opts.network == 'testnet' &&
+      ['testnet', 'regtest]'].includes(opts.network) &&
       Constants.UTXO_CHAINS.includes(opts.coin)
     ) {
       coinCode = '1';
@@ -439,11 +439,11 @@ export class Key {
       Constants.PATHS.REQUEST_KEY
     ).privateKey.toString();
 
-    if (opts.network == 'testnet') {
+    if (['testnet', 'regtest'].includes(opts.network)) {
       // Hacky: BTC/BCH xPriv depends on network: This code is to
-      // convert a livenet xPriv to a testnet xPriv
+      // convert a livenet xPriv to a testnet/regtest xPriv
       let x = xPrivKey.toObject();
-      x.network = 'testnet';
+      x.network = opts.network;
       delete x.xprivkey;
       delete x.checksum;
       x.privateKey = _.padStart(x.privateKey, 64, '0');

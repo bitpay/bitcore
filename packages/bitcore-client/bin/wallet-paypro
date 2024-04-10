@@ -23,6 +23,8 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program.opts();
   let { payProUri } = program.opts();
@@ -58,7 +60,6 @@ const main = async () => {
   });
 
   //  Payment-Request
-  let wallet;
   wallet = await Wallet.loadWallet({ name, path, storageType });
   const from = inputFrom || await wallet.deriveAddress(0);
   let nonce;
@@ -158,4 +159,5 @@ const main = async () => {
 };
 
 main()
-  .catch(err => console.error(err));
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

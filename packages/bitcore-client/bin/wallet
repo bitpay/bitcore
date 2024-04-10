@@ -20,6 +20,7 @@ program
   .command('send', 'simple send from wallet to an address').alias('s')
   .command('sign', 'sign a transaction')
   .command('token', 'add an ERC20 token to an eth wallet')
+  .command('flags', 'check or set wallet flags (XRP only)')
   .command('storage', 'storage util for wallets')
   .command('sign-message', 'sign a message with an address')
   .parse(process.argv);

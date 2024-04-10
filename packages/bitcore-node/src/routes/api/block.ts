@@ -10,7 +10,7 @@ router.get('/', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   let { sinceBlock, date, limit, since, direction, paging } = req.query as any;
   if (limit) {
-    limit = parseInt(limit);
+    limit = parseInt(limit) || undefined; // if limit is NaN or null, set it to undefined so it'll fallback to CSP default
   }
   try {
     let payload = {

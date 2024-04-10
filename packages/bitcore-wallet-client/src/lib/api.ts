@@ -418,13 +418,13 @@ export class API extends EventEmitter {
     return this.fromObj(c);
   }
 
-  decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, opts, cb) {
+  decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, progressCallback, cb) {
     var Bip38 = require('bip38');
     var bip38 = new Bip38();
 
     var privateKeyWif;
     try {
-      privateKeyWif = bip38.decrypt(encryptedPrivateKeyBase58, passphrase);
+      privateKeyWif = bip38.decrypt(encryptedPrivateKeyBase58, passphrase, progressCallback);
     } catch (ex) {
       return cb(new Error('Could not decrypt BIP38 private key' + ex));
     }
@@ -913,8 +913,8 @@ export class API extends EventEmitter {
       return cb(new Error('Invalid coin'));
 
     var network = opts.network || 'livenet';
-    if (!_.includes(['testnet', 'livenet'], network))
-      return cb(new Error('Invalid network'));
+    if (!_.includes(['testnet', 'livenet', 'regtest'], network))
+      return cb(new Error('Invalid network: ' + network));
 
     if (!this.credentials) {
       return cb(new Error('Import credentials first with setCredentials()'));
@@ -3395,6 +3395,15 @@ export class API extends EventEmitter {
     });
   }
 
+  moonpayGetSellQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/moonpay/sellQuote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   moonpayGetSignedPaymentUrl(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post(
@@ -3405,6 +3414,28 @@ export class API extends EventEmitter {
           return resolve(data);
         }
       );
+    });
+  }
+
+  moonpayGetSellSignedPaymentUrl(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/moonpay/sellSignedPaymentUrl',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  moonpayCancelSellTransaction(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/moonpay/cancelSellTransaction', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
     });
   }
 

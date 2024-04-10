@@ -1568,11 +1568,34 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/moonpay/getCurrencies', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetCurrencies(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.post('/v1/service/moonpay/quote', (req, res) => {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
           response = await server.moonpayGetQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/service/moonpay/sellQuote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.moonpayGetSellQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1603,6 +1626,18 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/moonpay/sellSignedPaymentUrl', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.moonpayGetSellSignedPaymentUrl(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
     router.post('/v1/service/moonpay/transactionDetails', async (req, res) => {
       let server, response;
       try {
@@ -1612,6 +1647,29 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
+    });
+
+    router.post('/v1/service/moonpay/sellTransactionDetails', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.moonpayGetSellTransactionDetails(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/moonpay/cancelSellTransaction', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.moonpayCancelSellTransaction(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
     });
 
     router.post('/v1/service/moonpay/accountDetails', async (req, res) => {
@@ -2140,6 +2198,23 @@ export class ExpressApp {
       }
 
       server.moralisGetMultipleERC20TokenPrices(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.post('/v1/moralis/getERC20TokenBalancesWithPricesByWallet', cors(moralisCorsOptions), (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetERC20TokenBalancesWithPricesByWallet(req)
         .then(response => {
           res.json(response);
         })

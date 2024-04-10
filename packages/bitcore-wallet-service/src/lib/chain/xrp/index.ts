@@ -1,10 +1,12 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
 import { Common } from '../../common';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
+import { WalletService } from '../../server';
 
 const Defaults = Common.Defaults;
 
@@ -15,12 +17,12 @@ export class XrpChain implements IChain {
    * @param {Number} locked - Sum of txp.amount
    * @returns {Object} balance - Total amount & locked amount.
    */
-  private convertBitcoreBalance(bitcoreBalance, locked) {
+  private convertBitcoreBalance(bitcoreBalance, locked, reserve = Defaults.MIN_XRP_BALANCE) {
     const { unconfirmed, confirmed, balance } = bitcoreBalance;
     let activatedLocked = locked;
     // If XRP address has a min balance of 10 XRP, subtract activation fee for true spendable balance.
     if (balance > 0) {
-      activatedLocked = locked + Defaults.MIN_XRP_BALANCE;
+      activatedLocked = locked + reserve;
     }
     const convertedBalance = {
       totalAmount: balance,
@@ -46,29 +48,34 @@ export class XrpChain implements IChain {
     return 0;
   }
 
-  getWalletBalance(server, wallet, opts, cb) {
+  getWalletBalance(server: WalletService, wallet: IWallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
       }
-      server.getPendingTxs(opts, (err, txps) => {
-        if (err) return cb(err);
-        const lockedSum = _.sumBy(txps, 'amount') || 0;
-        const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
-        server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+      bc.getReserve((err, reserve) => {
+        if (err) {
+          return cb(err);
+        }
+        server.getPendingTxs(opts, (err, txps) => {
           if (err) return cb(err);
-          if (addresses.length > 0) {
-            const byAddress = [
-              {
-                address: addresses[0].address,
-                path: addresses[0].path,
-                amount: convertedBalance.totalAmount
-              }
-            ];
-            convertedBalance.byAddress = byAddress;
-          }
-          return cb(null, convertedBalance);
+          const lockedSum = _.sumBy(txps, 'amount') || 0;
+          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserve);
+          server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+            if (err) return cb(err);
+            if (addresses.length > 0) {
+              const byAddress = [
+                {
+                  address: addresses[0].address,
+                  path: addresses[0].path,
+                  amount: convertedBalance.totalAmount
+                }
+              ];
+              convertedBalance.byAddress = byAddress;
+            }
+            return cb(null, convertedBalance);
+          });
         });
       });
     });
@@ -276,5 +283,15 @@ export class XrpChain implements IChain {
     // format tx to
     // {address, amount}
     return null;
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
+    bc.getReserve((err, reserve) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, reserve);
+    });
   }
 }

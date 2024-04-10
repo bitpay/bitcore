@@ -1,13 +1,14 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { WalletService } from 'src/lib/server';
 import { IChain } from '..';
 import config from '../../../config';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { TxProposal } from '../../model';
+import { IWallet, TxProposal } from '../../model';
 
 const $ = require('preconditions').singleton();
 const Constants = Common.Constants;
@@ -950,10 +951,9 @@ export class BtcChain implements IChain {
   protected _isCorrectNetwork(wallet, addr) {
     const addrNetwork = addr.network.toString();
     const walNetwork = wallet.network;
-    const walChain = wallet.chain || wallet.coin; // wallet.coin is for backward compatibility
 
-    if (addrNetwork === 'regtest' && walNetwork === 'testnet') {
-      return config.blockchainExplorerOpts?.[walChain]?.testnet?.regtestEnabled;
+    if (addrNetwork === 'testnet' && walNetwork === 'regtest') {
+      return !!config.allowRegtest;
     }
     return addrNetwork === walNetwork;
   }
@@ -975,5 +975,9 @@ export class BtcChain implements IChain {
   // Push notification handling
   onTx(tx) {
     return null;
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return cb(null, 0);
   }
 }

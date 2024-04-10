@@ -44,7 +44,11 @@ function get(arg, keys) {
     }
     return undefined;
   }
-  return networkMaps[arg];
+  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
 }
 
 /**
@@ -76,6 +80,7 @@ function addNetwork(data) {
     privatekey: data.privatekey,
     scripthash: data.scripthash,
     scripthash2: data.scripthash2,
+    bech32prefix: data.bech32prefix,
     xpubkey: data.xpubkey,
     xprivkey: data.xprivkey
   });
@@ -107,7 +112,10 @@ function addNetwork(data) {
 
   _.each(network, function(value) {
     if (!_.isUndefined(value) && !_.isObject(value)) {
-      networkMaps[value] = network;
+      if(!networkMaps[value]) {
+        networkMaps[value] = [];
+      }
+      networkMaps[value].push(network);
     }
   });
 
@@ -176,13 +184,20 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'regtest',
+  alias: 'test',
   pubkeyhash: 0x6f, // 111
   privatekey: 0xef, // 239
   scripthash: 0x3a, // 58
   scripthash2: 0xc4, // 196
+  bech32prefix: 'tltc',
   xpubkey: 0x043587cf,
-  xprivkey: 0x04358394
+  xprivkey: 0x04358394,
+  networkMagic: 0xfdd2c8f1,
+  port: 19335,
+  dnsSeeds: [
+    'testnet-seed.litecointools.com',
+    'seed-b.litecoin.loshan.co.uk'
+  ]
 });
 
 /**
@@ -191,89 +206,30 @@ addNetwork({
  */
 var testnet = get('testnet');
 
-// Add configurable values for testnet/regtest
-
-var TESTNET = {
-  PORT: 19335,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfdd2c8f1),
-  DNS_SEEDS: [
-    'testnet-seed.litecointools.com',
-    'seed-b.litecoin.loshan.co.uk'
-  ],
-  BECH32_PREFIX: 'tltc'
-};
-
-for (var key in TESTNET) {
-  if (!_.isObject(TESTNET[key])) {
-    networkMaps[TESTNET[key]] = testnet;
-  }
-}
-networkMaps[TESTNET.NETWORK_MAGIC.toString('hex')] = testnet;
-
-var REGTEST = {
-  PORT: 19444,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfabfb5da),
-  DNS_SEEDS: [],
-  BECH32_PREFIX: 'rltc'
-};
-
-for (var key in REGTEST) {
-  if (!_.isObject(REGTEST[key])) {
-    networkMaps[REGTEST[key]] = testnet;
-  }
-}
-networkMaps[REGTEST.NETWORK_MAGIC.toString('hex')] = testnet;
-
-Object.defineProperty(testnet, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PORT;
-    } else {
-      return TESTNET.PORT;
-    }
-  }
+addNetwork({
+  name: 'regtest',
+  alias: 'dev',
+  pubkeyhash: 0x6f, // 111
+  privatekey: 0xef, // 239
+  scripthash: 0x3a, // 58
+  scripthash2: 0xc4, // 196
+  bech32prefix: 'rltc',
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xfabfb5da,
+  port: 19444,
+  dnsSeeds: []
 });
 
-Object.defineProperty(testnet, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.NETWORK_MAGIC;
-    } else {
-      return TESTNET.NETWORK_MAGIC;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.DNS_SEEDS;
-    } else {
-      return TESTNET.DNS_SEEDS;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'bech32prefix', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.BECH32_PREFIX
-    } else {
-      return TESTNET.BECH32_PREFIX
-    }
-  }
-})
+/**
+ * @instance
+ * @member Networks#testnet
+ */
+var regtest = get('regtest');
 
 /**
  * @function
+ * @deprecated
  * @member Networks#enableRegtest
  * Will enable regtest features for testnet
  */
@@ -283,6 +239,7 @@ function enableRegtest() {
 
 /**
  * @function
+ * @deprecated
  * @member Networks#disableRegtest
  * Will disable regtest features for testnet
  */
@@ -300,6 +257,7 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest

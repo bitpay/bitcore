@@ -124,7 +124,7 @@ describe('Wallet', function() {
         });
         CWC.BitcoreLib.Transaction.prototype.feePerByte.callCount.should.equal(1);
         CWC.BitcoreLib.Transaction.prototype.feePerByte.args[0][0].should.equal(65);
-        expect(newTx).to.equal('0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff01f1bf0d00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
+        expect(newTx).to.equal('0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff01c4c40d00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
       });
 
       it('should bump the fee of a transaction with feeRate', async function() {
@@ -144,7 +144,7 @@ describe('Wallet', function() {
         });
         CWC.BitcoreLib.Transaction.prototype.feePerByte.callCount.should.equal(1);
         CWC.BitcoreLib.Transaction.prototype.feePerByte.args[0][0].should.equal(2);
-        expect(newTx).to.equal('0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff018e850e00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
+        expect(newTx).to.equal('0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff01b4850e00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
       });
     });
 
@@ -198,6 +198,54 @@ describe('Wallet', function() {
         expect(newTx).to.equal('0xed808545d964b80083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a764000080058080');
       });
     });
+  });
+
+  describe('getLocalAddress', function() {
+    for (const storageType of ['Level', 'Mongo', 'TextFile']) {
+      describe(storageType, function() {
+        let wallet;
+        let walletName = 'BitcoreClientTestGetLocalAddress' + storageType;
+        let address1, caddress1, address2, caddress2, address3, caddress3;
+        let path;
+        if (storageType === 'Mongo' && (process.env.DB_NAME || process.env.DB_HOST || process.env.DB_PORT)) {
+          path = `mongodb://${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 27017}/${process.env.DB_NAME || 'bitcoreWallets-test'}`;
+        }
+
+        before(async function() {
+          this.timeout(5000);
+          try {
+            wallet = await Wallet.create({
+              name: walletName,
+              chain: 'BTC',
+              network: 'testnet',
+              password: 'abc123',
+              storageType,
+              path
+            });
+            await wallet.unlock('abc123');
+            // 3 address pairs
+            [address1, caddress1] = await wallet.nextAddressPair(true);
+            [address2, caddress2] = await wallet.nextAddressPair(true);
+            [address3, caddress3] = await wallet.nextAddressPair(true);
+          } catch (e) {
+            wallet?.storage.close();
+            throw e;
+          }
+        });
+
+        after(async function() {
+          await Wallet.deleteWallet({ name: walletName, storageType, path });
+          wallet?.storage.close();
+        });
+
+        it('should return the local address', async function() {
+          const localAddress = await wallet.getLocalAddress(address2);
+          expect(localAddress.address).to.equal(address2);
+          expect(localAddress.path).to.equal('m/0/1');
+          expect(localAddress.pubKey).to.exist;
+        });
+      });
+    }
   });
 });
 

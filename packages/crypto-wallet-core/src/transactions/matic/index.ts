@@ -1,8 +1,5 @@
-import { ethers } from 'ethers';
-import Web3 from 'web3';
 import { ETHTxProvider } from '../eth';
-const utils = require('web3-utils');
-const { toBN } = Web3.utils;
+
 export class MATICTxProvider extends ETHTxProvider {
   getChainId(network: string) {
     let chainId = 137;
@@ -12,7 +9,7 @@ export class MATICTxProvider extends ETHTxProvider {
         chainId = 80001;
         break;
       case 'regtest':
-        chainId = 1337;
+        chainId = 13375;
         break;
       default:
         chainId = 137;

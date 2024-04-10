@@ -11,22 +11,26 @@ try {
     .option('--path <path>', 'optional - Custom wallet storage path')
     .option('--storageType <storageType>', 'optional - name of the database to use (default level)')
     .option('--token <token>', 'optional - Get balance of an ERC20 token')
+    .option('--tokenName <tokenName>', 'optional - Get balance of an ERC20 token using custom token name')
     .parse(process.argv);
 } catch (e) {
   console.log(e.message);
   return program.help();
 }
 
+let wallet;
+
 async function main() {
-  const { name, path, time, storageType, token } = program.opts();
-  const wallet = await Wallet.loadWallet({ name, path, storageType });
-  const balance = await wallet.getBalance(time, token);
+  const { name, path, time, storageType, token, tokenName } = program.opts();
+  wallet = await Wallet.loadWallet({ name, path, storageType });
+  const balance = await wallet.getBalance(time, token, tokenName);
   return Object.assign(balance, {
-    currency: token || wallet.chain,
+    currency: tokenName || token || wallet.chain,
     network: wallet.network
   });
 }
 
 main()
   .then(res => console.log(res))
-  .catch(err => console.error(err));
+  .catch(err => console.error(err))
+  .finally(() => wallet?.storage?.close());
