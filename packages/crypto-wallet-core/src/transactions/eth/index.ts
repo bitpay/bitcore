@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { Constants } from 'src/constants';
+import { Constants } from '../../constants';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { Key } from '../../derivation';
