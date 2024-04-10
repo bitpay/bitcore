@@ -48,10 +48,9 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       logger.info(`Making a new connection for ${this.chain}:${network}`);
       const dataType = params?.type;
       const providerConfig = getProvider({ network, dataType, config: this.config });
-      // EVM Chains other than MATIC will have both web3 configured by provider config and use ETH CryptoRpc
-      const chain = !['ETH', 'MATIC'].includes(this.chain) ? 'ETH' : this.chain;
-      const rpcConfig = { ...providerConfig, chain, currencyConfig: {} };
-      const rpc = new CryptoRpc(rpcConfig, {}).get(chain);
+      // Default to using ETH CryptoRpc with all EVM chain configs
+      const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
+      const rpc = new CryptoRpc(rpcConfig, {}).get('ETH');
       if (BaseEVMStateProvider.rpcs[this.chain]) {
         BaseEVMStateProvider.rpcs[this.chain][network] = { rpc, web3: rpc.web3, dataType: dataType || 'combinded' };
       } else {

@@ -103,7 +103,6 @@ export interface ConfigType {
   externalProviders?: {
     moralis: {
       apiKey: string;
-      apiVersion: string;
     }
   };
 }

@@ -85,8 +85,7 @@ const Config = function(): ConfigType {
     },
     externalProviders: {
       moralis: {
-        apiKey: 'string',
-        apiVersion: 'string'
+        apiKey: 'string'
       }
     }
   };

@@ -3,8 +3,6 @@ import config from '../../../config';
 import { isDateValid } from '../../../utils/check';
 import moralisChains from './defaults';
 
-const version = config.externalProviders?.moralis.apiVersion;
-
 const getBlockByDate = async ({ chain, network, date }) => {
   if (!date || !isDateValid(date) ) {
     return new Error('Invalid date');
@@ -14,7 +12,7 @@ const getBlockByDate = async ({ chain, network, date }) => {
   return new Promise((resolve, reject) => {
     request({
       method: 'GET',
-      url: `https://deep-index.moralis.io/api/v${version}/dateToBlock?chain=${chainId}&date=${unixTime}`,
+      url: `https://deep-index.moralis.io/api/v2.2/dateToBlock?chain=${chainId}&date=${unixTime}`,
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': config.externalProviders?.moralis.apiKey,
@@ -36,7 +34,7 @@ const getBlockByHash = async ({ chain, network, blockId }) => {
   return new Promise((resolve, reject) => {
     request({ 
       method: 'GET',
-      url: `https://deep-index.moralis.io/api/v${version}/block/${blockId}?chain=${chainId}`,
+      url: `https://deep-index.moralis.io/api/v2.2/block/${blockId}?chain=${chainId}`,
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': config.externalProviders?.moralis.apiKey,
