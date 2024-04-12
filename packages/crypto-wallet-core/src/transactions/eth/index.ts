@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { Constants } from '../../constants';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { Key } from '../../derivation';
@@ -53,7 +54,7 @@ export class ETHTxProvider {
     };
     if (maxGasFee) {
       txData.maxFeePerGas = utils.toHex(maxGasFee);
-      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || 0);
+      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
       txData.type = 2;
     } else {
       txData.gasPrice = utils.toHex(gasPrice);
@@ -65,6 +66,11 @@ export class ETHTxProvider {
   getMultiSendContract(tokenContractAddress: string) {
     const web3 = new Web3();
     return new web3.eth.Contract(MULTISENDAbi as AbiItem[], tokenContractAddress);
+  }
+
+  getPriorityFeeMinimum(chainId: number) {
+    const chain = Constants.EVM_CHAIN_ID_TO_CHAIN[chainId];
+    return Constants.FEE_MINIMUMS[chain]?.priority || 0;
   }
 
   getChainId(network: string) {
