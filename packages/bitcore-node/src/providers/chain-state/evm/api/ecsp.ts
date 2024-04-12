@@ -103,10 +103,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const blockPromises: Promise<any>[] = [];
       const blockNumbers = _.range(query.startBlock, query.endBlock + 1);
       // batch getBlock requests to reduce latency
-      blockNumbers.forEach((blockNumber) => {
+     for (let i = 0; i < blockNumbers.length; i++) {
         const blockPromise = new Promise<any>((resolve, reject) => {
           batch.add(
-            (web3.eth.getBlock as any).request(blockNumber, (error, block) => {
+            (web3.eth.getBlock as any).request(blockNumbers[i], (error, block) => {
               if (error) {
                 return reject(error);
               }
@@ -114,7 +114,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
           }));
         });
         blockPromises.push(blockPromise);
-      });
+      };
       batch.execute();
 
       return Promise.all(blockPromises)

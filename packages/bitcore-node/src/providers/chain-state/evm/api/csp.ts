@@ -620,7 +620,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   execute(funcName: string, network: string): (...args: any[]) => any {
     if (this.isExternallyProvided(network)) {
       // historical data via external provider + sparse mongo data
-      return this.ecsp[funcName];
+      return this.ecsp[funcName].bind(this.ecsp);
     }
     // historical data via full mongo data      
     return this[`_${funcName}`];

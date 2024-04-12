@@ -12,10 +12,10 @@ const getProvider = ({
   }
   const providers: any = config[network]?.providers?.filter((p) => matchProviderType(p, dataType));
   const providerIdx: number = worker.threadId % (providers || []).length;
-  return defaultProvider || !isNaN(providerIdx) ? providers![providerIdx] : undefined;
+  return defaultProvider || (!isNaN(providerIdx) ? providers![providerIdx] : undefined);
 }
 
-const matchProviderType = (provider : IProvider | undefined, type : string | undefined): boolean => {
+const matchProviderType = (provider?: IProvider, type?: string): boolean => {
   if (!provider) {
     return false;
   }
