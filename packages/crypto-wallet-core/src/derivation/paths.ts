@@ -36,6 +36,21 @@ export const Paths = {
     livenet: "m/44'/60'/",
     testnet: "m/44'/60'/"
   },
+  ARB: {
+    mainnet: "m/44'/60'/",
+    livenet: "m/44'/60'/",
+    testnet: "m/44'/60'/"
+  },
+  OP: {
+    mainnet: "m/44'/60'/",
+    livenet: "m/44'/60'/",
+    testnet: "m/44'/60'/"
+  },
+  BASE: {
+    mainnet: "m/44'/60'/",
+    livenet: "m/44'/60'/",
+    testnet: "m/44'/60'/"
+  },
   default: {
     testnet: "m/44'/1'/"
   }

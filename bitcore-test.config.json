@@ -64,6 +64,31 @@
           "threads": 0
         }
       },
+      "BASE": {
+        "testnet": {
+          "chainSource": "external",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": "30012/ws"
+            }
+          ],
+          "provider": {
+            "host": "docs-demo.base-mainnet.quiknode.pro/",
+            "protocol": "https",
+            "port": "",
+            "dataType": "historical"
+          },
+          "providers": [
+            {
+              "host": "docs-demo.base-mainnet.quiknode.pro/",
+              "protocol": "https",
+              "port": "",
+              "dataType": "combined"
+            }
+          ]
+        }
+      },
       "XRP": {
         "testnet": {
           "chainSource": "rpc",
