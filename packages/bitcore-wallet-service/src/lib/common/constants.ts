@@ -7,6 +7,9 @@ export const Constants = {
     BCH: 'bch',
     ETH: 'eth',
     MATIC: 'matic',
+    ARB: 'arb',
+    BASE: 'base',
+    OP: 'op',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc'
@@ -79,7 +82,17 @@ export const Constants = {
 
   EVM_CHAINS: {
     ETH: 'eth',
-    MATIC: 'matic'
+    MATIC: 'matic',
+    ARB: 'arb',
+    BASE: 'base',
+    OP: 'op',
+  },
+
+  EVM_CHAINS_WITH_ETH_GAS: {
+    ETH: 'eth',
+    ARB: 'arb',
+    BASE: 'base',
+    OP: 'op',
   },
 
   NETWORKS: {

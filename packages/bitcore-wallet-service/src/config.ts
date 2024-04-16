@@ -69,6 +69,30 @@ const Config = (): any => {
           url: 'https://api-matic.bitcore.io'
         }
       },
+      arb: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-eth.bitcore.io'
+        }
+      },
+      base: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-eth.bitcore.io'
+        }
+      },
+      op: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-eth.bitcore.io'
+        }
+      },
       xrp: {
         livenet: {
           url: 'https://api-xrp.bitcore.io'

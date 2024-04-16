@@ -21,6 +21,18 @@ const PROVIDERS = {
       livenet: 'https://api-matic.bitcore.io',
       testnet: 'https://api-matic.bitcore.io'
     },
+    arb: {
+      livenet: 'https://api-eth.bitcore.io',
+      testnet: 'https://api-eth.bitcore.io'
+    },
+    base: {
+      livenet: 'https://api-eth.bitcore.io',
+      testnet: 'https://api-eth.bitcore.io'
+    },
+    op: {
+      livenet: 'https://api-eth.bitcore.io',
+      testnet: 'https://api-eth.bitcore.io'
+    },
     xrp: {
       livenet: 'https://api-xrp.bitcore.io',
       testnet: 'https://api-xrp.bitcore.io'

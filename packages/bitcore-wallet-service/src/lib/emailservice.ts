@@ -5,6 +5,7 @@ import 'source-map-support/register';
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
+import { Constants as ConstantsCWC} from 'crypto-wallet-core';
 import request from 'request';
 import config from '../config';
 import { Common } from './common';
@@ -530,13 +531,11 @@ export class EmailService {
     return new Promise((resolve, reject) => {
       try {
         const credentials = this.oneInchGetCredentials();
-        const chainIdMap = {
-          eth: 1,
-          matic: 137
-        };
+        // Get mainnet chainId
+        const chainId = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[`${chain.toUpperCase()}_mainnet`]
         this.request(
           {
-            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            url: `${credentials.API}/v5.2/${chainId}/tokens`,
             method: 'GET',
             json: true,
             headers: {

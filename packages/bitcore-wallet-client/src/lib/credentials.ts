@@ -200,35 +200,41 @@ export class Credentials {
           break;
       }
 
-      var coin = '0';
+      var chain = '0';
       // checking in chains for simplicity
       if (
         this.network != 'livenet' &&
-        Constants.UTXO_CHAINS.includes(this.coin)
+        Constants.UTXO_CHAINS.includes(this.chain)
       ) {
-        coin = '1';
-      } else if (this.coin == 'bch') {
+        chain = '1';
+      } else if (this.chain == 'bch') {
         if (this.use145forBCH) {
-          coin = '145';
+          chain = '145';
         } else {
-          coin = '0';
+          chain = '0';
         }
-      } else if (this.coin == 'btc') {
-        coin = '0';
-      } else if (this.coin == 'eth') {
-        coin = '60';
-      } else if (this.coin == 'matic') {
-        coin = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
-      } else if (this.coin == 'xrp') {
-        coin = '144';
-      } else if (this.coin == 'doge') {
-        coin = '3';
-      } else if (this.coin == 'ltc') {
-        coin = '2';
+      } else if (this.chain == 'btc') {
+        chain = '0';
+      } else if (this.chain == 'eth') {
+        chain = '60';
+      } else if (this.chain == 'matic') {
+        chain = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
+      } else if (this.chain == 'arb') {
+        chain = '60';
+      } else if (this.chain == 'base') {
+        chain = '60'; 
+      } else if (this.chain == 'op') {
+        chain = '60';
+      } else if (this.chain == 'xrp') {
+        chain = '144';
+      } else if (this.chain == 'doge') {
+        chain = '3';
+      } else if (this.chain == 'ltc') {
+        chain = '2';
       } else {
-        throw new Error('unknown coin: ' + this.coin);
+        throw new Error('unknown chain: ' + this.chain);
       }
-      return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
+      return 'm/' + purpose + "'/" + chain + "'/" + this.account + "'";
     };
 
     if (!this.rootPath) {

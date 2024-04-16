@@ -24,6 +24,9 @@ var Bitcore_ = {
   bch: CWC.BitcoreLibCash,
   eth: CWC.BitcoreLib,
   matic: CWC.BitcoreLib,
+  arb: CWC.BitcoreLib,
+  base: CWC.BitcoreLib,
+  op: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
   ltc: CWC.BitcoreLibLtc
@@ -602,7 +605,7 @@ export class API extends EventEmitter {
     });
   }
 
-  static _buildSecret(walletId, walletPrivKey, coin, network) {
+  static _buildSecret(walletId, walletPrivKey, chain, network) {
     if (_.isString(walletPrivKey)) {
       walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
     }
@@ -612,7 +615,7 @@ export class API extends EventEmitter {
       _.padEnd(widBase58, 22, '0') +
       walletPrivKey.toWIF() +
       (network == 'testnet' ? 'T' : 'L') +
-      coin
+      chain
     );
   }
 
@@ -714,6 +717,9 @@ export class API extends EventEmitter {
       case 'xrp':
       case 'eth':
       case 'matic':
+      case 'arb':
+      case 'base':
+      case 'op':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
@@ -891,6 +897,7 @@ export class API extends EventEmitter {
   // * @param {Number} n
   // * @param {object} opts (optional: advanced options)
   // * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch).
+  // * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch).
   // * @param {string} opts.network[='livenet']
   // * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
@@ -907,7 +914,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-
+    var chain = opts.chain || coin;
+  
     // checking in chains for simplicity
     if (!_.includes(Constants.CHAINS, coin))
       return cb(new Error('Invalid coin'));
@@ -941,6 +949,7 @@ export class API extends EventEmitter {
       m,
       n,
       pubKey: new Bitcore.PrivateKey(walletPrivKey).toPublicKey().toString(),
+      chain,
       coin,
       network,
       singleAddress: !!opts.singleAddress,
@@ -2906,7 +2915,7 @@ export class API extends EventEmitter {
     const generateCredentials = (key, opts) => {
       let c = key.createCredentials(null, {
         coin: opts.coin,
-        chain: opts.coin, // chain === coin for stored clients
+        chain: opts.chain || opts.coin, // chain === coin IS NO LONGER TRUE for Arbitrum, Base, Optimisim
         network: opts.network,
         account: opts.account,
         n: opts.n,
@@ -2931,6 +2940,9 @@ export class API extends EventEmitter {
         ['bch', 'livenet', false, true], // check for prefork bch wallet
         ['eth', 'livenet'],
         ['matic', 'livenet'],
+        ['arb', 'livenet'],
+        ['base', 'livenet'],
+        ['op', 'livenet'],
         ['xrp', 'livenet'],
         ['doge', 'livenet'],
         ['ltc', 'livenet'],
@@ -2970,7 +2982,7 @@ export class API extends EventEmitter {
       for (let i = 0; i < opts.length; i++) {
         let opt = opts[i];
         let optsObj = {
-          coin: opt[0],
+          chain: opt[0],
           network: opt[1],
           account: 0,
           n: opt[2] ? 2 : 1,

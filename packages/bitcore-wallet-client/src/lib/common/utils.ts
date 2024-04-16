@@ -23,6 +23,9 @@ const Bitcore_ = {
   bch: BitcoreLibCash,
   eth: Bitcore,
   matic: Bitcore,
+  arb: Bitcore,
+  base: Bitcore,
+  op: Bitcore,
   xrp: Bitcore,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc
@@ -46,7 +49,7 @@ export class Utils {
         !Constants.CHAINS.includes(normalizedChain)
       ) {
         // default to eth if it's an ETH ERC20 or if we don't know the chain
-        normalizedChain = 'eth';
+        normalizedChain = 'eth'; 
       }
       return normalizedChain;
     } catch (_) {

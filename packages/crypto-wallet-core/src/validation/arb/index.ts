@@ -1,10 +1,10 @@
 import { EthValidation } from '../eth';
 
-export class MaticValidation extends EthValidation {
+export class ArbValidation extends EthValidation {
   regex: RegExp;
 
   constructor() {
     super();
-    this.regex = /matic/i;
+    this.regex = /arb/i;
   }
 }

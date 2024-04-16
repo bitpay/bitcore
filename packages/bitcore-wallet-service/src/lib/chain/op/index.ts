@@ -1,10 +1,10 @@
 import { EthChain } from '../eth';
 
-export class MaticChain extends EthChain {
+export class OpChain extends EthChain {
   chain: string;
 
   constructor() {
     super();
-    this.chain = 'MATIC'
+    this.chain = 'OP';
   }
 }
