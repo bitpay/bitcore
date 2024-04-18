@@ -165,4 +165,11 @@ Output.prototype.toBufferWriter = function(writer) {
   return writer;
 };
 
+Output.prototype.calculateSize = function() {
+  let result = 8; // satoshis
+  result += BufferWriter.varintBufNum(this._scriptBuffer.length).length;
+  result += this._scriptBuffer.length;
+  return result;
+};
+
 module.exports = Output;

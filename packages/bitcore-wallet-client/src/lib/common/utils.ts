@@ -184,9 +184,19 @@ export class Utils {
     m,
     network,
     chain,
-    escrowInputs?
+    escrowInputs?,
+    hardwareSourcePublicKey?
   ) {
     $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
+
+    if (hardwareSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+      return {
+        address: bitcoreAddress.toString(),
+        path,
+        publicKeys: [hardwareSourcePublicKey]
+      }
+    }
 
     chain = chain || 'btc';
     var bitcore = Bitcore_[chain];
@@ -522,6 +532,12 @@ export class Utils {
     const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
     const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
     if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
+       // Special handling for usdc.e and usdc on matic
+      if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc.e') {
+        return 'USDC_m';
+      } else if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc') {
+        return 'USDCn_m';
+      }
       return `${coin.toUpperCase()}_${suffix}`;
     }
     return coin.toUpperCase();

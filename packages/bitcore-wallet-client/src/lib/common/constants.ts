@@ -12,7 +12,8 @@ export const Constants = {
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',
     BIP45: 'BIP45',
-    BIP48: 'BIP48'
+    BIP48: 'BIP48',
+    BIP84: 'BIP84'
   },
   PATHS: {
     SINGLE_ADDRESS: 'm/0/0',
@@ -22,27 +23,7 @@ export const Constants = {
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
-  BITPAY_SUPPORTED_COINS: [
-    'btc',
-    'bch',
-    'eth',
-    'xrp',
-    'doge',
-    'ltc',
-    'usdc',
-    'pyusd',
-    'usdp',
-    'pax', // backwards compatibility
-    'gusd',
-    'busd',
-    'dai',
-    'wbtc',
-    'shib',
-    'ape',
-    'euroc',
-    'usdt'
-  ],
-
+  // there is no need to add new entries here ( only for backwards compatiblity )
   BITPAY_SUPPORTED_ETH_ERC20: [
     'matic',
     'usdc',

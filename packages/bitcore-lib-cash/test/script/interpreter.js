@@ -237,6 +237,14 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_NATIVE_INTROSPECTION;
     }
 
+    if (flagstr.indexOf('ENABLE_TOKENS') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_TOKENS;
+    }
+
+    if (flagstr.indexOf('ENABLE_P2SH_32') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_P2SH_32;
+    }
+
     return flags;
   };
 
@@ -316,7 +324,7 @@ describe('Interpreter', function() {
     }
   });
   describe('libauth vmb evaluation fixtures', () => {
-    const flags = getFlags('P2SH CLEANSTACK MINIMALDATA VERIFY_CHECKLOCKTIMEVERIFY NATIVE_INTROSPECTION 64_BIT_INTEGERS');
+    const flags = getFlags('P2SH CLEANSTACK MINIMALDATA VERIFY_CHECKLOCKTIMEVERIFY NATIVE_INTROSPECTION 64_BIT_INTEGERS ENABLE_TOKENS ENABLE_P2SH_32');
     const getOutputsFromHex = outputsHex => {
       const reader = new BufferReader(Buffer.from(outputsHex,'hex'));
       const numOutputs = reader.readVarintNum();
@@ -329,15 +337,33 @@ describe('Interpreter', function() {
       const sourceOutputsHex = test[5];
       const labels = test[6];
       const inputIndex = test[7] || 0;
-      const tx = new Transaction(txHex);
-      const outputs = getOutputsFromHex(sourceOutputsHex);
-      tx.inputs.forEach((input, index) => input.output = outputs[index]);
-      const scriptSig = tx.inputs[inputIndex].script;
-      const scriptPubkey = tx.inputs[inputIndex].output.script;
       it(`should pass vmb_tests vector ${testId}`, () => {
-        const valid = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
-        const expectedValidity = !labels[0].endsWith('invalid');
-        valid.should.equal(expectedValidity);
+        const shouldFail = labels.includes('chip_cashtokens_invalid') || !labels.some(label => label.includes('cashtokens')) && labels.includes('2022_invalid');
+        const expectedValidity = !shouldFail;
+        let tx;
+        try {
+          tx = new Transaction(txHex);
+        } catch (e) {
+          false.should.equal(expectedValidity);
+          return;
+        }
+        try {
+          const outputs = getOutputsFromHex(sourceOutputsHex);
+          tx.inputs.forEach((input, index) => input.output = outputs[index]);
+          tx.validateTokens();
+        } catch (e) {
+          false.should.equal(expectedValidity);
+          return;
+        }
+        const scriptSig = tx.inputs[inputIndex].script;
+        const scriptPubkey = tx.inputs[inputIndex].output.script;
+        const interpreter = Interpreter();
+        try {
+          const valid = interpreter.verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
+          valid.should.equal(expectedValidity);
+        } catch (err) {
+          false.should.equal(expectedValidity);
+        }
       });
     });
   });

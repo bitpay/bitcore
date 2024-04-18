@@ -2,72 +2,57 @@
 
 'use strict';
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
-const ethers = require('ethers');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--txid [txid]', 'Transaction id (either this or --rawtx are required)')
-  .option('--rawtx [rawtx]', 'Raw transaction (either this or --txid are required)')
-  .option('--gwei [gwei]', 'For use with EVM based chains (defaults to current market rate)')
-  .option('--path [path]', 'Custom wallet storage path')
-  .option('--storageType [storageType]', 'Name of the database to use (default Level)')
+  .description('Bump the fee of a transaction. If it\'s a UTXO chain, it will deduct from the change output.')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .option('-t, --txid <txid>', 'Transaction id (either this or --raw are required)')
+  .option('-r, --raw <hex>', 'Raw transaction (either this or --txid are required)')
+  .option('-c, --change <index>', 'Specify the change output index to deduct the new fee from (REQUIRED for UTXO chains)')
+  .option('-f, --feeRate <rate>', 'optional - Rate in sats/byte or Gwei')
+  .option('-T, --feeTarget <nBlocks>', 'optional - Number of blocks to confirm in (defaults to 2)')
+  .option('-P, --feePriority <rate>', 'optional - Priority fee for EVM type 2 txs in Gwei')
+  .option('-q, --quiet', 'optional - Do not prompt for confirmation or show raw tx data')
+  .option('--noRbf', 'optional - Disable replace-by-fee')
+  .option('--isSweep', 'optional - Treat the transaction as a sweep/max send which ensures all UTXOs are used (defaults to true if there is only one output)')
+  .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
-  const { name, path, storageType, txid, rawtx, gwei } = program;
-  let wallet;
-  const weiInGwei = 1000000000;
+  const { name, path, storageType = 'Level', raw: rawTx, change, feeRate, feeTarget = 2, feePriority, quiet, noRbf, isSweep } = program.opts();
+  let { txid } = program.opts();
   
+  if (!txid && !rawTx) {
+    return console.log('Must provide either --raw or --txid');
+  }
+
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
 
-    let existingTx;
-    if (txid) {
-      existingTx = JSON.parse(await wallet.getTransactionByTxid({ txid }));
-    } else if (rawtx) {
-      existingTx = ethers.utils.parseTransaction(rawtx);
-    } else {
-      throw new Error('Must provide either --rawtx or --txid.');
+    if (change == null && wallet.isUtxoChain()) {
+      return console.log('Must provide --change for UTXO chains');
     }
 
-    const existingGasPriceInWei = Number(existingTx.gasPrice);
-    let newFeeInWei;
-    if (gwei) {
-      newFeeInWei = Number(gwei) * weiInGwei;
-      if (newFeeInWei <= existingGasPriceInWei) {
-        throw new Error(
-          `Provided gwei is not greater than existing tx gwei. Existing tx gwei is ${existingGasPriceInWei / weiInGwei}`
-        );
-      }
-      existingTx.gasPrice = newFeeInWei;
-    } else {
-      newFeeInWei = JSON.parse(await wallet.getNetworkFee()).feerate;
-      existingTx.gasPrice = newFeeInWei;
-    }
-
-    console.log(
-      `Bumping gas price from ${existingGasPriceInWei / weiInGwei} gwei to ${newFeeInWei / weiInGwei} gwei`
-    );
-
-    const { nonce, gasLimit, gasPrice, to, data, value, chainId } = existingTx;
-    // converting gasLimit and value with toString avoids a bigNumber warning
-    const params = { nonce, gasLimit: gasLimit.toString(), gasPrice, data, chainId, recipients: [{ address: to, amount: value.toString() }] };
-
-    const tx = await wallet.newTx(params);
-    console.log('UnsignedRawTx: ', tx);
+    const { tx, params } = await wallet.bumpTxFee({ txid, rawTx, changeIdx: change, feeRate, feeTarget, feePriority, noRbf, isSweep });
+    !quiet && console.log('UnsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
-    const signedTx = await wallet.signTx({ tx, passphrase });
-    console.log('SignedRawTx: ', signedTx);
-    const confirmed = await promptly.confirm('Broadcast? (y/n)');
-    if (!confirmed) {
-      return;
+    const signedTx = await wallet.signTx({ tx, passphrase, utxos: params.utxos });
+    if (!quiet) {
+      console.log('SignedRawTx: ', signedTx);
+      const confirmed = await promptly.confirm('Broadcast? (y/n)');
+      if (!confirmed) {
+        return;
+      }
     }
-    const transaction = await wallet.broadcast({ tx: signedTx, ignoreNonce: true });
+    const transaction = await wallet.broadcast({ tx: signedTx });
     console.log('Txid: ', transaction.txid);
     console.log('Transaction broadcasted');
   } catch (e) {
@@ -75,4 +60,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

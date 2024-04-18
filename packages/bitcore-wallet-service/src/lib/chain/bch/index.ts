@@ -1,10 +1,8 @@
-import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
-import _ from 'lodash';
+import { BitcoreLibCash } from 'crypto-wallet-core';
 import { IChain } from '..';
+import config from '../../../config';
+import { Errors } from '../../errors/errordefinitions';
 import { BtcChain } from '../btc';
-const config = require('../../../config');
-
-const Errors = require('../../errors/errordefinitions');
 
 export class BchChain extends BtcChain implements IChain {
   constructor() {
@@ -31,7 +29,7 @@ export class BchChain extends BtcChain implements IChain {
     } catch (ex) {
       throw Errors.INVALID_ADDRESS;
     }
-    if (addr.network.toString() != wallet.network) {
+    if (!this._isCorrectNetwork(wallet, addr)) {
       throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
     if (!opts.noCashAddr) {

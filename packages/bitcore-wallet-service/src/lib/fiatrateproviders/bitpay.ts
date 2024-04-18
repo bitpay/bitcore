@@ -1,18 +1,20 @@
-import _ from 'lodash';
+import { IProvider, IRates } from './provider';
 
-module.exports = {
+export const BitPay: IProvider = {
   name: 'BitPay',
-  url: 'https://bitpay.com/api/rates/',
+  getUrl(coin): string {
+    return `https://bitpay.com/api/rates/${coin.toUpperCase()}?p=bws`;
+  },
   parseFn(raw) {
-    const rates = _.compact(
-      _.map(raw, d => {
-        if (!d.code || !d.rate) return null;
-        return {
+    const rates: Array<IRates> = [];
+    for (const d of raw) {
+      if (d.code && d.rate) {
+        rates.push({
           code: d.code,
           value: +d.rate
-        };
-      })
-    );
+        });
+      }
+    }
     return rates;
   }
 };

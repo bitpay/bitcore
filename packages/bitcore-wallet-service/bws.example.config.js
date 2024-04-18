@@ -2,6 +2,7 @@ module.exports = {
   basePath: '/bws/api',
   disableLogs: false,
   port: 3232,
+  allowRegtest: false,
 
   // Uncomment to make BWS a forking server
   // cluster: true,
@@ -21,7 +22,7 @@ module.exports = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
+      uri: 'mongodb://0.0.0.0:27017/bws',
       dbname: 'bws'
     }
   },
@@ -46,7 +47,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     eth: {
@@ -54,7 +56,8 @@ module.exports = {
         url: 'https://api-eth.bitcore.io'
       },
       testnet: {
-        url: 'https://api-eth.bitcore.io'
+        url: 'https://api-eth.bitcore.io',
+        regtestEnabled: false
       }
     },
     xrp: {
@@ -62,7 +65,8 @@ module.exports = {
         url: 'https://api-xrp.bitcore.io'
       },
       testnet: {
-        url: 'https://api-xrp.bitcore.io'
+        url: 'https://api-xrp.bitcore.io',
+        regtestEnabled: false
       }
     },
     doge: {
@@ -70,7 +74,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     ltc: {
@@ -78,7 +83,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     socketApiKey: 'socketApiKey'
@@ -121,7 +127,18 @@ module.exports = {
         disabled: false,
         removed: false
       },
+      transak: {
+        disabled: false,
+        removed: false
+      },
       wyre: {
+        disabled: false,
+        removed: false
+      }
+    },
+    sellCrypto: {
+      disabled: false,
+      moonpay: {
         disabled: false,
         removed: false
       }
@@ -163,24 +180,28 @@ module.exports = {
   //     apiKey: 'moonpay_sandbox_api_key_here',
   //     api: 'https://api.moonpay.com',
   //     widgetApi: 'https://buy-sandbox.moonpay.com',
+  //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
   //     secretKey: 'moonpay_sandbox_secret_key_here',
   //   },
   //   production: {
   //     apiKey: 'moonpay_production_api_key_here',
   //     api: 'https://api.moonpay.com',
   //     widgetApi: 'https://buy.moonpay.com',
+  //     sellWidgetApi: 'https://sell.moonpay.com',
   //     secretKey: 'moonpay_production_secret_key_here',
   //   },
   //   sandboxWeb: {
   //     apiKey: 'moonpay_sandbox_web_api_key_here',
   //     api: 'https://api.moonpay.com',
   //     widgetApi: 'https://buy-sandbox.moonpay.com',
+  //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
   //     secretKey: 'moonpay_sandbox_web_secret_key_here',
   //   },
   //   productionWeb: {
   //     apiKey: 'moonpay_production_web_api_key_here',
   //     api: 'https://api.moonpay.com',
   //     widgetApi: 'https://buy.moonpay.com',
+  //     sellWidgetApi: 'https://sell.moonpay.com',
   //     secretKey: 'moonpay_production_web_secret_key_here',
   //   }
   // },
@@ -248,6 +269,32 @@ module.exports = {
   //     apiKey: 'simplex_production_web_api_key_here',
   //     api: 'https://backend-wallet-api.simplexcc.com',
   //     appProviderId: 'simplex_web_provider_id_here'
+  //   }
+  // },
+  // transak : {
+  //   sandbox: {
+  //     api: 'https://api-stg.transak.com',
+  //     widgetApi: 'https://global-stg.transak.com',
+  //     apiKey: 'transak_sandbox_api_key_here',
+  //     secretKey: 'transak_sandbox_secret_key_here',
+  //   },
+  //   production: {
+  //     api: 'https://api.transak.com',
+  //     widgetApi: 'https://global.transak.com',
+  //     apiKey: 'transak_production_api_key_here',
+  //     secretKey: 'transak_production_secret_key_here',
+  //   },
+  //   sandboxWeb: {
+  //     api: 'https://api-stg.transak.com',
+  //     widgetApi: 'https://global-stg.transak.com',
+  //     apiKey: 'transak_sandbox_web_api_key_here',
+  //     secretKey: 'transak_sandbox_web_secret_key_here',
+  //   },
+  //   productionWeb: {
+  //     api: 'https://api.transak.com',
+  //     widgetApi: 'https://global.transak.com',
+  //     apiKey: 'transak_production_web_api_key_here',
+  //     secretKey: 'transak_production_web_secret_key_here',
   //   }
   // },
   // wyre: {

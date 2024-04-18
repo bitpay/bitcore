@@ -7,7 +7,6 @@ var expect = require('chai').expect;
 var bitcore = require('..');
 var errors = bitcore.errors;
 var hdErrors = errors.HDPrivateKey;
-var buffer = require('buffer');
 var Networks = bitcore.Networks;
 var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;

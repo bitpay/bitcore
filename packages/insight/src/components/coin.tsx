@@ -64,6 +64,8 @@ const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
               <TransactionTileFlex justifyContent='flex-end'>
                 {height === -3 && <TransactionChip error>Invalid</TransactionChip>}
 
+                {height === -5 && <TransactionChip error>Expired</TransactionChip>}
+
                 {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}
 
                 {confirmations === 1 && <TransactionChip primary>1 Confirmation</TransactionChip>}
@@ -83,7 +85,7 @@ const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
             {showTimer ? (
               <TileDescription value width='auto'>
                 {' '}
-                Mined on {getFormattedDate(time)}{' '}
+                {confirmations > 0 ? 'Mined' : 'Seen'} on {getFormattedDate(time)}{' '}
               </TileDescription>
             ) : (
               <TileLink value width='auto' onClick={() => getTxData(mintTxid)}>
@@ -115,6 +117,8 @@ const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
 
                 {height === -4 && <TransactionChip error>Error</TransactionChip>}
 
+                {height === -5 && <TransactionChip error>Expired</TransactionChip>}
+
                 {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}
 
                 {confirmations === 1 && <TransactionChip primary>1 Confirmation</TransactionChip>}
@@ -134,7 +138,7 @@ const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
             {showTimer ? (
               <TileDescription value width='auto'>
                 {' '}
-                Mined on {getFormattedDate(time)}{' '}
+                {confirmations > 0 ? 'Mined' : 'Seen'} on {getFormattedDate(time)}{' '}
               </TileDescription>
             ) : (
               <TileLink value width='auto' onClick={() => getTxData(spentTxid)}>

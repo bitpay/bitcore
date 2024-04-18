@@ -15,6 +15,16 @@ var log = require('./log');
  * @constructor
  */
 export class Verifier {
+  private static _useRegtest: boolean = false;
+
+  static useRegtest() {
+    this._useRegtest = true;
+  }
+
+  static useTestnet() {
+    this._useRegtest = false;
+  }
+  
   /**
    * Check address
    *
@@ -28,14 +38,20 @@ export class Verifier {
       'Failed state: credentials at <checkAddress>'
     );
 
+    let network = credentials.network;
+    if (network === 'testnet' && this._useRegtest) {
+      network = 'regtest';
+    }
+
     var local = Utils.deriveAddress(
       address.type || credentials.addressType,
       credentials.publicKeyRing,
       address.path,
       credentials.m,
-      credentials.network,
+      network,
       credentials.chain,
-      escrowInputs
+      escrowInputs,
+      credentials.hardwareSourcePublicKey
     );
     return (
       local.address == address.address &&

@@ -85,6 +85,8 @@ const TransactionDetailsEth: FC<TransactionDetailsEthProps> = ({
         </div>
 
         <TransactionTileFlex>
+          {confirmations === -5 && <TransactionChip error>Expired</TransactionChip>}
+
           {confirmations === -3 && <TransactionChip error>Invalid</TransactionChip>}
 
           {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}

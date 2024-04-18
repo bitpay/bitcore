@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import config from '../../config';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
@@ -8,10 +9,11 @@ import { Copayer } from './copayer';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
-const config = require('../../config');
+
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
+
 const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash'),
@@ -32,6 +34,7 @@ export interface IWallet {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
+  hardwareSourcePublicKey: string;
   addressIndex: number;
   copayers: string[];
   pubKey: string;
@@ -60,6 +63,7 @@ export class Wallet {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
+  hardwareSourcePublicKey: string;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -123,6 +127,8 @@ export class Wallet {
     // x.nativeCashAddr opts is only for testing
     x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
 
+    // hardware wallet related
+    x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
     return x;
   }
 
@@ -161,6 +167,9 @@ export class Wallet {
 
     x.nativeCashAddr = obj.nativeCashAddr;
     x.usePurpose48 = obj.usePurpose48;
+
+    // hardware wallet related
+    x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
 
     return x;
   }
@@ -282,7 +291,8 @@ export class Wallet {
       isChange,
       this.chain,
       !this.nativeCashAddr,
-      escrowInputs
+      escrowInputs,
+      this.hardwareSourcePublicKey,
     );
     return address;
   }

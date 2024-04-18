@@ -1,15 +1,21 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
+import { Validation } from 'crypto-wallet-core';
 import * as _ from 'lodash';
 import Moralis from 'moralis';
 import 'source-map-support/register';
+import config from '../config';
 import logger from './logger';
 
+import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
+import { serverMessages } from '../serverMessages';
+import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
+import { Errors } from './errors/errordefinitions';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
@@ -31,15 +37,10 @@ import {
 } from './model';
 import { Storage } from './storage';
 
-const config = require('../config');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
-const deprecatedServerMessage = require('../deprecated-serverMessages');
-const serverMessages = require('../serverMessages');
-const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -55,8 +56,6 @@ const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Services = Common.Services;
-
-const Errors = require('./errors/errordefinitions');
 
 let request = require('request');
 let initialized = false;
@@ -440,6 +439,7 @@ export class WalletService implements IWalletService {
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
         message += ' %o';
+        args[i] = args[i]?.stack || args[i]?.message || args[i];
       }
     }
 
@@ -519,6 +519,7 @@ export class WalletService implements IWalletService {
    * @param {number} opts.m - Required copayers.
    * @param {number} opts.n - Total copayers.
    * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
+   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
@@ -570,10 +571,14 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Invalid network'));
     }
 
+    if (opts.network === 'regtest' && !config.allowRegtest) {
+      return cb(new ClientError('Regtest is not allowed for this environment'));
+    }
+
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
     let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
 
-    if (opts.useNativeSegwit) {
+    if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
       addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
     }
 
@@ -622,7 +627,8 @@ export class WalletService implements IWalletService {
             derivationStrategy,
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
-            usePurpose48: opts.n > 1 && !!opts.usePurpose48
+            usePurpose48: opts.n > 1 && !!opts.usePurpose48,
+            hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -926,6 +932,7 @@ export class WalletService implements IWalletService {
       name: opts.name,
       copayerIndex: wallet.copayers.length,
       xPubKey: opts.xPubKey,
+      hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
       requestPubKey: opts.requestPubKey,
       signature: opts.copayerSignature,
       customData: opts.customData,
@@ -1076,15 +1083,15 @@ export class WalletService implements IWalletService {
    * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.chain[='btc'] - The expected chain for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.name - The copayer name.
-   * @param {string} opts.xPubKey - Extended Public Key for this copayer.
+   * @param {string} opts.xPubKey - Extended Public Key for this copayer
+   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
    * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
    * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
    * @param {string} opts.customData - (optional) Custom data for this copayer.
    * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
-    if (!checkRequired(opts, ['walletId', 'name', 'xPubKey', 'requestPubKey', 'copayerSignature'], cb)) return;
-
+    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
     if (_.isEmpty(opts.name)) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -1094,13 +1101,16 @@ export class WalletService implements IWalletService {
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
-    try {
-      xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
-    } catch (ex) {
-      return cb(new ClientError('Invalid extended public key'));
-    }
-    if (_.isUndefined(xPubKey.network)) {
-      return cb(new ClientError('Invalid extended public key'));
+    if (!opts.hardwareSourcePublicKey) {
+      if (!checkRequired(opts, ['xPubKey'], cb)) return;
+      try {
+        xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
+      } catch (ex) {
+        return cb(new ClientError('Invalid extended public key'));
+      }
+      if (_.isUndefined(xPubKey.network)) {
+        return cb(new ClientError('Invalid extended public key'));
+      }
     }
 
     this.walletId = opts.walletId;
@@ -1109,6 +1119,11 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
+        if (opts.hardwareSourcePublicKey) {
+          this._addCopayerToWallet(wallet, opts, cb);
+          return;
+        }
+        
         if (opts.chain === 'bch' && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
@@ -1149,7 +1164,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (wallet.network != xPubKey.network.name) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 
@@ -1975,6 +1990,36 @@ export class WalletService implements IWalletService {
     });
   }
 
+  estimateFee(opts) {
+    opts = opts || {};
+    return new Promise((resolve, reject) => {
+      const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.estimateFeeV2(opts, (err, result) => {
+        if (err) {
+          this.logw('Error estimating fee', err);
+          return reject(err);
+        }
+        return resolve(result);
+      });
+    });
+  }
+
+  estimatePriorityFee(opts) {
+    opts = opts || {};
+    return new Promise((resolve, reject) => {
+      const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.estimatePriorityFee(opts, (err, result) => {
+        if (err) {
+          this.logw('Error estimating priority fee', err);
+          return reject(err);
+        }
+        return resolve(result);
+      });
+    });
+  }
+
   /**
    * Returns fee levels for the current state of the network.
    * @param {Object} opts
@@ -2403,6 +2448,8 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
    * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
    * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
+   * @param {number} opts.txType - Optional. Type of EVM transaction
+   * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2416,7 +2463,7 @@ export class WalletService implements IWalletService {
     this._runLocked(
       cb,
       cb => {
-        let changeAddress, feePerKb, gasPrice, gasLimit, fee;
+        let changeAddress, feePerKb, gasPrice, gasLimit, fee, maxGasFee, priorityGasFee;
         this.getWallet({}, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
@@ -2464,9 +2511,8 @@ export class WalletService implements IWalletService {
                 },
                 async next => {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
-
                   try {
-                    ({ feePerKb, gasPrice, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
+                    ({ feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
                   } catch (error) {
                     return next(error);
                   }
@@ -2533,6 +2579,9 @@ export class WalletService implements IWalletService {
                     fee: txOptsFee,
                     noShuffleOutputs: opts.noShuffleOutputs,
                     gasPrice,
+                    maxGasFee,
+                    priorityGasFee,
+                    txType: opts.txType,
                     nonce: opts.nonce,
                     gasLimit, // Backward compatibility for BWC < v7.1.1
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
@@ -2548,6 +2597,17 @@ export class WalletService implements IWalletService {
                   };
                   txp = TxProposal.create(txOpts);
                   next();
+                },
+                async next => {
+                  if (opts.chain != 'xrp') return next();
+                  this.getBalance({ chain: opts.chain, wallet }, async (err, bal) => {
+                    if (err) return next(err);
+                    ChainService.getReserve(this, wallet, (err, reserve) => {
+                      if (err) return next(err);
+                      if (reserve > bal.totalConfirmedAmount - txp.getTotalAmount() - txp.fee) return next(Errors.BALANCE_BELOW_RESERVE);
+                      return next();
+                    });
+                  });
                 },
                 next => {
                   return ChainService.selectTxInputs(this, txp, wallet, opts, next);
@@ -2667,11 +2727,34 @@ export class WalletService implements IWalletService {
   /**
    * Retrieves a tx from storage.
    * @param {Object} opts
-   * @param {string} opts.txProposalId - The tx id.
+   * @param {string} opts.txProposalId - The tx proposal id.
    * @returns {Object} txProposal
    */
   getTx(opts, cb) {
     this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+      if (err) return cb(err);
+      if (!txp) return cb(Errors.TX_NOT_FOUND);
+
+      if (!txp.txid) return cb(null, txp);
+
+      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+        if (err) {
+          this.logw('Error fetching tx note for ' + txp.txid);
+        }
+        txp.note = note;
+        return cb(null, txp);
+      });
+    });
+  }
+
+  /**
+   * Retrieves a tx from storage using txid
+   * @param {Object} opts
+   * @param {string} opts.txid - The tx blockchain id.
+   * @returns {Object} txProposal
+   */
+  getTxByHash(opts, cb) {
+    this.storage.fetchTxByHash(opts.txid, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
 
@@ -2802,7 +2885,10 @@ export class WalletService implements IWalletService {
     const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.broadcast(raw, (err, txid) => {
-      if (err) return cb(err);
+      if (err) {
+        logger.info('Error broadcasting tx: %o %o %o %o', chain, network, raw, err);
+        return cb(err);
+      }
       return cb(null, txid);
     });
   }
@@ -2823,7 +2909,6 @@ export class WalletService implements IWalletService {
 
     opts.network = opts.network || 'livenet';
     if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
-
     this._broadcastRawTx(opts.chain, opts.network, opts.rawTx, cb);
   }
 
@@ -3011,11 +3096,7 @@ export class WalletService implements IWalletService {
             }
             this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
               if (err || txid != txp.txid) {
-                if (!err || txp.txid != txid) {
-                  logger.warn('Broadcast failed for: %o', raw);
-                } else {
-                  logger.warn('Broadcast failed: %o', err);
-                }
+                logger.warn('Broadcast failed: %o %o %o %o %o', wallet.id, wallet.chain, wallet.network, raw, err?.stack || err?.message || err);
 
                 const broadcastErr = err;
                 // Check if tx already in blockchain
@@ -3355,6 +3436,21 @@ export class WalletService implements IWalletService {
         _.map([].concat(txs), tx => {
           const t = new Date(tx.blockTime).getTime() / 1000;
           const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
+          
+          // This adapter rebuilds the abiType property from data contained in the effects so that it returns what wallet is used to
+          // If we remove the slight reliance in the wallet on abiType then we can remove this adapter
+          function recreateAbiType(effects) {
+            // Check if any top level effects are ERC20 transfers
+            if (effects && effects.length) {
+              const erc20Transfer = effects.find(e => e.type == 'ERC20:transfer' && e.callStack == '');
+              if (erc20Transfer) {
+                // This is the only data used in old wallet and bitpay-app
+                return { name: 'transfer' };
+              }
+            }
+            return undefined;
+          }
+
           const ret = {
             id: tx.id,
             txid: tx.txid,
@@ -3373,11 +3469,15 @@ export class WalletService implements IWalletService {
             network: tx.network,
             chain: tx.chain,
             data: tx.data,
-            abiType: tx.abiType,
+            abiType: tx.abiType || recreateAbiType(tx.effects),
             gasPrice: tx.gasPrice,
+            maxGasFee: tx.maxGasFee, 
+            priorityGasFee: tx.priorityGasFee,
+            txType: tx.txType,
             gasLimit: tx.gasLimit,
             receipt: tx.receipt,
-            nonce: tx.nonce
+            nonce: tx.nonce,
+            effects: tx.effects
           };
           switch (tx.category) {
             case 'send':
@@ -4630,11 +4730,11 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage:'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.'}};
     }
 
     if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.'}};
     }
 
     // Buy crypto rules
@@ -4645,7 +4745,18 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && buyCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle:'Unavailable', disabledMessage:'This service is currently unavailable in your area.'}};
+      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
+    }
+
+    // Sell crypto rules
+    const sellCryptoUsaBannedStates = ['NY'];
+    if (
+      // Logged in with bitpayId
+      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
+      // Logged out (IP restriction)
+      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
+    ) {
+      externalServicesConfig.sellCrypto = {...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
     }
 
     return cb(null, externalServicesConfig);
@@ -4792,6 +4903,8 @@ export class WalletService implements IWalletService {
       if (!checkRequired(req.body, ['account_reference', 'source', 'target', 'wallet_address', 'return_url_on_success'])) {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
+
+      delete req.body.payment_method_id;
       
       const UriPath = '/orders';
       const URL: string = API + UriPath;
@@ -4875,16 +4988,46 @@ export class WalletService implements IWalletService {
     const keys: {
       API: string;
       WIDGET_API: string;
+      SELL_WIDGET_API: string;
       API_KEY: string;
       SECRET_KEY: string;
     } = {
       API: config.moonpay[env].api,
       WIDGET_API: config.moonpay[env].widgetApi,
+      SELL_WIDGET_API: config.moonpay[env].sellWidgetApi,
       API_KEY: config.moonpay[env].apiKey,
       SECRET_KEY: config.moonpay[env].secretKey
     };
 
     return keys;
+  }
+
+  moonpayGetCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const URL = API + '/v3/currencies/'
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
   }
 
   moonpayGetQuote(req): Promise<any> {
@@ -4911,6 +5054,47 @@ export class WalletService implements IWalletService {
       if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + req.body.areFeesIncluded);
 
       const URL: string = API + `/v3/currencies/${req.body.currencyAbbreviation}/buy_quote/?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayGetSellQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['currencyAbbreviation', 'quoteCurrencyCode', 'baseCurrencyAmount'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      let qs = [];
+      qs.push('apiKey=' + API_KEY);
+      qs.push('quoteCurrencyCode=' + req.body.quoteCurrencyCode);
+      qs.push('baseCurrencyAmount=' + req.body.baseCurrencyAmount);
+
+      if (req.body.extraFeePercentage) qs.push('extraFeePercentage=' + req.body.extraFeePercentage);
+      if (req.body.payoutMethod) qs.push('payoutMethod=' + req.body.payoutMethod);
+
+      const URL: string = API + `/v3/currencies/${req.body.currencyAbbreviation}/sell_quote?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -5016,6 +5200,59 @@ export class WalletService implements IWalletService {
     return { urlWithSignature };
   }
 
+  moonpayGetSellSignedPaymentUrl(req): { urlWithSignature: string } {
+    const keys = this.moonpayGetKeys(req);
+    const SECRET_KEY = keys.SECRET_KEY;
+    const API_KEY = keys.API_KEY;
+    const SELL_WIDGET_API = keys.SELL_WIDGET_API;
+
+    if (
+      !checkRequired(req.body, [
+        'baseCurrencyCode',
+        'baseCurrencyAmount',
+        'externalTransactionId',
+        'redirectURL',
+      ])
+    ) {
+      throw new ClientError("Moonpay's request missing arguments");
+    }
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    let qs = [];
+    qs.push('apiKey=' + API_KEY);
+    qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
+    qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));
+    qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
+    qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
+
+    if (req.body.quoteCurrencyCode) qs.push('quoteCurrencyCode=' + encodeURIComponent(req.body.quoteCurrencyCode));
+    if (req.body.refundWalletAddress) qs.push('refundWalletAddress=' + encodeURIComponent(req.body.refundWalletAddress));
+    if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
+    if (req.body.colorCode) qs.push('colorCode=' + encodeURIComponent(req.body.colorCode));
+    if (req.body.theme) qs.push('theme=' + encodeURIComponent(req.body.theme));
+    if (req.body.language) qs.push('language=' + encodeURIComponent(req.body.language));
+    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
+    if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
+    if (req.body.showWalletAddressForm)
+      qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
+    if (req.body.unsupportedRegionRedirectUrl) qs.push('unsupportedRegionRedirectUrl=' + encodeURIComponent(req.body.unsupportedRegionRedirectUrl));
+    if (req.body.skipUnsupportedRegionScreen) qs.push('skipUnsupportedRegionScreen=' + encodeURIComponent(req.body.skipUnsupportedRegionScreen));
+
+    const URL_SEARCH: string = `?${qs.join('&')}`;
+
+    const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
+      Buffer.from(URL_SEARCH),
+      Buffer.from(SECRET_KEY)
+    ).toString('base64');
+
+    const urlWithSignature = `${SELL_WIDGET_API}${URL_SEARCH}&signature=${encodeURIComponent(URLSignatureHash)}`;
+
+    return { urlWithSignature };
+  }
+
   moonpayGetTransactionDetails(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.moonpayGetKeys(req);
@@ -5040,6 +5277,85 @@ export class WalletService implements IWalletService {
       }
 
       this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayGetSellTransactionDetails(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      let URL: string;
+
+      let qs = [];
+      qs.push('apiKey=' + API_KEY);
+      if (req.body.transactionId) {
+        URL = API + `/v3/sell_transactions/${req.body.transactionId}?${qs.join('&')}`;
+      } else if (req.body.externalId) {
+        URL = API + `/v3/sell_transactions/ext/${req.body.externalId}?${qs.join('&')}`;
+      }
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayCancelSellTransaction(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const headers = {
+        Authorization: 'Api-Key ' + SECRET_KEY,
+        Accept: 'application/json'
+      };
+      let URL: string;
+
+      if (req.body.transactionId) {
+        URL = API + `/v3/sell_transactions/${req.body.transactionId}`;
+      } else if (req.body.externalId) {
+        URL = API + `/v3/sell_transactions/ext/${req.body.externalId}`;
+      }
+
+      this.request.delete(
         URL,
         {
           headers,
@@ -5410,7 +5726,7 @@ export class WalletService implements IWalletService {
 
       if (req.body.orderId) {
         URL = API + `/v1/orders/${req.body.orderId}`;
-      } else if (req.body.externalUserId || req.body.referenceId){
+      } else if (req.body.externalUserId || req.body.referenceId) {
         if (req.body.externalUserId) qs.push('externalUserId=' + req.body.externalUserId);
         if (req.body.referenceId) qs.push('referenceId=' + req.body.referenceId);
         if (req.body.startDate) qs.push('startDate=' + req.body.startDate);
@@ -5601,6 +5917,291 @@ export class WalletService implements IWalletService {
 
     return keys;
   }
+
+  private transakGetKeys(req) {
+    if (!config.transak) throw new Error('Transak missing credentials');
+
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
+    }
+
+    delete req.body.env;
+    delete req.body.context;
+
+    const keys: {
+      API: string;
+      API_KEY: string;
+      SECRET_KEY: string;
+      WIDGET_API: string;
+    } = {
+      API: config.transak[env].api,
+      API_KEY: config.transak[env].apiKey,
+      SECRET_KEY: config.transak[env].secretKey,
+      WIDGET_API: config.transak[env].widgetApi
+    };
+
+    return keys;
+  }
+
+  transakGetAccessToken(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'api-secret': SECRET_KEY,
+      };
+
+      req.body = {
+        apiKey: API_KEY
+      }
+
+      const URL: string = API + '/partners/api/v2/refresh-token';
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetCryptoCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+
+      const URL: string = API + '/api/v2/currencies/crypto-currencies';
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetFiatCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+
+      const URL: string = API + `/api/v2/currencies/fiat-currencies?apiKey=${API_KEY}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['fiatCurrency', 'cryptoCurrency', 'network', 'paymentMethod'])) {
+        return reject(new ClientError("Transak's request missing arguments"));
+      }
+
+      const headers = {
+        Accept: 'application/json',
+      };
+
+      let qs = [];
+      qs.push('partnerApiKey=' + API_KEY);
+      qs.push('fiatCurrency=' + req.body.fiatCurrency);
+      qs.push('cryptoCurrency=' + req.body.cryptoCurrency);
+      qs.push('isBuyOrSell=BUY');
+      qs.push('network=' + req.body.network);
+      qs.push('paymentMethod=' + req.body.paymentMethod);
+
+      if (req.body.fiatAmount) qs.push('fiatAmount=' + req.body.fiatAmount);
+      if (req.body.cryptoAmount) qs.push('cryptoAmount=' + req.body.cryptoAmount);
+
+      const URL: string = API + `/api/v2/currencies/price?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetSignedPaymentUrl(req): { urlWithSignature: string } {
+    const appRequiredParams = [
+      'walletAddress',
+      'redirectURL',
+      'fiatAmount',
+      'fiatCurrency',
+      'network',
+      'cryptoCurrencyCode',
+      'partnerOrderId',
+      'partnerCustomerId',
+    ];
+
+    const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
+    const keys = this.transakGetKeys(req);
+    const API_KEY = keys.API_KEY;
+    const WIDGET_API = keys.WIDGET_API;
+
+    if (
+      !checkRequired(req.body, requiredParams)
+    ) {
+      throw new ClientError("Transak's request missing arguments");
+    }
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    let qs = [];
+    // Recommended parameters to customize from the app
+    if (req.body.walletAddress) qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
+    if (req.body.disableWalletAddressForm) qs.push('disableWalletAddressForm=' + encodeURIComponent(req.body.disableWalletAddressForm));
+    if (req.body.redirectURL) qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
+    if (req.body.exchangeScreenTitle) qs.push('exchangeScreenTitle=' + encodeURIComponent(req.body.exchangeScreenTitle));
+    if (req.body.fiatAmount) qs.push('fiatAmount=' + encodeURIComponent(req.body.fiatAmount));
+    if (req.body.fiatCurrency) qs.push('fiatCurrency=' + encodeURIComponent(req.body.fiatCurrency));
+    if (req.body.network) qs.push('network=' + encodeURIComponent(req.body.network));
+    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
+    if (req.body.cryptoCurrencyCode) qs.push('cryptoCurrencyCode=' + encodeURIComponent(req.body.cryptoCurrencyCode));
+    if (req.body.cryptoCurrencyList) qs.push('cryptoCurrencyList=' + encodeURIComponent(req.body.cryptoCurrencyList));
+    if (req.body.hideExchangeScreen) qs.push('hideExchangeScreen=' + encodeURIComponent(req.body.hideExchangeScreen));
+    if (req.body.themeColor) qs.push('themeColor=' + encodeURIComponent(req.body.themeColor));
+    if (req.body.hideMenu) qs.push('hideMenu=' + encodeURIComponent(req.body.hideMenu));
+    if (req.body.partnerOrderId) qs.push('partnerOrderId=' + encodeURIComponent(req.body.partnerOrderId));
+    if (req.body.partnerCustomerId) qs.push('partnerCustomerId=' + encodeURIComponent(req.body.partnerCustomerId));
+    // Other parameters
+    if (req.body.environment) qs.push('environment=' + encodeURIComponent(req.body.environment));
+    if (req.body.widgetHeight) qs.push('widgetHeight=' + encodeURIComponent(req.body.widgetHeight));
+    if (req.body.widgetWidth) qs.push('widgetWidth=' + encodeURIComponent(req.body.widgetWidth));
+    if (req.body.productsAvailed) qs.push('productsAvailed=' + encodeURIComponent(req.body.productsAvailed));
+    if (req.body.defaultFiatAmount) qs.push('defaultFiatAmount=' + encodeURIComponent(req.body.defaultFiatAmount));
+    if (req.body.countryCode) qs.push('countryCode=' + encodeURIComponent(req.body.countryCode));
+    if (req.body.excludeFiatCurrencies) qs.push('excludeFiatCurrencies=' + encodeURIComponent(req.body.excludeFiatCurrencies));
+    if (req.body.defaultNetwork) qs.push('defaultNetwork=' + encodeURIComponent(req.body.defaultNetwork));
+    if (req.body.networks) qs.push('networks=' + encodeURIComponent(req.body.networks));
+    if (req.body.defaultPaymentMethod) qs.push('defaultPaymentMethod=' + encodeURIComponent(req.body.defaultPaymentMethod));
+    if (req.body.disablePaymentMethods) qs.push('disablePaymentMethods=' + encodeURIComponent(req.body.disablePaymentMethods));
+    if (req.body.defaultCryptoAmount) qs.push('defaultCryptoAmount=' + encodeURIComponent(req.body.defaultCryptoAmount));
+    if (req.body.cryptoAmount) qs.push('cryptoAmount=' + encodeURIComponent(req.body.cryptoAmount));
+    if (req.body.defaultCryptoCurrency) qs.push('defaultCryptoCurrency=' + encodeURIComponent(req.body.defaultCryptoCurrency));
+    if (req.body.isFeeCalculationHidden) qs.push('isFeeCalculationHidden=' + encodeURIComponent(req.body.isFeeCalculationHidden));
+    if (req.body.walletAddressesData) qs.push('walletAddressesData=' + encodeURIComponent(req.body.walletAddressesData));
+    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
+    if (req.body.userData) qs.push('userData=' + encodeURIComponent(req.body.userData));
+    if (req.body.isAutoFillUserData) qs.push('isAutoFillUserData=' + encodeURIComponent(req.body.isAutoFillUserData));
+
+    const URL_SEARCH: string = `?apiKey=${API_KEY}&${qs.join('&')}`;
+
+    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}`;
+
+    return { urlWithSignature };
+  }
+
+  transakGetOrderDetails(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      const env = _.cloneDeep(req.body.env);
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+
+      if (!checkRequired(req.body, ['orderId'])) {
+        return reject(new ClientError("Transak's request missing arguments"));
+      }
+
+      let accessToken;
+      if (req.body.accessToken) {
+        accessToken = req.body.accessToken;
+      } else {
+        try {
+          const accessTokenData = await this.transakGetAccessToken({body: env});
+          accessToken = accessTokenData?.data?.accessToken;
+        } catch (err) {
+          return reject(err?.body ? err.body : err);
+        }
+      }
+
+      const headers = {
+        Accept: 'application/json',
+        'access-token': accessToken,
+      };
+
+      const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
 
   wyreWalletOrderQuotation(req): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -6396,6 +6997,7 @@ export class WalletService implements IWalletService {
           chain: req.body.chain,
           toBlock: req.body.toBlock,
           tokenAddresses: req.body.tokenAddresses,
+          excludeSpam: req.body.excludeSpam,
         });
       
         return resolve(response.raw ?? response);
@@ -6435,6 +7037,85 @@ export class WalletService implements IWalletService {
       } catch (err) {
         reject(err);
       }
+    });
+  }
+
+  moralisGetTokenPrice(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getTokenPrice({
+          address: req.body.address,
+          chain: req.body.chain,
+          include: req.body.include,
+          exchange: req.body.exchange,
+          toBlock: req.body.toBlock,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetMultipleERC20TokenPrices(req): Promise<any> {
+    return new Promise(async(resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.token.getMultipleTokenPrices({
+          chain: req.body.chain,
+          include: req.body.include,
+        },
+        {
+          tokens: req.body.tokens,
+        });
+      
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetERC20TokenBalancesWithPricesByWallet(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let keys, headers;
+
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['address'])) {
+        return reject(new ClientError('moralisGetERC20TokenBalancesWithPricesByWallet request missing arguments'));
+      }
+
+      let qs = [];
+      if (req.body.chain) qs.push('chain=' + req.body.chain);
+      if (req.body.toBlock) qs.push('to_block=' + req.body.toBlock);
+      if (req.body.tokenAddresses) qs.push('token_addresses=' + req.body.tokenAddresses);
+      if (req.body.excludeSpam) qs.push('exclude_spam=' + req.body.excludeSpam);
+      if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+      if (req.body.excludeNative) qs.push('exclude_native=' + req.body.excludeNative);
+
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${req.body.address}/tokens${qs.length > 0 ? '?' + qs.join('&') : ''}`
+
+      headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body ?? data);
+          }
+        }
+      );
     });
   }
 

@@ -1,18 +1,19 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { IChain, INotificationData } from '..';
+import { WalletService } from 'src/lib/server';
+import { IChain } from '..';
+import config from '../../../config';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { TxProposal } from '../../model';
+import { IWallet, TxProposal } from '../../model';
 
 const $ = require('preconditions').singleton();
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
-const config = require('../../../config');
 
 export class BtcChain implements IChain {
   protected sizeEstimationMargin: number;
@@ -914,10 +915,12 @@ export class BtcChain implements IChain {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
+        // tslint:disable-next-line:no-bitwise
+        const SIGHASH_TYPE = this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID;
         const s = {
           inputIndex: i,
           signature,
-          sigtype: this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
+          sigtype: SIGHASH_TYPE,
           publicKey: pub
         };
         tx.inputs[i].addSignature(tx, s, signingMethod);
@@ -939,10 +942,20 @@ export class BtcChain implements IChain {
     } catch (ex) {
       throw Errors.INVALID_ADDRESS;
     }
-    if (addr.network.toString() != wallet.network) {
+    if (!this._isCorrectNetwork(wallet, addr)) {
       throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
     return;
+  }
+
+  protected _isCorrectNetwork(wallet, addr) {
+    const addrNetwork = addr.network.toString();
+    const walNetwork = wallet.network;
+
+    if (addrNetwork === 'testnet' && walNetwork === 'regtest') {
+      return !!config.allowRegtest;
+    }
+    return addrNetwork === walNetwork;
   }
 
   // Push notification handling
@@ -962,5 +975,9 @@ export class BtcChain implements IChain {
   // Push notification handling
   onTx(tx) {
     return null;
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return cb(null, 0);
   }
 }

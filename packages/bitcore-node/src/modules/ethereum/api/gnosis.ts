@@ -3,6 +3,7 @@ import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import { MultisigAbi } from '../../../providers/chain-state/evm/abi/multisig';
 import { MultisigRelatedFilterTransform } from '../../../providers/chain-state/evm/api/multisigTransform';
+import { PopulateEffectsTransform } from '../../../providers/chain-state/evm/api/populateEffectsTransform';
 import { PopulateReceiptTransform } from '../../../providers/chain-state/evm/api/populateReceiptTransform';
 import { EVMListTransactionsStream } from '../../../providers/chain-state/evm/api/transform';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
@@ -145,8 +146,7 @@ export class GnosisApi {
   }
 
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
-    const { multisigContractAddress, network, res, args } = params;
-    const { web3 } = await ETH.getWeb3(network);
+    const { multisigContractAddress, res, args } = params;
     const transactionQuery = ETH.getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
@@ -163,6 +163,11 @@ export class GnosisApi {
             ...transactionQuery,
             'internal.action.to': args.tokenAddress.toLowerCase(),
             'internal.action.from': multisigContractAddress.toLowerCase()
+          },
+          {
+            ...transactionQuery,
+            'effects.contractAddress': args.tokenAddress,
+            'effects.from': multisigContractAddress
           }
         ]
       };
@@ -170,7 +175,8 @@ export class GnosisApi {
       query = {
         $or: [
           { ...transactionQuery, to: multisigContractAddress },
-          { ...transactionQuery, 'internal.action.to': multisigContractAddress.toLowerCase() }
+          { ...transactionQuery, 'internal.action.to': multisigContractAddress.toLowerCase() },
+          { ...transactionQuery, 'effects.to': multisigContractAddress }
         ]
       };
     }
@@ -178,14 +184,17 @@ export class GnosisApi {
     let transactionStream = new Readable({ objectMode: true });
     const ethTransactionTransform = new EVMListTransactionsStream([multisigContractAddress, args.tokenAddress]);
     const populateReceipt = new PopulateReceiptTransform();
+    const populateEffects = new PopulateEffectsTransform();
 
     transactionStream = EVMTransactionStorage.collection
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
+    transactionStream = transactionStream.pipe(populateEffects); // For old db entires
+
     if (multisigContractAddress) {
-      const ethMultisigTransform = new MultisigRelatedFilterTransform(web3, multisigContractAddress, args.tokenAddress);
+      const ethMultisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);
       transactionStream = transactionStream.pipe(ethMultisigTransform);
     }
 

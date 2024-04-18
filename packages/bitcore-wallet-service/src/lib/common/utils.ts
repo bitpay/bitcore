@@ -1,5 +1,6 @@
 import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
+import Config from '../../config';
 import { logger } from '../logger';
 
 const $ = require('preconditions').singleton();
@@ -272,5 +273,14 @@ export class Utils {
 
     const result = Bitcore_[coin].Address.fromObject(origObj);
     return coin == 'bch' ? result.toLegacyAddress() : result.toString();
+  }
+
+  static compareNetworks(network1, network2) {
+    network1 = network1?.toLowerCase();
+    network2 = network2?.toLowerCase();
+
+    if (network1 == network2) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(network1) && ['testnet', 'regtest'].includes(network2)) return true;
+    return false;
   }
 }

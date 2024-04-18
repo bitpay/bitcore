@@ -5211,7 +5211,8 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2
+            feePerKb: 100e2,
+            txType: 2
           };
           helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
@@ -5220,6 +5221,9 @@ describe('client API', function() {
             txp.status.should.equal('pending');
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
+            txp.txType.should.equal(2);
+            txp.maxGasFee.should.equal(20000);
+            txp.priorityGasFee.should.equal(5000);
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
@@ -6540,7 +6544,7 @@ describe('client API', function() {
                   let recoveryClient2 = c[1];
                   recoveryClient2.openWallet(err => {
                     should.not.exist(err);
-                    recoveryClient2.credentials.coin.should.equal('usdc');
+                    recoveryClient2.credentials.coin.should.equal('usdc.e');
                     should.exist(recoveryClient2.credentials.chain);
                     recoveryClient2.credentials.chain.should.equal('matic');
                     recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[0]}`);

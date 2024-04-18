@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import logger from '../../../../../logger';
 import { EVMTransactionStorage } from '../../models/transaction';
-import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransaction } from '../../types';
+import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransactionInProcess } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
 
 interface IGethTxTraceResponse {
@@ -15,7 +15,7 @@ interface IGethTxTraceBase {
   input: string;
   output: string;
   to: string;
-  type: 'CREATE';
+  type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2';
   value: string;
   abiType?: IAbiDecodedData;
 }
@@ -46,7 +46,7 @@ export class GethRPC implements IRpc {
         method: 'debug_traceBlockByNumber',
         params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
         jsonrpc: '2.0',
-        id: 1
+        id: Date.now() + Math.round(Math.random() * 1000)
       });
     } catch (e: any) {
       logger.debug('%o', e);
@@ -80,7 +80,7 @@ export class GethRPC implements IRpc {
     return convertedTx;
   }
 
-  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransaction[], traces: IGethTxTrace[]) {
+  public reconcileTraces(block: IEVMBlock, transactions: IEVMTransactionInProcess[], traces: IGethTxTrace[]) {
     // TODO calculate total block reward including fees
     block;
 
@@ -102,6 +102,7 @@ export class GethRPC implements IRpc {
     trace.abiType = trace.input ? EVMTransactionStorage.abiDecode(trace.input) : undefined;
     if (trace.abiType) {
       for (let param of trace.abiType.params) {
+        param.value = typeof param.value === 'string' ? param.value : JSON.stringify(param.value);
         if (param.value && param.value.length > 100) {
           // Need to truncate this so it doesn't blow up the index.
           param.value = param.value.substring(0, 100) + '...';

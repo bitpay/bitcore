@@ -1,44 +1,55 @@
 #!/usr/bin/env node
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option(
-    '--recipients <recipients>',
-    'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\''
-  )
-  .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
-  .option('--change <change>', 'REQUIRED - Change addresses')
-  .option('--fee [fee]', 'optional - custom transaction fee to pay')
-  .option('--target [target]', 'optional - custom target block for confirmation')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--storageType [storageType]', 'optional - Name of the database to use (default Level)')
-  .option('--from [from]', 'optional - From Address')
-  .option('--nonce [nonce]', 'optional - Nonce')
-  .option('--invoiceID [invoiceID]', 'optional - invoiceId for XRP transactions')
-  .option('--token [currency]', 'optional - ERC20 token')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .requiredOption('--recipients <recipients>', 'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\'')
+  .requiredOption('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
+  .requiredOption('--change <change>', 'REQUIRED - Change address. `miner` will ensure there is no change output and all left-overs go towards the miner fee.')
+  .option('--fee <fee>', 'optional - Custom transaction fee to pay')
+  .option('--target <target>', 'optional - Custom target block for confirmation')
+  .option('--from <from>', 'optional - From address')
+  .option('--nonce <nonce>', 'optional - Nonce')
+  .option('--invoiceID <invoiceID>', 'optional - InvoiceId for XRP transactions')
+  .option('--token <currency>', 'optional - ERC20 token symbol')
+  .option('--tokenName <currency>', 'optional - ERC20 token custom name')
+  .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
-  const { name, path, storageType } = program;
-  let wallet;
+  const { name, path, storageType } = program.opts();
   let totalTransactionFee;
   let walletNonce;
   try {
-    const { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program;
+    const { recipients, utxos, change, fee, target, from, nonce, invoiceID, token, tokenName } = program.opts();
     wallet = await Wallet.loadWallet({ name, path, storageType });
 
-    const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
-    const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];
-    if (!parsedRecipients.length) {
-      throw new Error('invalid arguments');
+    function tryParse(json) {
+      try {
+        return JSON.parse(json);
+      } catch (e) {
+        return;
+      }
     }
 
-    if (!parsedRecipients.length || !parsedUtxos.length) {
-      throw new Error('invalid arguments');
+    const parsedUtxos = tryParse(utxos) || [];
+    const parsedRecipients = tryParse(recipients) || [];
+    if (!parsedRecipients.length) {
+      throw new Error('invalid --recipients');
+    }
+
+    if (!parsedUtxos.length) {
+      throw new Error('invalid --utxos');
+    }
+
+    if (!change) {
+      throw new Error('invalid --change');
     }
 
     if (!fee) {
@@ -54,7 +65,14 @@ const main = async () => {
       walletNonce = await wallet.getNonce();
     }
 
-    let params = { recipients, utxos, change, fee, from, nonce, token };
+    if (change !== 'miner') {
+      const allKnownAddresses = await wallet.getAddresses();
+      if (!allKnownAddresses.includes(change)) {
+        throw new Error('This wallet will not be able to detect change funds sent to the --change address you specified. Try importing the key/address first.');
+      }
+    }
+
+    let params = { recipients, utxos, change, fee, from, nonce, token, tokenName };
     params.fee = Number(fee) || totalTransactionFee;
     params.nonce = Number(nonce) || walletNonce;
     params.recipients = parsedRecipients;
@@ -83,4 +101,6 @@ function getCurrencies() {
   });
 }
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

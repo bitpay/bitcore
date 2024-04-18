@@ -1,5 +1,6 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
+import logger from '../logger';
 import { Modules } from '../modules';
 import { Api } from '../services/api';
 import { Event } from '../services/event';
@@ -9,7 +10,7 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 require('heapdump');
 
-let args = parseArgv([], ['DEBUG', 'CLUSTER']);
+let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }, { arg: 'CLUSTER', type: 'bool' }]);
 const services: Array<any> = [];
 
 export const ClusteredApiWorker = async () => {
@@ -38,12 +39,22 @@ export const ClusteredApiWorker = async () => {
   }
 };
 
+let stopping = false;
 const stop = async () => {
-  console.log(`Shutting down ${process.pid}`);
+  if (stopping) {
+    logger.warn('Force stopping API Worker');
+    process.exit(1);
+  }
+  stopping = true;
+  
+  logger.error(`Shutting down ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
   }
-  process.exit();
+  setTimeout(() => {
+    logger.warn('API Worker did not shut down gracefully after 30 seconds, exiting');
+    process.exit(1);
+  }, 30 * 1000).unref();
 };
 
 if (require.main === module) {

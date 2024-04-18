@@ -45,7 +45,8 @@ export class Credentials {
     'rootPath', // this is only for information
     'keyId', // this is only for information
     'token', // this is for a ERC20 token
-    'multisigEthInfo' // this is for a MULTISIG eth wallet
+    'multisigEthInfo', // this is for a MULTISIG eth wallet
+    'hardwareSourcePublicKey' // public key from a hardware device for this copayer
   ];
   version: number;
   account: number;
@@ -194,6 +195,9 @@ export class Credentials {
         case Constants.DERIVATION_STRATEGIES.BIP48:
           purpose = '48';
           break;
+        case Constants.DERIVATION_STRATEGIES.BIP84:
+          purpose = '84';
+          break;
       }
 
       var coin = '0';
@@ -258,8 +262,8 @@ export class Credentials {
     x.account = x.account || 0;
 
     $.checkState(
-      x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted,
-      'Failed State: x.xPrivKey | x.xPubkey | x.xPrivKeyEncrypted at fromObj'
+      x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted || x.hardwareSourcePublicKey,
+      'Failed State: x.xPrivKey | x.xPubkey | x.xPrivKeyEncrypted | x.hardwareSourcePublicKey at fromObj'
     );
     return x;
   }

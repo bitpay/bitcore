@@ -1,18 +1,20 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
-import { IChain, INotificationData } from '..';
+import { WalletService } from 'src/lib/server';
+import { IChain } from '..';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
-const { toBN } = Web3.utils;
 
+const { toBN } = Web3.utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -136,16 +138,18 @@ export class EthChain implements IChain {
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
         let gasPrice = inFeePerKb;
-        const { from } = opts;
+        let maxGasFee;
+        let priorityGasFee;
+        const { from, txType, priorityFeePercentile } = opts;
         const { coin, network } = wallet;
         let inGasLimit = 0; // Per recepient gas limit
         let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
@@ -158,9 +162,9 @@ export class EthChain implements IChain {
         for (let output of opts.outputs) {
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
-            outputAmounts.push(toBN(output.amount));
+            outputAmounts.push(toBN(BigInt(output.amount).toString()));
             if (!opts.tokenAddress) {
-              totalValue = totalValue.add(toBN(output.amount));
+              totalValue = totalValue.add(toBN(BigInt(output.amount).toString()));
             }
             inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
             continue;
@@ -169,10 +173,10 @@ export class EthChain implements IChain {
               const to = opts.payProUrl
                 ? output.toAddress
                 : opts.tokenAddress
-                ? opts.tokenAddress
-                : opts.multisigContractAddress
-                ? opts.multisigContractAddress
-                : output.toAddress;
+                  ? opts.tokenAddress
+                  : opts.multisigContractAddress
+                    ? opts.multisigContractAddress
+                    : output.toAddress;
               const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               inGasLimit = await server.estimateGas({
                 coin,
@@ -222,7 +226,12 @@ export class EthChain implements IChain {
           gasLimit = gasLimit ? gasLimit : inGasLimit;
           fee += feePerKb * gasLimit;
         }
-        return resolve({ feePerKb, gasPrice, gasLimit, fee });
+
+        if (Number(txType) === 2) {
+          maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
+          priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15 });
+        }
+        return resolve({ feePerKb, gasPrice, gasLimit, maxGasFee, priorityGasFee, fee });
       });
     });
   }
@@ -451,7 +460,7 @@ export class EthChain implements IChain {
     });
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     try {
@@ -459,7 +468,7 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toBN(output.amount).toString() !== output.amount.toString()
+        Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }
@@ -535,29 +544,39 @@ export class EthChain implements IChain {
     let multisigContractAddress;
     let address;
     let amount;
-    if (tx.abiType && tx.abiType.type === 'ERC20') {
-      tokenAddress = tx.to;
-      address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
-      amount = tx.abiType.params[1].value;
-    } else if (tx.abiType && tx.abiType.type === 'MULTISIG' && tx.abiType.name === 'submitTransaction') {
-      multisigContractAddress = tx.to;
-      address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
-      amount = tx.abiType.params[1].value;
-    } else if (tx.abiType && tx.abiType.type === 'MULTISIG' && tx.abiType.name === 'confirmTransaction') {
-      multisigContractAddress = tx.to;
-      address = '0x0';
-      amount = 0;
-      if (tx.internal && tx.internal.length > 0) {
-        address = Web3.utils.toChecksumAddress(tx.internal[0].action.to);
-        amount = tx.internal[0].action.value;
-      } else if (tx.calls && tx.calls.length > 0) {
-        address = Web3.utils.toChecksumAddress(tx.calls[0].to);
-        amount = tx.calls[0].value;
+    // Only returns single notification so determine most precise
+    if (tx.effects && tx.effects.length) {
+      const multisigConfirm = tx.effects.findIndex(e => e.type === 'MULTISIG:confirmTransaction');
+      const multisigSubmit = tx.effects.findIndex(e => e.type === 'MULTISIG:submitTransaction');
+      const erc20Transfer = tx.effects.findIndex(e => e.type === 'ERC20:transer');
+      const internalTransfer = tx.effects.findIndex(e => !e.type && !e.contractAddress);
+      
+      const exists = [multisigConfirm, multisigSubmit, erc20Transfer, internalTransfer].filter(i => i > -1);
+      
+      if (exists.length) {
+        // Get the first effect based on priority as determined by order in above array
+        const best = tx.effects[exists[0]];
+        if (best.type == 'MULTISIG:confirmTransaction' || best.type == 'MULTISIG:submitTransaction') {
+          multisigContractAddress = best.contractAddress;
+          address = best.to;
+          amount = best.amount;
+        } else if (best.type == 'ERC20:transfer') {
+          tokenAddress = best.contractAddress;
+          address = best.to;
+          amount = best.amount;
+        } else {
+          address = best.to;
+          amount = best.amount;
+        }
       }
-    } else {
+    } 
+    
+    // If we haven't defined address by this point then it must be native transfer
+    if (!address) {
       address = tx.to;
       amount = tx.value;
     }
+
     return {
       txid: tx.txid,
       out: {
@@ -567,5 +586,9 @@ export class EthChain implements IChain {
         multisigContractAddress
       }
     };
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return cb(null, 0);
   }
 }

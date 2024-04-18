@@ -4,7 +4,7 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import request from 'request';
-import { ChainService } from './chain';
+import config from '../config';
 import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
@@ -43,6 +43,10 @@ const PUSHNOTIFICATIONS_TYPES = {
   },
   NewAddress: {
     dataOnly: true
+  },
+  ScanFinished: {
+    dataOnly: true,
+    broadcastToActiveUsers: true
   },
   NewBlock: {
     dataOnly: true,
@@ -476,7 +480,8 @@ export class PushNotificationsService {
       shib: 'SHIB',
       ape: 'APE',
       euroc: 'EUROC',
-      usdt: 'USDT'
+      usdt: 'USDT',
+      weth: 'WETH'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -612,10 +617,13 @@ export class PushNotificationsService {
         // if copayerid is associated to externalUserId use Braze subscriptions
         // avoid multiple notifications
         const allSubs = allSubsWithExternalId.length > 0 ? allSubsWithExternalId : allSubsWithToken;
+        const chainOrCoin = notification.data.chain || notification.data.coin;
+        const networkInfo = notification.data.network;
+        const hasChainNetworkInfo = chainOrCoin && networkInfo;
+        const chainNetworkMessage = hasChainNetworkInfo ? ` [${chainOrCoin}/${networkInfo}]` : '';
+
         logger.info(
-          `Sending ${notification.type} [${notification.data.chain || notification.data.coin}/${
-            notification.data.network
-          }] notifications to: ${allSubs.length} devices`
+          `Sending ${notification.type}${chainNetworkMessage} notifications to: ${allSubs.length} devices`
         );
         return cb(null, allSubs);
       });
@@ -683,27 +691,50 @@ export class PushNotificationsService {
     );
   }
 
-  getTokenData(chain) {
+  private oneInchGetCredentials() {
+    if (!config.oneInch) throw new Error('1Inch missing credentials');
+
+    const credentials = {
+      API: config.oneInch.api,
+      API_KEY: config.oneInch.apiKey,
+      referrerAddress: config.oneInch.referrerAddress,
+      referrerFee: config.oneInch.referrerFee
+    };
+
+    return credentials;
+  }
+
+  getTokenData(chain: string) {
     return new Promise((resolve, reject) => {
-      const chainIdMap = {
-        eth: 1,
-        matic: 137
-      };
-      // Get tokens
-      this.request(
-        {
-          url: `https://bitpay.api.enterprise.1inch.exchange/v3.0/${chainIdMap[chain]}/tokens`,
-          method: 'GET',
-          json: true,
-          headers: {
-            'Content-Type': 'application/json'
+      try {
+        const credentials = this.oneInchGetCredentials();
+        const chainIdMap = {
+          eth: 1,
+          matic: 137
+        };
+        this.request(
+          {
+            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            method: 'GET',
+            json: true,
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: 'Bearer ' + credentials.API_KEY,
+            }
+          },
+          (err, data) => {
+            if (err) return reject(err);
+            if (data?.statusCode === 429) {
+              // oneinch rate limit
+              return reject();
+            }
+            return resolve(data?.body?.tokens);
           }
-        },
-        (err, data: any) => {
-          if (err) return reject(err);
-          return resolve(data.body.tokens);
-        }
-      );
+        );
+      } catch (err) {
+        return reject(err);
+      }
     });
   }
 }

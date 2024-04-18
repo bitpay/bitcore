@@ -14,7 +14,7 @@ const should = chai.should();
 const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
-var config = require('../../ts_build/config.js');
+var config = require('../../ts_build/config.js').default;
 config.moralis = config.moralis ?? {
   apiKey: 'apiKey',
   whitelist: []
@@ -39,7 +39,7 @@ const Defaults = Common.Defaults;
 const VanillaDefaults = _.cloneDeep(Defaults);
 
 const Model = require('../../ts_build/lib/model');
-const BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
+const { BCHAddressTranslator } = require('../../ts_build/lib/bchaddresstranslator');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
@@ -4884,7 +4884,7 @@ describe('Wallet service', function() {
             bch: 3800,
             xrp: 3800,
             eth: 210000000,
-            doge: 1e8,
+            doge: 1e6,
             ltc: 3800
           }
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
@@ -10641,6 +10641,13 @@ describe('Wallet service', function() {
               removed: false
             },
           },
+          sellCrypto: { 
+            disabled: false,
+            moonpay: {
+              disabled: false,
+              removed: false
+            }
+          },
           swapCrypto: { 
             disabled: false,
             changelly: {
@@ -10677,6 +10684,13 @@ describe('Wallet service', function() {
               removed: false
             },
             wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          sellCrypto: { 
+            disabled: false,
+            moonpay: {
               disabled: false,
               removed: false
             }
@@ -10734,6 +10748,10 @@ describe('Wallet service', function() {
         config.services = {
           buyCrypto: {
             disabled: false,
+            banxa: {
+              disabled: false,
+              removed: false
+            },
             moonpay: {
               disabled: false,
               removed: false
@@ -10750,7 +10768,18 @@ describe('Wallet service', function() {
               disabled: false,
               removed: false
             },
+            transak: {
+              disabled: false,
+              removed: false
+            },
             wyre: {
+              disabled: false,
+              removed: false
+            }
+          },
+          sellCrypto: { 
+            disabled: false,
+            moonpay: {
               disabled: false,
               removed: false
             }
@@ -10836,6 +10865,36 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(config.buyCrypto);
             config.buyCrypto.disabled.should.equal(false);
+          });
+        });
+
+        const sellCryptoUsaBannedStates = ['NY'];
+        for (const bannedState of sellCryptoUsaBannedStates) {
+          it(`should return sell crypto disabled if the user is located in ${bannedState}`, () => {
+            const opts = {
+              currentLocationCountry: 'US',
+              currentLocationState: bannedState,
+            };
+      
+            server.getServicesData(opts, (err, config) => {
+              should.not.exist(err);
+              should.exist(config.sellCrypto);
+              config.sellCrypto.disabled.should.equal(true);
+              config.sellCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+            });
+          });
+        };
+
+        it('should return sell crypto enabled if the user is in USA located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.sellCrypto);
+            config.sellCrypto.disabled.should.equal(false);
           });
         });
       });
@@ -11009,6 +11068,37 @@ describe('Wallet service', function() {
             should.not.exist(err);
             should.exist(config.buyCrypto);
             config.buyCrypto.disabled.should.equal(false);
+          });
+        });
+
+        it('should return sell crypto disabled if the user is registred in NY and located outside NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'FL',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'NY',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.sellCrypto);
+            config.sellCrypto.disabled.should.equal(true);
+            config.sellCrypto.disabledMessage.should.equal('This service is currently unavailable in your area.');
+          });
+        });
+
+        it('should return sell crypto enabled if the user is registred outside NY and located in NY', () => {
+          const opts = {
+            currentLocationCountry: 'US',
+            currentLocationState: 'NY',
+            bitpayIdLocationCountry: 'US',
+            bitpayIdLocationState: 'FL',
+          };
+    
+          server.getServicesData(opts, (err, config) => {
+            should.not.exist(err);
+            should.exist(config.sellCrypto);
+            config.sellCrypto.disabled.should.equal(false);
           });
         });
       });
@@ -11363,24 +11453,28 @@ describe('Wallet service', function() {
           apiKey: 'apiKey1',
           api: 'api1',
           widgetApi: 'widgetApi1',
+          sellWidgetApi: 'sellWidgetApi1',
           secretKey: 'secretKey1'
         },
         production: {
           apiKey: 'apiKey2',
           api: 'api2',
           widgetApi: 'widgetApi2',
+          sellWidgetApi: 'sellWidgetApi2',
           secretKey: 'secretKey2'
         },
         sandboxWeb: {
           apiKey: 'apiKey3',
           api: 'api3',
           widgetApi: 'widgetApi3',
+          sellWidgetApi: 'sellWidgetApi3',
           secretKey: 'secretKey3'
         },
         productionWeb: {
           apiKey: 'apiKey4',
           api: 'api4',
           widgetApi: 'widgetApi4',
+          sellWidgetApi: 'sellWidgetApi4',
           secretKey: 'secretKey4'
         }
       }
@@ -11388,6 +11482,7 @@ describe('Wallet service', function() {
       fakeRequest = {
         get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
         post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+        delete: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
       };
 
       helpers.createAndJoinWallet(1, 1, (s, w) => {
@@ -11478,6 +11573,81 @@ describe('Wallet service', function() {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayGetSellQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            currencyAbbreviation: 'btc',
+            quoteCurrencyCode: 'usd',
+            baseCurrencyAmount: 1
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetSellQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.baseCurrencyAmount;
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellQuote(req);
           should.not.exist(data);
         } catch (err) {
           should.exist(err);
@@ -11611,6 +11781,57 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('#moonpayGetSellSignedPaymentUrl', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'production',
+            baseCurrencyCode: 'btc',
+            baseCurrencyAmount: 500,
+            externalTransactionId: '123123',
+            redirectURL: 'bitpay://moonpay',
+            quoteCurrencyCode: 'usd',
+            refundWalletAddress: 'bitcoin:123123',
+          }
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK', () => {
+        try {
+          const data = server.moonpayGetSellSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('sellWidgetApi2?apiKey=apiKey2&baseCurrencyCode=btc&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&quoteCurrencyCode=usd&refundWalletAddress=bitcoin%3A123123&signature=otiVaKVxKT%2BRNOfkSMOk07U3JxY4DrpPAztiXl5Wvjc%3D');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        delete req.body.baseCurrencyCode;
+
+        try {
+          const data = server.moonpayGetSellSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+
+      it('should return error if moonpay is commented in config', () => {
+        config.moonpay = undefined;
+
+        try {
+          const data = server.moonpayGetSellSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
     describe('#moonpayGetTransactionDetails', () => {
       beforeEach(() => {
         req = {
@@ -11688,6 +11909,83 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('#moonpayGetSellTransactionDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            transactionId: 'transactionId1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK with transactionId', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellTransactionDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK with externalId', async() => {
+        delete req.body.transactionId;
+        req.body.externalId = 'externalId1';
+
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellTransactionDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayGetSellTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        }
+      });
+  
+      it('should return error if there is no transactionId or externalId', async() => {
+        delete req.body.transactionId;
+        delete req.body.externalId;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayGetSellTransactionDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
     describe('#moonpayGetAccountDetails', () => {
       beforeEach(() => {
         req = {
@@ -11729,6 +12027,83 @@ describe('Wallet service', function() {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetAccountDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay missing credentials');
+        }
+      });
+    });
+
+    describe('#moonpayCancelSellTransaction', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            transactionId: 'transactionId1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK with transactionId', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayCancelSellTransaction(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK with externalId', async() => {
+        delete req.body.transactionId;
+        req.body.externalId = 'externalId1';
+
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayCancelSellTransaction(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if delete returns error', async() => {
+        const fakeRequest2 = {
+          delete: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.moonpayCancelSellTransaction(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        }
+      });
+  
+      it('should return error if there is no transactionId or externalId', async() => {
+        delete req.body.transactionId;
+        delete req.body.externalId;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayCancelSellTransaction(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Moonpay\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if moonpay is commented in config', async() => {
+        config.moonpay = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.moonpayCancelSellTransaction(req);
           should.not.exist(data);
         } catch (err) {
           should.exist(err);
@@ -12554,6 +12929,457 @@ describe('Wallet service', function() {
       });
     });
 
+  });
+
+  describe('Transak', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      transport.level= 'info';
+
+      config.transak = {
+        sandbox: {
+          api: 'api1',
+          apiKey: 'apiKey1',
+          secretKey: 'secretKey1',
+          widgetApi: 'widgetApi1',
+        },
+        production: {
+          api: 'api2',
+          apiKey: 'apiKey2',
+          secretKey: 'secretKey2',
+          widgetApi: 'widgetApi2',
+        },
+        sandboxWeb: {
+          api: 'api3',
+          apiKey: 'apiKey3',
+          secretKey: 'secretKey3',
+          widgetApi: 'widgetApi3',
+        },
+        productionWeb: {
+          api: 'api4',
+          apiKey: 'apiKey4',
+          secretKey: 'secretKey4',
+          widgetApi: 'widgetApi4',
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#transakGetAccessToken', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetAccessToken(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetAccessToken(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if post returns error', async() => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.transakGetAccessToken(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if transak is commented in config', async() => {
+        config.transak = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetAccessToken(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak missing credentials');
+        }
+      });
+    });
+
+    describe('#transakGetCryptoCurrencies', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetCryptoCurrencies(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetCryptoCurrencies(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.transakGetCryptoCurrencies(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if transak is commented in config', async() => {
+        config.transak = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetCryptoCurrencies(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak missing credentials');
+        }
+      });
+    });
+
+    describe('#transakGetFiatCurrencies', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetFiatCurrencies(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetFiatCurrencies(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.transakGetFiatCurrencies(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if transak is commented in config', async() => {
+        config.transak = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetFiatCurrencies(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak missing credentials');
+        }
+      });
+    });
+
+    describe('#transakGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            fiatCurrency: 'USD',
+            cryptoCurrency: 'BTC',
+            network: 'mainnet',
+            paymentMethod: 'credit_debit_card'
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.transakGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.fiatCurrency;
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+  
+      it('should return error if transak is commented in config', async() => {
+        config.transak = undefined;
+  
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak missing credentials');
+        }
+      });
+    });
+
+    describe('#transakGetSignedPaymentUrl', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'production',
+            walletAddress: 'walletAddress1',
+            redirectURL: 'bitpay://transak',
+            fiatAmount: '500',
+            fiatCurrency: 'USD',
+            network: 'mainnet',
+            cryptoCurrencyCode: 'BTC',
+            partnerOrderId: 'partnerOrderId1',
+            partnerCustomerId: 'partnerCustomerId1',
+          }
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK', () => {
+        try {
+          const data = server.transakGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&walletAddress=walletAddress1&redirectURL=bitpay%3A%2F%2Ftransak&fiatAmount=500&fiatCurrency=USD&network=mainnet&cryptoCurrencyCode=BTC&partnerOrderId=partnerOrderId1&partnerCustomerId=partnerCustomerId1');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should get the paymentUrl properly if req is OK for web', () => {
+        try {
+          req.body = {
+            env: 'production',
+            context: 'web',
+            walletAddress: 'walletAddress1',
+            redirectURL: 'bitpay://transak',
+            fiatAmount: '500',
+            fiatCurrency: 'USD',
+            network: 'mainnet',
+            cryptoCurrencyCode: 'BTC',
+            partnerOrderId: 'partnerOrderId1',
+            partnerCustomerId: 'partnerCustomerId1',
+          }
+          const data = server.transakGetSignedPaymentUrl(req);
+          should.exist(data.urlWithSignature);
+          data.urlWithSignature.should.equal('widgetApi4?apiKey=apiKey4&walletAddress=walletAddress1&redirectURL=bitpay%3A%2F%2Ftransak&fiatAmount=500&fiatCurrency=USD&network=mainnet&cryptoCurrencyCode=BTC&partnerOrderId=partnerOrderId1&partnerCustomerId=partnerCustomerId1');
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        delete req.body.context;
+        delete req.body.fiatAmount;
+
+        try {
+          const data = server.transakGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+
+      it('should return error if transak is commented in config', () => {
+        config.transak = undefined;
+
+        try {
+          const data = server.transakGetSignedPaymentUrl(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak missing credentials');
+        }
+      });
+    });
+
+    describe('#transakGetOrderDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            orderId: 'orderId1',
+            accessToken: 'accessToken1',
+          }
+        }
+      });
+  
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetOrderDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetOrderDetails(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+  
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+  
+        server.request = fakeRequest2;
+        try {
+          const data = await server.transakGetOrderDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+  
+      it('should return error if there is some missing arguments', async() => {
+        delete req.body.orderId;
+        server.request = fakeRequest;
+        try {
+          const data = await server.transakGetOrderDetails(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
   });
 
   describe('Wyre', () => {
