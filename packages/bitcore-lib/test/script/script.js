@@ -1,16 +1,20 @@
 'use strict';
 
-var should = require('chai').should();
-var expect = require('chai').expect;
+const sinon = require('sinon');
+const chai = require('chai');
 const taprootTestVectors = require('../data/bitcoind/wallet_test_vectors.json');
-var bitcore = require('../..');
+const bitcore = require('../..');
+const TaggedHash = require('../../lib/crypto/taggedhash');
 
-var BufferUtil = bitcore.util.buffer;
-var Script = bitcore.Script;
-var Networks = bitcore.Networks;
-var Opcode = bitcore.Opcode;
-var PublicKey = bitcore.PublicKey;
-var Address = bitcore.Address;
+const should = chai.should();
+const expect = chai.expect;
+
+const BufferUtil = bitcore.util.buffer;
+const Script = bitcore.Script;
+const Networks = bitcore.Networks;
+const Opcode = bitcore.Opcode;
+const PublicKey = bitcore.PublicKey;
+const Address = bitcore.Address;
 
 describe('Script', function() {
 
@@ -1079,13 +1083,48 @@ describe('Script', function() {
   });
 
   describe('Taproot', function() {
+    const sandbox = sinon.createSandbox();
+
+    beforeEach(() => {
+      sandbox.spy(PublicKey.prototype, 'createTapTweak');
+      sandbox.spy(PublicKey.prototype, 'computeTapTweakHash');
+      sandbox.spy(TaggedHash.prototype, 'finalize');
+    })
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
     describe('scriptPubKey', function() {
       for (let i = 0; i < taprootTestVectors.scriptPubKey.length; i++) {
         const vec = taprootTestVectors.scriptPubKey[i];
-        it(`vector ${i}: ${vec.given.internalPubkey} -> ${vec.expected.bip350Address}`, function() {
-          const script = Script.buildWitnessV1Out(vec.given.internalPubkey, vec.given.scriptTree);
-          script.toAddress().toString().should.equal(vec.expected.bip350Address);
-          throw new Error('TODO: do intermediary validation');
+        describe(vec.expected.bip350Address, function() {
+          it(`should buildWitnessV1Out from pub key and script tree`, function() {
+            const script = Script.buildWitnessV1Out(vec.given.internalPubkey, vec.given.scriptTree);
+            (PublicKey.prototype.createTapTweak.args[0][0]?.toString('hex') == vec.intermediary.merkleRoot).should.equal(true);
+            const retVals = TaggedHash.prototype.finalize.returnValues.map(v => v.toString('hex'));
+            for (const leafHash of vec.intermediary.leafHashes || []) {
+              retVals.should.include(leafHash);
+            }
+            for (let block of vec.expected.scriptPathControlBlocks || []) {
+              block = block.slice(66);
+              while (block.length > 0) {
+                const sub = block.slice(0, 64)
+                block = block.slice(64);
+                retVals.should.include(sub);
+              }
+            }
+            PublicKey.prototype.computeTapTweakHash.returnValues[0].toString('hex').should.equal(vec.intermediary.tweak);
+            PublicKey.prototype.createTapTweak.returnValues[0].tweakedPubKey.toString('hex').should.equal(vec.intermediary.tweakedPubkey);
+            script.toAddress().toString().should.equal(vec.expected.bip350Address);
+            script.toHex().should.equal(vec.expected.scriptPubKey);
+          });
+
+          it('should build script from address', function() {
+            const addr = vec.expected.bip350Address;
+            const script = Script.fromAddress(addr);
+            script.toAddress().toString().should.equal(addr);
+          });
         });
       }
     });

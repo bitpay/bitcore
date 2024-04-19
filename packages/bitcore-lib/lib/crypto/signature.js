@@ -349,12 +349,12 @@ Signature.fromSchnorr = function(buf) {
   return sig;
 };
 
-Signature.SIGHASH_ALL = 0x01;
-Signature.SIGHASH_NONE = 0x02;
-Signature.SIGHASH_SINGLE = 0x03;
-Signature.SIGHASH_ANYONECANPAY = 0x80;
+Signature.SIGHASH_DEFAULT       = 0x00; //!< Taproot only; implied when sighash byte is missing, and equivalent to SIGHASH_ALL
+Signature.SIGHASH_ALL           = 0x01;
+Signature.SIGHASH_NONE          = 0x02;
+Signature.SIGHASH_SINGLE        = 0x03;
+Signature.SIGHASH_ANYONECANPAY  = 0x80;
 
-Signature.SIGHASH_DEFAULT     = 0; //!< Taproot only; implied when sighash byte is missing, and equivalent to SIGHASH_ALL
 Signature.SIGHASH_OUTPUT_MASK = 3;
 Signature.SIGHASH_INPUT_MASK  = 128; // 0x80,
 

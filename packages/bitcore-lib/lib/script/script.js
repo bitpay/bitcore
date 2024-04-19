@@ -366,6 +366,8 @@ Script.prototype.getPublicKeyHash = function() {
     return this.chunks[2].buf;
   } else if (this.isWitnessPublicKeyHashOut()) {
     return this.chunks[1].buf;
+  } else if (this.isTaproot()) {
+    return this.chunks[1].buf;
   } else {
     throw new Error('Can\'t retrieve PublicKeyHash from a non-PKH output');
   }
@@ -935,16 +937,16 @@ Script.buildWitnessV0Out = function(to) {
 
 /**
  * Build Taproot script output
- * @param {PublicKey} pubKey recipient's pubKey
+ * @param {PublicKey|Address} to recipient's pubKey or address
  * @param {Array|Object} scriptTree single leaf object OR array of leaves. leaf: { script: String, leafVersion: Integer }
  * @returns {Script}
  */
-Script.buildWitnessV1Out = function(pubKey, scriptTree) {
-  $.checkArgument(pubKey instanceof PublicKey || pubKey instanceof Address || typeof pubKey === 'string');
+Script.buildWitnessV1Out = function(to, scriptTree) {
+  $.checkArgument(to instanceof PublicKey || to instanceof Address || typeof to === 'string');
   $.checkArgument(!scriptTree || Array.isArray(scriptTree) || !!scriptTree.script);
 
-  if (typeof pubKey === 'string') {
-    pubKey = PublicKey.fromTaproot(pubKey);
+  if (typeof to === 'string') {
+    to = PublicKey.fromTaproot(to);
   }
   
   function buildTree(tree) {
@@ -979,7 +981,12 @@ Script.buildWitnessV1Out = function(pubKey, scriptTree) {
     taggedHash = h;
   }
   
-  const { tweakedPubKey } = pubKey.createTapTweak(taggedHash);
+  let tweakedPubKey;
+  if (to instanceof PublicKey) {
+    tweakedPubKey = to.createTapTweak(taggedHash).tweakedPubKey;
+  } else { // Address
+    tweakedPubKey = to.hashBuffer;
+  }
   const s = new Script();
   s.add(Opcode.OP_1);
   s.add(tweakedPubKey);

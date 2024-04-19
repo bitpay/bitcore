@@ -390,12 +390,10 @@ PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
 /**
  * Create a tweaked version of this pub key
  * @param {Buffer} merkleRoot (optional)
- * @returns {Buffer}
+ * @returns {{ parity: Number, tweakedPubKey: Buffer }}
  */
 PublicKey.prototype.createTapTweak = function(merkleRoot) {
   $.checkArgument(merkleRoot == null || (Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32), 'merkleRoot must be a 32 byte buffer');
-
-  // TODO
 
   let t = this.computeTapTweakHash(merkleRoot);
   t = new BN(t);
