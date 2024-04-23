@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const $ = require('../util/preconditions');
 const JS = require('../util/js');
 const BN = require('./bn');
@@ -15,16 +16,14 @@ Schnorr.prototype.set = function() {};
 
 /**
  * Create a schnorr signature
- * @param {PrivateKey|Buffer} privateKey 
+ * @param {PrivateKey|Buffer|BN} privateKey
  * @param {String|Buffer} message Hex string or buffer
  * @param {String|Buffer} aux Hex string or buffer
  * @returns {Buffer}
  * @link https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki#Default_Signing
  */
 Schnorr.sign = function(privateKey, message, aux) {
-  if ($.isType(privateKey, 'PrivateKey')) {
-    privateKey = privateKey.point.x.toBuffer();
-  }
+  privateKey = Buffer.isBuffer(privateKey) ? privateKey : privateKey.toBuffer();
   if (privateKey.length !== 32) {
     throw new Error('Private key should be 32 bytes for schnorr signatures');
   }
@@ -32,16 +31,15 @@ Schnorr.sign = function(privateKey, message, aux) {
   if (typeof message === 'string' && JS.isHexaString(message)) {
     message = Buffer.from(message, 'hex')
   }
-  if (!$.isType(message, 'Buffer')) {
-    throw new Error('message must be a hex string or buffer');
-  }
+  $.checkArgument($.isType(message, 'Buffer'), 'message must be a hex string or buffer');
 
+  if (!aux) {
+    aux = crypto.randomBytes(32);
+  }
   if (typeof aux === 'string' && JS.isHexaString(aux)) {
     aux = Buffer.from(aux, 'hex')
   }
-  if (!$.isType(aux, 'Buffer')) {
-    throw new Error('aux must be a hex string or buffer');
-  }
+  $.checkArgument($.isType(aux, 'Buffer'), 'aux must be a hex string or buffer');
 
   const G = Point.getG();
   const n = Point.getN();
@@ -101,7 +99,7 @@ Schnorr.verify = function(publicKey, message, signature) {
   if (typeof signature.toBuffer === 'function') {
     signature = signature.toBuffer();
     if (signature.length === 65) {
-      signature = signature.slice(0, 64);
+      signature = signature.slice(0, 64); // remove the sighashType byte
     }
   }
   if (signature.length !== 64) {

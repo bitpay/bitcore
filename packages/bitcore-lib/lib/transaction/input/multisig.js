@@ -67,25 +67,35 @@ MultiSigInput.prototype._serializeSignatures = function() {
   });
 };
 
-MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
+/**
+ * Get signatures for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PrivateKey} privateKey - the private key with which to sign the transaction
+ * @param {number} index - the index of the input in the transaction input vector
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Buffer} merkleRoot - unused for this input type
+ * @return {Array<TransactionSignature>}
+ */
+MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
   signingMethod = signingMethod || 'ecdsa';
 
-  var self = this;
-  var results = [];
-  _.each(this.publicKeys, function(publicKey) {
+  const results = [];
+  for (const publicKey of this.publicKeys || []) {
     if (publicKey.toString() === privateKey.publicKey.toString()) {
       results.push(new TransactionSignature({
         publicKey: privateKey.publicKey,
-        prevTxId: self.prevTxId,
-        outputIndex: self.outputIndex,
+        prevTxId: this.prevTxId,
+        outputIndex: this.outputIndex,
         inputIndex: index,
-        signature: Sighash.sign(transaction, privateKey, sigtype, index, self.output.script, signingMethod),
+        signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod),
         sigtype: sigtype
       }));
     }
-  });
+  }
 
   return results;
 };

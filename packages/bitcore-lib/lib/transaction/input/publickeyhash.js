@@ -59,17 +59,17 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, inde
   return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
 };
 
-/* jshint maxparams: 5 */
 /**
  * @param {Transaction} transaction - the transaction to be signed
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
  * @param {number} index - the index of the input in the transaction input vector
- * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
- * @param {Buffer=} hashData - the precalculated hash of the public key associated with the privateKey provided
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
- * @return {Array} of objects that can be
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - the precalculated hash of the public key associated with the privateKey provided
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Buffer} merkleRoot - unused for this input type
+ * @return {Array<TransactionSignature>}
  */
-PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
+PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
   $.checkState(this.output instanceof Output);
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
@@ -108,6 +108,7 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
 /**
  * Add the provided signature
  *
+ * @param {Transaction} transaction
  * @param {Object} signature
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature

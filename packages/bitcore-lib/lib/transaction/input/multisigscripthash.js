@@ -114,7 +114,18 @@ MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey,
   return hash;
 };
 
-MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
+/**
+ * Get signatures for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PrivateKey} privateKey - the private key with which to sign the transaction
+ * @param {number} index - the index of the input in the transaction input vector
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Buffer} merkleRoot - unused for this input type
+ * @return {Array<TransactionSignature>}
+ */
+MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
   signingMethod = signingMethod || 'ecdsa';

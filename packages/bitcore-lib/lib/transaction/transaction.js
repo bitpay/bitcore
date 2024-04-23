@@ -23,6 +23,7 @@ var PublicKeyHashInput = Input.PublicKeyHash;
 var PublicKeyInput = Input.PublicKey;
 var MultiSigScriptHashInput = Input.MultiSigScriptHash;
 var MultiSigInput = Input.MultiSig;
+const TaprootInput = Input.Taproot;
 var Output = require('./output');
 var Script = require('../script');
 var PrivateKey = require('../privatekey');
@@ -649,7 +650,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (pubkeys && threshold) {
     this._fromMultisigUtxo(utxo, pubkeys, threshold, opts);
   } else {
-    this._fromNonP2SH(utxo);
+    this._fromNonP2SH(utxo, opts);
   }
   return this;
 };
@@ -690,6 +691,8 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
     }
   } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
     clazz = PublicKeyHashInput;
+  } else if (utxo.script.isTaproot()) {
+    clazz = TaprootInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
   } else {
@@ -716,8 +719,8 @@ Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts = 
   return new InputClass(input, ...args);
 }
 
-Transaction.prototype._fromNonP2SH = function(utxo) {
-  const input = this._getInputFrom(utxo);
+Transaction.prototype._fromNonP2SH = function(utxo, opts) {
+  const input = this._getInputFrom(utxo, null, null, opts);
   this.addInput(input);
 };
 
@@ -1233,31 +1236,33 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  * @param {Array|String|PrivateKey} privateKey
  * @param {number} sigtype
  * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Buffer|String} merkleRoot - merkle root for taproot signing
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
+Transaction.prototype.sign = function(privateKey, sigtype, signingMethod, merkleRoot) {
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   if (Array.isArray(privateKey)) {
     for (const pk of privateKey) {
-      this.sign(pk, sigtype, signingMethod);
+      this.sign(pk, sigtype, signingMethod, merkleRoot);
     }
     return this;
   }
-  for (const signature of this.getSignatures(privateKey, sigtype, signingMethod)) {
+  for (const signature of this.getSignatures(privateKey, sigtype, signingMethod, merkleRoot)) {
     this.applySignature(signature, signingMethod);
   }
   return this;
 };
 
-Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) {
+Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod, merkleRoot) {
+  if (typeof merkleRoot === 'string') {
+    merkleRoot = Buffer.from(merkleRoot, 'hex');
+  }
   privKey = new PrivateKey(privKey);
-  sigtype = sigtype || Signature.SIGHASH_ALL;
-  var transaction = this;
-  var results = [];
-  var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
-  for (let index = 0; index < this.inputs.length; index++) {
-    const input = this.inputs[index];
-    for (const signature of input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod)) {
+  const results = [];
+  const hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
+  for (let i = 0; i < this.inputs.length; i++) {
+    const input = this.inputs[i];
+    for (const signature of input.getSignatures(this, privKey, i, sigtype, hashData, signingMethod, merkleRoot)) {
       results.push(signature);
     }
   }

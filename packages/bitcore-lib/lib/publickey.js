@@ -384,7 +384,7 @@ PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
     return false;
   }
   return true;
-}
+};
 
 
 /**
@@ -403,7 +403,7 @@ PublicKey.prototype.createTapTweak = function(merkleRoot) {
     parity,
     tweakedPubKey: Q.x.toBuffer()
   };
-}
+};
 
 /**
  * Check if there would be any errors when initializing a PublicKey

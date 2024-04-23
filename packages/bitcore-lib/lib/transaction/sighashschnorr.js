@@ -3,13 +3,12 @@
 /* jshint maxparams:5 */
 
 const Signature = require('../crypto/signature');
-const Script = require('../script');
 const BufferWriter = require('../encoding/bufferwriter');
 const Hash = require('../crypto/hash');
 const Schnorr = require('../crypto/schnorr');
 const $ = require('../util/preconditions');
-const _ = require('lodash');
 const TaggedHash = require('../crypto/taggedhash');
+const PrivateKey = require('../privatekey');
 
 /**
  * Returns a buffer of length 32 bytes with the hash that needs to be signed
@@ -42,9 +41,7 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
     default:
       return false;
   }
-  if (inputNumber > transaction.inputs.length - 1) {
-    throw new Error('inputNumber is greater than number of inputs')
-  }
+  $.checkArgument(inputNumber < transaction.inputs.length, 'inputNumber is greater than number of inputs');
 
   const ss = TaggedHash.TAPSIGHASH;
 
@@ -158,17 +155,36 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
  *
  * @name Signing.sign
  * @param {Transaction} transaction
- * @param {PrivateKey} privateKey
+ * @param {Buffer|BN|PrivateKey} privateKey
  * @param {number} sighash
  * @param {number} inputIndex
- * @param {Script} subscript
+ * @param {number} sigversion
+ * @param {Buffer} leafHash
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer) {
-  let hashbuf = _signatureHash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
-  let sig = Schnorr.sign(privateKey.toString(), hashbuf);
-  return sig;
-}
+function sign(transaction, privateKey, sighashType, inputIndex, sigversion, leafHash) {
+  $.checkArgument(sigversion === Signature.Version.TAPROOT || sigversion === Signature.Version.TAPSCRIPT, 'Invalid sigversion');
+  
+  const execdata = { annexInit: true, annexPresent: false };
+  if (sigversion === Signature.Version.TAPSCRIPT) {
+    execdata.codeseparatorPosInit = true;
+    execdata.codeseparatorPos = 0xFFFFFFFF; // Only support non-OP_CODESEPARATOR BIP342 signing for now.
+    if (!leafHash) return false; // BIP342 signing needs leaf hash.
+    execdata.tapleafHashInit = true;
+    execdata.tapleafHash = leafHash;
+  }
+
+  const hashbuf = _signatureHash(transaction, sighashType, inputIndex, sigversion, execdata);
+  if (!hashbuf) {
+    return false;
+  }
+  const sig = Schnorr.sign(privateKey, hashbuf);
+  if (sighashType !== Signature.SIGHASH_DEFAULT) {
+    return Buffer.concat([sig, Buffer.from([sighashType])]); // 65 bytes
+  }
+  return sig; // 64 bytes
+};
+
 
 /**
  * Verify a Schnorr signature
@@ -178,19 +194,33 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
  * @param {Signature} signature
  * @param {PublicKey} publicKey
  * @param {Number} inputIndex
- * @param {Object} execdata
+ * @param {object|Buffer} execdata Can be full execdata object or just the leafHash buffer
  * @return {Boolean}
  */
 function verify(transaction, signature, publicKey, sigversion, inputIndex, execdata) {
-  $.checkArgument(!_.isUndefined(transaction), 'Transaction Undefined');
+  $.checkArgument(transaction != null, 'Transaction Undefined');
 
-  let hashbuf = _signatureHash(transaction, signature.nhashtype, inputIndex, sigversion, execdata);
+  if (!execdata || Buffer.isBuffer(execdata)) {
+    const leafHash = execdata;
+    execdata = { annexInit: true, annexPresent: false };
+    if (sigversion === Signature.Version.TAPSCRIPT) {
+      execdata.codeseparatorPosInit = true;
+      execdata.codeseparatorPos = 0xFFFFFFFF; // Only support non-OP_CODESEPARATOR BIP342 signing for now.
+      if (!leafHash) return false; // BIP342 signing needs leaf hash.
+      execdata.tapleafHashInit = true;
+      execdata.tapleafHash = leafHash;
+    }
+  }
+
+  $.checkArgument(execdata.annexInit, 'invalid execdata');
+
+  const hashbuf = _signatureHash(transaction, signature.nhashtype, inputIndex, sigversion, execdata);
   if (!hashbuf) {
     return false;
   }
-  let verified = Schnorr.verify(publicKey, hashbuf, signature);
+  const verified = Schnorr.verify(publicKey, hashbuf, signature);
   return verified;
-}
+};
 
 /**
  * @namespace Signing
