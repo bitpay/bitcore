@@ -1101,7 +1101,8 @@ describe('Script', function() {
         describe(vec.expected.bip350Address, function() {
           it(`should buildWitnessV1Out from pub key and script tree`, function() {
             const script = Script.buildWitnessV1Out(vec.given.internalPubkey, vec.given.scriptTree);
-            (PublicKey.prototype.createTapTweak.args[0][0]?.toString('hex') == vec.intermediary.merkleRoot).should.equal(true);
+            const merkleRoot = PublicKey.prototype.createTapTweak.args[0][0];
+            ((merkleRoot ? merkleRoot.toString('hex') : merkleRoot) == vec.intermediary.merkleRoot).should.equal(true);
             const retVals = TaggedHash.prototype.finalize.returnValues.map(v => v.toString('hex'));
             for (const leafHash of vec.intermediary.leafHashes || []) {
               retVals.should.include(leafHash);

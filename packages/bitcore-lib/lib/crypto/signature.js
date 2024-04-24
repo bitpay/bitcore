@@ -331,7 +331,7 @@ Signature.prototype.toTxFormat = function() {
  * @returns {Signature}
  */
 Signature.fromSchnorr = function(buf) {
-  $.checkArgument(_.isBuffer(buf), 'Schnorr signature argument must be a buffer');
+  $.checkArgument(Buffer.isBuffer(buf), 'Schnorr signature argument must be a buffer');
   $.checkArgument(buf.length === 64 || buf.length === 65, 'Schnorr signatures must be 64 or 65 bytes');
 
   const sig = new Signature();
