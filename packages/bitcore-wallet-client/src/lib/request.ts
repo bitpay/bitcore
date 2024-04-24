@@ -120,7 +120,7 @@ export class Request {
 
         if (!res.status) return cb(new Errors.CONNECTION_ERROR());
 
-        log.error('HTTP Error:' + res.status);
+        log.error(`HTTP Error: ${res.status} - ${this.baseUrl + url}`);
 
         if (!res.body) return cb(new Error(res.status));
         return cb(Request._parseError(res.body));
