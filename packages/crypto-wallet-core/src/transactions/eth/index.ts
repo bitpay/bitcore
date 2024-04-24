@@ -1,11 +1,11 @@
 import { ethers } from 'ethers';
-import { 
-  EVM_CHAIN_DEFAULT_TESTNET as defaultTestnet,
-  EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds 
-} from 'src/constants/chains';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { Constants } from '../../constants';
+import { 
+  EVM_CHAIN_DEFAULT_TESTNET as defaultTestnet,
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds 
+} from '../../constants/chains';
 import { Key } from '../../derivation';
 import { ERC20Abi, MULTISENDAbi } from '../erc20/abi';
 const utils = require('web3-utils');
