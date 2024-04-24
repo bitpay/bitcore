@@ -1,5 +1,6 @@
 import { CryptoRpc } from 'crypto-rpc';
 import _ from 'lodash';
+import { Readable, Transform } from 'stream';
 import Web3 from 'web3';
 import Config from '../../../../config';
 import logger from '../../../../logger';
@@ -13,18 +14,20 @@ import {
   StreamAddressUtxosParams,
   StreamBlocksParams,
   StreamTransactionParams,
-  StreamTransactionsParams
+  StreamTransactionsParams,
+  StreamWalletTransactionsParams
 } from '../../../../types/namespaces/ChainStateProvider';
 import { StatsUtil } from '../../../../utils/stats';
+import { ExternalApiStream } from '../../external/apiStream';
 import MoralisAPI from '../../external/moralis';
 import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON } from '../types';
 import { BaseEVMStateProvider } from './csp';
-import { 
+import {
   getProvider,
   isValidProviderType
- } from './provider';
+} from './provider';
 
 export class BaseEVMExternalStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -52,7 +55,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       if (BaseEVMStateProvider.rpcs[this.chain]) {
         BaseEVMStateProvider.rpcs[this.chain][network] = { rpc, web3: rpc.web3, dataType: dataType || 'combinded' };
       } else {
-        BaseEVMStateProvider.rpcs[this.chain] = { [network]: { rpc, web3: rpc.web3, dataType: dataType || 'combinded'  } };
+        BaseEVMStateProvider.rpcs[this.chain] = { [network]: { rpc, web3: rpc.web3, dataType: dataType || 'combinded' } };
       }
     }
     return BaseEVMStateProvider.rpcs[this.chain][network];
@@ -61,6 +64,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
   async getLocalTip({ chain, network }): Promise<IBlock> {
     const { web3 } = await this.getWeb3(network);
     const block = await web3.eth.getBlock('latest');
+    // timestamp is incorrect. do we want to spend an api call just to get the date?
     return this.transformBlockData({ chain, network, block }) as IBlock;
   }
 
@@ -73,15 +77,13 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const gasPrices = feeHistory.reward.map(reward => parseInt(reward[0])).sort((a, b) => b - a);
     const whichQuartile = Math.min(target, 4) || 1;
     const quartileMedian = StatsUtil.getNthQuartileMedian(gasPrices, whichQuartile);
-    const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+    const roundedGwei = (quartileMedian / 1e9).toFixed(6); // increased precision to handle chains with lower fees
     const gwei = Number(roundedGwei) || 0;
     const feerate = gwei * 1e9;
     return { feerate, blocks: target };
   }
 
   async getBlocks(params: GetBlockParams) {
-    // TODO use sparse data when available and necessary
-    // otherwise use external providers to access data
     try {
       const { chain, network } = params;
       const { query } = await this.getBlocksParams(params);
@@ -92,7 +94,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         block = await block;
         let confirmations = 0;
         const blockHeight = block.height || block.number || 0;
-        if (blockHeight >= 0 ) {
+        if (blockHeight >= 0) {
           confirmations = tipHeight - blockHeight + 1;
         }
         const convertedBlock = this.transformBlockData({ chain, network, block }) as IBlock;
@@ -103,7 +105,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const blockPromises: Promise<any>[] = [];
       const blockNumbers = _.range(query.startBlock, query.endBlock + 1);
       // batch getBlock requests to reduce latency
-     for (let i = 0; i < blockNumbers.length; i++) {
+      for (let i = 0; i < blockNumbers.length; i++) {
         const blockPromise = new Promise<any>((resolve, reject) => {
           batch.add(
             (web3.eth.getBlock as any).request(blockNumbers[i], (error, block) => {
@@ -111,18 +113,18 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
                 return reject(error);
               }
               return resolve(block);
-          }));
+            }));
         });
         blockPromises.push(blockPromise);
       };
       batch.execute();
 
       return Promise.all(blockPromises)
-      .then(blockPromises.map(blockTransform) as any)
-      .catch(error => error); 
-  } catch (error) {
-    console.error(error);
-  }
+        .then(blockPromises.map(blockTransform) as any)
+        .catch(error => error);
+    } catch (error) {
+      console.error(error);
+    }
     return undefined;
   }
 
@@ -136,7 +138,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const { web3 } = await this.getWeb3(network, { type: 'historical' });
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
-      const tx : any = await web3.eth.getTransaction(txId);
+      const tx: any = await web3.eth.getTransaction(txId);
       if (tx) {
         let confirmations = 0;
         if (tx.blockNumber && tx.blockNumber >= 0) {
@@ -152,8 +154,6 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         const tansformedTx = this.transformTransactionData({ tx, network, chain });
         const convertedTx = EVMTransactionStorage._apiTransform(tansformedTx, { object: true }) as EVMTransactionJSON;
         return { ...convertedTx, confirmations };
-      } else {
-        return undefined;
       }
     } catch (err) {
       console.error(err);
@@ -169,15 +169,54 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     throw new Error('Method not implemented.');
   }
 
-  async streamAddressTransactions(_params: StreamAddressUtxosParams) {
-    throw new Error('Method not implemented.');
+  async streamAddressTransactions(params: StreamAddressUtxosParams) {
+    const { req, res, args, chain, network, address } = params;
+    const { tokenAddress } = args;
+    try {
+      // Calculate confirmations with tip height
+      const tip = await this.getLocalTip(params);
+      args.tipHeight = tip ? tip.height : 0;
+      if (!args.tokenAddress) {
+        const txStream = MoralisAPI.streamTransactionsByAddress({ chain, network, address, args });
+        ExternalApiStream.onStream(txStream, req!, res!);
+      } else {
+        const tokenTransfers = MoralisAPI.streamERC20TransactionsByAddress({ chain, network, address, tokenAddress, args });
+        ExternalApiStream.onStream(tokenTransfers, req!, res!);
+      }
+    } catch (e) {
+      res!.status(500).send(e);
+    }
+  }
+
+  async streamWalletTransactions(params: StreamWalletTransactionsParams) {
+    const { network, wallet, chain, req, res, args } = params;
+    try {
+      // Calculate confirmations with tip height
+      const tip = await this.getLocalTip(params);
+      args.tipHeight = tip ? tip.height : 0;
+      const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address);
+      const mergedStream = new Transform();
+      const txStreams: Readable[] = [];
+
+      // Only mergedStream writes to res object
+      ExternalApiStream.onStream(mergedStream, req!, res!);
+      // Default to pulling only the first 10 transactions per address
+      for (let i = 0; i < walletAddresses.length; i++) {
+        // args / query params are processed at the api provider level
+        txStreams.push(MoralisAPI.streamTransactionsByAddress({ chain, network, address: walletAddresses[i], args }));
+      }
+      // Pipe all txStreams to the mergedStream
+      ExternalApiStream.mergeStreams(txStreams, mergedStream);
+    } catch (e) {
+      res!.status(500).send(e);
+    }
   }
 
   async streamTransactions(_params: StreamTransactionsParams) {
     throw new Error('Method not implemented.');
   }
 
-  async getBlockTimestamp(blockNumber, { network }) : Promise<Date> {
+  async getBlockTimestamp(blockNumber, { network }): Promise<Date> {
     const { web3 } = await this.getWeb3(network);
     const block = await web3.eth.getBlock(blockNumber);
     return new Date(Number(block.timestamp) * 1000);
@@ -188,7 +227,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     let { startDate, endDate, date, since, direction, paging } = args;
     let { limit = 10, sort = { height: -1 } } = args;
     let options = { limit, sort, since, direction, paging };
-    const query : ExternalGetBlockResults = {startBlock: 0, endBlock: 0};
+    const query: ExternalGetBlockResults = { startBlock: 0, endBlock: 0 };
     if (!chain || !network) {
       throw new Error('Missing required param');
     }
@@ -211,7 +250,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       query['height'] = height;
     }
     if (startDate) {
-      query['startDateBlock'] = await this.getBlockNumberByDate({ date: startDate, network});
+      query['startDateBlock'] = await this.getBlockNumberByDate({ date: startDate, network });
     }
     if (endDate) {
       query['endDateBlock'] = await this.getBlockNumberByDate({ date: endDate, network });
@@ -226,7 +265,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
 
     // Get range
     if (query?.block && query?.height) {
-      const blockNum = await this.getBlockNumberByBlockId({blockId: query.block, network});
+      const blockNum = await this.getBlockNumberByBlockId({ blockId: query.block, network });
       if (!blockNum) {
         throw new Error(`Could not get block ${query.block}`);
       }
@@ -234,7 +273,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       query.endBlock = blockNum + query.height;
     }
     if (!query?.block && query?.height) {
-      const blockNum = await this.getBlockNumberByBlockId({blockId: query.height, network});
+      const blockNum = await this.getBlockNumberByBlockId({ blockId: query.height, network });
       if (!blockNum) {
         throw new Error(`Could not get block ${query.block}`);
       }
@@ -252,7 +291,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const tipHeight = tip ? tip.height : 0;
     let endBlock = query.endBlock || tipHeight;
     let startBlock = query.startBlock || endBlock - 1;
-    
+
     if (limit && limit > 0 && (endBlock - startBlock) > limit) {
       endBlock = startBlock + limit;
     }
@@ -305,17 +344,17 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       txid: tx.hash,
       chain,
       network,
-      blockHeight: tx.blockNumber,
-      blockHash: tx.blockHash,
-      blockTime: tx.blockTime,
+      blockHeight: tx.blockNumber || tx.block_number,
+      blockHash: tx.blockHash || tx.block_hash,
+      blockTime: tx.blockTime || tx.block_timestamp,
       blockTimeNormalized: tx.blockTimeNormalized,
       fee: tx.fee,
       value: tx.value,
-      gasLimit: tx.gasLimit,
-      gasPrice: tx.gasPrice,
+      gasLimit: tx.gasLimit || tx.gas,
+      gasPrice: tx.gasPrice || tx.gas_price,
       nonce: tx.nonce,
-      to: tx.to,
-      from: tx.from,
+      to: tx.to || tx.to_address,
+      from: tx.from || tx.from_address,
       data: tx.data,
       effects: tx.effects,
     }
