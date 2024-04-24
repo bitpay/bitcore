@@ -1359,7 +1359,7 @@ Transaction.prototype.checkSchnorrSignature = function(sig, pubkey, nin, sigvers
   }
   $.checkArgument(pubkey && pubkey.length === 32, 'Schnorr signatures have 32-byte public keys. The caller is responsible for enforcing this.');
 
-  if (_.isBuffer(sig)) {
+  if (Buffer.isBuffer(sig)) {
     if (sig.length !== 64 && sig.length !== 65) {
       return false;
     }
