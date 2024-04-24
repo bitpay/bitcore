@@ -43,9 +43,9 @@ export class EVMRouter {
       try {
         const nonce = await this.csp.getAccountNonce(network, address);
         res.json({ nonce });
-      } catch (err) {
+      } catch (err: any) {
         logger.error('Nonce Error::%o', err);
-        res.status(500).send(err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -62,7 +62,7 @@ export class EVMRouter {
           res.status(400).send(err.message);
         } else {
           logger.error('Gas Error::%o', err);
-          res.status(500).send(err);
+          res.status(500).send(err.message || err);
         }
       }
     });
@@ -74,9 +74,9 @@ export class EVMRouter {
       try {
         const tokenInfo = await this.csp.getERC20TokenInfo(network, tokenAddress);
         res.json(tokenInfo);
-      } catch (err) {
+      } catch (err: any) {
         logger.error('Token Info Error::%o', err);
-        res.status(500).send(err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -87,9 +87,9 @@ export class EVMRouter {
       try {
         const allowance = await this.csp.getERC20TokenAllowance(network, tokenAddress, ownerAddress, spenderAddress);
         res.json(allowance);
-      } catch (err) {
+      } catch (err: any) {
         logger.error('Token Allowance Error::%o', err);
-        res.status(500).send(err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -126,9 +126,9 @@ export class EVMRouter {
           res,
           args: req.query
         });
-      } catch (err) {
+      } catch (err: any) {
         logger.error('Multisig Transactions Error::%o', err);
-        return res.status(500).send(err);
+        return res.status(500).send(err.message || err);
       }
     });
   };
@@ -139,9 +139,9 @@ export class EVMRouter {
       try {
         const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
         res.json(multisigTxpsInfo);
-      } catch (err) {
+      } catch (err: any) {
         logger.error('Multisig Txps Error::%o', err);
-        res.status(500).send(err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -152,9 +152,9 @@ export class EVMRouter {
       try {
         const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender, txId);
         res.json(multisigInstantiationInfo);
-      } catch (err) {
+      } catch (err: any) {
         logger.error('Multisig Instantiation Error::%o', err);
-        res.status(500).send(err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -165,9 +165,9 @@ export class EVMRouter {
       try {
         const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
         res.json(multisigInfo);
-      } catch (err) {
+      } catch (err: any) {
         logger.error('Multisig Info Error::%o', err);
-        res.status(500).send(err);
+        res.status(500).send(err.message || err);
       }
     });
   };

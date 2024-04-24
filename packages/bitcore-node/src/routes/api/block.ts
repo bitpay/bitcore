@@ -22,8 +22,8 @@ router.get('/', async function(req: Request, res: Response) {
       res
     };
     return ChainStateProvider.streamBlocks(payload);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -32,9 +32,9 @@ router.get('/tip', async function(req: Request, res: Response) {
   try {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    return res.status(500).send(err);
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -50,8 +50,8 @@ router.get('/:blockId', async function(req: Request, res: Response) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -119,8 +119,8 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 
     const sanitize = (coins: Array<ICoin>) => coins.map(c => CoinStorage._apiTransform(c, { object: true }));
     return res.json({ txids, inputs: sanitize(inputs), outputs: sanitize(outputs), previous, next });
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -136,8 +136,8 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 

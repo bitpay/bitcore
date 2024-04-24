@@ -7,8 +7,8 @@ XrpRoutes.get('/api/XRP/:network/address/:address/txs/count', async (req, res) =
   try {
     const nonce = await XRP.getAccountNonce(network, address);
     res.json({ nonce });
-  } catch (err) {
-    res.status(500).send(err);
+  } catch (err: any) {
+    res.status(500).send(err?.message || err);
   }
 });
 
@@ -17,8 +17,8 @@ XrpRoutes.get('/api/XRP/:network/address/:address/flags', async (req, res) => {
   try {
     const flags = await XRP.getAccountFlags(network, address);
     res.json({ flags });
-  } catch (err) {
-    res.status(500).send(err);
+  } catch (err: any) {
+    res.status(500).send(err?.message || err);
   }
 });
 
@@ -27,7 +27,7 @@ XrpRoutes.get('/api/XRP/:network/reserve', async (req, res) => {
   try {
     const reserve = await XRP.getReserve(network);
     res.json({ reserve });
-  } catch (err) {
-    res.status(500).send(err);
+  } catch (err: any) {
+    res.status(500).send(err?.message || err);
   }
 });

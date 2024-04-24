@@ -60,8 +60,8 @@ router.get('/:txId', async (req: Request, res: Response) => {
       }
       return res.send(tx);
     }
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -97,8 +97,8 @@ router.get('/:txId/populated', async (req: Request, res: Response) => {
       tx.coins = coins;
       return res.send(tx);
     }
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -116,8 +116,8 @@ router.get('/:txId/authhead', async (req: Request, res: Response) => {
     } else {
       return res.send(authhead);
     }
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 

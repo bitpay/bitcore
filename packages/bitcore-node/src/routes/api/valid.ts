@@ -11,8 +11,8 @@ router.get('/:input', async function(req, res) {
       input
     });
     return res.send(isValid);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 

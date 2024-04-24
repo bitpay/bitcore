@@ -18,8 +18,8 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
     });
     SetCache(res, CacheTimes.Day);
     return res.json(dailyTxs);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    return res.status(500).send(err.message || err);
   }
 });
 
