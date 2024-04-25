@@ -5,7 +5,7 @@ const getProvider = ({
   network,
   config,
   dataType 
-}: { network: string, dataType: string | undefined, config: IChainConfig<IEVMNetworkConfig>}) => {
+}: { network: string, dataType: string | undefined, config: IChainConfig<IEVMNetworkConfig> }) => {
   let defaultProvider;
   if (config[network]?.provider && matchProviderType(config[network].provider, dataType)) {
     defaultProvider = config[network].provider;

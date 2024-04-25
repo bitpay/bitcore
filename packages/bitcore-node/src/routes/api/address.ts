@@ -16,9 +16,9 @@ function streamCoins(req, res) {
       args: { ...req.query, unspent, limit, since }
     };
     ChainStateProvider.streamAddressTransactions(payload);
-  } catch (err) {
-    logger.error('Error streaming coins: %o', err);
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error streaming coins: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 }
 

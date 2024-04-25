@@ -178,13 +178,13 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       args.tipHeight = tip ? tip.height : 0;
       if (!args.tokenAddress) {
         const txStream = MoralisAPI.streamTransactionsByAddress({ chain, network, address, args });
-        ExternalApiStream.onStream(txStream, req!, res!);
+        await ExternalApiStream.onStream(txStream, req!, res!);
       } else {
         const tokenTransfers = MoralisAPI.streamERC20TransactionsByAddress({ chain, network, address, tokenAddress, args });
-        ExternalApiStream.onStream(tokenTransfers, req!, res!);
+        await ExternalApiStream.onStream(tokenTransfers, req!, res!);
       }
     } catch (e) {
-      res!.status(500).send(e);
+      throw e;
     }
   }
 

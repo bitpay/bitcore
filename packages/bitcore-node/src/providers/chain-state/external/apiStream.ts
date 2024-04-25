@@ -71,48 +71,53 @@ export class ExternalApiStream extends Readable {
   }
 
   // handles events emitted by the streamed response, request from client, and response to client
-  static onStream(stream: Stream, req: Request, res: Response): void {
-    let closed = false;
-    let isFirst = true;
+  static onStream(stream: Readable, req: Request, res: Response): Promise<void> {
+    return new Promise<any | void>((resolve, reject) => {
+      let closed = false;
+      let isFirst = true;
 
-    req.on('close', function () {
-      closed = true;
-    });
-
-    res.type('json');
-    res.on('close', function () {
-      closed = true;
-    });
-
-    stream.on('error', function (err) {
-      if (!closed) {
+      req.on('close', function () {
         closed = true;
-        return res.status(500).end(err.message);
-      }
-      return;
-    });
-    stream.on('data', function (data) {
-      if (!closed) {
-        if (isFirst) {
-          res.write('[\n');
-          isFirst = false;
-        } else {
-          res.write(',\n');
-        }
-        res.write(data);
-      }
-    });
-    stream.on('end', function () {
-      if (!closed) {
-        if (isFirst) {
-          // there was no data
-          res.write('[]');
-        } else {
-          res.write('\n]');
+      });
+
+      res.type('json');
+      res.on('close', function () {
+        closed = true;
+      });
+
+      stream.on('error', function (err) {
+        if (!closed) {
           closed = true;
+          return reject(err);
         }
-        res.end();
-      }
+        return;
+      });
+      stream.on('data', function (data) {
+        if (!closed) {
+          if (isFirst) {
+            res.write('[\n');
+            isFirst = false;
+          } else {
+            res.write(',\n');
+          }
+          res.write(data);
+        } else {
+          stream.destroy();
+        }
+      });
+      stream.on('end', function () {
+        if (!closed) {
+          if (isFirst) {
+            // there was no data
+            res.write('[]');
+          } else {
+            res.write('\n]');
+            closed = true;
+          }
+          res.end();
+          resolve(true);
+        }
+      });
     });
   }
 
