@@ -1,10 +1,10 @@
 import request = require('request');
-import config from '../../../config';
-import { isDateValid } from '../../../utils/check';
-import { EVMTransactionStorage } from '../evm/models/transaction';
-import { EVMTransactionJSON, Transaction } from '../evm/types';
-import { ExternalApiStream as apiStream } from './apiStream';
-import moralisChains from './defaults';
+import config from '../../../../config';
+import { isDateValid } from '../../../../utils/check';
+import { EVMTransactionStorage } from '../../evm/models/transaction';
+import { EVMTransactionJSON, Transaction } from '../../evm/types';
+import { ExternalApiStream as apiStream } from '../streams/apiStream';
+import moralisChains from '../defaults';
 
 const baseUrl = 'https://deep-index.moralis.io/api/v2.2';
 const headers = {
@@ -45,6 +45,30 @@ const getBlockByHash = async ({ chain, network, blockId }) => {
     request({
       method: 'GET',
       url: `${baseUrl}/block/${blockId}?chain=${chainId}`,
+      headers
+    }, (err, data) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(data);
+    })
+  });
+}
+
+const getNativeBalanceByBlock = async ({ chain, network, block, addresses }) => {
+  if (!block) {
+    return new Error('Invalid block number or hash string');
+  }
+
+  const queryStr = buildQueryString({
+    chain: getMoralisChainId(chain, network),
+    wallet_address: addresses
+  })
+
+  return new Promise((resolve, reject) => {
+    request({
+      method: 'GET',
+      url: `${baseUrl}/wallets/balances${queryStr}`,
       headers
     }, (err, data) => {
       if (err) {
@@ -165,7 +189,7 @@ const transformQueryParams = (params) => {
       }
     }
     if (args.direction) {
-      query.order = args.direction > 0 ? 'ASC' : 'DESC';
+      query.order = Number(args.direction) > 0 ? 'ASC' : 'DESC';
     }
     if (args.date) {
       query.date = new Date(args.date).getTime();
@@ -223,6 +247,7 @@ const buildQueryString = (params: Record<string, any>): string => {
 const MoralisAPI = {
   getBlockByDate,
   getBlockByHash,
+  getNativeBalanceByBlock,
   streamTransactionsByAddress,
   streamERC20TransactionsByAddress
 }

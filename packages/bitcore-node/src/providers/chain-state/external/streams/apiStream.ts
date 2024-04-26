@@ -18,7 +18,7 @@ export class ExternalApiStream extends Readable {
     this.headers = headers;
     this.cursor = null; // Start without a cursor
     this.page = 0; // Start at page 0
-    this.results = 0;
+    this.results = 0; // Result count
 
     this.limit = args?.limit; // Results limit across all pages
     this.paging = args?.paging; // Total pages to retrieve

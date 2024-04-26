@@ -18,8 +18,9 @@ import {
   StreamWalletTransactionsParams
 } from '../../../../types/namespaces/ChainStateProvider';
 import { StatsUtil } from '../../../../utils/stats';
-import { ExternalApiStream } from '../../external/apiStream';
-import MoralisAPI from '../../external/moralis';
+import { ExternalApiStream } from '../../external/streams/apiStream';
+import { NodeQueryStream } from '../../external/streams/nodeStream';
+import MoralisAPI from '../../external/providers/moralis';
 import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON } from '../types';
@@ -28,6 +29,7 @@ import {
   getProvider,
   isValidProviderType
 } from './provider';
+import { unixToDate } from '../../../../utils/convert';
 
 export class BaseEVMExternalStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -61,11 +63,11 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     return BaseEVMStateProvider.rpcs[this.chain][network];
   }
 
-  async getLocalTip({ chain, network }): Promise<IBlock> {
+  async getLocalTip({ chain, network, includeTxs = false }): Promise<IBlock> {
     const { web3 } = await this.getWeb3(network);
     const block = await web3.eth.getBlock('latest');
     // timestamp is incorrect. do we want to spend an api call just to get the date?
-    return this.transformBlockData({ chain, network, block }) as IBlock;
+    return ECSP.transformBlockData({ chain, network, block, includeTxs }) as IBlock;
   }
 
   async getFee(params) {
@@ -97,7 +99,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         if (blockHeight >= 0) {
           confirmations = tipHeight - blockHeight + 1;
         }
-        const convertedBlock = this.transformBlockData({ chain, network, block }) as IBlock;
+        const convertedBlock = ECSP.transformBlockData({ chain, network, block }) as IBlock;
         return { ...convertedBlock, confirmations };
       };
 
@@ -122,10 +124,21 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       return Promise.all(blockPromises)
         .then(blockPromises.map(blockTransform) as any)
         .catch(error => error);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      logger.error('Error getting blocks from historical node: %o', err);
     }
     return undefined;
+  }
+
+  async streamBlocks(_params: StreamBlocksParams) {
+    try {
+      // open and write to a stream while searching for multiple blocks by date
+      // limit 10
+      throw new Error('Method not implemented.');
+    } catch (err) {
+      logger.error('Error streaming blocks from historical node %o', err);
+      throw err;
+    }
   }
 
   async getTransaction(params: StreamTransactionParams) {
@@ -138,35 +151,61 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const { web3 } = await this.getWeb3(network, { type: 'historical' });
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
-      const tx: any = await web3.eth.getTransaction(txId);
-      if (tx) {
-        let confirmations = 0;
-        if (tx.blockNumber && tx.blockNumber >= 0) {
-          confirmations = tipHeight - tx.blockNumber + 1;
-        }
-        tx.blockTime = await this.getBlockTimestamp(tx.blockHash, params);
-        const receipt = await web3.eth.getTransactionReceipt(txId);
-        if (receipt) {
-          const fee = receipt.gasUsed * parseInt(tx.gasPrice);
-          tx.receipt = receipt;
-          tx.fee = fee;
-        }
-        const tansformedTx = this.transformTransactionData({ tx, network, chain });
-        const convertedTx = EVMTransactionStorage._apiTransform(tansformedTx, { object: true }) as EVMTransactionJSON;
-        return { ...convertedTx, confirmations };
-      }
+      return await this._getTransaction({ chain, network, txId, tipHeight, web3 });
     } catch (err) {
-      console.error(err);
+      logger.error('Error getting transations from historical node %o', err);
     }
     return undefined;
   }
 
-  async getWalletBalanceAtTime(_params: GetWalletBalanceAtTimeParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
-    throw new Error('Method not implemented.');
+  async _getTransaction({ chain, network, txId, tipHeight, web3 }) {
+    const tx: any = await web3.eth.getTransaction(txId);
+    if (tx) {
+      let confirmations = 0;
+      if (tx.blockNumber && tx.blockNumber >= 0) {
+        confirmations = tipHeight - tx.blockNumber + 1;
+      }
+      tx.blockTime = await this.getBlockTimestamp(tx.blockHash, { network });
+      const receipt = await web3.eth.getTransactionReceipt(txId);
+      if (receipt) {
+        const fee = receipt.gasUsed * parseInt(tx.gasPrice);
+        tx.receipt = receipt;
+        tx.fee = fee;
+      }
+      const tansformedTx = ECSP.transformTransactionData({ tx, network, chain });
+      const convertedTx = EVMTransactionStorage._apiTransform(tansformedTx, { object: true }) as EVMTransactionJSON;
+      return { ...convertedTx, confirmations };
+    }
+    return undefined;
   }
 
-  async streamBlocks(_params: StreamBlocksParams) {
-    throw new Error('Method not implemented.');
+  // stream all transactions from a desired block
+  async streamTransactions(params: StreamTransactionsParams) {
+    const { chain, network, req, res, args } = params;
+    let { blockHash, blockHeight } = args;
+    try {
+      if (blockHeight !== undefined) {
+        blockHeight = Number(blockHeight);
+      }
+      if (blockHash !== undefined) {
+        blockHash = blockHash;
+      }
+      // get block tip for confirmations
+      const tip = await this.getLocalTip(params);
+      const tipHeight = tip ? tip.height : 0;
+      const { web3 } = await this.getWeb3(network, { type: 'historical' });
+      // get block with desired transactions
+      const block = await web3.eth.getBlock(blockHash || blockHeight);
+      const getTransaction = (async (txId) => {
+        return await this._getTransaction({ chain, network, txId, tipHeight, web3 });
+      }).bind(this);
+      const txStream = new NodeQueryStream(block?.transactions || [], getTransaction, args);
+      // stream results into response
+      await NodeQueryStream.onStream(txStream, req!, res!);
+    } catch (err) {
+      logger.error('Error streaming transactions from historical node %o', err);
+      throw err;
+    }
   }
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
@@ -183,23 +222,27 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         const tokenTransfers = MoralisAPI.streamERC20TransactionsByAddress({ chain, network, address, tokenAddress, args });
         await ExternalApiStream.onStream(tokenTransfers, req!, res!);
       }
-    } catch (e) {
-      throw e;
+    } catch (err) {
+      logger.error('Error streaming address transactions from external provider: %o', err);
+      throw err;
     }
   }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     const { network, wallet, chain, req, res, args } = params;
     try {
+      if (!wallet?._id) {
+        throw new Error('Missing wallet');
+      }
       // Calculate confirmations with tip height
       const tip = await this.getLocalTip(params);
       args.tipHeight = tip ? tip.height : 0;
       const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address);
       const mergedStream = new Transform();
       const txStreams: Readable[] = [];
-
       // Only mergedStream writes to res object
-      ExternalApiStream.onStream(mergedStream, req!, res!);
+      const _mergedStream = ExternalApiStream.onStream(mergedStream, req!, res!);
+
       // Default to pulling only the first 10 transactions per address
       for (let i = 0; i < walletAddresses.length; i++) {
         // args / query params are processed at the api provider level
@@ -207,19 +250,35 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       }
       // Pipe all txStreams to the mergedStream
       ExternalApiStream.mergeStreams(txStreams, mergedStream);
-    } catch (e) {
-      res!.status(500).send(e);
+      // Ensure mergeStream resolves
+      await _mergedStream;
+    } catch (err) {
+      logger.error('Error streaming wallet transactions from external provider: %o', err);
+      throw err;
     }
   }
 
-  async streamTransactions(_params: StreamTransactionsParams) {
-    throw new Error('Method not implemented.');
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
+    const { chain, network, time, wallet } = params;
+    try {
+      if (!wallet?._id) {
+        throw new Error('Missing wallet');
+      }
+      const addresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address);
+      // get block number based on time
+      const block = await MoralisAPI.getBlockByDate({ chain, network, date: time });
+      const result: any = await MoralisAPI.getNativeBalanceByBlock({ chain, network, block, addresses });
+      return { unconfirmed: 0, confirmed: result?.total_balance, balance: result?.total_balance };
+    } catch (err) {
+      logger.error('Error getting wallet balance at time from external provider %o', err);
+      throw err;
+    }
   }
 
   async getBlockTimestamp(blockNumber, { network }): Promise<Date> {
     const { web3 } = await this.getWeb3(network);
     const block = await web3.eth.getBlock(blockNumber);
-    return new Date(Number(block.timestamp) * 1000);
+    return unixToDate(block.timestamp);
   }
 
   protected async getBlocksParams(params: GetBlockParams | StreamBlocksParams) {
@@ -317,14 +376,14 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     return block.number ? Number((block as any).number) : undefined;
   }
 
-  transformBlockData({ chain, network, block }) {
-    return {
+  static transformBlockData({ chain, network, block, includeTxs = false }) {
+    let data: IBlock = {
       chain,
       network,
       height: block.number,
       hash: block.hash,
-      time: new Date(block.timestamp),
-      timeNormalized: new Date(block.timestamp),
+      time: unixToDate(block.timestamp), // unix to iso
+      timeNormalized: unixToDate(block.timestamp), // unix to iso
       previousBlockHash: block.parentHash,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
@@ -337,9 +396,11 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       gasLimit: block.gasLimit, // BigNumber
       baseFeePerGas: block.baseFeePerGas // BigNumber
     } as IBlock; // IEVMBlock
+    if (includeTxs) { data.transactions = block.transactions; }
+    return data;
   }
 
-  transformTransactionData({ chain, network, tx }) {
+  static transformTransactionData({ chain, network, tx }) {
     return {
       txid: tx.hash,
       chain,
@@ -360,3 +421,5 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     }
   }
 }
+
+const ECSP = BaseEVMExternalStateProvider;
