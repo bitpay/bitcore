@@ -124,7 +124,7 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' } } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const txid = await ETH.broadcastTransaction({ chain, network, rawTx: '123' });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(txid).to.eq('123');
@@ -259,7 +259,7 @@ describe('ETH Chain State Provider', function() {
         await ETH.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Please provide a valid protocol');
+        expect(err.message).to.equal('No configuration found for unexpected and "realtime" compatible dataType');
       }
     });
 
