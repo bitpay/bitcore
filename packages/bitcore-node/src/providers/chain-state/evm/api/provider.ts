@@ -22,7 +22,7 @@ const matchProviderType = (provider?: IProvider, type?: string): boolean => {
     return false;
   }
   
-  if (!provider.dataType || provider.dataType === 'combined') {
+  if (!type || !provider.dataType || provider.dataType === 'combined') {
     return true;
   }
   // ************  Type match chart  ************************
