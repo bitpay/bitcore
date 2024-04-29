@@ -26,6 +26,9 @@ import {
   isValidProviderType
  } from './provider';
 
+
+ export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string }
+
 export class BaseEVMExternalStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
 
@@ -34,28 +37,47 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     this.config = Config.chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
   }
 
-  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<{ rpc: CryptoRpc; web3: Web3; dataType: string }> {
-    try {
-      if (isValidProviderType(params?.type, BaseEVMStateProvider.rpcs[this.chain]?.[network]?.dataType)) {
-        await BaseEVMStateProvider.rpcs[this.chain][network].web3.eth.getBlockNumber();
+  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<GetWeb3Response> {
+    for (const rpc of BaseEVMStateProvider.rpcs[this.chain]?.[network] || []) {
+      if (!isValidProviderType(params?.type, rpc.dataType)) {
+        continue;
       }
-    } catch (e) {
-      delete BaseEVMStateProvider.rpcs[this.chain][network];
-    }
-    if (!BaseEVMStateProvider.rpcs[this.chain] || !BaseEVMStateProvider.rpcs[this.chain][network]) {
-      logger.info(`Making a new connection for ${this.chain}:${network}`);
-      const dataType = params?.type;
-      const providerConfig = getProvider({ network, dataType, config: this.config });
-      // Default to using ETH CryptoRpc with all EVM chain configs
-      const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
-      const rpc = new CryptoRpc(rpcConfig, {}).get('ETH');
-      if (BaseEVMStateProvider.rpcs[this.chain]) {
-        BaseEVMStateProvider.rpcs[this.chain][network] = { rpc, web3: rpc.web3, dataType: dataType || 'combinded' };
-      } else {
-        BaseEVMStateProvider.rpcs[this.chain] = { [network]: { rpc, web3: rpc.web3, dataType: dataType || 'combinded'  } };
+
+      try {
+        await Promise.race([
+          rpc.web3.eth.getBlockNumber(),
+          new Promise((_, reject) => setTimeout(reject, 5000))
+        ]);
+        return rpc; // return the first applicable rpc that's responsive
+      } catch (e) {
+        // try reconnecting
+        if (typeof (rpc.web3.currentProvider as any)?.disconnect === 'function') {
+          (rpc.web3.currentProvider as any)?.disconnect?.();
+          (rpc.web3.currentProvider as any)?.connect?.();
+          if ((rpc.web3.currentProvider as any)?.connected) {
+            return rpc;
+          }
+        }
+        const idx = BaseEVMStateProvider.rpcs[this.chain][network].indexOf(rpc);
+        BaseEVMStateProvider.rpcs[this.chain][network].splice(idx, 1);
       }
     }
-    return BaseEVMStateProvider.rpcs[this.chain][network];
+    
+    logger.info(`Making a new connection for ${this.chain}:${network}`);
+    const dataType = params?.type;
+    const providerConfig = getProvider({ network, dataType, config: this.config });
+    // Default to using ETH CryptoRpc with all EVM chain configs
+    const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
+    const rpc = new CryptoRpc(rpcConfig, {}).get('ETH');
+    const rpcObj = { rpc, web3: rpc.web3, dataType: rpcConfig.dataType || 'combined' };
+    if (!BaseEVMStateProvider.rpcs[this.chain]) {
+      BaseEVMStateProvider.rpcs[this.chain] = {};
+    }
+    if (!BaseEVMStateProvider.rpcs[this.chain][network]) {
+      BaseEVMStateProvider.rpcs[this.chain][network] = [];
+    }
+    BaseEVMStateProvider.rpcs[this.chain][network].push(rpcObj);
+    return rpcObj;
   }
 
   async getLocalTip({ chain, network }): Promise<IBlock> {
