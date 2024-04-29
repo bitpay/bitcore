@@ -274,6 +274,14 @@ export class Wallet {
     return ['BTC', 'BCH', 'DOGE', 'LTC'].includes(this.chain?.toUpperCase() || 'BTC');
   }
 
+  /**
+   * Is this wallet EVM compatible?
+   * @returns {Boolean}
+   */
+  isEvmChain() {
+    return ['ETH', 'MATIC'].includes(this.chain?.toUpperCase());
+  }
+
   lock() {
     this.unlocked = undefined;
     return this;
@@ -401,6 +409,14 @@ export class Wallet {
       decimals: params.decimals,
       name: params.name
     });
+    await this.saveWallet();
+  }
+
+  async rmToken({ tokenName }) {
+    if (!this.tokens) {
+      return;
+    }
+    this.tokens = this.tokens.filter(tok => tok.name !== tokenName || (!tok.name && tok.symbol !== tokenName));
     await this.saveWallet();
   }
 
