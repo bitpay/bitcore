@@ -1,5 +1,6 @@
 import * as express from 'express';
 import request from 'request';
+import logger from '../../logger';
 import { Config } from '../../services/config';
 import { IEVMNetworkConfig } from '../../types/Config';
 
@@ -24,7 +25,8 @@ export function Web3Proxy(req: express.Request, res: express.Response) {
       requestStream = req.pipe(request(url) as any);
     }
     requestStream
-      .on('error', () => {
+      .on('error', (err: any) => {
+        logger.error('Error streaming wallet utxos: %o', err.stack || err.message || err);
         res.status(500).send('An Error Has Occurred');
       })
       .pipe(res);
