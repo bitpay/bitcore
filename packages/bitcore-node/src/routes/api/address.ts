@@ -17,12 +17,12 @@ function streamCoins(req, res) {
     };
     ChainStateProvider.streamAddressTransactions(payload);
   } catch (err: any) {
-    logger.error('Error streaming coins: %o', err);
+    logger.error('Error streaming coins: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 }
 
-router.get('/:address', function(req, res) {
+router.get('/:address', function (req, res) {
   try {
     let { address, chain, network } = req.params;
     let { unspent, limit = 10, since } = req.query;
@@ -36,7 +36,7 @@ router.get('/:address', function(req, res) {
     };
     return ChainStateProvider.streamAddressUtxos(payload);
   } catch (err: any) {
-    logger.error('Error getting address: %o', err);
+    logger.error('Error getting address: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });
@@ -44,7 +44,7 @@ router.get('/:address', function(req, res) {
 router.get('/:address/txs', streamCoins);
 router.get('/:address/coins', streamCoins);
 
-router.get('/:address/balance', async function(req, res) {
+router.get('/:address/balance', async function (req, res) {
   let { address, chain, network } = req.params;
   try {
     let result = await ChainStateProvider.getBalanceForAddress({
@@ -55,7 +55,7 @@ router.get('/:address/balance', async function(req, res) {
     });
     return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
   } catch (err: any) {
-    logger.error('Error getting address balance: %o', err);
+    logger.error('Error getting address balance: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });

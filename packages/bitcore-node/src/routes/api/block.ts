@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import logger from '../../logger';
 import { CoinStorage, ICoin } from '../../models/coin';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
@@ -23,6 +24,7 @@ router.get('/', async function(req: Request, res: Response) {
     };
     return ChainStateProvider.streamBlocks(payload);
   } catch (err: any) {
+    logger.error('Error getting blocks: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });
@@ -33,7 +35,7 @@ router.get('/tip', async function(req: Request, res: Response) {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
   } catch (err: any) {
-    console.error(err);
+    logger.error('Error getting tip block: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });
@@ -51,6 +53,7 @@ router.get('/:blockId', async function(req: Request, res: Response) {
     }
     return res.json(block);
   } catch (err: any) {
+    logger.error('Error getting blockId: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });
@@ -120,6 +123,7 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
     const sanitize = (coins: Array<ICoin>) => coins.map(c => CoinStorage._apiTransform(c, { object: true }));
     return res.json({ txids, inputs: sanitize(inputs), outputs: sanitize(outputs), previous, next });
   } catch (err: any) {
+    logger.error('Error getting block hash data: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });
@@ -137,6 +141,7 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
     }
     return res.json(block);
   } catch (err: any) {
+    logger.error('Error getting blocks before time: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });

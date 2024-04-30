@@ -327,8 +327,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       try {
         const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
         res!.json(tokenTransfers);
-      } catch (e) {
-        res!.status(500).send(e);
+      } catch (err: any) {
+        logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
+        res!.status(500).send(err);
       }
     }
   }
