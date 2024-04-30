@@ -17,10 +17,11 @@ import {
   StreamTransactionsParams,
   StreamWalletTransactionsParams
 } from '../../../../types/namespaces/ChainStateProvider';
+import { unixToDate } from '../../../../utils/convert';
 import { StatsUtil } from '../../../../utils/stats';
+import MoralisAPI from '../../external/providers/moralis';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { NodeQueryStream } from '../../external/streams/nodeStream';
-import MoralisAPI from '../../external/providers/moralis';
 import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON } from '../types';
@@ -29,7 +30,6 @@ import {
   getProvider,
   isValidProviderType
 } from './provider';
-import { unixToDate } from '../../../../utils/convert';
 
 export class BaseEVMExternalStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
@@ -147,7 +147,6 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       if (typeof txId !== 'string' || !chain || !network) {
         throw new Error('Missing required param');
       }
-      network = network.toLowerCase();
       const { web3 } = await this.getWeb3(network, { type: 'historical' });
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
@@ -266,8 +265,8 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       }
       const addresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address);
       // get block number based on time
-      const block = await MoralisAPI.getBlockByDate({ chain, network, date: time });
-      const result: any = await MoralisAPI.getNativeBalanceByBlock({ chain, network, block, addresses });
+      const block = await this.getBlockNumberByDate({ network, date: time });
+      const result: any = await this.getNativeBalanceByBlock({ chain, network, block, addresses });
       return { unconfirmed: 0, confirmed: result?.total_balance, balance: result?.total_balance };
     } catch (err) {
       logger.error('Error getting wallet balance at time from external provider %o', err);
@@ -374,6 +373,11 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const res = await MoralisAPI.getBlockByHash({ chain: this.chain, network, blockId });
     const block = JSON.parse((res as any).body);
     return block.number ? Number((block as any).number) : undefined;
+  }
+
+  async getNativeBalanceByBlock({ chain, network, block, addresses }) {
+    const res = await MoralisAPI.getNativeBalanceByBlock({ chain, network, block, addresses });
+    return JSON.parse((res as any).body);
   }
 
   static transformBlockData({ chain, network, block, includeTxs = false }) {

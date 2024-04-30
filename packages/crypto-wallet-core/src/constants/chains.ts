@@ -17,6 +17,9 @@ export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   ETH_holesky: 17000,
   ETH_sepolia: 11155111,
   ETH_goerli: 5,
+  ETH_kovan: 42,
+  ETH_ropsten: 3,
+  ETH_rinkeby: 4,
   // MATIC testnets
   MATIC_mumbai: 80001,
   MATIC_amoy: 80002,
@@ -30,6 +33,7 @@ export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   OP_sepolia: 11155420,
   OP_goerli: 28528,
   // Regtests
+  ETH_regtest: 1337,
   MATIC_regtest: 13375,
   ARB_regtest: 442161,
   BASE_regtest: 88453,

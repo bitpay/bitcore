@@ -42,7 +42,7 @@ export class ETHTxProvider {
       amount = toBN(0);
       for (let recipient of recipients) {
         addresses.push(recipient.address);
-        amounts.push(toBN(BigInt(recipient.amount).toString()));
+        amounts.push(toBN(recipient.amount));
         amount = amount.add(toBN(recipient.amount));
       }
       const multisendContract = this.getMultiSendContract(contractAddress);

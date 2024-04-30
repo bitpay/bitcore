@@ -15,14 +15,14 @@ export class NodeQueryStream extends Readable {
   }
 
   async _read() {
-    if (this.queries.length === 0) {
-      this.push(null); // No more data, end the stream
-      return;
-    }
-
     try {
+      if (this.queries.length === 0) {
+        this.push(null); // No more data, end the stream
+        return;
+      }
       // Retrieve and remove the first query from the list
       const query = this.queries.shift();
+      // Get node response
       let data = await this.handler(query);
       // Transform data before pushing
       if (this.transform) {

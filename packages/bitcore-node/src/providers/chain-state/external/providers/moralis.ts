@@ -3,8 +3,8 @@ import config from '../../../../config';
 import { isDateValid } from '../../../../utils/check';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { EVMTransactionJSON, Transaction } from '../../evm/types';
-import { ExternalApiStream as apiStream } from '../streams/apiStream';
 import moralisChains from '../defaults';
+import { ExternalApiStream as apiStream } from '../streams/apiStream';
 
 const baseUrl = 'https://deep-index.moralis.io/api/v2.2';
 const headers = {
@@ -14,7 +14,7 @@ const headers = {
 
 const getBlockByDate = async ({ chain, network, date }) => {
   if (!date || !isDateValid(date)) {
-    return new Error('Invalid date');
+    throw new Error('Invalid date');
   }
 
   const query = transformQueryParams({ chain, network, args: { date } });
@@ -36,7 +36,7 @@ const getBlockByDate = async ({ chain, network, date }) => {
 
 const getBlockByHash = async ({ chain, network, blockId }) => {
   if (!blockId) {
-    return new Error('Invalid block number or hash string');
+    throw new Error('Invalid block number or hash string');
   }
 
   const chainId = getMoralisChainId(chain, network);
@@ -57,9 +57,9 @@ const getBlockByHash = async ({ chain, network, blockId }) => {
 
 const getNativeBalanceByBlock = async ({ chain, network, block, addresses }) => {
   if (!block) {
-    return new Error('Invalid block number or hash string');
+    throw new Error('Invalid block number or hash string');
   }
-
+  // 25 wallet addresses max per Moralis API docs
   const queryStr = buildQueryString({
     chain: getMoralisChainId(chain, network),
     wallet_address: addresses
@@ -81,7 +81,7 @@ const getNativeBalanceByBlock = async ({ chain, network, block, addresses }) => 
 
 const streamTransactionsByAddress = ({ chain, network, address, args }): any => {
   if (!address) {
-    return new Error('Missing address');
+    throw new Error('Missing address');
   }
 
   const query = transformQueryParams({ chain, network, args }); // throws if no chain or network
@@ -108,10 +108,10 @@ const streamTransactionsByAddress = ({ chain, network, address, args }): any => 
 
 const streamERC20TransactionsByAddress = ({ chain, network, address, tokenAddress, args }): any => {
   if (!address) {
-    return new Error('Missing address');
+    throw new Error('Missing address');
   }
   if (!tokenAddress) {
-    return new Error('Missing token address');
+    throw new Error('Missing token address');
   }
 
   const queryTransform = transformQueryParams({ chain, network, args }); // throws if no chain or network
@@ -200,10 +200,10 @@ const transformQueryParams = (params) => {
 
 const getMoralisChainId = (chain, network): string | Error => {
   if (!chain) {
-    return new Error('Missing chain');
+    throw new Error('Missing chain');
   }
   if (!network) {
-    return new Error('Missing network');
+    throw new Error('Missing network');
   }
 
   chain = chain.toUpperCase();
@@ -213,7 +213,7 @@ const getMoralisChainId = (chain, network): string | Error => {
     network = moralisChains[chain]?.testnet;
   }
   if (!moralisChains[chain][network]) {
-    return new Error(`${chain}:${network} is not supported`);
+    throw new Error(`${chain}:${network} is not supported`);
   }
 
   return moralisChains[chain][network];
