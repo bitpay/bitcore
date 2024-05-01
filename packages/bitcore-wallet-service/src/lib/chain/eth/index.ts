@@ -452,8 +452,8 @@ export class EthChain implements IChain {
 
   getInsufficientFeeError(txp) {
     return new ClientError(
-      Errors.codes[`${this.chain}_ERRORS`][`INSUFFICIENT_${this.chain}_FEE`],
-      `${Errors[`${this.chain}_ERRORS`][`INSUFFICIENT_${this.chain}_FEE`].message}. RequiredFee: ${txp.fee}`,
+      Errors.codes[`INSUFFICIENT_${this.chain}_FEE`],
+      `${Errors[`INSUFFICIENT_${this.chain}_FEE`].message}. RequiredFee: ${txp.fee}`,
       {
         requiredFee: txp.fee
       }
@@ -462,8 +462,8 @@ export class EthChain implements IChain {
 
   getLockedFeeError(txp) {
     return new ClientError(
-      Errors.codes[`${this.chain}_ERRORS`][`LOCKED_${this.chain}_FEE`],
-      `${Errors[`${this.chain}_ERRORS`][`LOCKED_${this.chain}_FEE.message`]}. RequiredFee: ${txp.fee}`,
+      Errors.codes[`LOCKED_${this.chain}_FEE`],
+      `${Errors[`LOCKED_${this.chain}_FEE`].message}. RequiredFee: ${txp.fee}`,
       {
         requiredFee: txp.fee
       }
