@@ -1,8 +1,9 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
+import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 
-router.get('/:input', async function(req, res) {
+router.get('/:input', async function (req, res) {
   let { input, chain, network } = req.params;
   try {
     let isValid = await ChainStateProvider.isValid({
@@ -11,8 +12,9 @@ router.get('/:input', async function(req, res) {
       input
     });
     return res.send(isValid);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error checking network validity: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 

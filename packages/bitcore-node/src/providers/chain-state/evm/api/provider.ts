@@ -5,22 +5,24 @@ const getProvider = ({
   network,
   config,
   dataType 
-}: { network: string, dataType: string | undefined, config: IChainConfig<IEVMNetworkConfig> }) => {
-  let defaultProvider;
+}: { network: string, dataType: string | undefined, config: IChainConfig<IEVMNetworkConfig>}) : IProvider => {
   if (config[network]?.provider && matchProviderType(config[network].provider, dataType)) {
-    defaultProvider = config[network].provider;
+    return config[network].provider!;
   }
-  const providers: any = config[network]?.providers?.filter((p) => matchProviderType(p, dataType));
-  const providerIdx: number = worker.threadId % (providers || []).length;
-  return defaultProvider || (!isNaN(providerIdx) ? providers![providerIdx] : undefined);
+  const providers = config[network]?.providers?.filter((p) => matchProviderType(p, dataType));
+  if (!providers?.length) {
+    throw new Error(`No configuration found for ${network} and "${dataType}" compatible dataType`);
+  }
+  const providerIdx = worker.threadId % providers.length;
+  return providers[providerIdx];
 }
 
 const matchProviderType = (provider?: IProvider, type?: string): boolean => {
   if (!provider) {
     return false;
   }
-  // dataType is not required for IProvider so we return true if dataType is undefined and provider is defined
-  if (!type || !provider.dataType) {
+  
+  if (!type || !provider.dataType || provider.dataType === 'combined') {
     return true;
   }
   // ************  Type match chart  ************************
@@ -30,7 +32,7 @@ const matchProviderType = (provider?: IProvider, type?: string): boolean => {
   // historical : [ historical, combined ]
   // combined   : [ combined ]
   // undefined  : [ historical, combined, realtime ]
-  if (provider.dataType === 'combined' || type === provider.dataType) {
+  if (type === provider.dataType) {
     return true;
   }    
   return false;
