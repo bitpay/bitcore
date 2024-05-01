@@ -49,7 +49,7 @@ export class Utils {
         !Constants.CHAINS.includes(normalizedChain)
       ) {
         // default to eth if it's an ETH ERC20 or if we don't know the chain
-        normalizedChain = 'eth'; 
+        normalizedChain = 'eth';
       }
       return normalizedChain;
     } catch (_) {
@@ -499,8 +499,8 @@ export class Utils {
       const _chain = isMULTISIG
         ? chainName + 'MULTISIG'
         : isERC20
-        ? chainName + 'ERC20'
-        : chainName;
+          ? chainName + 'ERC20'
+          : chainName;
 
       if (multiSendContractAddress) {
         let multiSendParams = {
@@ -535,7 +535,7 @@ export class Utils {
     const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
     const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
     if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
-       // Special handling for usdc.e and usdc on matic
+      // Special handling for usdc.e and usdc on matic
       if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc.e') {
         return 'USDC_m';
       } else if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc') {

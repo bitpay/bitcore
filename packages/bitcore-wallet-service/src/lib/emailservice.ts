@@ -5,7 +5,7 @@ import 'source-map-support/register';
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
-import { Constants as ConstantsCWC} from 'crypto-wallet-core';
+import { Constants as ConstantsCWC } from 'crypto-wallet-core';
 import request from 'request';
 import config from '../config';
 import { Common } from './common';
@@ -374,7 +374,7 @@ export class EmailService {
         let errStr;
         try {
           errStr = err.toString().substr(0, 100);
-        } catch (e) {}
+        } catch (e) { }
 
         logger.warn('An error occurred when trying to send email to %o %o', email.to, (errStr || err));
         return cb(err);
@@ -430,7 +430,7 @@ export class EmailService {
   }
 
   sendEmail(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     const emailType = EMAIL_TYPES[notification.type];
     if (!emailType) return cb();
@@ -501,7 +501,7 @@ export class EmailService {
                   let errStr;
                   try {
                     errStr = err.toString().substr(0, 100);
-                  } catch (e) {}
+                  } catch (e) { }
 
                   logger.warn('An error ocurred generating email notification: %o', errStr || err);
                 }

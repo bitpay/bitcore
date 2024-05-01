@@ -5,6 +5,6 @@ export class MaticValidation extends EthValidation {
 
   constructor() {
     super();
-    this.regex = /matic/i;
+    this.regex = /matic|polygon/i;
   }
 }

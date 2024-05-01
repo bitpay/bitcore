@@ -5,6 +5,6 @@ export class ArbValidation extends EthValidation {
 
   constructor() {
     super();
-    this.regex = /arb/i;
+    this.regex = /arbitrum/i;
   }
 }

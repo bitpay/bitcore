@@ -1,8 +1,8 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
 import {
-  Validation,
-  Constants as ConstantsCWC
+  Constants as ConstantsCWC,
+  Validation
 } from 'crypto-wallet-core';
 import * as _ from 'lodash';
 import Moralis from 'moralis';
@@ -7066,10 +7066,9 @@ export class WalletService implements IWalletService {
         const response = await Moralis.EvmApi.token.getMultipleTokenPrices({
           chain: req.body.chain,
           include: req.body.include,
-        },
-          {
-            tokens: req.body.tokens,
-          });
+        }, {
+          tokens: req.body.tokens,
+        });
 
         return resolve(response.raw ?? response);
       } catch (err) {

@@ -50,6 +50,6 @@ const reverseObject = <K extends string, V extends number | string>(obj: Record<
   return reversed;
 };
 
-export const EVM_CHAIN_ID_TO_CHAIN_NEWORK = reverseObject(EVM_CHAIN_NETWORK_TO_CHAIN_ID);
+export const EVM_CHAIN_ID_TO_CHAIN_NETWORK = reverseObject(EVM_CHAIN_NETWORK_TO_CHAIN_ID);
 
 export const EVM_CHAIN_ID_TO_CHAIN = reverseObject(EVM_CHAIN_NETWORK_TO_CHAIN_ID, true);
