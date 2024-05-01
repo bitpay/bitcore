@@ -199,8 +199,8 @@ export class Key {
         this.use0forBCH = x.use145forBCH
           ? false
           : x.coin == 'bch'
-          ? true
-          : false;
+            ? true
+            : false;
 
         this.BIP45 = x.derivationStrategy == 'BIP45';
         break;
@@ -385,36 +385,36 @@ export class Key {
     // checking in chains for simplicity
     if (
       ['testnet', 'regtest]'].includes(opts.network) &&
-      Constants.UTXO_CHAINS.includes(opts.coin)
+      Constants.UTXO_CHAINS.includes(opts.chain)
     ) {
       coinCode = '1';
-    } else if (opts.coin == 'bch') {
+    } else if (opts.chain == 'bch') {
       if (this.use0forBCH || opts.use0forBCH) {
         coinCode = '0';
       } else {
         coinCode = '145';
       }
-    } else if (opts.coin == 'btc') {
+    } else if (opts.chain == 'btc') {
       coinCode = '0';
-    } else if (opts.coin == 'eth') {
+    } else if (opts.chain == 'eth') {
       coinCode = '60';
-    } else if (opts.coin == 'matic') {
+    } else if (opts.chain == 'matic') {
       coinCode = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
-    } else if (opts.coin == 'xrp') {
+    } else if (opts.chain == 'xrp') {
       coinCode = '144';
-    } else if (opts.coin == 'doge') {
+    } else if (opts.chain == 'doge') {
       coinCode = '3';
-    } else if (opts.coin == 'ltc') {
+    } else if (opts.chain == 'ltc') {
       coinCode = '2';
     } else {
-      throw new Error('unknown coin: ' + opts.coin);
+      throw new Error('unknown coin: ' + opts.chain);
     }
 
     return 'm/' + purpose + "'/" + coinCode + "'/" + opts.account + "'";
   };
 
   /*
-   * opts.coin
+   * opts.chain
    * opts.network
    * opts.account
    * opts.n
@@ -422,6 +422,7 @@ export class Key {
 
   createCredentials = function (password, opts) {
     opts = opts || {};
+    opts.chain = opts.chain || Utils.getChain(opts.coin);
 
     if (password) $.shouldBeString(password, 'provide password');
 
