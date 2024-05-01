@@ -379,35 +379,36 @@ export class Key {
     $.checkArgument(opts, 'Need to provide options');
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
+    const chain = opts.chain || Utils.getChain(opts.coin);
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
-    var coinCode = '0';
+    let coinCode = '0';
 
     // checking in chains for simplicity
     if (
       ['testnet', 'regtest]'].includes(opts.network) &&
-      Constants.UTXO_CHAINS.includes(opts.chain)
+      Constants.UTXO_CHAINS.includes(chain)
     ) {
       coinCode = '1';
-    } else if (opts.chain == 'bch') {
+    } else if (chain == 'bch') {
       if (this.use0forBCH || opts.use0forBCH) {
         coinCode = '0';
       } else {
         coinCode = '145';
       }
-    } else if (opts.chain == 'btc') {
+    } else if (chain == 'btc') {
       coinCode = '0';
-    } else if (opts.chain == 'eth') {
+    } else if (chain == 'eth') {
       coinCode = '60';
-    } else if (opts.chain == 'matic') {
+    } else if (chain == 'matic') {
       coinCode = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
-    } else if (opts.chain == 'xrp') {
+    } else if (chain == 'xrp') {
       coinCode = '144';
-    } else if (opts.chain == 'doge') {
+    } else if (chain == 'doge') {
       coinCode = '3';
-    } else if (opts.chain == 'ltc') {
+    } else if (chain == 'ltc') {
       coinCode = '2';
     } else {
-      throw new Error('unknown coin: ' + opts.chain);
+      throw new Error('unknown chain: ' + chain);
     }
 
     return 'm/' + purpose + "'/" + coinCode + "'/" + opts.account + "'";
