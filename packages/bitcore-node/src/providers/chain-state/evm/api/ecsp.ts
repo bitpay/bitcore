@@ -152,17 +152,6 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     return undefined;
   }
 
-  async streamBlocks(_params: StreamBlocksParams) {
-    try {
-      // open and write to a stream while searching for multiple blocks by date
-      // limit 10
-      throw new Error('Method not implemented.');
-    } catch (err) {
-      logger.error('Error streaming blocks from historical node %o', err);
-      throw err;
-    }
-  }
-
   async getTransaction(params: StreamTransactionParams) {
     try {
       let { chain, network, txId } = params;
@@ -207,9 +196,6 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     try {
       if (blockHeight !== undefined) {
         blockHeight = Number(blockHeight);
-      }
-      if (blockHash !== undefined) {
-        blockHash = blockHash;
       }
       // get block tip for confirmations
       const tip = await this.getLocalTip(params);
