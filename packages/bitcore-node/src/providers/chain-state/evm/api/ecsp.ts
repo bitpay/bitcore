@@ -174,7 +174,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const tipHeight = tip ? tip.height : 0;
       return await this._getTransaction({ chain, network, txId, tipHeight, web3 });
     } catch (err) {
-      logger.error('Error getting transations from historical node %o', err);
+      logger.error('Error getting transactions from historical node %o', err);
     }
     return undefined;
   }

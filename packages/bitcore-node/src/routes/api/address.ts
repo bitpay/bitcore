@@ -3,7 +3,7 @@ const router = express.Router({ mergeParams: true });
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 
-function streamCoins(req, res) {
+async function streamCoins(req, res) {
   try {
     let { address, chain, network } = req.params;
     let { unspent, limit = 10, since } = req.query;
@@ -15,7 +15,7 @@ function streamCoins(req, res) {
       res,
       args: { ...req.query, unspent, limit, since }
     };
-    ChainStateProvider.streamAddressTransactions(payload);
+    await ChainStateProvider.streamAddressTransactions(payload);
   } catch (err: any) {
     logger.error('Error streaming coins: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
