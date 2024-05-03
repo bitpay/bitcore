@@ -401,6 +401,12 @@ export class Key {
       coinCode = '60';
     } else if (chain == 'matic') {
       coinCode = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
+    } else if (chain == 'arb') {
+      coinCode = '60';
+    } else if (chain == 'op') {
+      coinCode = '60';
+    } else if (chain == 'base') {
+      coinCode = '60';
     } else if (chain == 'xrp') {
       coinCode = '144';
     } else if (chain == 'doge') {

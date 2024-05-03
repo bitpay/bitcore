@@ -204,7 +204,7 @@ export class Credentials {
       // checking in chains for simplicity
       if (
         this.network != 'livenet' &&
-        Constants.UTXO_CHAINS.includes(this.chain)
+        Constants.UTXO_CHAINS.includes(chain)
       ) {
         chainPath = '1';
       } else if (chain == 'bch') {
@@ -232,7 +232,7 @@ export class Credentials {
       } else if (chain == 'ltc') {
         chainPath = '2';
       } else {
-        throw new Error('unknown chain: ' + this.chain);
+        throw new Error('unknown chain: ' + chain);
       }
       return 'm/' + purpose + "'/" + chainPath + "'/" + this.account + "'";
     };

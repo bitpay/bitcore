@@ -2983,6 +2983,7 @@ export class API extends EventEmitter {
         let opt = opts[i];
         let optsObj = {
           chain: opt[0],
+          coin: opt[0],
           network: opt[1],
           account: 0,
           n: opt[2] ? 2 : 1,
