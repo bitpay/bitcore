@@ -15,7 +15,7 @@ describe('ETH Chain State Provider', function() {
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await ETH.getWeb3(network);
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
@@ -27,7 +27,7 @@ describe('ETH Chain State Provider', function() {
   it('should make a new web3 if getBlockNumber fails', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await ETH.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
     expect(stub.callCount).to.not.exist;
@@ -67,6 +67,15 @@ describe('ETH Chain State Provider', function() {
       gasPrice: 10,
       data: Buffer.from('')
     } as MongoBound<IEVMTransactionInProcess>;
+    const mockBlock = {
+      _id: new ObjectId(),
+      chain: 'ETH', 
+      network: 'testnet',
+      hash: '55555',
+      height: 1,
+      processed: true
+    } as MongoBound<IEVMBlock>;
+    mockModel('blocks', mockBlock);
     sandbox.stub(ETH, 'getReceipt').resolves({ gasUsed: 21000 });
     sandbox.stub(ETH, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
@@ -92,7 +101,7 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const txids = await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(true);
@@ -115,7 +124,7 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const txid = await ETH.broadcastTransaction({ chain, network, rawTx: '123' });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(txid).to.eq('123');
@@ -146,7 +155,7 @@ describe('ETH Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     let thrown = false;
     try {
       await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
@@ -190,7 +199,7 @@ describe('ETH Chain State Provider', function() {
     };
 
     beforeEach(() => {
-      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: { web3: web3Stub, rpc: sinon.stub() } } });
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     });
 
     afterEach(() => {
@@ -250,7 +259,7 @@ describe('ETH Chain State Provider', function() {
         await ETH.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Please provide a valid protocol');
+        expect(err.message).to.equal('No configuration found for unexpected and "realtime" compatible dataType');
       }
     });
 

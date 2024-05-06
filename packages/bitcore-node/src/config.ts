@@ -86,6 +86,11 @@ const Config = function(): ConfigType {
         bwsKeys: []
       },
       storage: {}
+    },
+    externalProviders: {
+      moralis: {
+        apiKey: 'string'
+      }
     }
   };
 

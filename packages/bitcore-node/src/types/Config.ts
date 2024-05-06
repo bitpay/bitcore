@@ -4,7 +4,7 @@ export interface IChainConfig<T extends INetworkConfig> {
 
 interface INetworkConfig {
   disabled?: boolean;
-  chainSource?: 'p2p';
+  chainSource?: 'p2p' | 'external';
   trustedPeers: {
     host: string;
     port: number | string;
@@ -23,17 +23,24 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
   defaultFeeMode?: 'CONSERVATIVE' | 'ECONOMICAL';
 }
 
-interface IProvider {
+export interface IProvider {
   host: string;
   port?: number | string;
   protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
   options?: object;
+  dataType?: 'realtime' | 'historical' | 'combined';
+}
+
+interface IExternalSyncConfig {
+  type?:  'sparse' | 'full'; // sparsely sync chain data based on criteria or sync all data
+  time?: string // cron time of block sync intervals
 }
 
 export interface IEVMNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
   providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
   provider?: IProvider;
+  externalSyncConfig?: IExternalSyncConfig; // configuration for external syncing
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
   syncStartHeight?: number; // Start syncing from this block height
@@ -100,5 +107,10 @@ export interface ConfigType {
     storage: {
       disabled?: boolean;
     };
+  };
+  externalProviders?: {
+    moralis: {
+      apiKey: string;
+    }
   };
 }

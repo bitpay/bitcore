@@ -32,7 +32,8 @@ export class XRPTxProvider {
           Destination: address,
           Amount: amount.toString(),
           Fee: fee.toString(),
-          Sequence: nonce
+          Sequence: nonce,
+          Flags: 2147483648 // tfFullyCanonicalSig - DEPRECATED but still here for backward compatibility
         };
         if (flags != null) {
           paymentTx.Flags = flags;
