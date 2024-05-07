@@ -23,7 +23,17 @@ const networkMapping = {
   },
   matic: {
     testnet: 'mumbai'
+  },
+  arb: {
+    testnet: 'sepolia'
+  },
+  base: {
+    testnet: 'sepolia'
+  },
+  op: {
+    testnet: 'sepolia'
   }
+
 };
 
 const doit = process.argv[2] === '--doit';

@@ -90,12 +90,13 @@ export class Wallet {
   static create(opts) {
     opts = opts || {};
 
+    const chain = opts.chain || opts.coin;
     let x = new Wallet();
 
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.CHAINS)); // checking in chains for simplicity
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.coin]));
+    $.checkArgument(Utils.checkValueInCollection(chain, Constants.CHAINS)); // checking in chains for simplicity
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]));
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);

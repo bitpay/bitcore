@@ -23,15 +23,15 @@ const PROVIDERS = {
     },
     arb: {
       livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+      sepolia: 'https://api-eth.bitcore.io'
     },
     base: {
       livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+      sepolia: 'https://api-eth.bitcore.io'
     },
     op: {
       livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+      sepolia: 'https://api-eth.bitcore.io'
     },
     xrp: {
       livenet: 'https://api-xrp.bitcore.io',

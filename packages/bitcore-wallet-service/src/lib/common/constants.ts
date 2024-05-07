@@ -99,10 +99,13 @@ export const Constants = {
     btc: ['livenet', 'testnet3', 'signet', 'regtest'],
     bch: ['livenet', 'testnet3', 'testnet4', 'scalenet', 'chipnet', 'regtest'],
     eth: ['livenet', 'sepolia', 'holesky', 'regtest'],
-    matic: ['livenet', 'mumbai', 'regtest'],
+    matic: ['livenet', 'mumbai', 'amoy', 'regtest'],
     ltc: ['livenet', 'testnet', 'regtest'],
     doge: ['livenet', 'testnet', 'regtest'],
-    xrp: ['livenet', 'testnet', 'regtest']
+    xrp: ['livenet', 'testnet', 'regtest'],
+    arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    base: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    op: ['livenet', 'sepolia', 'holesky', 'regtest'],
   } as { [chain: string]: Array<string> },
 
   // These aliases are here to support legacy clients so don't change them lightly
@@ -133,6 +136,18 @@ export const Constants = {
     },
     xrp: {
       mainnet: 'livenet',
+    },
+    arb: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    base: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    op: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
     }
   },
 

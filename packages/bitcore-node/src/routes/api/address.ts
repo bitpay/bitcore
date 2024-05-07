@@ -16,7 +16,7 @@ async function streamCoins(req, res) {
       res,
       args: { ...req.query, unspent, limit, since }
     } as StreamAddressUtxosParams;
-    ChainStateProvider.streamAddressTransactions(payload);
+    await ChainStateProvider.streamAddressTransactions(payload);
   } catch (err: any) {
     logger.error('Error streaming coins: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
