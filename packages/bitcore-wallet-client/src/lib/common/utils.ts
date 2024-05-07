@@ -23,6 +23,9 @@ const Bitcore_ = {
   bch: BitcoreLibCash,
   eth: Bitcore,
   matic: Bitcore,
+  arb: Bitcore,
+  base: Bitcore,
+  op: Bitcore,
   xrp: Bitcore,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc
@@ -496,8 +499,8 @@ export class Utils {
       const _chain = isMULTISIG
         ? chainName + 'MULTISIG'
         : isERC20
-        ? chainName + 'ERC20'
-        : chainName;
+          ? chainName + 'ERC20'
+          : chainName;
 
       if (multiSendContractAddress) {
         let multiSendParams = {
@@ -532,7 +535,7 @@ export class Utils {
     const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
     const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
     if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
-       // Special handling for usdc.e and usdc on matic
+      // Special handling for usdc.e and usdc on matic
       if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc.e') {
         return 'USDC_m';
       } else if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc') {

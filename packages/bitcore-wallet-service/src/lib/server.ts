@@ -1,6 +1,9 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
-import { Validation } from 'crypto-wallet-core';
+import {
+  Constants as ConstantsCWC,
+  Validation
+} from 'crypto-wallet-core';
 import * as _ from 'lodash';
 import Moralis from 'moralis';
 import 'source-map-support/register';
@@ -47,6 +50,9 @@ const Bitcore_ = {
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
   matic: Bitcore,
+  arb: Bitcore,
+  base: Bitcore,
+  op: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
@@ -273,7 +279,7 @@ export class WalletService implements IWalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -884,7 +890,7 @@ export class WalletService implements IWalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -1123,7 +1129,7 @@ export class WalletService implements IWalletService {
           this._addCopayerToWallet(wallet, opts, cb);
           return;
         }
-        
+
         if (opts.chain === 'bch' && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
@@ -3271,7 +3277,7 @@ export class WalletService implements IWalletService {
     }
   }
 
-  getPendingTxsPromise(opts): Promise<any>  {
+  getPendingTxsPromise(opts): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getPendingTxs(opts, (err, txps) => {
         if (err) return reject(err);
@@ -3436,7 +3442,7 @@ export class WalletService implements IWalletService {
         _.map([].concat(txs), tx => {
           const t = new Date(tx.blockTime).getTime() / 1000;
           const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
-          
+
           // This adapter rebuilds the abiType property from data contained in the effects so that it returns what wallet is used to
           // If we remove the slight reliance in the wallet on abiType then we can remove this adapter
           function recreateAbiType(effects) {
@@ -3471,7 +3477,7 @@ export class WalletService implements IWalletService {
             data: tx.data,
             abiType: tx.abiType || recreateAbiType(tx.effects),
             gasPrice: tx.gasPrice,
-            maxGasFee: tx.maxGasFee, 
+            maxGasFee: tx.maxGasFee,
             priorityGasFee: tx.priorityGasFee,
             txType: tx.txType,
             gasLimit: tx.gasLimit,
@@ -4730,11 +4736,11 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = { ...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.' } };
     }
 
     if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = { ...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.' } };
     }
 
     // Buy crypto rules
@@ -4745,7 +4751,7 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && buyCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
+      externalServicesConfig.buyCrypto = { ...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.' } };
     }
 
     // Sell crypto rules
@@ -4756,7 +4762,7 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.sellCrypto = {...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
+      externalServicesConfig.sellCrypto = { ...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.' } };
     }
 
     return cb(null, externalServicesConfig);
@@ -4866,7 +4872,7 @@ export class WalletService implements IWalletService {
       if (req.body.payment_method_id) qs.push('payment_method_id=' + req.body.payment_method_id);
       if (req.body.account_reference) qs.push('account_reference=' + req.body.account_reference);
       if (req.body.blockchain) qs.push('blockchain=' + req.body.blockchain);
-      
+
       const UriPath = `/prices${qs.length > 0 ? '?' + qs.join('&') : ''}`;
       const URL: string = API + UriPath;
       const auth = this.getBanxaSignature('get', UriPath, API_KEY, SECRET_KEY);
@@ -4905,7 +4911,7 @@ export class WalletService implements IWalletService {
       }
 
       delete req.body.payment_method_id;
-      
+
       const UriPath = '/orders';
       const URL: string = API + UriPath;
       const auth = this.getBanxaSignature('post', UriPath, API_KEY, SECRET_KEY, req.body);
@@ -5533,13 +5539,13 @@ export class WalletService implements IWalletService {
 
       let qs = [];
       qs.push('hostApiKey=' + API_KEY);
-    if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
-    if (req.body.withDisabled) qs.push('withDisabled=' + encodeURIComponent(req.body.withDisabled));
-    if (req.body.withHidden) qs.push('withHidden=' + encodeURIComponent(req.body.withHidden));
-    if (req.body.useIp) {
-      const ip = Utils.getIpFromReq(req);
-      qs.push('userIp=' + encodeURIComponent(ip));
-    }
+      if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
+      if (req.body.withDisabled) qs.push('withDisabled=' + encodeURIComponent(req.body.withDisabled));
+      if (req.body.withHidden) qs.push('withHidden=' + encodeURIComponent(req.body.withHidden));
+      if (req.body.useIp) {
+        const ip = Utils.getIpFromReq(req);
+        qs.push('userIp=' + encodeURIComponent(ip));
+      }
 
       URL = API + `/host-api/v3/assets?${qs.join('&')}`;
 
@@ -6173,7 +6179,7 @@ export class WalletService implements IWalletService {
         accessToken = req.body.accessToken;
       } else {
         try {
-          const accessTokenData = await this.transakGetAccessToken({body: env});
+          const accessTokenData = await this.transakGetAccessToken({ body: env });
           accessToken = accessTokenData?.data?.accessToken;
         } catch (err) {
           return reject(err?.body ? err.body : err);
@@ -6367,13 +6373,13 @@ export class WalletService implements IWalletService {
     });
 
     const publicKey = crypto.createPublicKey(privateKey).export({
-        type: 'pkcs1',
-        format: 'der'
+      type: 'pkcs1',
+      format: 'der'
     });
 
     const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), privateKey);
 
-    return {signature, publicKey};
+    return { signature, publicKey };
   }
 
   changellyGetCurrencies(req): Promise<any> {
@@ -6399,7 +6405,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6459,7 +6465,7 @@ export class WalletService implements IWalletService {
 
       const URL: string = keys.API;
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6521,7 +6527,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6594,7 +6600,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6645,16 +6651,16 @@ export class WalletService implements IWalletService {
         jsonrpc: '2.0',
         method: 'getTransactions',
         params:
-          {
-            id: req.body.exchangeTxId,
-            limit: req.body.limit ?? 1,
-          }
+        {
+          id: req.body.exchangeTxId,
+          limit: req.body.limit ?? 1,
+        }
       };
 
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6712,7 +6718,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6800,12 +6806,8 @@ export class WalletService implements IWalletService {
       if (credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
       if (credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
 
-      const chainIdMap = {
-        eth: 1,
-        matic: 137
-      };
-
-      const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
+      const chainNetwork: string = `${req.params?.['chain']?.toUpperCase()}_mainnet` || 'eth_mainnet';
+      const chainId: number = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[chainNetwork];
 
       const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
@@ -6862,13 +6864,13 @@ export class WalletService implements IWalletService {
             if (err) {
               this.logw('An error occured while retrieving the token list', err);
               if (oldvalues) {
-               this.logw('Using old cached values');
-               return resolve(oldvalues);
+                this.logw('Using old cached values');
+                return resolve(oldvalues);
               }
               return reject(err.body ?? err);
             } else if (data?.statusCode === 429 && oldvalues) {
               // oneinch rate limit
-               return resolve(oldvalues);
+              return resolve(oldvalues);
             } else {
               if (!data?.body?.tokens) {
                 if (oldvalues) {
@@ -6992,7 +6994,7 @@ export class WalletService implements IWalletService {
 
   // Moralis services
   moralisGetWalletTokenBalances(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getWalletTokenBalances({
           address: req.body.address,
@@ -7001,7 +7003,7 @@ export class WalletService implements IWalletService {
           tokenAddresses: req.body.tokenAddresses,
           excludeSpam: req.body.excludeSpam,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7010,7 +7012,7 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetTokenAllowance(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getTokenAllowance({
           address: req.body.address,
@@ -7018,7 +7020,7 @@ export class WalletService implements IWalletService {
           ownerAddress: req.body.ownerAddress,
           spenderAddress: req.body.spenderAddress,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7027,14 +7029,14 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetNativeBalance(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.balance.getNativeBalance({
           address: req.body.address,
           chain: req.body.chain,
           toBlock: req.body.toBlock,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7043,7 +7045,7 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetTokenPrice(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getTokenPrice({
           address: req.body.address,
@@ -7052,7 +7054,7 @@ export class WalletService implements IWalletService {
           exchange: req.body.exchange,
           toBlock: req.body.toBlock,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7061,16 +7063,15 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetMultipleERC20TokenPrices(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getMultipleTokenPrices({
           chain: req.body.chain,
           include: req.body.include,
-        },
-        {
+        }, {
           tokens: req.body.tokens,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7141,11 +7142,10 @@ export class WalletService implements IWalletService {
       };
       const contractAddresses = req.params['contractAddresses']; // format example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48,0x6b175474e89094c44da98b954eedeac495271d0f,..
       const altCurrencies = req.params['altCurrencies']; // format example ars,aud,usd,...
-        
-      const URL: string = `${credentials.API}/v3/simple/token_price/${
-        evmBlockchainNetwork[chain]
-      }?contract_addresses=${contractAddresses}&vs_currencies=${altCurrencies}&include_24hr_change=true&include_last_updated_at=true`;
-        
+
+      const URL: string = `${credentials.API}/v3/simple/token_price/${evmBlockchainNetwork[chain]
+        }?contract_addresses=${contractAddresses}&vs_currencies=${altCurrencies}&include_24hr_change=true&include_last_updated_at=true`;
+
       this.request.get(
         URL,
         {

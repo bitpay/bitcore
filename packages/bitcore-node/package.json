@@ -74,6 +74,7 @@
     "@types/socket.io-client": "1.4.32",
     "@types/through2": "2.0.33",
     "@types/winston": "2.4.4",
+    "axios": "0.21.1",
     "chai": "4.1.2",
     "eslint": "4.19.1",
     "eslint-config-airbnb-base": "12.1.0",

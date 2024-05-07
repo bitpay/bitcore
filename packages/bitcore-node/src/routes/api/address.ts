@@ -4,7 +4,7 @@ import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamAddressUtxosParams } from '../../types/namespaces/ChainStateProvider';
 
-function streamCoins(req, res) {
+async function streamCoins(req, res) {
   try {
     let { chain, network, address } = req.params;
     let { unspent, limit = 10, since } = req.query;

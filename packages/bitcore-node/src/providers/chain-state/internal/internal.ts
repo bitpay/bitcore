@@ -275,7 +275,8 @@ export class InternalStateProvider implements IChainStateService {
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
     const walletConfig = Config.for('api').wallets;
     const canCreate = walletConfig && walletConfig.allowCreationBeforeCompleteSync;
-    if (!initialSyncComplete && !canCreate) {
+    const exteranllyProvided = this.isExternallyProvided({ chain, network });
+    if (!exteranllyProvided && !initialSyncComplete && !canCreate) {
       throw new Error('Wallet creation not permitted before intitial sync is complete');
     }
     const wallet: IWallet = {
@@ -320,6 +321,10 @@ export class InternalStateProvider implements IChainStateService {
         resolve({ lastAddress, sum });
       });
     });
+  }
+
+  isExternallyProvided({ chain, network }) {
+    return Config.chainConfig({ chain, network })?.chainSource === 'external';
   }
 
   async streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams) {

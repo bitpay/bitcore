@@ -4,11 +4,11 @@ import { Readable } from 'stream';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import Config from '../../../../config';
-import { 
+import {
   historical,
   internal,
   realtime
- } from '../../../../decorators/decorators';
+} from '../../../../decorators/decorators';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
 import { ITransaction } from '../../../../models/baseTransaction';
@@ -44,10 +44,10 @@ import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
-import { 
+import {
   getProvider,
   isValidProviderType
- } from './provider';
+} from './provider';
 import { EVMListTransactionsStream } from './transform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
@@ -86,7 +86,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         BaseEVMStateProvider.rpcs[this.chain][network].splice(idx, 1);
       }
     }
-    
+
     logger.info(`Making a new connection for ${this.chain}:${network}`);
     const dataType = params?.type;
     const providerConfig = getProvider({ network, dataType, config: this.config });
@@ -157,7 +157,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           return { feerate, blocks: target };
         }
         let feerate;
-        if (!this.isExternallyProvided(network)) {
+        if (!this.isExternallyProvided({ network })) {
           const txs = await EVMTransactionStorage.collection
             .find({ chain, network, blockHeight: { $gt: 0 } })
             .project({ gasPrice: 1, blockHeight: 1 })
@@ -237,7 +237,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return this.execute('getLocalTip', network)({ chain, network });
   }
 
-  _getLocalTip = async ({ chain, network }) : Promise<IBlock> => {
+  _getLocalTip = async ({ chain, network }): Promise<IBlock> => {
     return EVMBlockStorage.getLocalTip({ chain, network });
   }
 
@@ -268,7 +268,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @historical
   async getTransaction(params: StreamTransactionParams) {
-    let { network } = params;
+    const { network } = params;
     return await this.execute('getTransaction', network)(params);
   }
 
@@ -324,8 +324,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   @historical
-  @internal
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
+    const { network } = params;
+    return await this.execute('streamAddressTransactions', network)(params);
+  }
+
+  _streamAddressTransactions = async (params: StreamAddressUtxosParams) => {
     const { req, res, args, chain, network, address } = params;
     const { limit, /*since,*/ tokenAddress } = args;
     if (!args.tokenAddress) {
@@ -455,7 +459,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return query;
   }
 
+  @historical
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
+    const { network } = params;
+    return this.execute('streamWalletTransactions', network)(params);
+  }
+
+  _streamWalletTransactions = async (params: StreamWalletTransactionsParams) => {
     const { network, wallet, res, args } = params;
     const { web3 } = await this.getWeb3(network);
     const query = this.getWalletTransactionQuery(params);
@@ -632,13 +642,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     });
   }
 
-  isExternallyProvided(network: string) {
+  isExternallyProvided({ network }) {
     return this.config[network]?.chainSource === 'external';
   }
 
   execute(funcName: string, network: string): (...args: any[]) => any {
-    if (this.isExternallyProvided(network)) {
-      // historical data via external provider + sparse mongo data
+    if (this.isExternallyProvided({ network })) {
+      // historical data via external provider
       return this.ecsp[funcName].bind(this.ecsp);
     }
     // historical data via full mongo data      

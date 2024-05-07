@@ -19,6 +19,9 @@ const Bitcore = {
   bch: require('bitcore-lib-cash'),
   eth: require('bitcore-lib'),
   matic: require('bitcore-lib'),
+  arb: require('bitcore-lib'),
+  base: require('bitcore-lib'),
+  op: require('bitcore-lib'),
   xrp: require('bitcore-lib'),
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
