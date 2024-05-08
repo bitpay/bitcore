@@ -1549,11 +1549,9 @@ export class WalletService implements IWalletService {
       if (opts.limit > 0) onlyMain = _.take(onlyMain, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
-        console.log('getMainAddresses:', '(onlyMain)', onlyMain, '(wallet2)', wallet.chain, wallet.network);
         _.each(onlyMain, x => {
           ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
         });
-        console.log('getMainAddresses:', '(onlyMain)', onlyMain, '(wallet2)', wallet.chain, wallet.network);
         return cb(null, onlyMain);
       });
     });
