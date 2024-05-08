@@ -257,6 +257,7 @@ const blockchainExplorerMock = {
     setUtxo: (address, amount, m, confirmations) => {
         var B = Bitcore_[address.coin];
         var scriptPubKey;
+        console.log('setting UTXO:', '(address.type)', address.type, '(coin)', address.coin);
         switch (address.type) {
             case Constants.SCRIPT_TYPES.P2SH:
                 scriptPubKey = address.publicKeys ? B.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
@@ -279,6 +280,7 @@ const blockchainExplorerMock = {
             scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
             confirmations: _.isUndefined(confirmations) ? Math.floor(Math.random() * 100 + 1) : +confirmations
         });
+        console.log('blockchainExplorerMock:', '(utxoss)', blockchainExplorerMock.utxos, '(scriptPubKey)', scriptPubKey);
     },
     supportsGrouping: () => {
         return false;

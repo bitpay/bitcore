@@ -949,9 +949,9 @@ export class BtcChain implements IChain {
   }
 
   protected _isCorrectNetwork(wallet, addr) {
-    const addrNetwork = addr.network.toString();
+    const addrNetwork = Utils.getNetworkName(wallet.chain, addr.network.toString())
     const walNetwork = wallet.network;
-    console.log('Checking address network', '(address)', addrNetwork, '(wallet)', wallet.chain, walNetwork, wallet.addressType);
+    console.log('Checking address network', '(address)', addrNetwork, addr.network.toString(), '(wallet)', wallet.chain, walNetwork, wallet.addressType);
     if (Utils.getNetworkType(addrNetwork) === 'testnet' && walNetwork === 'regtest') {
       return !!config.allowRegtest;
     }
