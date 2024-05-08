@@ -1,6 +1,12 @@
 {
   "bitcoreNode": {
-    "modules": ["./bitcoin", "./bitcoin-cash", "./ethereum", "./matic", "./ripple"],
+    "modules": [
+      "./bitcoin",
+      "./bitcoin-cash",
+      "./ethereum",
+      "./matic",
+      "./ripple"
+    ],
     "services": {
       "api": {
         "wallets": {
@@ -35,15 +41,18 @@
               "port": 40404
             }
           ],
-          "providers": [{
-            "host": "localhost",
-            "protocol": "ws",
-            "port": 9545
-          }, {
-            "host": "localhost",
-            "protocol": "ws",
-            "port": 9556
-          }],
+          "providers": [
+            {
+              "host": "localhost",
+              "protocol": "ws",
+              "port": 9545
+            },
+            {
+              "host": "localhost",
+              "protocol": "ws",
+              "port": 9556
+            }
+          ],
           "threads": 0
         }
       },
@@ -56,11 +65,13 @@
               "port": 40404
             }
           ],
-          "providers": [{
-            "host": "localhost",
-            "protocol": "ws",
-            "port": 9556
-          }],
+          "providers": [
+            {
+              "host": "localhost",
+              "protocol": "ws",
+              "port": 9556
+            }
+          ],
           "threads": 0
         }
       },
@@ -98,6 +109,17 @@
             "port": 6996,
             "dataHost": "localhost"
           }
+        }
+      }
+    },
+    "aliasMapping": {
+      "chains": {
+        "BTC": "BTC"
+      },
+      "networks": {
+        "BTC": {
+          "testnet3": "testnet",
+          "testnet4": "testnet"
         }
       }
     }

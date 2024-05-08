@@ -2456,7 +2456,7 @@ describe('client API', function() {
           };
           clients[0].getUtxos(opts, (err, utxos) => {
             should.not.exist(err);
-            console.log('(utxos)', utxos, '(addresses)', addresses);
+            console.log('(utxos)', utxos, '(addresses)', addresses, '(client)', clients[0]);
             utxos.length.should.equal(1);
             _.sumBy(utxos, 'satoshis').should.equal(1 * 1e8);
             done();
