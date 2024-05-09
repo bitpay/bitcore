@@ -1819,7 +1819,7 @@ export class WalletService implements IWalletService {
 
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
-
+        console.log('wallet:', wallet.chain, wallet.network);
         const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
         if (!bc) {
           return cb(new Error('Could not get blockchain explorer instance'));
@@ -1833,7 +1833,9 @@ export class WalletService implements IWalletService {
         } catch (ex) {
           return cb(null, []);
         }
+        console.log('(addrObj)', addrObj.network.name, wallet.network);
         if (addrObj.network.name != wallet.network) {
+          console.log('gotcha');
           return cb(null, []);
         }
 
