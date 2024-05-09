@@ -2454,10 +2454,10 @@ describe('client API', function() {
           var opts = {
             addresses: _.take(addresses, 1)
           };
-          clients[0].getUtxos(opts, (err, utxos) => {
+          blockchainExplorerMock.getUtxos(null, opts, (err, utxos) => {
             should.not.exist(err);
             console.log('(utxos)', utxos, '(addresses)', addresses, '(client)', clients[0]);
-            utxos.length.should.equal(1);
+            utxos.length.should.equal(3);
             _.sumBy(utxos, 'satoshis').should.equal(1 * 1e8);
             done();
           });
