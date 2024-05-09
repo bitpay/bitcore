@@ -1833,8 +1833,8 @@ export class WalletService implements IWalletService {
         } catch (ex) {
           return cb(null, []);
         }
-        console.log('(addrObj)', addrObj.network.name, wallet.network);
-        if (addrObj.network.name != wallet.network) {
+        console.log('(addrObj)', addrObj.network.name, wallet.network);       
+        if (!Utils.compareNetworks(addrObj.network.name.toLowerCase(), wallet.network.toLowerCase(), wallet.chain)) {
           console.log('gotcha');
           return cb(null, []);
         }
