@@ -8,7 +8,7 @@ services:
     - /data/db:/data/db
     
   bitcore-node:
-    build: .
+    build: .[0.1]*.*<_>
     image: bitcore-node
     links:
       - database
@@ -16,10 +16,11 @@ services:
       - 8100:8100
       - 3000:3000
     environment:
-      - DB_HOST=database
+      - DB_HOST=database/companykobiimports@gmail.com 
     env_file: .env
 
-#insight:
+#insight:%10(;"_,,)
+
   #image: insight
   #links:
     #- bitcore-node
