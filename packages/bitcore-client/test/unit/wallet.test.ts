@@ -1,8 +1,10 @@
 import sinon from 'sinon';
 import chai from 'chai';
+import crypto from 'crypto';
 import * as CWC from 'crypto-wallet-core';
 import { Wallet, AddressTypes } from '../../src/wallet';
 import { Client } from '../../src/client';
+import * as utils from '../../src/utils';
 
 
 const should = chai.should();
@@ -246,6 +248,83 @@ describe('Wallet', function() {
         });
       });
     }
+  });
+
+  describe.only('importKeys', function() {
+    walletName = 'BitcoreClientTestImportKeys';
+    let requestStub;
+    let sleepStub;
+
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        name: walletName,
+        chain: 'BTC',
+        network: 'testnet',
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        storageType,
+      });
+      await wallet.unlock('abc123');
+      requestStub = sandbox.stub(wallet.client, '_request').resolves();
+      sleepStub = sandbox.stub(utils, 'sleep').resolves();
+    });
+
+    it('should import 1 key', async function() {
+      const keys = [];
+      for (let i = 0; i < 1; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      requestStub.callCount.should.equal(1);
+      sleepStub.callCount.should.equal(0);
+      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+    });
+
+    it('should import <100 keys', async function() {
+      const keys = [];
+      for (let i = 0; i < 100; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      requestStub.callCount.should.equal(1);
+      sleepStub.callCount.should.equal(0);
+      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+    });
+
+    it('should import >100 keys', async function() {
+      const keys = [];
+      for (let i = 0; i < 101; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      requestStub.callCount.should.equal(2);
+      sleepStub.callCount.should.equal(1);
+      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+    });
   });
 });
 
