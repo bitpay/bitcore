@@ -208,7 +208,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       }).bind(this);
       const txStream = new NodeQueryStream(block?.transactions || [], getTransaction, args);
       // stream results into response
-      await NodeQueryStream.onStream(txStream, req!, res!);
+      const result = await NodeQueryStream.onStream(txStream, req!, res!);
+      if (result?.success === false) {
+        logger.error('Error mid-stream (streamTransactions): %o', result.error);
+      }
     } catch (err) {
       logger.error('Error streaming transactions from historical node %o', err);
       throw err;
@@ -220,14 +223,18 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const { tokenAddress } = args;
     try {
       // Calculate confirmations with tip height
+      let result;
       const tip = await this.getLocalTip(params);
       args.tipHeight = tip ? tip.height : 0;
       if (!args.tokenAddress) {
         const txStream = MoralisAPI.streamTransactionsByAddress({ chain, network, address, args });
-        await ExternalApiStream.onStream(txStream, req!, res!);
+        result = await ExternalApiStream.onStream(txStream, req!, res!);
       } else {
         const tokenTransfers = MoralisAPI.streamERC20TransactionsByAddress({ chain, network, address, tokenAddress, args });
-        await ExternalApiStream.onStream(tokenTransfers, req!, res!);
+        result = await ExternalApiStream.onStream(tokenTransfers, req!, res!);
+      }
+      if (result?.success === false) {
+        logger.error('Error mid-stream (streamAddressTransactions): %o', result.error);
       }
     } catch (err) {
       logger.error('Error streaming address transactions from external provider: %o', err);
@@ -258,7 +265,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       // Pipe all txStreams to the mergedStream
       ExternalApiStream.mergeStreams(txStreams, mergedStream);
       // Ensure mergeStream resolves
-      await _mergedStream;
+      const result = await _mergedStream;
+      if (result?.success === false) {
+        logger.error('Error mid-stream (streamWalletTransactions): %o', result.error);
+      }
     } catch (err) {
       logger.error('Error streaming wallet transactions from external provider: %o', err);
       throw err;

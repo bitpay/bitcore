@@ -63,7 +63,7 @@ export class Copayer {
     const x = new Copayer();
 
     x.version = 2;
-    x.createdOn = Math.floor(Date.now() / 1000);    
+    x.createdOn = Math.floor(Date.now() / 1000);
     x.coin = opts.coin;
     x.chain = opts.chain || opts.coin;
     x.xPubKey = opts.xPubKey;

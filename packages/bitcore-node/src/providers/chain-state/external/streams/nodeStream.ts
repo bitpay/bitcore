@@ -37,7 +37,8 @@ export class NodeQueryStream extends Readable {
     }
   }
 
-  static onStream(stream: Readable, req: Request, res: Response): Promise<void> {
+  static onStream(stream: Readable, req: Request, res: Response):
+    Promise<{ success: boolean, error?: any }> {
     return ExternalApiStream.onStream(stream, req, res);
   }
 

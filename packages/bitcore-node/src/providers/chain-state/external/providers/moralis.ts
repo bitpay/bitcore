@@ -2,6 +2,7 @@ import request = require('request');
 import config from '../../../../config';
 import { isDateValid } from '../../../../utils/check';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
+import { ErigonTraceResponse } from '../../evm/p2p/rpcs/erigonRpc';
 import { EVMTransactionJSON, Transaction } from '../../evm/types';
 import moralisChains from '../defaults';
 import { ExternalApiStream as apiStream } from '../streams/apiStream';
@@ -151,9 +152,34 @@ const transformTransaction = (tx) => {
     to: tx.to_address,
     from: tx.from_address,
     data: tx.input,
-    internal: tx.internal_transactions,
+    internal: tx?.internal_transactions.map(t => transformInternalTransaction(t)),
     effects: tx.effects,
   };
+}
+
+const transformInternalTransaction = (tx) => {
+  return {
+    action: {
+      callType: tx.type?.toLowerCase(),
+      from: tx.from,
+      gas: tx.gas,
+      input: tx.input,
+      to: tx.to,
+      value: tx.value,
+    },
+    blockHash: tx.block_hash,
+    blockNumber: Number(tx.block_number),
+    error: tx.error,
+    result: {
+      gasUsed: tx.gas_used,
+      output: tx.output
+    },
+    subtraces: tx.subtraces,
+    traceAddress: tx.traceAddress || [],
+    transactionHash: tx.transaction_hash,
+    transactionPosition: tx.transactionPosition || 0,
+    type: tx.type?.toLowerCase()
+  } as ErigonTraceResponse;
 }
 
 const transformTokenTransfer = (transfer) => {
