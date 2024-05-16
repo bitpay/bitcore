@@ -250,7 +250,7 @@ describe('Wallet', function() {
     }
   });
 
-  describe.only('importKeys', function() {
+  describe('importKeys', function() {
     walletName = 'BitcoreClientTestImportKeys';
     let requestStub;
     let sleepStub;
