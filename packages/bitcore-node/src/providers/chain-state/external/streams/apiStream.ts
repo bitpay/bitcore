@@ -71,8 +71,9 @@ export class ExternalApiStream extends Readable {
   }
 
   // handles events emitted by the streamed response, request from client, and response to client
-  static onStream(stream: Readable, req: Request, res: Response): Promise<void> {
-    return new Promise<any | void>((resolve, reject) => {
+  static onStream(stream: Readable, req: Request, res: Response):
+    Promise<{ success: boolean, error?: any }> {
+    return new Promise<{ success: boolean, error?: any }>((resolve, reject) => {
       let closed = false;
       let isFirst = true;
 
@@ -88,7 +89,14 @@ export class ExternalApiStream extends Readable {
       stream.on('error', function (err) {
         if (!closed) {
           closed = true;
-          return reject(err);
+          if (!isFirst) {
+            res.write(',\n{"error": "An error occurred during data stream"}\n]');
+            res.end();
+            res.destroy();
+            return resolve({ success: false, error: err });
+          } else {
+            return reject(err);
+          }
         }
         return;
       });
@@ -115,7 +123,7 @@ export class ExternalApiStream extends Readable {
             closed = true;
           }
           res.end();
-          resolve(true);
+          resolve({ success: true });
         }
       });
     });

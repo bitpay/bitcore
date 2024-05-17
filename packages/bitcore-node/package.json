@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "10.0.33",
+  "version": "10.0.35",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -91,7 +91,7 @@
   },
   "dependencies": {
     "abi-decoder": "2.4.0",
-    "bitcore-client": "^10.0.33",
+    "bitcore-client": "^10.0.34",
     "bitcore-lib": "^10.0.28",
     "bitcore-lib-cash": "^10.0.28",
     "bitcore-lib-doge": "^10.0.32",
@@ -99,11 +99,11 @@
     "bitcore-p2p": "^10.0.28",
     "bitcore-p2p-cash": "^10.0.28",
     "bitcore-p2p-doge": "^10.0.32",
-    "bitcore-wallet-client": "^10.0.33",
+    "bitcore-wallet-client": "^10.0.35",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
     "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#2c94b2a671021ff8c76d08233147fe197f0794de",
-    "crypto-wallet-core": "^10.0.33",
+    "crypto-wallet-core": "^10.0.34",
     "heapdump": "0.3.15",
     "http": "0.0.0",
     "lodash": "4.17.11",

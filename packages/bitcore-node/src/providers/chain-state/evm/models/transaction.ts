@@ -159,8 +159,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     }
   }
 
-  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[], froms: IEVMCachedAddress[] }  {
-    const {to, from, effects} = tx;
+  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[], froms: IEVMCachedAddress[] } {
+    const { to, from, effects } = tx;
     let toBatch = new Set<string>();
     let fromBatch = new Set<string>();
     const addToBatch = (batch: Set<string>, obj: IEVMCachedAddress) => {
@@ -179,7 +179,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           // Handle ERC20s
           addToBatch(toBatch, { address: effect.to, tokenAddress: effect.contractAddress });
           addToBatch(fromBatch, { address: effect.from, tokenAddress: effect.contractAddress });
-        } 
+        }
       }
     }
 
@@ -254,7 +254,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             walletsAddys.map(w => w.wallet),
             w => w.toHexString()
           );
-          
+
           // If config value is set then only store needed tx properties
           let leanTx: IEVMTransaction | IEVMTransactionInProcess = tx;
           if ((Config.chainConfig({ chain, network }) as IEVMNetworkConfig).leanTransactionStorage) {
@@ -325,7 +325,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc20Data
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const erc721Data: IAbiDecodeResponse = getErc721Decoder().decodeMethod(input);
       if (erc721Data) {
@@ -334,7 +334,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc721Data
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const invoiceData: IAbiDecodeResponse = getInvoiceDecoder().decodeMethod(input);
       if (invoiceData) {
@@ -343,7 +343,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...invoiceData
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const multisendData: IAbiDecodeResponse = getMultisendDecoder().decodeMethod(input);
       if (multisendData) {
@@ -352,7 +352,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisendData
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const multisigData: IAbiDecodeResponse = getMultisigDecoder().decodeMethod(input);
       if (multisigData) {
@@ -361,10 +361,10 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisigData
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     return undefined;
   }
-  
+
   /**
    * Creates an object with param names as keys instead of an array of objects
    * @param abi 
@@ -530,7 +530,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     tx: IEVMTransactionInProcess | Partial<MongoBound<IEVMTransactionInProcess>>,
     options?: TransformOptions
   ): EVMTransactionJSON | string {
-    
+
     let transaction: EVMTransactionJSON = {
       txid: tx.txid || '',
       network: tx.network || '',
@@ -548,7 +548,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       from: tx.from || '',
       effects: tx.effects || []
     };
-    
+
     // Add non-lean properties if we aren't excluding them
     const config = (Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig);
     if (config && !config.leanTransactionStorage) {
@@ -558,7 +558,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         data: dataStr,
         abiType: tx.abiType || valueOrDefault(decodedData, undefined),
         internal: tx.internal
-          ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
+          ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t?.action?.input || '0x') }))
           : [],
         calls: tx.calls ? tx.calls.map(t => ({ ...t, decodedData: this.abiDecode(t.input || '0x') })) : []
       };
