@@ -93,7 +93,6 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
   async getLocalTip({ chain, network, includeTxs = false }): Promise<IBlock> {
     const { web3 } = await this.getWeb3(network);
     const block = await web3.eth.getBlock('latest');
-    // timestamp is incorrect. do we want to spend an api call just to get the date?
     return ECSP.transformBlockData({ chain, network, block, includeTxs }) as IBlock;
   }
 
@@ -115,7 +114,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const whichQuartile: number = Math.min(target, 4) || 1;
     const quartileMedian: BigInt = StatsUtil.getNthQuartileMedian(gasPrices, whichQuartile);
     const feerate = quartileMedian.toString();
-    // fee returned in wei as a string
+    // Fee returned in wei as a string
     return { feerate, blocks: target };
   }
 
@@ -158,8 +157,8 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       return Promise.all(blockPromises)
         .then(blockPromises.map(blockTransform) as any)
         .catch(error => error);
-    } catch (err) {
-      logger.error('Error getting blocks from historical node: %o', err);
+    } catch (err: any) {
+      logger.error('Error getting blocks from historical node: %o', err.log || err);
     }
     return undefined;
   }
@@ -174,8 +173,8 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
       return await this._getTransaction({ chain, network, txId, tipHeight, web3 });
-    } catch (err) {
-      logger.error('Error getting transactions from historical node %o', err);
+    } catch (err: any) {
+      logger.error('Error getting transactions from historical node %o', err.log || err);
     }
     return undefined;
   }
@@ -222,10 +221,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       // stream results into response
       const result = await NodeQueryStream.onStream(txStream, req!, res!);
       if (result?.success === false) {
-        logger.error('Error mid-stream (streamTransactions): %o', result.error);
+        logger.error('Error mid-stream (streamTransactions): %o', result.error?.log || result.error);
       }
-    } catch (err) {
-      logger.error('Error streaming transactions from historical node %o', err);
+    } catch (err: any) {
+      logger.error('Error streaming transactions from historical node %o', err.log || err);
       throw err;
     }
   }
@@ -234,9 +233,9 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const { req, res, args, chain, network, address } = params;
     const { tokenAddress } = args;
     try {
-      // Calculate confirmations with tip height
       let result;
       const chainId = await this.getChainId({ network });
+      // Calculate confirmations with tip height
       const tip = await this.getLocalTip(params);
       args.tipHeight = tip ? tip.height : 0;
       if (!args.tokenAddress) {
@@ -247,10 +246,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         result = await ExternalApiStream.onStream(tokenTransfers, req!, res!);
       }
       if (result?.success === false) {
-        logger.error('Error mid-stream (streamAddressTransactions): %o', result.error);
+        logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
       }
-    } catch (err) {
-      logger.error('Error streaming address transactions from external provider: %o', err);
+    } catch (err: any) {
+      logger.error('Error streaming address transactions from external provider: %o', err.log || err);
       throw err;
     }
   }
@@ -281,10 +280,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       // Ensure mergeStream resolves
       const result = await _mergedStream;
       if (result?.success === false) {
-        logger.error('Error mid-stream (streamWalletTransactions): %o', result.error);
+        logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
       }
-    } catch (err) {
-      logger.error('Error streaming wallet transactions from external provider: %o', err);
+    } catch (err: any) {
+      logger.error('Error streaming wallet transactions from external provider: %o', err.log || err);
       throw err;
     }
   }
@@ -300,8 +299,8 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const block = await this.getBlockNumberByDate({ network, date: time });
       const result: any = await this.getNativeBalanceByBlock({ network, block, addresses });
       return { unconfirmed: 0, confirmed: result?.total_balance, balance: result?.total_balance };
-    } catch (err) {
-      logger.error('Error getting wallet balance at time from external provider %o', err);
+    } catch (err: any) {
+      logger.error('Error getting wallet balance at time from external provider %o', err.log || err);
       throw err;
     }
   }

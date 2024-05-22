@@ -86,9 +86,17 @@ export class ExternalApiStream extends Readable {
         closed = true;
       });
 
-      stream.on('error', function (err) {
+      stream.on('error', function (err: any) {
         if (!closed) {
           closed = true;
+          if (err.isAxiosError) {
+            err.log = {
+              url: err?.config?.url,
+              statusCode: err?.response?.status,
+              statusMsg: err?.response?.statusText,
+              data: err?.response?.data,
+            }
+          }
           if (!isFirst) {
             res.write(',\n{"error": "An error occurred during data stream"}\n]');
             res.end();
