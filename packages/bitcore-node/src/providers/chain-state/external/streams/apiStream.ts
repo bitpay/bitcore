@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Request, Response } from 'express';
-import { Readable, Stream, Writable } from 'stream';
+import { Readable, Stream, Transform, Writable } from 'stream';
 
 export class ExternalApiStream extends Readable {
   url: string;
@@ -144,5 +144,15 @@ export class ExternalApiStream extends Readable {
         }
       });
     };
+  }
+}
+
+export class MergedStream extends Transform {
+  constructor() {
+    super({ objectMode: true });
+  }
+
+  async _transform(data: any, _, done) {
+    done(null, data);
   }
 }
