@@ -123,10 +123,14 @@ export class DeriverProxy {
     const normalizedChain = chain.toUpperCase();
     const accountStr = `${account}'`;
     const chainConfig = Paths[normalizedChain];
-    if (chainConfig && chainConfig[network]) {
-      return chainConfig[network] + accountStr;
+    if (chainConfig) {
+      if (chainConfig[network]) {
+        return chainConfig[network] + accountStr;
+      } else {
+        return chainConfig.default + accountStr;
+      }
     } else {
-      return Paths.default.testnet + accountStr;
+      return Paths.BTC.default + accountStr;
     }
   }
 }

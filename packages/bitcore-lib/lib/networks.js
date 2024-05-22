@@ -1,6 +1,4 @@
 'use strict';
-var _ = require('lodash');
-
 var BufferUtil = require('./util/buffer');
 var JSUtil = require('./util/js');
 var networks = [];
@@ -31,24 +29,32 @@ function get(arg, keys) {
     return arg;
   }
   if (keys) {
-    if (!_.isArray(keys)) {
+    if (!Array.isArray(keys)) {
       keys = [keys];
     }
-    var containsArg = function(key) {
-      return networks[index][key] === arg;
-    };
-    for (var index in networks) {
-      if (_.some(keys, containsArg)) {
+    for (const index in networks) {
+      if (keys.some(key => networks[index][key] === arg)) {
         return networks[index];
       }
     }
     return undefined;
   }
-  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+  if (networkMaps[arg] && networkMaps[arg].length >= 1) {
     return networkMaps[arg][0];
   } else {
     return networkMaps[arg];
   }
+}
+
+/**
+ * @function
+ * @member Networks#is
+ * Returns true if the string is the network name or alias
+ * @param {string} str - A string to check
+ * @return boolean
+ */
+function is(str) {
+  return this.name == str || this.alias == str;
 }
 
 /**
@@ -64,18 +70,20 @@ function get(arg, keys) {
  * @param {string} data.bech32prefix - The native segwit prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
- * @param {Number} data.networkMagic - The network magic number
- * @param {Number} data.port - The network port
- * @param {Array}  data.dnsSeeds - An array of dns seeds
+ * @param {Array}  data.variants - An array of variants
+ * @param {string} data.variants.name - The name of the variant
+ * @param {Number} data.variants.networkMagic - The network magic number
+ * @param {Number} data.variants.port - The network port
+ * @param {Array}  data.variants.dnsSeeds - An array of dns seeds
  * @return Network
  */
 function addNetwork(data) {
-
   var network = new Network();
 
   JSUtil.defineImmutable(network, {
     name: data.name,
     alias: data.alias,
+    is: data.is,
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
@@ -101,16 +109,25 @@ function addNetwork(data) {
       dnsSeeds: data.dnsSeeds
     });
   }
-  _.each(network, function(value) {
-    if (!_.isUndefined(value) && !_.isObject(value)) {
-      if(!networkMaps[value]) {
+
+  for (const value of Object.values(network)) {
+    if (value != null && typeof value !== 'object') {
+      if (!networkMaps[value]) {
         networkMaps[value] = [];
       }
       networkMaps[value].push(network);
     }
-  });
+  };
 
   networks.push(network);
+
+  for (const variant of data.variants || []) {
+    addNetwork({
+      ...data,
+      variants: undefined,
+      ...variant,
+    });
+  }
 
   return network;
 }
@@ -148,6 +165,7 @@ function removeNetwork(network) {
 addNetwork({
   name: 'livenet',
   alias: 'mainnet',
+  is,
   pubkeyhash: 0x00,
   privatekey: 0x80,
   scripthash: 0x05,
@@ -174,21 +192,35 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'test',
+  alias: 'testnet',
+  is,
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   bech32prefix: 'tb',
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0x0b110907,
-  port: 18333,
-  dnsSeeds: [
-    'testnet-seed.bitcoin.petertodd.org',
-    'testnet-seed.bluematt.me',
-    'testnet-seed.alexykot.me',
-    'testnet-seed.bitcoin.schildbach.de'
-  ]
+  variants: [{
+    name: 'testnet3',
+    networkMagic: 0x0b110907,
+    port: 18333,
+    dnsSeeds: [
+      'testnet-seed.bitcoin.petertodd.org',
+      'testnet-seed.bluematt.me',
+      'testnet-seed.alexykot.me',
+      'testnet-seed.bitcoin.schildbach.de'
+    ]
+  }, {
+    name: 'signet',
+    networkMagic: 0x0a03cf40,
+    port: 38332,
+    dnsSeeds: [
+      '178.128.221.177',
+      '103.16.128.63',
+      '153.126.143.201',
+      '192.241.163.142'
+    ]
+  }]
 });
 
 /**
@@ -196,10 +228,13 @@ addNetwork({
  * @member Networks#testnet
  */
 var testnet = get('testnet');
+var testnet3 = get('testnet3');
+var signet = get('signet');
 
 addNetwork({
   name: 'regtest',
   alias: 'dev',
+  is,
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
@@ -213,7 +248,7 @@ addNetwork({
 
 /**
  * @instance
- * @member Networks#testnet
+ * @member Networks#regtest
  */
 var regtest = get('regtest');
 
@@ -247,6 +282,8 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  testnet3: testnet3,
+  signet: signet,
   regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,

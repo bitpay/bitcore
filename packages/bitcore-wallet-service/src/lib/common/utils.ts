@@ -2,6 +2,7 @@ import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
 import Config from '../../config';
 import { logger } from '../logger';
+import { Constants } from './constants';
 
 const $ = require('preconditions').singleton();
 const bitcore = require('bitcore-lib');
@@ -275,12 +276,39 @@ export class Utils {
     return coin == 'bch' ? result.toLegacyAddress() : result.toString();
   }
 
-  static compareNetworks(network1, network2) {
-    network1 = network1?.toLowerCase();
-    network2 = network2?.toLowerCase();
+  static compareNetworks(network1, network2, chain) {
+    network1 = network1 ? this.getNetworkName(chain, network1.toLowerCase()) : null;
+    network2 = network2 ? this.getNetworkName(chain, network2.toLowerCase()) : null;
 
     if (network1 == network2) return true;
-    if (Config.allowRegtest && ['testnet', 'regtest'].includes(network1) && ['testnet', 'regtest'].includes(network2)) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(this.getNetworkType(network1)) && ['testnet', 'regtest'].includes(this.getNetworkType(network2))) return true;
     return false;
+  }
+
+  // Good for going from generic 'testnet' to specific 'testnet3', 'sepolia', etc
+  static getNetworkName(chain, network) {
+    const aliases = Constants.NETWORK_ALIASES[chain];
+    if (aliases && aliases[network]) {
+      return aliases[network];
+    }
+    return network;
+  }
+
+  // Good for going from specific 'testnet3', 'sepolia', etc to generic 'testnet'
+  static getGenericName(network) {
+    if (network === 'mainnet') return 'livenet';
+    const isTestnet = !!Object.keys(Constants.NETWORK_ALIASES).find(key => Constants.NETWORK_ALIASES[key].testnet === network);
+    if (isTestnet) return 'testnet';
+    return network;
+  }
+
+  static getNetworkType(network) {
+    if (['mainnet', 'livenet'].includes(network)) {
+      return 'mainnet';
+    }
+    if (network === 'regtest') {
+       return 'regtest';
+    }
+    return 'testnet';
   }
 }

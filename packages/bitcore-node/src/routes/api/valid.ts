@@ -3,8 +3,8 @@ const router = express.Router({ mergeParams: true });
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 
-router.get('/:input', async function (req, res) {
-  let { input, chain, network } = req.params;
+router.get('/:input', async function(req, res) {
+  let { chain, network, input } = req.params;
   try {
     let isValid = await ChainStateProvider.isValid({
       chain,

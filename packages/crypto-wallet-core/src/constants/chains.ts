@@ -1,5 +1,5 @@
 export const EVM_CHAIN_DEFAULT_TESTNET = {
-  ETH: 'goerli',
+  ETH: 'sepolia',
   MATIC: 'mumbai',
   ARB: 'sepolia',
   BASE: 'sepolia',

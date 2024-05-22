@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import logger from '../../../logger';
-import { BaseEVMStateProvider } from '../../../providers/chain-state/evm/api/csp';
+import logger from '../../../../logger';
+import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
 export class EVMRouter {
@@ -113,7 +113,7 @@ export class EVMRouter {
     });
   };
 
-  private streamGnosisWalletTransactions(router: Router) {
+  private streamGnosisWalletTransactions(router: Router) { 
     router.get(`/api/${this.chain}/:network/ethmultisig/transactions/:multisigContractAddress`, async (req, res) => {
       let { network, multisigContractAddress } = req.params;
       try {
@@ -137,7 +137,7 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/ethmultisig/txps/:multisigContractAddress`, async (req, res) => {
       const { network, multisigContractAddress } = req.params;
       try {
-        const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
+        const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(this.chain, network, multisigContractAddress);
         res.json(multisigTxpsInfo);
       } catch (err: any) {
         logger.error('Multisig Txps Error::%o', err.stack || err.message || err);
@@ -150,7 +150,7 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/ethmultisig/:sender/instantiation/:txId`, async (req, res) => {
       const { network, sender, txId } = req.params;
       try {
-        const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender, txId);
+        const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(this.chain, network, sender, txId);
         res.json(multisigInstantiationInfo);
       } catch (err: any) {
         logger.error('Multisig Instantiation Error::%o', err.stack || err.message || err);
@@ -163,7 +163,7 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/ethmultisig/info/:multisigContractAddress`, async (req, res) => {
       const { network, multisigContractAddress } = req.params;
       try {
-        const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
+        const multisigInfo = await Gnosis.getMultisigInfo(this.chain, network, multisigContractAddress);
         res.json(multisigInfo);
       } catch (err: any) {
         logger.error('Multisig Info Error::%o', err.stack || err.message || err);

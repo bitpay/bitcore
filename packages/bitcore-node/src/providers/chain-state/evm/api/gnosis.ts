@@ -1,18 +1,19 @@
 import { Readable } from 'stream';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
-import { MultisigAbi } from '../../../providers/chain-state/evm/abi/multisig';
-import { MultisigRelatedFilterTransform } from '../../../providers/chain-state/evm/api/multisigTransform';
-import { PopulateEffectsTransform } from '../../../providers/chain-state/evm/api/populateEffectsTransform';
-import { PopulateReceiptTransform } from '../../../providers/chain-state/evm/api/populateReceiptTransform';
-import { EVMListTransactionsStream } from '../../../providers/chain-state/evm/api/transform';
-import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
-import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
-import { EventLog } from '../../../providers/chain-state/evm/types';
-import { Config } from '../../../services/config';
-import { IEVMNetworkConfig } from '../../../types/Config';
-import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
-import { ETH } from './csp';
+import { ChainStateProvider } from '../../';
+import { Config } from '../../../../services/config';
+import { IEVMNetworkConfig } from '../../../../types/Config';
+import { StreamWalletTransactionsParams } from '../../../../types/namespaces/ChainStateProvider';
+import { MultisigAbi } from '../abi/multisig';
+import { MultisigRelatedFilterTransform } from '../api/multisigTransform';
+import { PopulateEffectsTransform } from '../api/populateEffectsTransform';
+import { PopulateReceiptTransform } from '../api/populateReceiptTransform';
+import { EVMListTransactionsStream } from '../api/transform';
+import { EVMBlockStorage } from '../models/block';
+import { EVMTransactionStorage } from '../models/transaction';
+import { EventLog } from '../types';
+import { BaseEVMStateProvider } from './csp';
 
 interface MULTISIGInstantiation
   extends EventLog<{
@@ -24,33 +25,43 @@ interface MULTISIGTxInfo
     [key: string]: string;
   }> {}
 
+function getCSP(chain: string) {
+  return ChainStateProvider.get({ chain }) as BaseEVMStateProvider;
+}
+
 export class GnosisApi {
   public gnosisFactories = {
-    testnet: '0x2C992817e0152A65937527B774c7A99a84603045',
-    mainnet: '0x6e95C8E8557AbC08b46F3c347bA06F8dC012763f'
+    'ETH': {
+      testnet: '0x2C992817e0152A65937527B774c7A99a84603045',
+      mainnet: '0x6e95C8E8557AbC08b46F3c347bA06F8dC012763f'
+    },
+    'MATIC': {
+      mainnet: '0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2'
+    }
   };
 
-  private ETH_MULTISIG_TX_PROPOSAL_EXPIRE_TIME = 48 * 3600 * 1000;
+  private MULTISIG_TX_PROPOSAL_EXPIRE_TIME = 48 * 3600 * 1000;
 
-  async multisigFor(network: string, address: string) {
-    const { web3 } = await ETH.getWeb3(network);
+  async multisigFor(chain: string,network: string, address: string) {
+    const { web3 } = await getCSP(chain).getWeb3(network);
     const contract = new web3.eth.Contract(MultisigAbi as AbiItem[], address);
     return contract;
   }
 
   async getMultisigContractInstantiationInfo(
+    chain: string,
     network: string,
     sender: string,
     txId: string
   ): Promise<Partial<Transaction>[]> {
-    const { web3 } = await ETH.getWeb3(network);
+    const { web3 } = await getCSP(chain).getWeb3(network);
     const networkConfig: IEVMNetworkConfig = Config.chainConfig({ chain: 'ETH', network });
-    const { gnosisFactory = this.gnosisFactories[network] } = networkConfig;
-    let query = { chain: 'ETH', network, txid: txId };
+    const { gnosisFactory = this.gnosisFactories[chain][network] } = networkConfig;
+    let query = { chain, network, txid: txId };
     const found = await EVMTransactionStorage.collection.findOne(query);
     const blockHeight = found && found.blockHeight ? found.blockHeight : null;
     if (!blockHeight || blockHeight < 0) return Promise.resolve([]);
-    const contract = await this.multisigFor(network, gnosisFactory);
+    const contract = await this.multisigFor(chain, network, gnosisFactory);
     const contractInfo = await contract.getPastEvents('ContractInstantiation', {
       fromBlock: web3.utils.toHex(blockHeight),
       toBlock: web3.utils.toHex(blockHeight)
@@ -77,12 +88,12 @@ export class GnosisApi {
     } as Partial<Transaction>;
   }
 
-  async getMultisigTxpsInfo(network: string, multisigContractAddress: string): Promise<Partial<Transaction>[]> {
-    const contract = await this.multisigFor(network, multisigContractAddress);
-    const time = Math.floor(Date.now()) - this.ETH_MULTISIG_TX_PROPOSAL_EXPIRE_TIME;
+  async getMultisigTxpsInfo(chain: string, network: string, multisigContractAddress: string): Promise<Partial<Transaction>[]> {
+    const contract = await this.multisigFor(chain, network, multisigContractAddress);
+    const time = Math.floor(Date.now()) - this.MULTISIG_TX_PROPOSAL_EXPIRE_TIME;
     const [block] = await EVMBlockStorage.collection
       .find({
-        chain: 'ETH',
+        chain,
         network,
         timeNormalized: { $gte: new Date(time) }
       })
@@ -135,8 +146,8 @@ export class GnosisApi {
     } as Partial<Transaction>;
   }
 
-  async getMultisigEthInfo(network: string, multisigContractAddress: string) {
-    const contract: any = await this.multisigFor(network, multisigContractAddress);
+  async getMultisigInfo(chain: string, network: string, multisigContractAddress: string) {
+    const contract: any = await this.multisigFor(chain, network, multisigContractAddress);
     const owners = await contract.methods.getOwners().call();
     const required = await contract.methods.required().call();
     return {
@@ -146,8 +157,8 @@ export class GnosisApi {
   }
 
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
-    const { multisigContractAddress, res, args } = params;
-    const transactionQuery = ETH.getWalletTransactionQuery(params);
+    const { chain, multisigContractAddress, res, args } = params;
+    const transactionQuery = getCSP(chain).getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
     let query;
@@ -194,8 +205,8 @@ export class GnosisApi {
     transactionStream = transactionStream.pipe(populateEffects); // For old db entires
 
     if (multisigContractAddress) {
-      const ethMultisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);
-      transactionStream = transactionStream.pipe(ethMultisigTransform);
+      const multisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);
+      transactionStream = transactionStream.pipe(multisigTransform);
     }
 
     transactionStream

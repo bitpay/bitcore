@@ -96,9 +96,59 @@ export const Constants = {
   },
 
   NETWORKS: {
-    LIVENET: 'livenet',
-    TESTNET: 'testnet',
-    REGTEST: 'regtest'
+    btc: ['livenet', 'testnet3', 'signet', 'regtest'],
+    bch: ['livenet', 'testnet3', 'testnet4', 'scalenet', 'chipnet', 'regtest'],
+    eth: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    matic: ['livenet', 'mumbai', 'amoy', 'regtest'],
+    ltc: ['livenet', 'testnet', 'regtest'],
+    doge: ['livenet', 'testnet', 'regtest'],
+    xrp: ['livenet', 'testnet', 'regtest'],
+    arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    base: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    op: ['livenet', 'sepolia', 'holesky', 'regtest'],
+  } as { [chain: string]: Array<string> },
+
+  // These aliases are here to support legacy clients so don't change them lightly
+  NETWORK_ALIASES: {
+    btc: {
+      mainnet: 'livenet',
+      testnet: 'testnet3'
+    },
+    bch: {
+      mainnet: 'livenet',
+      testnet: 'testnet3'
+    },
+    eth: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    matic: {
+      mainnet: 'livenet',
+      testnet: 'mumbai'
+    },
+    ltc: {
+      mainnet: 'livenet',
+      testnet: 'testnet4'
+    },
+    doge: {
+      mainnet: 'livenet',
+      testnet: 'testnet3'
+    },
+    xrp: {
+      mainnet: 'livenet',
+    },
+    arb: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    base: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    op: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    }
   },
 
   ADDRESS_FORMATS: ['copay', 'cashaddr', 'legacy'],

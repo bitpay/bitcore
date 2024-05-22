@@ -40,7 +40,13 @@ module.exports = {
       testnet: {
         url: 'https://api.bitcore.io',
         regtestEnabled: false
-      }
+      },
+      testnet3: {
+        url: 'https://api.bitcore.io'
+      },
+      signet: {
+        url: 'https://api.bitcore.io'
+      },
     },
     bch: {
       livenet: {
@@ -49,7 +55,19 @@ module.exports = {
       testnet: {
         url: 'https://api.bitcore.io',
         regtestEnabled: false
-      }
+      },
+      testnet3:{
+        url: 'https://api.bitcore.io'
+      },
+      testnet4: {
+        url: 'https://api.bitcore.io'
+      },
+      scalenet: {
+        url: 'https://api.bitcore.io'
+      },
+      chipnet: {
+        url: 'https://api.bitcore.io'
+      },
     },
     eth: {
       livenet: {
@@ -58,7 +76,13 @@ module.exports = {
       testnet: {
         url: 'https://api-eth.bitcore.io',
         regtestEnabled: false
-      }
+      },
+      sepolia: {
+        url: 'https://api-eth.bitcore.io'
+      },
+      holesky: {
+        url: 'https://api-eth.bitcore.io'
+      },
     },
     xrp: {
       livenet: {

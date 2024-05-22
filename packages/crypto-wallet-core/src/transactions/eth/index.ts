@@ -7,7 +7,7 @@ import {
   EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds 
 } from '../../constants/chains';
 import { Key } from '../../derivation';
-import { ERC20Abi, MULTISENDAbi } from '../erc20/abi';
+import { MULTISENDAbi } from '../erc20/abi';
 const utils = require('web3-utils');
 const { toBN } = Web3.utils;
 export class ETHTxProvider {

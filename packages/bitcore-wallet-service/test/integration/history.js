@@ -980,7 +980,7 @@ describe('History', function() {
           abiType: '{"type":"ERC20","name":"transfer","params":[{"name":"_to","value":"0xeca2486a6a213fb40537658d7360ab6221eb26be","type":"address"},{"name":"_tokenId","value":"3000000","type":"uint256"}]}',
           effects: undefined,
           error: undefined,
-          network: 'testnet',
+          network: 'sepolia',
           chain: 'ETH',
           data: '0x',
           nonce: 57,

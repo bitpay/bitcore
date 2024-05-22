@@ -572,8 +572,8 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Invalid chain'));
     }
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) {
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) {
       return cb(new ClientError('Invalid network'));
     }
 
@@ -1170,7 +1170,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name)) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 
@@ -1601,7 +1601,7 @@ export class WalletService implements IWalletService {
     }
     opts.provider = provider;
     opts.chain = chain;
-    opts.network = network;
+    opts.network = Utils.getNetworkName(chain, network);
     opts.userAgent = WalletService.getServiceVersion();
     let bc;
     try {
@@ -1819,7 +1819,7 @@ export class WalletService implements IWalletService {
 
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
-
+        console.log('wallet:', wallet.chain, wallet.network);
         const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
         if (!bc) {
           return cb(new Error('Could not get blockchain explorer instance'));
@@ -1833,7 +1833,7 @@ export class WalletService implements IWalletService {
         } catch (ex) {
           return cb(null, []);
         }
-        if (addrObj.network.name != wallet.network) {
+        if (!Utils.compareNetworks(addrObj.network.name.toLowerCase(), wallet.network.toLowerCase(), wallet.chain)) {
           return cb(null, []);
         }
 
@@ -2040,8 +2040,8 @@ export class WalletService implements IWalletService {
     opts.chain = opts.chain || Defaults.CHAIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) return cb(new ClientError('Invalid network'));
 
     const cacheKey = 'feeLevel:' + opts.chain + ':' + opts.network;
 
@@ -2913,8 +2913,8 @@ export class WalletService implements IWalletService {
     opts.chain = opts.chain || opts.coin || Defaults.COIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) return cb(new ClientError('Invalid network'));
     this._broadcastRawTx(opts.chain, opts.network, opts.rawTx, cb);
   }
 

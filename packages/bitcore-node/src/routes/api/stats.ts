@@ -9,7 +9,7 @@ router.get('/', async function(_: Request, res: Response) {
 });
 
 router.get('/daily-transactions', async function(req: Request, res: Response) {
-  const { chain, network } = req.params;
+  let { chain, network } = req.params;
   try {
     let dailyTxs = await ChainStateProvider.getDailyTransactions({
       chain,

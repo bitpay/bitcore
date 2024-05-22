@@ -41,7 +41,7 @@ router.get('/tip', async function(req: Request, res: Response) {
 });
 
 router.get('/:blockId', async function(req: Request, res: Response) {
-  let { blockId, chain, network } = req.params;
+  let { chain, network, blockId } = req.params;
   try {
     let block = await ChainStateProvider.getBlock({ chain, network, blockId });
     if (!block) {
@@ -129,7 +129,7 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 });
 
 router.get('/before-time/:time', async function(req: Request, res: Response) {
-  let { time, chain, network } = req.params;
+  let { chain, network, time } = req.params;
   try {
     const block = await ChainStateProvider.getBlockBeforeTime({ chain, network, time });
     if (!block) {

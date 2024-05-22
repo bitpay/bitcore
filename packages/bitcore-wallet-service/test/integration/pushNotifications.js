@@ -378,7 +378,7 @@ describe('Push notifications', function() {
             txid: '999',
             address: address,
             amount: 12300000,
-            network: 'testnet'
+            network: 'testnet3'
           }, (err) => {
             should.not.exist(err);
 

@@ -7,31 +7,31 @@ const PROVIDERS = {
   v8: {
     btc: {
       livenet: 'https://api.bitcore.io',
-      testnet: 'https://api.bitcore.io'
+      testnet3: 'https://api.bitcore.io'
     },
     bch: {
       livenet: 'https://api.bitcore.io',
-      testnet: 'https://api.bitcore.io'
+      testnet3: 'https://api.bitcore.io'
     },
     eth: {
       livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+      sepolia: 'https://api-eth.bitcore.io'
     },
     matic: {
       livenet: 'https://api-matic.bitcore.io',
-      testnet: 'https://api-matic.bitcore.io'
+      mumbai: 'https://api-matic.bitcore.io'
     },
     arb: {
       livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+      sepolia: 'https://api-eth.bitcore.io'
     },
     base: {
       livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+      sepolia: 'https://api-eth.bitcore.io'
     },
     op: {
       livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+      sepolia: 'https://api-eth.bitcore.io'
     },
     xrp: {
       livenet: 'https://api-xrp.bitcore.io',

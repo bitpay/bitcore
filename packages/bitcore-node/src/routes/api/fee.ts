@@ -14,7 +14,7 @@ const feeModes = {
 };
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
-  let { target, chain, network } = req.params;
+  let { chain, network, target } = req.params;
   let { mode, txType } = req.query;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');

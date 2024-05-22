@@ -79,7 +79,7 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
 
 router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { chain, network } = req.params;
+    let { chain, network } = req.params;
     const wallet = req.wallet!._id!;
     const result = await ChainStateProvider.walletCheck({
       chain,

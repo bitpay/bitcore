@@ -4,7 +4,7 @@ import { XRP } from './csp';
 export const XrpRoutes = Router();
 
 XrpRoutes.get('/api/XRP/:network/address/:address/txs/count', async (req, res) => {
-  let { address, network } = req.params;
+  let { network, address } = req.params;
   try {
     const nonce = await XRP.getAccountNonce(network, address);
     res.json({ nonce });

@@ -137,7 +137,7 @@ describe('Chain BTC', function() {
       p2shPublicKey1,
       p2shPublicKey2,
 //      p2shPublicKey3
-    ], 2, 'testnet');
+    ], 2, 'testnet3');
     const p2shUtxoWith1BTC = {
       address: p2shAddress.toString(),
       txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
@@ -150,7 +150,7 @@ describe('Chain BTC', function() {
       p2shPublicKey1,
       p2shPublicKey2,
 //      p2shPublicKey3
-    ], 2, 'testnet', null, BitcoreLib.Address.PayToWitnessScriptHash);
+    ], 2, 'testnet3', null, BitcoreLib.Address.PayToWitnessScriptHash);
     const p2wshUtxoWith1BTC = {
       address: p2wshAddress.toString(),
       txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',

@@ -2,10 +2,11 @@ import express = require('express');
 const router = express.Router({ mergeParams: true });
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { StreamAddressUtxosParams } from '../../types/namespaces/ChainStateProvider';
 
 async function streamCoins(req, res) {
   try {
-    let { address, chain, network } = req.params;
+    let { chain, network, address } = req.params;
     let { unspent, limit = 10, since } = req.query;
     let payload = {
       chain,
@@ -14,7 +15,7 @@ async function streamCoins(req, res) {
       req,
       res,
       args: { ...req.query, unspent, limit, since }
-    };
+    } as StreamAddressUtxosParams;
     await ChainStateProvider.streamAddressTransactions(payload);
   } catch (err: any) {
     logger.error('Error streaming coins: %o', err.stack || err.message || err);
@@ -24,7 +25,7 @@ async function streamCoins(req, res) {
 
 router.get('/:address', function (req, res) {
   try {
-    let { address, chain, network } = req.params;
+    let { chain, network, address } = req.params;
     let { unspent, limit = 10, since } = req.query;
     let payload = {
       chain,
@@ -33,7 +34,7 @@ router.get('/:address', function (req, res) {
       req,
       res,
       args: { unspent, limit, since }
-    };
+    } as StreamAddressUtxosParams;
     return ChainStateProvider.streamAddressUtxos(payload);
   } catch (err: any) {
     logger.error('Error getting address: %o', err.stack || err.message || err);
