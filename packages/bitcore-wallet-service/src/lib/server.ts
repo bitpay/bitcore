@@ -1209,6 +1209,9 @@ export class WalletService implements IWalletService {
    * @param {string} opts.tokenAddresses - Linked token addresses
    * @param {string} opts.multisigEthInfo - Linked multisig eth wallet info
    * @param {string} opts.maticTokenAddresses - Linked token addresses
+   * @param {string} opts.opTokenAddresses - Linked token addresses
+   * @param {string} opts.baseTokenAddresses - Linked token addresses
+   * @param {string} opts.arbTokenAddresses - Linked token addresses
    * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
    */
@@ -1263,7 +1266,25 @@ export class WalletService implements IWalletService {
             value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress))
           );
         }
-      }
+      },
+      {
+        name: 'opTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('op', 'mainnet', x));
+        }
+      },
+      {
+        name: 'baseTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('base', 'mainnet', x));
+        }
+      },
+      {
+        name: 'arbTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
+        }
+      },
     ];
 
     opts = _.pick(opts, _.map(preferences, 'name'));
@@ -1288,7 +1309,7 @@ export class WalletService implements IWalletService {
       }
 
       if (wallet.coin != 'matic') {
-        opts.maticMokenAddresses = null;
+        opts.maticTokenAddresses = null;
         opts.multisigMaticInfo = null;
       }
 
@@ -1336,6 +1357,27 @@ export class WalletService implements IWalletService {
             oldPref = oldPref || {};
             oldPref.maticTokenAddresses = oldPref.maticTokenAddresses || [];
             preferences.maticTokenAddresses = _.uniq(oldPref.maticTokenAddresses.concat(opts.maticTokenAddresses));
+          }
+
+          // merge op tokenAddresses
+          if (opts.opTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.opTokenAddresses = oldPref.opTokenAddresses || [];
+            preferences.opTokenAddresses = _.uniq(oldPref.opTokenAddresses.concat(opts.opTokenAddresses));
+          }
+
+          // merge base tokenAddresses
+          if (opts.baseTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.baseTokenAddresses = oldPref.baseTokenAddresses || [];
+            preferences.baseTokenAddresses = _.uniq(oldPref.baseTokenAddresses.concat(opts.baseTokenAddresses));
+          }
+
+          // merge arb tokenAddresses
+          if (opts.arbTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
+            preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
           }
 
           // merge matic multisigMaticInfo
@@ -6847,7 +6889,10 @@ export class WalletService implements IWalletService {
 
         const chainIdMap = {
           eth: 1,
-          matic: 137
+          matic: 137,
+          arb: 42161,
+          base: 8453,
+          op: 10,
         };
 
         const chainId = chainIdMap[chain];

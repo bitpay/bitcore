@@ -156,7 +156,7 @@ export class EthChain implements IChain {
         let maxGasFee;
         let priorityGasFee;
         const { from, txType, priorityFeePercentile } = opts;
-        const { coin, network } = wallet;
+        const { coin, network, chain } = wallet;
         let inGasLimit = 0; // Per recepient gas limit
         let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
         let fee = 0;

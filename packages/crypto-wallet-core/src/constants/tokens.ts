@@ -131,38 +131,38 @@ export let MATIC_TOKEN_OPTS = {
 };
 
 export let ARB_TOKEN_OPTS = {
-  '0xaf88d065e77c8cC2239327C5EDb3A432268e5831': {
+  '0xaf88d065e77c8cc2239327c5edb3a432268e5831': {
     name: 'USD Coin',
     symbol: 'USDC',
     decimals: 6,
-    address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
+    address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831'
   },
-  '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f': {
+  '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f': {
     name: 'Wrapped Bitcoin',
     symbol: 'WBTC',
     decimals: 8,
-    address: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'
+    address: '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f'
   },
-  '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9': {
+  '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9': {
     name: 'Tether USD',
     symbol: 'USDT',
     decimals: 6,
-    address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'
+    address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9'
   },
-  '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1': {
+  '0x82af49447d8a07e3bd95bd0d56f35241523fbab1': {
     name: 'Wrapped Ether',
     symbol: 'WETH',
     decimals: 18,
-    address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+    address: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
   }
 };
 
 export let BASE_TOKEN_OPTS = {
-  '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913': {
+  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': {
     name: 'USD Coin',
     symbol: 'USDC',
     decimals: 6,
-    address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913'
   },
   '0x4200000000000000000000000000000000000006': {
     name: 'Wrapped Ether',
@@ -173,23 +173,23 @@ export let BASE_TOKEN_OPTS = {
 };
 
 export let OP_TOKEN_OPTS = {
-  '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85': {
+  '0x0b2c639c533813f4aa9d7837caf62653d097ff85': {
     name: 'USD Coin',
     symbol: 'USDC',
     decimals: 6,
-    address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'
+    address: '0x0b2c639c533813f4aa9d7837caf62653d097ff85'
   },
-  '0x68f180fcCe6836688e9084f035309E29Bf0A2095': {
+  '0x68f180fcce6836688e9084f035309e29bf0a2095': {
     name: 'Wrapped Bitcoin',
     symbol: 'WBTC',
     decimals: 8,
-    address: '0x68f180fcCe6836688e9084f035309E29Bf0A2095'
+    address: '0x68f180fcce6836688e9084f035309e29bf0a2095'
   },
-  '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58': {
+  '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58': {
     name: 'Tether USD',
     symbol: 'USDT',
     decimals: 6,
-    address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'
+    address: '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58'
   },
   '0x4200000000000000000000000000000000000006': {
     name: 'Wrapped Ether',
