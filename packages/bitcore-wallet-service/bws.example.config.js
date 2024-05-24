@@ -368,6 +368,7 @@ module.exports = {
   //  ignoreTLS: true,
   //  subjectPrefix: '[Wallet Service]',
   //  from: 'wallet-service@bitcore.io',
+  //  // Note: Prod templates are in a the copay-emails repo (https://github.com/bitpay/copay-emails)
   //  templatePath: 'templates',
   //  defaultLanguage: 'en',
   //  defaultUnit: 'btc',

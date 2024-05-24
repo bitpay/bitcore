@@ -1,6 +1,6 @@
 import { CryptoRpc } from 'crypto-rpc';
 import _ from 'lodash';
-import { Readable, Transform } from 'stream';
+import { Readable } from 'stream';
 import Web3 from 'web3';
 import Config from '../../../../config';
 import logger from '../../../../logger';
@@ -20,7 +20,7 @@ import {
 import { unixToDate } from '../../../../utils/convert';
 import { StatsUtil } from '../../../../utils/stats';
 import MoralisAPI from '../../external/providers/moralis';
-import { ExternalApiStream } from '../../external/streams/apiStream';
+import { ExternalApiStream, MergedStream } from '../../external/streams/apiStream';
 import { NodeQueryStream } from '../../external/streams/nodeStream';
 import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
@@ -85,10 +85,14 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     return rpcObj;
   }
 
+  async getChainId({ network }) {
+    const { web3 } = await this.getWeb3(network);
+    return await web3.eth.getChainId();
+  }
+
   async getLocalTip({ chain, network, includeTxs = false }): Promise<IBlock> {
     const { web3 } = await this.getWeb3(network);
     const block = await web3.eth.getBlock('latest');
-    // timestamp is incorrect. do we want to spend an api call just to get the date?
     return ECSP.transformBlockData({ chain, network, block, includeTxs }) as IBlock;
   }
 
@@ -98,12 +102,19 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const latestBlock = await web3.eth.getBlockNumber();
     // Getting the 25th percentile gas prices from the last 4k blocks
     const feeHistory = await web3.eth.getFeeHistory(20 * 200, latestBlock, [25]);
-    const gasPrices = feeHistory.reward.map(reward => parseInt(reward[0])).sort((a, b) => b - a);
-    const whichQuartile = Math.min(target, 4) || 1;
-    const quartileMedian = StatsUtil.getNthQuartileMedian(gasPrices, whichQuartile);
-    const roundedGwei = (quartileMedian / 1e9).toFixed(6); // increased precision to handle chains with lower fees
-    const gwei = Number(roundedGwei) || 0;
-    const feerate = gwei * 1e9;
+    const gasPrices: Array<BigInt> = [];
+    const length = Math.min(feeHistory.baseFeePerGas.length, feeHistory.reward.length);
+    for (let i = 0; i < length; i++) {
+      // Adds base fee with reward / priority fee to get total gas price in wei
+      // For pre-type2 blocks the gas prices are returned as rewards and zeroes are returned for the base fee per gas
+      gasPrices.push(BigInt(feeHistory.baseFeePerGas[i]) + BigInt(feeHistory.reward[i][0]));
+    }
+    // Sort descending with an appropriate BigInt comparator
+    gasPrices.sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+    const whichQuartile: number = Math.min(target, 4) || 1;
+    const quartileMedian: BigInt = StatsUtil.getNthQuartileMedian(gasPrices, whichQuartile);
+    const feerate = quartileMedian.toString();
+    // Fee returned in wei as a string
     return { feerate, blocks: target };
   }
 
@@ -146,8 +157,8 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       return Promise.all(blockPromises)
         .then(blockPromises.map(blockTransform) as any)
         .catch(error => error);
-    } catch (err) {
-      logger.error('Error getting blocks from historical node: %o', err);
+    } catch (err: any) {
+      logger.error('Error getting blocks from historical node: %o', err.log || err);
     }
     return undefined;
   }
@@ -162,8 +173,8 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
       return await this._getTransaction({ chain, network, txId, tipHeight, web3 });
-    } catch (err) {
-      logger.error('Error getting transactions from historical node %o', err);
+    } catch (err: any) {
+      logger.error('Error getting transactions from historical node %o', err.log || err);
     }
     return undefined;
   }
@@ -210,10 +221,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       // stream results into response
       const result = await NodeQueryStream.onStream(txStream, req!, res!);
       if (result?.success === false) {
-        logger.error('Error mid-stream (streamTransactions): %o', result.error);
+        logger.error('Error mid-stream (streamTransactions): %o', result.error?.log || result.error);
       }
-    } catch (err) {
-      logger.error('Error streaming transactions from historical node %o', err);
+    } catch (err: any) {
+      logger.error('Error streaming transactions from historical node %o', err.log || err);
       throw err;
     }
   }
@@ -222,22 +233,23 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     const { req, res, args, chain, network, address } = params;
     const { tokenAddress } = args;
     try {
-      // Calculate confirmations with tip height
       let result;
+      const chainId = await this.getChainId({ network });
+      // Calculate confirmations with tip height
       const tip = await this.getLocalTip(params);
       args.tipHeight = tip ? tip.height : 0;
       if (!args.tokenAddress) {
-        const txStream = MoralisAPI.streamTransactionsByAddress({ chain, network, address, args });
+        const txStream = MoralisAPI.streamTransactionsByAddress({ chainId, chain, network, address, args });
         result = await ExternalApiStream.onStream(txStream, req!, res!);
       } else {
-        const tokenTransfers = MoralisAPI.streamERC20TransactionsByAddress({ chain, network, address, tokenAddress, args });
+        const tokenTransfers = MoralisAPI.streamERC20TransactionsByAddress({ chainId, chain, network, address, tokenAddress, args });
         result = await ExternalApiStream.onStream(tokenTransfers, req!, res!);
       }
       if (result?.success === false) {
-        logger.error('Error mid-stream (streamAddressTransactions): %o', result.error);
+        logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
       }
-    } catch (err) {
-      logger.error('Error streaming address transactions from external provider: %o', err);
+    } catch (err: any) {
+      logger.error('Error streaming address transactions from external provider: %o', err.log || err);
       throw err;
     }
   }
@@ -248,11 +260,12 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       if (!wallet?._id) {
         throw new Error('Missing wallet');
       }
+      const chainId = await this.getChainId({ network });
       // Calculate confirmations with tip height
       const tip = await this.getLocalTip(params);
       args.tipHeight = tip ? tip.height : 0;
       const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address);
-      const mergedStream = new Transform();
+      const mergedStream = new MergedStream();
       const txStreams: Readable[] = [];
       // Only mergedStream writes to res object
       const _mergedStream = ExternalApiStream.onStream(mergedStream, req!, res!);
@@ -260,23 +273,23 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       // Default to pulling only the first 10 transactions per address
       for (let i = 0; i < walletAddresses.length; i++) {
         // args / query params are processed at the api provider level
-        txStreams.push(MoralisAPI.streamTransactionsByAddress({ chain, network, address: walletAddresses[i], args }));
+        txStreams.push(MoralisAPI.streamTransactionsByAddress({ chainId, chain, network, address: walletAddresses[i], args }));
       }
       // Pipe all txStreams to the mergedStream
       ExternalApiStream.mergeStreams(txStreams, mergedStream);
       // Ensure mergeStream resolves
       const result = await _mergedStream;
       if (result?.success === false) {
-        logger.error('Error mid-stream (streamWalletTransactions): %o', result.error);
+        logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
       }
-    } catch (err) {
-      logger.error('Error streaming wallet transactions from external provider: %o', err);
+    } catch (err: any) {
+      logger.error('Error streaming wallet transactions from external provider: %o', err.log || err);
       throw err;
     }
   }
 
   async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
-    const { chain, network, time, wallet } = params;
+    const { network, time, wallet } = params;
     try {
       if (!wallet?._id) {
         throw new Error('Missing wallet');
@@ -284,10 +297,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const addresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address);
       // get block number based on time
       const block = await this.getBlockNumberByDate({ network, date: time });
-      const result: any = await this.getNativeBalanceByBlock({ chain, network, block, addresses });
+      const result: any = await this.getNativeBalanceByBlock({ network, block, addresses });
       return { unconfirmed: 0, confirmed: result?.total_balance, balance: result?.total_balance };
-    } catch (err) {
-      logger.error('Error getting wallet balance at time from external provider %o', err);
+    } catch (err: any) {
+      logger.error('Error getting wallet balance at time from external provider %o', err.log || err);
       throw err;
     }
   }
@@ -382,19 +395,22 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
   }
 
   async getBlockNumberByDate({ date, network }) {
-    const res = await MoralisAPI.getBlockByDate({ chain: this.chain, network, date });
+    const chainId = await this.getChainId({ network });
+    const res = await MoralisAPI.getBlockByDate({ chainId, date });
     const block = JSON.parse((res as any).body);
     return block.number ? Number((block as any).number) : undefined;
   }
 
   async getBlockNumberByBlockId({ blockId, network }) {
-    const res = await MoralisAPI.getBlockByHash({ chain: this.chain, network, blockId });
+    const chainId = await this.getChainId({ network })
+    const res = await MoralisAPI.getBlockByHash({ chainId, blockId });
     const block = JSON.parse((res as any).body);
     return block.number ? Number((block as any).number) : undefined;
   }
 
-  async getNativeBalanceByBlock({ chain, network, block, addresses }) {
-    const res = await MoralisAPI.getNativeBalanceByBlock({ chain, network, block, addresses });
+  async getNativeBalanceByBlock({ network, block, addresses }) {
+    const chainId = await this.getChainId({ network });
+    const res = await MoralisAPI.getNativeBalanceByBlock({ chainId, block, addresses });
     return JSON.parse((res as any).body);
   }
 

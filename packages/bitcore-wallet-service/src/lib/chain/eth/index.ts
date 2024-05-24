@@ -186,6 +186,7 @@ export class EthChain implements IChain {
               const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               inGasLimit = await server.estimateGas({
                 coin,
+                chain: this.chain,
                 network,
                 from,
                 to,
@@ -218,6 +219,7 @@ export class EthChain implements IChain {
 
             gasLimit = await server.estimateGas({
               coin,
+              chain: this.chain,
               network,
               from,
               to: opts.multiSendContractAddress,

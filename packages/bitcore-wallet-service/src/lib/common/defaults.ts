@@ -114,81 +114,81 @@ export const Defaults = {
       {
         name: 'urgent',
         nbBlocks: 1,
-        defaultValue: 300000000000
+        defaultValue: 3000000000
       },
       {
         name: 'priority',
         nbBlocks: 2,
-        defaultValue: 250000000000
+        defaultValue: 2500000000
       },
       {
         name: 'normal',
         nbBlocks: 3,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       },
       {
         name: 'economy',
         nbBlocks: 4,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       },
       {
         name: 'superEconomy',
         nbBlocks: 4,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       }
     ],
     base: [
       {
         name: 'urgent',
         nbBlocks: 1,
-        defaultValue: 300000000000
+        defaultValue: 3000000000
       },
       {
         name: 'priority',
         nbBlocks: 2,
-        defaultValue: 250000000000
+        defaultValue: 2500000000
       },
       {
         name: 'normal',
         nbBlocks: 3,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       },
       {
         name: 'economy',
         nbBlocks: 4,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       },
       {
         name: 'superEconomy',
         nbBlocks: 4,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       }
     ],
     op: [
       {
         name: 'urgent',
         nbBlocks: 1,
-        defaultValue: 300000000000
+        defaultValue: 3000000000
       },
       {
         name: 'priority',
         nbBlocks: 2,
-        defaultValue: 250000000000
+        defaultValue: 2500000000
       },
       {
         name: 'normal',
         nbBlocks: 3,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       },
       {
         name: 'economy',
         nbBlocks: 4,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       },
       {
         name: 'superEconomy',
         nbBlocks: 4,
-        defaultValue: 200000000000
+        defaultValue: 2000000000
       }
     ],
     xrp: [
