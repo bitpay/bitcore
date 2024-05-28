@@ -1,12 +1,5 @@
 #!/usr/bin/env node
-/****************************************
- *** This migration script will change network names as defined in 
- *** networkMapping. It will update the state, blocks, transactions,
- *** wallets, walletAddresses and coins collections.
- ***
- *** This does a dry run by default. Use "--doit" to execute.
- ********************************************/
-const { StateStorage } = require('../build/src/models/state');
+
 const { BitcoinBlockStorage } = require('../build/src/models/block');
 const { CoinStorage } = require('../build/src/models/coin');
 const { TransactionStorage } = require('../build/src/models/transaction');
@@ -15,190 +8,109 @@ const { WalletAddressStorage } = require('../build/src/models/walletAddress');
 const { Storage } = require('../build/src/services/storage');
 const { wait } = require('../build/src/utils/wait');
 
-const networkMapping = {
-  ETH: {
-    testnet: 'goerli'
-  },
-  BTC: {
-    testnet: 'testnet3'
-  },
-  BCH: {
-    testnet: 'testnet3'
-  },
-  DOGE: {
-    testnet: 'testnet3'
-  },
-  LTC: {
-    testnet: 'testnet4',
-  },
-  MATIC: {
-    testnet: 'mumbai'
-  }
-};
+const chain = 'LTC';
+const oldNetwork = 'testnet';
+const newNetwork = 'testnet4';
+const dryRun = true; // make sure you stop sync services before running this script
+const batchSize = 10000;
 
-class Migration {
-  constructor({ transactionModel = TransactionStorage, coinModel = CoinStorage, stateModel = StateStorage, blockModel = BitcoinBlockStorage, walletModel = WalletStorage, walletAddressModel = WalletAddressStorage } = {}) {
-    this.transactionModel = transactionModel;
-    this.coinModel = coinModel;
-    this.stateModel = stateModel;
-    this.blockModel = blockModel;
-    this.walletModel = walletModel;
-    this.walletAddressModel = walletAddressModel;
+let quit = false;
+process.on('SIGINT', () => {
+  if (quit) {
+    process.exit(1);
   }
+  console.log('Caught interrupt signal');
+  quit = true;
+});
 
-  async connect() {
-    console.log("Attempting connection to the database...")
-    try {
-      if (!Storage.connected) {
-        await Storage.start();
-        await wait(2000);
-      }
-    } catch (e) {
-      console.log(e);
+Storage.start()
+  .then(async () => {
+    console.log('Connected to the database');
+
+    const cnt1 = await CoinStorage.collection.countDocuments({ chain, network: oldNetwork });
+    const cnt2 = await TransactionStorage.collection.countDocuments({ chain, network: oldNetwork });
+    const cnt3 = await BitcoinBlockStorage.collection.countDocuments({ chain, network: oldNetwork });
+    const cnt4 = await WalletStorage.collection.countDocuments({ chain, network: oldNetwork });
+    const cnt5 = await WalletAddressStorage.collection.countDocuments({ chain, network: oldNetwork });
+
+    console.log(`${chain} ${oldNetwork} coins:`, cnt1);
+    console.log(`${chain} ${oldNetwork} transactions:`, cnt2);
+    console.log(`${chain} ${oldNetwork} blocks:`, cnt3);
+    console.log(`${chain} ${oldNetwork} wallets:`, cnt4);
+    console.log(`${chain} ${oldNetwork} walletAddresses:`, cnt5);
+
+    if (dryRun) {
+      return;
     }
-  }
+    console.log('----------------------------------------');
 
-  async endProcess() {
-    if (Storage.connected){
-      await Storage.stop();
-    }
-    process.exit();
-  }
-
-  processArgs(argv) {
-    let retArgs = {
-      doit: false,
-    };
-    let args = argv.slice(2);
-
-    const help = ~args.findIndex(i => i == '--help');
-    if (help) {
-      console.log("Usage: node migrateToNamedTestnets.js [--doit to execute otherwise dry run]");
-      this.endProcess();
+    console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} coins in 10 seconds...`);
+    !quit && await wait(10000);
+    console.log(`Updating ${chain} ${oldNetwork} coins...`);
+    let coins = await CoinStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
+    let coinsUpdated = 0;
+    while (coins.length > 0 && !quit) {
+      const res = await CoinStorage.collection.updateMany({ _id: { $in: coins.map(c => c._id) } }, { $set: { network: newNetwork } });
+      coinsUpdated += res.modifiedCount;
+      console.log(`Updated ${coinsUpdated} coins (${(coinsUpdated / cnt1 * 100).toFixed(2)}%)`);
+      await wait(250);
+      coins = await CoinStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
     }
 
-    const doit = ~args.findIndex(i => i == '--doit');
-
-    retArgs.doit = doit;
-
-    return retArgs;
-  }
-
-  async runScript(args) {
-    const outcome = {};
-    const { doit } = args;
-    console.log(doit ? 'LET\'S DO IT FOR REAL' : 'Dry run');
-
-    // Blocks and Transactions are updated in a nested loop
-    for (const chain of Object.keys(networkMapping)) {
-      outcome[chain] = {};
-      for (const fromNetwork of Object.keys(networkMapping[chain])) {
-        outcome[chain][fromNetwork] = { state: 0, blocks: 0, transactions: 0, coins: 0, wallets: 0, walletAddresses: 0 };
-        const toNetwork = networkMapping[chain][fromNetwork];
-        const newOutcomes = await this.updateBlocksTransactionsAddressesAndCoins(chain, fromNetwork, toNetwork, doit);
-        outcome[chain][fromNetwork].state += newOutcomes.state;
-        outcome[chain][fromNetwork].blocks += newOutcomes.blocks;
-        outcome[chain][fromNetwork].transactions += newOutcomes.transactions;
-        outcome[chain][fromNetwork].coins += newOutcomes.coins;
-        outcome[chain][fromNetwork].walletAddresses += newOutcomes.walletAddresses;
-      }
-    }
-
-    // Wallets are updated as we retrieve each wallet
-    await this.updateWallets(outcome, doit);
-
-    console.log('Outcome:', outcome);
-    if (!doit) {
-      console.log('Run the script with "--doit" to execute this operation.');
-    }
-
-    await this.endProcess();
-  }
-
-  async updateBlocksTransactionsAddressesAndCoins(chain, fromNetwork, toNetwork, doit) {
-    const outcome = { state: 0, blocks: 0, transactions: 0, coins: 0, walletAddresses: 0};
-    if (doit) {
-      // State
-      const stateUpdate = await this.stateModel.collection.updateMany({ initialSyncComplete: `${chain}:${fromNetwork}` }, { $set: { 'initialSyncComplete.$': `${chain}:${toNetwork}` } });
-      if (stateUpdate?.result?.nModified) {
-        outcome.state += stateUpdate.result.nModified;
-      }
-      // Blocks
-      const blockUpdate = await this.blockModel.collection.updateMany({chain, network: fromNetwork }, { $set: { network: toNetwork } });
-      if (blockUpdate?.result?.nModified) {
-        outcome.blocks += blockUpdate.result.nModified;
-      }
-      // Transactions
-      const transactionUpdate = await this.transactionModel.collection.updateMany({chain, network: fromNetwork }, { $set: { network: toNetwork } });
-      if (transactionUpdate?.result?.nModified) {
-        outcome.transactions += transactionUpdate.result.nModified;
-      }
-      // Wallet Addresses
-      const walletAddressUpdate = await this.walletAddressModel.collection.updateMany({ chain, network: fromNetwork }, { $set: { network: toNetwork } });
-      if (walletAddressUpdate?.result?.nModified) {
-        outcome.walletAddresses += walletAddressUpdate.result.nModified;
-      }
-      // Coins
-      const coinUpdate = await this.coinModel.collection.updateMany({ chain, network: fromNetwork }, { $set: { network: toNetwork } });
-      if (coinUpdate?.result?.nModified) {
-        outcome.coins += coinUpdate.result.nModified;
-      }
-    } else {
-      // Only return the count of affected documents without actually updating
-      const stateCount = await this.stateModel.collection.countDocuments({ initialSyncComplete: `${chain}:${fromNetwork}` });
-      const blockCount = await this.blockModel.collection.countDocuments({ chain, network: fromNetwork });
-      const transactionCount = await this.transactionModel.collection.countDocuments({ chain, network: fromNetwork });
-      const walletAddressCount = await this.walletAddressModel.collection.countDocuments({ chain, network: fromNetwork });
-      const coinCount = await this.coinModel.collection.countDocuments({ chain, network: fromNetwork });
-      
-      outcome.state = stateCount;
-      outcome.blocks = blockCount;
-      outcome.transactions = transactionCount;
-      outcome.walletAddresses = walletAddressCount;
-      outcome.coins = coinCount;
+    console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} transactions in 10 seconds...`);
+    !quit && await wait(10000);
+    console.log(`Updating ${chain} ${oldNetwork} transactions...`);
+    let txs = await TransactionStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
+    let txsUpdated = 0;
+    while (txs.length > 0 && !quit) {
+      const res = await TransactionStorage.collection.updateMany({ _id: { $in: txs.map(c => c._id) } }, { $set: { network: newNetwork } });
+      txsUpdated += res.modifiedCount;
+      console.log(`Updated ${txsUpdated} transactions (${(txsUpdated / cnt2 * 100).toFixed(2)}%)`);
+      await wait(250);
+      txs = await TransactionStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
     }
     
-    return outcome;
-  }
+    console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} blocks in 10 seconds...`);
+    !quit && await wait(10000);
+    console.log(`Updating ${chain} ${oldNetwork} blocks...`);
+    let blocks = await BitcoinBlockStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
+    let blocksUpdated = 0;
+    while (blocks.length > 0 && !quit) {
+      const res = await BitcoinBlockStorage.collection.updateMany({ _id: { $in: blocks.map(c => c._id) } }, { $set: { network: newNetwork } });
+      blocksUpdated += res.modifiedCount;
+      console.log(`Updated ${blocksUpdated} blocks (${(blocksUpdated / cnt3 * 100).toFixed(2)}%)`);
+      await wait(250);
+      blocks = await BitcoinBlockStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+    }
 
-  async updateWallets(outcome, doit) {
-    const chains = Object.keys(networkMapping);
-    const chainNetworks = (chain) => Object.keys(networkMapping[chain]);
-      // Stream all wallets
-      const walletStream = this.walletModel.collection
-      .find({})
-      .addCursorFlag('noCursorTimeout', true);
+    console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} wallets in 10 seconds...`);
+    !quit && await wait(10000);
+    console.log(`Updating ${chain} ${oldNetwork} wallets...`);
+    let wallets = await WalletStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
+    let walletsUpdated = 0;
+    while (wallets.length > 0 && !quit) {
+      const res = await WalletStorage.collection.updateMany({ _id: { $in: wallets.map(c => c._id) } }, { $set: { network: newNetwork } });
+      walletsUpdated += res.modifiedCount;
+      console.log(`Updated ${walletsUpdated} wallets (${(walletsUpdated / cnt4 * 100).toFixed(2)}%)`);
+      await wait(250);
+      wallets = await WalletStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+    }
 
-      let walletData = (await walletStream.next());
-      while (walletData != null) {
-        const { chain, network } = walletData;
-        if (chains.includes(chain) && chainNetworks(chain).includes(network)) {
-          if (doit) {
-              // Wallet
-            await this.walletModel.collection.updateOne({ _id: walletData._id }, { $set: { network: networkMapping[chain][network] } });
-          }
-          outcome[chain][network].wallets++;
-        }            
-        // get next record
-        walletData = (await walletStream.next());
-      }
-    
-  }
-}
-
-const migration = new Migration({ stateModel: StateStorage, blockModel: BitcoinBlockStorage, transactionModel: TransactionStorage, coinModel: CoinStorage, walletModel: WalletStorage, walletAddressModel: WalletAddressStorage });
-
-const args = migration.processArgs(process.argv);
-migration
-  .connect()
-  .then(() => {
-    migration.runScript(args);
+    console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} walletAddresses in 10 seconds...`);
+    !quit && await wait(10000);
+    console.log(`Updating ${chain} ${oldNetwork} walletAddresses...`);
+    let walletAddresses = await WalletAddressStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
+    let walletAddressesUpdated = 0;
+    while (walletAddresses.length > 0 && !quit) {
+      const res = await WalletAddressStorage.collection.updateMany({ _id: { $in: walletAddresses.map(c => c._id) } }, { $set: { network: newNetwork } });
+      walletAddressesUpdated += res.modifiedCount;
+      console.log(`Updated ${walletAddressesUpdated} walletAddresses (${(walletAddressesUpdated / cnt5 * 100).toFixed(2)}%)`);
+      await wait(250);
+      walletAddresses = await WalletAddressStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+    }
   })
-  .catch(err => {
-    console.error(err);
-    migration.endProcess()
-    .catch(err => { 
-      console.error(err);
-      process.exit(1);
-    });
+  .catch(console.error)
+  .finally(() => {
+    console.log('Closing the database connection');
+    Storage.stop();
   });
