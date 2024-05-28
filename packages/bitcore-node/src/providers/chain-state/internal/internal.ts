@@ -292,8 +292,8 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async getWallet(params: GetWalletParams) {
-    const { pubKey } = params;
-    return WalletStorage.collection.findOne({ pubKey });
+    const { chain, pubKey } = params;
+    return WalletStorage.collection.findOne({ chain, pubKey });
   }
 
   streamWalletAddresses(params: StreamWalletAddressesParams) {
