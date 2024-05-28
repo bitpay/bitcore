@@ -2590,61 +2590,66 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 next => {
-                  let txOptsFee = fee;
+                  try {
+                    let txOptsFee = fee;
 
-                  if (!txOptsFee) {
-                    const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
-                    const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
-                    const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
+                    if (!txOptsFee) {
+                      const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
+                      const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
+                      const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 
-                    if (shouldUseOptsFee) {
-                      txOptsFee = opts.fee;
+                      if (shouldUseOptsFee) {
+                        txOptsFee = opts.fee;
+                      }
                     }
-                  }
 
-                  const txOpts = {
-                    id: opts.txProposalId,
-                    walletId: this.walletId,
-                    creatorId: this.copayerId,
-                    coin: opts.coin,
-                    chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
-                    network: wallet.network,
-                    outputs: opts.outputs,
-                    message: opts.message,
-                    from: opts.from,
-                    changeAddress,
-                    feeLevel: opts.feeLevel,
-                    feePerKb,
-                    payProUrl: opts.payProUrl,
-                    walletM: wallet.m,
-                    walletN: wallet.n,
-                    excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
-                    instantAcceptanceEscrow: opts.instantAcceptanceEscrow,
-                    addressType: wallet.addressType,
-                    customData: opts.customData,
-                    inputs: opts.inputs,
-                    version: opts.txpVersion,
-                    fee: txOptsFee,
-                    noShuffleOutputs: opts.noShuffleOutputs,
-                    gasPrice,
-                    maxGasFee,
-                    priorityGasFee,
-                    txType: opts.txType,
-                    nonce: opts.nonce,
-                    gasLimit, // Backward compatibility for BWC < v7.1.1
-                    data: opts.data, // Backward compatibility for BWC < v7.1.1
-                    tokenAddress: opts.tokenAddress,
-                    multisigContractAddress: opts.multisigContractAddress,
-                    multiSendContractAddress: opts.multiSendContractAddress,
-                    destinationTag: opts.destinationTag,
-                    invoiceID: opts.invoiceID,
-                    signingMethod: opts.signingMethod,
-                    isTokenSwap: opts.isTokenSwap,
-                    enableRBF: opts.enableRBF,
-                    replaceTxByFee: opts.replaceTxByFee
-                  };
-                  txp = TxProposal.create(txOpts);
-                  next();
+                    const txOpts = {
+                      id: opts.txProposalId,
+                      walletId: this.walletId,
+                      creatorId: this.copayerId,
+                      coin: opts.coin,
+                      chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
+                      network: wallet.network,
+                      outputs: opts.outputs,
+                      message: opts.message,
+                      from: opts.from,
+                      changeAddress,
+                      feeLevel: opts.feeLevel,
+                      feePerKb,
+                      payProUrl: opts.payProUrl,
+                      walletM: wallet.m,
+                      walletN: wallet.n,
+                      excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
+                      instantAcceptanceEscrow: opts.instantAcceptanceEscrow,
+                      addressType: wallet.addressType,
+                      customData: opts.customData,
+                      inputs: opts.inputs,
+                      version: opts.txpVersion,
+                      fee: txOptsFee,
+                      noShuffleOutputs: opts.noShuffleOutputs,
+                      gasPrice,
+                      maxGasFee,
+                      priorityGasFee,
+                      txType: opts.txType,
+                      nonce: opts.nonce,
+                      gasLimit, // Backward compatibility for BWC < v7.1.1
+                      data: opts.data, // Backward compatibility for BWC < v7.1.1
+                      tokenAddress: opts.tokenAddress,
+                      multisigContractAddress: opts.multisigContractAddress,
+                      multiSendContractAddress: opts.multiSendContractAddress,
+                      destinationTag: opts.destinationTag,
+                      invoiceID: opts.invoiceID,
+                      signingMethod: opts.signingMethod,
+                      isTokenSwap: opts.isTokenSwap,
+                      enableRBF: opts.enableRBF,
+                      replaceTxByFee: opts.replaceTxByFee
+                    };
+                    txp = TxProposal.create(txOpts);
+                    next();
+                  } catch (e) {
+                    logger.error('Error creating TX: %o', e.stack || e.message || e);
+                    return next(e);
+                  }
                 },
                 async next => {
                   if (opts.chain != 'xrp') return next();

@@ -96,10 +96,10 @@ export const Constants = {
   },
 
   NETWORKS: {
-    btc: ['livenet', 'testnet3', 'signet', 'regtest'],
+    btc: ['livenet', 'testnet3', 'testnet4', 'signet', 'regtest'],
     bch: ['livenet', 'testnet3', 'testnet4', 'scalenet', 'chipnet', 'regtest'],
     eth: ['livenet', 'sepolia', 'holesky', 'regtest'],
-    matic: ['livenet', 'mumbai', 'amoy', 'regtest'],
+    matic: ['livenet', 'amoy', 'regtest'],
     ltc: ['livenet', 'testnet', 'regtest'],
     doge: ['livenet', 'testnet', 'regtest'],
     xrp: ['livenet', 'testnet', 'regtest'],
@@ -124,7 +124,7 @@ export const Constants = {
     },
     matic: {
       mainnet: 'livenet',
-      testnet: 'mumbai'
+      testnet: 'amoy'
     },
     ltc: {
       mainnet: 'livenet',

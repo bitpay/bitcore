@@ -40,9 +40,16 @@ const Config = (): any => {
         livenet: {
           url: 'https://api.bitcore.io'
         },
-        testnet: {
-          url: 'https://api.bitcore.io',
-          regtestEnabled: false
+        testnet3: {
+          url: 'https://api.bitcore.io'
+        },
+        testnet4: {
+          url: 'https://api.bitcore.io'
+        }
+      },
+      bch: {
+        livenet: {
+          url: 'https://api.bitcore.io'
         },
         testnet3: {
           url: 'https://api.bitcore.io'
@@ -55,54 +62,22 @@ const Config = (): any => {
         },
         chipnet: {
           url: 'https://api.bitcore.io'
-        },
+        }
       },
-      bch: {
+      doge: {
         livenet: {
           url: 'https://api.bitcore.io'
         },
-        testnet: {
+        testnet3: {
           url: 'https://api.bitcore.io'
         }
       },
-      eth: {
+      ltc: {
         livenet: {
-          url: 'https://api-eth.bitcore.io'
+          url: 'https://api.bitcore.io'
         },
-        testnet: {
-          url: 'https://api-eth.bitcore.io'
-        }
-      },
-      matic: {
-        livenet: {
-          url: 'https://api-matic.bitcore.io'
-        },
-        testnet: {
-          url: 'https://api-matic.bitcore.io'
-        }
-      },
-      arb: {
-        livenet: {
-          url: 'https://api-eth.bitcore.io'
-        },
-        testnet: {
-          url: 'https://api-eth.bitcore.io'
-        }
-      },
-      base: {
-        livenet: {
-          url: 'https://api-eth.bitcore.io'
-        },
-        testnet: {
-          url: 'https://api-eth.bitcore.io'
-        }
-      },
-      op: {
-        livenet: {
-          url: 'https://api-eth.bitcore.io'
-        },
-        testnet: {
-          url: 'https://api-eth.bitcore.io'
+        testnet4: {
+          url: 'https://api.bitcore.io'
         }
       },
       xrp: {
@@ -113,20 +88,44 @@ const Config = (): any => {
           url: 'https://api-xrp.bitcore.io'
         }
       },
-      doge: {
+      eth: {
         livenet: {
-          url: 'https://api.bitcore.io'
+          url: 'https://api-eth.bitcore.io'
         },
-        testnet: {
-          url: 'https://api.bitcore.io'
+        sepolia: {
+          url: 'https://api-eth.bitcore.io'
         }
       },
-      ltc: {
+      matic: {
         livenet: {
-          url: 'https://api.bitcore.io'
+          url: 'https://api-matic.bitcore.io'
         },
-        testnet: {
-          url: 'https://api.bitcore.io'
+        amoy: {
+          url: 'https://api-matic.bitcore.io'
+        }
+      },
+      arb: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        sepolia: {
+          url: 'https://api-eth.bitcore.io'
+        }
+      },
+      base: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        sepolia: {
+          url: 'https://api-eth.bitcore.io'
+        }
+      },
+      op: {
+        livenet: {
+          url: 'https://api-eth.bitcore.io'
+        },
+        sepolia: {
+          url: 'https://api-eth.bitcore.io'
         }
       },
       socketApiKey: 'socketApiKey'

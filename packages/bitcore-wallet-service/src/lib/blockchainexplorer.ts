@@ -13,13 +13,25 @@ const PROVIDERS = {
       livenet: 'https://api.bitcore.io',
       testnet3: 'https://api.bitcore.io'
     },
+    doge: {
+      livenet: 'https://api.bitcore.io',
+      testnet3: 'https://api.bitcore.io'
+    },
+    ltc: {
+      livenet: 'https://api.bitcore.io',
+      testnet4: 'https://api.bitcore.io'
+    },
+    xrp: {
+      livenet: 'https://api-xrp.bitcore.io',
+      testnet: 'https://api-xrp.bitcore.io'
+    },
     eth: {
       livenet: 'https://api-eth.bitcore.io',
       sepolia: 'https://api-eth.bitcore.io'
     },
     matic: {
       livenet: 'https://api-matic.bitcore.io',
-      mumbai: 'https://api-matic.bitcore.io'
+      amoy: 'https://api-matic.bitcore.io'
     },
     arb: {
       livenet: 'https://api-eth.bitcore.io',
@@ -32,18 +44,6 @@ const PROVIDERS = {
     op: {
       livenet: 'https://api-eth.bitcore.io',
       sepolia: 'https://api-eth.bitcore.io'
-    },
-    xrp: {
-      livenet: 'https://api-xrp.bitcore.io',
-      testnet: 'https://api-xrp.bitcore.io'
-    },
-    doge: {
-      livenet: 'https://api.bitcore.io',
-      testnet: 'https://api.bitcore.io'
-    },
-    ltc: {
-      livenet: 'https://api.bitcore.io',
-      testnet: 'https://api.bitcore.io'
     }
   }
 };
