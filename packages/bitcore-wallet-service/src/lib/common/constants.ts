@@ -100,8 +100,8 @@ export const Constants = {
     bch: ['livenet', 'testnet3', 'testnet4', 'scalenet', 'chipnet', 'regtest'],
     eth: ['livenet', 'sepolia', 'holesky', 'regtest'],
     matic: ['livenet', 'amoy', 'regtest'],
-    ltc: ['livenet', 'testnet', 'regtest'],
-    doge: ['livenet', 'testnet', 'regtest'],
+    ltc: ['livenet', 'testnet4', 'regtest'],
+    doge: ['livenet', 'testnet3', 'regtest'],
     xrp: ['livenet', 'testnet', 'regtest'],
     arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
     base: ['livenet', 'sepolia', 'holesky', 'regtest'],
@@ -118,14 +118,6 @@ export const Constants = {
       mainnet: 'livenet',
       testnet: 'testnet3'
     },
-    eth: {
-      mainnet: 'livenet',
-      testnet: 'sepolia'
-    },
-    matic: {
-      mainnet: 'livenet',
-      testnet: 'amoy'
-    },
     ltc: {
       mainnet: 'livenet',
       testnet: 'testnet4'
@@ -136,6 +128,14 @@ export const Constants = {
     },
     xrp: {
       mainnet: 'livenet',
+    },
+    eth: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    matic: {
+      mainnet: 'livenet',
+      testnet: 'amoy'
     },
     arb: {
       mainnet: 'livenet',
