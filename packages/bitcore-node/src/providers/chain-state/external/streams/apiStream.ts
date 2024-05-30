@@ -103,7 +103,12 @@ export class ExternalApiStream extends Readable {
             }
           }
           if (!isFirst) {
-            res.write(',\n{"error": "An error occurred during data stream"}\n]');
+            const errMsg = '{"error": "An error occurred during data stream"}';
+            if (opts.jsonl) {
+              res.write(`${errMsg}`);
+            } else {
+              res.write(`,\n${errMsg}\n]`);
+            }
             res.end();
             res.destroy();
             return resolve({ success: false, error: err });
@@ -118,7 +123,7 @@ export class ExternalApiStream extends Readable {
           if (opts.jsonl) {
             if (isFirst) {
               isFirst = false;
-            } else {
+            } else if (!data.endsWith('\n')) {
               res.write('\n');
             }
           } else {
@@ -142,7 +147,7 @@ export class ExternalApiStream extends Readable {
               // there was no data
               res.write('[]');
             } else {
-              res.write('\n]');    
+              res.write('\n]');
             }
           }
           res.end();
@@ -167,6 +172,19 @@ export class ExternalApiStream extends Readable {
         }
       });
     };
+  }
+}
+
+export class ParseTransform extends Transform {
+  constructor() {
+    super({ objectMode: true });
+  }
+
+  async _transform(data: any, _, done) {
+    if (typeof data === 'string') {
+      data = JSON.parse(data);
+    }
+    done(null, data);
   }
 }
 

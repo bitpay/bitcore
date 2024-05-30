@@ -20,7 +20,7 @@ import {
 import { unixToDate } from '../../../../utils/convert';
 import { StatsUtil } from '../../../../utils/stats';
 import MoralisAPI from '../../external/providers/moralis';
-import { ExternalApiStream, MergedStream } from '../../external/streams/apiStream';
+import { ExternalApiStream, MergedStream, ParseTransform } from '../../external/streams/apiStream';
 import { NodeQueryStream } from '../../external/streams/nodeStream';
 import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
@@ -30,6 +30,8 @@ import {
   getProvider,
   isValidProviderType
 } from './provider';
+import { EVMListTransactionsStream } from './transform';
+import { PopulateReceiptTransform } from './populateReceiptTransform';
 
 
 export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string }
@@ -261,16 +263,24 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         throw new Error('Missing wallet');
       }
       const chainId = await this.getChainId({ network });
-      // Calculate confirmations with tip height
       const tip = await this.getLocalTip(params);
-      args.tipHeight = tip ? tip.height : 0;
-      const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address);
-      const mergedStream = new MergedStream();
+      const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address.toLowerCase());
       const txStreams: Readable[] = [];
-      // Only mergedStream writes to res object
-      const _mergedStream = ExternalApiStream.onStream(mergedStream, req!, res!, { jsonl: true });
+      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
+      const populateReceipt = new PopulateReceiptTransform();
+      const parseStrings = new ParseTransform();
+      const mergedStream = new MergedStream(); // Stream to combine the output of multiple streams
+      const resultStream = new MergedStream(); // Stream to write to the res object
 
-      // Default to pulling only the first 10 transactions per address
+      // Transform transactions proccessed through merged stream
+      mergedStream
+      .pipe(parseStrings)
+      .pipe(populateReceipt)
+      .pipe(ethTransactionTransform)
+      .pipe(resultStream);
+      // Tip height used to calculate confirmations
+      args.tipHeight = tip ? tip.height : 0;
+      // Defaults to pulling only the first 10 transactions per address
       for (let i = 0; i < walletAddresses.length; i++) {
         // args / query params are processed at the api provider level
         txStreams.push(MoralisAPI.streamTransactionsByAddress({ chainId, chain, network, address: walletAddresses[i], args }));
@@ -278,7 +288,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       // Pipe all txStreams to the mergedStream
       ExternalApiStream.mergeStreams(txStreams, mergedStream);
       // Ensure mergeStream resolves
-      const result = await _mergedStream;
+      const result = await ExternalApiStream.onStream(resultStream, req!, res!, { jsonl: true });
       if (result?.success === false) {
         logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
       }
