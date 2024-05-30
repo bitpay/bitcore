@@ -2,6 +2,11 @@ import axios from 'axios';
 import { Request, Response } from 'express';
 import { Readable, Stream, Transform, Writable } from 'stream';
 
+
+export interface StreamOpts {
+  jsonl?: boolean;
+}
+
 export class ExternalApiStream extends Readable {
   url: string;
   headers: any;
@@ -71,22 +76,22 @@ export class ExternalApiStream extends Readable {
   }
 
   // handles events emitted by the streamed response, request from client, and response to client
-  static onStream(stream: Readable, req: Request, res: Response):
+  static onStream(stream: Readable, req: Request, res: Response, opts: StreamOpts = {}):
     Promise<{ success: boolean, error?: any }> {
     return new Promise<{ success: boolean, error?: any }>((resolve, reject) => {
       let closed = false;
       let isFirst = true;
 
-      req.on('close', function () {
+      req.on('close', function() {
         closed = true;
       });
 
       res.type('json');
-      res.on('close', function () {
+      res.on('close', function() {
         closed = true;
       });
 
-      stream.on('error', function (err: any) {
+      stream.on('error', function(err: any) {
         if (!closed) {
           closed = true;
           if (err.isAxiosError) {
@@ -108,27 +113,37 @@ export class ExternalApiStream extends Readable {
         }
         return;
       });
-      stream.on('data', function (data) {
+      stream.on('data', function(data) {
         if (!closed) {
-          if (isFirst) {
-            res.write('[\n');
-            isFirst = false;
+          if (opts.jsonl) {
+            if (isFirst) {
+              isFirst = false;
+            } else {
+              res.write('\n');
+            }
           } else {
-            res.write(',\n');
+            if (isFirst) {
+              res.write('[\n');
+              isFirst = false;
+            } else {
+              res.write(',\n');
+            }
           }
           res.write(data);
         } else {
           stream.destroy();
         }
       });
-      stream.on('end', function () {
+      stream.on('end', function() {
         if (!closed) {
-          if (isFirst) {
-            // there was no data
-            res.write('[]');
-          } else {
-            res.write('\n]');
-            closed = true;
+          closed = true;
+          if (!opts.jsonl) {
+            if (isFirst) {
+              // there was no data
+              res.write('[]');
+            } else {
+              res.write('\n]');    
+            }
           }
           res.end();
           resolve({ success: true });

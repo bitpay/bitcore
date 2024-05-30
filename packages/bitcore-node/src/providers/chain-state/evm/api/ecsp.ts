@@ -268,7 +268,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const mergedStream = new MergedStream();
       const txStreams: Readable[] = [];
       // Only mergedStream writes to res object
-      const _mergedStream = ExternalApiStream.onStream(mergedStream, req!, res!);
+      const _mergedStream = ExternalApiStream.onStream(mergedStream, req!, res!, { jsonl: true });
 
       // Default to pulling only the first 10 transactions per address
       for (let i = 0; i < walletAddresses.length; i++) {
