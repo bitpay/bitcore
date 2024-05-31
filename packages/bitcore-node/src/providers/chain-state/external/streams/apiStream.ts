@@ -103,6 +103,8 @@ export class ExternalApiStream extends Readable {
             }
           }
           if (!isFirst) {
+            // Data has already been written to the stream and status 200 headers have already been sent
+            // We notify and log the error instead of throwing
             const errMsg = '{"error": "An error occurred during data stream"}';
             if (opts.jsonl) {
               res.write(`${errMsg}`);
@@ -113,6 +115,7 @@ export class ExternalApiStream extends Readable {
             res.destroy();
             return resolve({ success: false, error: err });
           } else {
+            // Rejecting here allows downstream to send status 500
             return reject(err);
           }
         }
@@ -120,19 +123,17 @@ export class ExternalApiStream extends Readable {
       });
       stream.on('data', function(data) {
         if (!closed) {
-          if (opts.jsonl) {
-            if (isFirst) {
-              isFirst = false;
-            } else if (!data.endsWith('\n')) {
-              res.write('\n');
-            }
-          } else {
+          // We are assuming jsonl data appended a new line upstream
+          if (!opts.jsonl) {
             if (isFirst) {
               res.write('[\n');
-              isFirst = false;
             } else {
               res.write(',\n');
             }
+          }
+          if (isFirst) {
+            // All cases need isFirst set correctly for proper error handling
+            isFirst = false;
           }
           res.write(data);
         } else {
@@ -175,7 +176,7 @@ export class ExternalApiStream extends Readable {
   }
 }
 
-export class ParseTransform extends Transform {
+export class ParseStream extends Transform {
   constructor() {
     super({ objectMode: true });
   }

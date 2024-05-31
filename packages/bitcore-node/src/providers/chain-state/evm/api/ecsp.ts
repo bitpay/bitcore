@@ -20,18 +20,18 @@ import {
 import { unixToDate } from '../../../../utils/convert';
 import { StatsUtil } from '../../../../utils/stats';
 import MoralisAPI from '../../external/providers/moralis';
-import { ExternalApiStream, MergedStream, ParseTransform } from '../../external/streams/apiStream';
+import { ExternalApiStream, MergedStream, ParseStream } from '../../external/streams/apiStream';
 import { NodeQueryStream } from '../../external/streams/nodeStream';
 import { InternalStateProvider } from '../../internal/internal';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON } from '../types';
 import { BaseEVMStateProvider } from './csp';
+import { PopulateReceiptTransform } from './populateReceiptTransform';
 import {
   getProvider,
   isValidProviderType
 } from './provider';
 import { EVMListTransactionsStream } from './transform';
-import { PopulateReceiptTransform } from './populateReceiptTransform';
 
 
 export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string }
@@ -268,16 +268,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       const txStreams: Readable[] = [];
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
       const populateReceipt = new PopulateReceiptTransform();
-      const parseStrings = new ParseTransform();
+      const parseStream = new ParseStream();
       const mergedStream = new MergedStream(); // Stream to combine the output of multiple streams
       const resultStream = new MergedStream(); // Stream to write to the res object
 
-      // Transform transactions proccessed through merged stream
-      mergedStream
-      .pipe(parseStrings)
-      .pipe(populateReceipt)
-      .pipe(ethTransactionTransform)
-      .pipe(resultStream);
       // Tip height used to calculate confirmations
       args.tipHeight = tip ? tip.height : 0;
       // Defaults to pulling only the first 10 transactions per address
@@ -287,7 +281,13 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       }
       // Pipe all txStreams to the mergedStream
       ExternalApiStream.mergeStreams(txStreams, mergedStream);
-      // Ensure mergeStream resolves
+      // Transform transactions proccessed through merged stream
+      mergedStream
+      .pipe(parseStream)
+      .pipe(populateReceipt)
+      .pipe(ethTransactionTransform)
+      .pipe(resultStream);
+      // Ensure resultStream resolves
       const result = await ExternalApiStream.onStream(resultStream, req!, res!, { jsonl: true });
       if (result?.success === false) {
         logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
