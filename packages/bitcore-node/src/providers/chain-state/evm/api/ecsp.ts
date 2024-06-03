@@ -18,6 +18,7 @@ import {
   StreamWalletTransactionsParams
 } from '../../../../types/namespaces/ChainStateProvider';
 import { unixToDate } from '../../../../utils/convert';
+import { ParseJsonStream } from '../../../../utils/jsonStream';
 import { StatsUtil } from '../../../../utils/stats';
 import MoralisAPI from '../../external/providers/moralis';
 import { ExternalApiStream, MergedStream } from '../../external/streams/apiStream';
@@ -32,7 +33,6 @@ import {
   isValidProviderType
 } from './provider';
 import { EVMListTransactionsStream } from './transform';
-import { ParseJsonStream } from '../../../../utils/jsonStream';
 
 
 export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string }
@@ -265,9 +265,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       }
       const chainId = await this.getChainId({ network });
       const tip = await this.getLocalTip(params);
-      // const walletAddresses = ['0x60a0c2f0f36020dca97f6214b3c8ff72d50d76db'];
-      const walletAddresses = ['0xB5B7B05Fe583E799c47BA1D3cdF34c08baD413E5'.toLowerCase()];
-      //(await this.getWalletAddresses(wallet._id!)).map(addy => addy.address.toLowerCase());
+      const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(addy => addy.address.toLowerCase());
       const txStreams: Readable[] = [];
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
       const populateReceipt = new PopulateReceiptTransform();

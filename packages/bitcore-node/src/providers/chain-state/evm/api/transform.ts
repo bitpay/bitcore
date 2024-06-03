@@ -2,6 +2,7 @@ import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
+import { overlaps } from '../../../../utils';
 import { IEVMTransactionTransformed } from '../types';
 
 export class EVMListTransactionsStream extends Transform {
@@ -55,9 +56,19 @@ export class EVMListTransactionsStream extends Transform {
       }
     } else {
       const weReceived = this.walletAddresses.includes(transaction.to);
-      if (weReceived) {
+      const weReceivedInternal = overlaps(this.walletAddresses, transaction.effects?.map(e => e.to));
+      if (weReceived || weReceivedInternal) {
         baseTx.category = 'receive';
-        baseTx.satoshis = transaction.value;
+        baseTx.satoshis = BigInt(transaction.value);
+        if (weReceivedInternal) {
+          for (const effect of transaction.effects!) {
+            if (this.walletAddresses.includes(effect.to)) {
+              baseTx.satoshis += BigInt(effect.amount);
+              baseTx.to = effect.to;
+            }
+          }
+        }
+        baseTx.satoshis = baseTx.satoshis.toString();
         this.push(
           JSON.stringify(baseTx) + '\n'
         );

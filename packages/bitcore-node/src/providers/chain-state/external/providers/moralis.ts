@@ -1,9 +1,9 @@
 import request = require('request');
 import config from '../../../../config';
-import { isDateValid } from '../../../../utils/check';
+import { isDateValid } from '../../../../utils';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ErigonTraceResponse } from '../../evm/p2p/rpcs/erigonRpc';
-import { EVMTransactionJSON, Transaction } from '../../evm/types';
+import { Effect, EVMTransactionJSON, IEVMTransactionTransformed, Transaction } from '../../evm/types';
 import { ExternalApiStream as apiStream } from '../streams/apiStream';
 
 const baseUrl = 'https://deep-index.moralis.io/api/v2.2';
@@ -97,8 +97,8 @@ const streamTransactionsByAddress = ({ chainId, chain, network, address, args })
     order: args.order || 'DESC', // default to descending order
     limit: args?.page_limit || 10, // limit per request/page. total limit is checked in apiStream._read()
     nft_metadata: false,
-    include_input_data: true,
-    include_internal_transactions: true
+    include_input_data: args.includeInputData,
+    include_internal_transactions: args.includeInternalTxs
   });
   args.transform = (tx) => {
     const _tx: any = transformTransaction({ chain, network, ...tx });
@@ -161,9 +161,37 @@ const transformTransaction = (tx) => {
     to: tx.to_address,
     from: tx.from_address,
     data: tx.input,
-    internal: tx?.internal_transactions.map(t => transformInternalTransaction(t)),
-    effects: tx.effects,
-  };
+    internal: tx?.internal_transactions?.map(t => transformInternalTransaction(t)) || [],
+    effects: getEffects(tx),
+    category: tx.category,
+    wallets: [],
+    transactionIndex: tx.transaction_index,
+    calls: [],
+  } as IEVMTransactionTransformed;
+}
+
+const getEffects = (tx): Effect[] => {
+  const effects: Effect[] = [];
+  for (const native of tx.native_transfers) {
+    if (native.internal_transaction) {
+      effects.push({
+        to: native.to_address,
+        from: native.from_address,
+        amount: native.value
+      });
+    }
+  }
+  for (const erc20 of tx.erc20_transfers) {
+    effects.push({
+      to: erc20.to_address,
+      from: erc20.from_address,
+      amount: erc20.value,
+      type: 'ERC20:transfer',
+      contractAddress: erc20.address,
+      callStack: `${erc20.log_index}` // 
+    });
+  }
+  return effects;
 }
 
 const transformInternalTransaction = (tx) => {

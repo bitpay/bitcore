@@ -195,6 +195,7 @@ export interface TxReceipt {
 export type IEVMTransactionTransformed = IEVMTransactionInProcess & {
   initialFrom?: string;
   callStack?: string;
+  externalCategory?: string; // from external provider
 };
 
 export interface TransactionJSON {
