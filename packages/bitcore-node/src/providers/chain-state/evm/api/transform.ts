@@ -59,11 +59,11 @@ export class EVMListTransactionsStream extends Transform {
       const weReceivedInternal = overlaps(this.walletAddresses, transaction.effects?.map(e => e.to));
       if (weReceived || weReceivedInternal) {
         baseTx.category = 'receive';
-        baseTx.satoshis = BigInt(transaction.value);
+        baseTx.satoshis = BigInt(transaction.value || 0);
         if (weReceivedInternal) {
           for (const effect of transaction.effects!) {
             if (this.walletAddresses.includes(effect.to)) {
-              baseTx.satoshis += BigInt(effect.amount);
+              baseTx.satoshis += BigInt(effect.amount || 0);
               baseTx.to = effect.to;
             }
           }
