@@ -92,7 +92,7 @@ jobs:
           command: |
             nvm use default
             set -x && node -v && npm -v && google-chrome --version && docker version && python --version
-      - restore_dependency_cache
+      # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
           npm install
