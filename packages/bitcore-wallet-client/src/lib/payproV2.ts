@@ -19,6 +19,9 @@ var MAX_FEE_PER_KB = {
   bch: 10000 * 1000, // 10k sat/b
   eth: 1000000000000, // 1000 Gwei
   matic: 1000000000000, // 1000 Gwei
+  arb: 1000000000000, // 1000 Gwei
+  base: 1000000000000, // 1000 Gwei
+  op: 1000000000000, // 1000 Gwei
   xrp: 1000000000000,
   doge: 10000 * 1000, // 10k sat/b
   ltc: 10000 * 1000 // 10k sat/b
@@ -28,7 +31,7 @@ var MAX_FEE_PER_KB = {
 export enum NetworkMap {
   main = 'livenet',
   test = 'testnet',
-  regtest = 'testnet'
+  regtest = 'regtest'
 }
 
 export class PayProV2 {

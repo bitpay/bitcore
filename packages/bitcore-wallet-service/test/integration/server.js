@@ -2089,7 +2089,7 @@ describe('Wallet service', function() {
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 1, {
           coin: 'bch',
-          network: 'testnet',
+          network: 'testnet3',
         }, function(s, w) {
           server = s;
           wallet = w;
@@ -2287,7 +2287,7 @@ describe('Wallet service', function() {
 
       describe('BIP44 testnet (with storage transformation)', function() {
         beforeEach(function(done) {
-          helpers.createAndJoinWallet(1, 1, { coin: 'eth', network: 'testnet' }, function(s, w) {
+          helpers.createAndJoinWallet(1, 1, { coin: 'eth', network: 'sepolia' }, function(s, w) {
             server = s;
             wallet = w;
             done();
@@ -2299,13 +2299,13 @@ describe('Wallet service', function() {
             should.not.exist(err);
             address.walletId.should.equal(wallet.id);
             address.path.should.equal('m/0/0');
-            address.network.should.equal('testnet');
+            address.network.should.equal('sepolia');
             address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
             server.createAddress({}, function(err, address) {
               should.not.exist(err);
               should.exist(address);
               address.walletId.should.equal(wallet.id);
-              address.network.should.equal('testnet');
+              address.network.should.equal('sepolia');
               address.path.should.equal('m/0/0');
               address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
               address.isChange.should.be.false;
@@ -2327,7 +2327,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             address.walletId.should.equal(wallet.id);
             address.path.should.equal('m/0/0');
-            address.network.should.equal('testnet');
+            address.network.should.equal('sepolia');
             address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
             server.syncWallet(wallet, function(err) {
               should.not.exist(err);
@@ -3655,7 +3655,7 @@ describe('Wallet service', function() {
         server.getFeeLevels({ coin: 'bch' }, function(err, fees, fromCache) {
           should.not.exist(err);
           should.not.exist(fromCache);
-          server.getFeeLevels({ coin: 'bch', network: 'testnet' }, function(err, fees, fromCache) {
+          server.getFeeLevels({ coin: 'bch', network: 'testnet3' }, function(err, fees, fromCache) {
             should.not.exist(err);
             should.not.exist(fromCache);
             done();

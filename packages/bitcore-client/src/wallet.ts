@@ -15,6 +15,9 @@ const chainLibs = {
   LTC: BitcoreLibLtc,
   ETH: { Web3, ethers },
   MATIC: { Web3, ethers },
+  ARB: { Web3, ethers },
+  BASE: { Web3, ethers },
+  OP: { Web3, ethers },
   XRP: xrpl
 };
 
@@ -279,7 +282,7 @@ export class Wallet {
    * @returns {Boolean}
    */
   isEvmChain() {
-    return ['ETH', 'MATIC'].includes(this.chain?.toUpperCase());
+    return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE'].includes(this.chain?.toUpperCase());
   }
 
   lock() {

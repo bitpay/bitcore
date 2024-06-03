@@ -409,7 +409,7 @@ Address._transformString = function(data, network, type) {
 
   if (data.length > 35){
     var info = decodeCashAddress(data);
-    if (!info.network || (networkObj && networkObj.name !== info.network.name)) {
+    if (!info.network || (networkObj && networkObj.prefix !== info.network.prefix)) {
       throw new TypeError('Address has mismatched network type.');
     }
     if (!info.type || (type && type !== info.type)) {

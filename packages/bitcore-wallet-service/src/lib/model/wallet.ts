@@ -19,6 +19,9 @@ const Bitcore = {
   bch: require('bitcore-lib-cash'),
   eth: require('bitcore-lib'),
   matic: require('bitcore-lib'),
+  arb: require('bitcore-lib'),
+  base: require('bitcore-lib'),
+  op: require('bitcore-lib'),
   xrp: require('bitcore-lib'),
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
@@ -87,12 +90,13 @@ export class Wallet {
   static create(opts) {
     opts = opts || {};
 
+    const chain = opts.chain || opts.coin;
     let x = new Wallet();
 
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.CHAINS)); // checking in chains for simplicity
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
+    $.checkArgument(Utils.checkValueInCollection(chain, Constants.CHAINS)); // checking in chains for simplicity
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]));
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -155,7 +159,7 @@ export class Wallet {
     x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
     x.network = obj.network;
     if (!x.network) {
-      x.network = obj.isTestnet ? 'testnet' : 'livenet';
+      x.network = obj.isTestnet ? Utils.getNetworkName(x.chain, 'testnet') : 'livenet';
     }
     x.derivationStrategy = obj.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = obj.addressType || Constants.SCRIPT_TYPES.P2SH;
@@ -213,7 +217,7 @@ export class Wallet {
       _.map(this.copayers, 'xPubKey')
         .sort()
         .join('') +
-      this.network +
+      Utils.getGenericName(this.network) + // Maintaining compatibility with previous versions
       this.coin +
       salt;
     seed = bitcore.crypto.Hash.sha256(Buffer.from(seed));

@@ -1,4 +1,4 @@
-import { EVMRouter } from '../../ethereum/api/evmRouter';
+import { EVMRouter } from '../../../providers/chain-state/evm/api/routes';
 import { OP } from './csp';
 
 class OPRouter extends EVMRouter {

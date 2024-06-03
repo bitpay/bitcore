@@ -18,7 +18,10 @@ const Bitcore_ = {
   matic: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc')
+  ltc: require('bitcore-lib-ltc'),
+  arb: Bitcore,
+  op: Bitcore,
+  base: Bitcore
 };
 
 const Constants = Common.Constants,
@@ -26,8 +29,8 @@ const Constants = Common.Constants,
   Utils = Common.Utils;
 
 function v8network(bwsNetwork, chain = 'btc') {
-  if (bwsNetwork == 'livenet') return 'mainnet';
-  if (bwsNetwork == 'testnet' && config.blockchainExplorerOpts?.[chain.toLowerCase()]?.testnet?.regtestEnabled) {
+  if (Utils.getGenericName(bwsNetwork) == 'livenet') return 'mainnet';
+  if (Utils.getGenericName(bwsNetwork) == 'testnet' && config.blockchainExplorerOpts?.[chain.toLowerCase()]?.[Utils.getNetworkName(chain.toLowerCase(), 'testnet')]?.regtestEnabled) {
     return 'regtest';
   }
   return bwsNetwork;
@@ -51,8 +54,8 @@ export class V8 {
 
   constructor(opts) {
     $.checkArgument(opts);
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
     $.checkArgument(Utils.checkValueInCollection(opts.chain, Constants.CHAINS));
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain]));
     $.checkArgument(opts.url);
 
     this.apiPrefix = opts.apiPrefix == null ? '/api' : opts.apiPrefix;

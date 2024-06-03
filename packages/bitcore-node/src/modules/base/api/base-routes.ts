@@ -1,13 +1,10 @@
-import { EVMRouter } from '../../ethereum/api/evmRouter';
+import { EVMRouter } from '../../../providers/chain-state/evm/api/routes';
 import { BASE } from './csp';
-
-const chain = 'BASE';
 
 class BASERouter extends EVMRouter {
   constructor() {
-    super(BASE, chain);
+    super(BASE, 'BASE');
   }
 }
-const router = new BASERouter().getRouter();
 
-export const BaseRoutes = router;
+export const BaseRoutes = new BASERouter().getRouter();;

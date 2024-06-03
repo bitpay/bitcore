@@ -60,13 +60,21 @@ app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api', getRouterFromFile('status'));
-
+// Change aliased chain and network params
+app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
+  const { chain: beforeChain, network: beforeNetwork } = req.params;
+  const { chain, network } = Config.aliasFor({ chain: beforeChain, network: beforeNetwork });
+  req.params.chain = chain;
+  req.params.network = network;
+  next();
+});
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
   let { chain, network } = req.params;
-  const hasChain = chains.includes(chain);
-  const chainNetworks = networks[chain] || null;
+
+  const hasChain = chains.includes(chain as string);
+  const chainNetworks = networks[chain as string] || null;
   const hasChainNetworks = chainNetworks != null;
-  const hasNetworkForChain = hasChainNetworks ? chainNetworks[network] : false;
+  const hasNetworkForChain = hasChainNetworks ? chainNetworks[network as string] : false;
 
   if (chain && !hasChain) {
     return resp.status(500).send(`This node is not configured for the chain ${chain}`);

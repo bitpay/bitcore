@@ -5,7 +5,6 @@ import { BitcoreLib } from 'crypto-wallet-core';
 import { Constants, Utils } from './common';
 const $ = require('preconditions').singleton();
 const _ = require('lodash');
-
 const Bitcore = BitcoreLib;
 const sjcl = require('sjcl');
 
@@ -94,7 +93,7 @@ export class Credentials {
     $.checkArgument(_.isUndefined(opts.nonCompliantDerivation));
     opts = opts || {};
 
-    var x: any = new Credentials();
+    let x: any = new Credentials();
     x.coin = opts.coin;
     x.chain = opts.chain;
     x.network = opts.network;
@@ -183,9 +182,9 @@ export class Credentials {
 
   getRootPath() {
     // This is for OLD v1.0 credentials only.
-    var legacyRootPath = () => {
+    let legacyRootPath = () => {
       // legacy base path schema
-      var purpose;
+      let purpose;
       switch (this.derivationStrategy) {
         case Constants.DERIVATION_STRATEGIES.BIP45:
           return "m/45'";
@@ -200,35 +199,42 @@ export class Credentials {
           break;
       }
 
-      var coin = '0';
+      let chainPath = '0';
+      const chain = this.chain?.toLowerCase() || this.coin;
       // checking in chains for simplicity
       if (
         this.network != 'livenet' &&
-        Constants.UTXO_CHAINS.includes(this.coin)
+        Constants.UTXO_CHAINS.includes(chain)
       ) {
-        coin = '1';
-      } else if (this.coin == 'bch') {
+        chainPath = '1';
+      } else if (chain == 'bch') {
         if (this.use145forBCH) {
-          coin = '145';
+          chainPath = '145';
         } else {
-          coin = '0';
+          chainPath = '0';
         }
-      } else if (this.coin == 'btc') {
-        coin = '0';
-      } else if (this.coin == 'eth') {
-        coin = '60';
-      } else if (this.coin == 'matic') {
-        coin = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
-      } else if (this.coin == 'xrp') {
-        coin = '144';
-      } else if (this.coin == 'doge') {
-        coin = '3';
-      } else if (this.coin == 'ltc') {
-        coin = '2';
+      } else if (chain == 'btc') {
+        chainPath = '0';
+      } else if (chain == 'eth') {
+        chainPath = '60';
+      } else if (chain == 'matic') {
+        chainPath = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
+      } else if (chain == 'arb') {
+        chainPath = '60';
+      } else if (chain == 'base') {
+        chainPath = '60';
+      } else if (chain == 'op') {
+        chainPath = '60';
+      } else if (chain == 'xrp') {
+        chainPath = '144';
+      } else if (chain == 'doge') {
+        chainPath = '3';
+      } else if (chain == 'ltc') {
+        chainPath = '2';
       } else {
-        throw new Error('unknown coin: ' + this.coin);
+        throw new Error('unknown chain: ' + chain);
       }
-      return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
+      return 'm/' + purpose + "'/" + chainPath + "'/" + this.account + "'";
     };
 
     if (!this.rootPath) {
@@ -238,7 +244,7 @@ export class Credentials {
   }
 
   static fromObj(obj) {
-    var x: any = new Credentials();
+    let x: any = new Credentials();
 
     if (!obj.version || obj.version < x.version) {
       throw new Error('Obsolete credentials version');
@@ -269,9 +275,9 @@ export class Credentials {
   }
 
   toObj() {
-    var self = this;
+    let self = this;
 
-    var x = {};
+    let x = {};
     _.each(Credentials.FIELDS, function (k) {
       x[k] = self[k];
     });

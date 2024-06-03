@@ -1,15 +1,14 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
 import { Readable } from 'stream';
-import Web3 from 'web3';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import Config from '../../../../config';
-import { 
+import {
   historical,
   internal,
   realtime
- } from '../../../../decorators/decorators';
+} from '../../../../decorators/decorators';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
 import { ITransaction } from '../../../../models/baseTransaction';
@@ -40,20 +39,20 @@ import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
-import { BaseEVMExternalStateProvider } from './ecsp';
+import { BaseEVMExternalStateProvider, GetWeb3Response } from './ecsp';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
-import { 
+import {
   getProvider,
   isValidProviderType
- } from './provider';
+} from './provider';
 import { EVMListTransactionsStream } from './transform';
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
-  static rpcs = {} as { [chain: string]: { [network: string]: { rpc: CryptoRpc; web3: Web3; dataType: string } } };
+  static rpcs = {} as { [chain: string]: { [network: string]: GetWeb3Response[] } };
   ecsp: BaseEVMExternalStateProvider;
 
   constructor(public chain: string = 'ETH') {
@@ -62,28 +61,47 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     this.ecsp = new BaseEVMExternalStateProvider(chain);
   }
 
-  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<{ rpc: CryptoRpc; web3: Web3; dataType: string }> {
-    try {
-      if (isValidProviderType(params?.type, BaseEVMStateProvider.rpcs[this.chain]?.[network]?.dataType)) {
-        await BaseEVMStateProvider.rpcs[this.chain][network].web3.eth.getBlockNumber();
+  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<GetWeb3Response> {
+    for (const rpc of BaseEVMStateProvider.rpcs[this.chain]?.[network] || []) {
+      if (!isValidProviderType(params?.type, rpc.dataType)) {
+        continue;
       }
-    } catch (e) {
-      delete BaseEVMStateProvider.rpcs[this.chain][network];
-    }
-    if (!BaseEVMStateProvider.rpcs[this.chain] || !BaseEVMStateProvider.rpcs[this.chain][network]) {
-      logger.info(`Making a new connection for ${this.chain}:${network}`);
-      const dataType = params?.type;
-      const providerConfig = getProvider({ network, dataType, config: this.config });
-      // Default to using ETH CryptoRpc with all EVM chain configs
-      const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
-      const rpc = new CryptoRpc(rpcConfig, {}).get('ETH');
-      if (BaseEVMStateProvider.rpcs[this.chain]) {
-        BaseEVMStateProvider.rpcs[this.chain][network] = { rpc, web3: rpc.web3, dataType: dataType || 'combinded' };
-      } else {
-        BaseEVMStateProvider.rpcs[this.chain] = { [network]: { rpc, web3: rpc.web3, dataType: dataType || 'combinded'  } };
+
+      try {
+        await Promise.race([
+          rpc.web3.eth.getBlockNumber(),
+          new Promise((_, reject) => setTimeout(reject, 5000))
+        ]);
+        return rpc; // return the first applicable rpc that's responsive
+      } catch (e) {
+        // try reconnecting
+        if (typeof (rpc.web3.currentProvider as any)?.disconnect === 'function') {
+          (rpc.web3.currentProvider as any)?.disconnect?.();
+          (rpc.web3.currentProvider as any)?.connect?.();
+          if ((rpc.web3.currentProvider as any)?.connected) {
+            return rpc;
+          }
+        }
+        const idx = BaseEVMStateProvider.rpcs[this.chain][network].indexOf(rpc);
+        BaseEVMStateProvider.rpcs[this.chain][network].splice(idx, 1);
       }
     }
-    return BaseEVMStateProvider.rpcs[this.chain][network];
+
+    logger.info(`Making a new connection for ${this.chain}:${network}`);
+    const dataType = params?.type;
+    const providerConfig = getProvider({ network, dataType, config: this.config });
+    // Default to using ETH CryptoRpc with all EVM chain configs
+    const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
+    const rpc = new CryptoRpc(rpcConfig, {}).get('ETH');
+    const rpcObj = { rpc, web3: rpc.web3, dataType: rpcConfig.dataType || 'combined' };
+    if (!BaseEVMStateProvider.rpcs[this.chain]) {
+      BaseEVMStateProvider.rpcs[this.chain] = {};
+    }
+    if (!BaseEVMStateProvider.rpcs[this.chain][network]) {
+      BaseEVMStateProvider.rpcs[this.chain][network] = [];
+    }
+    BaseEVMStateProvider.rpcs[this.chain][network].push(rpcObj);
+    return rpcObj;
   }
 
   async erc20For(network: string, address: string) {
@@ -139,7 +157,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           return { feerate, blocks: target };
         }
         let feerate;
-        if (!this.isExternallyProvided(network)) {
+        if (!this.isExternallyProvided({ network })) {
           const txs = await EVMTransactionStorage.collection
             .find({ chain, network, blockHeight: { $gt: 0 } })
             .project({ gasPrice: 1, blockHeight: 1 })
@@ -219,7 +237,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return this.execute('getLocalTip', network)({ chain, network });
   }
 
-  _getLocalTip = async ({ chain, network }) : Promise<IBlock> => {
+  _getLocalTip = async ({ chain, network }): Promise<IBlock> => {
     return EVMBlockStorage.getLocalTip({ chain, network });
   }
 
@@ -250,7 +268,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @historical
   async getTransaction(params: StreamTransactionParams) {
-    let { network } = params;
+    const { network } = params;
     return await this.execute('getTransaction', network)(params);
   }
 
@@ -306,8 +324,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   @historical
-  @internal
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
+    const { network } = params;
+    return await this.execute('streamAddressTransactions', network)(params);
+  }
+
+  _streamAddressTransactions = async (params: StreamAddressUtxosParams) => {
     const { req, res, args, chain, network, address } = params;
     const { limit, /*since,*/ tokenAddress } = args;
     if (!args.tokenAddress) {
@@ -327,8 +349,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       try {
         const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
         res!.json(tokenTransfers);
-      } catch (e) {
-        res!.status(500).send(e);
+      } catch (err: any) {
+        logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
+        res!.status(500).send(err);
       }
     }
   }
@@ -436,7 +459,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return query;
   }
 
+  @historical
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
+    const { network } = params;
+    return this.execute('streamWalletTransactions', network)(params);
+  }
+
+  _streamWalletTransactions = async (params: StreamWalletTransactionsParams) => {
     const { network, wallet, res, args } = params;
     const { web3 } = await this.getWeb3(network);
     const query = this.getWalletTransactionQuery(params);
@@ -613,13 +642,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     });
   }
 
-  isExternallyProvided(network: string) {
+  isExternallyProvided({ network }) {
     return this.config[network]?.chainSource === 'external';
   }
 
   execute(funcName: string, network: string): (...args: any[]) => any {
-    if (this.isExternallyProvided(network)) {
-      // historical data via external provider + sparse mongo data
+    if (this.isExternallyProvided({ network })) {
+      // historical data via external provider
       return this.ecsp[funcName].bind(this.ecsp);
     }
     // historical data via full mongo data      

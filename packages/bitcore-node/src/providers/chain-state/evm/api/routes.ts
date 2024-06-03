@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import logger from '../../../logger';
-import { BaseEVMStateProvider } from '../../../providers/chain-state/evm/api/csp';
+import logger from '../../../../logger';
+import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
 export class EVMRouter {
@@ -43,9 +43,9 @@ export class EVMRouter {
       try {
         const nonce = await this.csp.getAccountNonce(network, address);
         res.json({ nonce });
-      } catch (err) {
-        logger.error('Nonce Error::%o', err);
-        res.status(500).send(err);
+      } catch (err: any) {
+        logger.error('Nonce Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -61,8 +61,8 @@ export class EVMRouter {
         if (err?.code != null) { // Preventable error from geth (probably due to insufficient funds or similar)
           res.status(400).send(err.message);
         } else {
-          logger.error('Gas Error::%o', err);
-          res.status(500).send(err);
+          logger.error('Gas Error::%o', err.stack || err.message || err);
+          res.status(500).send(err.message || err);
         }
       }
     });
@@ -74,9 +74,9 @@ export class EVMRouter {
       try {
         const tokenInfo = await this.csp.getERC20TokenInfo(network, tokenAddress);
         res.json(tokenInfo);
-      } catch (err) {
-        logger.error('Token Info Error::%o', err);
-        res.status(500).send(err);
+      } catch (err: any) {
+        logger.error('Token Info Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -87,9 +87,9 @@ export class EVMRouter {
       try {
         const allowance = await this.csp.getERC20TokenAllowance(network, tokenAddress, ownerAddress, spenderAddress);
         res.json(allowance);
-      } catch (err) {
-        logger.error('Token Allowance Error::%o', err);
-        res.status(500).send(err);
+      } catch (err: any) {
+        logger.error('Token Allowance Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -107,13 +107,13 @@ export class EVMRouter {
         }
         return res.json(fee);
       } catch (err: any) {
-        logger.error('Fee Error: %o', err.message || err);
+        logger.error('Fee Error: %o', err.stack || err.message || err);
         return res.status(500).send('Error getting priority fee from RPC');
       }
     });
   };
 
-  private streamGnosisWalletTransactions(router: Router) {
+  private streamGnosisWalletTransactions(router: Router) { 
     router.get(`/api/${this.chain}/:network/ethmultisig/transactions/:multisigContractAddress`, async (req, res) => {
       let { network, multisigContractAddress } = req.params;
       try {
@@ -126,9 +126,9 @@ export class EVMRouter {
           res,
           args: req.query
         });
-      } catch (err) {
-        logger.error('Multisig Transactions Error::%o', err);
-        return res.status(500).send(err);
+      } catch (err: any) {
+        logger.error('Multisig Transactions Error::%o', err.stack || err.message || err);
+        return res.status(500).send(err.message || err);
       }
     });
   };
@@ -137,11 +137,11 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/ethmultisig/txps/:multisigContractAddress`, async (req, res) => {
       const { network, multisigContractAddress } = req.params;
       try {
-        const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
+        const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(this.chain, network, multisigContractAddress);
         res.json(multisigTxpsInfo);
-      } catch (err) {
-        logger.error('Multisig Txps Error::%o', err);
-        res.status(500).send(err);
+      } catch (err: any) {
+        logger.error('Multisig Txps Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -150,11 +150,11 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/ethmultisig/:sender/instantiation/:txId`, async (req, res) => {
       const { network, sender, txId } = req.params;
       try {
-        const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender, txId);
+        const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(this.chain, network, sender, txId);
         res.json(multisigInstantiationInfo);
-      } catch (err) {
-        logger.error('Multisig Instantiation Error::%o', err);
-        res.status(500).send(err);
+      } catch (err: any) {
+        logger.error('Multisig Instantiation Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
@@ -163,11 +163,11 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/ethmultisig/info/:multisigContractAddress`, async (req, res) => {
       const { network, multisigContractAddress } = req.params;
       try {
-        const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
+        const multisigInfo = await Gnosis.getMultisigInfo(this.chain, network, multisigContractAddress);
         res.json(multisigInfo);
-      } catch (err) {
-        logger.error('Multisig Info Error::%o', err);
-        res.status(500).send(err);
+      } catch (err: any) {
+        logger.error('Multisig Info Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
