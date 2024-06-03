@@ -9,3 +9,15 @@ export class StringifyJsonStream extends Transform {
     done();
   }
 }
+
+export class ParseJsonStream extends Transform {
+  constructor() {
+    super({ objectMode: true });
+  }
+  _transform(data, _, done) {
+    if (typeof data === 'string') {
+      data = JSON.parse(data);
+    }
+    done(null, data);
+  }
+}

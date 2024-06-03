@@ -12,8 +12,7 @@ import { Storage, StorageService } from '../../../../services/storage';
 import { SpentHeightIndicators } from '../../../../types/Coin';
 import { StreamingFindOptions } from '../../../../types/Query';
 import { TransformOptions } from '../../../../types/TransformOptions';
-import { valueOrDefault } from '../../../../utils/check';
-import { partition } from '../../../../utils/partition';
+import { partition, valueOrDefault } from '../../../../utils';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
@@ -550,7 +549,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     };
 
     // Add non-lean properties if we aren't excluding them
-    const config = (Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig);
+    const config = Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig;
     if (config && !config.leanTransactionStorage) {
       const dataStr = tx.data ? tx.data.toString() : '';
       const decodedData = this.abiDecode(dataStr);

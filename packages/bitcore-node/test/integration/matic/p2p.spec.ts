@@ -8,7 +8,7 @@ import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/b
 import { EVMP2pWorker } from '../../../src/providers/chain-state/evm/p2p/p2p';
 import { Api } from '../../../src/services/api';
 import { IEVMNetworkConfig } from '../../../src/types/Config';
-import { wait } from '../../../src/utils/wait';
+import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 

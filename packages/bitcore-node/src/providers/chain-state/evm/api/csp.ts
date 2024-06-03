@@ -32,7 +32,7 @@ import {
   StreamWalletTransactionsParams,
   UpdateWalletParams
 } from '../../../../types/namespaces/ChainStateProvider';
-import { partition } from '../../../../utils/partition';
+import { partition } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';

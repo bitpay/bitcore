@@ -40,7 +40,7 @@ import {
   WalletCheckParams
 } from '../../../types/namespaces/ChainStateProvider';
 import { TransactionJSON } from '../../../types/Transaction';
-import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
+import { StringifyJsonStream } from '../../../utils/jsonStream';
 import { ListTransactionsStream } from './transforms';
 
 @LoggifyClass

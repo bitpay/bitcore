@@ -1,7 +1,7 @@
 import config from '../../src/config';
 import { Modules } from '../../src/modules';
 import { Storage } from '../../src/services/storage';
-import { wait } from '../../src/utils/wait';
+import { wait } from '../../src/utils';
 
 const storageArgs = {
   dbHost: config.dbHost,

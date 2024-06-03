@@ -3,7 +3,7 @@ import logger from '../logger';
 import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
 import { IBlock } from '../types/Block';
-import { wait } from '../utils/wait';
+import { wait } from '../utils';
 import { Config, ConfigService } from './config';
 
 export class P2pManager {

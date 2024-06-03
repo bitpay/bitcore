@@ -14,7 +14,7 @@ import { AsyncRPC } from '../../src/rpc';
 import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
-import { wait } from '../../src/utils/wait';
+import { wait } from '../../src/utils';
 import { createWallet } from '../benchmark/wallet-benchmark';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';

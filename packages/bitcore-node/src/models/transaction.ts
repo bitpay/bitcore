@@ -11,7 +11,7 @@ import { SpentHeightIndicators } from '../types/Coin';
 import { BitcoinTransaction } from '../types/namespaces/Bitcoin';
 import { TransactionJSON } from '../types/Transaction';
 import { TransformOptions } from '../types/TransformOptions';
-import { partition } from '../utils/partition';
+import { partition } from '../utils';
 import { MongoBound } from './base';
 import { BaseTransaction, ITransaction } from './baseTransaction';
 import { CoinStorage, ICoin } from './coin';
