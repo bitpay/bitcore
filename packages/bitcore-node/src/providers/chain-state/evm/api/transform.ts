@@ -2,7 +2,7 @@ import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
-import { overlaps } from '../../../../utils';
+import { jsonStringify, overlaps } from '../../../../utils';
 import { IEVMTransactionTransformed } from '../types';
 
 export class EVMListTransactionsStream extends Transform {
@@ -45,32 +45,34 @@ export class EVMListTransactionsStream extends Transform {
         baseTx.category = 'send';
         baseTx.satoshis = -transaction.value
         this.push(
-          JSON.stringify(baseTx) + '\n'
+          jsonStringify(baseTx) + '\n'
         );
       } else {
         baseTx.category = 'move';
         baseTx.satoshis = transaction.value;
         this.push(
-          JSON.stringify(baseTx) + '\n'
+          jsonStringify(baseTx) + '\n'
         );
       }
     } else {
+      baseTx.category = 'receive'; // assume it's a receive, but may not be sent
       const weReceived = this.walletAddresses.includes(transaction.to);
       const weReceivedInternal = overlaps(this.walletAddresses, transaction.effects?.map(e => e.to));
-      if (weReceived || weReceivedInternal) {
-        baseTx.category = 'receive';
-        baseTx.satoshis = BigInt(transaction.value || 0);
-        if (weReceivedInternal) {
-          for (const effect of transaction.effects!) {
-            if (this.walletAddresses.includes(effect.to)) {
-              baseTx.satoshis += BigInt(effect.amount || 0);
-              baseTx.to = effect.to;
-            }
+      if (weReceivedInternal) {
+        baseTx.satoshis = 0n;
+        for (const effect of transaction.effects!) {
+          if (this.walletAddresses.includes(effect.to) && !effect.contractAddress) {
+            baseTx.satoshis += BigInt(effect.amount || 0);
           }
         }
-        baseTx.satoshis = baseTx.satoshis.toString();
         this.push(
-          JSON.stringify(baseTx) + '\n'
+          jsonStringify(baseTx) + '\n'
+        );
+      } else if (weReceived) {
+        // console.log(weReceived, weReceivedInternal, transaction.to, this.walletAddresses, transaction);
+        baseTx.satoshis = BigInt(transaction.value || 0);
+        this.push(
+          jsonStringify(baseTx) + '\n'
         );
       }
     }

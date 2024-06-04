@@ -25,6 +25,20 @@ export function tryParse(str: string): any {
   }
 }
 
+/**
+ * Wrapper for JSON.stringify that also converts BigInts to strings
+ * @param obj 
+ * @returns 
+ */
+export function jsonStringify(obj: any): string {
+  return JSON.stringify(obj, (_key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return value;
+  });
+}
+
 export function partition<T>(array: T[], n: number): T[][] {
   n = n > 0 ? Math.ceil(n) : 1;
   return array.length ? [array.slice(0, n)].concat(partition(array.slice(n), n)) : [];
