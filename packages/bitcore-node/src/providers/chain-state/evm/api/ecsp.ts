@@ -116,8 +116,8 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     gasPrices.sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
     const whichQuartile: number = Math.min(target, 4) || 1;
     const quartileMedian: BigInt = StatsUtil.getNthQuartileMedian(gasPrices, whichQuartile);
-    const feerate = quartileMedian.toString();
-    // Fee returned in wei as a string
+    const feerate = Number(quartileMedian.toString());
+    // Fee returned in wei
     return { feerate, blocks: target };
   }
 
