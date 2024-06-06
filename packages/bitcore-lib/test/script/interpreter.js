@@ -462,7 +462,7 @@ describe('Interpreter', function() {
       it(`script asset test vector ${i}: ${test.comment}`, function() {
         const tx =  new Transaction(test.tx);
         const prevOuts = [];
-        for (let prevout in test.prevouts) {
+        for (let prevout of test.prevouts) {
           const poBuffReader = new BufferReader(Buffer.from(prevout,'hex'));
           prevout = Transaction.Output.fromBufferReader(poBuffReader);
           
