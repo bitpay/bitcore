@@ -1,8 +1,8 @@
 import requestStream from 'request';
 import request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
-import * as stream from 'stream';
 import { URL } from 'url';
+import * as utils from './utils';
 let usingBrowser = (global as any).window;
 const URLClass = usingBrowser ? usingBrowser.URL : URL;
 const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
@@ -19,13 +19,12 @@ export class Client {
       return await request(params);
     } catch (err) {
       if (err.statusCode) {
-        throw new Error(`${err.statusCode} - ${params.url} - "${JSON.stringify(err.error)}"`);
+        throw new Error(`${err.statusCode} - ${params.method}: ${params.url} - "${JSON.stringify(err.error)}"`);
       } else if (err.error instanceof Error) {
         throw err.error;
       }
       throw err;
     }
-
   }
 
   _buildQueryString( params: any) {
@@ -170,18 +169,27 @@ export class Client {
     return result;
   }
 
-  async importAddresses(params) {
+  async importAddresses(params: { pubKey: string; payload: Array<{ address: string }> }): Promise<void> {
     const { payload, pubKey } = params;
     const url = `${this.apiUrl}/wallet/${pubKey}`;
-    const signature = this.sign({ method: 'POST', url, payload });
 
-    return this._request({
-      method: 'POST',
-      url,
-      headers: { 'x-signature': signature },
-      body: payload,
-      json: true
-    });
+    for (let i = 0; i < payload.length; i += 100) {
+      const body = payload.slice(i, i + 100);
+      console.log(`Importing addresses ${i + 1}-${i + body.length} of ${payload.length}`);
+      if (i >= 100) {
+        await utils.sleep(1000); // cooldown
+      }
+      
+      const signature = this.sign({ method: 'POST', url, payload: body });
+
+      await this._request({
+        method: 'POST',
+        url,
+        headers: { 'x-signature': signature },
+        body,
+        json: true
+      });
+    }
   }
 
   async broadcast(params) {

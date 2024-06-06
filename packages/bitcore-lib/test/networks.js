@@ -123,4 +123,25 @@ describe('Networks', function() {
     expect(fn).to.throw(TypeError)
   });
 
+  it('should have not have network magic or port for testnet', function() {
+    var testnet = networks.get('testnet');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(false);
+    isNaN(testnet.port).should.equal(true);
+  });
+
+  it('should have network magic and port for testnet variant "testnet3"', function() {
+    var testnet = networks.get('testnet3');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
+  });
+
+  it('should have network magic and port for testnet variant "signet"', function() {
+    var testnet = networks.get('signet');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
+  });
+
 });

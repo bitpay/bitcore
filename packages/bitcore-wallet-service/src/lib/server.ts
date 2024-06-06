@@ -1,6 +1,9 @@
 import * as async from 'async';
 import * as crypto from 'crypto'
-import { Validation } from 'crypto-wallet-core';
+import {
+  Constants as ConstantsCWC,
+  Validation
+} from 'crypto-wallet-core';
 import * as _ from 'lodash';
 import Moralis from 'moralis';
 import 'source-map-support/register';
@@ -47,6 +50,9 @@ const Bitcore_ = {
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
   matic: Bitcore,
+  arb: Bitcore,
+  base: Bitcore,
+  op: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
@@ -273,7 +279,7 @@ export class WalletService implements IWalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -566,8 +572,8 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Invalid chain'));
     }
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) {
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) {
       return cb(new ClientError('Invalid network'));
     }
 
@@ -884,7 +890,7 @@ export class WalletService implements IWalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -1123,7 +1129,7 @@ export class WalletService implements IWalletService {
           this._addCopayerToWallet(wallet, opts, cb);
           return;
         }
-        
+
         if (opts.chain === 'bch' && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
@@ -1164,7 +1170,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name)) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 
@@ -1203,6 +1209,9 @@ export class WalletService implements IWalletService {
    * @param {string} opts.tokenAddresses - Linked token addresses
    * @param {string} opts.multisigEthInfo - Linked multisig eth wallet info
    * @param {string} opts.maticTokenAddresses - Linked token addresses
+   * @param {string} opts.opTokenAddresses - Linked token addresses
+   * @param {string} opts.baseTokenAddresses - Linked token addresses
+   * @param {string} opts.arbTokenAddresses - Linked token addresses
    * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
    */
@@ -1257,7 +1266,25 @@ export class WalletService implements IWalletService {
             value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress))
           );
         }
-      }
+      },
+      {
+        name: 'opTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('op', 'mainnet', x));
+        }
+      },
+      {
+        name: 'baseTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('base', 'mainnet', x));
+        }
+      },
+      {
+        name: 'arbTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
+        }
+      },
     ];
 
     opts = _.pick(opts, _.map(preferences, 'name'));
@@ -1282,7 +1309,7 @@ export class WalletService implements IWalletService {
       }
 
       if (wallet.coin != 'matic') {
-        opts.maticMokenAddresses = null;
+        opts.maticTokenAddresses = null;
         opts.multisigMaticInfo = null;
       }
 
@@ -1330,6 +1357,27 @@ export class WalletService implements IWalletService {
             oldPref = oldPref || {};
             oldPref.maticTokenAddresses = oldPref.maticTokenAddresses || [];
             preferences.maticTokenAddresses = _.uniq(oldPref.maticTokenAddresses.concat(opts.maticTokenAddresses));
+          }
+
+          // merge op tokenAddresses
+          if (opts.opTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.opTokenAddresses = oldPref.opTokenAddresses || [];
+            preferences.opTokenAddresses = _.uniq(oldPref.opTokenAddresses.concat(opts.opTokenAddresses));
+          }
+
+          // merge base tokenAddresses
+          if (opts.baseTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.baseTokenAddresses = oldPref.baseTokenAddresses || [];
+            preferences.baseTokenAddresses = _.uniq(oldPref.baseTokenAddresses.concat(opts.baseTokenAddresses));
+          }
+
+          // merge arb tokenAddresses
+          if (opts.arbTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
+            preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
           }
 
           // merge matic multisigMaticInfo
@@ -1595,7 +1643,7 @@ export class WalletService implements IWalletService {
     }
     opts.provider = provider;
     opts.chain = chain;
-    opts.network = network;
+    opts.network = Utils.getNetworkName(chain, network);
     opts.userAgent = WalletService.getServiceVersion();
     let bc;
     try {
@@ -1813,7 +1861,7 @@ export class WalletService implements IWalletService {
 
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
-
+        console.log('wallet:', wallet.chain, wallet.network);
         const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
         if (!bc) {
           return cb(new Error('Could not get blockchain explorer instance'));
@@ -1827,7 +1875,7 @@ export class WalletService implements IWalletService {
         } catch (ex) {
           return cb(null, []);
         }
-        if (addrObj.network.name != wallet.network) {
+        if (!Utils.compareNetworks(addrObj.network.name.toLowerCase(), wallet.network.toLowerCase(), wallet.chain)) {
           return cb(null, []);
         }
 
@@ -2034,8 +2082,8 @@ export class WalletService implements IWalletService {
     opts.chain = opts.chain || Defaults.CHAIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) return cb(new ClientError('Invalid network'));
 
     const cacheKey = 'feeLevel:' + opts.chain + ':' + opts.network;
 
@@ -2542,61 +2590,66 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 next => {
-                  let txOptsFee = fee;
+                  try {
+                    let txOptsFee = fee;
 
-                  if (!txOptsFee) {
-                    const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
-                    const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
-                    const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
+                    if (!txOptsFee) {
+                      const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
+                      const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
+                      const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 
-                    if (shouldUseOptsFee) {
-                      txOptsFee = opts.fee;
+                      if (shouldUseOptsFee) {
+                        txOptsFee = opts.fee;
+                      }
                     }
-                  }
 
-                  const txOpts = {
-                    id: opts.txProposalId,
-                    walletId: this.walletId,
-                    creatorId: this.copayerId,
-                    coin: opts.coin,
-                    chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
-                    network: wallet.network,
-                    outputs: opts.outputs,
-                    message: opts.message,
-                    from: opts.from,
-                    changeAddress,
-                    feeLevel: opts.feeLevel,
-                    feePerKb,
-                    payProUrl: opts.payProUrl,
-                    walletM: wallet.m,
-                    walletN: wallet.n,
-                    excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
-                    instantAcceptanceEscrow: opts.instantAcceptanceEscrow,
-                    addressType: wallet.addressType,
-                    customData: opts.customData,
-                    inputs: opts.inputs,
-                    version: opts.txpVersion,
-                    fee: txOptsFee,
-                    noShuffleOutputs: opts.noShuffleOutputs,
-                    gasPrice,
-                    maxGasFee,
-                    priorityGasFee,
-                    txType: opts.txType,
-                    nonce: opts.nonce,
-                    gasLimit, // Backward compatibility for BWC < v7.1.1
-                    data: opts.data, // Backward compatibility for BWC < v7.1.1
-                    tokenAddress: opts.tokenAddress,
-                    multisigContractAddress: opts.multisigContractAddress,
-                    multiSendContractAddress: opts.multiSendContractAddress,
-                    destinationTag: opts.destinationTag,
-                    invoiceID: opts.invoiceID,
-                    signingMethod: opts.signingMethod,
-                    isTokenSwap: opts.isTokenSwap,
-                    enableRBF: opts.enableRBF,
-                    replaceTxByFee: opts.replaceTxByFee
-                  };
-                  txp = TxProposal.create(txOpts);
-                  next();
+                    const txOpts = {
+                      id: opts.txProposalId,
+                      walletId: this.walletId,
+                      creatorId: this.copayerId,
+                      coin: opts.coin,
+                      chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
+                      network: wallet.network,
+                      outputs: opts.outputs,
+                      message: opts.message,
+                      from: opts.from,
+                      changeAddress,
+                      feeLevel: opts.feeLevel,
+                      feePerKb,
+                      payProUrl: opts.payProUrl,
+                      walletM: wallet.m,
+                      walletN: wallet.n,
+                      excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
+                      instantAcceptanceEscrow: opts.instantAcceptanceEscrow,
+                      addressType: wallet.addressType,
+                      customData: opts.customData,
+                      inputs: opts.inputs,
+                      version: opts.txpVersion,
+                      fee: txOptsFee,
+                      noShuffleOutputs: opts.noShuffleOutputs,
+                      gasPrice,
+                      maxGasFee,
+                      priorityGasFee,
+                      txType: opts.txType,
+                      nonce: opts.nonce,
+                      gasLimit, // Backward compatibility for BWC < v7.1.1
+                      data: opts.data, // Backward compatibility for BWC < v7.1.1
+                      tokenAddress: opts.tokenAddress,
+                      multisigContractAddress: opts.multisigContractAddress,
+                      multiSendContractAddress: opts.multiSendContractAddress,
+                      destinationTag: opts.destinationTag,
+                      invoiceID: opts.invoiceID,
+                      signingMethod: opts.signingMethod,
+                      isTokenSwap: opts.isTokenSwap,
+                      enableRBF: opts.enableRBF,
+                      replaceTxByFee: opts.replaceTxByFee
+                    };
+                    txp = TxProposal.create(txOpts);
+                    next();
+                  } catch (e) {
+                    logger.error('Error creating TX: %o', e.stack || e.message || e);
+                    return next(e);
+                  }
                 },
                 async next => {
                   if (opts.chain != 'xrp') return next();
@@ -2907,8 +2960,8 @@ export class WalletService implements IWalletService {
     opts.chain = opts.chain || opts.coin || Defaults.COIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) return cb(new ClientError('Invalid network'));
     this._broadcastRawTx(opts.chain, opts.network, opts.rawTx, cb);
   }
 
@@ -3271,7 +3324,7 @@ export class WalletService implements IWalletService {
     }
   }
 
-  getPendingTxsPromise(opts): Promise<any>  {
+  getPendingTxsPromise(opts): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getPendingTxs(opts, (err, txps) => {
         if (err) return reject(err);
@@ -3436,7 +3489,7 @@ export class WalletService implements IWalletService {
         _.map([].concat(txs), tx => {
           const t = new Date(tx.blockTime).getTime() / 1000;
           const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
-          
+
           // This adapter rebuilds the abiType property from data contained in the effects so that it returns what wallet is used to
           // If we remove the slight reliance in the wallet on abiType then we can remove this adapter
           function recreateAbiType(effects) {
@@ -3471,7 +3524,7 @@ export class WalletService implements IWalletService {
             data: tx.data,
             abiType: tx.abiType || recreateAbiType(tx.effects),
             gasPrice: tx.gasPrice,
-            maxGasFee: tx.maxGasFee, 
+            maxGasFee: tx.maxGasFee,
             priorityGasFee: tx.priorityGasFee,
             txType: tx.txType,
             gasLimit: tx.gasLimit,
@@ -4730,11 +4783,11 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = { ...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.' } };
     }
 
     if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
-      externalServicesConfig.swapCrypto = {...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.'}};
+      externalServicesConfig.swapCrypto = { ...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.' } };
     }
 
     // Buy crypto rules
@@ -4745,7 +4798,7 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && buyCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.buyCrypto = {...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
+      externalServicesConfig.buyCrypto = { ...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.' } };
     }
 
     // Sell crypto rules
@@ -4756,7 +4809,7 @@ export class WalletService implements IWalletService {
       // Logged out (IP restriction)
       (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
     ) {
-      externalServicesConfig.sellCrypto = {...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.'}};
+      externalServicesConfig.sellCrypto = { ...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.' } };
     }
 
     return cb(null, externalServicesConfig);
@@ -4866,7 +4919,7 @@ export class WalletService implements IWalletService {
       if (req.body.payment_method_id) qs.push('payment_method_id=' + req.body.payment_method_id);
       if (req.body.account_reference) qs.push('account_reference=' + req.body.account_reference);
       if (req.body.blockchain) qs.push('blockchain=' + req.body.blockchain);
-      
+
       const UriPath = `/prices${qs.length > 0 ? '?' + qs.join('&') : ''}`;
       const URL: string = API + UriPath;
       const auth = this.getBanxaSignature('get', UriPath, API_KEY, SECRET_KEY);
@@ -4905,7 +4958,7 @@ export class WalletService implements IWalletService {
       }
 
       delete req.body.payment_method_id;
-      
+
       const UriPath = '/orders';
       const URL: string = API + UriPath;
       const auth = this.getBanxaSignature('post', UriPath, API_KEY, SECRET_KEY, req.body);
@@ -5229,6 +5282,8 @@ export class WalletService implements IWalletService {
     qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
 
     if (req.body.quoteCurrencyCode) qs.push('quoteCurrencyCode=' + encodeURIComponent(req.body.quoteCurrencyCode));
+    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
+    if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
     if (req.body.refundWalletAddress) qs.push('refundWalletAddress=' + encodeURIComponent(req.body.refundWalletAddress));
     if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
     if (req.body.colorCode) qs.push('colorCode=' + encodeURIComponent(req.body.colorCode));
@@ -5531,13 +5586,13 @@ export class WalletService implements IWalletService {
 
       let qs = [];
       qs.push('hostApiKey=' + API_KEY);
-    if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
-    if (req.body.withDisabled) qs.push('withDisabled=' + encodeURIComponent(req.body.withDisabled));
-    if (req.body.withHidden) qs.push('withHidden=' + encodeURIComponent(req.body.withHidden));
-    if (req.body.useIp) {
-      const ip = Utils.getIpFromReq(req);
-      qs.push('userIp=' + encodeURIComponent(ip));
-    }
+      if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
+      if (req.body.withDisabled) qs.push('withDisabled=' + encodeURIComponent(req.body.withDisabled));
+      if (req.body.withHidden) qs.push('withHidden=' + encodeURIComponent(req.body.withHidden));
+      if (req.body.useIp) {
+        const ip = Utils.getIpFromReq(req);
+        qs.push('userIp=' + encodeURIComponent(ip));
+      }
 
       URL = API + `/host-api/v3/assets?${qs.join('&')}`;
 
@@ -6171,7 +6226,7 @@ export class WalletService implements IWalletService {
         accessToken = req.body.accessToken;
       } else {
         try {
-          const accessTokenData = await this.transakGetAccessToken({body: env});
+          const accessTokenData = await this.transakGetAccessToken({ body: env });
           accessToken = accessTokenData?.data?.accessToken;
         } catch (err) {
           return reject(err?.body ? err.body : err);
@@ -6365,13 +6420,13 @@ export class WalletService implements IWalletService {
     });
 
     const publicKey = crypto.createPublicKey(privateKey).export({
-        type: 'pkcs1',
-        format: 'der'
+      type: 'pkcs1',
+      format: 'der'
     });
 
     const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), privateKey);
 
-    return {signature, publicKey};
+    return { signature, publicKey };
   }
 
   changellyGetCurrencies(req): Promise<any> {
@@ -6397,7 +6452,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6457,7 +6512,7 @@ export class WalletService implements IWalletService {
 
       const URL: string = keys.API;
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6519,7 +6574,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6592,7 +6647,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6643,16 +6698,16 @@ export class WalletService implements IWalletService {
         jsonrpc: '2.0',
         method: 'getTransactions',
         params:
-          {
-            id: req.body.exchangeTxId,
-            limit: req.body.limit ?? 1,
-          }
+        {
+          id: req.body.exchangeTxId,
+          limit: req.body.limit ?? 1,
+        }
       };
 
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6710,7 +6765,7 @@ export class WalletService implements IWalletService {
       const URL: string = keys.API;
 
       if (req.body.useV2) {
-        const {signature, publicKey} = this.changellySignRequestsV2(message, keys.SECRET);
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
         headers = {
           'Content-Type': 'application/json',
           'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
@@ -6798,12 +6853,8 @@ export class WalletService implements IWalletService {
       if (credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
       if (credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
 
-      const chainIdMap = {
-        eth: 1,
-        matic: 137
-      };
-
-      const chainId = chainIdMap[req.params?.['chain'] || 'eth'];
+      const chainNetwork: string = `${req.params?.['chain']?.toUpperCase()}_mainnet` || 'eth_mainnet';
+      const chainId: number = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[chainNetwork];
 
       const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
@@ -6843,7 +6894,10 @@ export class WalletService implements IWalletService {
 
         const chainIdMap = {
           eth: 1,
-          matic: 137
+          matic: 137,
+          arb: 42161,
+          base: 8453,
+          op: 10,
         };
 
         const chainId = chainIdMap[chain];
@@ -6860,13 +6914,13 @@ export class WalletService implements IWalletService {
             if (err) {
               this.logw('An error occured while retrieving the token list', err);
               if (oldvalues) {
-               this.logw('Using old cached values');
-               return resolve(oldvalues);
+                this.logw('Using old cached values');
+                return resolve(oldvalues);
               }
               return reject(err.body ?? err);
             } else if (data?.statusCode === 429 && oldvalues) {
               // oneinch rate limit
-               return resolve(oldvalues);
+              return resolve(oldvalues);
             } else {
               if (!data?.body?.tokens) {
                 if (oldvalues) {
@@ -6990,7 +7044,7 @@ export class WalletService implements IWalletService {
 
   // Moralis services
   moralisGetWalletTokenBalances(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getWalletTokenBalances({
           address: req.body.address,
@@ -6999,7 +7053,7 @@ export class WalletService implements IWalletService {
           tokenAddresses: req.body.tokenAddresses,
           excludeSpam: req.body.excludeSpam,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7008,7 +7062,7 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetTokenAllowance(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getTokenAllowance({
           address: req.body.address,
@@ -7016,7 +7070,7 @@ export class WalletService implements IWalletService {
           ownerAddress: req.body.ownerAddress,
           spenderAddress: req.body.spenderAddress,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7025,14 +7079,14 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetNativeBalance(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.balance.getNativeBalance({
           address: req.body.address,
           chain: req.body.chain,
           toBlock: req.body.toBlock,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7041,7 +7095,7 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetTokenPrice(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getTokenPrice({
           address: req.body.address,
@@ -7050,7 +7104,7 @@ export class WalletService implements IWalletService {
           exchange: req.body.exchange,
           toBlock: req.body.toBlock,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7059,16 +7113,15 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetMultipleERC20TokenPrices(req): Promise<any> {
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const response = await Moralis.EvmApi.token.getMultipleTokenPrices({
           chain: req.body.chain,
           include: req.body.include,
-        },
-        {
+        }, {
           tokens: req.body.tokens,
         });
-      
+
         return resolve(response.raw ?? response);
       } catch (err) {
         reject(err);
@@ -7139,11 +7192,10 @@ export class WalletService implements IWalletService {
       };
       const contractAddresses = req.params['contractAddresses']; // format example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48,0x6b175474e89094c44da98b954eedeac495271d0f,..
       const altCurrencies = req.params['altCurrencies']; // format example ars,aud,usd,...
-        
-      const URL: string = `${credentials.API}/v3/simple/token_price/${
-        evmBlockchainNetwork[chain]
-      }?contract_addresses=${contractAddresses}&vs_currencies=${altCurrencies}&include_24hr_change=true&include_last_updated_at=true`;
-        
+
+      const URL: string = `${credentials.API}/v3/simple/token_price/${evmBlockchainNetwork[chain]
+        }?contract_addresses=${contractAddresses}&vs_currencies=${altCurrencies}&include_24hr_change=true&include_last_updated_at=true`;
+
       this.request.get(
         URL,
         {

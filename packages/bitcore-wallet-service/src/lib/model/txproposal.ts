@@ -151,8 +151,9 @@ export class TxProposal {
 
   static create(opts) {
     opts = opts || {};
-
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
+  
+    const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]), `Invalid network: ${opts.network} at TxProposal.create()`);
 
     const x = new TxProposal();
 
@@ -163,7 +164,7 @@ export class TxProposal {
 
     // x.version = opts.version || 5; // DISABLED 2020-04-07
     x.version = opts.version || 3;
-    $.checkState(x.version <= 3, 'Failed state: txp version 4 not allowed yet at <create()>');
+    $.checkState(x.version <= 3, 'Failed state: txp version 4 not allowed yet at TxProposal.create()');
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
@@ -171,7 +172,7 @@ export class TxProposal {
     x.walletId = opts.walletId;
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
-    x.chain = opts.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
+    x.chain = chain;
     x.network = opts.network;
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;

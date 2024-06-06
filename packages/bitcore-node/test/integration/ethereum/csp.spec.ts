@@ -434,12 +434,14 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
   } as StreamWalletTransactionsParams)
 
   let counter = 0;
-  await new Promise(r => {
+  const err = await new Promise(r => {
     res
       .on('data', () => counter++)
+      .on('error', r)
       .on('end', r);
   });
 
+  expect(err).to.not.exist;
   expect(counter).to.eq(includeInvalidTxs ? txCount * 2 : txCount);
   sandbox.restore();
 };

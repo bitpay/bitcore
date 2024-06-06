@@ -15,14 +15,25 @@ interface Errors<T> {
   ONLY_CASHADDR: T;
   INSUFFICIENT_FUNDS: T;
   INSUFFICIENT_FUNDS_FOR_FEE: T;
-  INSUFFICIENT_ETH_FEE: T;
-  INSUFFICIENT_MATIC_FEE: T;
   INVALID_ADDRESS: T;
   INVALID_CHANGE_ADDRESS: T;
   KEY_IN_COPAYER: T;
   LOCKED_FUNDS: T;
-  LOCKED_ETH_FEE: T;
+  // Polygon Errors
+  INSUFFICIENT_MATIC_FEE: T;
   LOCKED_MATIC_FEE: T;
+  // Ethereum Errors
+  INSUFFICIENT_ETH_FEE: T;
+  LOCKED_ETH_FEE: T;
+  // Arbitrum Errors
+  INSUFFICIENT_ARB_FEE: T;
+  LOCKED_ARB_FEE: T;
+  // Base Errors
+  INSUFFICIENT_BASE_FEE: T;
+  LOCKED_BASE_FEE: T;
+  // Optimisim Errors
+  INSUFFICIENT_OP_FEE: T;
+  LOCKED_OP_FEE: T;
   HISTORY_LIMIT_EXCEEDED: T;
   MAIN_ADDRESS_GAP_REACHED: T;
   NETWORK_SUSPENDED: T;
@@ -62,14 +73,20 @@ const errors: Errors<string> = {
   ONLY_CASHADDR: 'Only cashaddr wo prefix is allowed for outputs',
   INSUFFICIENT_FUNDS: 'Insufficient funds',
   INSUFFICIENT_FUNDS_FOR_FEE: 'Insufficient funds for fee',
-  INSUFFICIENT_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee',
   INSUFFICIENT_MATIC_FEE: 'Your linked POLYGON wallet does not have enough MATIC for fee',
+  LOCKED_MATIC_FEE: 'Your linked POLYGON wallet does not have enough MATIC for fee',
+  INSUFFICIENT_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee',
+  LOCKED_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee',
+  INSUFFICIENT_ARB_FEE: 'Your linked ARB wallet does not have enough ETH for fee',
+  LOCKED_ARB_FEE: 'Your linked ARB wallet does not have enough ETH for fee',
+  INSUFFICIENT_BASE_FEE: 'Your linked BASE wallet does not have enough ETH for fee',
+  LOCKED_BASE_FEE: 'Your linked BASE wallet does not have enough ETH for fee',
+  INSUFFICIENT_OP_FEE: 'Your linked OP wallet does not have enough ETH for fee',
+  LOCKED_OP_FEE: 'Your linked OP wallet does not have enough ETH for fee',
   INVALID_ADDRESS: 'Invalid address',
   INVALID_CHANGE_ADDRESS: 'Invalid change address',
   KEY_IN_COPAYER: 'Key already registered',
   LOCKED_FUNDS: 'Funds are locked by pending transaction proposals',
-  LOCKED_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee',
-  LOCKED_MATIC_FEE: 'Your linked POLYGON wallet does not have enough MATIC for fee',
   HISTORY_LIMIT_EXCEEDED: 'Requested page limit is above allowed maximum',
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
   NETWORK_SUSPENDED: '$network operations are currently suspended. Please check status.bitpay.com for further updates.',

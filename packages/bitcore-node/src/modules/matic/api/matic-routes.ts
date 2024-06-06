@@ -1,4 +1,4 @@
-import { EVMRouter } from '../../ethereum/api/evmRouter';
+import { EVMRouter } from '../../../providers/chain-state/evm/api/routes';
 import { MATIC } from './csp';
 
 class MATICRouter extends EVMRouter {

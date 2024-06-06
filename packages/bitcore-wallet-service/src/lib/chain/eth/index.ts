@@ -34,6 +34,12 @@ function getInvoiceDecoder() {
 }
 
 export class EthChain implements IChain {
+
+  chain: string;
+
+  constructor() {
+    this.chain = 'ETH';
+  }
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -150,7 +156,7 @@ export class EthChain implements IChain {
         let maxGasFee;
         let priorityGasFee;
         const { from, txType, priorityFeePercentile } = opts;
-        const { coin, network } = wallet;
+        const { coin, network, chain } = wallet;
         let inGasLimit = 0; // Per recepient gas limit
         let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
         let fee = 0;
@@ -180,6 +186,7 @@ export class EthChain implements IChain {
               const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               inGasLimit = await server.estimateGas({
                 coin,
+                chain: this.chain,
                 network,
                 from,
                 to,
@@ -212,6 +219,7 @@ export class EthChain implements IChain {
 
             gasLimit = await server.estimateGas({
               coin,
+              chain: this.chain,
               network,
               from,
               to: opts.multiSendContractAddress,
@@ -248,7 +256,7 @@ export class EthChain implements IChain {
     } = txp;
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
-    const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ETHERC20' : 'ETH';
+    const chain = isETHMULTISIG ? `${this.chain}MULTISIG` : isERC20 ? `${this.chain}ERC20` : this.chain;
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,
@@ -446,8 +454,8 @@ export class EthChain implements IChain {
 
   getInsufficientFeeError(txp) {
     return new ClientError(
-      Errors.codes.INSUFFICIENT_ETH_FEE,
-      `${Errors.INSUFFICIENT_ETH_FEE.message}. RequiredFee: ${txp.fee}`,
+      Errors.codes[`INSUFFICIENT_${this.chain}_FEE`],
+      `${Errors[`INSUFFICIENT_${this.chain}_FEE`].message}. RequiredFee: ${txp.fee}`,
       {
         requiredFee: txp.fee
       }
@@ -455,9 +463,13 @@ export class EthChain implements IChain {
   }
 
   getLockedFeeError(txp) {
-    return new ClientError(Errors.codes.LOCKED_ETH_FEE, `${Errors.LOCKED_ETH_FEE.message}. RequiredFee: ${txp.fee}`, {
-      requiredFee: txp.fee
-    });
+    return new ClientError(
+      Errors.codes[`LOCKED_${this.chain}_FEE`],
+      `${Errors[`LOCKED_${this.chain}_FEE`].message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
   }
 
   checkUtxos(opts) { }
@@ -504,25 +516,24 @@ export class EthChain implements IChain {
       throw new Error('Signatures Required');
     }
 
-    const chain = 'ETH'; // TODO use lowercase always to avoid confusion
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
     for (let index = 0; index < signatures.length; index++) {
       const signed = Transactions.applySignature({
-        chain,
+        chain: this.chain, // TODO use lowercase always to avoid confusion
         tx: unsignedTxs[index],
         signature: signatures[index]
       });
       signedTxs.push(signed);
 
       // bitcore users id for txid...
-      tx.id = Transactions.getHash({ tx: signed, chain });
+      tx.id = Transactions.getHash({ tx: signed, chain: this.chain });
     }
     tx.uncheckedSerialize = () => signedTxs;
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const chain = 'eth';
+    const chain = this.chain.toLowerCase();
     const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
     if (!isValidTo) {
       throw Errors.INVALID_ADDRESS;
@@ -550,9 +561,9 @@ export class EthChain implements IChain {
       const multisigSubmit = tx.effects.findIndex(e => e.type === 'MULTISIG:submitTransaction');
       const erc20Transfer = tx.effects.findIndex(e => e.type === 'ERC20:transer');
       const internalTransfer = tx.effects.findIndex(e => !e.type && !e.contractAddress);
-      
+
       const exists = [multisigConfirm, multisigSubmit, erc20Transfer, internalTransfer].filter(i => i > -1);
-      
+
       if (exists.length) {
         // Get the first effect based on priority as determined by order in above array
         const best = tx.effects[exists[0]];
@@ -569,8 +580,8 @@ export class EthChain implements IChain {
           amount = best.amount;
         }
       }
-    } 
-    
+    }
+
     // If we haven't defined address by this point then it must be native transfer
     if (!address) {
       address = tx.to;

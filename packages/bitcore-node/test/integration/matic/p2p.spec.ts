@@ -8,7 +8,7 @@ import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/b
 import { EVMP2pWorker } from '../../../src/providers/chain-state/evm/p2p/p2p';
 import { Api } from '../../../src/services/api';
 import { IEVMNetworkConfig } from '../../../src/types/Config';
-import { wait } from '../../../src/utils/wait';
+import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
@@ -85,7 +85,7 @@ describe('Polygon', function() {
     const addresses = await wallet.getAddresses();
     expect(addresses).to.exist;
     expect(addresses.length).to.eq(1);
-    expect(addresses[0].toLowerCase()).to.equal('0xb875c670b079cce8f6ab4f013bd471359c877ac0');
+    expect(addresses[0].toLowerCase()).to.equal('0xa4e131d8c33fc059e9d245489db03a4a61a2f32b');
   });
 
   it('should be able to get block events from geth', async () => {
@@ -117,7 +117,7 @@ describe('Polygon', function() {
     const balance = await wallet.getBalance();
     expect(balance.confirmed).to.be.gt(0);
 
-    const key = 'getBalanceForAddress-MATIC-regtest-0xb875c670b079cce8f6ab4f013bd471359c877ac0';
+    const key = 'getBalanceForAddress-MATIC-regtest-0xa4e131d8c33fc059e9d245489db03a4a61a2f32b';
     const cached = await CacheStorage.collection.findOne({ key });
     expect(cached).to.exist;
     expect(cached!.value).to.deep.eq(balance);

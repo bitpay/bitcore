@@ -2,7 +2,7 @@ import { ObjectID } from 'mongodb';
 import { Readable, Transform, Writable } from 'stream';
 import { StorageService } from '../services/storage';
 import { TransformOptions } from '../types/TransformOptions';
-import { partition } from '../utils/partition';
+import { partition } from '../utils';
 import { BaseModel } from './base';
 import { CoinStorage, ICoin } from './coin';
 import { TransactionStorage } from './transaction';

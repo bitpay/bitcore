@@ -8,6 +8,7 @@ export interface IBlock {
   timeNormalized: Date;
   previousBlockHash: string;
   nextBlockHash: string;
+  transactions?: string[];
   transactionCount: number;
   size: number;
   reward: number;

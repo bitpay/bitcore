@@ -7,7 +7,7 @@ import Config from '../../../../config';
 import logger, { timestamp } from '../../../../logger';
 import { StateStorage } from '../../../../models/state';
 import { IEVMNetworkConfig } from '../../../../types/Config';
-import { wait } from '../../../../utils/wait';
+import { wait } from '../../../../utils';
 import { EVMBlockStorage } from '../models/block';
 
 export class MultiThreadSync extends EventEmitter {

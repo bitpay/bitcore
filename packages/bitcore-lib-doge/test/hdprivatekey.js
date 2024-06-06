@@ -79,6 +79,19 @@ describe('HDPrivate key interface', function() {
     ));
   });
 
+  it('should make a new private key from random for testnet', function() {
+    var key = new HDPrivateKey('testnet');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+  it('should make a new private key from random for testnet when passing specific network "testnet3"', function() {
+    var key = new HDPrivateKey('testnet3');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+
   describe('instantiation', function() {
     it('invalid argument: can not instantiate from a number', function() {
       expectFailBuilding(1, hdErrors.UnrecognizedArgument);

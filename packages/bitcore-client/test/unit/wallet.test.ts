@@ -1,8 +1,10 @@
 import sinon from 'sinon';
 import chai from 'chai';
+import crypto from 'crypto';
 import * as CWC from 'crypto-wallet-core';
 import { Wallet, AddressTypes } from '../../src/wallet';
 import { Client } from '../../src/client';
+import * as utils from '../../src/utils';
 
 
 const should = chai.should();
@@ -183,7 +185,7 @@ describe('Wallet', function() {
           feeTarget: 2
         });
         params.gasPrice.should.equal(26550000000);
-        expect(newTx).to.equal('0xed8085062e80d98083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a764000080058080');
+        expect(newTx).to.equal('0xf08085062e80d98083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
       });
 
       it('should bump the fee of a transaction with feeRate', async function() {
@@ -195,7 +197,7 @@ describe('Wallet', function() {
           feeRate: 300
         });
         params.gasPrice.should.equal(CWC.Web3.utils.toWei('300', 'gwei'));
-        expect(newTx).to.equal('0xed808545d964b80083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a764000080058080');
+        expect(newTx).to.equal('0xf0808545d964b80083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
       });
     });
   });
@@ -246,6 +248,83 @@ describe('Wallet', function() {
         });
       });
     }
+  });
+
+  describe('importKeys', function() {
+    walletName = 'BitcoreClientTestImportKeys';
+    let requestStub;
+    let sleepStub;
+
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        name: walletName,
+        chain: 'BTC',
+        network: 'testnet',
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        storageType,
+      });
+      await wallet.unlock('abc123');
+      requestStub = sandbox.stub(wallet.client, '_request').resolves();
+      sleepStub = sandbox.stub(utils, 'sleep').resolves();
+    });
+
+    it('should import 1 key', async function() {
+      const keys = [];
+      for (let i = 0; i < 1; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      requestStub.callCount.should.equal(1);
+      sleepStub.callCount.should.equal(0);
+      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+    });
+
+    it('should import <100 keys', async function() {
+      const keys = [];
+      for (let i = 0; i < 100; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      requestStub.callCount.should.equal(1);
+      sleepStub.callCount.should.equal(0);
+      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+    });
+
+    it('should import >100 keys', async function() {
+      const keys = [];
+      for (let i = 0; i < 101; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      requestStub.callCount.should.equal(2);
+      sleepStub.callCount.should.equal(1);
+      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+    });
   });
 });
 

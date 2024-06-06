@@ -1,3 +1,3 @@
 import { EthDeriver } from '../eth';
 
-export class MaticDeriver extends EthDeriver {}
+export class MaticDeriver extends EthDeriver { }

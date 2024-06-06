@@ -65,9 +65,10 @@ export class Copayer {
     x.version = 2;
     x.createdOn = Math.floor(Date.now() / 1000);
     x.coin = opts.coin;
+    x.chain = opts.chain || opts.coin;
     x.xPubKey = opts.xPubKey;
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
-    x.id = Copayer._xPubToCopayerId(opts.coin, x.xPubKey);
+    x.id = Copayer._xPubToCopayerId(opts.chain, x.xPubKey);
     x.name = opts.name;
     x.requestPubKey = opts.requestPubKey;
     x.signature = opts.signature;

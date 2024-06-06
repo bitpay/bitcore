@@ -110,6 +110,87 @@ export const Defaults = {
         defaultValue: 200000000000
       }
     ],
+    arb: [
+      {
+        name: 'urgent',
+        nbBlocks: 1,
+        defaultValue: 3000000000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 2,
+        defaultValue: 2500000000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 3,
+        defaultValue: 2000000000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 4,
+        defaultValue: 2000000000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 4,
+        defaultValue: 2000000000
+      }
+    ],
+    base: [
+      {
+        name: 'urgent',
+        nbBlocks: 1,
+        defaultValue: 3000000000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 2,
+        defaultValue: 2500000000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 3,
+        defaultValue: 2000000000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 4,
+        defaultValue: 2000000000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 4,
+        defaultValue: 2000000000
+      }
+    ],
+    op: [
+      {
+        name: 'urgent',
+        nbBlocks: 1,
+        defaultValue: 3000000000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 2,
+        defaultValue: 2500000000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 3,
+        defaultValue: 2000000000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 4,
+        defaultValue: 2000000000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 4,
+        defaultValue: 2000000000
+      }
+    ],
     xrp: [
       {
         name: 'normal',
@@ -271,6 +352,9 @@ export const Defaults = {
     bch: 10000 * 1000, // 10k sat/b
     eth: 1000000000000, // 50 Gwei,
     matic: 1000000000000, // 50 Gwei,
+    arb: 1000000000000, // 50 Gwei,
+    base: 1000000000000, // 50 Gwei,
+    op: 1000000000000, // 50 Gwei,
     xrp: 1000000000000,
     doge: 100000000 * 100,
     ltc: 10000 * 1000 // 10k sat/b
@@ -281,6 +365,9 @@ export const Defaults = {
     bch: 0,
     eth: 0,
     matic: 0,
+    arb: 0,
+    base: 0,
+    op: 0,
     xrp: 0,
     doge: 0,
     ltc: 0
@@ -291,6 +378,9 @@ export const Defaults = {
     bch: 0.05 * 1e8,
     eth: 1 * 1e18, // 1 eth
     matic: 1 * 1e18, // 1 matic
+    arb: 1 * 1e18, // 1 eth
+    base: 1 * 1e18, // 1 eth
+    op: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
     ltc: 0.05 * 1e8

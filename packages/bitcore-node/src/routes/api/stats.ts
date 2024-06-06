@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { CacheTimes, SetCache } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
@@ -8,7 +9,7 @@ router.get('/', async function(_: Request, res: Response) {
 });
 
 router.get('/daily-transactions', async function(req: Request, res: Response) {
-  const { chain, network } = req.params;
+  let { chain, network } = req.params;
   try {
     let dailyTxs = await ChainStateProvider.getDailyTransactions({
       chain,
@@ -18,8 +19,9 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
     });
     SetCache(res, CacheTimes.Day);
     return res.json(dailyTxs);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting daily transactions: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
