@@ -65,7 +65,7 @@ export class Address {
     x.isEscrow = opts.isEscrow;
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
-    x.coin = opts.coin;
+    x.coin = opts.chain;
     x.chain = opts.chain;
     x.network = Address.Bitcore[opts.chain]
       ? Address.Bitcore[opts.chain].Address(x.address).toObject().network
@@ -83,7 +83,7 @@ export class Address {
     x.createdOn = obj.createdOn;
     x.address = obj.address;
     x.walletId = obj.walletId;
-    x.coin = obj.coin || Defaults.COIN;
+    x.coin = obj.chain || ChainService.getChain(x.coin);;
     x.chain = obj.chain || ChainService.getChain(x.coin);
     x.network = Utils.getNetworkName(x.chain, obj.network) || obj.network;
     x.isChange = obj.isChange;
