@@ -377,8 +377,7 @@ describe('Interpreter', function() {
   describe('bitcoind transaction evaluation fixtures', function() {
     var test_txs = function(set, expected) {
       var c = 0;
-      for (let i in set) {
-        const vector = set[i];
+      for (const vector of set) {
         if (vector.length === 1) {
           continue;
         }
@@ -423,7 +422,6 @@ describe('Interpreter', function() {
           txVerified = (txVerified === true) ? true : false;
           allInputsVerified = allInputsVerified && txVerified;
           allInputsVerified.should.equal(expected);
-
         });
       }
     };
@@ -464,8 +462,7 @@ describe('Interpreter', function() {
       it(`script asset test vector ${i}: ${test.comment}`, function() {
         const tx =  new Transaction(test.tx);
         const prevOuts = [];
-        for (let j in test.prevouts) {
-          let prevout = test.prevouts[j];
+        for (let prevout in test.prevouts) {
           const poBuffReader = new BufferReader(Buffer.from(prevout,'hex'));
           prevout = Transaction.Output.fromBufferReader(poBuffReader);
           

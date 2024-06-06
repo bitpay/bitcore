@@ -28,24 +28,26 @@ Schnorr.sign = function(privateKey, message, aux) {
     throw new Error('Private key should be 32 bytes for schnorr signatures');
   }
 
-  if (typeof message === 'string' && JS.isHexaString(message)) {
+  if (typeof message === 'string') {
+    $.checkArgument(JS.isHexaString(message), 'Schnorr message string is not hex');
     message = Buffer.from(message, 'hex')
   }
-  $.checkArgument($.isType(message, 'Buffer'), 'message must be a hex string or buffer');
+  $.checkArgument($.isType(message, 'Buffer'), 'Schnorr message must be a hex string or buffer');
 
   if (!aux) {
     aux = crypto.randomBytes(32);
   }
-  if (typeof aux === 'string' && JS.isHexaString(aux)) {
+  if (typeof aux === 'string') {
+    $.checkArgument(JS.isHexaString(aux), 'Schnorr aux string is not hex');
     aux = Buffer.from(aux, 'hex')
   }
-  $.checkArgument($.isType(aux, 'Buffer'), 'aux must be a hex string or buffer');
+  $.checkArgument($.isType(aux, 'Buffer'), 'Schnorr aux must be a hex string or buffer');
 
   const G = Point.getG();
   const n = Point.getN();
 
   const dPrime = new BN(privateKey);
-  if (dPrime.eqn(0) || dPrime.gte(Point.getN())) {
+  if (dPrime.eqn(0) || dPrime.gte(n)) {
     throw new Error('Invalid private key for schnorr signing');
   }
   const P = G.mul(dPrime);
@@ -86,7 +88,8 @@ Schnorr.verify = function(publicKey, message, signature) {
     throw new Error('Public key should be 32 bytes for schnorr signatures');
   }
 
-  if (typeof message === 'string' && JS.isHexaString(message)) {
+  if (typeof message === 'string') {
+    $.checkArgument(JS.isHexaString(message), 'Schnorr message string is not hex');
     message = Buffer.from(message, 'hex');
   }
   if (message.length !== 32) {
@@ -94,6 +97,7 @@ Schnorr.verify = function(publicKey, message, signature) {
   }
 
   if (typeof signature === 'string') {
+    $.checkArgument(JS.isHexaString(signature), 'Schnorr signature string is not hex');
     signature = Buffer.from(signature, 'hex');
   }
   if (typeof signature.toBuffer === 'function') {
