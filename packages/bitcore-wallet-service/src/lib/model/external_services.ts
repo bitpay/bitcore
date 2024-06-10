@@ -30,6 +30,7 @@ export interface SwapCryptoConfig {
   disabledTitle?: string;
   disabledMessage?: string;
   changelly?: ExchangeConfig;
+  thorswap?: ExchangeConfig;
 }
 
 export interface ExternalServicesConfig {
