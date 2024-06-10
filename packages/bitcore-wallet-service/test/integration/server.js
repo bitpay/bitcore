@@ -10700,6 +10700,10 @@ describe('Wallet service', function() {
             changelly: {
               disabled: false,
               removed: false
+            },
+            thorswap: {
+              disabled: false,
+              removed: false
             }
           },
         }
@@ -10787,6 +10791,10 @@ describe('Wallet service', function() {
           swapCrypto: { 
             disabled: false,
             changelly: {
+              disabled: false,
+              removed: false
+            },
+            thorswap: {
               disabled: false,
               removed: false
             }
