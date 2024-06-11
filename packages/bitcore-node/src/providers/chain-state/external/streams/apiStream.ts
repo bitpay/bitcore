@@ -103,6 +103,11 @@ export class ExternalApiStream extends Readable {
               data: err?.response?.data,
             }
           }
+          if (err.log?.data?.message?.includes('not supported')) {
+            res.write('[]');
+            res.end();
+            return resolve({ success: false, error: err });
+          }
           if (!isFirst) {
             // Data has already been written to the stream and status 200 headers have already been sent
             // We notify and log the error instead of throwing
