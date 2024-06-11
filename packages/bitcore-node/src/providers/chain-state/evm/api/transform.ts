@@ -1,11 +1,11 @@
-import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { jsonStringify, overlaps } from '../../../../utils';
 import { IEVMTransactionTransformed } from '../types';
+import { TransformWithEventPipe } from '../../../../utils/transformWithEventPipe';
 
-export class EVMListTransactionsStream extends Transform {
+export class EVMListTransactionsStream extends TransformWithEventPipe {
   constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }

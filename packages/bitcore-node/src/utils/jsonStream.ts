@@ -1,6 +1,6 @@
-import { Transform } from 'stream';
+import { TransformWithEventPipe } from './transformWithEventPipe';
 
-export class StringifyJsonStream extends Transform {
+export class StringifyJsonStream extends TransformWithEventPipe {
   constructor() {
     super({ objectMode: true });
   }
@@ -10,7 +10,7 @@ export class StringifyJsonStream extends Transform {
   }
 }
 
-export class ParseJsonStream extends Transform {
+export class ParseJsonStream extends TransformWithEventPipe {
   constructor() {
     super({ objectMode: true });
   }

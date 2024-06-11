@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Request, Response } from 'express';
 import { Readable, Stream, Transform, Writable } from 'stream';
+import { TransformWithEventPipe } from '../../../../utils/transformWithEventPipe';
 
 
 export interface StreamOpts {
@@ -189,7 +190,7 @@ export class ParseStream extends Transform {
   }
 }
 
-export class MergedStream extends Transform {
+export class MergedStream extends TransformWithEventPipe {
   constructor() {
     super({ objectMode: true });
   }

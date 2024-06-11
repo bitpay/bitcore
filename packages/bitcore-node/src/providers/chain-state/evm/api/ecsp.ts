@@ -285,10 +285,10 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
       ExternalApiStream.mergeStreams(txStreams, mergedStream);
       // Transform transactions proccessed through merged stream
       mergedStream
-      .pipe(parseStream)
-      .pipe(populateReceipt)
-      .pipe(ethTransactionTransform)
-      .pipe(resultStream);
+      .eventPipe(parseStream)
+      .eventPipe(populateReceipt)
+      .eventPipe(ethTransactionTransform)
+      .eventPipe(resultStream);
       // Ensure resultStream resolves
       const result = await ExternalApiStream.onStream(resultStream, req!, res!, { jsonl: true });
       if (result?.success === false) {
