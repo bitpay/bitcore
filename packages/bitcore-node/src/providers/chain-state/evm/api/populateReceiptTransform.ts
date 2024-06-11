@@ -1,7 +1,7 @@
 import { MongoBound } from '../../../../models/base';
+import { TransformWithEventPipe } from '../../../../utils/transformWithEventPipe';
 import { IEVMTransaction } from '../types';
 import { BaseEVMStateProvider } from './csp';
-import { TransformWithEventPipe } from '../../../../utils/transformWithEventPipe';
 
 export class PopulateReceiptTransform extends TransformWithEventPipe {
   constructor() {
