@@ -1318,6 +1318,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         const opts = {
           coin: req.query.coin || 'eth',
+          chain: req.query.chain,
           network: req.query.network || 'livenet',
           address: req.params['address']
         };
