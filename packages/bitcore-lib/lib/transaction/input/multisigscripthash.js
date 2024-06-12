@@ -121,14 +121,14 @@ MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey,
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {String} signingMethod DEPRECATED - method used to sign - 'ecdsa' or 'schnorr'
  * @param {Buffer} merkleRoot - unused for this input type
  * @return {Array<TransactionSignature>}
  */
 MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa';
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
   const results = [];
   for (const publicKey of this.publicKeys) {
@@ -137,9 +137,9 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
       if (this.nestedWitness || this.type === Address.PayToWitnessScriptHash) {
         var scriptCode = this.getScriptCode();
         var satoshisBuffer = this.getSatoshisBuffer();
-        signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer, signingMethod);
+        signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
       } else  {
-        signature = Sighash.sign(transaction, privateKey, sigtype, index, this.redeemScript, signingMethod);
+        signature = Sighash.sign(transaction, privateKey, sigtype, index, this.redeemScript);
       }
       results.push(new TransactionSignature({
         publicKey: privateKey.publicKey,
@@ -224,7 +224,7 @@ MultiSigScriptHashInput.prototype.publicKeysWithoutSignature = function() {
 };
 
 MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signature, signingMethod) {
-  signingMethod = signingMethod || 'ecdsa';
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
   if (this.nestedWitness || this.type === Address.PayToWitnessScriptHash) {
     signature.signature.nhashtype = signature.sigtype;
     var scriptCode = this.getScriptCode();
@@ -235,8 +235,7 @@ MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signa
       signature.publicKey,
       signature.inputIndex,
       scriptCode,
-      satoshisBuffer,
-      signingMethod
+      satoshisBuffer
     );
   } else {
     // FIXME: Refactor signature so this is not necessary
@@ -246,8 +245,7 @@ MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signa
       signature.signature,
       signature.publicKey,
       signature.inputIndex,
-      this.redeemScript, 
-      signingMethod
+      this.redeemScript
     );
   }
 };

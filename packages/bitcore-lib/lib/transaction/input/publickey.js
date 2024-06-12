@@ -27,13 +27,14 @@ inherits(PublicKeyInput, Input);
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type 
- * @param {String} signingMethod - method used to sign input - 'ecdsa' or 'schnorr'
+ * @param {String} signingMethod DEPRECATED - method used to sign input - 'ecdsa' or 'schnorr'
  * @param {Buffer} merkleRoot - unused for this input type
  * @return {Array} of objects that can be
  */
 PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
   var publicKey = privateKey.toPublicKey();
   if (publicKey.toString() === this.output.script.getPublicKey().toString('hex')) {
     return [new TransactionSignature({
@@ -41,7 +42,7 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod),
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script),
       sigtype: sigtype
     })];
   }

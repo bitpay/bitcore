@@ -73,7 +73,7 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
   $.checkState(this.output instanceof Output);
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa';
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
   var script;
   if (this.output.script.isScriptHashOut()) {
@@ -87,9 +87,9 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
     if (script.isWitnessPublicKeyHashOut()) {
       var satoshisBuffer = this.getSatoshisBuffer();
       var scriptCode = this.getScriptCode(privateKey.publicKey);
-      signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer, signingMethod);
+      signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
     } else {
-      signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod);
+      signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script);
     }
 
     return [new TransactionSignature({
@@ -156,6 +156,7 @@ PublicKeyHashInput.prototype.isFullySigned = function() {
 };
 
 PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature, signingMethod) {
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
@@ -167,8 +168,7 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
       signature.publicKey,
       signature.inputIndex,
       scriptCode,
-      satoshisBuffer,
-      signingMethod
+      satoshisBuffer
     );
   } else {
     return Sighash.verify(
@@ -176,8 +176,7 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
       signature.signature,
       signature.publicKey,
       signature.inputIndex,
-      this.output.script,
-      signingMethod
+      this.output.script
     );
   }
 };
