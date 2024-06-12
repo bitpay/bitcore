@@ -28,7 +28,6 @@ inherits(PublicKeyInput, Input);
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type 
  * @param {String} signingMethod DEPRECATED - method used to sign input - 'ecdsa' or 'schnorr'
- * @param {Buffer} merkleRoot - unused for this input type
  * @return {Array} of objects that can be
  */
 PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {

@@ -305,8 +305,7 @@ PublicKey.fromTaproot = function(hexBuf) {
   if (typeof hexBuf === 'string' && JSUtil.isHexaString(hexBuf)) {
     hexBuf = Buffer.from(hexBuf, 'hex');
   }
-  $.checkArgument(Buffer.isBuffer(hexBuf), 'input must be a hex string or buffer');
-  $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
+  $.checkArgument(PublicKey.isValidTaproot(hexBuf), 'Invalid Taproot public key');
   return new PublicKey.fromX(false, hexBuf);
 }
 
@@ -319,7 +318,7 @@ PublicKey.isValidTaproot = function(hexBuf) {
   if (typeof hexBuf === 'string' && JSUtil.isHexaString(hexBuf)) {
     hexBuf = Buffer.from(hexBuf, 'hex');
   }
-  $.checkArgument(Buffer.isBuffer(hexBuf), 'input must be a hex string or buffer');
+  $.checkArgument(Buffer.isBuffer(hexBuf), 'hexBuf must be a hex string or buffer');
   $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
 
   // TODO: do a more thorough taproot validation
@@ -377,13 +376,7 @@ PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
   const P = p.point.liftX();
   const Q = P.add(this.point.curve.g.mul(BN.fromBuffer(tweak)));
   
-  if (!this.point.x.eq(Q.x)) {
-    return false;
-  }
-  if (!Q.y.mod(new BN(2)).eq(new BN(control[0] & 1))) {
-    return false;
-  }
-  return true;
+  return this.point.x.eq(Q.x) && Q.y.mod(new BN(2)).eq(new BN(control[0] & 1));
 };
 
 

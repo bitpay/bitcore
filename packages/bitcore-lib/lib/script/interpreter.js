@@ -100,10 +100,7 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
     execdata.annexInit = true;
     if (stack.length === 1) {
       // Key path spending (stack size is 1 after removing optional annex)
-      if (!this.checkSchnorrSignature(stack[0], program, Signature.Version.TAPROOT, execdata)) {
-        return false;
-      }
-      return true;
+      return this.checkSchnorrSignature(stack[0], program, Signature.Version.TAPROOT, execdata);
     } else {
       // Script path spending (stack size is >1 after removing optional annex)
       const control = stack.pop();
@@ -117,7 +114,6 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
         this.errstr = 'SCRIPT_ERR_TAPROOT_WRONG_CONTROL_SIZE';
         return false;
       }
-      // TODO
       execdata.tapleafHash = Interpreter.computeTapleafHash(control[0] & Interpreter.TAPROOT_LEAF_MASK, scriptPubKeyBuf);
       if (!Interpreter.verifyTaprootCommitment(control, program, execdata.tapleafHash)) {
         this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH';
@@ -149,10 +145,12 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
         execdata.validationWeightLeftInit = true;
         return this.executeWitnessScript(scriptPubKey, stack, Signature.Version.TAPSCRIPT, satoshis, flags, execdata);
       }
+      // If none of the above conditions are met then this must be an upgraded taproot version.
       if (flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_TAPROOT_VERSION) {
         this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_TAPROOT_VERSION';
         return false;
       }
+      // Future softfork compatibility
       return true;
     }
   } else if ((flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)) {
@@ -433,18 +431,18 @@ Interpreter.prototype.initialize = function(obj) {
 Interpreter.prototype.set = function(obj) {
   this.script = obj.script || this.script;
   this.tx = obj.tx || this.tx;
-  this.nin = typeof obj.nin !== 'undefined' ? parseInt(obj.nin) : this.nin;
+  this.nin = typeof obj.nin === 'undefined' ? this.nin : parseInt(obj.nin);
   this.stack = obj.stack || this.stack;
   this.altstack = obj.altack || this.altstack;
-  this.pc = typeof obj.pc !== 'undefined' ? obj.pc : this.pc;
-  this.pbegincodehash = typeof obj.pbegincodehash !== 'undefined' ? obj.pbegincodehash : this.pbegincodehash;
-  this.sigversion = typeof obj.sigversion !== 'undefined' ? obj.sigversion : this.sigversion;
-  this.satoshis = typeof obj.satoshis !== 'undefined' ? obj.satoshis : this.satoshis;
-  this.nOpCount = typeof obj.nOpCount !== 'undefined' ? obj.nOpCount : this.nOpCount;
+  this.pc = typeof obj.pc === 'undefined' ? this.pc : obj.pc;
+  this.pbegincodehash = typeof obj.pbegincodehash === 'undefined' ? this.pbegincodehash : obj.pbegincodehash;
+  this.sigversion = typeof obj.sigversion === 'undefined' ? this.sigversion : obj.sigversion;
+  this.satoshis = typeof obj.satoshis === 'undefined' ? this.satoshis : obj.satoshis;
+  this.nOpCount = typeof obj.nOpCount === 'undefined' ? this.nOpCount : obj.nOpCount;
   this.vfExec = obj.vfExec || this.vfExec;
   this.errstr = obj.errstr || this.errstr;
-  this.flags = typeof obj.flags !== 'undefined' ? obj.flags : this.flags;
-  this.execdata = typeof obj.execdata !== 'undefined' ? (obj.execdata || {}) : this.execdata
+  this.flags = typeof obj.flags === 'undefined' ? this.flags : obj.flags;
+  this.execdata = typeof obj.execdata === 'undefined' ? this.execdata : (obj.execdata || {});
 };
 
 Interpreter.true = Buffer.from([1]);
@@ -719,7 +717,7 @@ Interpreter.prototype.checkSchnorrSignature = function(sig, pubkey, sigversion, 
   // abort script execution). This is implemented in EvalChecksigTapscript, which won't invoke
   // CheckSchnorrSignature in that case. In other contexts, they are invalid like every other signature with
   // size different from 64 or 65.
-  if (sig.length !== 64 && sig.length !== 65) {
+  if (!(sig.length === 64 || sig.length === 65)) {
     this.errstr = 'SCRIPT_ERR_SCHNORR_SIG_SIZE';
     return false;
   }
@@ -1008,10 +1006,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
 
   // Now that we know we're comparing apples-to-apples, the comparison is a
   // simple numeric one.
-  if (nSequenceMasked.gt(txToSequenceMasked)) {
-    return false;
-  }
-  return true;
+  return nSequenceMasked.lte(txToSequenceMasked)
 }
 
 
@@ -1058,8 +1053,7 @@ Interpreter.verifyTaprootCommitment = function(control, program, tapleafHash) {
     // Verify that the output pubkey matches the tweaked internal pubkey, after correcting for parity.
     return q.checkTapTweak(p, merkleRoot, control);
   } catch (err) {
-    // TODO: set this.errstr here?
-    return false
+    return false;
   }
 };
 

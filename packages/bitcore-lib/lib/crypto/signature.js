@@ -28,10 +28,10 @@ Signature.prototype.set = function(obj) {
   this.s = obj.s || this.s || undefined;
 
   // public key recovery parameter in range [0, 3]
-  this.i = typeof obj.i !== 'undefined' ? obj.i : this.i;
+  this.i = typeof obj.i === 'undefined' ? this.i : obj.i;
   // whether the recovered pubkey is compressed
-  this.compressed = typeof obj.compressed !== 'undefined' ? obj.compressed : this.compressed;
-  this.isSchnorr = typeof obj.isSchnorr !== 'undefined' ? obj.isSchnorr : this.isSchnorr;
+  this.compressed = typeof obj.compressed === 'undefined' ? this.compressed : obj.compressed;
+  this.isSchnorr = typeof obj.isSchnorr === 'undefined' ? this.isSchnorr : obj.isSchnorr;
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;
 };

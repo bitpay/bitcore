@@ -51,7 +51,7 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
   // Hash type
   const outputType = (sighashType == Signature.SIGHASH_DEFAULT) ? Signature.SIGHASH_ALL : (sighashType & Signature.SIGHASH_OUTPUT_MASK); // Default (no sighash byte) is equivalent to SIGHASH_ALL
   const inputType = sighashType & Signature.SIGHASH_INPUT_MASK;
-  if (!(sighashType <= 0x03 || (sighashType >= 0x81 && sighashType <= 0x83))) {
+  if (!(sighashType <= 0x03 || (sighashType >= 0x81 && sighashType <= 0x83))) { // Check valid sighashtype (Signature.SIGHASH_*)
     return false;
   }
   ss.writeUInt8(sighashType);
@@ -71,8 +71,9 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
 
       spentAmountsBW.writeUInt64LEBN(vin.output._satoshisBN);
 
-      spentScriptsBW.writeUInt8(vin.output.script.toBuffer().length);
-      spentScriptsBW.write(vin.output.script.toBuffer());
+      const scriptBuf = vin.output.script.toBuffer();
+      spentScriptsBW.writeUInt8(scriptBuf.length);
+      spentScriptsBW.write(scriptBuf);
 
       sequencesBW.writeUInt32LE(vin.sequenceNumber);
     }
@@ -150,6 +151,19 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
 };
 
 
+function _getExecData(sigversion, leafHash) {
+  const execdata = { annexInit: true, annexPresent: false };
+  if (sigversion === Signature.Version.TAPSCRIPT) {
+    execdata.codeseparatorPosInit = true;
+    execdata.codeseparatorPos = 0xFFFFFFFF; // Only support non-OP_CODESEPARATOR BIP342 signing for now.
+    if (!leafHash) return false; // BIP342 signing needs leaf hash.
+    execdata.tapleafHashInit = true;
+    execdata.tapleafHash = leafHash;
+  }
+  return execdata;
+}
+
+
 /**
  * Create a Schnorr signature
  *
@@ -165,15 +179,7 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
 function sign(transaction, privateKey, sighashType, inputIndex, sigversion, leafHash) {
   $.checkArgument(sigversion === Signature.Version.TAPROOT || sigversion === Signature.Version.TAPSCRIPT, 'Invalid sigversion');
   
-  const execdata = { annexInit: true, annexPresent: false };
-  if (sigversion === Signature.Version.TAPSCRIPT) {
-    execdata.codeseparatorPosInit = true;
-    execdata.codeseparatorPos = 0xFFFFFFFF; // Only support non-OP_CODESEPARATOR BIP342 signing for now.
-    if (!leafHash) return false; // BIP342 signing needs leaf hash.
-    execdata.tapleafHashInit = true;
-    execdata.tapleafHash = leafHash;
-  }
-
+  const execdata = _getExecData(sigversion, leaftHash);
   const hashbuf = _signatureHash(transaction, sighashType, inputIndex, sigversion, execdata);
   if (!hashbuf) {
     return false;
@@ -194,7 +200,7 @@ function sign(transaction, privateKey, sighashType, inputIndex, sigversion, leaf
  * @param {Signature} signature
  * @param {PublicKey} publicKey
  * @param {Number} inputIndex
- * @param {object|Buffer} execdata Can be full execdata object or just the leafHash buffer
+ * @param {object|Buffer|null} execdata If given, can be full execdata object or just the leafHash buffer
  * @return {Boolean}
  */
 function verify(transaction, signature, publicKey, sigversion, inputIndex, execdata) {
@@ -202,14 +208,7 @@ function verify(transaction, signature, publicKey, sigversion, inputIndex, execd
 
   if (!execdata || Buffer.isBuffer(execdata)) {
     const leafHash = execdata;
-    execdata = { annexInit: true, annexPresent: false };
-    if (sigversion === Signature.Version.TAPSCRIPT) {
-      execdata.codeseparatorPosInit = true;
-      execdata.codeseparatorPos = 0xFFFFFFFF; // Only support non-OP_CODESEPARATOR BIP342 signing for now.
-      if (!leafHash) return false; // BIP342 signing needs leaf hash.
-      execdata.tapleafHashInit = true;
-      execdata.tapleafHash = leafHash;
-    }
+    execdata = _getExecData(sigversion, leafHash);
   }
 
   $.checkArgument(execdata.annexInit, 'invalid execdata');
