@@ -95,7 +95,7 @@ Opcode.decodeOpN = function(opcode) {
  * @returns {Boolean}
  */
 Opcode.isOpSuccess = function(opcode) {
-  if (typeof opcode === 'string') {
+  if (typeof opcode === 'string' && !parseInt(opcode)) {
     opcode = Opcode[opcode];
   }
   return opcode == 80 || opcode == 98 || (opcode >= 126 && opcode <= 129) ||

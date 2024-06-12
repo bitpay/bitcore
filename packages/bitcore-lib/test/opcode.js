@@ -84,6 +84,47 @@ describe('Opcode', function() {
     });
   });
 
+  describe('#decodeOpN', function() {
+    it('returns 0 for OP_0', function() {
+      Opcode.decodeOpN(Opcode.OP_0).should.equal(0);
+    });
+
+    it('should return 16 for OP_16', function() {
+      Opcode.decodeOpN(Opcode.OP_16).should.equal(16);
+    });
+
+    it('should throw an error for >OP_16', function() {
+      try {
+        Opcode.decodeOpN(Opcode.OP_NOP);
+        throw new Error('should have thrown');
+      } catch(e) {
+        e.message.should.equal('Invalid Argument: Error: Invalid opcode: 97');
+      }
+    });
+  });
+
+  describe('#isOpSuccess', function() {
+    it('should return true for "success" codes', function() {
+      function isSuccess(opcode) {
+        return opcode == 80 || opcode == 98 || (opcode >= 126 && opcode <= 129) ||
+          (opcode >= 131 && opcode <= 134) || (opcode >= 137 && opcode <= 138) ||
+          (opcode >= 141 && opcode <= 142) || (opcode >= 149 && opcode <= 153) ||
+          (opcode >= 187 && opcode <= 254)
+      };
+      for (let i = 0; i <= 255; i++) {
+        Opcode.isOpSuccess(i).should.equal(isSuccess(i));
+      }
+    });
+
+    it('should handle human readable string opcode', function() {
+      Opcode.isOpSuccess('OP_RESERVED').should.equal(true);
+    });
+
+    it('should handle number string opcode', function() {
+      Opcode.isOpSuccess('80').should.equal(true);
+    });
+  });
+
   describe('@map', function() {
     it('should have a map containing 119 elements', function() {
       _.size(Opcode.map).should.equal(119);
