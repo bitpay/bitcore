@@ -179,7 +179,7 @@ function _getExecData(sigversion, leafHash) {
 function sign(transaction, privateKey, sighashType, inputIndex, sigversion, leafHash) {
   $.checkArgument(sigversion === Signature.Version.TAPROOT || sigversion === Signature.Version.TAPSCRIPT, 'Invalid sigversion');
   
-  const execdata = _getExecData(sigversion, leaftHash);
+  const execdata = _getExecData(sigversion, leafHash);
   const hashbuf = _signatureHash(transaction, sighashType, inputIndex, sigversion, execdata);
   if (!hashbuf) {
     return false;
