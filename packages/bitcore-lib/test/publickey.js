@@ -451,4 +451,36 @@ describe('PublicKey', function() {
 
   });
 
+  describe('#isValidTaproot', function() {
+    it('should be true - hex string', function() {
+      const isValid = PublicKey.isValidTaproot('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5e');
+      isValid.should.equal(true);
+    });
+
+    it('should be true - buffer', function() {
+      const isValid = PublicKey.isValidTaproot(Buffer.from('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5e', 'hex'));
+      isValid.should.equal(true);
+    });
+
+    it('should be false - hex string', function() {  
+      const isValid = PublicKey.isValidTaproot('bca10d4006dbfebe31eee345df1d18d738f72fcd62d6ccafa84f87f05bac3467');
+      isValid.should.equal(false);
+    });
+
+    it('should be false - buffer', function() {
+      const isValid = PublicKey.isValidTaproot(Buffer.from('bca10d4006dbfebe31eee345df1d18d738f72fcd62d6ccafa84f87f05bac3467', 'hex'));
+      isValid.should.equal(false);
+    });
+
+    it('should be false - invalid length', function() {
+      const isValid = PublicKey.isValidTaproot('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5');
+      isValid.should.equal(false);
+    });
+
+    it('should be false - invalid hex', function() {
+      const isValid = PublicKey.isValidTaproot('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5g');
+      isValid.should.equal(false);
+    });
+  });
+
 });

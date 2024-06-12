@@ -305,7 +305,8 @@ PublicKey.fromTaproot = function(hexBuf) {
   if (typeof hexBuf === 'string' && JSUtil.isHexaString(hexBuf)) {
     hexBuf = Buffer.from(hexBuf, 'hex');
   }
-  $.checkArgument(PublicKey.isValidTaproot(hexBuf), 'Invalid Taproot public key');
+  $.checkArgument(Buffer.isBuffer(hexBuf), 'hexBuf must be a hex string or buffer');
+  $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
   return new PublicKey.fromX(false, hexBuf);
 }
 
@@ -315,24 +316,11 @@ PublicKey.fromTaproot = function(hexBuf) {
  * @returns {Boolean}
  */
 PublicKey.isValidTaproot = function(hexBuf) {
-  if (typeof hexBuf === 'string' && JSUtil.isHexaString(hexBuf)) {
-    hexBuf = Buffer.from(hexBuf, 'hex');
+  try {
+    return !!PublicKey.fromTaproot(hexBuf);
+  } catch {
+    return false;
   }
-  $.checkArgument(Buffer.isBuffer(hexBuf), 'hexBuf must be a hex string or buffer');
-  $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
-
-  // TODO: do a more thorough taproot validation
-
-  // if (!secp256k1_fe_set_b32(&x, input32)) {
-  //   return false;
-  // }
-  // if (!secp256k1_ge_set_xo_var(&pk, &x, 0)) {
-  //     return false;
-  // }
-  // if (!secp256k1_ge_is_in_correct_subgroup(&pk)) {
-  //     return false;
-  // }
-  return true;
 };
 
 
