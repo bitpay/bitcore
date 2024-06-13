@@ -9,7 +9,13 @@ var BufferUtil = require('../../util/buffer');
 var JSUtil = require('../../util/js');
 var Script = require('../../script');
 var Sighash = require('../sighash');
+var SighashWitness = require('../sighashwitness');
 var Output = require('../output');
+const TransactionSignature = require('../signature');
+const Signature = require('../../crypto/signature');
+const PublicKey = require('../../publickey');
+const OpCode = require('../../opcode');
+const BN = require('../../crypto/bn');
 
 var MAXINT = 0xffffffff; // Math.pow(2, 32) - 1;
 var DEFAULT_SEQNUMBER = MAXINT;
@@ -162,6 +168,154 @@ Input.prototype.getSignatures = function() {
   );
 };
 
+/**
+ * 
+ * @param {Transaction} transaction
+ * @param {number} inputIndex The index of the input in the transaction
+ * @param {Script|Buffer|string} scriptPubKey (optional) required for PublicKeyIn or MultisigIn input that does not have the output attached to it.
+ * @param {number|BN} satoshis (optional) required for PayToWitnessScriptHash input
+ * @returns {Array<TransactionSignature>}
+ */
+Input.prototype.extractSignatures = function(transaction, inputIndex, scriptPubKey, satoshis) {
+  $.checkArgument(JSUtil.isNaturalNumber(inputIndex), 'inputIndex is not a natural number');
+  $.checkState(this.script, 'Missing input script');
+
+  if (this.script.isPublicKeyIn()) {
+    const sig = Signature.fromTxFormat(this.script.chunks[0].buf);
+    if (!this.output) {
+      $.checkArgument(scriptPubKey, 'scriptPubKey is required when the input is not a full UTXO');
+      this.output = { script: new Script(scriptPubKey) };
+    }
+    const publicKey = this.output.script.chunks[0] && this.output.script.chunks[0].buf;
+    $.checkArgument(publicKey, 'No public key found from UTXO scriptPubKey');
+    return [new TransactionSignature({
+      signature: sig,
+      publicKey: new PublicKey(publicKey),
+      sigtype: sig.nhashtype,
+      inputIndex,
+      prevTxId: this.prevTxId,
+      outputIndex: this.outputIndex
+    })];
+  } else if (this.script.isPublicKeyHashIn()) {
+    const sig = Signature.fromTxFormat(this.script.chunks[0].buf);
+    return [new TransactionSignature({
+      signature: sig,
+      publicKey: this.script.chunks[1].buf,
+      sigtype: sig.nhashtype,
+      inputIndex,
+      prevTxId: this.prevTxId,
+      outputIndex: this.outputIndex
+    })];
+  } else if (this.hasWitnesses()) {
+    const witnessSigs = [];
+    const lastWitness = Script.fromBuffer(this.witnesses[this.witnesses.length - 1]);
+    if (lastWitness.toBuffer().length > 72 && lastWitness.chunks.at(-1).opcodenum === OpCode.OP_CHECKMULTISIG) {
+      // multisig
+      $.checkArgument((this.output && this.output._satoshisBN) || satoshis, 'Missing required satoshis parameter');
+      const satoshisBuffer = new BufferWriter().writeUInt64LEBN(this.output ? this.output._satoshisBN :new BN(satoshis)).toBuffer();
+      const scriptCode = new BufferWriter().writeVarintNum(lastWitness.toBuffer().length).write(lastWitness.toBuffer()).concat();
+      const numKeys = parseInt(OpCode(lastWitness.chunks.at(-2).opcodenum).toString().replace('OP_', ''));
+      const publicKeys = lastWitness.chunks.slice(-2 - numKeys, -2).map(c => c.buf);
+      for (const sigBuf of this.witnesses.slice(1, -1)) {
+        const sig = Signature.fromTxFormat(sigBuf);
+        let pkFound = false;
+        for (const pk of publicKeys) {
+          const txSig = new TransactionSignature({
+            signature: sig,
+            publicKey: pk,
+            sigtype: sig.nhashtype,
+            inputIndex,
+            prevTxId: this.prevTxId,
+            outputIndex: this.outputIndex
+          });
+          if (this.isValidSignature(transaction, txSig, 'ecdsa', { scriptCode, satoshisBuffer })) {
+            witnessSigs.push(txSig);
+            pkFound = true;
+            break;
+          }
+        }
+        $.checkState(pkFound, 'No public key found for multisig signature');
+      }
+    } else {
+      for (let i = 0; i < this.witnesses.length; i = i + 2) {
+        const sig = Signature.fromTxFormat(this.witnesses[i]);
+        witnessSigs.push(new TransactionSignature({
+          signature: sig,
+          publicKey: this.witnesses[i+1],
+          sigtype: sig.nhashtype,
+          inputIndex,
+          prevTxId: this.prevTxId,
+          outputIndex: this.outputIndex
+        }));
+      }
+    }
+    return witnessSigs;
+  } else if (this.script.isMultisigIn()) {
+    $.checkArgument(transaction, 'Missing transaction parameter');
+    if (!this.output) {
+      $.checkArgument(scriptPubKey, 'scriptPubKey is required when the input is not a full UTXO');
+      this.output = { script: new Script(scriptPubKey) };
+    }
+    const publicKeys = this.output.script.chunks.filter(c => c.opcodenum === 33).map(c => c.buf);
+    $.checkArgument(publicKeys.length > 0, 'No public keys found from UTXO scriptPubKey');
+    const sigs = [];
+    for (const chunk of this.script.chunks.slice(1)) {
+      const sig = Signature.fromTxFormat(chunk.buf);
+      let pkFound = false;
+      for (const pk of publicKeys) {
+        const txSig = new TransactionSignature({
+          signature: sig,
+          publicKey: pk,
+          sigtype: sig.nhashtype,
+          inputIndex,
+          prevTxId: this.prevTxId,
+          outputIndex: this.outputIndex
+        });
+        if (this.isValidSignature(transaction, txSig, 'ecdsa')) {
+          sigs.push(txSig);
+          pkFound = true;
+          break;
+        }
+      }
+      $.checkState(pkFound, 'No public key found for multisig signature');
+    }
+    return sigs;
+  } else if (this.script.isScriptHashIn()) {
+    $.checkArgument(transaction, 'Missing transaction parameter');
+    const redeemScript = Script.fromBuffer(this.script.chunks[this.script.chunks.length - 1].buf);
+    if (!this.output) { // if this is a generic Input
+      this.output = { script: redeemScript };
+    }
+    const publicKeys = redeemScript.chunks.filter(c => c.opcodenum === 33).map(c => c.buf);
+    const sigs = [];
+    for (const chunk of this.script.chunks.slice(1, -1)) {
+      const sig = Signature.fromTxFormat(chunk.buf);
+      let pkFound = false;
+      for (const pk of publicKeys) {
+        const txSig = new TransactionSignature({
+          signature: sig,
+          publicKey: pk,
+          sigtype: sig.nhashtype,
+          inputIndex,
+          prevTxId: this.prevTxId,
+          outputIndex: this.outputIndex
+        });
+        if (this.isValidSignature(transaction, txSig, 'ecdsa')) {
+          sigs.push(txSig);
+          pkFound = true;
+          break;
+        }
+      }
+      $.checkState(pkFound, 'No public key found for multisig signature');
+    }
+    return sigs;
+
+  }
+
+  // Unsigned input
+  return [];
+};
+
 Input.prototype.getSatoshisBuffer = function() {
   $.checkState(this.output instanceof Output);
   $.checkState(this.output._satoshisBN);
@@ -200,18 +354,30 @@ Input.prototype.setWitnesses = function(witnesses) {
   this.witnesses = witnesses;
 };
 
-Input.prototype.isValidSignature = function(transaction, signature, signingMethod) {
+Input.prototype.isValidSignature = function(transaction, signature, signingMethod, witnessScriptHash) {
   // FIXME: Refactor signature so this is not necessary
   signingMethod = signingMethod || 'ecdsa';
   signature.signature.nhashtype = signature.sigtype;
-  return Sighash.verify(
-    transaction,
-    signature.signature,
-    signature.publicKey,
-    signature.inputIndex,
-    this.output.script,
-    signingMethod
-  );
+  if (witnessScriptHash) {
+    return SighashWitness.verify(
+      transaction,
+      signature.signature,
+      signature.publicKey,
+      signature.inputIndex,
+      witnessScriptHash.scriptCode,
+      witnessScriptHash.satoshisBuffer,
+      signingMethod
+    );
+  } else {
+    return Sighash.verify(
+      transaction,
+      signature.signature,
+      signature.publicKey,
+      signature.inputIndex,
+      this.output.script,
+      signingMethod
+    );
+  }
 };
 
 /**
