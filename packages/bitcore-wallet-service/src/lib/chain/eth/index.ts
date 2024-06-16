@@ -148,6 +148,8 @@ export class EthChain implements IChain {
 
   checkDust(output, opts) { }
 
+  checkScriptOutput(output) { }
+
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {

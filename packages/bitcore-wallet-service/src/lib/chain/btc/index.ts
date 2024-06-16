@@ -210,6 +210,19 @@ export class BtcChain implements IChain {
     }
   }
 
+  checkScriptOutput(output) {
+    if (output.script) {
+      if (typeof output.script !== 'string') {
+        return Errors.SCRIPT_TYPE;
+      }
+
+      // check OP_RETURN
+      if (output.script.startsWith('6a') && output.amount != 0) {
+        return Errors.SCRIPT_OP_RETURN_AMOUNT;
+      }
+    }
+  }
+
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleInput(txp, opts = { conservativeEstimation: false }) {
     const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_DATA
@@ -450,8 +463,18 @@ export class BtcChain implements IChain {
     const serializationOpts = {
       disableIsFullySigned: true,
       disableSmallFees: true,
-      disableLargeFees: true
+      disableLargeFees: true,
+      disableDustOutputs: false
     };
+
+    if (txp.outputs && _.isArray(txp.outputs)) {
+      for (let output of txp.outputs) {
+        if (output.script && output.script.startsWith('6a')) { // check OP_RETURN
+          serializationOpts.disableDustOutputs = true;
+        }
+      }
+    }
+
     if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
 
     try {

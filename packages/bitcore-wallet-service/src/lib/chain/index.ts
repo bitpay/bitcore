@@ -45,6 +45,7 @@ export interface IChain {
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
+  checkScriptOutput(output: { script: string; amount: number; });
   getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
@@ -135,6 +136,10 @@ class ChainProxy {
 
   checkDust(chain, output, opts) {
     return this.get(chain).checkDust(output, opts);
+  }
+
+  checkScriptOutput(chain, output) {
+    return this.get(chain).checkScriptOutput(output);
   }
 
   getFee(server, wallet, opts) {
