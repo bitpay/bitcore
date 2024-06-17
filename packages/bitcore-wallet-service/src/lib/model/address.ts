@@ -83,8 +83,8 @@ export class Address {
     x.createdOn = obj.createdOn;
     x.address = obj.address;
     x.walletId = obj.walletId;
-    x.coin = obj.chain || ChainService.getChain(x.coin);;
-    x.chain = obj.chain || ChainService.getChain(x.coin);
+    x.coin = obj.chain || ChainService.getChain(obj.coin);
+    x.chain = x.coin;
     x.network = Utils.getNetworkName(x.chain, obj.network) || obj.network;
     x.isChange = obj.isChange;
     x.isEscrow = obj.isEscrow;

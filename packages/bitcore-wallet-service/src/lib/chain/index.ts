@@ -7,6 +7,7 @@ import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
+import logger from './logger';
 import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { OpChain } from './op';
@@ -107,6 +108,7 @@ class ChainProxy {
       }
       return normalizedChain;
     } catch (err) {
+      logger.error(`Error getting chain for coin ${coin}: %o`, err.stack || err.message || err);
       return Defaults.CHAIN; // coin should always exist but most unit test don't have it -> return btc as default
     }
   }
