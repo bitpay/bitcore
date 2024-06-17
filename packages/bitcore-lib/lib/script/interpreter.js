@@ -433,7 +433,7 @@ Interpreter.prototype.set = function(obj) {
   this.tx = obj.tx || this.tx;
   this.nin = typeof obj.nin === 'undefined' ? this.nin : parseInt(obj.nin);
   this.stack = obj.stack || this.stack;
-  this.altstack = obj.altack || this.altstack;
+  this.altstack = obj.altstack || this.altstack;
   this.pc = typeof obj.pc === 'undefined' ? this.pc : obj.pc;
   this.pbegincodehash = typeof obj.pbegincodehash === 'undefined' ? this.pbegincodehash : obj.pbegincodehash;
   this.sigversion = typeof obj.sigversion === 'undefined' ? this.sigversion : obj.sigversion;

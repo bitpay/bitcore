@@ -1,22 +1,27 @@
 'use strict';
 
-var should = require('chai').should();
-var expect = require('chai').expect;
+const should = require('chai').should();
+const expect = require('chai').expect;
+const sinon = require('sinon');
 
-var bitcore = require('..');
-var Point = bitcore.crypto.Point;
-var BN = bitcore.crypto.BN;
-var PublicKey = bitcore.PublicKey;
-var PrivateKey = bitcore.PrivateKey;
-var Address = bitcore.Address;
-var Networks = bitcore.Networks;
+const bitcore = require('..');
+const Point = bitcore.crypto.Point;
+const BN = bitcore.crypto.BN;
+const PublicKey = bitcore.PublicKey;
+const PrivateKey = bitcore.PrivateKey;
+const Address = bitcore.Address;
+const Networks = bitcore.Networks;
 
 /* jshint maxlen: 200 */
 
 describe('PublicKey', function() {
   /* jshint maxstatements: 30 */
 
-  var invalidPoint = '0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+  afterEach(function() {
+    sinon.restore();
+  });
+
+  const invalidPoint = '0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
 
   describe('validating errors on creation', function() {
     it('errors if data is missing', function() {
@@ -452,33 +457,43 @@ describe('PublicKey', function() {
   });
 
   describe('#isValidTaproot', function() {
+    const TAPROOT_VALID_HEX = '29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5e';
+    const TAPROOT_INVALID_HEX = TAPROOT_VALID_HEX.slice(0, -1) + 'g'; // g is not a valid hex character
+    const INVALID_X = 'bca10d4006dbfebe31eee345df1d18d738f72fcd62d6ccafa84f87f05bac3467';
+
     it('should be true - hex string', function() {
-      const isValid = PublicKey.isValidTaproot('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5e');
+      const isValid = PublicKey.isValidTaproot(TAPROOT_VALID_HEX);
       isValid.should.equal(true);
     });
 
     it('should be true - buffer', function() {
-      const isValid = PublicKey.isValidTaproot(Buffer.from('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5e', 'hex'));
+      const isValid = PublicKey.isValidTaproot(Buffer.from(TAPROOT_VALID_HEX, 'hex'));
       isValid.should.equal(true);
     });
 
-    it('should be false - hex string', function() {  
-      const isValid = PublicKey.isValidTaproot('bca10d4006dbfebe31eee345df1d18d738f72fcd62d6ccafa84f87f05bac3467');
+    it('should be false - invalid X - hex string', function() {
+      sinon.spy(PublicKey, 'fromX');
+      const isValid = PublicKey.isValidTaproot(INVALID_X);
       isValid.should.equal(false);
+      PublicKey.fromX.callCount.should.equal(1);
+      PublicKey.fromX.getCall(0).exception.message.should.equal('Invalid X');
     });
 
-    it('should be false - buffer', function() {
-      const isValid = PublicKey.isValidTaproot(Buffer.from('bca10d4006dbfebe31eee345df1d18d738f72fcd62d6ccafa84f87f05bac3467', 'hex'));
+    it('should be false - invalid X - buffer', function() {
+      sinon.spy(PublicKey, 'fromX');
+      const isValid = PublicKey.isValidTaproot(Buffer.from(INVALID_X, 'hex'));
       isValid.should.equal(false);
+      PublicKey.fromX.callCount.should.equal(1);
+      PublicKey.fromX.getCall(0).exception.message.should.equal('Invalid X');
     });
 
     it('should be false - invalid length', function() {
-      const isValid = PublicKey.isValidTaproot('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5');
+      const isValid = PublicKey.isValidTaproot(TAPROOT_VALID_HEX.slice(0, -1));
       isValid.should.equal(false);
     });
 
     it('should be false - invalid hex', function() {
-      const isValid = PublicKey.isValidTaproot('29b21ed3959615c97d0866a295486c25577aaa5ee18d463489d9dbe3cf0aaf5g');
+      const isValid = PublicKey.isValidTaproot(TAPROOT_INVALID_HEX);
       isValid.should.equal(false);
     });
   });

@@ -318,7 +318,7 @@ PublicKey.fromTaproot = function(hexBuf) {
 PublicKey.isValidTaproot = function(hexBuf) {
   try {
     return !!PublicKey.fromTaproot(hexBuf);
-  } catch {
+  } catch (e) {
     return false;
   }
 };
