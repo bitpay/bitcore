@@ -7,7 +7,7 @@ import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
-import logger from './logger';
+import logger from './../logger';
 import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { OpChain } from './op';
