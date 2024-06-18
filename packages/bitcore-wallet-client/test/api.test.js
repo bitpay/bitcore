@@ -7268,6 +7268,62 @@ describe('client API', function() {
         });
       });
 
+      it('should be able to gain access to three arb accounts from mnemonic and add wallet info correctly to all of them', done => {
+        let key = new Key({ seedType: 'new' });
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb'}, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb', account: 1}, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb', account: 2}, () => {
+              var words = keys[0].get(null, true).mnemonic;
+              var walletName = clients[0].credentials.walletName;
+              var copayerName = clients[0].credentials.copayerName;
+              clients[0].createAddress((err, addr) => {
+                should.not.exist(err);
+                should.exist(addr);
+                Client.serverAssistedImport(
+                  { words, includeTestnetWallets: true },
+                  {
+                    clientFactory: () => {
+                      return helpers.newClient(app);
+                    }
+                  },
+                  (err, k, c) => {
+                    should.not.exist(err);
+                    c.length.should.equal(3);
+                    c[0].credentials.coin.should.equal('eth');
+                    c[1].credentials.coin.should.equal('eth');
+                    c[2].credentials.coin.should.equal('eth');
+                    c[0].credentials.chain.should.equal('arb');
+                    c[1].credentials.chain.should.equal('arb');
+                    c[2].credentials.chain.should.equal('arb');
+                    c[0].credentials.account.should.equal(0);
+                    c[1].credentials.account.should.equal(1);
+                    c[2].credentials.account.should.equal(2);
+                    c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                    c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                    c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                    should.exist(c[0].credentials.walletId);
+                    should.exist(c[1].credentials.walletId);
+                    should.exist(c[2].credentials.walletId);
+                    let recoveryClient = c[2];
+                    recoveryClient.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient.credentials.walletName.should.equal(walletName);
+                      recoveryClient.credentials.copayerName.should.equal(copayerName);
+                      recoveryClient.getMainAddresses({}, (err, list) => {
+                        should.not.exist(err);
+                        should.exist(list);
+                        list[0].address.should.equal(addr.address);
+                        done();
+                      });
+                    });
+                  }
+                );
+              });
+            });
+          });
+        });
+      });
+
       it('should be able to gain access to a 1-1 wallet from mnemonic with passphrase', done => {
         let passphrase = 'xxx';
         helpers.createAndJoinWallet(clients, keys, 1, 1, { passphrase }, () => {

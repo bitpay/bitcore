@@ -198,6 +198,32 @@ describe('Bulk Client', function () {
             });
         });
 
+        it('returns two arb wallets and token wallets associated with one of them', done => {
+          let key = new Key({ seedType: 'new' });
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb', key: key, network: 'livenet' }, () => {
+              helpers.createAndJoinWallet(clients.slice(1), keys, 1, 1, { coin: 'eth', chain: 'arb', key: key, account: 1, network: 'livenet' }, () => {
+                  let walletOptions = {
+                      [clients[0].credentials.copayerId]: {
+                          tokenAddresses: [
+                              '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                              '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+                          ]
+                      }
+                  };
+
+                  clients[0].bulkClient.getStatusAll([clients[0].credentials, clients[1].credentials], { includeExtendedInfo: true, twoStep: true, wallets: walletOptions }, (err, wallets) => {
+                      should.not.exist(err);
+                      wallets.length.should.equal(4);
+                      wallets.filter(wallet => wallet.tokenAddress === null).length.should.equal(2);
+                      wallets.findIndex(wallet => wallet.tokenAddress === '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48').should.be.above(-1);
+                      wallets.findIndex(wallet => wallet.tokenAddress === '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd').should.be.above(-1);
+
+                      done();
+                  });
+              });
+          });
+      });
+
         it('fails gracefully when given bad signature', done => {
             clients[0].fromString(
                 k.createCredentials(null, {
