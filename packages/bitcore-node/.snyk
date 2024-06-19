@@ -1,0 +1,64 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.1
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-567746:
+    - winston > async > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: winston > async > lodash
+    - bitcore-client > async > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: bitcore-client > async > lodash
+    - '@types/winston > winston > async > lodash':
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: '@types/winston > winston > async > lodash'
+    - bitcore-wallet-client > source-map-loader > async > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: bitcore-wallet-client > source-map-loader > async > lodash
+    - xrpl > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: xrpl > lodash
+    - eslint > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: eslint > lodash
+    - crypto-wallet-core > xrpl > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: crypto-wallet-core > xrpl > lodash
+    - bitcore-wallet-client > preconditions > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: bitcore-wallet-client > preconditions > lodash
+    - crypto-rpc > xrpl > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: crypto-rpc > xrpl > lodash
+    - eslint > inquirer > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: eslint > inquirer > lodash
+    - eslint > table > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: eslint > table > lodash
+    - bitcore-client > crypto-wallet-core > xrpl > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: bitcore-client > crypto-wallet-core > xrpl > lodash
+    - bitcore-wallet-client > crypto-wallet-core > xrpl > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: bitcore-wallet-client > crypto-wallet-core > xrpl > lodash
+    - bitcore-client > request-promise-native > request-promise-core > lodash:
+        patched: '2024-06-18T18:37:06.425Z'
+        id: SNYK-JS-LODASH-567746
+        path: >-
+          bitcore-client > request-promise-native > request-promise-core >
+          lodash
