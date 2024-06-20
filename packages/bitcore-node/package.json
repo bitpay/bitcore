@@ -110,7 +110,7 @@
     "mongodb": "3.6.10",
     "request": "2.88.2",
     "secp256k1": "4.0.3",
-    "socket.io": "3.1.0",
+    "socket.io": "4.6.2",
     "source-map-support": "^0.5.13",
     "through2": "2.0.3",
     "underscore": "1.12.1",
