@@ -64,13 +64,13 @@
     "bitcore-lib-cash": "^10.0.39",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
-    "socks5-client": "^0.3.6"
+    "socks5-client": "^1.1.2"
   },
   "devDependencies": {
     "bitcore-build": "^10.0.21",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
-    "gulp": "^4.0.0",
+    "gulp": "^5.0.0",
     "sinon": "^1.12.2"
   },
   "license": "MIT",
