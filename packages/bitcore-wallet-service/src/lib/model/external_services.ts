@@ -3,6 +3,7 @@ interface ExchangeConfig {
   removed?: boolean;
   disabledTitle?: string;
   disabledMessage?: string;
+  config?: any;
 }
 
 export interface BuyCryptoConfig {

@@ -175,7 +175,11 @@ module.exports = {
       },
       thorswap: {
         disabled: false,
-        removed: false
+        removed: false,
+        // config: {
+        //   affiliateAddress: 'thorname_here',
+        //   affiliateBasisPoints: 'type_number_fee_here'
+        // }
       }
     },
   },

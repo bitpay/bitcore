@@ -1870,21 +1870,15 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/thorswap/getSwapQuote', (req, res) => {
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-
-      server
-        .thorswapGetSwapQuote(req)
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          return returnError(err ?? 'unknown', res, req);
-        });
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.thorswapGetSwapQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
     });
 
     router.post('/v1/service/thorswap/getSwapTx', (req, res) => {

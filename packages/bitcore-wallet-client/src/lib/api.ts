@@ -3452,6 +3452,15 @@ export class API extends EventEmitter {
     });
   }
 
+  thorswapGetSwapQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/thorswap/getSwapQuote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   transakGetAccessToken(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post('/v1/service/transak/getAccessToken', data, (err, data) => {
