@@ -81,6 +81,7 @@ export interface ITxProposal {
   isTokenSwap?: boolean;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
+  multiTx?: boolean;
 }
 
 export class TxProposal {
@@ -151,6 +152,7 @@ export class TxProposal {
   multiSendContractAddress?: string;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
+  multiTx?: boolean;
 
   static create(opts) {
     opts = opts || {};
@@ -242,7 +244,8 @@ export class TxProposal {
     // XRP
     x.destinationTag = opts.destinationTag;
     x.invoiceID = opts.invoiceID;
-
+    x.multiTx = opts.multiTx;
+  
     return x;
   }
 
@@ -318,6 +321,7 @@ export class TxProposal {
     // XRP
     x.destinationTag = obj.destinationTag;
     x.invoiceID = obj.invoiceID;
+    x.multiTx = obj.multiTx;
 
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;

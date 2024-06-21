@@ -774,7 +774,7 @@ describe('Wallet service', function() {
       });
     });
 
-    ['eth','xrp'].forEach(c => {
+    ['eth','xrp','matic','arb','base','op'].forEach(c => {
       it(`should  fail to create a multisig ${c}  wallet`, function(done) {
         var opts = {
           coin: c,
@@ -797,7 +797,28 @@ describe('Wallet service', function() {
         });
       });
 
-
+      it(`should create, store, and fetch ${c} wallet`, function(done) {
+        var opts = {
+          coin: c,
+          name: 'my wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub
+        };
+  
+        server.createWallet(opts, function(err, walletId) {
+          should.not.exist(err);
+          should.exist(walletId);
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            wallet.id.should.equal(walletId);
+            wallet.name.should.equal('my wallet');
+            wallet.chain.should.equal(c);
+            wallet.coin.should.equal(c);
+            done();
+          });
+        });
+      });
     });
 
 
