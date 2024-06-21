@@ -10,7 +10,7 @@ enum HashPrefix {
 }
 export class XRPTxProvider {
   create(params: {
-    recipients: Array<{ address: string; amount: string }>;
+    recipients: Array<{ address: string; amount: string; recipientsTag?: number }>;
     tag?: number;
     from: string;
     invoiceID?: string;
@@ -25,7 +25,7 @@ export class XRPTxProvider {
     switch (type?.toLowerCase()) {
       case 'payment':
       default:
-        const { address, amount } = recipients[0];
+        const { address, amount, recipientsTag } = recipients[0];
         const paymentTx: xrpl.Payment = {
           TransactionType: 'Payment',
           Account: from,
@@ -41,8 +41,8 @@ export class XRPTxProvider {
         if (invoiceID) {
           paymentTx.InvoiceID = invoiceID;
         }
-        if (tag) {
-          paymentTx.DestinationTag = tag;
+        if (tag || recipientsTag) {
+          paymentTx.DestinationTag = tag || recipientsTag;
         }
         return xrpl.encode(paymentTx);
       case 'accountset':

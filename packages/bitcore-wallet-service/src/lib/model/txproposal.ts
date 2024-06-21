@@ -20,6 +20,7 @@ export interface ITxProposal {
   creatorName: string;
   createdOn: number;
   txid: string;
+  txids?: Array<string>;
   id: string;
   walletId: string;
   creatorId: string;
@@ -40,6 +41,7 @@ export interface ITxProposal {
     data?: string;
     gasLimit?: number;
     script?: string;
+    tag?: string;
   }>;
   outputOrder: number;
   walletM: number;
@@ -87,6 +89,7 @@ export class TxProposal {
   createdOn: number;
   id: string;
   txid: string;
+  txids?: Array<string>;
   walletId: string;
   creatorId: string;
   coin: string;
@@ -151,7 +154,7 @@ export class TxProposal {
 
   static create(opts) {
     opts = opts || {};
-  
+
     const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
     $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]), `Invalid network: ${opts.network} at TxProposal.create()`);
 
@@ -272,6 +275,7 @@ export class TxProposal {
     x.requiredRejections = obj.requiredRejections;
     x.status = obj.status;
     x.txid = obj.txid;
+    x.txids = obj.txids;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
     x.actions = _.map(obj.actions, action => {
@@ -433,8 +437,9 @@ export class TxProposal {
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {
-        this.raw = tx.uncheckedSerialize();
+        this.raw = tx.uncheckedSerialize(); // be able to store multiple and create multiple actions
         this.txid = tx.id;
+        this.txids = tx.txids() || [tx.id];
       }
 
       return true;
