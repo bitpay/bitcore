@@ -290,7 +290,7 @@ Address._transformPublicKey = function(pubkey, network, type) {
   if (type === Address.PayToScriptHash) {
     info.hashBuffer = Hash.sha256ripemd160(Script.buildWitnessV0Out(pubkey).toBuffer());
   } else if (type === Address.PayToTaproot) {
-    info.hashBuffer = Hash.sha256ripemd160(Script.buildWitnessV1Out(pubkey).toBuffer());
+    info.hashBuffer = pubkey.createTapTweak().tweakedPubKey;
   } else {
     info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
   }

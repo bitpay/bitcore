@@ -2,25 +2,26 @@
 
 /* jshint unused: false */
 /* jshint latedef: false */
-var should = require('chai').should();
-var expect = require('chai').expect;
-var _ = require('lodash');
-var sinon = require('sinon');
+const should = require('chai').should();
+const expect = require('chai').expect;
+const _ = require('lodash');
+const sinon = require('sinon');
 
-var bitcore = require('../..');
-var BN = bitcore.crypto.BN;
-var Transaction = bitcore.Transaction;
-var Input = bitcore.Transaction.Input;
-var Output = bitcore.Transaction.Output;
-var PrivateKey = bitcore.PrivateKey;
-var Script = bitcore.Script;
-var Interpreter = bitcore.Script.Interpreter;
-var Address = bitcore.Address;
-var Networks = bitcore.Networks;
-var Opcode = bitcore.Opcode;
-var errors = bitcore.errors;
+const bitcore = require('../..');
+const BN = bitcore.crypto.BN;
+const Transaction = bitcore.Transaction;
+const Input = bitcore.Transaction.Input;
+const Output = bitcore.Transaction.Output;
+const PrivateKey = bitcore.PrivateKey;
+const Script = bitcore.Script;
+const Interpreter = bitcore.Script.Interpreter;
+const Address = bitcore.Address;
+const Networks = bitcore.Networks;
+const Opcode = bitcore.Opcode;
+const errors = bitcore.errors;
 
-var transactionVector = require('../data/tx_creation');
+const transactionVector = require('../data/tx_creation');
+const taprootVectors = require('../data/bitcoind/wallet_test_vectors.json');
 
 describe('Transaction', function() {
 
@@ -2097,6 +2098,69 @@ describe('Transaction', function() {
       (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
     });
   });
+
+
+  describe('Taproot', function() {
+    for (let i = 0; i < taprootVectors.keyPathSpending.length; i++) {
+      const vec = taprootVectors.keyPathSpending[i];
+      it(`vector ${i}`, function() {
+        Script;
+        const tx = new Transaction(vec.given.rawUnsignedTx);
+        const tf = new Transaction(vec.auxiliary.fullySignedTx);
+        const t = new Transaction();
+        t.nLockTime = tx.nLockTime;
+        // t.lockUntilBlockHeight(tx.nLockTime)
+        for (let j = 0; j < vec.given.utxosSpent.length; j++) {
+          const utxo = new Transaction.UnspentOutput({
+            satoshis: vec.given.utxosSpent[j].amountSats,
+            script: vec.given.utxosSpent[j].scriptPubKey,
+            txid: tx.inputs[j].prevTxId.toString('hex'),
+            outputIndex: tx.inputs[j].outputIndex
+          });
+          t.from(utxo, null, null, { sequenceNumber: tx.inputs[j].sequenceNumber });
+        }
+        for (const output of tx.outputs) {
+          t.addOutput(output);
+        }
+        for (const inputSpending of vec.inputSpending) {
+          const {
+            internalPrivkey,
+            hashType,
+            merkleRoot
+          } = inputSpending.given;
+          t.sign(internalPrivkey, hashType, null, merkleRoot);
+        }
+        // NOTE: t.isFullySigned() === false b/c priv keys are not given for non-taproot inputs
+        // We'll add them below from the fully signed tx in the test vector
+        for (let i = 0; i < t.inputs.length; i++) {
+          const taprootSpending = vec.inputSpending.find(s => s.given.txinIndex == i);
+          if (taprootSpending) {
+            t.inputs[i].isFullySigned().should.equal(true);
+            for (const witness of taprootSpending.expected.witness) {
+              t.inputs[i].isValidSignature(t, {
+                signature: {
+                  toBuffer: () => Buffer.from(witness, 'hex'),
+                  nhashtype: taprootSpending.given.hashType
+                }
+              }).should.equal(true);
+            }
+          } else {
+            // non-taproot input
+            // add the signatures given from the test vector
+            if (tf.inputs[i].witnesses.length) {
+              t.inputs[i].setWitnesses(tf.inputs[i].witnesses);
+            } else {
+              t.inputs[i].setScript(tf.inputs[i].script);
+            }            
+          }
+        }
+        t.isFullySigned().should.equal(true);
+        t.hash.should.equal('fea03dc5c362e2ebd71f90960803aaa2cdbbc6cd536135f49980afedc19e3552');
+        expect(t.serialize({ disableLargeFees: true })).to.exist;
+      });
+    }
+  });
+
 });
 
 

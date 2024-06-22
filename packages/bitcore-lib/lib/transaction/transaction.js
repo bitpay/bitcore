@@ -14,6 +14,7 @@ var Hash = require('../crypto/hash');
 var Signature = require('../crypto/signature');
 var Sighash = require('./sighash');
 var SighashWitness = require('./sighashwitness');
+const SighashSchnorr = require('./sighashschnorr');
 
 var Address = require('../address');
 var UnspentOutput = require('./unspentoutput');
@@ -22,6 +23,7 @@ var PublicKeyHashInput = Input.PublicKeyHash;
 var PublicKeyInput = Input.PublicKey;
 var MultiSigScriptHashInput = Input.MultiSigScriptHash;
 var MultiSigInput = Input.MultiSig;
+const TaprootInput = Input.Taproot;
 var Output = require('./output');
 var Script = require('../script');
 var PrivateKey = require('../privatekey');
@@ -648,7 +650,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (pubkeys && threshold) {
     this._fromMultisigUtxo(utxo, pubkeys, threshold, opts);
   } else {
-    this._fromNonP2SH(utxo);
+    this._fromNonP2SH(utxo, opts);
   }
   return this;
 };
@@ -663,7 +665,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
  * @param {Object} opts
  * @returns {Array<number>}
  */
-Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
+Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts = {}) {
   let indexes = [];
   for(let utxo of utxos) {
     const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
@@ -689,6 +691,8 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
     }
   } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
     clazz = PublicKeyHashInput;
+  } else if (utxo.script.isTaproot()) {
+    clazz = TaprootInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
   } else {
@@ -698,7 +702,7 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
 }
 
 
-Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
+Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts = {}) {
   utxo = new UnspentOutput(utxo);
   const InputClass = this._selectInputType(utxo, pubkeys, threshold);
   const input = {
@@ -708,15 +712,15 @@ Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
     }),
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
-    sequenceNumber: utxo.sequenceNumber,
+    sequenceNumber: opts.sequenceNumber,
     script: Script.empty()
   };
   let args = pubkeys && threshold ? [pubkeys, threshold, false, opts] : []
   return new InputClass(input, ...args);
 }
 
-Transaction.prototype._fromNonP2SH = function(utxo) {
-  const input = this._getInputFrom(utxo);
+Transaction.prototype._fromNonP2SH = function(utxo, opts) {
+  const input = this._getInputFrom(utxo, null, null, opts);
   this.addInput(input);
 };
 
@@ -1232,31 +1236,33 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  * @param {Array|String|PrivateKey} privateKey
  * @param {number} sigtype
  * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Buffer|String} merkleRoot - merkle root for taproot signing
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
+Transaction.prototype.sign = function(privateKey, sigtype, signingMethod, merkleRoot) {
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   if (Array.isArray(privateKey)) {
     for (const pk of privateKey) {
-      this.sign(pk, sigtype, signingMethod);
+      this.sign(pk, sigtype, signingMethod, merkleRoot);
     }
     return this;
   }
-  for (const signature of this.getSignatures(privateKey, sigtype, signingMethod)) {
+  for (const signature of this.getSignatures(privateKey, sigtype, signingMethod, merkleRoot)) {
     this.applySignature(signature, signingMethod);
   }
   return this;
 };
 
-Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) {
+Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod, merkleRoot) {
+  if (typeof merkleRoot === 'string') {
+    merkleRoot = Buffer.from(merkleRoot, 'hex');
+  }
   privKey = new PrivateKey(privKey);
-  sigtype = sigtype || Signature.SIGHASH_ALL;
-  var transaction = this;
-  var results = [];
-  var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
-  for (let index = 0; index < this.inputs.length; index++) {
-    const input = this.inputs[index];
-    for (const signature of input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod)) {
+  const results = [];
+  const hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
+  for (let i = 0; i < this.inputs.length; i++) {
+    const input = this.inputs[i];
+    for (const signature of input.getSignatures(this, privKey, i, sigtype, hashData, signingMethod, merkleRoot)) {
       results.push(signature);
     }
   }
@@ -1303,41 +1309,102 @@ Transaction.prototype.isValidSignature = function(signature, signingMethod) {
   return this.inputs[signature.inputIndex].isValidSignature(this, signature, signingMethod);
 };
 
+
 /**
- * @param {String} signingMethod method used to sign - 'ecdsa' or 'schnorr' (future signing method)
- * @returns {bool} whether the signature is valid for this transaction input
+ * Verify ECDSA signature
+ * @param {Signature} sig 
+ * @param {PublicKey} pubkey 
+ * @param {Number} nin 
+ * @param {Script} subscript 
+ * @param {Number} satoshis 
+ * @returns {Boolean}
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, signingMethod) {
-  if (sigversion == null) {
-    sigversion = 0;
+Transaction.prototype.checkEcdsaSignature = function(sig, pubkey, nin, subscript, satoshis) {
+  var subscriptBuffer = subscript.toBuffer();
+  var scriptCodeWriter = new BufferWriter();
+  scriptCodeWriter.writeVarintNum(subscriptBuffer.length);
+  scriptCodeWriter.write(subscriptBuffer);
+
+  var satoshisBuffer;
+  if (satoshis) {
+    $.checkState(JSUtil.isNaturalNumber(satoshis), 'satoshis needs to be a natural number');
+    satoshisBuffer = new BufferWriter().writeUInt64LEBN(new BN(satoshis)).toBuffer();
+  } else {
+    satoshisBuffer = this.inputs[nin].getSatoshisBuffer();
   }
+  var verified = SighashWitness.verify(
+    this,
+    sig,
+    pubkey,
+    nin,
+    scriptCodeWriter.toBuffer(),
+    satoshisBuffer
+  );
+  return verified;
+};
 
-  if (sigversion === 1) {
-    var subscriptBuffer = subscript.toBuffer();
-    var scriptCodeWriter = new BufferWriter();
-    scriptCodeWriter.writeVarintNum(subscriptBuffer.length);
-    scriptCodeWriter.write(subscriptBuffer);
 
-    var satoshisBuffer;
-    if (satoshis) {
-      $.checkState(JSUtil.isNaturalNumber(satoshis));
-      satoshisBuffer = new BufferWriter().writeUInt64LEBN(new BN(satoshis)).toBuffer();
-    } else {
-      satoshisBuffer = this.inputs[nin].getSatoshisBuffer();
+/**
+ * Verify Schnorr signature
+ * @param {Signature|Buffer} sig 
+ * @param {PublicKey|Buffer} pubkey 
+ * @param {Number} nin 
+ * @param {Number} sigversion 
+ * @param {Object} execdata 
+ * @returns {Boolean}
+ */
+Transaction.prototype.checkSchnorrSignature = function(sig, pubkey, nin, sigversion, execdata) {
+  if ($.isType(pubkey, 'PublicKey')) {
+    pubkey = pubkey.point.x.toBuffer();
+  }
+  $.checkArgument(pubkey && pubkey.length === 32, 'Schnorr signatures have 32-byte public keys. The caller is responsible for enforcing this.');
+
+  if (Buffer.isBuffer(sig)) {
+    if (sig.length !== 64 && sig.length !== 65) {
+      return false;
     }
-    var verified = SighashWitness.verify(
-      this,
-      sig,
-      pubkey,
-      nin,
-      scriptCodeWriter.toBuffer(),
-      satoshisBuffer,
-      signingMethod
-    );
-    return verified;
+    sig = Signature.fromSchnorr(sig);
+  }
+  // Note that in Tapscript evaluation, empty signatures are treated specially (invalid signature that does not
+  // abort script execution). This is implemented in Interpreter.evalChecksigTapscript, which won't invoke
+  // CheckSchnorrSignature in that case. In other contexts, they are invalid like every other signature with
+  // size different from 64 or 65.
+  $.checkArgument(sig.isSchnorr, 'Signature must be schnorr');
+
+  if (!SighashSchnorr.verify(this, sig, pubkey, sigversion, nin, execdata)) {
+    return false;
+  }
+  return true;
+};
+
+/**
+ * This is here largely for legacy reasons. However, if the sig type
+ * is already known (via sigversion), then it would be better to call
+ * checkEcdsaSignature or checkSchnorrSignature directly.
+ * @param {Signature|Buffer} sig Signature to verify
+ * @param {PublicKey|Buffer} pubkey Public key used to verify sig
+ * @param {Number} nin Tx input index to verify signature against
+ * @param {Script} subscript ECDSA only
+ * @param {Number} sigversion See Signature.Version for valid versions (default: 0 or Signature.Version.BASE)
+ * @param {Number} satoshis ECDSA only
+ * @param {Object} execdata Schnorr only
+ * @returns {Boolean} whether the signature is valid for this transaction input
+ */
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, execdata) {
+  if (sigversion == null) {
+    sigversion = Signature.Version.BASE;
   }
 
-  return Sighash.verify(this, sig, pubkey, nin, subscript, signingMethod);
+  switch(sigversion) {
+    case Signature.Version.WITNESS_V0:
+      return this.checkEcdsaSignature(sig, pubkey, nin, subscript, satoshis);
+    case Signature.Version.TAPROOT:
+    case Signature.Version.TAPSCRIPT:
+      return this.checkSchnorrSignature(sig, pubkey, nin, sigversion, execdata);
+    case Signature.Version.BASE:
+    default:
+      return Sighash.verify(this, sig, pubkey, nin, subscript);
+  }
 };
 
 /**

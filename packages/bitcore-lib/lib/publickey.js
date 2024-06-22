@@ -7,6 +7,7 @@ var JSUtil = require('./util/js');
 var Network = require('./networks');
 var _ = require('lodash');
 var $ = require('./util/preconditions');
+const TaggedHash = require('./crypto/taggedhash');
 
 /**
  * Instantiate a PublicKey from a {@link PrivateKey}, {@link Point}, `string`, or `Buffer`.
@@ -226,11 +227,25 @@ PublicKey.fromPrivateKey = function(privkey) {
 
 /**
  * Instantiate a PublicKey from a Buffer
+ * @param {Buffer} buf A DER buffer (33+ bytes) or a 32 byte X-only coordinate (taproot only)
+ * @param {Boolean} strict (optional; Only applies to DER format) If set to false, will loosen some conditions
+ * @returns {PublicKey}
+ */
+PublicKey.fromBuffer = function(buf, strict) {
+  $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key or 32 byte X coordinate (taproot)');
+  if (buf.length === 32) {
+    return PublicKey.fromX(false, buf);
+  }
+  return PublicKey.fromDER(buf, strict);
+}
+
+/**
+ * Instantiate a PublicKey from a DER buffer
  * @param {Buffer} buf - A DER hex buffer
  * @param {bool=} strict - if set to false, will loosen some conditions
  * @returns {PublicKey} A new valid instance of PublicKey
  */
-PublicKey.fromDER = PublicKey.fromBuffer = function(buf, strict) {
+PublicKey.fromDER = function(buf, strict) {
   $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key');
   var info = PublicKey._transformDER(buf, strict);
   return new PublicKey(info.point, {
@@ -279,6 +294,96 @@ PublicKey.fromX = function(odd, x) {
   return new PublicKey(info.point, {
     compressed: info.compressed
   });
+};
+
+/**
+ * PublicKey instance from a Taproot (32-byte) public key
+ * @param {String|Buffer} hexBuf 
+ * @returns {PublicKey}
+ */
+PublicKey.fromTaproot = function(hexBuf) {
+  if (typeof hexBuf === 'string' && JSUtil.isHexaString(hexBuf)) {
+    hexBuf = Buffer.from(hexBuf, 'hex');
+  }
+  $.checkArgument(Buffer.isBuffer(hexBuf), 'hexBuf must be a hex string or buffer');
+  $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
+  return new PublicKey.fromX(false, hexBuf);
+}
+
+/**
+ * Verifies if the input is a valid Taproot public key
+ * @param {String|Buffer} hexBuf 
+ * @returns {Boolean}
+ */
+PublicKey.isValidTaproot = function(hexBuf) {
+  try {
+    return !!PublicKey.fromTaproot(hexBuf);
+  } catch (e) {
+    return false;
+  }
+};
+
+
+/**
+ * Get the TapTweak tagged hash of this pub key and the merkleRoot
+ * @param {Buffer} merkleRoot (optional)
+ * @returns {Buffer}
+ */
+PublicKey.prototype.computeTapTweakHash = function(merkleRoot) {
+  const taggedWriter = new TaggedHash('TapTweak');
+  taggedWriter.write(this.point.x.toBuffer({ size: 32 }));
+
+  //  If !merkleRoot, then we have no scripts. The actual tweak does not matter, but 
+  //  follow BIP341 here to allow for reproducible tweaking.
+
+  if (merkleRoot) {
+    $.checkArgument(Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be 32 byte buffer');
+    taggedWriter.write(merkleRoot);
+  }
+  const tweakHash = taggedWriter.finalize();
+  
+  const order = Point.getN();
+  $.checkState(BN.fromBuffer(tweakHash).lt(order), 'TapTweak hash failed secp256k1 order check');
+  return tweakHash;
+};
+
+
+/**
+ * Verify a tweaked public key against this key
+ * @param {PublicKey|Buffer} p Tweaked pub key
+ * @param {Buffer} merkleRoot (optional)
+ * @param {Buffer} control 
+ * @returns {Boolean}
+ */
+PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
+  if (Buffer.isBuffer(p)) {
+    p = PublicKey.fromTaproot(p);
+  }
+  const tweak = p.computeTapTweakHash(merkleRoot);
+
+  const P = p.point.liftX();
+  const Q = P.add(this.point.curve.g.mul(BN.fromBuffer(tweak)));
+  
+  return this.point.x.eq(Q.x) && Q.y.mod(new BN(2)).eq(new BN(control[0] & 1));
+};
+
+
+/**
+ * Create a tweaked version of this pub key
+ * @param {Buffer} merkleRoot (optional)
+ * @returns {{ parity: Number, tweakedPubKey: Buffer }}
+ */
+PublicKey.prototype.createTapTweak = function(merkleRoot) {
+  $.checkArgument(merkleRoot == null || (Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32), 'merkleRoot must be a 32 byte buffer');
+
+  let t = this.computeTapTweakHash(merkleRoot);
+  t = new BN(t);
+  const Q = this.point.liftX().add(Point.getG().mul(t));
+  const parity = Q.y.isEven() ? 0 : 1;
+  return {
+    parity,
+    tweakedPubKey: Q.x.toBuffer()
+  };
 };
 
 /**
