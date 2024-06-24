@@ -2498,6 +2498,7 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @param {number} opts.txType - Optional. Type of EVM transaction
    * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
+   * @param {Boolean} opts.multiTx - Optional. Proposal will create multiple transactions
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {

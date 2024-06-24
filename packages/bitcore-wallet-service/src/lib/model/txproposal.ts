@@ -81,7 +81,7 @@ export interface ITxProposal {
   isTokenSwap?: boolean;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
-  multiTx?: boolean;
+  multiTx?: boolean; // proposal contains multiple transactions
 }
 
 export class TxProposal {
@@ -441,9 +441,11 @@ export class TxProposal {
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {
-        this.raw = tx.uncheckedSerialize(); // be able to store multiple and create multiple actions
+        this.raw = tx.uncheckedSerialize();
         this.txid = tx.id;
-        this.txids = tx.txids() || [tx.id];
+        if (this.multiTx) {
+          this.txids = tx?.txids && tx.txids() || [tx.id];
+        }
       }
 
       return true;
