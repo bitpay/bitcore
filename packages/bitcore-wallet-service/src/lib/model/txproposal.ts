@@ -367,7 +367,7 @@ export class TxProposal {
    * @return {Number} total amount of all outputs excluding change output
    */
   getTotalAmount() {
-    return _.sumBy(this.outputs, 'amount');
+    return Number((this.outputs || []).reduce((total, o) => total += BigInt(o.amount), 0n));
   }
 
   /**

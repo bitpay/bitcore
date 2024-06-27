@@ -414,7 +414,7 @@ export class EthChain implements IChain {
         const txpTotalAmount =
           (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
             ? getInvoiceValue(txp)
-            : txp.getTotalAmount(opts);
+            : txp.getTotalAmount();
 
         if (totalAmount < txpTotalAmount) {
           return cb(Errors.INSUFFICIENT_FUNDS);
