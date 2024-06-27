@@ -10,9 +10,9 @@ function format(message, args) {
 }
 var traverseNode = function (parent, errorDefinition) {
   var NodeError = function () {
-    if (_.isString(errorDefinition.message)) {
+    if (typeof errorDefinition.message === 'string') {
       this.message = format(errorDefinition.message, arguments);
-    } else if (_.isFunction(errorDefinition.message)) {
+    } else if (typeof errorDefinition.message === 'function') {
       this.message = errorDefinition.message.apply(null, arguments);
     } else {
       throw new Error('Invalid error definition for ' + errorDefinition.name);
@@ -30,9 +30,9 @@ var traverseNode = function (parent, errorDefinition) {
 
 /* jshint latedef: false */
 var childDefinitions = function (parent, childDefinitions) {
-  _.each(childDefinitions, function (childDefinition) {
+  for (const childDefinition of childDefinitions) {
     traverseNode(parent, childDefinition);
-  });
+  }
 };
 /* jshint latedef: true */
 
