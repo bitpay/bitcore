@@ -2558,7 +2558,7 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 async next => {
-                  if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
+                  if (!isNaN(opts.fee) && (opts.inputs || []).length > 0) return next();
                   try {
                     ({ feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
                   } catch (error) {
@@ -2676,6 +2676,25 @@ export class WalletService implements IWalletService {
                   }
                   if (opts.dryRun) return next();
                   this._store(wallet, txp.escrowAddress, next, true);
+                },
+                next => {
+                  if (!txp.multiSendContractAddress || !txp.tokenAddress) {
+                    return next(); 
+                  }
+                  // Check that the multisend contract is approved in the token contract for the total amount
+                  const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+                  if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
+                  bc.getTokenAllowance({
+                    tokenAddress: txp.tokenAddress,
+                    ownerAddress: txp.from,
+                    spenderAddress: txp.multiSendContractAddress
+                  }, (err, allowance) => {
+                    if (err) { return next(err); }
+                    if (BigInt(allowance) < BigInt(txp.getTotalAmount())) {
+                      return next(new Error(`Insufficient token allowance. Allowed: ${BigInt(allowance)}, Want: ${BigInt(txp.getTotalAmount())}`));
+                    }
+                    return next();
+                  });
                 },
                 next => {
                   if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress) return next();
@@ -4093,7 +4112,7 @@ export class WalletService implements IWalletService {
     );
   }
 
-  getTxHistoryV8(bc, wallet, opts, skip, limit, cb) {
+  getTxHistoryV8(bc: V8, wallet, opts, skip, limit, cb) {
     let bcHeight,
       bcHash,
       sinceTx,
