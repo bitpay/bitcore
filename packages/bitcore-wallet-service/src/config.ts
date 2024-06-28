@@ -191,6 +191,14 @@ const Config = (): any => {
         changelly: {
           disabled: false,
           removed: false
+        },
+        thorswap: {
+          disabled: false,
+          removed: false,
+          // config: {
+          //   affiliateAddress: 'thorname_here',
+          //   affiliateBasisPoints: 'type_number_fee_here'
+          // }
         }
       },
     },
@@ -313,6 +321,20 @@ const Config = (): any => {
     //     api: 'https://backend-wallet-api.simplexcc.com',
     //     appProviderId: 'simplex_web_provider_id_here'
     //   }
+    // },
+    // thorswap : {
+    //   sandbox: {
+    //     api: 'https://dev-api.thorswap.net',
+    //     apiKey: 'thorswap_sandbox_api_key_here',
+    //     secretKey: 'thorswap_sandbox_secret_key_here',
+    //     referer: 'thorswap_sandbox_referer_here'
+    //   },
+    //   production: {
+    //     api: 'https://api.thorswap.net',
+    //     apiKey: 'thorswap_production_api_key_here',
+    //     secretKey: 'thorswap_production_secret_key_here',
+    //     referer: 'thorswap_production_referer_here'
+    //   },
     // },
     // transak : {
     //   sandbox: {
