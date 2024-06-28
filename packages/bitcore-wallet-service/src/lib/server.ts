@@ -3086,14 +3086,14 @@ export class WalletService implements IWalletService {
   }
 
   _processBroadcast(txp, opts, cb) {
-    $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processBroadcast()>'); // handle mutiple txids
+    $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processBroadcast()>');
     opts = opts || {};
     txp.setBroadcasted();
     this.storage.storeTx(this.walletId, txp, err => {
       if (err) return cb(err);
 
       const extraArgs = {
-        txid: _.isEmpty(txp.txids) ? txp.txid : txp.txids
+        txid: txp?.txids?.length ? txp.txids : txp.txid
       };
       if (opts.byThirdParty) {
         this._notifyTxProposalAction('NewOutgoingTxByThirdParty', txp, extraArgs);
@@ -4739,12 +4739,12 @@ export class WalletService implements IWalletService {
   txConfirmationSubscribe(opts, cb) {
     if (!checkRequired(opts, ['txid'], cb)) return;
 
-    const txids = _.isArray(opts.txid) ? opts.txid : [opts.txid];
-    for (let i = 0; i < txids.length; i++) {
+    const txids = Array.isArray(opts.txid) ? opts.txid : [opts.txid];
+    for (const txid of txids) {
       const sub = TxConfirmationSub.create({
         copayerId: this.copayerId,
         walletId: this.walletId,
-        txid: txids[i],
+        txid,
         amount: opts.amount,
         isCreator: true
       });

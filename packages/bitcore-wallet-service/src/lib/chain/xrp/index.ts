@@ -137,14 +137,15 @@ export class XrpChain implements IChain {
       return {
         amount: output.amount,
         address: output.toAddress,
-        recipientTag: output.tag
+        tag: output.tag
       };
     });
     const unsignedTxs = [];
     for (let index = 0; index < recipients.length; index++) {
+      const _tag = recipients[0]?.tag || destinationTag
       const rawTx = Transactions.create({
         ...txp,
-        tag: destinationTag ? Number(destinationTag) : undefined,
+        tag: _tag ? Number(_tag) : undefined,
         chain,
         nonce: Number(txp.nonce) + Number(index),
         recipients: [recipients[index]]
