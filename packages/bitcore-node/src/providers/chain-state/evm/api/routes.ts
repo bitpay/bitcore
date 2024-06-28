@@ -81,7 +81,7 @@ export class EVMRouter {
     });
   };
 
-  private getERC20TokenAllowance (router: Router) {
+  private getERC20TokenAllowance(router: Router) {
     router.get(`/api/${this.chain}/:network/token/:tokenAddress/allowance/:ownerAddress/for/:spenderAddress`, async (req, res) => {
       const { network, tokenAddress, ownerAddress, spenderAddress } = req.params;
       try {

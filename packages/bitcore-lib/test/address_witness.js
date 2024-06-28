@@ -2,15 +2,17 @@
 
 /* jshint maxstatements: 30 */
 
-var chai = require('chai');
-var should = chai.should();
-var expect = chai.expect;
+const chai = require('chai');
+const taprootAccounts = require('./data/taproot_accounts');
+const bitcore = require('..');
 
-var bitcore = require('..');
-var PublicKey = bitcore.PublicKey;
-var Address = bitcore.Address;
-var Script = bitcore.Script;
-var Networks = bitcore.Networks;
+const should = chai.should();
+const expect = chai.expect;
+
+const PublicKey = bitcore.PublicKey;
+const Address = bitcore.Address;
+const Script = bitcore.Script;
+const Networks = bitcore.Networks;
 
 describe('Witness Address', function() {
 
@@ -230,6 +232,13 @@ describe('Witness Address', function() {
         type: address.type
       });
       address.toString().should.equal(address2.toString());
+    });
+
+    it('can be instantiated from a taproot address', function() {
+      for (const account of taprootAccounts) {
+        const address = new Address(account.address);
+        address.toString().should.equal(account.address);
+      }
     });
   });
 
@@ -501,5 +510,34 @@ describe('Witness Address', function() {
         return Address.createMultisig([], 3, 'testnet', null, Address.PayToWitnessScriptHash);
       }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
     });
+  });
+
+  describe('taproot', function() {
+    const priv = new bitcore.HDPrivateKey('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
+
+    before(function() {
+      priv.hdPublicKey.toString().should.equal('xpub661MyMwAqRbcFkPHucMnrGNzDwb6teAX1RbKQmqtEF8kK3Z7LZ59qafCjB9eCRLiTVG3uxBxgKvRgbubRhqSKXnGGb1aoaqLrpMBDrVxga8');
+    });
+
+    for (let i = 0; i < taprootAccounts.length; i++) {
+      const account = taprootAccounts[i];
+
+      it('should create taproot address from pub key - vector ' + i, function() {
+        const newPriv = priv.deriveChild(account.path);
+        newPriv.hdPublicKey.publicKey.toAddress('livenet', 'taproot').toString().should.equal(account.address);
+      });
+
+      it('should create taproot address from pub key - step-by-step - vector ' + i, function() {
+        const newPriv = priv.deriveChild(account.path);
+        newPriv.xprivkey.should.equal(account.xprv);
+        newPriv.hdPublicKey.xpubkey.should.equal(account.xpub);
+        newPriv.hdPublicKey.publicKey.toString().slice(2).should.equal(account.internal_key);
+        const tweakedKey = newPriv.hdPublicKey.publicKey.createTapTweak();
+        tweakedKey.tweakedPubKey.toString('hex').should.equal(account.output_key);
+        const scriptPubKey = new Script().add(81).add(tweakedKey.tweakedPubKey);
+        scriptPubKey.toHex().should.equal(account.scriptPubKey);
+        scriptPubKey.toAddress('livenet').toString().should.equal(account.address);
+      });
+    }
   });
 });

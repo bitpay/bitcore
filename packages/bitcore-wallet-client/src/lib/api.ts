@@ -3095,8 +3095,8 @@ export class API extends EventEmitter {
         settings.account++;
         const clonedSettings = JSON.parse(JSON.stringify(settings));
         let c = key.createCredentials(null, {
-          coin: clonedSettings.coin,
-          chain: clonedSettings.coin, // chain === coin for stored clients
+          coin: clonedSettings.coin, // base currency used for fees. Helpful for UI
+          chain: clonedSettings.chain || clonedSettings.coin,
           network: clonedSettings.network,
           account: clonedSettings.account,
           n: clonedSettings.n,

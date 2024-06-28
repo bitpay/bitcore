@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 var inherits = require('inherits');
 var BufferUtil = require('../util/buffer');
@@ -24,7 +23,7 @@ function TransactionSignature(arg) {
   if (arg instanceof TransactionSignature) {
     return arg;
   }
-  if (_.isObject(arg)) {
+  if (arg && typeof arg === 'object') {
     return this._fromObject(arg);
   }
   throw new errors.InvalidArgument('TransactionSignatures must be instantiated from an object');
@@ -45,20 +44,20 @@ TransactionSignature.prototype._fromObject = function(arg) {
 };
 
 TransactionSignature.prototype._checkObjectArgs = function(arg) {
-  $.checkArgument(PublicKey(arg.publicKey), 'publicKey');
-  $.checkArgument(!_.isUndefined(arg.inputIndex), 'inputIndex');
-  $.checkArgument(!_.isUndefined(arg.outputIndex), 'outputIndex');
-  $.checkState(_.isNumber(arg.inputIndex), 'inputIndex must be a number');
-  $.checkState(_.isNumber(arg.outputIndex), 'outputIndex must be a number');
-  $.checkArgument(arg.signature, 'signature');
-  $.checkArgument(arg.prevTxId, 'prevTxId');
+  $.checkArgument(PublicKey(arg.publicKey), 'invalid publicKey');
+  $.checkArgument(arg.inputIndex != null, 'missing inputIndex');
+  $.checkArgument(arg.outputIndex != null, 'missing outputIndex');
+  $.checkState(!isNaN(arg.inputIndex), 'inputIndex must be a number');
+  $.checkState(!isNaN(arg.outputIndex), 'outputIndex must be a number');
+  $.checkArgument(arg.signature, 'missing signature');
+  $.checkArgument(arg.prevTxId, 'missing prevTxId');
   $.checkState(arg.signature instanceof Signature ||
                BufferUtil.isBuffer(arg.signature) ||
                JSUtil.isHexa(arg.signature), 'signature must be a buffer or hexa value');
   $.checkState(BufferUtil.isBuffer(arg.prevTxId) ||
                JSUtil.isHexa(arg.prevTxId), 'prevTxId must be a buffer or hexa value');
-  $.checkArgument(arg.sigtype, 'sigtype');
-  $.checkState(_.isNumber(arg.sigtype), 'sigtype must be a number');
+  $.checkArgument(arg.sigtype != null, 'missing sigtype');
+  $.checkState(!isNaN(arg.sigtype), 'sigtype must be a number');
 };
 
 /**
