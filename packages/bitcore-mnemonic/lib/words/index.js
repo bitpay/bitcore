@@ -5,5 +5,6 @@ module.exports = {
   'ITALIAN': require('./italian'),
   'JAPANESE': require('./japanese'),
   'KOREAN': require('./korean'),
-  'SPANISH': require('./spanish')
+  'SPANISH': require('./spanish'),
+  'PORTUGUESE': require('./portuguese')
 };
