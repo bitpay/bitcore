@@ -74,7 +74,9 @@ function HDPrivateKey(arg) {
 HDPrivateKey.isValidPath = function(arg, hardened) {
   if (_.isString(arg)) {
     var indexes = HDPrivateKey._getDerivationIndexes(arg);
-    return indexes !== null && _.every(indexes, HDPrivateKey.isValidPath);
+    return indexes !== null && _.every(indexes, function (index) {
+      return HDPrivateKey.isValidPath(index, hardened);
+    });
   }
 
   if (_.isNumber(arg)) {
@@ -116,7 +118,7 @@ HDPrivateKey._getDerivationIndexes = function(path) {
       return NaN;
     }
     var index = +step; // cast to number
-    if (isHardened) {
+    if (index < HDPrivateKey.Hardened && isHardened === true) {
       index += HDPrivateKey.Hardened;
     }
 
