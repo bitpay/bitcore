@@ -4067,6 +4067,30 @@ describe('Wallet service', function() {
               });
             });
 
+            it(`should fail to create ${coin} tx with a script other than OP_RETURN`, function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+                var txOpts = {
+                  outputs: [
+                    {
+                      toAddress: addressStr,
+                      amount: coinAmount[coin],
+                    },
+                    {
+                    script: '76a91489abcdefabbaabbaabbaabbaabbaabbaabbaabba88ac',
+                    amount: 5000000000,
+                  }],
+                  feePerKb: 100e2,
+                };
+                txOpts = Object.assign(txOpts, flags);
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(tx);
+                  should.exist(err);
+                  err.message.should.equal('The only supported script is OP_RETURN');
+                  done();
+                });
+              });
+            });
+
             it(`should fail to create ${coin} tx with OP_RETURN script and invalid amount`, function(done) {
               helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
                 var txOpts = {
@@ -4133,7 +4157,7 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(tx);
                 should.exist(err);
-                err.message.should.equal('Invalid script: "wrong script"');
+                err.message.should.equal('The only supported script is OP_RETURN');
                 done();
               });
             });

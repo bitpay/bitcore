@@ -217,6 +217,11 @@ export class BtcChain implements IChain {
       }
 
       // check OP_RETURN
+      if (!output.script.startsWith('6a')) {
+        return Errors.SCRIPT_OP_RETURN;
+      }
+
+      // check OP_RETURN amount
       if (output.script.startsWith('6a') && output.amount != 0) {
         return Errors.SCRIPT_OP_RETURN_AMOUNT;
       }
@@ -467,7 +472,7 @@ export class BtcChain implements IChain {
       disableDustOutputs: false
     };
 
-    if (txp.outputs && _.isArray(txp.outputs)) {
+    if (txp.outputs && Array.isArray(txp.outputs)) {
       for (let output of txp.outputs) {
         if (output.script && output.script.startsWith('6a')) { // check OP_RETURN
           serializationOpts.disableDustOutputs = true;
