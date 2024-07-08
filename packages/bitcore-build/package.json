@@ -46,8 +46,8 @@
     "brfs": "^2.0.1",
     "browserify": "^16.2.3",
     "chai": "^4.2.0",
-    "gulp": "^4.0.0",
-    "gulp-mocha": "^7.0.1",
+    "gulp": "^5.0.0",
+    "gulp-mocha": "^8.0.0",
     "gulp-rename": "^1.4.0",
     "gulp-shell": "^0.6.5",
     "gulp-terser": "^1.1.7",
@@ -56,7 +56,7 @@
     "karma-chrome-launcher": "^3.1.1",
     "karma-mocha": "^2.0.1",
     "lodash": "^4.17.15",
-    "mocha": "^6.2.0"
+    "mocha": "^7.1.2"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }
