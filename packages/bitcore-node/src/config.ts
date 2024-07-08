@@ -21,7 +21,7 @@ function findConfig(): ConfigType | undefined {
   // No config specified. Search home, bitcore and cur directory
   for (let path of bitcoreConfigPaths) {
     if (foundConfig) { 
-      break;
+      return foundConfig;
     }
     try {
       const expanded = path[0] === '~' ? path.replace('~', homedir()) : path;
