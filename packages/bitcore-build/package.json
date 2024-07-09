@@ -47,7 +47,7 @@
     "browserify": "^16.2.3",
     "chai": "^4.2.0",
     "gulp": "^5.0.0",
-    "gulp-mocha": "^8.0.0",
+    "gulp-mocha": "^9.0.0",
     "gulp-rename": "^1.4.0",
     "gulp-shell": "^0.6.5",
     "gulp-terser": "^1.1.7",
