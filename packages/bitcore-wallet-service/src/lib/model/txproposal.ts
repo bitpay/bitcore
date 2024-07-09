@@ -20,6 +20,7 @@ export interface ITxProposal {
   creatorName: string;
   createdOn: number;
   txid: string;
+  txids?: Array<string>;
   id: string;
   walletId: string;
   creatorId: string;
@@ -40,6 +41,7 @@ export interface ITxProposal {
     data?: string;
     gasLimit?: number;
     script?: string;
+    tag?: string;
   }>;
   outputOrder: number;
   walletM: number;
@@ -79,6 +81,7 @@ export interface ITxProposal {
   isTokenSwap?: boolean;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
+  multiTx?: boolean; // proposal contains multiple transactions
 }
 
 export class TxProposal {
@@ -87,6 +90,7 @@ export class TxProposal {
   createdOn: number;
   id: string;
   txid: string;
+  txids?: Array<string>;
   walletId: string;
   creatorId: string;
   coin: string;
@@ -148,10 +152,11 @@ export class TxProposal {
   multiSendContractAddress?: string;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
+  multiTx?: boolean;
 
   static create(opts) {
     opts = opts || {};
-  
+
     const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
     $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]), `Invalid network: ${opts.network} at TxProposal.create()`);
 
@@ -239,7 +244,8 @@ export class TxProposal {
     // XRP
     x.destinationTag = opts.destinationTag;
     x.invoiceID = opts.invoiceID;
-
+    x.multiTx = opts.multiTx;
+  
     return x;
   }
 
@@ -272,6 +278,7 @@ export class TxProposal {
     x.requiredRejections = obj.requiredRejections;
     x.status = obj.status;
     x.txid = obj.txid;
+    x.txids = obj.txids;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
     x.actions = _.map(obj.actions, action => {
@@ -314,6 +321,7 @@ export class TxProposal {
     // XRP
     x.destinationTag = obj.destinationTag;
     x.invoiceID = obj.invoiceID;
+    x.multiTx = obj.multiTx;
 
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;
@@ -367,7 +375,7 @@ export class TxProposal {
    * @return {Number} total amount of all outputs excluding change output
    */
   getTotalAmount() {
-    return _.sumBy(this.outputs, 'amount');
+    return Number((this.outputs || []).reduce((total, o) => total += BigInt(o.amount), 0n));
   }
 
   /**
@@ -435,6 +443,9 @@ export class TxProposal {
       if (this.status == 'accepted') {
         this.raw = tx.uncheckedSerialize();
         this.txid = tx.id;
+        if (this.multiTx) {
+          this.txids = tx?.txids && tx.txids() || [tx.id];
+        }
       }
 
       return true;

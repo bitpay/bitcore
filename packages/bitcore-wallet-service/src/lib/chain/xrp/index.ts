@@ -109,9 +109,11 @@ export class XrpChain implements IChain {
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
+
+  checkScriptOutput(output) {}
 
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
@@ -136,14 +138,16 @@ export class XrpChain implements IChain {
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,
-        address: output.toAddress
+        address: output.toAddress,
+        tag: output.tag
       };
     });
     const unsignedTxs = [];
     for (let index = 0; index < recipients.length; index++) {
+      const _tag = recipients[0]?.tag || destinationTag;
       const rawTx = Transactions.create({
         ...txp,
-        tag: destinationTag ? Number(destinationTag) : undefined,
+        tag: _tag ? Number(_tag) : undefined,
         chain,
         nonce: Number(txp.nonce) + Number(index),
         recipients: [recipients[index]]
@@ -153,6 +157,7 @@ export class XrpChain implements IChain {
     let tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
+      txids: () => txp.txid ? [txp.txid] : [],
       toObject: () => {
         let ret = _.clone(txp);
         ret.outputs[0].satoshis = ret.outputs[0].amount;
@@ -206,7 +211,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
@@ -244,6 +249,7 @@ export class XrpChain implements IChain {
     const network = tx.network;
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
+    const txids = [];
     for (let index = 0; index < signatures.length; index++) {
       const signed = Transactions.applySignature({
         chain,
@@ -254,7 +260,9 @@ export class XrpChain implements IChain {
 
       // bitcore users id for txid...
       tx.id = Transactions.getHash({ tx: signed, chain, network });
+      txids.push(tx.id);
     }
+    tx.txids = () => txids;
     tx.uncheckedSerialize = () => signedTxs;
   }
 

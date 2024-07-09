@@ -20,7 +20,7 @@ const getBlockByDate = async ({ chainId, date }) => {
     throw new Error('Invalid chainId');
   }
 
-  const query = transformQueryParams({ chainId: formatChainId(chainId), args: { date } });
+  const query = transformQueryParams({ chainId, args: { date } });
   const queryStr = buildQueryString(query);
 
   return new Promise((resolve, reject) => {
@@ -45,10 +45,14 @@ const getBlockByHash = async ({ chainId, blockId }) => {
     throw new Error('Invalid chainId');
   }
 
+  const queryStr = buildQueryString({
+    chain: chainId
+  })
+
   return new Promise((resolve, reject) => {
     request({
       method: 'GET',
-      url: `${baseUrl}/block/${blockId}?chain=${chainId}`,
+      url: `${baseUrl}/block/${blockId}${queryStr}`,
       headers
     }, (err, data) => {
       if (err) {
@@ -272,6 +276,10 @@ const calculateConfirmations = (tx, tip) => {
 const buildQueryString = (params: Record<string, any>): string => {
   const query: string[] = [];
 
+  if (params.chain) {
+    params.chain = formatChainId(params.chain);
+  }
+
   for (const [key, value] of Object.entries(params)) {
     if (Array.isArray(value)) {
       for (let i = 0; i < value.length; i++) {
@@ -287,7 +295,7 @@ const buildQueryString = (params: Record<string, any>): string => {
 }
 
 const formatChainId = (chainId) => {
-  return '0x' + parseInt(chainId).toString(16)
+  return '0x' + parseInt(chainId).toString(16);
 }
 
 const MoralisAPI = {

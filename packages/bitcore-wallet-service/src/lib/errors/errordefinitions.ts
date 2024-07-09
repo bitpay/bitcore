@@ -38,6 +38,9 @@ interface Errors<T> {
   MAIN_ADDRESS_GAP_REACHED: T;
   NETWORK_SUSPENDED: T;
   NOT_AUTHORIZED: T;
+  SCRIPT_OP_RETURN: T;
+  SCRIPT_OP_RETURN_AMOUNT: T;
+  SCRIPT_TYPE: T;
   TOO_MANY_KEYS: T;
   TX_ALREADY_BROADCASTED: T;
   TX_CANNOT_CREATE: T;
@@ -91,6 +94,9 @@ const errors: Errors<string> = {
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
   NETWORK_SUSPENDED: '$network operations are currently suspended. Please check status.bitpay.com for further updates.',
   NOT_AUTHORIZED: 'Not authorized',
+  SCRIPT_OP_RETURN: 'The only supported script is OP_RETURN',
+  SCRIPT_OP_RETURN_AMOUNT: 'The amount of an output with OP_RETURN script must be 0',
+  SCRIPT_TYPE: 'Script must be a valid data type',
   TOO_MANY_KEYS: 'Too many keys registered',
   TX_ALREADY_BROADCASTED: 'The transaction proposal is already broadcasted',
   TX_CANNOT_CREATE: 'Cannot create TX proposal during backoff time',

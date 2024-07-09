@@ -330,7 +330,7 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
     let options = { limit, sort, since, direction, paging };
     const query: ExternalGetBlockResults = { startBlock: 0, endBlock: 0 };
     if (!chain || !network) {
-      throw new Error('Missing required param');
+      throw new Error('Missing required chain and/or network param');
     }
     if (blockId) {
       if (blockId.length >= 64) {
@@ -343,63 +343,56 @@ export class BaseEVMExternalStateProvider extends InternalStateProvider implemen
         query['height'] = height;
       }
     }
-    if (sinceBlock) {
-      let height = Number(sinceBlock);
-      if (Number.isNaN(height) || height.toString(10) !== sinceBlock) {
-        throw new Error('invalid block id provided');
-      }
-      query['height'] = height;
+  
+    if (date) {
+      startDate = new Date(date);
+      endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
     }
     if (startDate) {
-      query['startDateBlock'] = await this.getBlockNumberByDate({ date: startDate, network });
+      query.startBlock = await this.getBlockNumberByDate({ date: startDate, network }) || 0;
     }
     if (endDate) {
-      query['endDateBlock'] = await this.getBlockNumberByDate({ date: endDate, network });
-    }
-    if (date) {
-      let firstDate = new Date(date);
-      let nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
-      query['startDateBlock'] = await this.getBlockNumberByDate({ date: firstDate, network });
-      query['endDateBlock'] = await this.getBlockNumberByDate({ date: nextDate, network });
+      query.endBlock = await this.getBlockNumberByDate({ date: endDate, network }) || 0;
     }
 
     // Get range
-    if (query?.block && query?.height) {
+    if (sinceBlock) {
+      let height = Number(sinceBlock);
+      if (isNaN(height) || height.toString(10) !== sinceBlock) {
+        throw new Error('invalid block id provided');
+      }
+      query.startBlock = height;
+      query.endBlock = height + limit;
+    } else if (query?.block) {
       const blockNum = await this.getBlockNumberByBlockId({ blockId: query.block, network });
       if (!blockNum) {
         throw new Error(`Could not get block ${query.block}`);
       }
-      query.startBlock = blockNum;
-      query.endBlock = blockNum + query.height;
-    }
-    if (!query?.block && query?.height) {
-      const blockNum = await this.getBlockNumberByBlockId({ blockId: query.height, network });
-      if (!blockNum) {
-        throw new Error(`Could not get block ${query.block}`);
-      }
-      query.startBlock = blockNum;
-    }
-    if (query?.startDateBlock) {
-      query.startBlock = query.startDateBlock;
-    }
-    if (query?.endDateBlock) {
-      query.endBlock = query.endDateBlock;
+      query['height'] = blockNum;
     }
 
-    // Calaculate range with options
-    const tip = await this.getLocalTip(params);
-    const tipHeight = tip ? tip.height : 0;
-    let endBlock = query.endBlock || tipHeight;
-    let startBlock = query.startBlock || endBlock - 1;
-
-    if (limit && limit > 0 && (endBlock - startBlock) > limit) {
-      endBlock = startBlock + limit;
+    if (query?.height) {
+      query.startBlock = query?.height;
+      query.endBlock = query?.height;
     }
+
+    if (!query.startBlock || !query.endBlock) {
+      // Calaculate range with options
+      const tip = await this.getLocalTip(params);
+      const tipHeight = tip ? tip.height : 0;
+      query.endBlock = query.endBlock || tipHeight;
+      query.startBlock = query.startBlock || query.endBlock - 1;
+    }
+
+    if (limit > 0 && (query.endBlock - query.startBlock) > limit) {
+      query.endBlock = query.startBlock + limit;
+    }
+
     if (sort === -1) {
-      let b = startBlock;
-      startBlock = endBlock;
-      endBlock = b;
+      let b = query.startBlock;
+      query.startBlock = query.endBlock;
+      query.endBlock = b;
     }
 
     // { limit, sort, since, direction, paging };

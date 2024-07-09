@@ -148,6 +148,8 @@ export class EthChain implements IChain {
 
   checkDust(output, opts) { }
 
+  checkScriptOutput(output) { }
+
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
@@ -414,7 +416,7 @@ export class EthChain implements IChain {
         const txpTotalAmount =
           (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
             ? getInvoiceValue(txp)
-            : txp.getTotalAmount(opts);
+            : txp.getTotalAmount();
 
         if (totalAmount < txpTotalAmount) {
           return cb(Errors.INSUFFICIENT_FUNDS);
