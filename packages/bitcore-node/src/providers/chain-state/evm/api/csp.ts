@@ -1,5 +1,6 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
+import Web3 from 'web3';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import Config from '../../../../config';
@@ -16,6 +17,7 @@ import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { InternalStateProvider } from '../../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
+import { ChainId } from '../../../../types/ChainNetwork';
 import { SpentHeightIndicators } from '../../../../types/Coin';
 import { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
 import {
@@ -49,8 +51,6 @@ import {
   isValidProviderType
 } from './provider';
 import { EVMListTransactionsStream } from './transform';
-import { ChainId } from '../../../../types/ChainNetwork';
-import Web3 from 'web3';
 
 export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string };
 

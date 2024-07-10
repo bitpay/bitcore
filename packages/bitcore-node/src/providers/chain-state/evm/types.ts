@@ -1,10 +1,10 @@
 import BN from 'bn.js';
 
+import { Binary } from 'mongodb';
 import { ITransaction } from '../../../models/baseTransaction';
 import { IBlock } from '../../../types/Block';
 import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
 import { IGethTxTraceFlat } from './p2p/rpcs/gethRpc';
-import { Binary } from 'mongodb';
 
 interface BaseBlock {
   difficulty: string;
