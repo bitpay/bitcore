@@ -74,6 +74,6 @@ export function range(start: number, end?: number): number[] {
     return Array.from({ length: end - start }, (_, i) => start + i);
   } else {
     // descending range
-    return Array.from({ length: start - end }, (_, i) => (end as number) + i).reverse();
+    return Array.from({ length: start - end }, (_, i) => start - i);
   }
 }
