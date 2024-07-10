@@ -426,7 +426,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
   let counter = 0;
   const res = (new Writable({
     write: function(data, _, cb) {
-      data & counter++;
+      data && counter++;
       cb();
     }
   }) as unknown) as Response;
