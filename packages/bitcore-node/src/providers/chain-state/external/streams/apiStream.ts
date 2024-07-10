@@ -1,14 +1,14 @@
 import axios from 'axios';
 import { Request, Response } from 'express';
 import { Readable, Stream, Transform, Writable } from 'stream';
-import { TransformWithEventPipe } from '../../../../utils/transformWithEventPipe';
+import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
 
 export interface StreamOpts {
   jsonl?: boolean;
 }
 
-export class ExternalApiStream extends Readable {
+export class ExternalApiStream extends ReadableWithEventPipe {
   url: string;
   headers: any;
   cursor: string | null;
@@ -52,9 +52,6 @@ export class ExternalApiStream extends Readable {
           // Transform data before pushing
           if (this.transform) {
             data = this.transform(data);
-          }
-          if (typeof data !== 'string') {
-            data = JSON.stringify(data);
           }
           this.push(data);
           this.results++;
@@ -164,7 +161,7 @@ export class ExternalApiStream extends Readable {
     });
   }
 
-  static mergeStreams(streams: Stream[], destination: Writable): void {
+  static mergeStreams(streams: Stream[], destination: Writable): Writable {
     let activeStreams = streams.length;
 
     for (const stream of streams) {
@@ -179,6 +176,7 @@ export class ExternalApiStream extends Readable {
         }
       });
     };
+    return destination;
   }
 }
 

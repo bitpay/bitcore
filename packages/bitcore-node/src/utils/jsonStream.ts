@@ -1,4 +1,4 @@
-import { TransformWithEventPipe } from './transformWithEventPipe';
+import { TransformWithEventPipe } from './streamWithEventPipe';
 
 export class StringifyJsonStream extends TransformWithEventPipe {
   constructor() {

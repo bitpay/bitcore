@@ -324,7 +324,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   isExternallyProvided({ chain, network }) {
-    return Config.chainConfig({ chain, network })?.chainSource === 'external';
+    return Config.chainConfig({ chain, network })?.chainSource !== 'p2p';
   }
 
   async streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams) {

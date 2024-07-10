@@ -4,6 +4,7 @@ import { ITransaction } from '../../../models/baseTransaction';
 import { IBlock } from '../../../types/Block';
 import { ClassifiedTrace } from './p2p/rpcs/erigonRpc';
 import { IGethTxTraceFlat } from './p2p/rpcs/gethRpc';
+import { Binary } from 'mongodb';
 
 interface BaseBlock {
   difficulty: string;
@@ -138,15 +139,15 @@ export interface Transaction {
 }
 
 export type IEVMBlock = IBlock & {
-  coinbase: Buffer;
-  nonce: Buffer;
+  coinbase: Buffer | Binary;
+  nonce: Buffer | Binary;
   gasLimit: number;
   gasUsed: number;
-  stateRoot: Buffer;
-  logsBloom: Buffer;
-  sha3Uncles: Buffer;
-  receiptsRoot: Buffer;
-  merkleRoot: Buffer;
+  stateRoot: Buffer | Binary;
+  logsBloom: Buffer | Binary;
+  sha3Uncles: Buffer | Binary;
+  receiptsRoot: Buffer | Binary;
+  merkleRoot: Buffer | Binary;
   uncleReward?: Array<number>;
   difficulty: string;
   totalDifficulty: string;
@@ -162,6 +163,7 @@ export type IEVMTransaction = ITransaction & {
   error?: string;
   receipt?: TxReceipt;
   effects?: Effect[] // Meant to replace abiType, internal, calls and data on stored txs
+  confirmations?: number;
 };
 
 export interface Effect {
