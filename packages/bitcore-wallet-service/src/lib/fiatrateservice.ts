@@ -66,7 +66,7 @@ export class FiatRateService {
       (coin, next2) => {
         this._retrieve(provider, coin, (err, res) => {
           if (err) {
-            logger.warn('Error retrieving data for %o: %o', provider.name + coin, err);
+            logger.warn('Error retrieving data for %o->%o: %o', provider.name, coin, err);
             return next2();
           }
           this.storage.storeFiatRate(coin, res, err => {
@@ -86,8 +86,8 @@ export class FiatRateService {
     const coinUC = coin.toUpperCase();
 
     const handleCoinsRates = (err, res) => {
-      if (err || !res) {
-        return cb(err);
+      if (err || !res || res.error) {
+        return cb(err || new Error('Unable to fetch rates data for ' + provider.name + ' / ' + coin + ': ' + res?.error));
       }
 
       logger.debug(`Data for ${provider.name} / ${coin} fetched successfully`);
