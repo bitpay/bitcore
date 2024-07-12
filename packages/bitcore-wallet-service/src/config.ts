@@ -103,7 +103,7 @@ module.exports = {
     defaultLanguage: 'en',
     defaultUnit: 'btc',
     subjectPrefix: '',
-    pushServerUrl: 'https://fcm.googleapis.com/fcm',
+    pushServerUrl: 'https://fcm.googleapis.com/v1/projects/abcpay-cash-wallet/messages:send',
     authorizationKey: 'You_have_to_put_something_here'
   },
   fiatRateServiceOpts: {
