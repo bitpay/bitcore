@@ -46,6 +46,7 @@
     "express-notify-telegram": "^1.6.2",
     "express-rate-limit": "^2.6.0",
     "express-session": "^1.17.3",
+    "firebase-admin": "7.4.0",
     "googleapis": "^122.0.0",
     "inherits": "^2.0.1",
     "istanbul": "^0.4.5",

@@ -18,6 +18,11 @@ const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
 const config = require('../config');
+const admin = require('firebase-admin');
+const serviceAccount = require('../../config/serviceAccountKey.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -85,9 +90,15 @@ export class PushNotificationsService {
   storage: Storage;
   messageBroker: any;
 
-  start(opts, cb) {
+  async start(opts, cb) {
     opts = opts || {};
     this.request = opts.request || defaultRequest;
+
+    const getAccessToken = async () => {
+      const customCredential = admin.credential.cert(serviceAccount);
+      const token = await customCredential.getAccessToken();
+      return token.access_token;
+    };
 
     const _readDirectories = (basePath, cb) => {
       fs.readdir(basePath, (err, files) => {
@@ -113,7 +124,7 @@ export class PushNotificationsService {
     this.defaultUnit = opts.pushNotificationsOpts.defaultUnit || 'btc';
     this.subjectPrefix = opts.pushNotificationsOpts.subjectPrefix || '';
     this.pushServerUrl = opts.pushNotificationsOpts.pushServerUrl;
-    this.authorizationKey = opts.pushNotificationsOpts.authorizationKey;
+    this.authorizationKey = await getAccessToken();
 
     if (!this.authorizationKey) return cb(new Error('Missing authorizationKey attribute in configuration.'));
 
@@ -206,7 +217,7 @@ export class PushNotificationsService {
                     : null;
 
                 const notificationData: any = {
-                  to: sub.token,
+                  token: sub.token,
                   priority: 'high',
                   restricted_package_name: sub.packageName,
                   data: {
@@ -574,16 +585,19 @@ export class PushNotificationsService {
   }
 
   public _makeRequest(opts, cb) {
+    const bodyMessage = {
+      message: opts
+    };
     this.request(
       {
-        url: this.pushServerUrl + '/send',
+        url: this.pushServerUrl,
         method: 'POST',
         json: true,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'key=' + this.authorizationKey
+          Authorization: `Bearer ${this.authorizationKey}`
         },
-        body: opts
+        body: bodyMessage
       },
       cb
     );
