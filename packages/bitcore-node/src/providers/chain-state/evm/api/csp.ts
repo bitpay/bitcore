@@ -233,11 +233,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return balances;
   }
 
-  // @realtime
-  // async getLocalTip({ chain, network }) {
-  //   return this.execute('getLocalTip', network)({ chain, network });
-  // }
-
   async getLocalTip({ chain, network }): Promise<IBlock> {
     if (this.isExternallyProvided({ network })) {
       const { web3 } = await this.getWeb3(network);
@@ -271,12 +266,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     return tx;
   }
-
-  // @historical
-  // async getTransaction(params: StreamTransactionParams) {
-  //   const { network } = params;
-  //   return await this.execute('getTransaction', network)(params);
-  // }
 
   async getTransaction(params: StreamTransactionParams) {
     try {
@@ -342,12 +331,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     return txids.length === 1 ? txids[0] : txids;
   }
-
-  // @historical
-  // async streamAddressTransactions(params: StreamAddressUtxosParams) {
-  //   const { network } = params;
-  //   return await this.execute('streamAddressTransactions', network)(params);
-  // }
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     return new Promise<void>(async (resolve, reject) => {
@@ -504,12 +487,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     return query;
   }
-
-  // @historical
-  // async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-  //   const { network } = params;
-  //   return this.execute('streamWalletTransactions', network)(params);
-  // }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     return new Promise<void>(async (resolve, reject) => {
@@ -726,21 +703,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   getExternalProvider({ network }) {
     return ExternalProviders[this.config[network]?.chainSource || 'p2p'];
   }
-
-  // private execute(funcName: string, network: string): (...args: any[]) => any {
-  //   if (this.isExternallyProvided({ network })) {
-  //     // historical data via external provider
-  //     return this.ecsp[funcName].bind(this.ecsp);
-  //   }
-  //   // historical data via full mongo data      
-  //   return this[`_${funcName}`];
-  // }
-
-  // @historical
-  // async getBlocks(params: GetBlockParams) {
-  //   const { network } = params;
-  //   return this.execute('getBlocks', network)(params);
-  // }
 
   async getBlocks(params: GetBlockParams) {
     const { chain, network } = params;
