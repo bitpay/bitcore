@@ -278,7 +278,8 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
       processed: false,
       gasLimit: block.gasLimit,
       gasUsed: block.gasUsed,
-      stateRoot: new Binary(Buffer.from(block.stateRoot))
+      baseFeePerGas: block.baseFeePerGas,
+      stateRoot: new Binary(Buffer.from(block.stateRoot)),
     } as IEVMBlock;
   }
 }

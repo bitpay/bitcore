@@ -138,6 +138,9 @@ export class ExternalApiStream extends ReadableWithEventPipe {
             // All cases need isFirst set correctly for proper error handling
             isFirst = false;
           }
+          if (typeof data !== 'string') {
+            data = JSON.stringify(data);
+          }
           res.write(data);
         } else {
           stream.destroy();

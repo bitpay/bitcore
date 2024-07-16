@@ -37,6 +37,7 @@ import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import ExternalProviders from '../../external/providers';
+import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
@@ -350,49 +351,54 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     return new Promise<void>(async (resolve, reject) => {
-      const { req, res, args, chain, network, address } = params;
-      const { limit, /*since,*/ tokenAddress } = args;
+      try {
+        const { req, res, args, chain, network, address } = params;
+        const { limit, /*since,*/ tokenAddress } = args;
 
-      if (this.isExternallyProvided({ network })) {
-        const chainId = await this.getChainId({ network });
-        const provider = this.getExternalProvider({ network });
-        const txStream = await provider.streamAddressTransactions({
-          chainId,
-          chain: this.chain,
-          network,
-          address,
-          args: {
-            limit: 10, // default limit
-            ...args
+        if (this.isExternallyProvided({ network })) {
+          const chainId = await this.getChainId({ network });
+          const provider = this.getExternalProvider({ network });
+          const txStream = await provider.streamAddressTransactions({
+            chainId,
+            chain: this.chain,
+            network,
+            address,
+            args: {
+              limit: 10, // default limit
+              ...args
+            }
+          });
+          // TODO unify `ExternalApiStream.onStream` and `Storage.apiStream` which are effectively doing the same thing
+          const result = await ExternalApiStream.onStream(txStream, req!, res!);
+          if (!result?.success) {
+            logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
           }
-        });
-        return txStream
-          .eventPipe(res!)
-          .on('error', reject)
-          .on('finish', resolve);
-      } else if (!args.tokenAddress) {
-        const query = {
-          $or: [
-            { chain, network, from: address },
-            { chain, network, to: address },
-            { chain, network, 'internal.action.to': address }, // Retained for old db entries
-            { chain, network, 'effects.to': address }
-          ]
-        };
+        } else if (!args.tokenAddress) {
+          const query = {
+            $or: [
+              { chain, network, from: address },
+              { chain, network, to: address },
+              { chain, network, 'internal.action.to': address }, // Retained for old db entries
+              { chain, network, 'effects.to': address }
+            ]
+          };
 
-        // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
-        // The case where an address has >1000 txns is an edge case ATM and can be addressed later
-        Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
-      } else {
-        try {
-          const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
-          res!.json(tokenTransfers);
-        } catch (err: any) {
-          logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
-          return reject(err);
+          // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
+          // The case where an address has >1000 txns is an edge case ATM and can be addressed later
+          Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
+        } else {
+          try {
+            const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
+            res!.json(tokenTransfers);
+          } catch (err: any) {
+            logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
+            return reject(err);
+          }
         }
+        return resolve();
+      } catch (err) {
+        return reject(err);
       }
-      return resolve();
     });
   }
 
@@ -507,7 +513,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     return new Promise<void>(async (resolve, reject) => {
-      const { network, wallet, res, args } = params;
+      const { network, wallet, req, res, args } = params;
       const { web3 } = await this.getWeb3(network);
 
       let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
@@ -527,6 +533,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
             address,
             args: {
               limit: 10, // default limit
+              order: 'ASC',
               ...args
             }
           });
@@ -553,17 +560,20 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         transactionStream = transactionStream.eventPipe(erc20Transform);
       }
 
-      transactionStream
+      transactionStream = transactionStream
         .eventPipe(populateReceipt)
-        .eventPipe(ethTransactionTransform)
-        .eventPipe(res)
-        .on('error', err => {
-          reject(err);
-        })
-        .on('finish', () => {
-          resolve();
-        });
-      });
+        .eventPipe(ethTransactionTransform);
+
+      try {
+        const result = await ExternalApiStream.onStream(transactionStream, req!, res!, { jsonl: true });
+        if (!result?.success) {
+          logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
+        }  
+        return resolve();
+      } catch (err) {
+        return reject(err);
+      }
+    });
   }
 
   async getErc20Transfers(
