@@ -903,7 +903,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   
     const stream = new ReadableWithEventPipe({
       objectMode: true,
-      read: async function() {
+      async read() {
         if (isReading) {
           return;
         }
