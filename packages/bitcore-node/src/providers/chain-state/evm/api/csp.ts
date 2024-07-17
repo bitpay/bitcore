@@ -27,6 +27,7 @@ import {
   GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
+  StreamBlocksParams,
   StreamTransactionParams,
   StreamTransactionsParams,
   StreamWalletTransactionsArgs,
@@ -35,7 +36,7 @@ import {
 } from '../../../../types/namespaces/ChainStateProvider';
 import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
-import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
+import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import ExternalProviders from '../../external/providers';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
@@ -719,7 +720,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         const block = await web3.eth.getBlock(blockNum);
         const nextBlock = await web3.eth.getBlock(block.number + 1);
         const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
-        convertedBlock.nextBlockHash = nextBlock?.hash;      }
+        convertedBlock.nextBlockHash = nextBlock?.hash;
+        blocks.push(convertedBlock);
+      }
     } else {
       const { query, options } = this.getBlocksQuery(params);
       let cursor = EVMBlockStorage.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
@@ -796,12 +799,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const { chain, network, chainId, sinceBlock, args = {} } = params;
     let { blockId } = params;
     let { startDate, endDate, date, limit = 10, sort = { height: -1 } } = args;
-    const query = { startBlock: 0, endBlock: 0 };
+    const query: { startBlock?: number; endBlock?: number } = {};
     if (!chain || !network) {
       throw new Error('Missing required chain and/or network param');
     }
 
-    let height;
+    let height: number | null = null;
     if (blockId && blockId.length < 64) {
       height = parseInt(blockId, 10);
       if (isNaN(height) || height.toString(10) !== blockId) {
@@ -831,8 +834,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       if (isNaN(height) || height.toString(10) !== sinceBlock) {
         throw new Error('invalid block id provided');
       }
-      query.startBlock = height;
-      query.endBlock = height + limit;
+      const { web3 } = await this.getWeb3(network);
+      const tipHeight = await web3.eth.getBlockNumber();
+      if (tipHeight > height) {
+        return [];
+      }
+      query.endBlock = query.endBlock ?? tipHeight;
+      query.startBlock = query.startBlock ?? query.endBlock - limit;
     } else if (blockId) {
       const { web3 } = await this.getWeb3(network);
       const blk = await web3.eth.getBlock(blockId);
@@ -842,24 +850,24 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       height = blk.number;
     }
 
-    if (height) {
+    if (height != null) {
       query.startBlock = height;
-      query.endBlock = height;
+      query.endBlock = height + limit;
     }
 
-    if (!query.startBlock || !query.endBlock) {
+    if (query.startBlock == null || query.endBlock == null) {
       // Calaculate range with options
       const { web3 } = await this.getWeb3(network);
       const tipHeight = await web3.eth.getBlockNumber();
-      query.endBlock = query.endBlock || tipHeight;
-      query.startBlock = query.startBlock || query.endBlock - 1;
+      query.endBlock = query.endBlock ?? tipHeight;
+      query.startBlock = query.startBlock ?? query.endBlock - limit;
     }
 
     if (limit > 0 && (query.endBlock - query.startBlock) > limit) {
       query.endBlock = query.startBlock + limit;
     }
 
-    if (sort === -1) {
+    if (sort?.height === -1) {
       let b = query.startBlock;
       query.startBlock = query.endBlock;
       query.endBlock = b;
@@ -878,5 +886,45 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       inputs: [],
       outputs: []
     };
+  }
+
+  async streamBlocks(params: StreamBlocksParams) {
+    const { chain, network, req, res } = params;
+
+    if (!this.isExternallyProvided({ network })) {
+      return super.streamBlocks(params);
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    const tipHeight = await web3.eth.getBlockNumber();
+    const chainId = await this.getChainId({ network });
+    const blockRange = await this.getBlocksRange({ ...params, chainId });
+    let isReading = false;
+  
+    const stream = new ReadableWithEventPipe({
+      objectMode: true,
+      read: async function() {
+        if (isReading) {
+          return;
+        }
+        isReading = true;
+
+        let block;
+        let nextBlock;
+        for (const blockNum of blockRange) {
+          // stage next block in new var so `nextBlock` doesn't get overwritten if needed for `block`
+          const thisNextBlock = parseInt(block?.number) === blockNum + 1 ? block : await web3.eth.getBlock(blockNum + 1);
+          block = parseInt(nextBlock?.number) === blockNum ? nextBlock : await web3.eth.getBlock(blockNum);
+          nextBlock = thisNextBlock;
+          const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
+          convertedBlock.nextBlockHash = nextBlock?.hash;
+          convertedBlock.confirmations = tipHeight - block.number + 1;
+          this.push(convertedBlock);
+        }
+        this.push(null);
+      }
+    });
+
+    return ExternalApiStream.onStream(stream, req!, res!);
   }
 }

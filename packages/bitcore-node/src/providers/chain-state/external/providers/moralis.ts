@@ -36,11 +36,11 @@ class MoralisClass implements IExternalProvider {
         url: `${this.baseUrl}/dateToBlock${queryStr}`,
         headers: this.headers,
         json: true
-      }, (err, data: any) => {
+      }, (err, _data: any, body) => {
         if (err) {
           return reject(err);
         }
-        return resolve(data.number as number);
+        return resolve(body.block as number);
       })
     });
   }
