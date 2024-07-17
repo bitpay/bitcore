@@ -382,6 +382,13 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
   await EVMTransactionStorage.collection.insertMany(txs);
 
   let counter = 0;
+  const req = (new Writable({
+    write: function(data, _, cb) {
+      data && counter++;
+      cb();
+    }
+  }) as unknown) as Request;
+
   const res = (new Writable({
     write: function(data, _, cb) {
       data && counter++;
@@ -399,6 +406,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
       chain,
       network,
       wallet,
+      req,
       res,
       args: {
         includeInvalidTxs
