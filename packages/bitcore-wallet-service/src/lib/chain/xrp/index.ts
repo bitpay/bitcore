@@ -113,6 +113,8 @@ export class XrpChain implements IChain {
 
   checkDust(output, opts) { }
 
+  checkScriptOutput(output) {}
+
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
       // This is used for sendmax flow

@@ -3990,8 +3990,67 @@ describe('Wallet service', function() {
               });
             });
           });
-          if(coin === 'btc' || coin === 'bch' || coin === 'doge' || coin === 'ltc') {
-            it('should fail to create BTC/BCH tx for invalid amount', function(done) {
+          if(['btc', 'bch', 'doge', 'ltc'].includes(coin)) {
+            const coinAmount = {
+              btc:8000,
+              bch:8000,
+              doge:1e8,
+              ltc:8000
+            }
+            it(`should not fail to create ${coin} tx with valid OP_RETURN script and amount`, function(done) {
+              let old = blockchainExplorer.getTransactionCount;
+              blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+                let amount = coinAmount[coin];
+                const testScript = '6a423d3a4554482e555344433a3078466231343633393239633337414531334533624232343337413330633039423239373031323732313a36303335373834393136373a743a3330';
+
+                var txOpts = {
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: amount,
+                  },
+                  {
+                    script: testScript,
+                    amount: 0,
+                  }],
+                  message: 'some message',
+                  customData: 'some custom data',
+                  feePerKb: 123e2,
+                  from: fromAddr,
+                };
+                txOpts = Object.assign(txOpts, flags);
+    
+    
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(err);
+                  should.exist(tx);
+                  tx.walletM.should.equal(1);
+                  tx.walletN.should.equal(1);
+                  tx.requiredRejections.should.equal(1);
+                  tx.requiredSignatures.should.equal(1);
+                  tx.isAccepted().should.equal.false;
+                  tx.isRejected().should.equal.false;
+                  tx.isPending().should.equal.true;
+                  tx.isTemporary().should.equal.true;
+                  tx.amount.should.equal(coinAmount[coin]);
+                  tx.feePerKb.should.equal(123e2);
+                  tx.outputs[0].toAddress.should.equal(addressStr);
+                  tx.outputs[0].amount.should.equal(amount);
+                  tx.outputs[1].script.should.equal(testScript);
+                  tx.outputs[1].amount.should.equal(0);
+    
+                  should.not.exist(tx.feeLevel);
+                  server.getPendingTxs({}, function(err, txs) {
+                    should.not.exist(err);
+                    txs.should.be.empty;
+                    blockchainExplorer.getTransactionCount = old;
+                    done();
+                  });
+                });
+              });
+            });
+
+            it(`should fail to create ${coin} tx for invalid amount`, function(done) {
               var txOpts = {
                 outputs: [{
                   toAddress: addressStr,
@@ -4006,6 +4065,102 @@ describe('Wallet service', function() {
                 err.message.should.equal('Invalid amount');
                 done();
               });
+            });
+
+            it(`should fail to create ${coin} tx with a script other than OP_RETURN`, function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+                var txOpts = {
+                  outputs: [
+                    {
+                      toAddress: addressStr,
+                      amount: coinAmount[coin],
+                    },
+                    {
+                    script: '76a91489abcdefabbaabbaabbaabbaabbaabbaabbaabba88ac',
+                    amount: 5000000000,
+                  }],
+                  feePerKb: 100e2,
+                };
+                txOpts = Object.assign(txOpts, flags);
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(tx);
+                  should.exist(err);
+                  err.message.should.equal('The only supported script is OP_RETURN');
+                  done();
+                });
+              });
+            });
+
+            it(`should fail to create ${coin} tx with OP_RETURN script and invalid amount`, function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+                var txOpts = {
+                  outputs: [
+                    {
+                      toAddress: addressStr,
+                      amount: coinAmount[coin],
+                    },
+                    {
+                    script: '6a423d3a4554482e555344433a3078466231343633393239633337414531334533624232343337413330633039423239373031323732313a36303335373834393136373a743a3330',
+                    amount: 10,
+                  }],
+                  feePerKb: 100e2,
+                };
+                txOpts = Object.assign(txOpts, flags);
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(tx);
+                  should.exist(err);
+                  err.message.should.equal('The amount of an output with OP_RETURN script must be 0');
+                  done();
+                });
+              });
+            });
+
+            it(`should fail to create ${coin} tx with wrong data type of OP_RETURN script`, function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+              var txOpts = {
+                outputs: [
+                  {
+                    toAddress: addressStr,
+                    amount: coinAmount[coin],
+                  },
+                  {
+                  script: 123,
+                  amount: 0,
+                }],
+                feePerKb: 100e2,
+              };
+              txOpts = Object.assign(txOpts, flags);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(tx);
+                should.exist(err);
+                err.message.should.equal('Script must be a valid data type');
+                done();
+              });
+            });
+            });
+
+            it(`should fail to create ${coin} tx with an output with invalid script and valid data type`, function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+              var txOpts = {
+                outputs: [
+                  {
+                    toAddress: addressStr,
+                    amount: coinAmount[coin],
+                  },
+                  {
+                  script: 'wrong script',
+                  amount: 0,
+                }],
+                feePerKb: 100e2,
+              };
+              txOpts = Object.assign(txOpts, flags);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(tx);
+                should.exist(err);
+                err.message.should.equal('The only supported script is OP_RETURN');
+                done();
+              });
+            });
             });
           } else if(coin === 'eth') {
             it('should not fail to create ETH chain based tx for 0 amount', function(done) {

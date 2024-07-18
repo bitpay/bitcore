@@ -2220,23 +2220,29 @@ export class WalletService implements IWalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      try {
-        ChainService.validateAddress(wallet, output.toAddress, opts);
-      } catch (addrErr) {
-        return addrErr;
+      if (ChainService.isUTXOChain(wallet.chain) && output.script) {
+        const error = ChainService.checkScriptOutput(wallet.chain, output);
+        if (error) return error;
+        output.valid = true;
+      } else {
+        try {
+          ChainService.validateAddress(wallet, output.toAddress, opts);
+        } catch (addrErr) {
+          return addrErr;
+        }
+  
+        if (!checkRequired(output, ['toAddress', 'amount'])) {
+          return new ClientError('Argument missing in output #' + (i + 1) + '.');
+        }
+  
+        if (!ChainService.checkValidTxAmount(wallet.chain, output)) {
+          return new ClientError('Invalid amount');
+        }
+  
+        const error = ChainService.checkDust(wallet.chain, output, opts);
+        if (error) return error;
+        output.valid = true;
       }
-
-      if (!checkRequired(output, ['toAddress', 'amount'])) {
-        return new ClientError('Argument missing in output #' + (i + 1) + '.');
-      }
-
-      if (!ChainService.checkValidTxAmount(wallet.chain, output)) {
-        return new ClientError('Invalid amount');
-      }
-
-      const error = ChainService.checkDust(wallet.chain, output, opts);
-      if (error) return error;
-      output.valid = true;
     }
     return null;
   }
@@ -2321,11 +2327,13 @@ export class WalletService implements IWalletService {
               toAddress?: string;
               amount?: number;
               message?: string;
+              script?: string;
             } = {
               toAddress: x.toAddress,
               amount: x.amount
             };
             if (x.message) ret.message = x.message;
+            if (x.script) ret.script = x.script;
 
             return ret;
           });
