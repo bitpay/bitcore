@@ -1,6 +1,6 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
-import { Readable } from 'stream';
+import Web3 from 'web3';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
 import Config from '../../../../config';
@@ -17,6 +17,7 @@ import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { InternalStateProvider } from '../../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
+import { ChainId } from '../../../../types/ChainNetwork';
 import { SpentHeightIndicators } from '../../../../types/Coin';
 import { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
 import {
@@ -26,20 +27,23 @@ import {
   GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
+  StreamBlocksParams,
   StreamTransactionParams,
   StreamTransactionsParams,
   StreamWalletTransactionsArgs,
   StreamWalletTransactionsParams,
   UpdateWalletParams
 } from '../../../../types/namespaces/ChainStateProvider';
-import { partition } from '../../../../utils';
+import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
+import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
+import ExternalProviders from '../../external/providers';
+import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
-import { BaseEVMExternalStateProvider, GetWeb3Response } from './ecsp';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
@@ -50,15 +54,17 @@ import {
 } from './provider';
 import { EVMListTransactionsStream } from './transform';
 
+export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string };
+
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
   static rpcs = {} as { [chain: string]: { [network: string]: GetWeb3Response[] } };
-  ecsp: BaseEVMExternalStateProvider;
+  // ecsp: BaseEVMExternalStateProvider;
 
   constructor(public chain: string = 'ETH') {
     super(chain);
     this.config = Config.chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
-    this.ecsp = new BaseEVMExternalStateProvider(chain);
+    // this.ecsp = new BaseEVMExternalStateProvider(chain);
   }
 
   async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<GetWeb3Response> {
@@ -151,13 +157,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
-        if (txType?.toString() === '2') {
-          const { rpc } = await this.getWeb3(network, { type: 'historical' });
-          let feerate = await rpc.estimateFee({ nBlocks: target, txType });
-          return { feerate, blocks: target };
-        }
         let feerate;
-        if (!this.isExternallyProvided({ network })) {
+        if (txType?.toString() === '2' || this.isExternallyProvided({ network })) {
+          const { rpc } = await this.getWeb3(network, { type: 'historical' });
+          feerate = await rpc.estimateFee({ nBlocks: target, txType });
+        } else {
           const txs = await EVMTransactionStorage.collection
             .find({ chain, network, blockHeight: { $gt: 0 } })
             .project({ gasPrice: 1, blockHeight: 1 })
@@ -176,8 +180,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           const roundedGwei = (quartileMedian / 1e9).toFixed(2);
           const gwei = Number(roundedGwei) || 0;
           feerate = gwei * 1e9;
-        } else {
-          return await this.ecsp.getFee(params);
         }
         return { feerate, blocks: target };
       },
@@ -232,12 +234,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return balances;
   }
 
-  @realtime
-  async getLocalTip({ chain, network }) {
-    return this.execute('getLocalTip', network)({ chain, network });
-  }
-
-  _getLocalTip = async ({ chain, network }): Promise<IBlock> => {
+  async getLocalTip({ chain, network }): Promise<IBlock> {
+    if (this.isExternallyProvided({ network })) {
+      const { web3 } = await this.getWeb3(network);
+      const block = await web3.eth.getBlock('latest');
+      return EVMBlockStorage.convertRawBlock(chain, network, block);
+    }
     return EVMBlockStorage.getLocalTip({ chain, network });
   }
 
@@ -266,23 +268,33 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return tx;
   }
 
-  @historical
   async getTransaction(params: StreamTransactionParams) {
-    const { network } = params;
-    return await this.execute('getTransaction', network)(params);
-  }
-
-  _getTransaction = async (params: StreamTransactionParams) => {
     try {
       let { chain, network, txId } = params;
-      if (typeof txId !== 'string' || !chain || !network) {
-        throw new Error('Missing required param');
+      if (typeof txId !== 'string') {
+        throw new Error('Missing required param: txId');
+      }
+      if (!chain) {
+        throw new Error('Missing required param: chain');
+      }
+      if (!network) {
+        throw new Error('Missing required param: network');
       }
       network = network.toLowerCase();
-      let query = { chain, network, txid: txId };
-      const tip = await this._getLocalTip(params);
-      const tipHeight = tip ? tip.height : 0;
-      let found = await EVMTransactionStorage.collection.findOne(query);
+      let tipHeight = 0;
+      let found: MongoBound<IEVMTransaction> | null | undefined;
+
+      if (this.isExternallyProvided({ network })) {
+        const { web3 } = await this.getWeb3(network, { type: 'historical' });
+        tipHeight = await web3.eth.getBlockNumber();
+        const chainId = await this.getChainId({ network });
+        found = await this.getExternalProvider({ network }).getTransaction({ chain, network, chainId, txId });
+      } else {
+        let query = { chain, network, txid: txId };
+        const tip = await this.getLocalTip(params);
+        tipHeight = tip ? tip.height : tipHeight;
+        found = await EVMTransactionStorage.collection.findOne(query);
+      }
       if (found) {
         let confirmations = 0;
         if (found.blockHeight && found.blockHeight >= 0) {
@@ -293,8 +305,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         found = this.populateEffects(found);
         const convertedTx = EVMTransactionStorage._apiTransform(found, { object: true }) as EVMTransactionJSON;
         return { ...convertedTx, confirmations };
-      } else {
-        return undefined;
       }
     } catch (err) {
       console.error(err);
@@ -323,37 +333,57 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return txids.length === 1 ? txids[0] : txids;
   }
 
-  @historical
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
-    const { network } = params;
-    return await this.execute('streamAddressTransactions', network)(params);
-  }
-
-  _streamAddressTransactions = async (params: StreamAddressUtxosParams) => {
-    const { req, res, args, chain, network, address } = params;
-    const { limit, /*since,*/ tokenAddress } = args;
-    if (!args.tokenAddress) {
-      const query = {
-        $or: [
-          { chain, network, from: address },
-          { chain, network, to: address },
-          { chain, network, 'internal.action.to': address }, // Retained for old db entries
-          { chain, network, 'effects.to': address }
-        ]
-      };
-
-      // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
-      // The case where an address has >1000 txns is an edge case ATM and can be addressed later
-      Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
-    } else {
+    return new Promise<void>(async (resolve, reject) => {
       try {
-        const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
-        res!.json(tokenTransfers);
-      } catch (err: any) {
-        logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
-        res!.status(500).send(err);
+        const { req, res, args, chain, network, address } = params;
+        const { limit, /*since,*/ tokenAddress } = args;
+
+        if (this.isExternallyProvided({ network })) {
+          const chainId = await this.getChainId({ network });
+          const provider = this.getExternalProvider({ network });
+          const txStream = await provider.streamAddressTransactions({
+            chainId,
+            chain: this.chain,
+            network,
+            address,
+            args: {
+              limit: 10, // default limit
+              ...args
+            }
+          });
+          // TODO unify `ExternalApiStream.onStream` and `Storage.apiStream` which are effectively doing the same thing
+          const result = await ExternalApiStream.onStream(txStream, req!, res!);
+          if (!result?.success) {
+            logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
+          }
+        } else if (!args.tokenAddress) {
+          const query = {
+            $or: [
+              { chain, network, from: address },
+              { chain, network, to: address },
+              { chain, network, 'internal.action.to': address }, // Retained for old db entries
+              { chain, network, 'effects.to': address }
+            ]
+          };
+
+          // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
+          // The case where an address has >1000 txns is an edge case ATM and can be addressed later
+          Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
+        } else {
+          try {
+            const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
+            res!.json(tokenTransfers);
+          } catch (err: any) {
+            logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
+            return reject(err);
+          }
+        }
+        return resolve();
+      } catch (err) {
+        return reject(err);
       }
-    }
+    });
   }
 
   @historical
@@ -374,7 +404,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (blockHash !== undefined) {
       query.blockHash = blockHash;
     }
-    const tip = await this._getLocalTip(params);
+    const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(EVMTransactionStorage, query, args, req, res, t => {
       let confirmations = 0;
@@ -459,44 +489,69 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return query;
   }
 
-  @historical
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-    const { network } = params;
-    return this.execute('streamWalletTransactions', network)(params);
-  }
+    return new Promise<void>(async (resolve, reject) => {
+      const { network, wallet, req, res, args } = params;
+      const { web3 } = await this.getWeb3(network);
 
-  _streamWalletTransactions = async (params: StreamWalletTransactionsParams) => {
-    const { network, wallet, res, args } = params;
-    const { web3 } = await this.getWeb3(network);
-    const query = this.getWalletTransactionQuery(params);
+      let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
+      const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
+      const populateReceipt = new PopulateReceiptTransform();
+      const populateEffects = new PopulateEffectsTransform();
 
-    let transactionStream = new Readable({ objectMode: true });
-    const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
-    const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
-    const populateReceipt = new PopulateReceiptTransform();
-    const populateEffects = new PopulateEffectsTransform();
+      if (this.isExternallyProvided({ network })) {
+        const chainId = await this.getChainId({ network });
+        const provider = this.getExternalProvider({ network });
+        for (const address of walletAddresses) {
+          const txStream = await provider.streamAddressTransactions({
+            chainId,
+            chain: this.chain,
+            network,
+            address,
+            args: {
+              limit: 10, // default limit
+              order: 'ASC',
+              ...args
+            }
+          });
+          transactionStream = txStream.eventPipe(transactionStream);
+        }
+      } else {
+        const query = this.getWalletTransactionQuery(params);
 
-    transactionStream = EVMTransactionStorage.collection
-      .find(query)
-      .sort({ blockTimeNormalized: 1 })
-      .addCursorFlag('noCursorTimeout', true);
+        transactionStream = EVMTransactionStorage.collection
+          .find(query)
+          .sort({ blockTimeNormalized: 1 })
+          .addCursorFlag('noCursorTimeout', true)
+          .pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
 
-    transactionStream = transactionStream.pipe(populateEffects); // For old db entires
+        transactionStream = transactionStream.eventPipe(populateEffects); // For old db entires
+      }
+      if (!args.tokenAddress && wallet._id) {
+        const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
+        transactionStream = transactionStream.eventPipe(internalTxTransform);
+      }
 
-    if (!args.tokenAddress && wallet._id) {
-      const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
-      transactionStream = transactionStream.pipe(internalTxTransform);
-    }
+      if (args.tokenAddress) {
+        const erc20Transform = new Erc20RelatedFilterTransform(args.tokenAddress);
+        transactionStream = transactionStream.eventPipe(erc20Transform);
+      }
 
-    if (args.tokenAddress) {
-      const erc20Transform = new Erc20RelatedFilterTransform(args.tokenAddress);
-      transactionStream = transactionStream.pipe(erc20Transform);
-    }
+      transactionStream = transactionStream
+        .eventPipe(populateReceipt)
+        .eventPipe(ethTransactionTransform);
 
-    transactionStream
-      .pipe(populateReceipt)
-      .pipe(ethTransactionTransform)
-      .pipe(res);
+      try {
+        const result = await ExternalApiStream.onStream(transactionStream, req!, res!, { jsonl: true });
+        if (!result?.success) {
+          logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
+        }  
+        return resolve();
+      } catch (err) {
+        return reject(err);
+      }
+    });
   }
 
   async getErc20Transfers(
@@ -643,33 +698,41 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   isExternallyProvided({ network }) {
-    return this.config[network]?.chainSource === 'external';
+    return !!ExternalProviders[this.config[network]?.chainSource || 'p2p'];
   }
 
-  execute(funcName: string, network: string): (...args: any[]) => any {
-    if (this.isExternallyProvided({ network })) {
-      // historical data via external provider
-      return this.ecsp[funcName].bind(this.ecsp);
-    }
-    // historical data via full mongo data      
-    return this[`_${funcName}`];
+  getExternalProvider({ network }) {
+    return ExternalProviders[this.config[network]?.chainSource || 'p2p'];
   }
 
-  @historical
   async getBlocks(params: GetBlockParams) {
-    const { network } = params;
-    return this.execute('getBlocks', network)(params);
-  }
+    const { chain, network } = params;
+    let blocks: MongoBound<IEVMBlock>[] = [];
+    let tipHeight = 0;
 
-  _getBlocks = async (params: GetBlockParams) => {
-    const { query, options } = this.getBlocksQuery(params);
-    let cursor = EVMBlockStorage.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
-    if (options.sort) {
-      cursor = cursor.sort(options.sort);
+    if (this.isExternallyProvided({ network })) {
+      const { web3 } = await this.getWeb3(network);
+      tipHeight = await web3.eth.getBlockNumber();
+      const chainId = await this.getChainId({ network });
+      const blockRange = await this.getBlocksRange({ ...params, chainId });
+
+      for (const blockNum of blockRange) {
+        const block = await web3.eth.getBlock(blockNum);
+        const nextBlock = await web3.eth.getBlock(block.number + 1);
+        const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
+        convertedBlock.nextBlockHash = nextBlock?.hash;
+        blocks.push(convertedBlock);
+      }
+    } else {
+      const { query, options } = this.getBlocksQuery(params);
+      let cursor = EVMBlockStorage.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
+      if (options.sort) {
+        cursor = cursor.sort(options.sort);
+      }
+      blocks = await cursor.toArray();
+      const tip = await this.getLocalTip(params);
+      tipHeight = tip ? tip.height : tipHeight;
     }
-    let blocks = await cursor.toArray();
-    const tip = await this._getLocalTip(params);
-    const tipHeight = tip ? tip.height : 0;
     const blockTransform = (b: IEVMBlock) => {
       let confirmations = 0;
       if (b.height && b.height >= 0) {
@@ -732,10 +795,136 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
   }
 
+  private async getBlocksRange(params: GetBlockParams & ChainId) {
+    const { chain, network, chainId, sinceBlock, args = {} } = params;
+    let { blockId } = params;
+    let { startDate, endDate, date, limit = 10, sort = { height: -1 } } = args;
+    const query: { startBlock?: number; endBlock?: number } = {};
+    if (!chain || !network) {
+      throw new Error('Missing required chain and/or network param');
+    }
+
+    let height: number | null = null;
+    if (blockId && blockId.length < 64) {
+      height = parseInt(blockId, 10);
+      if (isNaN(height) || height.toString(10) !== blockId) {
+        throw new Error('invalid block id provided');
+      }
+      blockId = undefined;
+    }
+  
+    if (date) {
+      startDate = new Date(date);
+      endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+    }
+    if (startDate || endDate) {
+      const provider = this.getExternalProvider({ network });
+      if (startDate) {
+        query.startBlock = await provider.getBlockNumberByDate({ date: startDate, chainId }) || 0;
+      }
+      if (endDate) {
+        query.endBlock = await provider.getBlockNumberByDate({ date: endDate, chainId }) || 0;
+      }
+    }
+
+    // Get range
+    if (sinceBlock) {
+      let height = Number(sinceBlock);
+      if (isNaN(height) || height.toString(10) !== sinceBlock) {
+        throw new Error('invalid block id provided');
+      }
+      const { web3 } = await this.getWeb3(network);
+      const tipHeight = await web3.eth.getBlockNumber();
+      if (tipHeight > height) {
+        return [];
+      }
+      query.endBlock = query.endBlock ?? tipHeight;
+      query.startBlock = query.startBlock ?? query.endBlock - limit;
+    } else if (blockId) {
+      const { web3 } = await this.getWeb3(network);
+      const blk = await web3.eth.getBlock(blockId);
+      if (!blk || blk.number == null) {
+        throw new Error(`Could not get block ${blockId}`);
+      }
+      height = blk.number;
+    }
+
+    if (height != null) {
+      query.startBlock = height;
+      query.endBlock = height + limit;
+    }
+
+    if (query.startBlock == null || query.endBlock == null) {
+      // Calaculate range with options
+      const { web3 } = await this.getWeb3(network);
+      const tipHeight = await web3.eth.getBlockNumber();
+      query.endBlock = query.endBlock ?? tipHeight;
+      query.startBlock = query.startBlock ?? query.endBlock - limit;
+    }
+
+    if (limit > 0 && (query.endBlock - query.startBlock) > limit) {
+      query.endBlock = query.startBlock + limit;
+    }
+
+    if (sort?.height === -1) {
+      let b = query.startBlock;
+      query.startBlock = query.endBlock;
+      query.endBlock = b;
+    }
+
+    return range(query.startBlock, query.endBlock + 1);
+  }
+
+  async getChainId({ network }) {
+    const { web3 } = await this.getWeb3(network);
+    return web3.eth.getChainId();
+  }
+
   async getCoinsForTx() {
     return {
       inputs: [],
       outputs: []
     };
+  }
+
+  async streamBlocks(params: StreamBlocksParams) {
+    const { chain, network, req, res } = params;
+
+    if (!this.isExternallyProvided({ network })) {
+      return super.streamBlocks(params);
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    const tipHeight = await web3.eth.getBlockNumber();
+    const chainId = await this.getChainId({ network });
+    const blockRange = await this.getBlocksRange({ ...params, chainId });
+    let isReading = false;
+  
+    const stream = new ReadableWithEventPipe({
+      objectMode: true,
+      async read() {
+        if (isReading) {
+          return;
+        }
+        isReading = true;
+
+        let block;
+        let nextBlock;
+        for (const blockNum of blockRange) {
+          // stage next block in new var so `nextBlock` doesn't get overwritten if needed for `block`
+          const thisNextBlock = parseInt(block?.number) === blockNum + 1 ? block : await web3.eth.getBlock(blockNum + 1);
+          block = parseInt(nextBlock?.number) === blockNum ? nextBlock : await web3.eth.getBlock(blockNum);
+          nextBlock = thisNextBlock;
+          const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
+          convertedBlock.nextBlockHash = nextBlock?.hash;
+          convertedBlock.confirmations = tipHeight - block.number + 1;
+          this.push(convertedBlock);
+        }
+        this.push(null);
+      }
+    });
+
+    return ExternalApiStream.onStream(stream, req!, res!);
   }
 }

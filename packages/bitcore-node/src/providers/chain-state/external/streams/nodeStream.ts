@@ -42,7 +42,7 @@ export class NodeQueryStream extends Readable {
     return ExternalApiStream.onStream(stream, req, res);
   }
 
-  static mergeStreams(streams: Stream[], destination: Writable): void {
+  static mergeStreams(streams: Stream[], destination: Writable): Writable {
     return ExternalApiStream.mergeStreams(streams, destination);
   }
 }
