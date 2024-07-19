@@ -911,15 +911,22 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
         let block;
         let nextBlock;
-        for (const blockNum of blockRange) {
-          // stage next block in new var so `nextBlock` doesn't get overwritten if needed for `block`
-          const thisNextBlock = parseInt(block?.number) === blockNum + 1 ? block : await web3.eth.getBlock(blockNum + 1);
-          block = parseInt(nextBlock?.number) === blockNum ? nextBlock : await web3.eth.getBlock(blockNum);
-          nextBlock = thisNextBlock;
-          const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
-          convertedBlock.nextBlockHash = nextBlock?.hash;
-          convertedBlock.confirmations = tipHeight - block.number + 1;
-          this.push(convertedBlock);
+        try {
+          for (const blockNum of blockRange) {
+            // stage next block in new var so `nextBlock` doesn't get overwritten if needed for `block`
+            const thisNextBlock = parseInt(block?.number) === blockNum + 1 ? block : await web3.eth.getBlock(blockNum + 1);
+            block = parseInt(nextBlock?.number) === blockNum ? nextBlock : await web3.eth.getBlock(blockNum);
+            if (!block) {
+              continue;
+            }
+            nextBlock = thisNextBlock;
+            const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
+            convertedBlock.nextBlockHash = nextBlock?.hash;
+            convertedBlock.confirmations = tipHeight - block.number + 1;
+            this.push(convertedBlock);
+          }
+        } catch (e) {
+          logger.error('Error streaming blocks: %o', e);
         }
         this.push(null);
       }
