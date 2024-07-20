@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const promptly = require('promptly');
+const { Wallet } = require('../ts_build/src/wallet');
+
+program
+  .version(require('../package.json').version)
+  .requiredOption('--name <name>', 'REQUIRED - Wallet name')
+  .requiredOption('--tokenName <tokenName>', 'REQUIRED - Name of token to remove')
+  .option('--storageType <storageType>', 'optional - Name of the database to use (Mongo | Level | TextFile)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
+  .parse(process.argv);
+
+let wallet;
+
+const main = async () => {
+  const { name, path, tokenName, storageType } = program.opts();
+  try {
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+    if (!wallet.isEvmChain()) {
+      throw new Error('Cannot remove token from non-EVM wallet.');
+    }
+    await wallet.rmToken({ tokenName });
+    console.log(`Successfully removed ${tokenName}`);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());
