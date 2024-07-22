@@ -611,10 +611,21 @@ export class API extends EventEmitter {
     }
     var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
+    let networkChar = 'L';
+    switch (network) {
+      case 'testnet':
+        networkChar = 'T';
+        break;
+      case 'regtest':
+        networkChar = 'R';
+        break;
+      default:
+        networkChar = 'L';
+    }
     return (
       _.padEnd(widBase58, 22, '0') +
       walletPrivKey.toWIF() +
-      (network == 'testnet' ? 'T' : 'L') +
+      networkChar +
       chain
     );
   }
@@ -639,15 +650,25 @@ export class API extends EventEmitter {
       var widHex = Bitcore.encoding.Base58.decode(widBase58).toString('hex');
       var walletId = split(widHex, [8, 12, 16, 20]).join('-');
 
-      var walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
-      var networkChar = secretSplit[2];
-      var coin = secretSplit[3] || 'btc';
+      const walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
+      let network = 'livenet';
+      switch (secretSplit[2]) {
+        case 'T':
+          network = 'testnet';
+          break;
+        case 'R':
+          network = 'regtest';
+          break;
+        default:
+          network = 'livenet';
+      }
+      const coin = secretSplit[3] || 'btc';
 
       return {
         walletId,
         walletPrivKey,
         coin,
-        network: networkChar == 'T' ? 'testnet' : 'livenet'
+        network
       };
     } catch (ex) {
       throw new Error('Invalid secret');
