@@ -1,0 +1,10 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.1
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-567746:
+    - bitcore-wallet-service > lodash:
+        patched: '2024-07-23T01:18:51.032Z'
+        id: SNYK-JS-LODASH-567746
+        path: bitcore-wallet-service > lodash
