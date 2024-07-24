@@ -269,6 +269,13 @@ export class Utils {
           );
         }
         break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        bitcoreAddress = bitcore.Address.fromPublicKey(
+          publicKeys[0],
+          network,
+          'taproot'
+        );
+        break;
     }
 
     return {

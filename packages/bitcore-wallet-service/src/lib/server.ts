@@ -533,6 +533,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.account[=0] - BIP44 account number
    * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
    * @param {string} opts.useNativeSegwit - for Segwit address, set addressType to P2WPKH or P2WSH
+   * @param {string} opts.useTaproot - for Taproot address, set addressType to P2TR
    */
   createWallet(opts, cb) {
     let pubKey;
@@ -586,6 +587,10 @@ export class WalletService implements IWalletService {
 
     if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
       addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+    }
+
+    if (opts.useTaproot && Utils.checkValueInCollection(opts.chain, Constants.TAPROOT_CHAINS)) {
+      addressType = Constants.SCRIPT_TYPES.P2TR;
     }
 
     try {

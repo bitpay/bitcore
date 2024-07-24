@@ -154,6 +154,10 @@ export class Address {
           bitcoreAddress = Deriver.deriveAddress(chain.toUpperCase(), network, xPubKey, addressIndex, isChange);
         }
         break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        // TODO: add support for multisig taproot
+        bitcoreAddress = Address.Bitcore[chain].Address.fromPublicKey(publicKeys[0], network, 'taproot');
+        break;
     }
 
     let addrStr = bitcoreAddress.toString(true);

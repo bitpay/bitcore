@@ -904,6 +904,7 @@ export class API extends EventEmitter {
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
   // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
+  // * @param {Boolean} opts.useTaproot - set addressType to P2TR
   // * @param cb
   // * @return {undefined}
   // */
@@ -957,6 +958,7 @@ export class API extends EventEmitter {
       id: opts.id,
       usePurpose48: n > 1,
       useNativeSegwit: !!opts.useNativeSegwit,
+      useTaproot: !!opts.useTaproot,
       hardwareSourcePublicKey: c.hardwareSourcePublicKey
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
@@ -964,7 +966,8 @@ export class API extends EventEmitter {
 
       var walletId = res.walletId;
       c.addWalletInfo(walletId, walletName, m, n, copayerName, {
-        useNativeSegwit: opts.useNativeSegwit
+        useNativeSegwit: opts.useNativeSegwit,
+        useTaproot: opts.useTaproot
       });
       var secret = API._buildSecret(
         c.walletId,
@@ -1054,6 +1057,7 @@ export class API extends EventEmitter {
             {
               useNativeSegwit:
                 wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
+              useTaproot: wallet.addressType === Constants.SCRIPT_TYPES.P2TR,
               allowOverwrite: true
             }
           );
@@ -1093,6 +1097,7 @@ export class API extends EventEmitter {
         var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
         var walletId = c.walletId;
         var useNativeSegwit = c.addressType === Constants.SCRIPT_TYPES.P2WPKH;
+        var useTaproot = c.addressType === Constants.SCRIPT_TYPES.P2TR;
         var supportBIP44AndP2PKH =
           c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
         var encWalletName = Utils.encryptMessage(
@@ -1110,7 +1115,8 @@ export class API extends EventEmitter {
           network: c.network,
           id: walletId,
           usePurpose48: c.n > 1,
-          useNativeSegwit
+          useNativeSegwit,
+          useTaproot
         };
 
         if (!!supportBIP44AndP2PKH)
