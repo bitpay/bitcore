@@ -138,7 +138,7 @@ class MoralisClass implements IExternalProvider {
     const transformed = {
       chain: tx.chain,
       network: tx.network,
-      txid: tx.hash,
+      txid: tx.hash || tx.transaction_hash, // erc20 transfer txs have transaction_hash
       blockHeight: Number(tx.block_number),
       blockHash: tx.block_hash,
       blockTime: new Date(tx.block_timestamp),
