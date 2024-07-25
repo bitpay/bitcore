@@ -1,4 +1,4 @@
-FROM node:22.5.1-bullseye
+FROM node:22.5.1-slim
 
 # Install Chrome
 
