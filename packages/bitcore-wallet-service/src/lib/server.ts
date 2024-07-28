@@ -3305,14 +3305,14 @@ export class WalletService implements IWalletService {
     } else {
       this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
         if (err) return cb(err);
-
+        if (opts.tokenAddress) {
+          txps = txps.filter(txp => opts.tokenAddress === txp.tokenAddress);
+        } else {
+          txps = txps.filter(txp => !txp.tokenAddress);
+        }
         _.each(txps, txp => {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
         });
-
-        if (opts.tokenAddress) {
-          txps = txps.filter(txp => opts.tokenAddress === txp.tokenAddress);
-        }
         async.each(
           txps,
           (txp: ITxProposal, next) => {
