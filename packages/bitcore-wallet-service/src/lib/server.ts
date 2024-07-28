@@ -3294,9 +3294,7 @@ export class WalletService implements IWalletService {
    * @returns {TxProposal[]} Transaction proposal.
    */
   async getPendingTxs(opts, cb) {
-    if (opts.tokenAddress) {
-      return cb();
-    } else if (opts.multisigContractAddress) {
+    if (opts.multisigContractAddress) {
       try {
         const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
         const txps = await this.storage.fetchEthPendingTxs(multisigTxpsInfo);
@@ -3312,6 +3310,9 @@ export class WalletService implements IWalletService {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
         });
 
+        if (opts.tokenAddress) {
+          txps = txps.filter(txp => opts.tokenAddress === txp.tokenAddress);
+        }
         async.each(
           txps,
           (txp: ITxProposal, next) => {
@@ -3329,9 +3330,7 @@ export class WalletService implements IWalletService {
             });
           },
           err => {
-            txps = _.reject(txps, txp => {
-              return txp.status == 'broadcasted';
-            });
+            txps = txps.filter(txp => txp.status !== 'broadcasted');
 
             if (txps[0] && txps[0].chain == 'bch') {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
