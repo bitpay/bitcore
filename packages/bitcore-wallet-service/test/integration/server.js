@@ -70,7 +70,7 @@ describe('Wallet service', function() {
 
   });
   beforeEach(function(done) {
-    transport.level= LOG_LEVEL;
+    transport.level = LOG_LEVEL;
     config.suspendedChains = [];
 
     // restore defaults, cp values
@@ -107,7 +107,7 @@ describe('Wallet service', function() {
         var server = WalletService.getInstance({
           clientVersion: 'bwc-1.1.99',
         });
-      } catch(ex) {
+      } catch (ex) {
         err = ex;
       }
       should.exist(err);
@@ -197,31 +197,31 @@ describe('Wallet service', function() {
         s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
           copayerId: wallet.copayers[0].id
         }, {
-            $set: {
-              isSupportStaff: true
-            }
-          }, () => {
+          $set: {
+            isSupportStaff: true
+          }
+        }, () => {
 
-            var xpriv = TestData.copayers[0].xPrivKey;
-            var priv = TestData.copayers[0].privKey_1H_0;
+          var xpriv = TestData.copayers[0].xPrivKey;
+          var priv = TestData.copayers[0].privKey_1H_0;
 
-            var sig = helpers.signMessage('hello world', priv);
+          var sig = helpers.signMessage('hello world', priv);
 
-            WalletService.getInstanceWithAuth({
-              copayerId: wallet.copayers[0].id,
-              message: 'hello world',
-              signature: sig,
-              walletId: '123',
-            }, function(err, server) {
-              should.not.exist(err);
+          WalletService.getInstanceWithAuth({
+            copayerId: wallet.copayers[0].id,
+            message: 'hello world',
+            signature: sig,
+            walletId: '123',
+          }, function(err, server) {
+            should.not.exist(err);
 
-              // AQUI
-              server.walletId.should.equal('123');
-              server.copayerId.should.equal(wallet.copayers[0].id);
-              done();
-            });
-
+            // AQUI
+            server.walletId.should.equal('123');
+            server.copayerId.should.equal(wallet.copayers[0].id);
+            done();
           });
+
+        });
       });
     });
 
@@ -231,31 +231,31 @@ describe('Wallet service', function() {
         s.storage.db.collection(collections.COPAYERS_LOOKUP).updateOne({
           copayerId: wallet.copayers[0].id
         }, {
-            $set: {
-              isMarketingStaff: true
-            }
-          }, () => {
+          $set: {
+            isMarketingStaff: true
+          }
+        }, () => {
 
-            var xpriv = TestData.copayers[0].xPrivKey;
-            var priv = TestData.copayers[0].privKey_1H_0;
+          var xpriv = TestData.copayers[0].xPrivKey;
+          var priv = TestData.copayers[0].privKey_1H_0;
 
-            var sig = helpers.signMessage('hello world', priv);
+          var sig = helpers.signMessage('hello world', priv);
 
-            WalletService.getInstanceWithAuth({
-              copayerId: wallet.copayers[0].id,
-              message: 'hello world',
-              signature: sig,
-              walletId: '123',
-            }, function(err, server) {
-              should.not.exist(err);
+          WalletService.getInstanceWithAuth({
+            copayerId: wallet.copayers[0].id,
+            message: 'hello world',
+            signature: sig,
+            walletId: '123',
+          }, function(err, server) {
+            should.not.exist(err);
 
-              server.walletId.should.not.equal('123');
-              server.copayerIsMarketingStaff.should.equal(true);
-              server.copayerId.should.equal(wallet.copayers[0].id);
-              done();
-            });
-
+            server.walletId.should.not.equal('123');
+            server.copayerIsMarketingStaff.should.equal(true);
+            server.copayerId.should.equal(wallet.copayers[0].id);
+            done();
           });
+
+        });
       });
     });
   });
@@ -265,9 +265,9 @@ describe('Wallet service', function() {
     var server, wallet, adOpts;
 
     adOpts = {
-      advertisementId:  '123',
+      advertisementId: '123',
       name: 'name',
-      title:'title',
+      title: 'title',
       body: 'body',
       country: 'US',
       type: 'standard',
@@ -288,57 +288,57 @@ describe('Wallet service', function() {
       });
     });
 
-     it('should create/get ad', function(done) {
-        async.series([function(next) {
-          server.createAdvert(adOpts, function (err, ad) {
-            should.not.exist(err);
-            next();
-          });
-        }, function(next) {
-          server.getAdvert({adId: '123'}, function (err, ad) {
-            should.not.exist(err);
-            should.exist(ad);
-            ad.advertisementId.should.equal('123');
-            ad.name.should.equal('name');
-            ad.title.should.equal('title');
-            ad.body.should.equal('body');
-            ad.country.should.equal('US');
-            ad.type.should.equal('standard');
-            ad.linkText.should.equal('linkText');
-            ad.linkUrl.should.equal('linkUrl');
-            ad.dismissible.should.equal(true);
-            ad.isAdActive.should.equal(false);
-            ad.isTesting.should.equal(true);
-            ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463'),
+    it('should create/get ad', function(done) {
+      async.series([function(next) {
+        server.createAdvert(adOpts, function(err, ad) {
+          should.not.exist(err);
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({ adId: '123' }, function(err, ad) {
+          should.not.exist(err);
+          should.exist(ad);
+          ad.advertisementId.should.equal('123');
+          ad.name.should.equal('name');
+          ad.title.should.equal('title');
+          ad.body.should.equal('body');
+          ad.country.should.equal('US');
+          ad.type.should.equal('standard');
+          ad.linkText.should.equal('linkText');
+          ad.linkUrl.should.equal('linkUrl');
+          ad.dismissible.should.equal(true);
+          ad.isAdActive.should.equal(false);
+          ad.isTesting.should.equal(true);
+          ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463'),
             ad.app.should.equal('bitpay');
 
-            next();
-          });
-        }], function(err) {
-          should.not.exist(err);
-          done();
-        })
+          next();
+        });
+      }], function(err) {
+        should.not.exist(err);
+        done();
+      })
     });
 
     it('should create/get/delete an ad', function(done) {
 
-        async.series([function(next) {
-          server.createAdvert(adOpts, function (err, ad) {
-            next();
-          });
-        }, function(next) {
-          server.getAdvert({adId: '123'}, function (err, ad) {
-            should.not.exist(err);
-            should.exist(ad);
-            next();
-          });
-        },
-        server.removeAdvert({adId: '123'}, function(err, nextArg) {
-           should.not.exist(err);
-        })
-    ], function(err) {
+      async.series([function(next) {
+        server.createAdvert(adOpts, function(err, ad) {
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({ adId: '123' }, function(err, ad) {
           should.not.exist(err);
-        })
+          should.exist(ad);
+          next();
+        });
+      },
+      server.removeAdvert({ adId: '123' }, function(err, nextArg) {
+        should.not.exist(err);
+      })
+      ], function(err) {
+        should.not.exist(err);
+      })
 
       done();
     });
@@ -346,11 +346,11 @@ describe('Wallet service', function() {
     it('should create ad initially inactive, retrieve, make active, retrieve again', function(done) {
 
       async.series([function(next) {
-        server.createAdvert(adOpts, function (err, ad) {
+        server.createAdvert(adOpts, function(err, ad) {
           next();
         });
       }, function(next) {
-        server.getAdvert({adId: '123'}, function(err, ad) {
+        server.getAdvert({ adId: '123' }, function(err, ad) {
           should.not.exist(err);
           should.exist(ad);
           ad.advertisementId.should.equal('123');
@@ -359,12 +359,12 @@ describe('Wallet service', function() {
         });
         next();
       }, function(next) {
-        server.activateAdvert({adId: '123'}, function (err, ad) {
+        server.activateAdvert({ adId: '123' }, function(err, ad) {
           should.not.exist(err);
           next();
         });
       }, function(next) {
-        server.getAdvert({adId: '123'}, function (err, ad) {
+        server.getAdvert({ adId: '123' }, function(err, ad) {
           should.not.exist(err);
           should.exist(ad);
           ad.advertisementId.should.equal('123');
@@ -687,11 +687,11 @@ describe('Wallet service', function() {
         opts.n = pair.n;
         opts.pubKey = pub.toString();
         server.createWallet(opts, function(err) {
-          if(!pair.valid) {
+          if (!pair.valid) {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
-            if(err) console.log("ERROR", opts, err);
+            if (err) console.log("ERROR", opts, err);
             should.not.exist(err);
           }
           return cb();
@@ -774,7 +774,7 @@ describe('Wallet service', function() {
       });
     });
 
-    ['eth','xrp','matic','arb','base','op'].forEach(c => {
+    ['eth', 'xrp', 'matic', 'arb', 'base', 'op'].forEach(c => {
       it(`should  fail to create a multisig ${c}  wallet`, function(done) {
         var opts = {
           coin: c,
@@ -805,7 +805,7 @@ describe('Wallet service', function() {
           n: 1,
           pubKey: TestData.keyPair.pub
         };
-  
+
         server.createWallet(opts, function(err, walletId) {
           should.not.exist(err);
           should.exist(walletId);
@@ -3773,7 +3773,7 @@ describe('Wallet service', function() {
       server.createWallet(walletOpts, function(err, walletId) {
         should.not.exist(err);
         var copayerOpts = helpers.getSignedCopayerOpts({
-        coin: 'bch',
+          coin: 'bch',
           walletId: walletId,
           name: 'me',
           xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
@@ -3812,12 +3812,12 @@ describe('Wallet service', function() {
       flags: {},
     },
     {
-        coin: 'bch',
-        key: 'id44bch',
-        addr: 'qpgjyj728rhu4gca2dqfzlpl8acnhzequshhgvev53',
-        lockedFunds: 0,
-        flags: {},
-      },
+      coin: 'bch',
+      key: 'id44bch',
+      addr: 'qpgjyj728rhu4gca2dqfzlpl8acnhzequshhgvev53',
+      lockedFunds: 0,
+      flags: {},
+    },
     {
       coin: 'bch',
       key: 'id44bch',
@@ -3837,7 +3837,7 @@ describe('Wallet service', function() {
       key: 'id44btc',
       addr: 'rDzTZxa7NwD9vmNf5dvTbW4FQDNSRsfPv6',
       lockedFunds: Defaults.MIN_XRP_BALANCE,
-      flags: { noChange: true , noUtxoTests: true},
+      flags: { noChange: true, noUtxoTests: true },
     },
     {
       coin: 'doge',
@@ -3897,12 +3897,12 @@ describe('Wallet service', function() {
           blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
             const coinAmount = {
-              btc:8000,
-              bch:8000,
-              eth:8000,
-              xrp:8000,
-              doge:1e8,
-              ltc:8000
+              btc: 8000,
+              bch: 8000,
+              eth: 8000,
+              xrp: 8000,
+              doge: 1e8,
+              ltc: 8000
             }
             let amount = coinAmount[coin];
             var txOpts = {
@@ -3934,7 +3934,7 @@ describe('Wallet service', function() {
               tx.outputs[0].toAddress.should.equal(addressStr);
               tx.outputs[0].amount.should.equal(amount);
 
-              if(coin == 'eth') {
+              if (coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
                 tx.nonce.should.equal('5');
                 tx.outputs.should.deep.equal([{
@@ -3990,12 +3990,12 @@ describe('Wallet service', function() {
               });
             });
           });
-          if(['btc', 'bch', 'doge', 'ltc'].includes(coin)) {
+          if (['btc', 'bch', 'doge', 'ltc'].includes(coin)) {
             const coinAmount = {
-              btc:8000,
-              bch:8000,
-              doge:1e8,
-              ltc:8000
+              btc: 8000,
+              bch: 8000,
+              doge: 1e8,
+              ltc: 8000
             }
             it(`should not fail to create ${coin} tx with valid OP_RETURN script and amount`, function(done) {
               let old = blockchainExplorer.getTransactionCount;
@@ -4019,8 +4019,8 @@ describe('Wallet service', function() {
                   from: fromAddr,
                 };
                 txOpts = Object.assign(txOpts, flags);
-    
-    
+
+
                 server.createTx(txOpts, function(err, tx) {
                   should.not.exist(err);
                   should.exist(tx);
@@ -4038,7 +4038,7 @@ describe('Wallet service', function() {
                   tx.outputs[0].amount.should.equal(amount);
                   tx.outputs[1].script.should.equal(testScript);
                   tx.outputs[1].amount.should.equal(0);
-    
+
                   should.not.exist(tx.feeLevel);
                   server.getPendingTxs({}, function(err, txs) {
                     should.not.exist(err);
@@ -4076,9 +4076,9 @@ describe('Wallet service', function() {
                       amount: coinAmount[coin],
                     },
                     {
-                    script: '76a91489abcdefabbaabbaabbaabbaabbaabbaabbaabba88ac',
-                    amount: 5000000000,
-                  }],
+                      script: '76a91489abcdefabbaabbaabbaabbaabbaabbaabbaabba88ac',
+                      amount: 5000000000,
+                    }],
                   feePerKb: 100e2,
                 };
                 txOpts = Object.assign(txOpts, flags);
@@ -4100,9 +4100,9 @@ describe('Wallet service', function() {
                       amount: coinAmount[coin],
                     },
                     {
-                    script: '6a423d3a4554482e555344433a3078466231343633393239633337414531334533624232343337413330633039423239373031323732313a36303335373834393136373a743a3330',
-                    amount: 10,
-                  }],
+                      script: '6a423d3a4554482e555344433a3078466231343633393239633337414531334533624232343337413330633039423239373031323732313a36303335373834393136373a743a3330',
+                      amount: 10,
+                    }],
                   feePerKb: 100e2,
                 };
                 txOpts = Object.assign(txOpts, flags);
@@ -4117,52 +4117,52 @@ describe('Wallet service', function() {
 
             it(`should fail to create ${coin} tx with wrong data type of OP_RETURN script`, function(done) {
               helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-              var txOpts = {
-                outputs: [
-                  {
-                    toAddress: addressStr,
-                    amount: coinAmount[coin],
-                  },
-                  {
-                  script: 123,
-                  amount: 0,
-                }],
-                feePerKb: 100e2,
-              };
-              txOpts = Object.assign(txOpts, flags);
-              server.createTx(txOpts, function(err, tx) {
-                should.not.exist(tx);
-                should.exist(err);
-                err.message.should.equal('Script must be a valid data type');
-                done();
+                var txOpts = {
+                  outputs: [
+                    {
+                      toAddress: addressStr,
+                      amount: coinAmount[coin],
+                    },
+                    {
+                      script: 123,
+                      amount: 0,
+                    }],
+                  feePerKb: 100e2,
+                };
+                txOpts = Object.assign(txOpts, flags);
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(tx);
+                  should.exist(err);
+                  err.message.should.equal('Script must be a valid data type');
+                  done();
+                });
               });
-            });
             });
 
             it(`should fail to create ${coin} tx with an output with invalid script and valid data type`, function(done) {
               helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-              var txOpts = {
-                outputs: [
-                  {
-                    toAddress: addressStr,
-                    amount: coinAmount[coin],
-                  },
-                  {
-                  script: 'wrong script',
-                  amount: 0,
-                }],
-                feePerKb: 100e2,
-              };
-              txOpts = Object.assign(txOpts, flags);
-              server.createTx(txOpts, function(err, tx) {
-                should.not.exist(tx);
-                should.exist(err);
-                err.message.should.equal('The only supported script is OP_RETURN');
-                done();
+                var txOpts = {
+                  outputs: [
+                    {
+                      toAddress: addressStr,
+                      amount: coinAmount[coin],
+                    },
+                    {
+                      script: 'wrong script',
+                      amount: 0,
+                    }],
+                  feePerKb: 100e2,
+                };
+                txOpts = Object.assign(txOpts, flags);
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(tx);
+                  should.exist(err);
+                  err.message.should.equal('The only supported script is OP_RETURN');
+                  done();
+                });
               });
             });
-            });
-          } else if(coin === 'eth') {
+          } else if (coin === 'eth') {
             it('should not fail to create ETH chain based tx for 0 amount', function(done) {
               var txOpts = {
                 outputs: [{
@@ -4200,7 +4200,7 @@ describe('Wallet service', function() {
           });
 
 
-          if( ! flags.noUtxoTests ) {
+          if (!flags.noUtxoTests) {
             it('should fail to create tx for address of different network', function(done) {
               helpers.stubUtxos(server, wallet, 1, function() {
                 var txOpts = {
@@ -4246,7 +4246,7 @@ describe('Wallet service', function() {
                 });
               });
             });
-            if(coin !== 'doge') { // TODO
+            if (coin !== 'doge') { // TODO
               it('should be able to specify change address', function(done) {
                 helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
                   var txOpts = {
@@ -4264,11 +4264,11 @@ describe('Wallet service', function() {
                     var t = ChainService.getBitcoreTx(tx);
 
                     t.getChangeOutput().script.toAddress().toString(true).should.equal(txOpts.changeAddress);
-                  done();
+                    done();
+                  });
                 });
               });
-            });
-          }
+            }
             it('should be fail if specified change address is not from the wallet', function(done) {
 
               helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
@@ -4574,14 +4574,14 @@ describe('Wallet service', function() {
             });
           });
 
-          if( ! flags.noUtxoTests ) {
+          if (!flags.noUtxoTests) {
             it('should fail to publish a temporary tx proposal if utxos are locked by other pending proposals', function(done) {
               const coinAmount = {
-                btc:0.8,
-                bch:0.8,
-                eth:0.8,
-                xrp:0.8,
-                doge:1,
+                btc: 0.8,
+                bch: 0.8,
+                eth: 0.8,
+                xrp: 0.8,
+                doge: 1,
                 ltc: 0.8
               }
               var txp1, txp2;
@@ -4726,75 +4726,75 @@ describe('Wallet service', function() {
             if (coin === 'btc') {
 
               it('should fail to publish ( replaceTxByFee -> undefined ) a temporary tx proposal if utxos are already spent in a RBF tx', function(done) {
-                  var txp1, txp2;
-                  var txOpts = {
-                    outputs: [{
-                      toAddress: addressStr,
-                      amount: 1e8,
-                    }],
-                    message: 'some message',
-                    feePerKb: 100e2,
-                    enableRBF: true
-                  };
-    
-                  async.waterfall([
-    
-                    function(next) {
-                      helpers.stubUtxos(server, wallet, [1, 2], function() {
-                        next();
-                      });
-                    },
-                    function(next) {
-                      txOpts = Object.assign(txOpts, flags);
-                      server.createTx(txOpts, next);
-                    },
-                    function(txp, next) {
-                      txp1 = txp;
-                      txOpts = Object.assign(txOpts, flags);
-                      server.createTx( txOpts , next);
-                    },
-                    function(txp, next) {
-                      txp2 = txp;
-                      should.exist(txp1);
-                      should.exist(txp2);
-                      var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
-                      server.publishTx(publishOpts, next);
-                    },
-                    function(txp, next) {
-                      // Sign & Broadcast txp1
-                      var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
-                      server.signTx({
-                        txProposalId: txp.id,
-                        signatures: signatures
+                var txp1, txp2;
+                var txOpts = {
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1e8,
+                  }],
+                  message: 'some message',
+                  feePerKb: 100e2,
+                  enableRBF: true
+                };
+
+                async.waterfall([
+
+                  function(next) {
+                    helpers.stubUtxos(server, wallet, [1, 2], function() {
+                      next();
+                    });
+                  },
+                  function(next) {
+                    txOpts = Object.assign(txOpts, flags);
+                    server.createTx(txOpts, next);
+                  },
+                  function(txp, next) {
+                    txp1 = txp;
+                    txOpts = Object.assign(txOpts, flags);
+                    server.createTx(txOpts, next);
+                  },
+                  function(txp, next) {
+                    txp2 = txp;
+                    should.exist(txp1);
+                    should.exist(txp2);
+                    var publishOpts = helpers.getProposalSignatureOpts(txp1, TestData.copayers[0].privKey_1H_0);
+                    server.publishTx(publishOpts, next);
+                  },
+                  function(txp, next) {
+                    // Sign & Broadcast txp1
+                    var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+                    server.signTx({
+                      txProposalId: txp.id,
+                      signatures: signatures
+                    }, function(err, txp) {
+
+                      should.not.exist(err);
+
+                      helpers.stubBroadcast(txp.txid);
+                      server.broadcastTx({
+                        txProposalId: txp.id
                       }, function(err, txp) {
-    
+
                         should.not.exist(err);
-    
-                        helpers.stubBroadcast(txp.txid);
-                        server.broadcastTx({
-                          txProposalId: txp.id
-                        }, function(err, txp) {
-    
-                          should.not.exist(err);
-                          should.exist(txp.txid);
-                          txp.status.should.equal('broadcasted');
-                          next();
-                        });
-                      });
-                    },
-                    function(next) {
-    
-                      var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
-                      server.publishTx(publishOpts, function(err, txp) {
-                        err.code.should.equal('UNAVAILABLE_UTXOS');
+                        should.exist(txp.txid);
+                        txp.status.should.equal('broadcasted');
                         next();
                       });
-                    },
-                  ], function(err) {
-                    should.not.exist(err);
-                    done();
-                  });
+                    });
+                  },
+                  function(next) {
+
+                    var publishOpts = helpers.getProposalSignatureOpts(txp2, TestData.copayers[0].privKey_1H_0);
+                    server.publishTx(publishOpts, function(err, txp) {
+                      err.code.should.equal('UNAVAILABLE_UTXOS');
+                      next();
+                    });
+                  },
+                ], function(err) {
+                  should.not.exist(err);
+                  done();
                 });
+              });
 
               it('should not fail to publish, sign and broadcast ( replaceTxByFee -> true ) a tx proposal if utxos are already spent in a RBF tx', function(done) {
                 var txp1, txp2;
@@ -4831,7 +4831,7 @@ describe('Wallet service', function() {
                   function(txp, next) {
                     txp1 = txp;
                     txOpts2 = Object.assign(txOpts2, flags);
-                    server.createTx({ ...txOpts2, ...{ replaceTxByFee: true, inputs: txp1.inputs} }, next);
+                    server.createTx({ ...txOpts2, ...{ replaceTxByFee: true, inputs: txp1.inputs } }, next);
                   },
                   function(txp, next) {
                     txp2 = txp;
@@ -4901,7 +4901,7 @@ describe('Wallet service', function() {
           var level, expected, expectedNormal;
           before(() => {
             if (Constants.UTXO_CHAINS[coin.toUpperCase()]) {
-              const normal = coin == 'doge' ? 1e8: 200e2;   // normal BCH, DOGE
+              const normal = coin == 'doge' ? 1e8 : 200e2;   // normal BCH, DOGE
               helpers.stubFeeLevels({
                 1: 400e2,
                 2: normal,
@@ -4923,7 +4923,7 @@ describe('Wallet service', function() {
                 1: 12
               }, null, coin);
             }
-            switch(coin) {
+            switch (coin) {
               case 'bch':
                 level = 'normal';
                 expected = 210e2;
@@ -5018,11 +5018,11 @@ describe('Wallet service', function() {
         });
         it('should generate new change address for each created tx', function(done) {
           const coinAmount = {
-            btc:8000,
-            bch:8000,
-            eth:8000,
-            xrp:8000,
-            doge:1e8,
+            btc: 8000,
+            bch: 8000,
+            eth: 8000,
+            xrp: 8000,
+            doge: 1e8,
             ltc: 8000
           }
           let amount = coinAmount[coin];
@@ -5043,7 +5043,7 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx2) {
                 should.not.exist(err);
                 should.exist(tx2);
-                if(flags.noChange) {
+                if (flags.noChange) {
                   should.not.exist(tx1.changeAddress);
                   should.not.exist(tx2.changeAddress);
                 } else {
@@ -5148,12 +5148,12 @@ describe('Wallet service', function() {
         });
         it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
           const coinAmount = {
-            btc:0.5,
-            bch:0.5,
-            eth:0.5,
-            xrp:0.5,
-            doge:1,
-            ltc:0.5
+            btc: 0.5,
+            bch: 0.5,
+            eth: 0.5,
+            xrp: 0.5,
+            doge: 1,
+            ltc: 0.5
           }
           helpers.stubUtxos(server, wallet, 2, { coin }, function() {
             sandbox.stub(CWC.Transactions, 'create').throws(new Error('dummy exception'));
@@ -5177,7 +5177,7 @@ describe('Wallet service', function() {
             });
           });
         });
-        if(coin !== 'doge') { // TODO
+        if (coin !== 'doge') { // TODO
           it('should fail with different error for insufficient funds and locked funds', function(done) {
             const ts = TO_SAT[coin];
             helpers.stubUtxos(server, wallet, [1, 1], { coin }, function() {
@@ -5195,14 +5195,14 @@ describe('Wallet service', function() {
                 server.getBalance({}, function(err, balance) {
                   should.not.exist(err);
                   balance.totalAmount.should.equal(2 * ts + lockedFunds);
-                  if(flags.noChange) {
+                  if (flags.noChange) {
                     balance.lockedAmount.should.equal(txAmount + lockedFunds);
                     txOpts.outputs[0].amount = 2 * ts;
                   } else {
                     balance.lockedAmount.should.equal(2 * ts);
                     txOpts.outputs[0].amount = 1 * ts;
                   }
-  
+
                   txOpts = Object.assign(txOpts, flags);
                   server.createTx(txOpts, function(err, tx) {
                     should.exist(err);
@@ -5216,30 +5216,30 @@ describe('Wallet service', function() {
           });
         }
 
-        if(!flags.noUtxoTests) {
+        if (!flags.noUtxoTests) {
 
-        it('should fail to create a tx exceeding max size in kb', function(done) {
-          Defaults.MAX_TX_SIZE_IN_KB_BTC = 1;
+          it('should fail to create a tx exceeding max size in kb', function(done) {
+            Defaults.MAX_TX_SIZE_IN_KB_BTC = 1;
 
-          helpers.stubUtxos(server, wallet, _.range(1, 10, 0), { coin }, function() {
-            let x = [];
-            x.push({
-              toAddress:addressStr,
-              amount: 8*ts,
-            });
-            var txOpts = {
-              outputs: x,
-              feePerKb: 100e2,
-              from: fromAddr,
-            };
-            txOpts = Object.assign(txOpts, flags);
-            server.createTx(txOpts, function(err, tx) {
-              should.exist(err);
-              err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
-              done();
+            helpers.stubUtxos(server, wallet, _.range(1, 10, 0), { coin }, function() {
+              let x = [];
+              x.push({
+                toAddress: addressStr,
+                amount: 8 * ts,
+              });
+              var txOpts = {
+                outputs: x,
+                feePerKb: 100e2,
+                from: fromAddr,
+              };
+              txOpts = Object.assign(txOpts, flags);
+              server.createTx(txOpts, function(err, tx) {
+                should.exist(err);
+                err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
+                done();
+              });
             });
           });
-        });
 
           it('should fail to create tx for dust amount in outputs', function(done) {
             helpers.stubUtxos(server, wallet, 1, function() {
@@ -5260,66 +5260,66 @@ describe('Wallet service', function() {
             });
           });
 
-          if(coin !== 'doge') { // TODO
-          
-            it('should create tx with 0 change output', function(done) {
-            helpers.stubUtxos(server, wallet, 2, function() {
-              var fee = 2260; // The exact fee of the resulting tx
-              var amount = 2e8 - fee;
+          if (coin !== 'doge') { // TODO
 
-              var txOpts = {
-                outputs: [{
-                  toAddress: addressStr,
-                  amount: amount,
-                }],
-                feePerKb: 100e2,
-              };
-              txOpts = Object.assign(txOpts, flags);
-              server.createTx(txOpts, function(err, tx) {
-                should.not.exist(err);
-                should.exist(tx);
-                var bitcoreTx = ChainService.getBitcoreTx(tx);
-                bitcoreTx.outputs.length.should.equal(1);
-                bitcoreTx.outputs[0].satoshis.should.equal(tx.amount);
-                done();
+            it('should create tx with 0 change output', function(done) {
+              helpers.stubUtxos(server, wallet, 2, function() {
+                var fee = 2260; // The exact fee of the resulting tx
+                var amount = 2e8 - fee;
+
+                var txOpts = {
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: amount,
+                  }],
+                  feePerKb: 100e2,
+                };
+                txOpts = Object.assign(txOpts, flags);
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(err);
+                  should.exist(tx);
+                  var bitcoreTx = ChainService.getBitcoreTx(tx);
+                  bitcoreTx.outputs.length.should.equal(1);
+                  bitcoreTx.outputs[0].satoshis.should.equal(tx.amount);
+                  done();
+                });
               });
             });
-          });
-          it('should create tx when there is a pending tx and enough UTXOs', function(done) {
-            helpers.stubUtxos(server, wallet, [1.1, 1.2, 1.3], { coin }, function() {
-              var txOpts = {
-                outputs: [{
-                  toAddress: addressStr,
-                  amount: 1.5 * TO_SAT[coin],
-                }],
-                feePerKb: 100e2,
-              };
-              txOpts = Object.assign(txOpts, flags);
-              helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
-                should.exist(tx);
-                txOpts.outputs[0].amount = 1 * TO_SAT[coin];
+            it('should create tx when there is a pending tx and enough UTXOs', function(done) {
+              helpers.stubUtxos(server, wallet, [1.1, 1.2, 1.3], { coin }, function() {
+                var txOpts = {
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 1.5 * TO_SAT[coin],
+                  }],
+                  feePerKb: 100e2,
+                };
                 txOpts = Object.assign(txOpts, flags);
                 helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
                   should.exist(tx);
-                  server.getPendingTxs({}, function(err, txs) {
-                    should.not.exist(err);
-                    txs.length.should.equal(2);
-                    server.getBalance({}, function(err, balance) {
+                  txOpts.outputs[0].amount = 1 * TO_SAT[coin];
+                  txOpts = Object.assign(txOpts, flags);
+                  helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+                    should.exist(tx);
+                    server.getPendingTxs({}, function(err, txs) {
                       should.not.exist(err);
-                      balance.totalAmount.should.equal(3.6 * TO_SAT[coin]);
-                      if(coin == 'eth') {
-                        balance.lockedAmount.should.equal(2300000000000000000);
-                      } else {
-                        balance.lockedAmount.should.equal(3.6 * TO_SAT[coin]);
-                      }
-                      done();
+                      txs.length.should.equal(2);
+                      server.getBalance({}, function(err, balance) {
+                        should.not.exist(err);
+                        balance.totalAmount.should.equal(3.6 * TO_SAT[coin]);
+                        if (coin == 'eth') {
+                          balance.lockedAmount.should.equal(2300000000000000000);
+                        } else {
+                          balance.lockedAmount.should.equal(3.6 * TO_SAT[coin]);
+                        }
+                        done();
+                      });
                     });
                   });
                 });
               });
             });
-          });
-        }
+          }
           it('should fail to create tx when there is a pending tx and not enough UTXOs', function(done) {
             helpers.stubUtxos(server, wallet, [1.1, 1.2, 1.3], { coin }, function() {
               var txOpts = {
@@ -5344,7 +5344,7 @@ describe('Wallet service', function() {
                     server.getBalance({}, function(err, balance) {
                       should.not.exist(err);
                       balance.totalAmount.should.equal(3.6 * TO_SAT[coin]);
-                      if(coin != 'eth') {
+                      if (coin != 'eth') {
                         var amountInputs = _.sumBy(txs[0].inputs, 'satoshis');
                         balance.lockedAmount.should.equal(amountInputs);
                         balance.lockedAmount.should.be.below(balance.totalAmount);
@@ -5391,7 +5391,7 @@ describe('Wallet service', function() {
         });
 
 
-        if(!flags.noUtxoTests) {
+        if (!flags.noUtxoTests) {
 
           it('should  send max with appropiate fee', function(done) {
             helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
@@ -5427,70 +5427,70 @@ describe('Wallet service', function() {
                     var t = ChainService.getBitcoreTx(txp);
                     t.getFee().should.equal(txp.fee);
 
-                    const actualFeeRate = t.getFee() / (txp.raw.length/2);
+                    const actualFeeRate = t.getFee() / (txp.raw.length / 2);
                     done();
-                  });
-              });
-              });
-            });
-          });
-
-
-          if(coin !== 'doge' && coin !== 'ltc') { // TODO
-          it('should accept a tx proposal signed with a custom key', function(done) {
-            var reqPrivKey = new Bitcore.PrivateKey();
-            var reqPubKey = reqPrivKey.toPublicKey().toString();
-
-            var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
-            var accessOpts = {
-              copayerId: TestData.copayers[0][idKey],
-              requestPubKey: reqPubKey,
-              signature: helpers.signRequestPubKey(reqPubKey, xPrivKey),
-            };
-
-            server.addAccess(accessOpts, function(err) {
-              should.not.exist(err);
-
-              helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-                var txOpts = {
-                  outputs: [{
-                    toAddress: addressStr,
-                    amount: 0.8 * 1e8,
-                  }],
-                  message: 'some message',
-                  feePerKb: 100e2,
-                };
-                txOpts = Object.assign(txOpts, flags);
-                server.createTx(txOpts, function(err, txp) {
-                  should.not.exist(err);
-                  should.exist(txp);
-
-                  var publishOpts = {
-                    txProposalId: txp.id,
-                    proposalSignature: helpers.signMessage(txp.getRawTx(), reqPrivKey),
-                  }
-
-                  server.publishTx(publishOpts, function(err) {
-                    should.not.exist(err);
-                    server.getTx({
-                      txProposalId: txp.id
-                    }, function(err, x) {
-                      should.not.exist(err);
-                      x.proposalSignature.should.equal(publishOpts.proposalSignature);
-                      x.proposalSignaturePubKey.should.equal(accessOpts.requestPubKey);
-                      x.proposalSignaturePubKeySig.should.equal(accessOpts.signature);
-                      done();
-                    });
                   });
                 });
               });
             });
           });
-        }
+
+
+          if (coin !== 'doge' && coin !== 'ltc') { // TODO
+            it('should accept a tx proposal signed with a custom key', function(done) {
+              var reqPrivKey = new Bitcore.PrivateKey();
+              var reqPubKey = reqPrivKey.toPublicKey().toString();
+
+              var xPrivKey = TestData.copayers[0].xPrivKey_44H_0H_0H;
+              var accessOpts = {
+                copayerId: TestData.copayers[0][idKey],
+                requestPubKey: reqPubKey,
+                signature: helpers.signRequestPubKey(reqPubKey, xPrivKey),
+              };
+
+              server.addAccess(accessOpts, function(err) {
+                should.not.exist(err);
+
+                helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+                  var txOpts = {
+                    outputs: [{
+                      toAddress: addressStr,
+                      amount: 0.8 * 1e8,
+                    }],
+                    message: 'some message',
+                    feePerKb: 100e2,
+                  };
+                  txOpts = Object.assign(txOpts, flags);
+                  server.createTx(txOpts, function(err, txp) {
+                    should.not.exist(err);
+                    should.exist(txp);
+
+                    var publishOpts = {
+                      txProposalId: txp.id,
+                      proposalSignature: helpers.signMessage(txp.getRawTx(), reqPrivKey),
+                    }
+
+                    server.publishTx(publishOpts, function(err) {
+                      should.not.exist(err);
+                      server.getTx({
+                        txProposalId: txp.id
+                      }, function(err, x) {
+                        should.not.exist(err);
+                        x.proposalSignature.should.equal(publishOpts.proposalSignature);
+                        x.proposalSignaturePubKey.should.equal(accessOpts.requestPubKey);
+                        x.proposalSignaturePubKeySig.should.equal(accessOpts.signature);
+                        done();
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          }
 
           it('should shuffle outputs unless specified', function(done) {
             let amount, outputAmount;
-            if(coin === 'doge'){
+            if (coin === 'doge') {
               amount = 1000;
               outputAmount = 1e8;
             } else {
@@ -5635,7 +5635,7 @@ describe('Wallet service', function() {
       });
     });
 
-    if(Constants.UTXO_CHAINS[coin.toUpperCase()]) {
+    if (Constants.UTXO_CHAINS[coin.toUpperCase()]) {
       describe('UTXO Selection ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
@@ -5646,7 +5646,7 @@ describe('Wallet service', function() {
           });
         });
         afterEach(function() {
-          transport.level= LOG_LEVEL;
+          transport.level = LOG_LEVEL;
         });
 
         it('should exclude unconfirmed utxos if specified', function(done) {
@@ -5772,7 +5772,7 @@ describe('Wallet service', function() {
               var amounts = _.map(txp.inputs, 'satoshis');
               amounts.length.should.equal(30);
               _.every(amounts, function(amount, i) {
-                if(i == 0) return true;
+                if (i == 0) return true;
                 return amount < amounts[i - 1];
               }).should.be.false;
               done();
@@ -5911,23 +5911,23 @@ describe('Wallet service', function() {
           Defaults.MAX_TX_SIZE_IN_KB_XRP = 2;
 
 
-            helpers.stubUtxos(server, wallet, [100].concat(_.range(1, 20, 0)), function() {
-              var txOpts = {
-                outputs: [{
-                  toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-                  amount: 15e8,
-                }],
-                feePerKb: 120e2,
-              };
-              txOpts = Object.assign(txOpts, flags);
-              server.createTx(txOpts, function(err, txp) {
-                should.not.exist(err);
-                should.exist(txp);
-                txp.inputs.length.should.equal(1);
-                txp.inputs[0].satoshis.should.equal(100e8);
-                done();
-              });
+          helpers.stubUtxos(server, wallet, [100].concat(_.range(1, 20, 0)), function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+                amount: 15e8,
+              }],
+              feePerKb: 120e2,
+            };
+            txOpts = Object.assign(txOpts, flags);
+            server.createTx(txOpts, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+              txp.inputs.length.should.equal(1);
+              txp.inputs[0].satoshis.should.equal(100e8);
+              done();
             });
+          });
         });
         it('should ignore utxos not contributing enough to cover increase in fee', function(done) {
           helpers.stubUtxos(server, wallet, ['100bit', '100bit', '100bit'], function() {
@@ -6205,9 +6205,9 @@ describe('Wallet service', function() {
     it('should set the desired Fee rate on segwit TXs', function(done) {
       helpers.stubFeeLevels({
       });
-      let addr= '134kthjj3BaGTRMPiB1moohBdtKfyCrt9c';
+      let addr = '134kthjj3BaGTRMPiB1moohBdtKfyCrt9c';
       let amount = 75909000;
-      helpers.stubUtxos(server, wallet, [0.36023362, 0.39923362 ], function() {
+      helpers.stubUtxos(server, wallet, [0.36023362, 0.39923362], function() {
         var txOpts = {
           outputs: [{
             toAddress: addr,
@@ -6304,7 +6304,7 @@ describe('Wallet service', function() {
             outputs: [{
               toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
               amount: amount,
-            },{
+            }, {
               toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
               amount: amount,
             }],
@@ -6320,7 +6320,7 @@ describe('Wallet service', function() {
               toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
               gasLimit: 21000,
               amount: amount
-            },{
+            }, {
               toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
               gasLimit: 21000,
               amount: amount
@@ -7283,7 +7283,7 @@ describe('Wallet service', function() {
           var amounts = _.map(info.inputs, 'satoshis');
           amounts.length.should.equal(30);
           _.every(amounts, function(amount, i) {
-            if(i == 0) return true;
+            if (i == 0) return true;
             return amount < amounts[i - 1];
           }).should.be.false;
           done();
@@ -7386,23 +7386,23 @@ describe('Wallet service', function() {
       });
     });
     it('should not go beyond max tx size', function(done) {
-      Defaults.MAX_TX_SIZE_IN_KB_BTC =2;
-      Defaults.MAX_TX_SIZE_IN_KB_ETH =2;
-      Defaults.MAX_TX_SIZE_IN_KB_XRP =2;
-        helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
-          server.getSendMaxInfo({
-            feePerKb: 10000,
-            returnInputs: true,
-          }, function(err, info) {
-            should.not.exist(err);
-            should.exist(info);
-            info.size.should.be.below(2000);
-            info.inputs.length.should.be.below(9);
-            info.utxosAboveMaxSize.should.equal(3);
-            info.amountAboveMaxSize.should.equal(3e8);
-            sendTx(info, done);
-          });
+      Defaults.MAX_TX_SIZE_IN_KB_BTC = 2;
+      Defaults.MAX_TX_SIZE_IN_KB_ETH = 2;
+      Defaults.MAX_TX_SIZE_IN_KB_XRP = 2;
+      helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
+        server.getSendMaxInfo({
+          feePerKb: 10000,
+          returnInputs: true,
+        }, function(err, info) {
+          should.not.exist(err);
+          should.exist(info);
+          info.size.should.be.below(2000);
+          info.inputs.length.should.be.below(9);
+          info.utxosAboveMaxSize.should.equal(3);
+          info.amountAboveMaxSize.should.equal(3e8);
+          sendTx(info, done);
         });
+      });
     });
   })
 
@@ -7430,7 +7430,7 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: false,
         utxos: [1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7441,7 +7441,7 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: true,
         utxos: [1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7452,7 +7452,7 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: true,
         utxos: [0.1, 0.2, 0.3, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7463,61 +7463,61 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: true,
         utxos: [0.1, 0.3, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10, // overwritten in sendMax
         }],
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 2 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [1, 2],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 3 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: ['100000 sat', '20000 sat', 1],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [1.2],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
-       vSize: 144,
+        vSize: 144,
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [0.4, 0.4, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
       },
       // CASE 8
-     {
+      {
         name: 'Segwit, non-sendmax, 6 inputs',
         requiredFeeRate: 30000,
         fromSegwit: true,
         utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 1e8,
         }],
@@ -7529,20 +7529,20 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: false,
         utxos: [1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
       },
       {
         n: 2,
-        vSize:123, // from https://btc.com/tools/tx/decode
+        vSize: 123, // from https://btc.com/tools/tx/decode
         name: 'Segwit, sendmax',
         requiredFeeRate: 10000,
         sendMax: true,
         fromSegwit: true,
         utxos: [1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7554,7 +7554,7 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: true,
         utxos: [0.1, 0.2, 0.3, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7566,67 +7566,67 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: true,
         utxos: [0.1, 0.3, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10, // overwritten in sendMax
         }],
       },
-     {
+      {
         n: 2,
         name: 'Segwit, non-sendmax, 2 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [1, 2],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         n: 2,
         name: 'Segwit, non-sendmax, 3 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: ['100000 sat', '20000 sat', 1],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         n: 2,
         name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [1.1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
-       vSize: 144,
+        vSize: 144,
       },
 
-     {
+      {
         n: 2,
-       vSize: 321,
+        vSize: 321,
         name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [0.4, 0.4, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
       },
-    {
+      {
         n: 2,
         name: 'Segwit, non-sendmax, 6 inputs',
         requiredFeeRate: 30000,
         fromSegwit: true,
         utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 1e8,
         }],
@@ -7639,7 +7639,7 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: false,
         utxos: [1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7647,13 +7647,13 @@ describe('Wallet service', function() {
       {
         m: 2,
         n: 3,
-        vSize:123, // from https://btc.com/tools/tx/decode
+        vSize: 123, // from https://btc.com/tools/tx/decode
         name: 'Segwit, sendmax',
         requiredFeeRate: 10000,
         sendMax: true,
         fromSegwit: true,
         utxos: [1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7666,7 +7666,7 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: true,
         utxos: [0.1, 0.2, 0.3, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 10, // overwritten in sendMax
         }],
@@ -7679,72 +7679,72 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: true,
         utxos: [0.1, 0.3, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10, // overwritten in sendMax
         }],
       },
-     {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 2 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [1, 2],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 3 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: ['100000 sat', '20000 sat', 1],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [1.1],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
-       vSize: 144,
+        vSize: 144,
       },
 
-     {
+      {
         m: 2,
         n: 3,
-       vSize: 321,
+        vSize: 321,
         name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
         utxos: [0.4, 0.4, 0.4],
-        outputs:  [{
+        outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
       },
-    {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 6 inputs',
         requiredFeeRate: 30000,
         fromSegwit: true,
         utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
-        outputs:  [{
+        outputs: [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 1e8,
         }],
@@ -7783,7 +7783,7 @@ describe('Wallet service', function() {
           const vSize = x.vSize || t._estimateSize(); // use given vSize if available
           // Check size and fee rate
           const actualSize = txp.raw.length / 2;
-          const actualFeeRate = t.getFee() /  (x.fromSegwit ? vSize : actualSize) * 1000;
+          const actualFeeRate = t.getFee() / (x.fromSegwit ? vSize : actualSize) * 1000;
           //console.log('[server.js.7001:log:]',txp.raw); // TODO
           console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
 
@@ -7794,15 +7794,15 @@ describe('Wallet service', function() {
         });
       });
     };
-    let i=0;
-    cases.forEach( x => {
+    let i = 0;
+    cases.forEach(x => {
 
       x.i = i;
       x.m = x.m || 1;
       x.n = x.n || 1;
       it(`case  ${i++} : ${x.name} (${x.m}-of-${x.n})`, function(done) {
 
-        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+        helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit }, function(s, w) {
           server = s;
           wallet = w;
 
@@ -7819,9 +7819,9 @@ describe('Wallet service', function() {
               };
 
               if (x.sendMax) {
-                txOpts.fee =  info.fee;
+                txOpts.fee = info.fee;
                 txOpts.inputs = info.inputs;
-                txOpts.outputs[0].amount =  info.amount;
+                txOpts.outputs[0].amount = info.amount;
               } else {
                 txOpts.feePerKb = x.requiredFeeRate;
               }
@@ -7833,7 +7833,7 @@ describe('Wallet service', function() {
                   helpers.beforeEach(() => {
                     // check with paypro fee is bigger.
                     console.log(`## case  ${x.i} : Again with no paypro`);
-                    helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+                    helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit }, function(s, w) {
                       server = s;
                       wallet = w;
 
@@ -7878,9 +7878,9 @@ describe('Wallet service', function() {
         name: 'Legacy',
         requiredFeeRate: 755000,
         utxos: [100],
-        outputs:  [{
+        outputs: [{
           toAddress: 'DMHR9z3hVfEMkfsxfP7CbVtYdPh2f5ESqo',
-          amount: 2048378600, 
+          amount: 2048378600,
         }],
       },
       {
@@ -7890,7 +7890,7 @@ describe('Wallet service', function() {
         sendMax: true,
         fromSegwit: false,
         utxos: [100],
-        outputs:  [{
+        outputs: [{
           toAddress: 'DMHR9z3hVfEMkfsxfP7CbVtYdPh2f5ESqo',
         }],
       },
@@ -7939,7 +7939,7 @@ describe('Wallet service', function() {
           const vSize = x.vSize || t._estimateSize(); // use given vSize if available
           // Check size and fee rate
           const actualSize = txp.raw.length / 2;
-          const actualFeeRate = t.getFee() /  (x.fromSegwit ? vSize : actualSize) * 1000;
+          const actualFeeRate = t.getFee() / (x.fromSegwit ? vSize : actualSize) * 1000;
           //console.log('[server.js.7001:log:]',txp.raw); // TODO
           console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
 
@@ -7955,15 +7955,15 @@ describe('Wallet service', function() {
         });
       });
     };
-    let i=0;
-    cases.forEach( x => {
+    let i = 0;
+    cases.forEach(x => {
 
       x.i = i;
       x.m = x.m || 1;
       x.n = x.n || 1;
       it(`case  ${i++} : ${x.name} (${x.m}-of-${x.n})`, function(done) {
 
-        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit, coin:'doge'}, function(s, w) {
+        helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit, coin: 'doge' }, function(s, w) {
           server = s;
           wallet = w;
 
@@ -7980,9 +7980,9 @@ describe('Wallet service', function() {
               };
 
               if (x.sendMax) {
-                txOpts.fee =  info.fee;
+                txOpts.fee = info.fee;
                 txOpts.inputs = info.inputs;
-                txOpts.outputs[0].amount =  info.amount;
+                txOpts.outputs[0].amount = info.amount;
               } else {
                 txOpts.feePerKb = x.requiredFeeRate;
               }
@@ -7994,7 +7994,7 @@ describe('Wallet service', function() {
                   helpers.beforeEach(() => {
                     // check with paypro fee is bigger.
                     console.log(`## case  ${x.i} : Again with no paypro`);
-                    helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+                    helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit }, function(s, w) {
                       server = s;
                       wallet = w;
 
@@ -9226,21 +9226,21 @@ describe('Wallet service', function() {
             amount: 5435,  // 5434 sats
             hash: 'dummy hash',
           }, {
-              isGlobal: true
-            }, function(err) {
+            isGlobal: true
+          }, function(err) {
+            should.not.exist(err);
+            s2.getNotifications({
+              minTs: +Date.now() - (60 * 1000),
+            }, function(err, notifications) {
               should.not.exist(err);
-              s2.getNotifications({
-                minTs: +Date.now() - (60 * 1000),
-              }, function(err, notifications) {
-                should.not.exist(err);
-                var types = _.map(notifications, 'type');
-                types.should.deep.equal(['NewCopayer', 'NewIncomingTx']);
-                var walletIds = _.uniq(_.map(notifications, 'walletId'));
-                walletIds.length.should.equal(1);
-                walletIds[0].should.equal(w2.id);
-                done();
-              });
+              var types = _.map(notifications, 'type');
+              types.should.deep.equal(['NewCopayer', 'NewIncomingTx']);
+              var walletIds = _.uniq(_.map(notifications, 'walletId'));
+              walletIds.length.should.equal(1);
+              walletIds[0].should.equal(w2.id);
+              done();
             });
+          });
         });
       });
     });
@@ -9254,30 +9254,30 @@ describe('Wallet service', function() {
       server._notify('NewBlock', {
         hash: 'dummy hash',
       }, {
+        isGlobal: true
+      }, function(err) {
+        should.not.exist(err);
+        server.walletId = 'btc:testnet';
+        server._notify('NewBlock', {
+          hash: 'dummy hash',
+        }, {
           isGlobal: true
         }, function(err) {
           should.not.exist(err);
-          server.walletId = 'btc:testnet';
-          server._notify('NewBlock', {
-            hash: 'dummy hash',
-          }, {
-              isGlobal: true
-            }, function(err) {
-              should.not.exist(err);
-              server.walletId = wallet.id;
-              server.getNotifications({
-                minTs: +Date.now() - (60 * 1000),
-              }, function(err, notifications) {
-                should.not.exist(err);
-                var types = _.map(notifications, 'type');
-                types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewBlock']);
-                var walletIds = _.uniq(_.map(notifications, 'walletId'));
-                walletIds.length.should.equal(1);
-                walletIds[0].should.equal(wallet.id);
-                done();
-              });
-            });
+          server.walletId = wallet.id;
+          server.getNotifications({
+            minTs: +Date.now() - (60 * 1000),
+          }, function(err, notifications) {
+            should.not.exist(err);
+            var types = _.map(notifications, 'type');
+            types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewBlock']);
+            var walletIds = _.uniq(_.map(notifications, 'walletId'));
+            walletIds.length.should.equal(1);
+            walletIds[0].should.equal(wallet.id);
+            done();
+          });
         });
+      });
     });
     it('should pull notifications in the last 60 seconds', function(done) {
       server.getNotifications({
@@ -9969,7 +9969,7 @@ describe('Wallet service', function() {
         'm/1/0',
       ];
       server.messageBroker.onMessage(function(n) {
-        if(n.type == 'ScanFinished') {
+        if (n.type == 'ScanFinished') {
           server.getWallet({}, function(err, wallet) {
             should.exist(wallet.scanStatus);
             wallet.scanStatus.should.equal('success');
@@ -9996,7 +9996,7 @@ describe('Wallet service', function() {
     it('should set scan status error when unable to reach blockchain', function(done) {
       blockchainExplorer.getAddressActivity = sinon.stub().yields('dummy error');
       server.messageBroker.onMessage(function(n) {
-        if(n.type == 'ScanFinished') {
+        if (n.type == 'ScanFinished') {
           should.exist(n.data.error);
           server.getWallet({}, function(err, wallet) {
             should.exist(wallet.scanStatus);
@@ -10015,9 +10015,9 @@ describe('Wallet service', function() {
 
       var scans = 0;
       server.messageBroker.onMessage(function(n) {
-        if(n.type == 'ScanFinished') {
+        if (n.type == 'ScanFinished') {
           scans++;
-          if(scans == 2) done();
+          if (scans == 2) done();
         }
       });
 
@@ -10419,7 +10419,7 @@ describe('Wallet service', function() {
             const stream = server.storage.streamActiveTxConfirmationSubs(wallet.copayers[0].id, ['456']);
             let txSub = (await stream.next());
             should.exist(txSub);
-            txSub.txid.should.equal('456'); 
+            txSub.txid.should.equal('456');
             next();
           },
           function(next) {
@@ -10687,7 +10687,7 @@ describe('Wallet service', function() {
       sandbox.restore();
     })
 
-   it('should fail with different error for ERC20 txs with insufficient ETH to cover miner fee', function(done) {
+    it('should fail with different error for ERC20 txs with insufficient ETH to cover miner fee', function(done) {
       const ts = TO_SAT['usdc'];
       server.createAddress({}, from => {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
@@ -10772,7 +10772,7 @@ describe('Wallet service', function() {
       sandbox.restore();
     })
 
-   it('should fail with different error for ERC20 txs with insufficient MATIC to cover miner fee', function(done) {
+    it('should fail with different error for ERC20 txs with insufficient MATIC to cover miner fee', function(done) {
       const ts = TO_SAT['usdc'];
       server.createAddress({}, from => {
         helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
@@ -10842,7 +10842,7 @@ describe('Wallet service', function() {
 
   describe('getServicesData', () => {
     let server;
-   
+
     beforeEach(() => {
       server = new WalletService();
     });
@@ -10858,14 +10858,14 @@ describe('Wallet service', function() {
               removed: false
             },
           },
-          sellCrypto: { 
+          sellCrypto: {
             disabled: false,
             moonpay: {
               disabled: false,
               removed: false
             }
           },
-          swapCrypto: { 
+          swapCrypto: {
             disabled: false,
             changelly: {
               disabled: false,
@@ -10875,14 +10875,14 @@ describe('Wallet service', function() {
         }
         config.services = configServices;
         const opts = undefined;
-  
+
         server.getServicesData(opts, (err, config) => {
           should.not.exist(err);
           should.exist(config);
           config.should.deep.equal(configServices);
         });
       });
-  
+
       it('should return config.services with swap crypto disabled if it is included in the config file, the user is logged out and located in NY', () => {
         const configServices = {
           buyCrypto: {
@@ -10905,14 +10905,14 @@ describe('Wallet service', function() {
               removed: false
             }
           },
-          sellCrypto: { 
+          sellCrypto: {
             disabled: false,
             moonpay: {
               disabled: false,
               removed: false
             }
           },
-          swapCrypto: { 
+          swapCrypto: {
             disabled: false,
             changelly: {
               disabled: false,
@@ -10929,7 +10929,7 @@ describe('Wallet service', function() {
           currentLocationCountry: 'US',
           currentLocationState: 'NY',
         };
-  
+
         server.getServicesData(opts, (err, config) => {
           should.not.exist(err);
           should.exist(config.swapCrypto);
@@ -10937,7 +10937,7 @@ describe('Wallet service', function() {
           config.swapCrypto.disabledMessage.should.equal('Swaps are currently unavailable in your area.');
         });
       });
-  
+
       it('should return config.services with swap crypto disabled if it is included in the config file and incomplete, the user is logged out and located in NY', () => {
         const configServices = {
           buyCrypto: {
@@ -10954,7 +10954,7 @@ describe('Wallet service', function() {
           currentLocationCountry: 'US',
           currentLocationState: 'NY',
         };
-  
+
         server.getServicesData(opts, (err, config) => {
           should.not.exist(err);
           should.exist(config.swapCrypto);
@@ -10998,14 +10998,14 @@ describe('Wallet service', function() {
               removed: false
             }
           },
-          sellCrypto: { 
+          sellCrypto: {
             disabled: false,
             moonpay: {
               disabled: false,
               removed: false
             }
           },
-          swapCrypto: { 
+          swapCrypto: {
             disabled: false,
             changelly: {
               disabled: false,
@@ -11027,7 +11027,7 @@ describe('Wallet service', function() {
               currentLocationCountry: 'US',
               currentLocationState: bannedState,
             };
-      
+
             server.getServicesData(opts, (err, config) => {
               should.not.exist(err);
               should.exist(config.swapCrypto);
@@ -11042,7 +11042,7 @@ describe('Wallet service', function() {
             currentLocationCountry: 'US',
             currentLocationState: 'FL',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11055,7 +11055,7 @@ describe('Wallet service', function() {
             currentLocationCountry: 'AR',
             currentLocationState: 'T',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11070,7 +11070,7 @@ describe('Wallet service', function() {
               currentLocationCountry: 'US',
               currentLocationState: bannedState,
             };
-      
+
             server.getServicesData(opts, (err, config) => {
               should.not.exist(err);
               should.exist(config.buyCrypto);
@@ -11085,7 +11085,7 @@ describe('Wallet service', function() {
             currentLocationCountry: 'US',
             currentLocationState: 'FL',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.buyCrypto);
@@ -11100,7 +11100,7 @@ describe('Wallet service', function() {
               currentLocationCountry: 'US',
               currentLocationState: bannedState,
             };
-      
+
             server.getServicesData(opts, (err, config) => {
               should.not.exist(err);
               should.exist(config.sellCrypto);
@@ -11115,7 +11115,7 @@ describe('Wallet service', function() {
             currentLocationCountry: 'US',
             currentLocationState: 'FL',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.sellCrypto);
@@ -11132,7 +11132,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'NY',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11148,7 +11148,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'NY',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11164,7 +11164,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'NY',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11180,7 +11180,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'FL',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11195,7 +11195,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'AR',
             bitpayIdLocationState: 'T',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11215,7 +11215,7 @@ describe('Wallet service', function() {
               version: '1.1.1'
             },
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11237,7 +11237,7 @@ describe('Wallet service', function() {
               version: '1.1.1'
             },
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11257,7 +11257,7 @@ describe('Wallet service', function() {
               version: '1.1.2'
             },
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.swapCrypto);
@@ -11272,7 +11272,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'NY',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.buyCrypto);
@@ -11288,7 +11288,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'FL',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.buyCrypto);
@@ -11303,7 +11303,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'NY',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.sellCrypto);
@@ -11319,7 +11319,7 @@ describe('Wallet service', function() {
             bitpayIdLocationCountry: 'US',
             bitpayIdLocationState: 'FL',
           };
-    
+
           server.getServicesData(opts, (err, config) => {
             should.not.exist(err);
             should.exist(config.sellCrypto);
@@ -11333,7 +11333,7 @@ describe('Wallet service', function() {
   describe('Banxa', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      transport.level= 'info';
+      transport.level = 'info';
 
       config.banxa = {
         sandbox: {
@@ -11392,8 +11392,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.banxaGetPaymentMethods(req);
@@ -11403,7 +11403,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -11413,12 +11413,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.banxaGetPaymentMethods(req);
@@ -11428,10 +11428,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if banxa is commented in config', async() => {
+
+      it('should return error if banxa is commented in config', async () => {
         config.banxa = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.banxaGetPaymentMethods(req);
@@ -11454,8 +11454,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.banxaGetQuote(req);
@@ -11465,7 +11465,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -11475,12 +11475,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.banxaGetQuote(req);
@@ -11490,8 +11490,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.target;
         server.request = fakeRequest;
         try {
@@ -11502,10 +11502,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Banxa\'s request missing arguments');
         }
       });
-  
-      it('should return error if banxa is commented in config', async() => {
+
+      it('should return error if banxa is commented in config', async () => {
         config.banxa = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.banxaGetQuote(req);
@@ -11531,8 +11531,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.banxaCreateOrder(req);
@@ -11542,7 +11542,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -11552,12 +11552,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if post returns error', async() => {
+
+      it('should return error if post returns error', async () => {
         const fakeRequest2 = {
           post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.banxaCreateOrder(req);
@@ -11567,8 +11567,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.source;
         server.request = fakeRequest;
         try {
@@ -11579,10 +11579,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Banxa\'s request missing arguments');
         }
       });
-  
-      it('should return error if banxa is commented in config', async() => {
+
+      it('should return error if banxa is commented in config', async () => {
         config.banxa = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.banxaCreateOrder(req);
@@ -11604,8 +11604,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.banxaGetOrder(req);
@@ -11615,7 +11615,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -11625,12 +11625,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.banxaGetOrder(req);
@@ -11640,8 +11640,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.order_id;
         server.request = fakeRequest;
         try {
@@ -11653,9 +11653,9 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should return error if banxa is commented in config', async() => {
+      it('should return error if banxa is commented in config', async () => {
         config.banxa = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.banxaGetOrder(req);
@@ -11671,7 +11671,7 @@ describe('Wallet service', function() {
   describe('Moonpay', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      transport.level= 'info';
+      transport.level = 'info';
 
       config.moonpay = {
         sandbox: {
@@ -11743,8 +11743,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetQuote(req);
@@ -11754,7 +11754,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -11764,12 +11764,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.moonpayGetQuote(req);
@@ -11779,8 +11779,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.baseCurrencyAmount;
         server.request = fakeRequest;
         try {
@@ -11791,10 +11791,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Moonpay\'s request missing arguments');
         }
       });
-  
-      it('should return error if moonpay is commented in config', async() => {
+
+      it('should return error if moonpay is commented in config', async () => {
         config.moonpay = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetQuote(req);
@@ -11818,8 +11818,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetSellQuote(req);
@@ -11829,7 +11829,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -11839,12 +11839,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.moonpayGetSellQuote(req);
@@ -11854,8 +11854,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.baseCurrencyAmount;
         server.request = fakeRequest;
         try {
@@ -11866,10 +11866,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Moonpay\'s request missing arguments');
         }
       });
-  
-      it('should return error if moonpay is commented in config', async() => {
+
+      it('should return error if moonpay is commented in config', async () => {
         config.moonpay = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetSellQuote(req);
@@ -11892,8 +11892,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetCurrencyLimits(req);
@@ -11903,7 +11903,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -11913,12 +11913,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.moonpayGetCurrencyLimits(req);
@@ -11928,8 +11928,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.baseCurrencyCode;
         server.request = fakeRequest;
         try {
@@ -11940,10 +11940,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Moonpay\'s request missing arguments');
         }
       });
-  
-      it('should return error if moonpay is commented in config', async() => {
+
+      it('should return error if moonpay is commented in config', async () => {
         config.moonpay = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetCurrencyLimits(req);
@@ -12067,8 +12067,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK with transactionId', async() => {
+
+      it('should work properly if req is OK with transactionId', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetTransactionDetails(req);
@@ -12078,7 +12078,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK with externalId', async() => {
+      it('should work properly if req is OK with externalId', async () => {
         delete req.body.transactionId;
         req.body.externalId = 'externalId1';
 
@@ -12090,12 +12090,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.moonpayGetTransactionDetails(req);
@@ -12105,11 +12105,11 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         }
       });
-  
-      it('should return error if there is no transactionId or externalId', async() => {
+
+      it('should return error if there is no transactionId or externalId', async () => {
         delete req.body.transactionId;
         delete req.body.externalId;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetTransactionDetails(req);
@@ -12119,10 +12119,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Moonpay\'s request missing arguments');
         }
       });
-  
-      it('should return error if moonpay is commented in config', async() => {
+
+      it('should return error if moonpay is commented in config', async () => {
         config.moonpay = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetTransactionDetails(req);
@@ -12144,8 +12144,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK with transactionId', async() => {
+
+      it('should work properly if req is OK with transactionId', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetSellTransactionDetails(req);
@@ -12155,7 +12155,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK with externalId', async() => {
+      it('should work properly if req is OK with externalId', async () => {
         delete req.body.transactionId;
         req.body.externalId = 'externalId1';
 
@@ -12167,12 +12167,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.moonpayGetSellTransactionDetails(req);
@@ -12182,11 +12182,11 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         }
       });
-  
-      it('should return error if there is no transactionId or externalId', async() => {
+
+      it('should return error if there is no transactionId or externalId', async () => {
         delete req.body.transactionId;
         delete req.body.externalId;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetSellTransactionDetails(req);
@@ -12196,10 +12196,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Moonpay\'s request missing arguments');
         }
       });
-  
-      it('should return error if moonpay is commented in config', async() => {
+
+      it('should return error if moonpay is commented in config', async () => {
         config.moonpay = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetSellTransactionDetails(req);
@@ -12220,8 +12220,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetAccountDetails(req);
@@ -12230,12 +12230,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.moonpayGetAccountDetails(req);
@@ -12245,10 +12245,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         }
       });
-  
-      it('should return error if moonpay is commented in config', async() => {
+
+      it('should return error if moonpay is commented in config', async () => {
         config.moonpay = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayGetAccountDetails(req);
@@ -12270,8 +12270,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK with transactionId', async() => {
+
+      it('should work properly if req is OK with transactionId', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.moonpayCancelSellTransaction(req);
@@ -12281,7 +12281,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK with externalId', async() => {
+      it('should work properly if req is OK with externalId', async () => {
         delete req.body.transactionId;
         req.body.externalId = 'externalId1';
 
@@ -12293,12 +12293,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if delete returns error', async() => {
+
+      it('should return error if delete returns error', async () => {
         const fakeRequest2 = {
           delete: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.moonpayCancelSellTransaction(req);
@@ -12308,11 +12308,11 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         }
       });
-  
-      it('should return error if there is no transactionId or externalId', async() => {
+
+      it('should return error if there is no transactionId or externalId', async () => {
         delete req.body.transactionId;
         delete req.body.externalId;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayCancelSellTransaction(req);
@@ -12322,10 +12322,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Moonpay\'s request missing arguments');
         }
       });
-  
-      it('should return error if moonpay is commented in config', async() => {
+
+      it('should return error if moonpay is commented in config', async () => {
         config.moonpay = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.moonpayCancelSellTransaction(req);
@@ -12341,7 +12341,7 @@ describe('Wallet service', function() {
   describe('Sardine', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      transport.level= 'info';
+      transport.level = 'info';
 
       config.sardine = {
         sandbox: {
@@ -12406,8 +12406,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetQuote(req);
@@ -12417,7 +12417,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -12427,12 +12427,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.sardineGetQuote(req);
@@ -12442,8 +12442,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.asset_type;
         server.request = fakeRequest;
         try {
@@ -12454,10 +12454,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Sardine\'s request missing arguments');
         }
       });
-  
-      it('should return error if sardine is commented in config', async() => {
+
+      it('should return error if sardine is commented in config', async () => {
         config.sardine = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetQuote(req);
@@ -12478,8 +12478,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetCurrencyLimits(req);
@@ -12489,7 +12489,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -12499,12 +12499,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.sardineGetCurrencyLimits(req);
@@ -12514,10 +12514,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if sardine is commented in config', async() => {
+
+      it('should return error if sardine is commented in config', async () => {
         config.sardine = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetCurrencyLimits(req);
@@ -12541,8 +12541,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetToken(req);
@@ -12552,7 +12552,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -12562,12 +12562,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if post returns error', async() => {
+
+      it('should return error if post returns error', async () => {
         const fakeRequest2 = {
           post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.sardineGetToken(req);
@@ -12577,8 +12577,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.referenceId;
         server.request = fakeRequest;
         try {
@@ -12589,10 +12589,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Sardine\'s request missing arguments');
         }
       });
-  
-      it('should return error if sardine is commented in config', async() => {
+
+      it('should return error if sardine is commented in config', async () => {
         config.sardine = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetToken(req);
@@ -12614,8 +12614,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetOrdersDetails(req);
@@ -12625,7 +12625,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -12635,12 +12635,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.sardineGetOrdersDetails(req);
@@ -12650,8 +12650,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.orderId;
         server.request = fakeRequest;
         try {
@@ -12663,7 +12663,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if orderId is not present but externalUserId is', async() => {
+      it('should work properly if orderId is not present but externalUserId is', async () => {
         delete req.body.orderId;
         req.body.externalUserId = 'externalUserId1';
         server.request = fakeRequest;
@@ -12675,9 +12675,9 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should return error if sardine is commented in config', async() => {
+      it('should return error if sardine is commented in config', async () => {
         config.sardine = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.sardineGetOrdersDetails(req);
@@ -12693,7 +12693,7 @@ describe('Wallet service', function() {
   describe('Ramp', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      transport.level= 'info';
+      transport.level = 'info';
 
       config.ramp = {
         sandbox: {
@@ -12755,8 +12755,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.rampGetQuote(req);
@@ -12766,7 +12766,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -12776,12 +12776,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if post returns error', async() => {
+
+      it('should return error if post returns error', async () => {
         const fakeRequest2 = {
           post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.rampGetQuote(req);
@@ -12791,8 +12791,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.fiatValue;
         server.request = fakeRequest;
         try {
@@ -12803,10 +12803,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Ramp\'s request missing arguments');
         }
       });
-  
-      it('should return error if ramp is commented in config', async() => {
+
+      it('should return error if ramp is commented in config', async () => {
         config.ramp = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.rampGetQuote(req);
@@ -12900,8 +12900,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK with currencyCode', async() => {
+
+      it('should work properly if req is OK with currencyCode', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.rampGetAssets(req);
@@ -12911,7 +12911,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK with useIp', async() => {
+      it('should work properly if req is OK with useIp', async () => {
         delete req.body.currencyCode;
         req.body.useIp = true;
 
@@ -12923,12 +12923,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.rampGetAssets(req);
@@ -12938,10 +12938,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         }
       });
-  
-      it('should return error if Ramp is commented in config', async() => {
+
+      it('should return error if Ramp is commented in config', async () => {
         config.ramp = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.rampGetAssets(req);
@@ -12957,7 +12957,7 @@ describe('Wallet service', function() {
   describe('Simplex', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      transport.level= 'info';
+      transport.level = 'info';
 
       config.simplex = {
         sandbox: {
@@ -13159,7 +13159,7 @@ describe('Wallet service', function() {
   describe('Transak', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      transport.level= 'info';
+      transport.level = 'info';
 
       config.transak = {
         sandbox: {
@@ -13222,8 +13222,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.transakGetAccessToken(req);
@@ -13233,7 +13233,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -13243,12 +13243,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if post returns error', async() => {
+
+      it('should return error if post returns error', async () => {
         const fakeRequest2 = {
           post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.transakGetAccessToken(req);
@@ -13258,10 +13258,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if transak is commented in config', async() => {
+
+      it('should return error if transak is commented in config', async () => {
         config.transak = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.transakGetAccessToken(req);
@@ -13282,8 +13282,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.transakGetCryptoCurrencies(req);
@@ -13293,7 +13293,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -13303,12 +13303,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.transakGetCryptoCurrencies(req);
@@ -13318,10 +13318,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if transak is commented in config', async() => {
+
+      it('should return error if transak is commented in config', async () => {
         config.transak = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.transakGetCryptoCurrencies(req);
@@ -13342,8 +13342,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.transakGetFiatCurrencies(req);
@@ -13353,7 +13353,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -13363,12 +13363,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.transakGetFiatCurrencies(req);
@@ -13378,10 +13378,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if transak is commented in config', async() => {
+
+      it('should return error if transak is commented in config', async () => {
         config.transak = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.transakGetFiatCurrencies(req);
@@ -13406,8 +13406,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.transakGetQuote(req);
@@ -13417,7 +13417,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -13427,12 +13427,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.transakGetQuote(req);
@@ -13442,8 +13442,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.fiatCurrency;
         server.request = fakeRequest;
         try {
@@ -13454,10 +13454,10 @@ describe('Wallet service', function() {
           err.message.should.equal('Transak\'s request missing arguments');
         }
       });
-  
-      it('should return error if transak is commented in config', async() => {
+
+      it('should return error if transak is commented in config', async () => {
         config.transak = undefined;
-  
+
         server.request = fakeRequest;
         try {
           const data = await server.transakGetQuote(req);
@@ -13556,8 +13556,8 @@ describe('Wallet service', function() {
           }
         }
       });
-  
-      it('should work properly if req is OK', async() => {
+
+      it('should work properly if req is OK', async () => {
         server.request = fakeRequest;
         try {
           const data = await server.transakGetOrderDetails(req);
@@ -13567,7 +13567,7 @@ describe('Wallet service', function() {
         }
       });
 
-      it('should work properly if req is OK for web', async() => {
+      it('should work properly if req is OK for web', async () => {
         req.body.context = 'web';
         server.request = fakeRequest;
         try {
@@ -13577,12 +13577,12 @@ describe('Wallet service', function() {
           should.not.exist(err);
         }
       });
-  
-      it('should return error if get returns error', async() => {
+
+      it('should return error if get returns error', async () => {
         const fakeRequest2 = {
           get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
         };
-  
+
         server.request = fakeRequest2;
         try {
           const data = await server.transakGetOrderDetails(req);
@@ -13592,8 +13592,8 @@ describe('Wallet service', function() {
           err.message.should.equal('Error');
         };
       });
-  
-      it('should return error if there is some missing arguments', async() => {
+
+      it('should return error if there is some missing arguments', async () => {
         delete req.body.orderId;
         server.request = fakeRequest;
         try {
@@ -13629,7 +13629,7 @@ describe('Wallet service', function() {
 
       fakeRequest = {
         get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
-        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data'}) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
       };
 
       helpers.createAndJoinWallet(1, 1, (s, w) => {
@@ -13882,7 +13882,7 @@ describe('Wallet service', function() {
   describe('#getCoinsForTx', function() {
     let server, wallet;
     beforeEach(function() {
-     blockchainExplorer.getCoinsForTx = sinon.stub().callsArgWith(1, null, [ { txid: '11'} ] );
+      blockchainExplorer.getCoinsForTx = sinon.stub().callsArgWith(1, null, [{ txid: '11' }]);
     });
 
     it('should get Coins', function(done) {
@@ -13897,7 +13897,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get not get Coins for not utxo chain', function(done) {
-      helpers.createAndJoinWallet(1, 1, {coin: 'eth'},  function(s, w) {
+      helpers.createAndJoinWallet(1, 1, { coin: 'eth' }, function(s, w) {
         server = s;
         wallet = w;
         server.getCoinsForTx('abab', function(err, coins) {
@@ -14006,16 +14006,18 @@ describe('Wallet service', function() {
 
     it('should call getPayId with a url obtained from the template field if it exists', () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(null, {
-          body: {
-            subject: "payid:matias$ematiu.sandbox.payid.org",
-            links: [{
+        get: (_url, _opts, _cb) => {
+          return _cb(null, {
+            body: {
+              subject: "payid:matias$ematiu.sandbox.payid.org",
+              links: [{
                 rel: "https://payid.org/ns/payid-easy-checkout-uri/1.0",
                 href: "https://xpring.io/portal/wallet/xrp/testnet/payto",
                 template: "https://ematiu.sandbox.payid.org/payid/{acctpart}"
               }]
-          }
-        })}
+            }
+          })
+        }
       };
 
       server.request = fakeRequest2;
@@ -14032,15 +14034,17 @@ describe('Wallet service', function() {
 
     it('should call getPayId with a default url if the template field does not exist', () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(null, {
-          body: {
-            subject: "payid:matias$ematiu.sandbox.payid.org",
-            links: [{
+        get: (_url, _opts, _cb) => {
+          return _cb(null, {
+            body: {
+              subject: "payid:matias$ematiu.sandbox.payid.org",
+              links: [{
                 rel: "https://payid.org/ns/payid-easy-checkout-uri/1.0",
                 href: "https://xpring.io/portal/wallet/xrp/testnet/payto",
               }]
-          }
-        })}
+            }
+          })
+        }
       };
       const url = 'https://ematiu.sandbox.payid.org/matias';
       server.request = fakeRequest2;
