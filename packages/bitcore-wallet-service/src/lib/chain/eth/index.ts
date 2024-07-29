@@ -95,9 +95,23 @@ export class EthChain implements IChain {
       }
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
+        let fees = 0;
+        let amounts = 0;
+
+        txps = txps.filter(txp => {
+          // Factor gas used for tokens
+          fees += txp.fee;
+          // Filter tokens. getPendingTxs returns all txps when given a native currency
+          if (!opts.tokenAddress) {
+            return false;
+          }
+          amounts += txp.amount;
+          return true;
+        });
+        
         // Do not lock eth multisig amount
-        const lockedSum = opts.multisigContractAddress ? 0 : _.sumBy(txps, 'amount') || 0;
-        const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
+        const lockedSum = opts.multisigContractAddress ? 0 : amounts + fees || 0; // TODO support big int
+        const convertedBalance = this.convertBitcoreBalance(balance, lockedSum); 
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
           if (addresses.length > 0) {
