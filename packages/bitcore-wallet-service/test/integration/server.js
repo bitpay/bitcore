@@ -5085,6 +5085,47 @@ describe('Wallet service', function() {
             });
           });
         });
+        it('should support creating a txp with multiple transactions', function(done) {
+          const coinFee = {
+            btc: 3800,
+            bch: 3800,
+            xrp: 3800,
+            eth: 210000000,
+            doge: 1e6,
+            ltc: 3800
+          }
+          helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+            var amount = ts - coinFee[coin];
+            var txOpts = {
+              outputs: [{
+                toAddress: addressStr,
+                amount,
+              }, {
+                toAddress: addressStr,
+                amount: 2 * amount,
+              }],
+              multiTx: true,
+              feePerKb: 100e2,
+              from: fromAddr,
+            };
+            txOpts = Object.assign(txOpts, flags);
+            server.createTx(txOpts, function(err, txp) {
+              if (coin != 'xrp') {
+                should.exist(err);
+                return done();
+              }
+
+              should.not.exist(err);
+              should.exist(txp);
+              txp.outputOrder.length.should.equal(2);
+              var t = ChainService.getBitcoreTx(txp).toObject();
+              t.outputs.length.should.equal(2);
+              t.outputs[txp.outputOrder[0]].amount.should.equal(txOpts.outputs[txp.outputOrder[0]].amount);
+              t.outputs[txp.outputOrder[1]].amount.should.equal(txOpts.outputs[txp.outputOrder[1]].amount);
+              done();
+            });
+          });
+        });
         it('should fail gracefully if unable to reach the blockchain', function(done) {
           blockchainExplorer.getUtxos = sinon.stub().callsArgWith(2, 'dummy error');
           blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, 'dummy error');

@@ -356,7 +356,9 @@ export class BtcChain implements IChain {
       // set nLockTime (only txp.version>=4)
       if (txp.lockUntilBlockHeight) t.lockUntilBlockHeight(txp.lockUntilBlockHeight);
     }
-
+    if (txp.multiTx) {
+      throw Errors.MULTI_TX_UNSUPPORTED;
+    }
     /*
      * txp.inputs clean txp.input
      * removes possible nSequence number (BIP68)

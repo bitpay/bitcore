@@ -36,6 +36,7 @@ interface Errors<T> {
   LOCKED_OP_FEE: T;
   HISTORY_LIMIT_EXCEEDED: T;
   MAIN_ADDRESS_GAP_REACHED: T;
+  MULTI_TX_UNSUPPORTED: T;
   NETWORK_SUSPENDED: T;
   NOT_AUTHORIZED: T;
   SCRIPT_OP_RETURN: T;
@@ -92,6 +93,7 @@ const errors: Errors<string> = {
   LOCKED_FUNDS: 'Funds are locked by pending transaction proposals',
   HISTORY_LIMIT_EXCEEDED: 'Requested page limit is above allowed maximum',
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
+  MULTI_TX_UNSUPPORTED: 'Desired chain does not support multi transaction proposals',
   NETWORK_SUSPENDED: '$network operations are currently suspended. Please check status.bitpay.com for further updates.',
   NOT_AUTHORIZED: 'Not authorized',
   SCRIPT_OP_RETURN: 'The only supported script is OP_RETURN',

@@ -139,7 +139,7 @@ export class XrpChain implements IChain {
     const length = multiTx ? outputOrder.length : outputs.length;
     for (let index = 0; index < length; index++) {
       let outputIdx = index;
-      if (outputOrder.length) {
+      if (multiTx) {
         outputIdx = outputOrder[index];
       }
       if (!outputs?.[outputIdx]) {
