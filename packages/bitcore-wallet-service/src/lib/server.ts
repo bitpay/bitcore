@@ -3307,8 +3307,6 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (opts.tokenAddress) {
           txps = txps.filter(txp => opts.tokenAddress === txp.tokenAddress);
-        } else {
-          txps = txps.filter(txp => !txp.tokenAddress);
         }
         _.each(txps, txp => {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
