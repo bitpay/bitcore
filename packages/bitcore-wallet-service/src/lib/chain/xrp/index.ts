@@ -60,7 +60,9 @@ export class XrpChain implements IChain {
         }
         server.getPendingTxs(opts, (err, txps) => {
           if (err) return cb(err);
-          const lockedSum = _.sumBy(txps, 'amount') || 0;
+          const lockedSum = txps.reduce((sum, txp) => {
+            return sum + txp.amount + txp.fee;
+          }, 0) || 0;
           const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserve);
           server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
             if (err) return cb(err);
