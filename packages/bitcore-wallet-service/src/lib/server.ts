@@ -3306,7 +3306,7 @@ export class WalletService implements IWalletService {
       this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
         if (err) return cb(err);
         if (opts.tokenAddress) {
-          txps = txps.filter(txp => opts.tokenAddress === txp.tokenAddress);
+          txps = txps.filter(txp => opts.tokenAddress?.toLowerCase() === txp.tokenAddress?.toLowerCase());
         }
         _.each(txps, txp => {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);

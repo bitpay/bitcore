@@ -102,7 +102,7 @@ export class EthChain implements IChain {
         txps = txps.filter(txp => {
           // Add gas used for tokens when getting native balance
           if (!opts.tokenAddress) {
-            fees += txp.fee;
+            fees += txp.fee || 0;
           }
           // Filter tokens when getting native balance
           if (txp.tokenAddress && !opts.tokenAddress) {
