@@ -3299,9 +3299,7 @@ export class WalletService implements IWalletService {
    * @returns {TxProposal[]} Transaction proposal.
    */
   async getPendingTxs(opts, cb) {
-    if (opts.tokenAddress) {
-      return cb();
-    } else if (opts.multisigContractAddress) {
+    if (opts.multisigContractAddress) {
       try {
         const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
         const txps = await this.storage.fetchEthPendingTxs(multisigTxpsInfo);
@@ -3312,11 +3310,12 @@ export class WalletService implements IWalletService {
     } else {
       this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
         if (err) return cb(err);
-
+        if (opts.tokenAddress) {
+          txps = txps.filter(txp => opts.tokenAddress?.toLowerCase() === txp.tokenAddress?.toLowerCase());
+        }
         _.each(txps, txp => {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
         });
-
         async.each(
           txps,
           (txp: ITxProposal, next) => {
@@ -3334,9 +3333,7 @@ export class WalletService implements IWalletService {
             });
           },
           err => {
-            txps = _.reject(txps, txp => {
-              return txp.status == 'broadcasted';
-            });
+            txps = txps.filter(txp => txp.status !== 'broadcasted');
 
             if (txps[0] && txps[0].chain == 'bch') {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
@@ -5277,6 +5274,7 @@ export class WalletService implements IWalletService {
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
+    if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
