@@ -774,7 +774,48 @@ describe('Wallet service', function() {
       });
     });
 
-    ['eth','xrp','matic','arb','base','op'].forEach(c => {
+    it('should create a P2TR Taproot wallet', function(done) {
+      var opts = {
+        coin: 'btc',
+        name: 'my multisig segwit wallet',
+        m: 1,
+        n: 1,
+        pubKey: TestData.keyPair.pub,
+        useTaproot: true
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        server.storage.fetchWallet(walletId, function(err, wallet) {
+          should.not.exist(err);
+          wallet.addressType.should.equal('P2TR');
+          wallet.coin.should.equal('btc');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2TR Taproot wallet if useNativeSegwit is also given', function(done) {
+      var opts = {
+        coin: 'btc',
+        name: 'my multisig segwit wallet',
+        m: 1,
+        n: 1,
+        pubKey: TestData.keyPair.pub,
+        useNativeSegwit: true, // should be ignored
+        useTaproot: true
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        server.storage.fetchWallet(walletId, function(err, wallet) {
+          should.not.exist(err);
+          wallet.addressType.should.equal('P2TR');
+          wallet.coin.should.equal('btc');
+          done();
+        });
+      });
+    });
+
+    for (const c of ['eth','xrp','matic','arb','base','op']) {
       it(`should  fail to create a multisig ${c}  wallet`, function(done) {
         var opts = {
           coin: c,
@@ -819,7 +860,7 @@ describe('Wallet service', function() {
           });
         });
       });
-    });
+    }
 
 
     describe('Address derivation strategy', function() {
@@ -7427,7 +7468,7 @@ describe('Wallet service', function() {
           amount: 10, // overwritten in sendMax
         }],
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 2 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
@@ -7436,9 +7477,9 @@ describe('Wallet service', function() {
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 3 inputs',
         requiredFeeRate: 25000,
         fromSegwit: true,
@@ -7447,9 +7488,9 @@ describe('Wallet service', function() {
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
@@ -7458,9 +7499,9 @@ describe('Wallet service', function() {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
-       vSize: 144,
+        vSize: 144,
       },
-     {
+      {
         name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
@@ -7471,7 +7512,7 @@ describe('Wallet service', function() {
         }],
       },
       // CASE 8
-     {
+      {
         name: 'Segwit, non-sendmax, 6 inputs',
         requiredFeeRate: 30000,
         fromSegwit: true,
@@ -7540,9 +7581,9 @@ describe('Wallet service', function() {
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         n: 2,
         name: 'Segwit, non-sendmax, 3 inputs',
         requiredFeeRate: 25000,
@@ -7552,9 +7593,9 @@ describe('Wallet service', function() {
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         n: 2,
         name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
         requiredFeeRate: 25000,
@@ -7564,12 +7605,11 @@ describe('Wallet service', function() {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
-       vSize: 144,
+        vSize: 144,
       },
-
-     {
+      {
         n: 2,
-       vSize: 321,
+        vSize: 321,
         name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
@@ -7579,7 +7619,7 @@ describe('Wallet service', function() {
           amount: 1e8,
         }],
       },
-    {
+      {
         n: 2,
         name: 'Segwit, non-sendmax, 6 inputs',
         requiredFeeRate: 30000,
@@ -7643,7 +7683,7 @@ describe('Wallet service', function() {
           amount: 10, // overwritten in sendMax
         }],
       },
-     {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 2 inputs',
@@ -7654,9 +7694,9 @@ describe('Wallet service', function() {
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 3 inputs',
@@ -7667,9 +7707,9 @@ describe('Wallet service', function() {
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
           amount: 10000,
         }],
-       vSize: 141, // from https://btc.com/tools/tx/decode
+        vSize: 141, // from https://btc.com/tools/tx/decode
       },
-     {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 1 inputs, 1 legacy output',
@@ -7680,13 +7720,12 @@ describe('Wallet service', function() {
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
           amount: 1e8,
         }],
-       vSize: 144,
+        vSize: 144,
       },
-
-     {
+      {
         m: 2,
         n: 3,
-       vSize: 321,
+        vSize: 321,
         name: 'Segwit, non-sendmax, 3 inputs, 1 legacy output',
         requiredFeeRate: 25000,
         fromSegwit: true,
@@ -7696,12 +7735,108 @@ describe('Wallet service', function() {
           amount: 1e8,
         }],
       },
-    {
+      {
         m: 2,
         n: 3,
         name: 'Segwit, non-sendmax, 6 inputs',
         requiredFeeRate: 30000,
         fromSegwit: true,
+        utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 1e8,
+        }],
+      },
+      // Taproot
+      {
+        name: 'Taproot, sendmax',
+        requiredFeeRate: 10000,
+        sendMax: true,
+        fromSegwit: false,
+        fromTaproot: true,
+        utxos: [1],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        name: 'Taproot, sendmax, 4 inputs',
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: false,
+        fromTaproot: true,
+        utxos: [0.1, 0.2, 0.3, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        name: 'Taproot, sendmax, 3 inputs',
+        requiredFeeRate: 25000,
+        sendMax: true,
+        fromSegwit: false,
+        fromTaproot: true,
+        utxos: [0.1, 0.3, 0.4],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10, // overwritten in sendMax
+        }],
+      },
+      {
+        name: 'Taproot, non-sendmax, 2 inputs',
+        requiredFeeRate: 25000,
+        fromSegwit: false,
+        fromTaproot: true,
+        utxos: [1, 2],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000,
+        }],
+        vSize: 141, // from https://btc.com/tools/tx/decode
+      },
+      {
+        name: 'Taproot, non-sendmax, 3 inputs',
+        requiredFeeRate: 25000,
+        fromSegwit: false,
+        fromTaproot: true,
+        utxos: ['100000 sat', '20000 sat', 1],
+        outputs:  [{
+          toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
+          amount: 10000,
+        }],
+        vSize: 141, // from https://btc.com/tools/tx/decode
+      },
+      {
+        name: 'Taproot, non-sendmax, 1 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: false,
+        fromTaproot: true,
+        utxos: [1.2],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8,
+        }],
+        vSize: 144,
+      },
+      {
+        name: 'Taproot, non-sendmax, 3 inputs, 1 legacy output',
+        requiredFeeRate: 25000,
+        fromSegwit: false,
+        fromTaproot: true,
+        utxos: [0.4, 0.4, 0.4],
+        outputs:  [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 1e8,
+        }],
+      },
+      // CASE 34
+      {
+        name: 'Taproot, non-sendmax, 6 inputs',
+        requiredFeeRate: 30000,
+        fromSegwit: false,
+        fromTaproot: true,
         utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
         outputs:  [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
@@ -7739,29 +7874,29 @@ describe('Wallet service', function() {
           //console.log('[server.js.6981:txp:]',txp); // TODO
 
           var t = ChainService.getBitcoreTx(txp);
-          const vSize = x.vSize || t._estimateSize(); // use given vSize if available
+          const useVsize = x.fromSegwit || x.fromTaproot;
+          const vSize = t._estimateSize();
           // Check size and fee rate
-          const actualSize = txp.raw.length / 2;
-          const actualFeeRate = t.getFee() /  (x.fromSegwit ? vSize : actualSize) * 1000;
+          const rawSize = txp.raw.length / 2;
+          const feeRate = t.getFee() / (useVsize ? vSize : rawSize) * 1000;
           //console.log('[server.js.7001:log:]',txp.raw); // TODO
-          console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
+          console.log(`Wire Size:${rawSize} vSize: ${vSize} (Segwit: ${x.fromSegwit}, Taproot: ${x.fromTaproot || false})  Fee: ${t.getFee()} ActualRate:${Math.round(feeRate)} RequiredRate:${x.requiredFeeRate}`);
 
           // size should be above (or equal) the required FeeRate
-          actualFeeRate.should.not.be.below(x.requiredFeeRate);
-          actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
-          return cb(actualFeeRate);
+          feeRate.should.not.be.below(x.requiredFeeRate);
+          feeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+          return cb(feeRate);
         });
       });
     };
-    let i=0;
-    cases.forEach( x => {
 
+    for (let i = 0; i < cases.length; i++) {
+      const x = cases[i];
       x.i = i;
       x.m = x.m || 1;
       x.n = x.n || 1;
       it(`case  ${i++} : ${x.name} (${x.m}-of-${x.n})`, function(done) {
-
-        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit}, function(s, w) {
+        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit, useTaproot: x.fromTaproot}, function(s, w) {
           server = s;
           wallet = w;
 
@@ -7816,7 +7951,7 @@ describe('Wallet service', function() {
           });
         });
       });
-    });
+    }
   });
 
 
@@ -7914,9 +8049,9 @@ describe('Wallet service', function() {
         });
       });
     };
-    let i=0;
-    cases.forEach( x => {
 
+    for (let i = 0; i < cases.length; i++) {
+      const x = cases[i];
       x.i = i;
       x.m = x.m || 1;
       x.n = x.n || 1;
@@ -7977,7 +8112,7 @@ describe('Wallet service', function() {
           });
         });
       });
-    });
+    }
   });
 
 
