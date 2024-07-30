@@ -5269,6 +5269,7 @@ export class WalletService implements IWalletService {
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
+    if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
