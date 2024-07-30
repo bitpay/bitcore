@@ -299,6 +299,10 @@ export class Credentials {
         n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
     }
 
+    if (opts.useTaproot) {
+      this.addressType = Constants.SCRIPT_TYPES.P2TR;
+    }
+
     if (this.n != n && !opts.allowOverwrite) {
       // we always allow multisig n overwrite
       if (this.n == 1 || n == 1) {
