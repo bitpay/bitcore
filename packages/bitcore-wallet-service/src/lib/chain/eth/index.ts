@@ -93,15 +93,18 @@ export class EthChain implements IChain {
       if (err) {
         return cb(err);
       }
+      // getPendingTxs returns all txps when given a native currency
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
         let fees = 0;
         let amounts = 0;
 
         txps = txps.filter(txp => {
-          // Factor gas used for tokens
-          fees += txp.fee;
-          // Filter tokens. getPendingTxs returns all txps when given a native currency
+          // Add gas used for tokens when getting native balance
+          if (!opts.tokenAddress) {
+            fees += txp.fee;
+          }
+          // Filter tokens when getting native balance
           if (txp.tokenAddress && !opts.tokenAddress) {
             return false;
           }
@@ -111,7 +114,7 @@ export class EthChain implements IChain {
         
         // TODO support big int
         const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
-        const convertedBalance = this.convertBitcoreBalance(balance, lockedSum); 
+        const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
           if (addresses.length > 0) {
