@@ -5,6 +5,6 @@ export class OpValidation extends EthValidation {
 
   constructor() {
     super();
-    this.regex = /optimisim/i;
+    this.regex = /optimism/i;
   }
 }

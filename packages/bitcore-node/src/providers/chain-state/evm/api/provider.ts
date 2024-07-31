@@ -17,6 +17,15 @@ const getProvider = ({
   return providers[providerIdx];
 }
 
+const hasProvider = ({ network, config, dataType }): boolean => {
+  try {
+    getProvider({ network, config, dataType });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const matchProviderType = (provider?: IProvider, type?: string): boolean => {
   if (!provider) {
     return false;
@@ -45,6 +54,7 @@ const isValidProviderType = (expectedType, type) => {
 
 export {
   getProvider,
+  hasProvider,
   matchProviderType,
   isValidProviderType
 };
