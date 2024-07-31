@@ -253,7 +253,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     network: opts.network || 'livenet',
     nativeCashAddr: opts.nativeCashAddr,
     useNativeSegwit: opts.useNativeSegwit,
-    useTaproot: opts.useTaproot,
+    segwitVersion: opts.segwitVersion,
   };
 
   if (_.isBoolean(opts.supportBIP44AndP2PKH))

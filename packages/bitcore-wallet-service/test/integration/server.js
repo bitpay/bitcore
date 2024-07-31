@@ -781,28 +781,8 @@ describe('Wallet service', function() {
         m: 1,
         n: 1,
         pubKey: TestData.keyPair.pub,
-        useTaproot: true
-      };
-      server.createWallet(opts, function(err, walletId) {
-        should.not.exist(err);
-        server.storage.fetchWallet(walletId, function(err, wallet) {
-          should.not.exist(err);
-          wallet.addressType.should.equal('P2TR');
-          wallet.coin.should.equal('btc');
-          done();
-        });
-      });
-    });
-
-    it('should create a P2TR Taproot wallet if useNativeSegwit is also given', function(done) {
-      var opts = {
-        coin: 'btc',
-        name: 'my multisig segwit wallet',
-        m: 1,
-        n: 1,
-        pubKey: TestData.keyPair.pub,
-        useNativeSegwit: true, // should be ignored
-        useTaproot: true
+        useNativeSegwit: true,
+        segwitVersion: 1 // taproot
       };
       server.createWallet(opts, function(err, walletId) {
         should.not.exist(err);
@@ -7752,8 +7732,8 @@ describe('Wallet service', function() {
         name: 'Taproot, sendmax',
         requiredFeeRate: 10000,
         sendMax: true,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: [1],
         outputs:  [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -7764,8 +7744,8 @@ describe('Wallet service', function() {
         name: 'Taproot, sendmax, 4 inputs',
         requiredFeeRate: 25000,
         sendMax: true,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: [0.1, 0.2, 0.3, 0.4],
         outputs:  [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -7776,8 +7756,8 @@ describe('Wallet service', function() {
         name: 'Taproot, sendmax, 3 inputs',
         requiredFeeRate: 25000,
         sendMax: true,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: [0.1, 0.3, 0.4],
         outputs:  [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
@@ -7787,8 +7767,8 @@ describe('Wallet service', function() {
       {
         name: 'Taproot, non-sendmax, 2 inputs',
         requiredFeeRate: 25000,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: [1, 2],
         outputs:  [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
@@ -7799,8 +7779,8 @@ describe('Wallet service', function() {
       {
         name: 'Taproot, non-sendmax, 3 inputs',
         requiredFeeRate: 25000,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: ['100000 sat', '20000 sat', 1],
         outputs:  [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
@@ -7811,8 +7791,8 @@ describe('Wallet service', function() {
       {
         name: 'Taproot, non-sendmax, 1 inputs, 1 legacy output',
         requiredFeeRate: 25000,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: [1.2],
         outputs:  [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -7823,8 +7803,8 @@ describe('Wallet service', function() {
       {
         name: 'Taproot, non-sendmax, 3 inputs, 1 legacy output',
         requiredFeeRate: 25000,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: [0.4, 0.4, 0.4],
         outputs:  [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -7835,8 +7815,8 @@ describe('Wallet service', function() {
       {
         name: 'Taproot, non-sendmax, 6 inputs',
         requiredFeeRate: 30000,
-        fromSegwit: false,
-        fromTaproot: true,
+        fromSegwit: true,
+        segwitVersion: 1,
         utxos: [0.2, 0.2, 0.1, 0.1, 0.3, 0.15],
         outputs:  [{
           toAddress: 'bc1q9ytgh0jywlxv0zr8w3ytd6z5rpgct6tuvmh4pl',
@@ -7869,18 +7849,13 @@ describe('Wallet service', function() {
         sign(0, tx, (txp) => {
 
           should.exist(txp.raw);
-          // console.log('[server.js.7038]', txp.raw); // TODO
           txp.status.should.equal('accepted');
-          //console.log('[server.js.6981:txp:]',txp); // TODO
-
           var t = ChainService.getBitcoreTx(txp);
-          const useVsize = x.fromSegwit || x.fromTaproot;
-          const vSize = t._estimateSize();
+
           // Check size and fee rate
-          const rawSize = txp.raw.length / 2;
-          const feeRate = t.getFee() / (useVsize ? vSize : rawSize) * 1000;
-          //console.log('[server.js.7001:log:]',txp.raw); // TODO
-          console.log(`Wire Size:${rawSize} vSize: ${vSize} (Segwit: ${x.fromSegwit}, Taproot: ${x.fromTaproot || false})  Fee: ${t.getFee()} ActualRate:${Math.round(feeRate)} RequiredRate:${x.requiredFeeRate}`);
+          (txp.raw.length / 2).should.equal(t.size);
+          const feeRate = t.getFee() / (x.fromSegwit ? t.vsize : t.size) * 1000;
+          console.log(`Wire Size:${t.size} vSize: ${t.vsize} (Segwit: ${x.fromSegwit}, SegwitVersion: ${x.segwitVersion || 0})  Fee: ${t.getFee()} ActualRate:${Math.round(feeRate)} RequiredRate:${x.requiredFeeRate}`);
 
           // size should be above (or equal) the required FeeRate
           feeRate.should.not.be.below(x.requiredFeeRate);
@@ -7896,7 +7871,7 @@ describe('Wallet service', function() {
       x.m = x.m || 1;
       x.n = x.n || 1;
       it(`case  ${i++} : ${x.name} (${x.m}-of-${x.n})`, function(done) {
-        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit, useTaproot: x.fromTaproot}, function(s, w) {
+        helpers.createAndJoinWallet(x.m, x.n, {useNativeSegwit: x.fromSegwit, segwitVersion: x.segwitVersion}, function(s, w) {
           server = s;
           wallet = w;
 

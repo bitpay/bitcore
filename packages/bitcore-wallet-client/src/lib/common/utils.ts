@@ -552,4 +552,24 @@ export class Utils {
     }
     return coin.toUpperCase();
   }
+
+  static isNativeSegwit(addressType) {
+    return [
+      Constants.SCRIPT_TYPES.P2WPKH,
+      Constants.SCRIPT_TYPES.P2WSH,
+      Constants.SCRIPT_TYPES.P2TR,
+    ].includes(addressType);
+  }
+
+  static getSegwitVersion(addressType) {
+    switch (addressType) {
+      case Constants.SCRIPT_TYPES.P2WPKH:
+      case Constants.SCRIPT_TYPES.P2WSH:
+        return 0;
+      case Constants.SCRIPT_TYPES.P2TR:
+        return 1;
+      default:
+        return undefined; // non-segwit addressType
+    }
+  }
 }

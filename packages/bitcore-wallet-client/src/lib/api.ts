@@ -903,8 +903,8 @@ export class API extends EventEmitter {
   // * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
-  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
-  // * @param {Boolean} opts.useTaproot - set addressType to P2TR
+  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
+  // * @param {Number} opts.segwitVersion - 0 (default) = P2WPKH, P2WSH; 1 = P2TR
   // * @param cb
   // * @return {undefined}
   // */
@@ -958,7 +958,7 @@ export class API extends EventEmitter {
       id: opts.id,
       usePurpose48: n > 1,
       useNativeSegwit: !!opts.useNativeSegwit,
-      useTaproot: !!opts.useTaproot,
+      segwitVersion: opts.segwitVersion,
       hardwareSourcePublicKey: c.hardwareSourcePublicKey
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
@@ -967,7 +967,7 @@ export class API extends EventEmitter {
       var walletId = res.walletId;
       c.addWalletInfo(walletId, walletName, m, n, copayerName, {
         useNativeSegwit: opts.useNativeSegwit,
-        useTaproot: opts.useTaproot
+        segwitVersion: opts.segwitVersion
       });
       var secret = API._buildSecret(
         c.walletId,
@@ -1055,9 +1055,8 @@ export class API extends EventEmitter {
             wallet.n,
             copayerName,
             {
-              useNativeSegwit:
-                wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
-              useTaproot: wallet.addressType === Constants.SCRIPT_TYPES.P2TR,
+              useNativeSegwit: Utils.isNativeSegwit(wallet.addressType),
+              segwitVersion: Utils.getSegwitVersion(wallet.addressType),
               allowOverwrite: true
             }
           );
@@ -1096,10 +1095,9 @@ export class API extends EventEmitter {
         var c = this.credentials;
         var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
         var walletId = c.walletId;
-        var useNativeSegwit = c.addressType === Constants.SCRIPT_TYPES.P2WPKH;
-        var useTaproot = c.addressType === Constants.SCRIPT_TYPES.P2TR;
-        var supportBIP44AndP2PKH =
-          c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
+        var useNativeSegwit = Utils.isNativeSegwit(c.addressType);
+        var segwitVersion = Utils.getSegwitVersion(c.addressType);
+        var supportBIP44AndP2PKH = c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
         var encWalletName = Utils.encryptMessage(
           c.walletName || 'recovered wallet',
           c.sharedEncryptingKey
@@ -1116,11 +1114,12 @@ export class API extends EventEmitter {
           id: walletId,
           usePurpose48: c.n > 1,
           useNativeSegwit,
-          useTaproot
+          segwitVersion
         };
 
-        if (!!supportBIP44AndP2PKH)
+        if (!!supportBIP44AndP2PKH) {
           args['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
+        }
 
         this.request.post('/v2/wallets/', args, (err, body) => {
           if (err) {
