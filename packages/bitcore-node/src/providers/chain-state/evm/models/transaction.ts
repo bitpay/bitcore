@@ -412,8 +412,10 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             effects.push(effect);
           }
-          // Ignoring delegated calls because they are redundant
-          if (internalTx.abiType && internalTx.type != 'delegatecall') {
+          // We used to ignore delegated calls because we thought they were redundant in ERC20 transfers via proxy contract
+          //  Maybe something changed with the EVM, but they seem to be necessary now to get ERC20 transfers to show up.
+          // TODO: Revisit this logic to reduce duplicates
+          if (internalTx.abiType) { // && internalTx.type != 'delegatecall') {
             // Handle Abi related effects
             const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             if (effect) {
@@ -428,8 +430,10 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
             effects.push(effect);
           }
-          // Ignoring delegated calls because they are redundant
-          if (internalTx.abiType && internalTx.type != 'DELEGATECALL') {
+          // We used to ignore delegated calls because we thought they were redundant in ERC20 transfers via proxy contract
+          //  Maybe something changed with the EVM, but they seem to be necessary now to get ERC20 transfers to show up.
+          // TODO: Revisit this logic to reduce duplicates
+          if (internalTx.abiType) { // && internalTx.type != 'DELEGATECALL') {
             // Handle Abi related effects
             const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.to, internalTx.from, internalTx.depth);
             if (effect) {

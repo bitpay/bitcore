@@ -1,6 +1,6 @@
 {
   "lerna": "2.9.1",
-  "version": "10.0.42",
+  "version": "10.2.0",
   "packages": [
     "packages/[^insight]*"
   ]

@@ -1,5 +1,5 @@
 import { MongoBound } from '../../../../models/base';
-import { TransformWithEventPipe } from '../../../../utils/transformWithEventPipe';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransaction } from '../types';
 import { BaseEVMStateProvider } from './csp';
 

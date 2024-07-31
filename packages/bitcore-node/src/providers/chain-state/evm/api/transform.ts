@@ -2,7 +2,7 @@ import { MongoBound } from '../../../../models/base';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { jsonStringify, overlaps } from '../../../../utils';
-import { TransformWithEventPipe } from '../../../../utils/transformWithEventPipe';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionTransformed } from '../types';
 
 export class EVMListTransactionsStream extends TransformWithEventPipe {

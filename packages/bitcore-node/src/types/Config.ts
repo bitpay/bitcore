@@ -4,7 +4,7 @@ export interface IChainConfig<T extends INetworkConfig> {
 
 interface INetworkConfig {
   disabled?: boolean;
-  chainSource?: 'p2p' | 'external';
+  chainSource?: 'p2p' | 'moralis';
   trustedPeers: {
     host: string;
     port: number | string;

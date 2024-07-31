@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import logger from '../../../../logger';
+import { Config } from '../../../../services/config';
 import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
@@ -12,6 +13,12 @@ export class EVMRouter {
     this.csp = csp;
     this.chain = chain?.toUpperCase();
     this.router = Router();
+    this.router.param('network', (req, _res, next) => {
+      const { network: beforeNetwork } = req.params;
+      const { network } = Config.aliasFor({ chain: this.chain, network: beforeNetwork });
+      req.params.network = network;
+      next();
+    });
     this.setDefaultRoutes(this.router);
     if (params?.multisig) {
       this.setMultiSigRoutes(this.router);
