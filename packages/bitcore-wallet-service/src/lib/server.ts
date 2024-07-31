@@ -5787,6 +5787,40 @@ export class WalletService implements IWalletService {
     });
   }
 
+  sardineGetSupportedTokens(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.sardineGetKeys(req);
+      const API = keys.API;
+      const CLIENT_ID = keys.CLIENT_ID;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
+      const secretBase64 = Buffer.from(secret).toString('base64');
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${secretBase64}`,
+      };
+
+      const URL: string = API + '/v1/supported-tokens';
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
   sardineGetOrdersDetails(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.sardineGetKeys(req);

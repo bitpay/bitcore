@@ -12563,6 +12563,66 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('#sardineGetSupportedTokens', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+          }
+        }
+      });
+
+      it('should work properly if req is OK', async() => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetSupportedTokens(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async() => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetSupportedTokens(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if get returns error', async() => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        try {
+          const data = await server.sardineGetSupportedTokens(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+
+      it('should return error if sardine is commented in config', async() => {
+        config.sardine = undefined;
+
+        server.request = fakeRequest;
+        try {
+          const data = await server.sardineGetSupportedTokens(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Sardine missing credentials');
+        }
+      });
+    });
+
     describe('#sardineGetOrdersDetails', () => {
       beforeEach(() => {
         req = {
