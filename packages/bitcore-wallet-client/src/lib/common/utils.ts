@@ -393,6 +393,7 @@ export class Utils {
           break;
         case Constants.SCRIPT_TYPES.P2WPKH:
         case Constants.SCRIPT_TYPES.P2PKH:
+        case Constants.SCRIPT_TYPES.P2TR:
           t.from(txp.inputs);
           break;
       }

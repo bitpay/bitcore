@@ -3176,6 +3176,9 @@ export class API extends EventEmitter {
                     ? Constants.SCRIPT_TYPES.P2WPKH
                     : Constants.SCRIPT_TYPES.P2WSH;
               }
+              if (wallet.opts.coin === 'btc' && wallet.status.wallet.addressType === 'P2TR') {
+                client.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
+              }
               // add client to list
               let newClient = _.cloneDeep(client);
               // newClient.credentials = settings.credentials;
