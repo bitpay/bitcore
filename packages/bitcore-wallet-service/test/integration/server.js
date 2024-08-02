@@ -5195,8 +5195,8 @@ describe('Wallet service', function() {
                 server.getBalance({}, function(err, balance) {
                   should.not.exist(err);
                   balance.totalAmount.should.equal(2 * ts + lockedFunds);
-                  if (flags.noChange) {
-                    balance.lockedAmount.should.equal(txAmount + lockedFunds);
+                  if(flags.noChange) {
+                    balance.lockedAmount.should.equal(txAmount + tx.fee + lockedFunds);
                     txOpts.outputs[0].amount = 2 * ts;
                   } else {
                     balance.lockedAmount.should.equal(2 * ts);
