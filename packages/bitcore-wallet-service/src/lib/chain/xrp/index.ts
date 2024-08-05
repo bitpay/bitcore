@@ -115,7 +115,7 @@ export class XrpChain implements IChain {
 
   checkDust(output, opts) { }
 
-  checkScriptOutput(output) {}
+  checkScriptOutput(output) { }
 
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
@@ -135,24 +135,30 @@ export class XrpChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { destinationTag, outputs } = txp;
+    const { destinationTag, outputs, outputOrder, multiTx } = txp;
     const chain = 'XRP';
-    const recipients = outputs.map(output => {
-      return {
-        amount: output.amount,
-        address: output.toAddress,
-        tag: output.tag
-      };
-    });
     const unsignedTxs = [];
-    for (let index = 0; index < recipients.length; index++) {
-      const _tag = recipients[0]?.tag || destinationTag;
+    const length = multiTx ? outputOrder.length : outputs.length;
+    for (let index = 0; index < length; index++) {
+      let outputIdx = index;
+      if (multiTx) {
+        outputIdx = outputOrder[index];
+      }
+      if (!outputs?.[outputIdx]) {
+        throw new Error('Output index out of range');
+      }
+      const recepient = {
+        amount: outputs[outputIdx].amount,
+        address: outputs[outputIdx].toAddress,
+        tag: outputs[outputIdx].tag
+      }
+      const _tag = recepient?.tag || destinationTag;
       const rawTx = Transactions.create({
         ...txp,
         tag: _tag ? Number(_tag) : undefined,
         chain,
         nonce: Number(txp.nonce) + Number(index),
-        recipients: [recipients[index]]
+        recipients: [recepient]
       });
       unsignedTxs.push(rawTx);
     }

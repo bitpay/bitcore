@@ -271,8 +271,12 @@ export class EthChain implements IChain {
       tokenAddress,
       multisigContractAddress,
       multiSendContractAddress,
-      isTokenSwap
+      isTokenSwap,
+      multiTx
     } = txp;
+    if (multiTx) {
+      throw Errors.MULTI_TX_UNSUPPORTED;
+    }
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? `${this.chain}MULTISIG` : isERC20 ? `${this.chain}ERC20` : this.chain;

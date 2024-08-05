@@ -477,7 +477,9 @@ export class Utils {
         multisigContractAddress,
         multiSendContractAddress,
         isTokenSwap,
-        gasLimit
+        gasLimit,
+        multiTx,
+        outputOrder
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -511,6 +513,29 @@ export class Utils {
           gasLimit
         };
         unsignedTxs.push(Transactions.create({ ...txp, ...multiSendParams }));
+      } else if (multiTx) {
+        // Add unsigned transactions in outputOrder
+        for (let index = 0; index < outputOrder.length; index++) {
+          const outputIdx = outputOrder[index];
+          if (!outputs?.[outputIdx]) {
+            throw new Error('Output index out of range');
+          }
+          const recepient = {
+            amount: outputs[outputIdx].amount,
+            address: outputs[outputIdx].toAddress,
+            tag: outputs[outputIdx].tag
+          }
+          const _tag = recepient?.tag || destinationTag;
+          const rawTx = Transactions.create({
+            ...txp,
+            ...recepient,
+            tag: _tag ? Number(_tag) : undefined,
+            chain: _chain,
+            nonce: Number(txp.nonce) + Number(index),
+            recipients: [recepient]
+          });
+          unsignedTxs.push(rawTx);
+        }
       } else {
         for (let index = 0; index < recipients.length; index++) {
           const rawTx = Transactions.create({
