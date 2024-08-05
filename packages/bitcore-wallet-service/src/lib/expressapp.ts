@@ -1745,6 +1745,17 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/sardine/getSupportedTokens', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.sardineGetSupportedTokens(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.post('/v1/service/sardine/currencyLimits', (req, res) => {
       let server;
       try {

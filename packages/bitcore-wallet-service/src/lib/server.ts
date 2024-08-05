@@ -5799,6 +5799,40 @@ export class WalletService implements IWalletService {
     });
   }
 
+  sardineGetSupportedTokens(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.sardineGetKeys(req);
+      const API = keys.API;
+      const CLIENT_ID = keys.CLIENT_ID;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
+      const secretBase64 = Buffer.from(secret).toString('base64');
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${secretBase64}`,
+      };
+
+      const URL: string = API + '/v1/supported-tokens';
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
   sardineGetOrdersDetails(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.sardineGetKeys(req);
@@ -5886,6 +5920,11 @@ export class WalletService implements IWalletService {
         'Content-Type': 'application/json',
         Authorization: 'ApiKey ' + API_KEY
       };
+
+      if (req.body && req.body.payment_methods && Array.isArray(req.body.payment_methods)) {
+        // Workaround to fix older versions of the app
+        req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
+      }
 
       this.request.post(
         API + '/wallet/merchant/v2/quote',
