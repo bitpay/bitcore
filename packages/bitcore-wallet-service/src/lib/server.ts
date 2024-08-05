@@ -5909,6 +5909,11 @@ export class WalletService implements IWalletService {
         Authorization: 'ApiKey ' + API_KEY
       };
 
+      if (req.body && req.body.payment_methods && Array.isArray(req.body.payment_methods)) {
+        // Workaround to fix older versions of the app
+        req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
+      }
+
       this.request.post(
         API + '/wallet/merchant/v2/quote',
         {
