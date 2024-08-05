@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import Logger from '../logger';
+import logger from '../logger';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';
 import { Api } from '../services/api';
@@ -76,9 +76,9 @@ class ModuleManager extends BaseModule {
     for (const chain in chains) {
       const modulePath = this.KNOWN_MODULE_PATHS[chain];
       if (!modulePath) {
-        Logger.warn(
+        logger.warn(
           `Auto module registration failed for chain '${chain}'. ` +
-            'Is the chain name / module path inside of KNOWN_MODULE_PATHS?'
+          'Is the chain name / module path inside of KNOWN_MODULE_PATHS?'
         );
         continue;
       }

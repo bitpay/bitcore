@@ -6,7 +6,7 @@ export function realtime(_target: any, _propertyKey: string | symbol, descriptor
   descriptor.value.category = 'realtime';
 }
 
-export function internal( _target: any, _propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+export function internal(_target: any, _propertyKey: string | symbol, descriptor: PropertyDescriptor) {
   descriptor.value.scope = 'internal';
 }
 

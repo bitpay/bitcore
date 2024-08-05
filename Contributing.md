@@ -10,7 +10,7 @@ Guidelines for bug reports:
    reported. If it already exists, consider leaving a comment with any extra clarifying
    details about your situation that might help us narrow in on the nature of the problem.
 
-2. **Check if the issue has already been fixed** &mdash; In the event that you are don't 
+2. **Check if the issue has already been fixed** &mdash; In the event that you don't 
     have the latest, try to reproduce it using the latest changes in the `master` branch.
 
 3. **Submit a clear and detailed issue** &mdash; Please try to be as detailed as possible 
