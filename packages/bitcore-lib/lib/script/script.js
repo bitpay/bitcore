@@ -946,7 +946,11 @@ Script.buildWitnessV1Out = function(to, scriptTree) {
   $.checkArgument(!scriptTree || Array.isArray(scriptTree) || !!scriptTree.script);
 
   if (typeof to === 'string') {
-    to = PublicKey.fromTaproot(to);
+    try {
+      to = PublicKey.fromTaproot(to);
+    } catch {
+      to = Address.fromString(to);
+    }
   }
   
   function buildTree(tree) {

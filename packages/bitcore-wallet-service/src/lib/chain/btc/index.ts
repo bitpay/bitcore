@@ -242,6 +242,9 @@ export class BtcChain implements IChain {
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 69 + inputSafetyMargin; // vsize
 
+      case Constants.SCRIPT_TYPES.P2TR:
+        return 58 + inputSafetyMargin; // vsize
+
       case Constants.SCRIPT_TYPES.P2WSH:
         return Math.ceil(32 + 4 + 1 + (5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4) + inputSafetyMargin; // vsize
 
@@ -378,18 +381,19 @@ export class BtcChain implements IChain {
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(inputs, i => {
+        for (const i of inputs) {
           $.checkState(i.publicKeys, 'Failed state: Inputs should include public keys at <getBitcoreTx()>');
           t.from(i, i.publicKeys, txp.requiredSignatures);
-        });
+        }
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
       case Constants.SCRIPT_TYPES.P2PKH:
+      case Constants.SCRIPT_TYPES.P2TR:
         t.from(inputs);
         break;
     }
 
-    _.each(txp.outputs, o => {
+    for (const o of txp.outputs || []) {
       $.checkState(
         o.script || o.toAddress,
         'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
@@ -404,7 +408,7 @@ export class BtcChain implements IChain {
       } else {
         t.to(o.toAddress, o.amount);
       }
-    });
+    }
 
     t.fee(txp.fee);
 

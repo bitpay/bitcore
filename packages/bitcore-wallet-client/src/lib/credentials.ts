@@ -295,8 +295,17 @@ export class Credentials {
     this.m = m;
 
     if (opts.useNativeSegwit) {
-      this.addressType =
-        n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+      switch (Number(opts.segwitVersion)) {
+        case 0:
+        default:
+          this.addressType =
+            n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          break;
+        case 1:
+          // Taproot is segwit v1
+          this.addressType = Constants.SCRIPT_TYPES.P2TR;
+          break;
+      }
     }
 
     if (this.n != n && !opts.allowOverwrite) {

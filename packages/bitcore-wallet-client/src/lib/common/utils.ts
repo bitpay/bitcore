@@ -269,6 +269,13 @@ export class Utils {
           );
         }
         break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        bitcoreAddress = bitcore.Address.fromPublicKey(
+          publicKeys[0],
+          network,
+          'taproot'
+        );
+        break;
     }
 
     return {
@@ -386,6 +393,7 @@ export class Utils {
           break;
         case Constants.SCRIPT_TYPES.P2WPKH:
         case Constants.SCRIPT_TYPES.P2PKH:
+        case Constants.SCRIPT_TYPES.P2TR:
           t.from(txp.inputs);
           break;
       }
@@ -569,5 +577,25 @@ export class Utils {
       return `${coin.toUpperCase()}_${suffix}`;
     }
     return coin.toUpperCase();
+  }
+
+  static isNativeSegwit(addressType) {
+    return [
+      Constants.SCRIPT_TYPES.P2WPKH,
+      Constants.SCRIPT_TYPES.P2WSH,
+      Constants.SCRIPT_TYPES.P2TR,
+    ].includes(addressType);
+  }
+
+  static getSegwitVersion(addressType) {
+    switch (addressType) {
+      case Constants.SCRIPT_TYPES.P2WPKH:
+      case Constants.SCRIPT_TYPES.P2WSH:
+        return 0;
+      case Constants.SCRIPT_TYPES.P2TR:
+        return 1;
+      default:
+        return undefined; // non-segwit addressType
+    }
   }
 }
