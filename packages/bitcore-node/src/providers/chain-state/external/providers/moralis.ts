@@ -1,8 +1,10 @@
+import os from 'os';
 import request = require('request');
 import Web3 from 'web3';
 import config from '../../../../config';
-import { ChainId } from '../../../../types/ChainNetwork';
-import { IExternalProvider } from '../../../../types/ExternalProvider';
+import { CoinEvent } from '../../../../models/events';
+import { ChainId, ChainNetwork } from '../../../../types/ChainNetwork';
+import { IAddressSubscription, IExternalProvider } from '../../../../types/ExternalProvider';
 import { StreamAddressUtxosParams, StreamTransactionParams } from '../../../../types/namespaces/ChainStateProvider';
 import { isDateValid } from '../../../../utils';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
@@ -10,14 +12,22 @@ import { EVMTransactionJSON, GethTraceCall, IEVMTransactionTransformed, Transact
 import { ExternalApiStream as ApiStream } from '../streams/apiStream';
 
 
+export interface MoralisAddressSubscription {
+  id?: string;
+  message?: string;
+  status?: string;
+}
+
 class MoralisClass implements IExternalProvider {
   baseUrl = 'https://deep-index.moralis.io/api/v2.2';
+  baseStreamUrl = 'https://api.moralis-streams.com/streams/evm';
   apiKey = config.externalProviders?.moralis?.apiKey;
+  baseWebhookurl = config.externalProviders?.moralis?.webhookBaseUrl;
   headers = {
     'Content-Type': 'application/json',
     'X-API-Key': this.apiKey,
   };
-  
+
 
   async getBlockNumberByDate({ chainId, date }) {
     if (!date || !isDateValid(date)) {
@@ -139,24 +149,24 @@ class MoralisClass implements IExternalProvider {
       chain: tx.chain,
       network: tx.network,
       txid: tx.hash || tx.transaction_hash, // erc20 transfer txs have transaction_hash
-      blockHeight: Number(tx.block_number),
-      blockHash: tx.block_hash,
-      blockTime: new Date(tx.block_timestamp),
-      blockTimeNormalized: new Date(tx.block_timestamp),
+      blockHeight: Number(tx.block_number ?? tx.blockNumber),
+      blockHash: tx.block_hash ?? tx.blockHash,
+      blockTime: new Date(tx.block_timestamp ?? tx.blockTimestamp),
+      blockTimeNormalized: new Date(tx.block_timestamp ?? tx.blockTimestamp),
       value: tx.value,
       gasLimit: tx.gas,
-      gasPrice: tx.gas_price,
-      fee: Number(tx.receipt_gas_used) * Number(tx.gas_price),
+      gasPrice: tx.gas_price ?? tx.gasPrice,
+      fee: Number(tx.receipt_gas_used ?? tx.receiptGasUsed) * Number(tx.gas_price ?? tx.gasPrice),
       nonce: tx.nonce,
-      to: Web3.utils.toChecksumAddress(tx.to_address),
-      from: Web3.utils.toChecksumAddress(tx.from_address),
+      to: Web3.utils.toChecksumAddress(tx.to_address ?? tx.toAddress),
+      from: Web3.utils.toChecksumAddress(tx.from_address ?? tx.fromAddress),
       data: tx.input,
       internal: [],
       calls: tx?.internal_transactions?.map(t => this._transformInternalTransaction(t)) || [],
       effects: [],
       category: tx.category,
       wallets: [],
-      transactionIndex: tx.transaction_index
+      transactionIndex: tx.transaction_index ?? tx.transactionIndex
     } as IEVMTransactionTransformed;
     EVMTransactionStorage.addEffectsToTxs([transformed]);
     return transformed;
@@ -249,6 +259,108 @@ class MoralisClass implements IExternalProvider {
 
   private _formatChainId(chainId) {
     return '0x' + parseInt(chainId).toString(16);
+  }
+
+  /**
+   * Request wrapper for moralis Streams (subscriptions)
+   * @param method 
+   * @param url 
+   * @param body 
+   * @returns 
+   */
+  _subsRequest(method: string, url: string, body?: any) {
+    return new Promise((resolve, reject) => {
+      request({
+        method,
+        url,
+        headers: this.headers,
+        json: true,
+        body
+      }, (err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        if (typeof data === 'string') {
+          return reject(new Error(data));
+        }
+        return resolve(data.body);
+      });
+    });
+  }
+
+  async createAddressSubscription(params: ChainNetwork & ChainId) {
+    const { chain, network, chainId } = params;
+    const _chainId = this._formatChainId(chainId);
+
+    const result: any = await this._subsRequest('PUT', this.baseStreamUrl, {
+        description: `Bitcore ${_chainId} - ${os.hostname()} - addresses`,
+        // tag: '',
+        chainIds: [_chainId],
+        webhookUrl: `${this.baseWebhookurl}/${chain}/${network}/moralis`,
+        includeNativeTxs: true,
+        includeInternalTxs: true
+      }
+    );
+    if (!result.id) {
+      throw new Error('Failed to create subscription: ' + JSON.stringify(result));
+    }
+    return result;
+  }
+
+  async getAddressSubscriptions() {
+    const subs: any = await this._subsRequest('GET', this.baseStreamUrl + '?limit=100');
+    return subs.result as any[];
+  }
+
+  deleteAddressSubscription(params: { sub: IAddressSubscription }) {
+    const { sub } = params;
+    return this._subsRequest('DELETE', `${this.baseStreamUrl}/${sub.id}`) as Promise<MoralisAddressSubscription>;
+  }
+
+  async updateAddressSubscription(params: { sub: IAddressSubscription, addressesToAdd?: string[], addressesToRemove?: string[], status?: string }) {
+    const { sub, addressesToAdd, addressesToRemove, status } = params;
+
+    let moralisSub: MoralisAddressSubscription | null = null;
+    if (addressesToAdd && addressesToAdd.length > 0) {
+      moralisSub = await this._subsRequest('POST', `${this.baseStreamUrl}/${sub.id}/address`, { address: addressesToAdd }) as MoralisAddressSubscription;
+    } else if (addressesToRemove && addressesToRemove.length > 0) {
+      moralisSub = await this._subsRequest('DELETE', `${this.baseStreamUrl}/${sub.id}/address`, { address: addressesToRemove }) as MoralisAddressSubscription;
+    } else if (status) {
+      moralisSub = await this._subsRequest('POST', `${this.baseStreamUrl}/${sub.id}/status`, { status }) as MoralisAddressSubscription;
+    }
+    if (moralisSub?.message) {
+      throw new Error(moralisSub.message);
+    }
+    return moralisSub?.id ? moralisSub : sub; // fallback to sub in case there's nothing to update (e.g. addressesToAdd is an empty array)
+  }
+
+  webhookToCoinEvents(params: { webhook: any } & ChainNetwork) {
+    const { chain, network, webhook } = params;
+    if (webhook.body.confirmed) {
+      // Moralis broadcasts both confirmed and unconfirmed.
+      // Filtering out confirmed de-duplicates events.
+      return [];
+    }
+    const coinEvents: CoinEvent[] = webhook.body.txs.flatMap(tx => this._transformWebhookTransaction({ chain, network, tx, webhook: webhook.body }));
+    return coinEvents;
+  }
+
+  private _transformWebhookTransaction(params: { webhook, tx } & ChainNetwork): CoinEvent[] {
+    const { chain, network, tx } = params;
+    const events: CoinEvent[] = [];
+    for (const address of tx.triggered_by) {
+      events.push({
+        address,
+        coin: {
+          chain,
+          network,
+          value: tx.value,
+          address: tx.toAddress,
+          mintTxid: tx.hash
+        }
+      });
+    }
+    return events;
   }
 }
 

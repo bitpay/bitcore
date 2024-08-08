@@ -47,7 +47,7 @@ class ModuleManager extends BaseModule {
   internalServices = new Array<IService>();
 
   // Chain names -> module paths map
-  KNOWN_MODULE_PATHS = {
+  DEFAULT_MODULE_PATHS = {
     BTC: './bitcoin',
     ETH: './ethereum',
     MATIC: './matic',
@@ -61,30 +61,25 @@ class ModuleManager extends BaseModule {
   };
 
   loadConfigured() {
-    let { modules, chains } = Config.get();
-    modules = modules || [];
-
-    const registerModuleClass = modulePath => {
-      const moduleClass = require(modulePath).default || (require(modulePath) as Class<BaseModule>);
-      this.internalServices.push(new moduleClass(this.bitcoreServices));
-    };
-
-    // Register all configured modules (in case users want to add custom modules)
-    if (modules.length > 0) for (const modulePath of modules) registerModuleClass(modulePath);
+    const { chains } = Config.get();
 
     // Auto register known modules from config.chains
     for (const chain in chains) {
-      const modulePath = this.KNOWN_MODULE_PATHS[chain];
+      let modulePath = this.DEFAULT_MODULE_PATHS[chain];
       if (!modulePath) {
         Logger.warn(
           `Auto module registration failed for chain '${chain}'. ` +
-            'Is the chain name / module path inside of KNOWN_MODULE_PATHS?'
+            'Is the chain name / module path inside of DEFAULT_MODULE_PATHS?'
         );
         continue;
       }
 
-      // Do not register detected modulePath if it is in config.modules as well
-      if (!_.includes(modules, modulePath)) registerModuleClass(modulePath);
+      // Register for each
+      for (const [network, config] of Object.entries(chains[chain])) {
+        modulePath = config.modulePath || modulePath; // custom module path
+        const moduleClass = require(modulePath).default || (require(modulePath) as Class<BaseModule>);
+        this.internalServices.push(new moduleClass(this.bitcoreServices, network, config));
+      }
     }
   }
 }

@@ -38,9 +38,9 @@ describe('Modules', function() {
   });
 
   it('should have services registered after loading modules', () => {
-    const chains = Config.chains();
-    for (const chain of chains) {
-      const service = ChainStateProvider.get({ chain });
+    const chainsNetworks = Config.chainNetworks();
+    for (const { chain, network } of chainsNetworks) {
+      const service = ChainStateProvider.get({ chain, network });
       expect(service).to.exist;
     }
   });
@@ -54,17 +54,17 @@ describe('Modules', function() {
   });
 
   it('should have p2p services registered', () => {
-    const chains = ['BTC', 'BCH'];
-    for (const chain of chains) {
-      const service = P2P.get(chain);
+    const chains = [['BTC', 'mainnet'], ['BCH', 'mainnet']];
+    for (const [chain, network] of chains) {
+      const service = P2P.get(chain, network);
       expect(service).to.exist;
     }
   });
 
   it('should have verification services registered', () => {
-    const chains = ['BTC', 'BCH'];
-    for (const chain of chains) {
-      const service = Verification.get(chain);
+    const chains = [['BTC', 'mainnet'], ['BCH', 'mainnet']];
+    for (const [chain, network] of chains) {
+      const service = Verification.get(chain, network);
       expect(service).to.exist;
     }
   });
