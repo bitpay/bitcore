@@ -1,12 +1,5 @@
 {
   "bitcoreNode": {
-    "modules": [
-      "./bitcoin",
-      "./bitcoin-cash",
-      "./ethereum",
-      "./matic",
-      "./ripple"
-    ],
     "services": {
       "api": {
         "wallets": {
