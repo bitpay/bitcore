@@ -516,6 +516,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
             }
           });
           transactionStream = txStream.eventPipe(transactionStream);
+          await WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address });  
         }
       } else {
         const query = this.getWalletTransactionQuery(params);

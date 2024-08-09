@@ -22,9 +22,9 @@ Let's say we have a node_module, named `bitcore-node-bch` with the following cod
 // index.js
 
 module.exports = class BitcoinCashModule {
-  constructor(services) {
+  constructor(services, network, config) {
     services.Libs.register('BCH', 'bitcore-lib-cash', 'bitcore-p2p-cash');
-    services.P2P.register('BCH', services.P2P.get('BTC'));
+    services.P2P.register('BCH', network, services.P2P.get('BTC'));
   }
 }
 ```
@@ -40,8 +40,16 @@ The module has the following dependencies
 
 ```
 
-We could add this module by adding `bitcore-node-bch` to the modules array in bitcore.config.json
+We could add this module by adding `bitcore-node-bch` to the chain-network's modulePath in bitcore.config.json
 
 ```
-    modules: ['./bitcoin', 'bitcore-node-bch'],
+  chains: {
+    // ... other chain configs
+    BCH: {
+      mainnet: {
+        // ... other config entries
+        modulePath: 'bitcore-node-bch'
+      }
+    }
+  }
 ```

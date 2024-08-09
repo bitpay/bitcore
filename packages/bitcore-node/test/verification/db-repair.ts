@@ -22,7 +22,7 @@ import { Verification } from '../../src/services/verification';
   Modules.loadConfigured();
 
   const chainConfig = Config.chainConfig({ chain, network });
-  const workerClass = Verification.get(chain);
+  const workerClass = Verification.get(chain, network);
   const worker = new workerClass({ chain, network, chainConfig });
   await worker.connect();
 

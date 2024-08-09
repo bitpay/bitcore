@@ -21,7 +21,7 @@ import { MultisigAbi } from '../abi/multisig';
 
 import Web3 from 'web3';
 import { IEVMNetworkConfig } from '../../../../types/Config';
-import { Effect, EVMTransactionJSON, IAbiDecodedData, IAbiDecodeResponse, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import { Effect, ErigonTransaction, EVMTransactionJSON, GethTransaction, IAbiDecodedData, IAbiDecodeResponse, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -524,6 +524,53 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       }
     }
     return tx;
+  }
+
+  convertRawTx(chain: string, network: string, tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
+    if (!block) {
+      const txid = tx.hash || '';
+      const to = tx.to || '';
+      const from = tx.from || '';
+      const value = Number(tx.value);
+      const fee = Number(tx.gas) * Number(tx.gasPrice);
+      const abiType = this.abiDecode(tx.input!);
+      const nonce = tx.nonce || 0;
+      const convertedTx: IEVMTransactionInProcess = {
+        chain,
+        network,
+        blockHeight: valueOrDefault(tx.blockNumber, -1),
+        blockHash: valueOrDefault(tx.blockHash, undefined),
+        data: Buffer.from(tx.input || '0x'),
+        txid,
+        blockTime: new Date(),
+        blockTimeNormalized: new Date(),
+        fee,
+        transactionIndex: tx.transactionIndex || 0,
+        value,
+        wallets: [],
+        to,
+        from,
+        gasLimit: Number(tx.gas),
+        gasPrice: Number(tx.gasPrice),
+        nonce,
+        internal: [],
+        calls: []
+      };
+      if (abiType) {
+        convertedTx.abiType = abiType;
+      }
+      return convertedTx;
+    } else {
+      const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
+      const noBlockTx = this.convertRawTx(chain, network, tx);
+      return {
+        ...noBlockTx,
+        blockHeight: height,
+        blockHash,
+        blockTime,
+        blockTimeNormalized
+      };
+    }
   }
 
   // Correct tx.data.toString() => 0xa9059cbb00000000000000000000000001503dfc5ad81bf630d83697e98601871bb211b60000000000000000000000000000000000000000000000000000000000002710

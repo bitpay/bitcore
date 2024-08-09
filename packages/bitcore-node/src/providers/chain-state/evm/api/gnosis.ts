@@ -25,8 +25,8 @@ interface MULTISIGTxInfo
     [key: string]: string;
   }> {}
 
-function getCSP(chain: string) {
-  return ChainStateProvider.get({ chain }) as BaseEVMStateProvider;
+function getCSP(chain: string, network: string) {
+  return ChainStateProvider.get({ chain, network }) as BaseEVMStateProvider;
 }
 
 export class GnosisApi {
@@ -43,7 +43,7 @@ export class GnosisApi {
   private MULTISIG_TX_PROPOSAL_EXPIRE_TIME = 48 * 3600 * 1000;
 
   async multisigFor(chain: string,network: string, address: string) {
-    const { web3 } = await getCSP(chain).getWeb3(network);
+    const { web3 } = await getCSP(chain, network).getWeb3(network);
     const contract = new web3.eth.Contract(MultisigAbi as AbiItem[], address);
     return contract;
   }
@@ -54,7 +54,7 @@ export class GnosisApi {
     sender: string,
     txId: string
   ): Promise<Partial<Transaction>[]> {
-    const { web3 } = await getCSP(chain).getWeb3(network);
+    const { web3 } = await getCSP(chain, network).getWeb3(network);
     const networkConfig: IEVMNetworkConfig = Config.chainConfig({ chain: 'ETH', network });
     const { gnosisFactory = this.gnosisFactories[chain][network] } = networkConfig;
     let query = { chain, network, txid: txId };
@@ -157,8 +157,8 @@ export class GnosisApi {
   }
 
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
-    const { chain, multisigContractAddress, res, args } = params;
-    const transactionQuery = getCSP(chain).getWalletTransactionQuery(params);
+    const { chain, network, multisigContractAddress, res, args } = params;
+    const transactionQuery = getCSP(chain, network).getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
     let query;

@@ -258,14 +258,7 @@ export class MultiThreadSync extends EventEmitter {
       this.sync();
     } else {
       logger.info(`${this.chain}:${this.network} multi-thread sync is finished. Switching to main process sync.`);
-      await StateStorage.collection.updateOne(
-        {},
-        {
-          $addToSet: { initialSyncComplete: `${this.chain}:${this.network}` },
-          $set: { [`verifiedBlockHeight.${this.chain}.${this.network}`]: this.currentHeight }
-        },
-        { upsert: true }
-      );
+      await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: this.currentHeight });
       this.emit('INITIALSYNCDONE');
       this.shutdownThreads();
       this.syncing = false;

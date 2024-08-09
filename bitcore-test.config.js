@@ -3,6 +3,9 @@ const testConfig = require('./bitcore-test.config.json');
 testConfig.bitcoreNode.chains.BTC.regtest.trustedPeers[0].host = 'bitcoin';
 testConfig.bitcoreNode.chains.BTC.regtest.rpc.host = 'bitcoin';
 
+testConfig.bitcoreNode.chains.BCH.regtest.trustedPeers[0].host = 'bitcoin';
+testConfig.bitcoreNode.chains.BCH.regtest.rpc.host = 'bitcoin';
+
 testConfig.bitcoreNode.chains.ETH.regtest.trustedPeers[0].host = 'geth';
 testConfig.bitcoreNode.chains.ETH.regtest.trustedPeers[0].port = 30303;
 testConfig.bitcoreNode.chains.ETH.regtest.providers[0].host = 'erigon';

@@ -1,4 +1,4 @@
-import { Chain } from '../../types/ChainNetwork';
+import { ChainNetwork } from '../../types/ChainNetwork';
 import {
   BroadcastTransactionParams,
   ChainStateServices,
@@ -28,11 +28,11 @@ import {
 const services: ChainStateServices = {};
 
 class ChainStateProxy implements IChainStateProvider {
-  get({ chain }: Chain) {
-    if (services[chain] == undefined) {
-      throw new Error(`Chain ${chain} doesn't have a ChainStateProvider registered`);
+  get({ chain, network }: ChainNetwork) {
+    if (services[chain]?.[network] == undefined) {
+      throw new Error(`Chain ${chain}:${network} doesn't have a ChainStateProvider registered`);
     }
-    return services[chain];
+    return services[chain][network];
   }
 
   streamAddressUtxos(params: StreamAddressUtxosParams) {
@@ -123,8 +123,9 @@ class ChainStateProxy implements IChainStateProvider {
     return this.get(params).broadcastTransaction(params);
   }
 
-  registerService(currency: string, service: IChainStateService) {
-    services[currency] = service;
+  registerService(chain: string, network: string, service: IChainStateService) {
+    services[chain] = services[chain] || {}
+    services[chain][network] = service;
   }
 
   async getCoinsForTx(params: { chain: string; network: string; txid: string }) {

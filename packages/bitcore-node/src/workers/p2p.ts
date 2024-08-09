@@ -1,3 +1,4 @@
+import cluster from 'cluster';
 import 'source-map-support/register';
 import logger from '../logger';
 import { Modules } from '../modules';
@@ -25,7 +26,7 @@ export const P2pWorker = async () => {
   const { CHAIN: chain, NETWORK: network } = process.env;
   if (chain && network) {
     const chainConfig = Config.chainConfig({ chain, network });
-    const p2pClass = P2P.get(chain);
+    const p2pClass = P2P.get(chain, network);
     const worker = new p2pClass({
       chain,
       network,
@@ -39,8 +40,8 @@ export const P2pWorker = async () => {
   for (const service of services) {
     try {
       await service.start();
-    } catch (e) {
-      logger.error('P2P Worker died with %o', e);
+    } catch (e: any) {
+      logger.error('P2P Worker died: %o', e.stack || e.message || e);
     }
   }
 };
@@ -53,7 +54,7 @@ const stop = async () => {
   }
   stopping = true;
 
-  logger.info(`Shutting down pid ${process.pid}`);
+  logger.info(`Shutting down P2P pid ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
   }
@@ -61,6 +62,10 @@ const stop = async () => {
     logger.warn('P2P Worker did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);
   }, 30 * 1000).unref();
+
+  if (!cluster.isPrimary) {
+    process.removeAllListeners();
+  }
 };
 
 if (require.main === module) {

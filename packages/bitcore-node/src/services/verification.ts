@@ -25,12 +25,13 @@ export class VerificationManager {
 
   constructor() {}
 
-  register(chain: string, worker: Class<IVerificationPeer>) {
-    this.workerClasses[chain] = worker;
+  register(chain: string, network: string, worker: Class<IVerificationPeer>) {
+    this.workerClasses[chain] = this.workerClasses[chain] || {};
+    this.workerClasses[chain][network] = worker;
   }
 
-  get(chain: string) {
-    return this.workerClasses[chain];
+  get(chain: string, network: string) {
+    return this.workerClasses[chain]?.[network];
   }
 }
 

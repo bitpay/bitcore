@@ -7,7 +7,7 @@ import { RippleStateProvider } from './csp';
 export class RippleEventAdapter {
   stopping = false;
   clients: CryptoRpc[] = [];
-  constructor(protected services: BaseModule['bitcoreServices']) {}
+  constructor(protected services: BaseModule['bitcoreServices'], protected network: string) {}
 
   async start() {
     this.stopping = false;
@@ -22,7 +22,8 @@ export class RippleEventAdapter {
         .filter(c => c.chain === 'XRP')
         .map(c => c.network);
       const chain = 'XRP';
-      const csp = this.services.CSP.get({ chain }) as RippleStateProvider;
+      const network = this.network;
+      const csp = this.services.CSP.get({ chain, network }) as RippleStateProvider;
 
       for (let network of networks) {
         try {
