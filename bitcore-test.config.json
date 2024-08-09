@@ -25,6 +25,23 @@
           }
         }
       },
+      "BCH": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 8332
+            }
+          ],
+          "rpc": {
+            "host": "localhost",
+            "port": 8333,
+            "username": "bitcorenodetest",
+            "password": "local321"
+          }
+        }
+      },
       "ETH": {
         "regtest": {
           "chainSource": "p2p",
