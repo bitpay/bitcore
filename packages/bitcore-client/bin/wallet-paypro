@@ -28,11 +28,10 @@ let wallet;
 const main = async () => {
   const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program.opts();
   let { payProUri } = program.opts();
-  if (payProUri.includes('=')) {
-    const [base, query] = payProUri.split('?'); // strip query params
-    const split = base.split('=');
+  if (payProUri.includes('?r=')) {
+    const split = base.split('?r=');
     console.log(split.length);
-    payProUri = split[split.length - 1] + (query ? '?' + query : '');
+    payProUri = split[split.length - 1];
   }
   // Payment-Options
   const paymentOptionsResponse = await doRequest({
