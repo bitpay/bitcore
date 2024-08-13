@@ -28,8 +28,8 @@ let wallet;
 const main = async () => {
   const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program.opts();
   let { payProUri } = program.opts();
-  if (payProUri.includes('?r=')) {
-    const split = base.split('?r=');
+  if (payProUri.includes(':?r=')) {
+    const split = base.split(':?r=');
     console.log(split.length);
     payProUri = split[split.length - 1];
   }
