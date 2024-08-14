@@ -58,6 +58,7 @@ describe('TaprootInput', function() {
     const input = transaction.inputs[0];
 
     transaction.sign(privateKey);
+    input.isFullySigned().should.equal(true);
     input.clearSignatures();
     input.isFullySigned().should.equal(false);
   });
@@ -67,6 +68,7 @@ describe('TaprootInput', function() {
       .to(address, 1000000);
     const input = transaction.inputs[0];
     const signatures = input.getSignatures(transaction, new PrivateKey(), 0);
+    Array.isArray(signatures).should.equal(true);
     signatures.length.should.equal(0);
   });
 
@@ -96,6 +98,7 @@ describe('TaprootInput', function() {
       const input = transaction.inputs[0];
 
       transaction.sign(privateKey);
+      input.isFullySigned().should.equal(true);
       input.clearSignatures();
       input.isFullySigned().should.equal(false);
     });
