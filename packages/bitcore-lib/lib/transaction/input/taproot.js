@@ -48,10 +48,7 @@ TaprootInput.prototype.getSignatures = function(transaction, privateKey, index, 
     signature: Signature.fromSchnorr(signature),
     sigtype: sigtype
   });
-  if (!this.isValidSignature(transaction, txSig)) {
-    return [];
-  }
-  return [txSig];
+  return this.isValidSignature(transaction, txSig) ? [txSig] : [];
 };
 
 
