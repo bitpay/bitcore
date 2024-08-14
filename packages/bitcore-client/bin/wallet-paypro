@@ -68,12 +68,10 @@ const main = async () => {
     nonce = inputNonce || await wallet.getNonce();
   }
 
-  const { data: currencies } = await doRequest({
-    method: 'GET',
-    uri: 'https://bitpay.com/currencies',
-    json: true
-  });
-  const currency = token || currencies.find(c => c.chain === chain && c.native)?.code || chain;
+  const currency = token || paymentOptions.find(o => o.chain === chain && o.native)?.currency;
+  if (!currency) {
+    throw new Error(`No supported currency for ${chain}. Try specifying --token`);
+  }
   console.log(`selecting ${currency}`);
   const paymentRequestResponse = await doRequest({
     method: 'POST',
