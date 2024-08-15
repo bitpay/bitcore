@@ -1,15 +1,24 @@
 import os from 'os';
 import request = require('request');
 import Web3 from 'web3';
-import config from '../../../../config';
-import { CoinEvent } from '../../../../models/events';
-import { ChainId, ChainNetwork } from '../../../../types/ChainNetwork';
-import { IAddressSubscription, IExternalProvider } from '../../../../types/ExternalProvider';
-import { StreamAddressUtxosParams, StreamTransactionParams } from '../../../../types/namespaces/ChainStateProvider';
-import { isDateValid } from '../../../../utils';
-import { EVMTransactionStorage } from '../../evm/models/transaction';
-import { EVMTransactionJSON, GethTraceCall, IEVMTransactionTransformed, Transaction } from '../../evm/types';
-import { ExternalApiStream as ApiStream } from '../streams/apiStream';
+import config from '../../../config';
+import logger from '../../../logger';
+import { MongoBound } from '../../../models/base';
+import { CacheStorage } from '../../../models/cache';
+import { CoinEvent } from '../../../models/events';
+import { WalletAddressStorage } from '../../../models/walletAddress';
+import { BaseEVMStateProvider, BuildWalletTxsStreamParams } from '../../../providers/chain-state/evm/api/csp';
+import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
+import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
+import { EVMTransactionJSON, GethTraceCall, IEVMBlock, IEVMTransactionTransformed, Transaction } from '../../../providers/chain-state/evm/types';
+import { ExternalApiStream } from '../../../providers/chain-state/external/streams/apiStream';
+import { IBlock } from '../../../types/Block';
+import { ChainId, ChainNetwork } from '../../../types/ChainNetwork';
+import { IAddressSubscription } from '../../../types/ExternalProvider';
+import { GetBlockParams, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
+import { isDateValid } from '../../../utils';
+import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
+
 
 
 export interface MoralisAddressSubscription {
@@ -18,7 +27,7 @@ export interface MoralisAddressSubscription {
   status?: string;
 }
 
-class MoralisClass implements IExternalProvider {
+export class MoralisStateProvider extends BaseEVMStateProvider {
   baseUrl = 'https://deep-index.moralis.io/api/v2.2';
   baseStreamUrl = 'https://api.moralis-streams.com/streams/evm';
   apiKey = config.externalProviders?.moralis?.apiKey;
@@ -28,8 +37,165 @@ class MoralisClass implements IExternalProvider {
     'X-API-Key': this.apiKey,
   };
 
+  constructor(chain: string) {
+    super(chain);
+  }
 
-  async getBlockNumberByDate({ chainId, date }) {
+  // @override
+  async getFee(params) {
+    let { network, target = 4, txType } = params;
+    const chain = this.chain;
+    if (network === 'livenet') {
+      network = 'mainnet';
+    }
+    let cacheKey = `getFee-${chain}-${network}-${target}`;
+    if (txType) {
+      cacheKey += `-type${txType}`;
+    }
+
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        let feerate;
+        const { rpc } = await this.getWeb3(network, { type: 'historical' });
+        feerate = await rpc.estimateFee({ nBlocks: target, txType });
+        return { feerate, blocks: target };
+      },
+      CacheStorage.Times.Minute
+    );
+  }
+
+  // @override
+  async getLocalTip({ chain, network }): Promise<IBlock> {
+    const { web3 } = await this.getWeb3(network);
+    const block = await web3.eth.getBlock('latest');
+    return EVMBlockStorage.convertRawBlock(chain, network, block);
+  }
+
+  // @override
+  async streamBlocks(params: StreamBlocksParams) {
+    const { chain, network, req, res } = params;
+    const { web3 } = await this.getWeb3(network);
+    const chainId = await this.getChainId({ network });
+    const blockRange = await this.getBlocksRange({ ...params, chainId });
+    const tipHeight = await web3.eth.getBlockNumber();
+    let isReading = false;
+  
+    const stream = new ReadableWithEventPipe({
+      objectMode: true,
+      async read() {
+        if (isReading) {
+          return;
+        }
+        isReading = true;
+
+        let block;
+        let nextBlock;
+        try {
+          for (const blockNum of blockRange) {
+            // stage next block in new var so `nextBlock` doesn't get overwritten if needed for `block`
+            const thisNextBlock = parseInt(block?.number) === blockNum + 1 ? block : await web3.eth.getBlock(blockNum + 1);
+            block = parseInt(nextBlock?.number) === blockNum ? nextBlock : await web3.eth.getBlock(blockNum);
+            if (!block) {
+              continue;
+            }
+            nextBlock = thisNextBlock;
+            const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
+            convertedBlock.nextBlockHash = nextBlock?.hash;
+            convertedBlock.confirmations = tipHeight - block.number + 1;
+            this.push(convertedBlock);
+          }
+        } catch (e) {
+          logger.error('Error streaming blocks: %o', e);
+        }
+        this.push(null);
+      }
+    });
+
+    return ExternalApiStream.onStream(stream, req!, res!);
+
+  }
+
+  // @override
+  async _getTransaction(params: StreamTransactionParams) {
+    let { chain, network, txId } = params;
+    network = network.toLowerCase();
+
+    const { web3 } = await this.getWeb3(network, { type: 'historical' });
+    const tipHeight = await web3.eth.getBlockNumber();
+    const chainId = await this.getChainId({ network });
+    const found = await this._getTransactionFromMoralis({ chain, network, chainId, txId });
+    return { tipHeight, found };
+  }
+
+  // @override
+  async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
+    const { req, res, args, network, address } = params;
+
+    const chainId = await this.getChainId({ network });
+    const txStream = await this._streamAddressTransactionsFromMoralis({
+      chainId,
+      chain: this.chain,
+      network,
+      address,
+      args: {
+        limit: 10, // default limit
+        ...args
+      }
+    });
+    // TODO unify `ExternalApiStream.onStream` and `Storage.apiStream` which are effectively doing the same thing
+    const result = await ExternalApiStream.onStream(txStream, req!, res!);
+    if (!result?.success) {
+      logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
+    }
+  }
+
+  // @override
+  async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
+    const { network, args } = params;
+    let { transactionStream, walletAddresses } = streamParams;
+
+    const chainId = await this.getChainId({ network });
+    for (const address of walletAddresses) {
+      const txStream = await this._streamAddressTransactionsFromMoralis({
+        chainId,
+        chain: this.chain,
+        network,
+        address,
+        args: {
+          limit: 10, // default limit
+          order: 'ASC',
+          ...args
+        }
+      });
+      transactionStream = txStream.eventPipe(transactionStream);
+      await WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address });
+    }
+    return transactionStream;
+  }
+
+  // @override
+  async _getBlocks(params: GetBlockParams) {
+    const { chain, network } = params;
+    const blocks: MongoBound<IEVMBlock>[] = [];
+    const { web3 } = await this.getWeb3(network);
+    const chainId = await this.getChainId({ network });
+    const blockRange = await this.getBlocksRange({ ...params, chainId });
+
+    for (const blockNum of blockRange) {
+      const block = await web3.eth.getBlock(blockNum);
+      const nextBlock = await web3.eth.getBlock(block.number + 1);
+      const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
+      convertedBlock.nextBlockHash = nextBlock?.hash;
+      blocks.push(convertedBlock);
+    }
+    
+    const tipHeight = await web3.eth.getBlockNumber();
+    return { tipHeight, blocks };
+  }
+
+  // @override
+  async _getBlockNumberByDate({ chainId, date }) {
     if (!date || !isDateValid(date)) {
       throw new Error('Invalid date');
     }
@@ -56,7 +222,10 @@ class MoralisClass implements IExternalProvider {
   }
 
 
-  async getTransaction(params: StreamTransactionParams & ChainId) {
+
+  /** MORALIS METHODS */
+
+  async _getTransactionFromMoralis(params: StreamTransactionParams & ChainId) {
     const { chain, network, chainId, txId } = params;
 
     const query = this._buildQueryString({ chain: chainId, include: 'internal_transactions' });
@@ -81,7 +250,7 @@ class MoralisClass implements IExternalProvider {
   }
 
 
-  streamAddressTransactions(params: StreamAddressUtxosParams & ChainId) {
+  _streamAddressTransactionsFromMoralis(params: StreamAddressUtxosParams & ChainId) {
     const { chainId, chain, network, address, args } = params;
     if (args.tokenAddress) {
       return this._streamERC20TransactionsByAddress({ chainId, chain, network, address, tokenAddress: args.tokenAddress, args });
@@ -106,7 +275,7 @@ class MoralisClass implements IExternalProvider {
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
     }
 
-    return new ApiStream(
+    return new ExternalApiStream(
       `${this.baseUrl}/${address}${queryStr}`,
       this.headers,
       args
@@ -137,7 +306,7 @@ class MoralisClass implements IExternalProvider {
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
     }
 
-    return new ApiStream(
+    return new ExternalApiStream(
       `${this.baseUrl}/${address}/erc20/transfers${queryStr}`,
       this.headers,
       args
@@ -363,5 +532,3 @@ class MoralisClass implements IExternalProvider {
     return events;
   }
 }
-
-export const Moralis = new MoralisClass();

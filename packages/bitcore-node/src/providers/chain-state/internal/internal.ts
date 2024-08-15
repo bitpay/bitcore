@@ -275,8 +275,8 @@ export class InternalStateProvider implements IChainStateService {
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
     const walletConfig = Config.for('api').wallets;
     const canCreate = walletConfig && walletConfig.allowCreationBeforeCompleteSync;
-    const exteranllyProvided = this.isExternallyProvided({ chain, network });
-    if (!exteranllyProvided && !initialSyncComplete && !canCreate) {
+    const isP2P = this.isP2p({ chain, network });
+    if (isP2P && !initialSyncComplete && !canCreate) {
       throw new Error('Wallet creation not permitted before intitial sync is complete');
     }
     const wallet: IWallet = {
@@ -323,7 +323,7 @@ export class InternalStateProvider implements IChainStateService {
     });
   }
 
-  isExternallyProvided({ chain, network }) {
+  isP2p({ chain, network }) {
     return Config.chainConfig({ chain, network })?.chainSource !== 'p2p';
   }
 

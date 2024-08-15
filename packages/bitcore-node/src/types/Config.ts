@@ -4,8 +4,8 @@ export interface IChainConfig<T extends INetworkConfig> {
 
 interface INetworkConfig {
   disabled?: boolean; // Disables P2P worker for this network
-  modulePath?: string; // Custom module path
-  chainSource?: 'p2p' | 'moralis';
+  module?: string; // Specific/custom module
+  chainSource?: 'p2p' | 'external';
   trustedPeers: {
     host: string;
     port: number | string;
@@ -70,7 +70,7 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [currency: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
+    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
   };
   aliasMapping: {
     chains: {

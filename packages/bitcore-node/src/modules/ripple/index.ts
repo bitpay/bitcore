@@ -10,12 +10,12 @@ import { XrpVerificationPeer } from './p2p/verification';
 export default class XRPModule extends BaseModule {
   static startMonitor: EventEmitter;
   static endMonitor: EventEmitter;
-  constructor(services: BaseModule['bitcoreServices'], network: string, _config: IXrpNetworkConfig) {
+  constructor(services: BaseModule['bitcoreServices'], chain: string, network: string, _config: IXrpNetworkConfig) {
     super(services);
-    services.CSP.registerService('XRP', network, new RippleStateProvider());
+    services.CSP.registerService(chain, network, new RippleStateProvider());
     services.Api.app.use(XrpRoutes);
-    services.P2P.register('XRP', network, XrpP2pWorker);
-    services.Verification.register('XRP', network, XrpVerificationPeer);
+    services.P2P.register(chain, network, XrpP2pWorker);
+    services.Verification.register(chain, network, XrpVerificationPeer);
 
     if (!XRPModule.startMonitor) {
       const adapter = new RippleEventAdapter(services, network);

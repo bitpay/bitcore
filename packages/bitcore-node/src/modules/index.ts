@@ -9,6 +9,7 @@ import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { Verification } from '../services/verification';
+import { ChainNetwork } from '../types/ChainNetwork';
 
 export interface IService {
   start(): Promise<void>;
@@ -54,31 +55,32 @@ class ModuleManager extends BaseModule {
     BCH: './bitcoin-cash',
     DOGE: './dogecoin',
     LTC: './litecoin',
-    XRP: './ripple',
-    ARB: './arbitrum',
-    BASE: './base',
-    OP: './optimism',
+    XRP: './ripple'
   };
 
-  loadConfigured() {
-    const { chains } = Config.get();
+  loadConfigured(params: Partial<ChainNetwork> = {}) {
+    const chains = params.chain ? [params.chain] : Config.chains();
 
     // Auto register known modules from config.chains
-    for (const chain in chains) {
+    for (const chain of chains) {
       let modulePath = this.DEFAULT_MODULE_PATHS[chain];
-      if (!modulePath) {
-        logger.warn(
-          `Auto module registration failed for chain '${chain}'. ` +
-            'Is the chain name / module path inside of DEFAULT_MODULE_PATHS?'
-        );
-        continue;
-      }
 
       // Register for each
-      for (const [network, config] of Object.entries(chains[chain])) {
-        modulePath = config.modulePath || modulePath; // custom module path
-        const moduleClass = require(modulePath).default || (require(modulePath) as Class<BaseModule>);
-        this.internalServices.push(new moduleClass(this.bitcoreServices, network, config));
+      const networks = params.network ? [params.network] : Config.networksFor(chain);
+      for (const network of networks) {
+        const config = Config.chainConfig({ chain, network });
+        modulePath = config.module || modulePath; // custom module path
+        if (!modulePath) {
+          logger.warn(`Module not found for ${chain}:${network}. Did you forget to specify 'module' in the config?`);
+          continue;
+        }
+        logger.info(`Registering module for ${chain}:${network}: ${modulePath}`);
+        try {
+          const ModuleClass: Class<BaseModule> = require(modulePath).default || require(modulePath);
+          this.internalServices.push(new ModuleClass(this.bitcoreServices, chain, network, config));
+        } catch (err: any) {
+          logger.error(`Module registration errored for ${chain}:${network}: %o`, err.stack || err.message || err);
+        }
       }
     }
   }

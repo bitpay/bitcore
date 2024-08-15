@@ -2,39 +2,36 @@ import { CryptoRpc } from 'crypto-rpc';
 import { Cursor } from 'mongodb';
 import Web3 from 'web3';
 import { BlockTransactionObject } from 'web3-eth';
-import logger, { timestamp } from '../logger';
-import { CoinEvent, EventStorage } from '../models/events';
-import { StateStorage } from '../models/state';
-import { WalletAddressStorage } from '../models/walletAddress';
-import { IWebhook, WebhookStorage } from '../models/webhook';
-import { BaseEVMStateProvider } from '../providers/chain-state/evm/api/csp';
-import { EVMBlockStorage } from '../providers/chain-state/evm/models/block';
-import { EVMTransactionStorage } from '../providers/chain-state/evm/models/transaction';
-import { Moralis } from '../providers/chain-state/external/providers/moralis';
-import { IEVMNetworkConfig, IExternalSyncConfig } from '../types/Config';
-import { IAddressSubscription, IExternalProvider } from '../types/ExternalProvider';
-import { wait } from '../utils';
-import { BaseP2PWorker } from './p2p';
+import logger, { timestamp } from '../../../logger';
+import { CoinEvent, EventStorage } from '../../../models/events';
+import { StateStorage } from '../../../models/state';
+import { WalletAddressStorage } from '../../../models/walletAddress';
+import { IWebhook, WebhookStorage } from '../../../models/webhook';
+import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
+import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
+import { BaseP2PWorker } from '../../../services/p2p';
+import { IEVMNetworkConfig, IExternalSyncConfig } from '../../../types/Config';
+import { IAddressSubscription } from '../../../types/ExternalProvider';
+import { wait } from '../../../utils';
+import { MoralisStateProvider } from '../api/csp';
 
-export class ExternalEvmP2PWorker extends BaseP2PWorker {
+export class MoralisP2PWorker extends BaseP2PWorker {
   private chainConfig: IExternalSyncConfig<IEVMNetworkConfig>;
   private web3?: Web3;
   private syncInterval?: NodeJS.Timeout;
-  private csp: BaseEVMStateProvider;
-  private provider: IExternalProvider;
   private addressSub?: IAddressSubscription;
   private chainId?: number;
   private webhookTail?: Cursor;
   private bestBlock: number;
   private chainNetworkStr: string;
+  private csp: MoralisStateProvider;
 
   constructor({ chain, network, chainConfig }) {
     super({ chain, network, chainConfig });
     this.chain = chain;
     this.network = network;
     this.chainConfig = chainConfig;
-    this.csp = new BaseEVMStateProvider(this.chain);
-    this.provider = this.csp.getExternalProvider({ network });
+    this.csp = new MoralisStateProvider(this.chain);
     this.addressSub = undefined;
     this.chainId = undefined;
     this.webhookTail = undefined;
@@ -65,9 +62,9 @@ export class ExternalEvmP2PWorker extends BaseP2PWorker {
         const providerConfigs = this.chainConfig.providers || (this.chainConfig.provider ? [this.chainConfig.provider] : []);
         for (const config of providerConfigs) {
           try {
-            const { web3 } = new CryptoRpc({ chain: this.chain, network: this.network, isEVM: true, ...config }).get(this.chain);
-            await web3.eth.getBlockNumber();
-            this.web3 = web3;
+            const rpc = new CryptoRpc({ chain: this.chain, network: this.network, isEVM: true, ...config }).get(this.chain);
+            await rpc.web3.eth.getBlockNumber();
+            this.web3 = rpc.web3;
             return this.web3 as Web3;
           } catch (e) {
             connectionErrors.push(e);
@@ -165,24 +162,24 @@ export class ExternalEvmP2PWorker extends BaseP2PWorker {
   private async subscribeToAddressActivity() {
     try {
       const chainId = await this.getChainId();
-      const subs = await this.provider.getAddressSubscriptions();
+      const subs = await this.csp.getAddressSubscriptions();
       this.addressSub = subs?.find(sub => sub.chainIds.includes('0x' + chainId.toString(16)));
       
       if (this.addressSub?.status === 'error') {
-        await this.provider.deleteAddressSubscription({ sub: this.addressSub });
+        await this.csp.deleteAddressSubscription({ sub: this.addressSub });
         this.addressSub = undefined;
       }
 
       if (!this.addressSub) {
         // Create new subscription if none exists
-        this.addressSub = await this.provider.createAddressSubscription({
+        this.addressSub = await this.csp.createAddressSubscription({
           chain: this.chain,
           network: this.network,
           chainId
         });
       }
 
-      logger[this.addressSub?.status === 'active' ? 'info' : 'warn'](`Address subscription for ${this.chainNetworkStr} is: ${this.addressSub.status}`);
+      logger[this.addressSub?.status === 'active' ? 'info' : 'warn'](`Address subscription for ${this.chainNetworkStr} is: ${this.addressSub!.status}`);
 
       // todo check and update url
       // if (!sub.webhookUrl.startsWith(provider.baseWebhookUrl)) {
@@ -202,10 +199,10 @@ export class ExternalEvmP2PWorker extends BaseP2PWorker {
           lastQueryTime: { $gte: lastUpdate, $lt: now - ONE_DAY * 60 }
         }).toArray();
        
-        this.addressSub = (await this.provider.updateAddressSubscription({
-          sub: this.addressSub,
+        this.addressSub = await this.csp.updateAddressSubscription({
+          sub: this.addressSub!,
           addressesToRemove: inactiveAddresses.map(a => a.address)
-        }));
+        });
       }
       
       { // Add new addresses
@@ -215,19 +212,19 @@ export class ExternalEvmP2PWorker extends BaseP2PWorker {
           lastQueryTime: { $gte: now - ONE_DAY * 60 }
         }).toArray();
     
-        this.addressSub = await this.provider.updateAddressSubscription({
+        this.addressSub = await this.csp.updateAddressSubscription({
           sub: this.addressSub,
           addressesToAdd: activeAddresses.map(a => a.address),
         });
       }
 
       // Set subscription to active
-      this.addressSub = await this.provider.updateAddressSubscription({
+      this.addressSub = await this.csp.updateAddressSubscription({
         sub: this.addressSub,
         status: 'active'
       });
 
-      logger[this.addressSub?.status === 'active' ? 'info' : 'warn'](`Address subscription for ${this.chainNetworkStr} is: ${this.addressSub.status}`);
+      logger[this.addressSub?.status === 'active' ? 'info' : 'warn'](`Address subscription for ${this.chainNetworkStr} is: ${this.addressSub!.status}`);
       return true;
     } catch (err: any) {
       logger.error(`Error subscribing to ${this.chainNetworkStr} address activity: %o`, err.stack || err.message || err);
@@ -268,13 +265,10 @@ export class ExternalEvmP2PWorker extends BaseP2PWorker {
     this.webhookTail.on('data', async (webhook: IWebhook) => {
       try {
         let coinEvents: CoinEvent[] = [];
-        switch (webhook.source) {
-          case 'moralis':
-            coinEvents = Moralis.webhookToCoinEvents({ chain: this.chain, network: this.network, webhook })
-            break;
-          default:
-            throw new Error(`Unrecognized webhook source on webhook ${webhook._id?.toString()}: ${webhook.source}`);
+        if (webhook.source !== 'moralis') {
+          return;
         }
+        coinEvents = this.csp.webhookToCoinEvents({ chain: this.chain, network: this.network, webhook })
         const result = await Promise.allSettled(coinEvents.map(evt => EventStorage.signalAddressCoin(evt))); 
         const someFulfilled = result.some(r => r.status === 'fulfilled' || (false && logger.error(`Error signaling ${this.chainNetworkStr} for webhook ${webhook._id?.toString()}: %o`, (r as PromiseRejectedResult).reason)));
         if (someFulfilled) {

@@ -20,10 +20,10 @@ export const P2pWorker = async () => {
 
   services.push(Storage, Event);
 
-  Modules.loadConfigured();
+  const { CHAIN: chain, NETWORK: network } = process.env;
+  Modules.loadConfigured({ chain, network }); // loads all if no chain and network specified
 
   // start a particular chain and network, or all of them
-  const { CHAIN: chain, NETWORK: network } = process.env;
   if (chain && network) {
     const chainConfig = Config.chainConfig({ chain, network });
     const p2pClass = P2P.get(chain, network);

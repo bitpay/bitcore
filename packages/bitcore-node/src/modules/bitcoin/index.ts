@@ -5,11 +5,11 @@ import { BitcoinP2PWorker } from './p2p';
 import { VerificationPeer } from './VerificationPeer';
 
 export default class BitcoinModule extends BaseModule {
-  constructor(services: BaseModule['bitcoreServices'], network: string, _config: IUtxoNetworkConfig) {
+  constructor(services: BaseModule['bitcoreServices'], chain: string, network: string, _config: IUtxoNetworkConfig) {
     super(services);
-    services.Libs.register('BTC', 'bitcore-lib', 'bitcore-p2p');
-    services.P2P.register('BTC', network, BitcoinP2PWorker);
-    services.CSP.registerService('BTC', network, new BTCStateProvider());
-    services.Verification.register('BTC', network, VerificationPeer);
+    services.Libs.register(chain, 'bitcore-lib', 'bitcore-p2p');
+    services.P2P.register(chain, network, BitcoinP2PWorker);
+    services.CSP.registerService(chain, network, new BTCStateProvider());
+    services.Verification.register(chain, network, VerificationPeer);
   }
 }
