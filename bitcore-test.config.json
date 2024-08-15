@@ -88,6 +88,7 @@
       "BASE": {
         "testnet": {
           "chainSource": "external",
+          "module": "./moralis",
           "trustedPeers": [
             {
               "host": "localhost",
