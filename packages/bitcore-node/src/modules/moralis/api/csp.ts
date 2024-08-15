@@ -169,11 +169,12 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         }
       });
       transactionStream = txStream.eventPipe(transactionStream);
-      await Promise.all([
-        WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address }),
-        this._addAddressToSubscription({ chainId, address })
-          .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e))
-      ]);
+      
+      // Do not await these promises. They are not critical to the stream.
+      WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address })
+        .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e)),
+      this._addAddressToSubscription({ chainId, address })
+        .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e))
     }
     return transactionStream;
   }
