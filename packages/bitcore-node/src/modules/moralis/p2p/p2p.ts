@@ -233,22 +233,8 @@ export class MoralisP2PWorker extends BaseP2PWorker {
   }
 
   private async syncAddressActivity() {
-    // let tipHeight;
-
-    // const updateTipHeight = async () => {
-    //   try {
-    //     const web3 = await this.getWeb3();
-    //     tipHeight = await web3.eth.getBlockNumber();
-    //   } catch (e: any) {
-    //     logger.error(`Error fetching block number for ${this.chainNetworkStr}: %o`, e.stack || e.message || e);
-    //   }
-    // };
-
-    // await updateTipHeight();
-    // let heightInterval = setInterval(updateTipHeight, 5000);
-    if (this.webhookTail) {
-      this.webhookTail.removeAllListeners();
-    }
+    // if this is a reconnect, remove old listeners
+    this.webhookTail?.removeAllListeners();
     this.webhookTail = WebhookStorage.getTail({ chain: this.chain, network: this.network });
     logger.info(`Webhook tail initiated for ${this.chainNetworkStr}`);
     this.webhookTail.on('error', (err) => {
