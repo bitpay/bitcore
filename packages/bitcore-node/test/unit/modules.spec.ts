@@ -23,14 +23,14 @@ describe('Modules', function() {
   it('should try to load custom module', () => {
     const sandbox = sinon.createSandbox();
     const mockConfigCopy = JSON.parse(JSON.stringify(mockConfig));
-    mockConfigCopy.chains.BTC.testnet.modulePath = './bitcoin-custom';
+    mockConfigCopy.chains.BTC.testnet.module = './bitcoin-custom';
     sandbox.stub(Config, 'get').returns(mockConfigCopy);
 
     try {
       Modules.loadConfigured();
       throw new Error('it should have thrown due to a non-existing custom module');
     } catch (e: any) {
-      expect(e.message.startsWith('Cannot find module \'./bitcoin-custom\'')).to.equal(true);
+      expect(e.message).to.include('Cannot find module \'./bitcoin-custom\'');
     }
     sandbox.restore();
   });

@@ -75,12 +75,8 @@ class ModuleManager extends BaseModule {
           continue;
         }
         logger.info(`Registering module for ${chain}:${network}: ${modulePath}`);
-        try {
-          const ModuleClass: Class<BaseModule> = require(modulePath).default || require(modulePath);
-          this.internalServices.push(new ModuleClass(this.bitcoreServices, chain, network, config));
-        } catch (err: any) {
-          logger.error(`Module registration errored for ${chain}:${network}: %o`, err.stack || err.message || err);
-        }
+        const ModuleClass: Class<BaseModule> = require(modulePath).default || require(modulePath);
+        this.internalServices.push(new ModuleClass(this.bitcoreServices, chain, network, config));
       }
     }
   }
