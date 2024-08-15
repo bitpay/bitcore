@@ -169,7 +169,11 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         }
       });
       transactionStream = txStream.eventPipe(transactionStream);
-      await WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address });
+      await Promise.all([
+        WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address }),
+        this._addAddressToSubscription({ chainId, address })
+          .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e))
+      ]);
     }
     return transactionStream;
   }
@@ -530,5 +534,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       });
     }
     return events;
+  }
+
+  private async _addAddressToSubscription({ chainId, address }) {
+    const subs = await this.getAddressSubscriptions();
+    const sub = subs?.find(sub => sub.chainIds.includes('0x' + chainId.toString(16)));
+    if (sub) {
+      await this.updateAddressSubscription({ sub, addressesToAdd: [address] });
+    }
   }
 }
