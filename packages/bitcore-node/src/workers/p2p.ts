@@ -54,14 +54,16 @@ const stop = async () => {
   }
   stopping = true;
 
-  logger.info(`Shutting down P2P pid ${process.pid}`);
-  for (const service of services.reverse()) {
-    await service.stop();
-  }
   setTimeout(() => {
     logger.warn('P2P Worker did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);
   }, 30 * 1000).unref();
+
+
+  logger.info(`Shutting down P2P pid ${process.pid}`);
+  for (const service of services.reverse()) {
+    await service.stop();
+  }
 
   if (!cluster.isPrimary) {
     process.removeAllListeners();

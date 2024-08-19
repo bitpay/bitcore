@@ -47,14 +47,20 @@ const stop = async () => {
   }
   stopping = true;
   
-  logger.error(`Shutting down ${process.pid}`);
-  for (const service of services.reverse()) {
-    await service.stop();
-  }
   setTimeout(() => {
     logger.warn('API Worker did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);
   }, 30 * 1000).unref();
+
+
+  logger.error(`Shutting down API ${process.pid}`);
+  for (const service of services.reverse()) {
+    await service.stop();
+  }
+
+  if (!cluster.isPrimary) {
+    process.removeAllListeners();
+  }
 };
 
 if (require.main === module) {
