@@ -96,6 +96,9 @@ export class SocketService {
   async stop() {
     logger.info('Stopping Socket Service');
     this.stopped = true;
+    this.eventService.txEvent.removeAllListeners();
+    this.eventService.blockEvent.removeAllListeners();
+    this.eventService.addressCoinEvent.removeAllListeners();
   }
 
   async wireup() {
