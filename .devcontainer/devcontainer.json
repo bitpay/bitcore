@@ -1,0 +1,9 @@
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@transifex/native/dist/browser.native.min.js"></script>
+const tx = Transifex.tx;
+const t = Transifex.t;
+tx.init({
+  token: '1/f8abc8392622dd61508c8b1550db7d272967a7ae',
+});
+1/f8abc8392622dd61508c8b1550db7d272967a7ae
+
+1/97f0084e10053ac6a1b2ca3b0a344fa8a28322d2
