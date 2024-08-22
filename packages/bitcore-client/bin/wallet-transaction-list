@@ -5,26 +5,25 @@ const { Wallet } = require('../ts_build/src/wallet');
 
 program
   .version(require('../package.json').version)
-  .requiredOption('--name <name>', 'REQUIRED - Wallet name')
-  .option('--startDate <startDate>')
-  .option('--endDate <endDate>')
-  .option('--startBlock <startBlock>')
-  .option('--endBlock <endBlock>')
-  .option('--includeMempool')
-  .option('--tokenContractAddress <tokenContractAddress>', 'optional - Address of the token to query')
-  .option('--token <token>', 'optional - Symbol of the token to query')
-  .option('--tokenName <tokenName>', 'optional - Custom name of the token to query')
-  .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
-  .option('--path <path>', 'optional - Custom wallet storage path')
+  .requiredOption('--name <name>',        'REQUIRED - Wallet name')
+  .option('--startDate <startDate>',      'Start date for the query')
+  .option('--endDate <endDate>',          'End date for the query')
+  .option('--startBlock <startBlock>',    'Start block for the query')
+  .option('--endBlock <endBlock>',        'End block for the query')
+  .option('--includeMempool',             'Include unconfirmed transactions')
+  .option('--token <tokenName>',          'Get token transactions by the token name')
+  .option('--storageType <storageType>',  'Name of the database to use (default Level)')
+  .option('--path <path>',                'Custom wallet storage path')
   .parse(process.argv);
 
 let wallet;
 
 const main = async () => {
-  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token, tokenName, tokenContractAddress } = program.opts();
+  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token: tokenName } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
-    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, token, tokenName, tokenContractAddress }).pipe(process.stdout);
+    const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
+    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, tokenName }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
   }

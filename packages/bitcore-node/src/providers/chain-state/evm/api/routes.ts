@@ -72,10 +72,10 @@ export class EVMRouter {
 
   private estimateGas(router: Router) {
     router.post(`/api/${this.chain}/:network/gas`, async (req, res) => {
-      const { from, to, value, data, gasPrice } = req.body;
+      const { from, to, value, data } = req.body;
       const { network } = req.params;
       try {
-        const gasLimit = await this.csp.estimateGas({ network, from, to, value, data, gasPrice });
+        const gasLimit = await this.csp.estimateGas({ network, from, to, value, data });
         res.json(gasLimit);
       } catch (err: any) {
         if (err?.code != null) { // Preventable error from geth (probably due to insufficient funds or similar)
@@ -97,7 +97,7 @@ export class EVMRouter {
 
         const { needsL1Fee } = Config.chainConfig({ chain: this.chain, network }) as IEVMNetworkConfig;
         if (!needsL1Fee) {
-          return res.json(0); // No L1 fee required
+          return res.json('0'); // No L1 fee required
         }
 
         if (!rawTx) {

@@ -404,11 +404,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @realtime
   async getWalletBalance(params: GetWalletBalanceParams) {
-    const { network } = params;
+    const { network, args } = params;
     if (params.wallet._id === undefined) {
       throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
     }
     let addresses = await this.getWalletAddresses(params.wallet._id);
+    addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
     );
