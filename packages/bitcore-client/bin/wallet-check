@@ -27,7 +27,12 @@ const main = async () => {
     } else {
       const address = wallet.deriveAddress(wallet.addressIndex - 1, false);
       const addressObj = await wallet.getLocalAddress(address);
-      console.log(`Last local address: ${address} (${addressObj?.path || `m/0/${wallet.addressIndex - 1}`})`);
+      if (!addressObj) {
+        console.log('Local address not found at index ' + (wallet.addressIndex - 1));
+        console.log(`Run \`wallet derive --name <name> --startIdx ${wallet.addressIndex - 1}\` and try again.`);
+      } else {
+        console.log(`Last local address: ${address} (${addressObj?.path || `m/0/${wallet.addressIndex - 1}`})`);
+      }
     }
 
     if (index) {

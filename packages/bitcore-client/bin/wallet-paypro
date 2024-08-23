@@ -28,13 +28,13 @@ let wallet;
 const main = async () => {
   const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program.opts();
   let { payProUri } = program.opts();
-  if (payProUri.includes('=')) {
-    const split = payProUri.split('=');
+  if (payProUri.includes(':?r=')) {
+    const split = payProUri.split(':?r=');
     console.log(split.length);
     payProUri = split[split.length - 1];
   }
   // Payment-Options
-  const paymentOptionsResponse = await request({
+  const paymentOptionsResponse = await doRequest({
     method: 'GET',
     uri: payProUri,
     headers: {
@@ -67,9 +67,13 @@ const main = async () => {
   if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
     nonce = inputNonce || await wallet.getNonce();
   }
-  const currency = token || chain;
+
+  const currency = token || paymentOptions.find(o => o.chain === chain && o.native)?.currency;
+  if (!currency) {
+    throw new Error(`No supported currency for ${chain}. Try specifying --token`);
+  }
   console.log(`selecting ${currency}`);
-  const paymentRequestResponse = await request({
+  const paymentRequestResponse = await doRequest({
     method: 'POST',
     uri: payProUri,
     json: { chain, currency },
@@ -100,7 +104,7 @@ const main = async () => {
       invoiceID = outputs[0].invoiceID;
     }
     const utxos = await wallet.getUtxosArray();
-    const params = { recipients, feeRate, from, invoiceID, data, value, utxos };
+    const params = { recipients, feeRate, from, invoiceID, data, value, utxos, gasPrice };
     params.nonce = Number(nonce);
     params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
     const changeIdx = params.change ? wallet.addressIndex : null;
@@ -113,7 +117,7 @@ const main = async () => {
     }
     wallet = await wallet.unlock(password);
     const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password, changeAddressIdx: changeIdx });
-    const txid = cwc.Transactions.getHash({chain, tx: signedTx});
+    const txid = cwc.Transactions.getHash({ chain, tx: signedTx });
     console.log(`signedRawTx: ${signedTx}`);
     signedTransactions.push({ tx: signedTx });
     console.log(`txid: ${txid}`);
@@ -127,23 +131,23 @@ const main = async () => {
     nonce++;
   }
 
-    // Payment Verification
-    const paymentVerificationResponse = await request({
-      method: 'POST',
-      uri: payProUri,
-      json: { chain, currency, transactions: unsignedTransactions},
-      headers: {
-        'Content-Type' : 'application/payment-verification',
-        'x-paypro-version' : '2'
-      },
-      agentOptions: {
-        rejectUnauthorized: false
-      },
-    });
-    console.log(paymentVerificationResponse);
+  // Payment Verification
+  const paymentVerificationResponse = await doRequest({
+    method: 'POST',
+    uri: payProUri,
+    json: { chain, currency, transactions: unsignedTransactions },
+    headers: {
+      'Content-Type' : 'application/payment-verification',
+      'x-paypro-version' : '2'
+    },
+    agentOptions: {
+      rejectUnauthorized: false
+    },
+  });
+  console.log(paymentVerificationResponse);
 
   //  send-payment
-  const sendPaymentResponse = await request({
+  const sendPaymentResponse = await doRequest({
     method: 'POST',
     uri: payProUri,
     json: { chain, currency, transactions: signedTransactions },
@@ -156,6 +160,14 @@ const main = async () => {
     },
   });
   console.log(sendPaymentResponse);
+};
+
+const doRequest = async (...opts) => {
+  try {
+    return await request(...opts);
+  } catch (e) {
+    throw new Error(e.stack || e.message || e);
+  }
 };
 
 main()

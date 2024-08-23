@@ -93,10 +93,27 @@ export class EthChain implements IChain {
       if (err) {
         return cb(err);
       }
+      // getPendingTxs returns all txps when given a native currency
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
-        // Do not lock eth multisig amount
-        const lockedSum = opts.multisigContractAddress ? 0 : _.sumBy(txps, 'amount') || 0;
+        let fees = 0;
+        let amounts = 0;
+
+        txps = txps.filter(txp => {
+          // Add gas used for tokens when getting native balance
+          if (!opts.tokenAddress) {
+            fees += txp.fee || 0;
+          }
+          // Filter tokens when getting native balance
+          if (txp.tokenAddress && !opts.tokenAddress) {
+            return false;
+          }
+          amounts += txp.amount;
+          return true;
+        });
+        
+        // TODO support big int
+        const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
@@ -254,8 +271,12 @@ export class EthChain implements IChain {
       tokenAddress,
       multisigContractAddress,
       multiSendContractAddress,
-      isTokenSwap
+      isTokenSwap,
+      multiTx
     } = txp;
+    if (multiTx) {
+      throw Errors.MULTI_TX_UNSUPPORTED;
+    }
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? `${this.chain}MULTISIG` : isERC20 ? `${this.chain}ERC20` : this.chain;

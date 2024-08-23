@@ -3294,9 +3294,7 @@ export class WalletService implements IWalletService {
    * @returns {TxProposal[]} Transaction proposal.
    */
   async getPendingTxs(opts, cb) {
-    if (opts.tokenAddress) {
-      return cb();
-    } else if (opts.multisigContractAddress) {
+    if (opts.multisigContractAddress) {
       try {
         const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
         const txps = await this.storage.fetchEthPendingTxs(multisigTxpsInfo);
@@ -3307,11 +3305,12 @@ export class WalletService implements IWalletService {
     } else {
       this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
         if (err) return cb(err);
-
+        if (opts.tokenAddress) {
+          txps = txps.filter(txp => opts.tokenAddress?.toLowerCase() === txp.tokenAddress?.toLowerCase());
+        }
         _.each(txps, txp => {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
         });
-
         async.each(
           txps,
           (txp: ITxProposal, next) => {
@@ -3329,9 +3328,7 @@ export class WalletService implements IWalletService {
             });
           },
           err => {
-            txps = _.reject(txps, txp => {
-              return txp.status == 'broadcasted';
-            });
+            txps = txps.filter(txp => txp.status !== 'broadcasted');
 
             if (txps[0] && txps[0].chain == 'bch') {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
@@ -5272,6 +5269,7 @@ export class WalletService implements IWalletService {
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
+    if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
@@ -5789,6 +5787,40 @@ export class WalletService implements IWalletService {
     });
   }
 
+  sardineGetSupportedTokens(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.sardineGetKeys(req);
+      const API = keys.API;
+      const CLIENT_ID = keys.CLIENT_ID;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
+      const secretBase64 = Buffer.from(secret).toString('base64');
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${secretBase64}`,
+      };
+
+      const URL: string = API + '/v1/supported-tokens';
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
   sardineGetOrdersDetails(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.sardineGetKeys(req);
@@ -5876,6 +5908,11 @@ export class WalletService implements IWalletService {
         'Content-Type': 'application/json',
         Authorization: 'ApiKey ' + API_KEY
       };
+
+      if (req.body && req.body.payment_methods && Array.isArray(req.body.payment_methods)) {
+        // Workaround to fix older versions of the app
+        req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
+      }
 
       this.request.post(
         API + '/wallet/merchant/v2/quote',
