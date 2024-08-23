@@ -22,7 +22,6 @@ const main = async () => {
   const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token: tokenName } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
-    const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
     wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, tokenName }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
