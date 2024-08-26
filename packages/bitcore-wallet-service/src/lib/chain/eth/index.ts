@@ -229,14 +229,13 @@ export class EthChain implements IChain {
               data,
               gasPrice
             });
-            gasLimit += Math.ceil(gasLimit * Defaults.MS_GAS_LIMIT_BUFFER_PERCENT); // gas limit buffer
           } catch (error) {
             logger.error('Error estimating gas for MultiSend contract: %o', error);
           }
           gasLimit = gasLimit ? gasLimit : inGasLimit;
           fee += feePerKb * gasLimit;
         }
-
+        gasLimit += Math.ceil(gasLimit * Defaults.GAS_LIMIT_BUFFER_PERCENT); // gas limit buffer
         if (Number(txType) === 2) {
           maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
           priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15 });

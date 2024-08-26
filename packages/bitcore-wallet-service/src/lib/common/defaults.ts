@@ -395,7 +395,7 @@ export const Defaults = {
   MIN_GAS_LIMIT: 21000,
 
   // Added buffer to account for variance between estimateGas and live execution
-  MS_GAS_LIMIT_BUFFER_PERCENT: 10 / 100,
+  GAS_LIMIT_BUFFER_PERCENT: 10 / 100,
 
   // XRP has a non-refundable mininum activation fee / balance
   MIN_XRP_BALANCE: 10000000,
