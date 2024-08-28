@@ -232,9 +232,9 @@ export class EthChain implements IChain {
           } catch (error) {
             logger.error('Error estimating gas for MultiSend contract: %o', error);
           }
+          const buffer = gasLimitBuffer ? gasLimitBuffer / 100 : Defaults.MS_GAS_LIMIT_BUFFER_PERCENT; 
           gasLimit = gasLimit ? gasLimit : inGasLimit;
-          const buffer = gasLimitBuffer ? gasLimitBuffer / 100 : Defaults.MS_GAS_LIMIT_BUFFER_PERCENT;
-          gasLimit += Math.ceil(gasLimit * buffer); // gas limit buffer  
+          gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer 
           fee += feePerKb * gasLimit;
         } else if (gasLimitBuffer) {
           gasLimit += Math.ceil(gasLimit * (gasLimitBuffer / 100));
