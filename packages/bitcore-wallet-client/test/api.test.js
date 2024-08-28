@@ -1367,7 +1367,6 @@ describe('client API', function() {
       const coin = ['bch', 'btc', 'doge', 'ltc'][i % 4];
 
       it(`should create secret and parse secret: ${i} - ${coin}:${network}`, () => {
-        console.log(i, coin, network);
         var walletId = Uuid.v4();
         var walletPrivKey = new Bitcore.PrivateKey();
         var secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
