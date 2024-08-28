@@ -157,7 +157,7 @@ export class EthChain implements IChain {
         let gasPrice = inFeePerKb;
         let maxGasFee;
         let priorityGasFee;
-        const { from, txType, priorityFeePercentile } = opts;
+        const { from, txType, priorityFeePercentile, gasLimitBuffer } = opts;
         const { coin, network, chain } = wallet;
         let inGasLimit = 0; // Per recepient gas limit
         let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
@@ -233,9 +233,12 @@ export class EthChain implements IChain {
             logger.error('Error estimating gas for MultiSend contract: %o', error);
           }
           gasLimit = gasLimit ? gasLimit : inGasLimit;
+          const buffer = gasLimitBuffer ? gasLimitBuffer / 100 : Defaults.GAS_LIMIT_BUFFER_PERCENT;
+          gasLimit += Math.ceil(gasLimit * buffer); // gas limit buffer  
           fee += feePerKb * gasLimit;
+        } else if (gasLimitBuffer) {
+          gasLimit += Math.ceil(gasLimit * (gasLimitBuffer / 100));
         }
-        gasLimit += Math.ceil(gasLimit * Defaults.GAS_LIMIT_BUFFER_PERCENT); // gas limit buffer
         if (Number(txType) === 2) {
           maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
           priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15 });
