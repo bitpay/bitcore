@@ -38,6 +38,15 @@ var querystring = require('querystring');
 var log = require('./log');
 const Errors = require('./errors');
 
+const NetworkChar = {
+  livenet: 'L',
+  testnet: 'T',
+  regtest: 'R'
+};
+for (const network in NetworkChar) { // invert NetworkChar
+  NetworkChar[NetworkChar[network]] = network;
+}
+
 var BASE_URL = 'http://localhost:3232/bws/api';
 
 // /**
@@ -606,22 +615,12 @@ export class API extends EventEmitter {
   }
 
   static _buildSecret(walletId, walletPrivKey, chain, network) {
-    if (_.isString(walletPrivKey)) {
+    if (typeof walletPrivKey === 'string') {
       walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
     }
     var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
-    let networkChar = 'L';
-    switch (network) {
-      case 'testnet':
-        networkChar = 'T';
-        break;
-      case 'regtest':
-        networkChar = 'R';
-        break;
-      default:
-        networkChar = 'L';
-    }
+    const networkChar = NetworkChar[network] || 'L';
     return (
       _.padEnd(widBase58, 22, '0') +
       walletPrivKey.toWIF() +
@@ -651,17 +650,7 @@ export class API extends EventEmitter {
       var walletId = split(widHex, [8, 12, 16, 20]).join('-');
 
       const walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
-      let network = 'livenet';
-      switch (secretSplit[2]) {
-        case 'T':
-          network = 'testnet';
-          break;
-        case 'R':
-          network = 'regtest';
-          break;
-        default:
-          network = 'livenet';
-      }
+      const network = NetworkChar[secretSplit[2]] || 'livenet';
       const coin = secretSplit[3] || 'btc';
 
       return {
