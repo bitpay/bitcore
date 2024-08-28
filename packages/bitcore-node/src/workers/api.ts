@@ -8,7 +8,6 @@ import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
-require('heapdump');
 
 let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }, { arg: 'CLUSTER', type: 'bool' }]);
 const services: Array<any> = [];

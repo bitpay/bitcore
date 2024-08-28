@@ -1,3 +1,5 @@
+import { FeeMode } from './namespaces/ChainStateProvider';
+
 export interface IChainConfig<T extends INetworkConfig> {
   [network: string]: T;
 }
@@ -20,7 +22,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     username: string;
     password: string;
   };
-  defaultFeeMode?: 'CONSERVATIVE' | 'ECONOMICAL';
+  defaultFeeMode?: FeeMode;
 }
 
 export interface IProvider {

@@ -2615,7 +2615,7 @@ export class WalletService implements IWalletService {
                     let txOptsFee = fee;
 
                     if (!txOptsFee) {
-                      const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
+                      const useInputFee = opts.inputs && isNaN(opts.feePerKb);
                       const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
                       const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 

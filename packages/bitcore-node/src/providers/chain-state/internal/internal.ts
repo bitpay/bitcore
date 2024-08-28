@@ -1,9 +1,9 @@
-import through2 from 'through2';
 import { GetBlockBeforeTimeParams, StreamTransactionParams } from '../../../types/namespaces/ChainStateProvider';
 import { StreamBlocksParams } from '../../../types/namespaces/ChainStateProvider';
 
 import { Validation } from 'crypto-wallet-core';
 import { ObjectId } from 'mongodb';
+import { Transform } from 'stream';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { MongoBound } from '../../../models/base';
 import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
@@ -338,9 +338,9 @@ export class InternalStateProvider implements IChainStateService {
     const allMissingAddresses = new Array<string>();
     let totalMissingValue = 0;
     const missingStream = cursor.pipe(
-      through2(
-        { objectMode: true },
-        async (spentCoin: MongoBound<ICoin>, _, done) => {
+      new Transform({
+        objectMode: true,
+        async transform(spentCoin: MongoBound<ICoin>, _, next) {
           if (!seen[spentCoin.spentTxid]) {
             seen[spentCoin.spentTxid] = true;
             // find coins that were spent with my coins
@@ -357,16 +357,15 @@ export class InternalStateProvider implements IChainStateService {
                 return { _id, wallets, address, value, expected: walletId.toHexString() };
               });
             if (missing.length > 0) {
-              return done(undefined, { txid: spentCoin.spentTxid, missing });
+              return next(undefined, { txid: spentCoin.spentTxid, missing });
             }
           }
-          return done();
+          return next();
         },
-        function(done) {
-          this.push({ allMissingAddresses, totalMissingValue });
-          done();
+        flush(done) {
+          done(null, { allMissingAddresses, totalMissingValue });
         }
-      )
+      })
     );
     missingStream.pipe(new StringifyJsonStream()).pipe(res);
   }

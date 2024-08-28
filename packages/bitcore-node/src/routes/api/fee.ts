@@ -1,11 +1,14 @@
-import { Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import config from '../../config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { QueryType } from '../../types/Api';
 import { IUtxoNetworkConfig } from '../../types/Config';
+import { FeeMode } from '../../types/namespaces/ChainStateProvider';
 import { CacheTimes } from '../middleware';
 import { CacheMiddleware } from '../middleware';
-const router = require('express').Router({ mergeParams: true });
+
+const router = express.Router({ mergeParams: true });
 const feeCache = {};
 
 const feeModes = {
@@ -15,14 +18,14 @@ const feeModes = {
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
   let { chain, network, target } = req.params;
-  let { mode, txType } = req.query;
+  let { mode, txType } = req.query as QueryType & { mode?: FeeMode };
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
   }
 
   chain = chain.toUpperCase();
   network = network.toLowerCase();
-  mode = mode?.toUpperCase();
+  mode = mode?.toUpperCase() as FeeMode;
   const targetNum = Number(target);
   if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
