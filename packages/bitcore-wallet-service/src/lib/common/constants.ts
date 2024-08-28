@@ -157,12 +157,17 @@ export const Constants = {
     P2SH: 'P2SH',
     P2WSH: 'P2WSH',
     P2PKH: 'P2PKH',
-    P2WPKH: 'P2WPKH'
+    P2WPKH: 'P2WPKH',
+    P2TR: 'P2TR'
   },
 
   NATIVE_SEGWIT_CHAINS: {
     BTC: 'btc',
     LTC: 'ltc'
+  },
+
+  TAPROOT_CHAINS: {
+    BTC: 'btc'
   },
 
   DERIVATION_STRATEGIES: {

@@ -40,14 +40,15 @@ TaprootInput.prototype.getSignatures = function(transaction, privateKey, index, 
   if (!signature) {
     return [];
   }
-  return [new TransactionSignature({
+  const txSig = new TransactionSignature({
     publicKey: privateKey.publicKey,
     prevTxId: this.prevTxId,
     outputIndex: this.outputIndex,
     inputIndex,
     signature: Signature.fromSchnorr(signature),
     sigtype: sigtype
-  })];
+  });
+  return this.isValidSignature(transaction, txSig) ? [txSig] : [];
 };
 
 
@@ -74,7 +75,7 @@ TaprootInput.prototype.isValidSignature = function(transaction, signature) {
  * @return {boolean}
  */
 TaprootInput.prototype.isFullySigned = function() {
-  return this.output.script.isTaproot() || this.hasWitnesses();
+  return this.output.script.isTaproot() && this.hasWitnesses();
 };
 
 /**
@@ -100,6 +101,19 @@ TaprootInput.prototype.addSignature = function(transaction, signature) {
   // Maybe the validation check should be upstream to keep the code lexically obedient?
 
   return this;
+};
+
+
+// TODO verify that this is the correct MAX size.
+TaprootInput.SCRIPT_MAX_SIZE = 66; // numwitnesses (1) + sigsize (1 + 64)
+
+TaprootInput.prototype._estimateSize = function() {
+  let result = this._getBaseSize();
+  result += 1; // script size
+  const WITNESS_DISCOUNT = 4;
+  const witnessSize = TaprootInput.SCRIPT_MAX_SIZE / WITNESS_DISCOUNT;
+  result += witnessSize;
+  return result;
 };
 
 
