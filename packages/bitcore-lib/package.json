@@ -1,6 +1,6 @@
 {
   "name": "bitcore-lib",
-  "version": "10.2.1",
+  "version": "10.3.0",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",

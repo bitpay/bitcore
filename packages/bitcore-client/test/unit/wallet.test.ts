@@ -31,9 +31,7 @@ describe('Wallet', function() {
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
     for (const addressType of Object.keys(AddressTypes[chain] || { 'pubkeyhash': 1 })) {
-      if (addressType === 'p2tr' || addressType === 'taproot') {
-        continue;
-      }
+
       it(`should create a wallet for chain and addressType: ${chain} ${addressType}`, async function() {
         walletName = 'BitcoreClientTest' + chain + addressType;
 
