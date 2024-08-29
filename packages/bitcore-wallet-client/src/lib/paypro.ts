@@ -100,30 +100,33 @@ export class PayPro {
       );
     }
 
-    var hashbuf = Buffer.from(hash, 'hex');
-    let sigbuf = Buffer.from(signature, 'hex');
+    try {
+      const hashbuf = Buffer.from(hash, 'hex');
+      const sigbuf = Buffer.from(signature, 'hex');
 
-    let s_r = Buffer.alloc(32);
-    let s_s = Buffer.alloc(32);
+      const s_r = Buffer.alloc(32);
+      const s_s = Buffer.alloc(32);
 
-    sigbuf.copy(s_r, 0, 0);
-    sigbuf.copy(s_s, 0, 32);
+      sigbuf.copy(s_r, 0, 0);
+      sigbuf.copy(s_s, 0, 32);
 
-    let s_rBN = Bitcore.crypto.BN.fromBuffer(s_r);
-    let s_sBN = Bitcore.crypto.BN.fromBuffer(s_s);
+      const s_rBN = Bitcore.crypto.BN.fromBuffer(s_r);
+      const s_sBN = Bitcore.crypto.BN.fromBuffer(s_s);
 
-    let pub = Bitcore.PublicKey.fromString(keyData.publicKey);
+      const pub = Bitcore.PublicKey.fromString(keyData.publicKey);
 
-    let sig = new Bitcore.crypto.Signature();
-    sig.set({ r: s_rBN, s: s_sBN });
+      const sig = new Bitcore.crypto.Signature();
+      sig.set({ r: s_rBN, s: s_sBN });
 
-    let valid = Bitcore.crypto.ECDSA.verify(hashbuf, sig, pub);
+      const valid = Bitcore.crypto.ECDSA.verify(hashbuf, sig, pub);
+      if (!valid) {
+        throw new Error('Invalid signature');
+      }
 
-    if (!valid) {
+      return callback(null, keyData.owner);
+    } catch (err) {
       return callback(new Error('Response signature invalid'));
     }
-
-    return callback(null, keyData.owner);
   }
 
   static runRequest(opts, cb) {
