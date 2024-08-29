@@ -253,6 +253,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     network: opts.network || 'livenet',
     nativeCashAddr: opts.nativeCashAddr,
     useNativeSegwit: opts.useNativeSegwit,
+    segwitVersion: opts.segwitVersion,
   };
 
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
@@ -417,14 +418,17 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
           case Constants.SCRIPT_TYPES.P2SH:
             scriptPubKey = S.buildMultisigOut(address.publicKeys, wallet.m).toScriptHashOut();
             break;
-         case Constants.SCRIPT_TYPES.P2PKH:
+          case Constants.SCRIPT_TYPES.P2PKH:
             scriptPubKey = S.buildPublicKeyHashOut(address.address);
             break;
           case Constants.SCRIPT_TYPES.P2WPKH:
             scriptPubKey = S.buildWitnessV0Out(address.address);
             break;
-           case Constants.SCRIPT_TYPES.P2WSH:
+          case Constants.SCRIPT_TYPES.P2WSH:
             scriptPubKey = S.buildWitnessV0Out(address.address);
+            break;
+          case Constants.SCRIPT_TYPES.P2TR:
+            scriptPubKey = S.buildWitnessV1Out(address.address);
             break;
         }
         should.exist(scriptPubKey, 'unknown address type:' + wallet.addressType);

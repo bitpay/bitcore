@@ -107,7 +107,7 @@ Schnorr.verify = function(publicKey, message, signature) {
     }
   }
   if (signature.length !== 64) {
-    throw new Error('Signature should be a 64 byte buffer');
+    throw new Error('Signature should be a 64 byte buffer. Got ' + signature.length + ' bytes');
   }
 
   try {
