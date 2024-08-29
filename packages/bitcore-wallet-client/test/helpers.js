@@ -53,16 +53,12 @@ const helpers = {
             timeout: sinon.stub(),
             end: sinon.stub().yields(err, res)
         };
-        var reqFactory = _.reduce(
-            ['get', 'post', 'put', 'delete'],
-            (mem, verb) => {
-                mem[verb] = url => {
-                    return request;
-                };
-                return mem;
-            },
-            {}
-        );
+        var reqFactory = ['get', 'post', 'put', 'delete'].reduce((mem, verb) => {
+            mem[verb] = url => {
+                return request;
+            };
+            return mem;
+        }, {});
 
         return reqFactory;
     },
