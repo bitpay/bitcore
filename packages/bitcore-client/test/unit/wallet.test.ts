@@ -257,7 +257,7 @@ describe('Wallet', function() {
             wallet = await Wallet.create({
               name: walletName,
               chain: 'BTC',
-              network: 'testnet',
+              network: 'regtest',
               password: 'abc123',
               storageType,
               path,
