@@ -1,10 +1,11 @@
-import express = require('express');
-const router = express.Router({ mergeParams: true });
+import express, { Request } from 'express';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamAddressUtxosParams } from '../../types/namespaces/ChainStateProvider';
 
-async function streamCoins(req, res) {
+const router = express.Router({ mergeParams: true });
+
+async function streamCoins(req: Request, res) {
   try {
     let { chain, network, address } = req.params;
     let { unspent, limit = 10, since } = req.query;
@@ -23,7 +24,7 @@ async function streamCoins(req, res) {
   }
 }
 
-router.get('/:address', function (req, res) {
+router.get('/:address', function (req: Request, res) {
   try {
     let { chain, network, address } = req.params;
     let { unspent, limit = 10, since } = req.query;
@@ -45,7 +46,7 @@ router.get('/:address', function (req, res) {
 router.get('/:address/txs', streamCoins);
 router.get('/:address/coins', streamCoins);
 
-router.get('/:address/balance', async function (req, res) {
+router.get('/:address/balance', async function (req: Request, res) {
   let { address, chain, network } = req.params;
   try {
     let result = await ChainStateProvider.getBalanceForAddress({

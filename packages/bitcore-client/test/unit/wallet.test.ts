@@ -2,10 +2,16 @@ import sinon from 'sinon';
 import chai from 'chai';
 import crypto from 'crypto';
 import * as CWC from 'crypto-wallet-core';
+import supertest from 'supertest';
+import requestStream from 'request';
+import request from 'request-promise-native';
+import { Server } from 'http';
 import { Wallet, AddressTypes } from '../../src/wallet';
-import { Client } from '../../src/client';
 import * as utils from '../../src/utils';
 
+const { Modules } = require('../../../../bitcore-node/build/src/modules');
+const { Api: bcnApi } = require('../../../../bitcore-node/build/src/services/api');
+const { Storage: bcnStorage } = require('../../../../bitcore-node/build/src/services/storage');
 
 const should = chai.should();
 const expect = chai.expect;
@@ -20,10 +26,41 @@ const libMap = {
 describe('Wallet', function() {
   const sandbox = sinon.createSandbox();
   const storageType = 'Level';
+  const baseUrl = 'http://127.0.0.1:3000/api';
   let walletName;
   let wallet: Wallet;
+  let api;
+  before(async function() {
+    this.timeout(20000);
+    await bcnStorage.start({
+      dbHost: process.env.DB_HOST || 'localhost',
+      dbPort: process.env.DB_PORT || '27017',
+      dbName: process.env.DB_NAME || 'bitcore-client-tests'
+    });
+    Modules.loadConfigured();
+    const httpServer: Server = await bcnApi.start();
+    api = supertest(httpServer);
+  });
+  after(async function() {
+    this.timeout(20000);
+    await bcnApi.stop();
+    await bcnStorage.stop();
+  });
   beforeEach(function() {
-    sandbox.stub(Client.prototype, 'register').resolves();
+    sandbox.stub(request, 'Request').callsFake(function(args) {
+      args.url = args.url.replace('https://api.bitcore.io/api', baseUrl);
+      args.url = args.url.replace(baseUrl, '/api');
+      const req = api[args.method.toLowerCase()](args.url);
+      for (const [key, value] of Object.entries(args.headers)) {
+        req.set(key, value);
+      }
+      req.send(args.body);
+      return req;
+    });
+    sandbox.stub(requestStream, 'defaults').callsFake(function(args) {
+      console.log(args);
+      throw new Error('Need to implement requestStream stub in tests');
+    });
   });
   afterEach(async function() {
     await Wallet.deleteWallet({ name: walletName, storageType });
@@ -43,7 +80,8 @@ describe('Wallet', function() {
           password: 'abc123',
           lite: false,
           addressType,
-          storageType
+          storageType,
+          baseUrl
         });
 
         expect(wallet.addressType).to.equal(AddressTypes[chain]?.[addressType] || 'pubkeyhash');
@@ -84,6 +122,7 @@ describe('Wallet', function() {
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
+          baseUrl
         });
         await wallet.unlock('abc123');
       });
@@ -159,6 +198,7 @@ describe('Wallet', function() {
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
+          baseUrl
         });
         await wallet.unlock('abc123');
       });
@@ -217,10 +257,11 @@ describe('Wallet', function() {
             wallet = await Wallet.create({
               name: walletName,
               chain: 'BTC',
-              network: 'testnet',
+              network: 'regtest',
               password: 'abc123',
               storageType,
-              path
+              path,
+              baseUrl
             });
             await wallet.unlock('abc123');
             // 3 address pairs
@@ -261,6 +302,7 @@ describe('Wallet', function() {
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType,
+        baseUrl
       });
       await wallet.unlock('abc123');
       requestStub = sandbox.stub(wallet.client, '_request').resolves();

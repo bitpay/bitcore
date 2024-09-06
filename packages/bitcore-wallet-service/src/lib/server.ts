@@ -2517,6 +2517,7 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
    * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @param {number} opts.txType - Optional. Type of EVM transaction
+   * @param {number} opts.gasLimitBuffer - Optional. Percentage of buffer to add to the gasLimit
    * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
    * @param {Boolean} opts.multiTx - Optional. Proposal will create multiple transactions
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
@@ -2615,7 +2616,7 @@ export class WalletService implements IWalletService {
                     let txOptsFee = fee;
 
                     if (!txOptsFee) {
-                      const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
+                      const useInputFee = opts.inputs && isNaN(opts.feePerKb);
                       const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
                       const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 

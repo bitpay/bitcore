@@ -5,7 +5,7 @@ import { Event } from '../services/event';
 import { Pruning } from '../services/pruning';
 import { Storage } from '../services/storage';
 import '../utils/polyfills';
-require('heapdump');
+
 const services: Array<any> = [];
 
 export const PruningWorker = async () => {

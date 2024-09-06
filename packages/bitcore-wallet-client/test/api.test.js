@@ -2958,7 +2958,8 @@ describe('client API', function() {
           tasks.push(create);
         }
 
-        async.parallel(tasks, (err, results) => {
+        // Node20 http performance improvements causes async.parallel to overwhelm the server, hence parallelLimt
+        async.parallelLimit(tasks, 10, (err, results) => {
           should.not.exist(err);
           results.length.should.equal(num);
           done();
