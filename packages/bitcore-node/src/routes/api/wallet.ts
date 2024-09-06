@@ -48,7 +48,7 @@ router.get('/:pubKey/addresses/missing', Auth.authenticateMiddleware, async (req
       chain,
       network,
       pubKey,
-      stream: res
+      res
     };
     return await ChainStateProvider.streamMissingWalletAddresses(payload);
   } catch (err: any) {
