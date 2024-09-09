@@ -166,7 +166,8 @@ export class EthChain implements IChain {
         let outputAddresses = []; // Parameter for MuliSend contract
         let outputAmounts = []; // Parameter for MuliSend contract
         let totalValue = toBN(0); // Parameter for MuliSend contract
-
+        logger.info(`getFee for address ${from} on network ${network} and chain ${chain}`);
+        logger.info('getFee.opts: %o', { from, txType, priorityFeePercentile, gasLimitBuffer });
         for (let output of opts.outputs) {
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
@@ -210,7 +211,8 @@ export class EthChain implements IChain {
           gasLimit = inGasLimit || defaultGasLimit;
           fee += feePerKb * gasLimit;
         }
-
+        logger.info(`[${from}] Add gas limit buffer?: ${!!gasLimitBuffer}`);
+        logger.info(`[${from}] Current gas limit: ${gasLimit}`);
         if (opts.multiSendContractAddress) {
           try {
             const data = this.encodeContractParameters(
@@ -229,6 +231,7 @@ export class EthChain implements IChain {
               data,
               gasPrice
             });
+            logger.info(`[${from}] Estimated gas limit: ${gasLimit}`);
           } catch (error) {
             logger.error('Error estimating gas for MultiSend contract: %o', error);
           }
@@ -236,8 +239,10 @@ export class EthChain implements IChain {
           gasLimit = gasLimit ? gasLimit : inGasLimit;
           gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer 
           fee += feePerKb * gasLimit;
+          logger.info(`[${from}] Gas limit with buffer: ${gasLimit}`);
         } else if (gasLimitBuffer) {
           gasLimit += Math.ceil(gasLimit * (gasLimitBuffer / 100));
+          logger.info(`[${from}] Gas limit with buffer: ${gasLimit}`);
         }
         if (Number(txType) === 2) {
           maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
