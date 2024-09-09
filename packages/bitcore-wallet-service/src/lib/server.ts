@@ -2242,15 +2242,15 @@ export class WalletService implements IWalletService {
         } catch (addrErr) {
           return addrErr;
         }
-  
+
         if (!checkRequired(output, ['toAddress', 'amount'])) {
           return new ClientError('Argument missing in output #' + (i + 1) + '.');
         }
-  
+
         if (!ChainService.checkValidTxAmount(wallet.chain, output)) {
           return new ClientError('Invalid amount');
         }
-  
+
         const error = ChainService.checkDust(wallet.chain, output, opts);
         if (error) return error;
         output.valid = true;
@@ -2580,9 +2580,15 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 async next => {
+                  logger.info('Calculating fee for new tx: %o', {
+                    from: opts.from, fee: opts.fee, input: opts.inputs?.length, gasLimit: opts.gasLimit, gasLimitBuffer: opts.gasLimitBuffer
+                  });
                   if (!isNaN(opts.fee) && (opts.inputs || []).length > 0) return next();
                   try {
                     ({ feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
+                    logger.info('ChainService.getFee return value %o', {
+                      from: opts.from, feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee
+                    });
                   } catch (error) {
                     return next(error);
                   }
@@ -2702,7 +2708,7 @@ export class WalletService implements IWalletService {
                 },
                 next => {
                   if (!txp.multiSendContractAddress || !txp.tokenAddress) {
-                    return next(); 
+                    return next();
                   }
                   // Check that the multisend contract is approved in the token contract for the total amount
                   const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
@@ -6167,24 +6173,24 @@ export class WalletService implements IWalletService {
         'x-api-key': API_KEY
       };
 
-        let qs = [];
-        if (!checkRequired(req.body, ['sellAsset', 'buyAsset', 'sellAmount'])) {
-          return reject(new ClientError("Thorswap's request missing arguments"));
-        }
-        qs.push('sellAsset=' + req.body.sellAsset);
-        qs.push('buyAsset=' + req.body.buyAsset);
-        qs.push('sellAmount=' + req.body.sellAmount);
-        if (req.body.senderAddress) qs.push('senderAddress=' + req.body.senderAddress);
-        if (req.body.recipientAddress) qs.push('recipientAddress=' + req.body.recipientAddress);
-        if (req.body.slippage) qs.push('slippage=' + req.body.slippage);
-        if (req.body.limit) qs.push('limit=' + req.body.limit);
-        if (req.body.providers) qs.push('providers=' + req.body.providers);
-        if (req.body.subProviders) qs.push('subProviders=' + req.body.subProviders);
-        if (req.body.preferredProvider) qs.push('preferredProvider=' + req.body.preferredProvider);
-        if (req.body.affiliateAddress) qs.push('affiliateAddress=' + req.body.affiliateAddress);
-        if (req.body.affiliateBasisPoints) qs.push('affiliateBasisPoints=' + req.body.affiliateBasisPoints);
-        if (req.body.isAffiliateFeeFlat) qs.push('isAffiliateFeeFlat=' + req.body.isAffiliateFeeFlat);
-        if (req.body.allowSmartContractRecipient) qs.push('allowSmartContractRecipient=' + req.body.allowSmartContractRecipient);
+      let qs = [];
+      if (!checkRequired(req.body, ['sellAsset', 'buyAsset', 'sellAmount'])) {
+        return reject(new ClientError("Thorswap's request missing arguments"));
+      }
+      qs.push('sellAsset=' + req.body.sellAsset);
+      qs.push('buyAsset=' + req.body.buyAsset);
+      qs.push('sellAmount=' + req.body.sellAmount);
+      if (req.body.senderAddress) qs.push('senderAddress=' + req.body.senderAddress);
+      if (req.body.recipientAddress) qs.push('recipientAddress=' + req.body.recipientAddress);
+      if (req.body.slippage) qs.push('slippage=' + req.body.slippage);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+      if (req.body.providers) qs.push('providers=' + req.body.providers);
+      if (req.body.subProviders) qs.push('subProviders=' + req.body.subProviders);
+      if (req.body.preferredProvider) qs.push('preferredProvider=' + req.body.preferredProvider);
+      if (req.body.affiliateAddress) qs.push('affiliateAddress=' + req.body.affiliateAddress);
+      if (req.body.affiliateBasisPoints) qs.push('affiliateBasisPoints=' + req.body.affiliateBasisPoints);
+      if (req.body.isAffiliateFeeFlat) qs.push('isAffiliateFeeFlat=' + req.body.isAffiliateFeeFlat);
+      if (req.body.allowSmartContractRecipient) qs.push('allowSmartContractRecipient=' + req.body.allowSmartContractRecipient);
 
       const URL: string = API + `/aggregator/tokens/quote?${qs.join('&')}`;
 
