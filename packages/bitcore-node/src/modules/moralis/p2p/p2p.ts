@@ -46,9 +46,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
   async stop() {
     this.stopping = true;
     clearInterval(this.syncInterval);
-    // this.addressSub && await this.provider.updateAddressSubscription({ sub: this.addressSub, status: 'paused' }).catch(() => {});
     await this.webhookTail?.close();
-    // this.webhookTail?.next();
     await this.unregisterSyncingNode();
     (this.web3?.currentProvider as any)?.disconnect?.();
   }
