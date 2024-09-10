@@ -210,7 +210,7 @@ export class EthChain implements IChain {
                     : output.toAddress;
               const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
               // output.gasLimit used as the gasLimit in getBitcoreTx for non multisend transactions
-              output.gasLimit = await server.estimateGas({
+              const gasLimitEstimate = await server.estimateGas({
                 coin,
                 chain: this.chain,
                 network,
@@ -219,7 +219,8 @@ export class EthChain implements IChain {
                 value,
                 data: output.data,
                 gasPrice
-              }) || defaultGasLimit;
+              });
+              output.gasLimit = gasLimitEstimate || defaultGasLimit;
             } catch (err) {
               output.gasLimit = defaultGasLimit;
             }
