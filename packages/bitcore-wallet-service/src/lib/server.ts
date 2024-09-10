@@ -2660,7 +2660,7 @@ export class WalletService implements IWalletService {
                       priorityGasFee,
                       txType: opts.txType,
                       nonce: opts.nonce,
-                      gasLimit, // Backward compatibility for BWC < v7.1.1
+                      gasLimit, // For Multisend and Backward compatibility for BWC < v7.1.1
                       data: opts.data, // Backward compatibility for BWC < v7.1.1
                       tokenAddress: opts.tokenAddress,
                       multisigContractAddress: opts.multisigContractAddress,
