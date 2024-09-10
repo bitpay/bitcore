@@ -1,5 +1,9 @@
+import cors from 'cors';
 import { Router } from 'express';
+import Web3 from 'web3';
+import config from '../../../../config';
 import logger from '../../../../logger';
+import { WebhookStorage } from '../../../../models/webhook';
 import { Config } from '../../../../services/config';
 import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
@@ -23,6 +27,7 @@ export class EVMRouter {
     if (params?.multisig) {
       this.setMultiSigRoutes(this.router);
     }
+    this.setWebhooks(this.router);
   };
 
   public getRouter() {
@@ -43,6 +48,10 @@ export class EVMRouter {
     this.getMultisigTxpsInfo(router);
     this.streamGnosisWalletTransactions(router);
   };
+
+  private setWebhooks(router: Router) {
+    this.postMoralisWebhook(router);
+  }
 
   private getAccountNonce(router: Router) {
     router.get(`/api/${this.chain}/:network/address/:address/txs/count`, async (req, res) => {
@@ -178,4 +187,50 @@ export class EVMRouter {
       }
     });
   };
+
+
+  private _validateMoralisWebhook(req, res, next) {
+    const secret = config.externalProviders?.moralis?.streamSecret;
+    if (!secret) {
+      return res.status(404).send('Moralis not configured');
+    }
+    const reqSig = req.headers['x-signature'];
+    if (!reqSig) {
+      return res.status(400).send('Signature not provided');
+    }
+    const computedSig = Web3.utils.sha3(JSON.stringify(req.body) + secret);
+    if (reqSig !== computedSig) {
+      return res.status(406).send('Unauthorized');
+    }
+    next();
+  }
+
+  private postMoralisWebhook(router: Router) {
+    const webhookCors = config.externalProviders?.moralis?.webhookCors;
+    router.post(`/webhook/${this.chain}/:network/moralis`, cors(webhookCors), this._validateMoralisWebhook, async (req, res) => {
+      try {
+        const { network } = req.params;
+
+        if (req.body.chainId === '') {
+          // This is a webhook test call from moralis
+          return res.end();
+        }
+
+        await WebhookStorage.collection.insertOne({
+          chain: this.chain,
+          network,
+          source: 'moralis',
+          sourceId: req.body.streamId,
+          tag: req.body.tag,
+          body: req.body,
+          timestamp: new Date(),
+          processed: false
+        });
+        return res.end();
+      } catch (err: any) {
+        logger.error('Error processing moralis webhook: %o', err.stack || err.message || err);
+        return res.status(500).send('Unable to process webhook');
+      }
+    });
+  }
 }

@@ -35,7 +35,7 @@ router.get('/tip', async function(req: Request, res: Response) {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
   } catch (err: any) {
-    logger.error('Error getting tip block: %o', err.stack || err.message || err);
+    logger.error('Error getting tip block: %o:%o: %o', chain, network, err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });

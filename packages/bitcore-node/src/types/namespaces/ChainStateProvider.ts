@@ -202,5 +202,7 @@ export interface IChainStateService {
 }
 
 export interface ChainStateServices {
-  [key: string]: IChainStateService;
+  [chain: string]: {
+    [network: string]: IChainStateService;
+  }
 }

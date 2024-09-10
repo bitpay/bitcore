@@ -1,14 +1,15 @@
 import { BaseModule } from '..';
 import { DOGEStateProvider } from '../../providers/chain-state/doge/doge';
+import { IUtxoNetworkConfig } from '../../types/Config';
 import { VerificationPeer } from '../bitcoin/VerificationPeer';
 import { DogecoinP2PWorker } from './p2p';
 
 export default class DOGEModule extends BaseModule {
-  constructor(services) {
+  constructor(services: BaseModule['bitcoreServices'], chain: string, network: string, _config: IUtxoNetworkConfig) {
     super(services);
-    services.Libs.register('DOGE', 'bitcore-lib-doge', 'bitcore-p2p-doge');
-    services.P2P.register('DOGE', DogecoinP2PWorker);
-    services.CSP.registerService('DOGE', new DOGEStateProvider());
-    services.Verification.register('DOGE', VerificationPeer);
+    services.Libs.register(chain, 'bitcore-lib-doge', 'bitcore-p2p-doge');
+    services.P2P.register(chain, network, DogecoinP2PWorker);
+    services.CSP.registerService(chain, network, new DOGEStateProvider());
+    services.Verification.register(chain, network, VerificationPeer);
   }
 }

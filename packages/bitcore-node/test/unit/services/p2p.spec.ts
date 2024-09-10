@@ -22,8 +22,9 @@ describe('P2P Service', function() {
 
   it('should register a class', () => {
     const chain = 'TEST';
-    P2P.register(chain, MockP2PWorker);
-    const registered = P2P.get(chain);
+    const network = 'test';
+    P2P.register(chain, network, MockP2PWorker);
+    const registered = P2P.get(chain, network);
     expect(registered).to.deep.eq(MockP2PWorker);
   });
 
@@ -33,7 +34,7 @@ describe('P2P Service', function() {
     const network = 'testnet';
     const fakeConfig = {};
 
-    P2P.register(chain, MockP2PWorker);
+    P2P.register(chain, network, MockP2PWorker);
     sandbox.stub(Config, 'chainNetworks').returns([{ chain, network }]);
     sandbox
       .stub(Config, 'chainConfig')
@@ -54,8 +55,9 @@ describe('P2P Service', function() {
   it('should not start if disabled', async () => {
     const sandbox = sinon.createSandbox();
     const chain = 'TEST';
+    const network = 'test';
 
-    P2P.register(chain, MockP2PWorker);
+    P2P.register(chain, network, MockP2PWorker);
     sandbox
       .stub(Config, 'isDisabled')
       .withArgs('p2p')
@@ -72,7 +74,7 @@ describe('P2P Service', function() {
     const network = 'testnet';
     const fakeConfig = { disabled: true };
 
-    P2P.register(chain, MockP2PWorker);
+    P2P.register(chain, network, MockP2PWorker);
     sandbox.stub(Config, 'chainNetworks').returns([{ chain, network }]);
     sandbox
       .stub(Config, 'chainConfig')
@@ -91,7 +93,7 @@ describe('P2P Service', function() {
     const network = 'testnet';
     const fakeConfig = { chainSource: 'rpc' };
 
-    P2P.register(chain, MockP2PWorker);
+    P2P.register(chain, network, MockP2PWorker);
     sandbox.stub(Config, 'chainNetworks').returns([{ chain, network }]);
     sandbox
       .stub(Config, 'chainConfig')

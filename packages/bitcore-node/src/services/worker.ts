@@ -4,7 +4,6 @@ import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { CallbackType } from '../types/Callback';
-import { WorkerType } from '../types/Worker';
 import parseArgv from '../utils/parseArgv';
 
 let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
@@ -20,16 +19,15 @@ export class WorkerService extends EventEmitter {
   async start() {
     if (cluster.isPrimary) {
       logger.verbose(`Master ${process.pid} is running`);
-      cluster.on('exit', (worker: WorkerType) => {
-        logger.warn(`worker ${worker.process.pid} stopped`);
-        process.kill(process.pid);
-      });
       if (!args.DEBUG) {
         for (let worker = 0; worker < config.numWorkers; worker++) {
           let newWorker = cluster.fork();
           logger.verbose(`Starting worker number ${worker}`);
           newWorker.on('message', (msg: any) => {
             this.emit(msg.id, msg);
+          });
+          newWorker.on('exit', (code, _signal) => {
+            logger[code == 0 ? 'info' : 'warn'](`Worker ${newWorker.process.pid} stopped with code ${code}`);
           });
           let started = new Promise<void>(resolve => {
             newWorker.on('listening', () => {
