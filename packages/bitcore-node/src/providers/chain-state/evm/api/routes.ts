@@ -200,7 +200,7 @@ export class EVMRouter {
     }
     const computedSig = Web3.utils.sha3(JSON.stringify(req.body) + secret);
     if (reqSig !== computedSig) {
-      return res.status(406).send('Unathorized');
+      return res.status(406).send('Unauthorized');
     }
     next();
   }
@@ -228,7 +228,7 @@ export class EVMRouter {
         });
         return res.end();
       } catch (err: any) {
-        logger.error('Error processing moralis webhook: %o', err.stack || err.messgae || err);
+        logger.error('Error processing moralis webhook: %o', err.stack || err.message || err);
         return res.status(500).send('Unable to process webhook');
       }
     });

@@ -452,9 +452,11 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         body
       }, (err, data) => {
         if (err) {
+          logger.error(`Error with Moralis subscription call ${method}:${url}: ${err.stack || err.message || err}`);
           return reject(err);
         }
         if (typeof data === 'string') {
+          logger.warn(`Moralis subscription ${method}:${url} returned a string: ${data}`);
           return reject(new Error(data));
         }
         return resolve(data.body);

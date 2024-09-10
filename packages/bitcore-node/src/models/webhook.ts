@@ -1,9 +1,9 @@
-import { ObjectID } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import { StorageService } from '../services/storage';
 import { BaseModel } from './base';
 
 export interface IWebhook {
-  _id?: ObjectID;
+  _id?: ObjectId;
   chain: string;
   network: string;
   source: string;
@@ -21,10 +21,10 @@ export class WebhookModel extends BaseModel<IWebhook> {
   allowedPaging = [];
 
   onConnect() {
-    // capped at 0.5 million docs
-    this.db?.createCollection(this.collectionName, { capped: true, size: 500000 })
+    // capped at 100 MiB
+    this.db?.createCollection(this.collectionName, { capped: true, size: (2 ** 20) * 100 })
       .catch((err) => { if (err.codeName !== 'NamespaceExists') throw err; });
-    this.collection.createIndex({ chain: 1, network: 1, source: 1 });
+    this.collection.createIndex({ chain: 1, network: 1, source: 1 }, { background: true });
   }
 
   getTail(params: { chain: string; network: string; }) {
@@ -41,7 +41,7 @@ export class WebhookModel extends BaseModel<IWebhook> {
       .stream();
   }
 
-  setProcessed(params: { webhook?: IWebhook; webhookId?: ObjectID | string }) {
+  setProcessed(params: { webhook?: IWebhook; webhookId?: ObjectId | string }) {
     const { webhook, webhookId } = params;
     const id = webhook?._id || webhookId;
     if (!id) {
