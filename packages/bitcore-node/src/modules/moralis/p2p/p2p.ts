@@ -142,9 +142,10 @@ export class MoralisP2PWorker extends BaseP2PWorker {
         logger.info(`${this.chainNetworkStr} up to date.`);
       } catch (err: any) {
         logger.error(`Error syncing ${this.chainNetworkStr}: %o`, err.stack || err.message || err);
+      } finally {
+        syncing = false;
+        clearInterval(msgInterval); // clear here too in case of a catch
       }
-      syncing = false;
-      clearInterval(msgInterval); // clear here too in case of a catch
     }, 1000 * (this.chainConfig.syncIntervalSecs || 10)); // default 10 seconds
 
     // Listen for webhooks and process any unprocessed ones in the db
