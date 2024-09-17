@@ -43,7 +43,7 @@ export interface ITxProposal {
     script?: string;
     tag?: string;
   }>;
-  outputOrder: number;
+  outputOrder: number[];
   walletM: number;
   walletN: number;
   requiredSignatures: number;
@@ -188,9 +188,12 @@ export class TxProposal {
     x.outputs = _.map(opts.outputs, output => {
       return _.pick(output, ['amount', 'toAddress', 'message', 'data', 'gasLimit', 'script']);
     });
-    let numOutputs = x.outputs.length + 1;
+    let numOutputs = x.outputs.length;
+    if (!opts.multiTx) {
+      numOutputs++;
+    }
     if (x.instantAcceptanceEscrow) {
-      numOutputs = numOutputs + 1;
+      numOutputs++;
     }
     x.outputOrder = _.range(numOutputs);
     if (!opts.noShuffleOutputs) {
@@ -244,7 +247,7 @@ export class TxProposal {
     // XRP
     x.destinationTag = opts.destinationTag;
     x.invoiceID = opts.invoiceID;
-    x.multiTx = opts.multiTx;
+    x.multiTx = opts.multiTx; // proposal contains multiple transactions
   
     return x;
   }

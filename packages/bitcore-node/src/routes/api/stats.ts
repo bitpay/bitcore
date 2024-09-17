@@ -1,8 +1,9 @@
-import { Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { CacheTimes, SetCache } from '../middleware';
-const router = require('express').Router({ mergeParams: true });
+
+const router = express.Router({ mergeParams: true });
 
 router.get('/', async function(_: Request, res: Response) {
   return res.send(404);

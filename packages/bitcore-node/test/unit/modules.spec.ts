@@ -20,32 +20,30 @@ describe('Modules', function() {
     sandbox.restore();
   });
 
-  it('should prevent double module registration', () => {
+  it('should try to load custom module', () => {
     const sandbox = sinon.createSandbox();
-    sandbox.stub(Config, 'get').returns({
-      // Double module registration test case. ModuleManager will attempt to register BTC Module from
-      // "config.modules" as well as "config.chains". Should only register once.
-      modules: ['./bitcoin'],
-      ...mockConfig
-    });
+    const mockConfigCopy = JSON.parse(JSON.stringify(mockConfig));
+    mockConfigCopy.chains.BTC.testnet.module = './bitcoin-custom';
+    sandbox.stub(Config, 'get').returns(mockConfigCopy);
 
-    validateModules();
+    try {
+      Modules.loadConfigured();
+      throw new Error('it should have thrown due to a non-existing custom module');
+    } catch (e: any) {
+      expect(e.message).to.include('Cannot find module \'./bitcoin-custom\'');
+    }
     sandbox.restore();
   });
 
-  it('should have a test which runs', function() {
-    expect(true).to.equal(true);
-  });
-
   it('should have services registered after loading modules', () => {
-    const chains = Config.chains();
-    for (const chain of chains) {
-      const service = ChainStateProvider.get({ chain });
+    const chainsNetworks = Config.chainNetworks();
+    for (const { chain, network } of chainsNetworks) {
+      const service = ChainStateProvider.get({ chain, network });
       expect(service).to.exist;
     }
   });
 
-  it('should have libaries registered', () => {
+  it('should have libraries registered', () => {
     const chains = ['BTC', 'BCH'];
     for (const chain of chains) {
       const service = Libs.get(chain);
@@ -54,17 +52,17 @@ describe('Modules', function() {
   });
 
   it('should have p2p services registered', () => {
-    const chains = ['BTC', 'BCH'];
-    for (const chain of chains) {
-      const service = P2P.get(chain);
+    const chains = [['BTC', 'regtest'], ['BCH', 'regtest']];
+    for (const [chain, network] of chains) {
+      const service = P2P.get(chain, network);
       expect(service).to.exist;
     }
   });
 
   it('should have verification services registered', () => {
-    const chains = ['BTC', 'BCH'];
-    for (const chain of chains) {
-      const service = Verification.get(chain);
+    const chains = [['BTC', 'regtest'], ['BCH', 'regtest']];
+    for (const [chain, network] of chains) {
+      const service = Verification.get(chain, network);
       expect(service).to.exist;
     }
   });

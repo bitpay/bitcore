@@ -417,7 +417,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
 
   // Stubs
   sandbox.stub(ETH, 'getWalletAddresses').resolves([address]);
-  sandbox.stub(ETH, 'isExternallyProvided').returns(false);
+  sandbox.stub(ETH, 'isP2p').returns(true);
 
   // Test
   await EVMTransactionStorage.collection.deleteMany({});

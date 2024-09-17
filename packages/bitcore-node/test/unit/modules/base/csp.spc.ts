@@ -1,11 +1,15 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { BASE } from '../../../../src/modules/base/api/csp';
+import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
 
 
 describe('BASE Chain State Provider', function() {
   const network = 'testnet';
+  let BASE;
+  before(() => {
+    BASE = new MoralisStateProvider('BASE');
+  });
 
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();

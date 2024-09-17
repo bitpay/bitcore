@@ -532,7 +532,8 @@ export class WalletService implements IWalletService {
    * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
    * @param {string} opts.account[=0] - BIP44 account number
    * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
-   * @param {string} opts.useNativeSegwit - for Segwit address, set addressType to P2WPKH or P2WSH
+   * @param {boolean} opts.useNativeSegwit - set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
+   * @param {number} opts.segwitVersion - 0 (default) = P2WPKH, P2WSH; 1 = P2TR
    */
   createWallet(opts, cb) {
     let pubKey;
@@ -585,7 +586,18 @@ export class WalletService implements IWalletService {
     let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
 
     if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
-      addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+      switch (Number(opts.segwitVersion)) {
+        case 0:
+        default:
+          addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          break;
+        case 1:
+          if (!Utils.checkValueInCollection(opts.chain, Constants.TAPROOT_CHAINS)) {
+            return cb(new ClientError('Invalid chain for P2TR'));
+          }
+          addressType = Constants.SCRIPT_TYPES.P2TR;
+          break;
+      }
     }
 
     try {
@@ -2230,15 +2242,15 @@ export class WalletService implements IWalletService {
         } catch (addrErr) {
           return addrErr;
         }
-  
+
         if (!checkRequired(output, ['toAddress', 'amount'])) {
           return new ClientError('Argument missing in output #' + (i + 1) + '.');
         }
-  
+
         if (!ChainService.checkValidTxAmount(wallet.chain, output)) {
           return new ClientError('Invalid amount');
         }
-  
+
         const error = ChainService.checkDust(wallet.chain, output, opts);
         if (error) return error;
         output.valid = true;
@@ -2505,6 +2517,7 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
    * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @param {number} opts.txType - Optional. Type of EVM transaction
+   * @param {number} opts.gasLimitBuffer - Optional. Percentage of buffer to add to the gasLimit
    * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
    * @param {Boolean} opts.multiTx - Optional. Proposal will create multiple transactions
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
@@ -2567,9 +2580,15 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 async next => {
+                  logger.info('Calculating fee for new tx: %o', {
+                    from: opts.from, fee: opts.fee, input: opts.inputs?.length, gasLimit: opts.gasLimit, gasLimitBuffer: opts.gasLimitBuffer
+                  });
                   if (!isNaN(opts.fee) && (opts.inputs || []).length > 0) return next();
                   try {
                     ({ feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
+                    logger.info('ChainService.getFee return value %o', {
+                      from: opts.from, feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee
+                    });
                   } catch (error) {
                     return next(error);
                   }
@@ -2603,7 +2622,7 @@ export class WalletService implements IWalletService {
                     let txOptsFee = fee;
 
                     if (!txOptsFee) {
-                      const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
+                      const useInputFee = opts.inputs && isNaN(opts.feePerKb);
                       const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
                       const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 
@@ -2641,7 +2660,7 @@ export class WalletService implements IWalletService {
                       priorityGasFee,
                       txType: opts.txType,
                       nonce: opts.nonce,
-                      gasLimit, // Backward compatibility for BWC < v7.1.1
+                      gasLimit, // For Multisend and Backward compatibility for BWC < v7.1.1
                       data: opts.data, // Backward compatibility for BWC < v7.1.1
                       tokenAddress: opts.tokenAddress,
                       multisigContractAddress: opts.multisigContractAddress,
@@ -2689,7 +2708,7 @@ export class WalletService implements IWalletService {
                 },
                 next => {
                   if (!txp.multiSendContractAddress || !txp.tokenAddress) {
-                    return next(); 
+                    return next();
                   }
                   // Check that the multisend contract is approved in the token contract for the total amount
                   const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
@@ -3294,9 +3313,7 @@ export class WalletService implements IWalletService {
    * @returns {TxProposal[]} Transaction proposal.
    */
   async getPendingTxs(opts, cb) {
-    if (opts.tokenAddress) {
-      return cb();
-    } else if (opts.multisigContractAddress) {
+    if (opts.multisigContractAddress) {
       try {
         const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
         const txps = await this.storage.fetchEthPendingTxs(multisigTxpsInfo);
@@ -3307,11 +3324,12 @@ export class WalletService implements IWalletService {
     } else {
       this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
         if (err) return cb(err);
-
+        if (opts.tokenAddress) {
+          txps = txps.filter(txp => opts.tokenAddress?.toLowerCase() === txp.tokenAddress?.toLowerCase());
+        }
         _.each(txps, txp => {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
         });
-
         async.each(
           txps,
           (txp: ITxProposal, next) => {
@@ -3329,9 +3347,7 @@ export class WalletService implements IWalletService {
             });
           },
           err => {
-            txps = _.reject(txps, txp => {
-              return txp.status == 'broadcasted';
-            });
+            txps = txps.filter(txp => txp.status !== 'broadcasted');
 
             if (txps[0] && txps[0].chain == 'bch') {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
@@ -5272,6 +5288,7 @@ export class WalletService implements IWalletService {
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
+    if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
@@ -5789,6 +5806,40 @@ export class WalletService implements IWalletService {
     });
   }
 
+  sardineGetSupportedTokens(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.sardineGetKeys(req);
+      const API = keys.API;
+      const CLIENT_ID = keys.CLIENT_ID;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
+      const secretBase64 = Buffer.from(secret).toString('base64');
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${secretBase64}`,
+      };
+
+      const URL: string = API + '/v1/supported-tokens';
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
   sardineGetOrdersDetails(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.sardineGetKeys(req);
@@ -5876,6 +5927,11 @@ export class WalletService implements IWalletService {
         'Content-Type': 'application/json',
         Authorization: 'ApiKey ' + API_KEY
       };
+
+      if (req.body && req.body.payment_methods && Array.isArray(req.body.payment_methods)) {
+        // Workaround to fix older versions of the app
+        req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
+      }
 
       this.request.post(
         API + '/wallet/merchant/v2/quote',
@@ -6117,24 +6173,24 @@ export class WalletService implements IWalletService {
         'x-api-key': API_KEY
       };
 
-        let qs = [];
-        if (!checkRequired(req.body, ['sellAsset', 'buyAsset', 'sellAmount'])) {
-          return reject(new ClientError("Thorswap's request missing arguments"));
-        }
-        qs.push('sellAsset=' + req.body.sellAsset);
-        qs.push('buyAsset=' + req.body.buyAsset);
-        qs.push('sellAmount=' + req.body.sellAmount);
-        if (req.body.senderAddress) qs.push('senderAddress=' + req.body.senderAddress);
-        if (req.body.recipientAddress) qs.push('recipientAddress=' + req.body.recipientAddress);
-        if (req.body.slippage) qs.push('slippage=' + req.body.slippage);
-        if (req.body.limit) qs.push('limit=' + req.body.limit);
-        if (req.body.providers) qs.push('providers=' + req.body.providers);
-        if (req.body.subProviders) qs.push('subProviders=' + req.body.subProviders);
-        if (req.body.preferredProvider) qs.push('preferredProvider=' + req.body.preferredProvider);
-        if (req.body.affiliateAddress) qs.push('affiliateAddress=' + req.body.affiliateAddress);
-        if (req.body.affiliateBasisPoints) qs.push('affiliateBasisPoints=' + req.body.affiliateBasisPoints);
-        if (req.body.isAffiliateFeeFlat) qs.push('isAffiliateFeeFlat=' + req.body.isAffiliateFeeFlat);
-        if (req.body.allowSmartContractRecipient) qs.push('allowSmartContractRecipient=' + req.body.allowSmartContractRecipient);
+      let qs = [];
+      if (!checkRequired(req.body, ['sellAsset', 'buyAsset', 'sellAmount'])) {
+        return reject(new ClientError("Thorswap's request missing arguments"));
+      }
+      qs.push('sellAsset=' + req.body.sellAsset);
+      qs.push('buyAsset=' + req.body.buyAsset);
+      qs.push('sellAmount=' + req.body.sellAmount);
+      if (req.body.senderAddress) qs.push('senderAddress=' + req.body.senderAddress);
+      if (req.body.recipientAddress) qs.push('recipientAddress=' + req.body.recipientAddress);
+      if (req.body.slippage) qs.push('slippage=' + req.body.slippage);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+      if (req.body.providers) qs.push('providers=' + req.body.providers);
+      if (req.body.subProviders) qs.push('subProviders=' + req.body.subProviders);
+      if (req.body.preferredProvider) qs.push('preferredProvider=' + req.body.preferredProvider);
+      if (req.body.affiliateAddress) qs.push('affiliateAddress=' + req.body.affiliateAddress);
+      if (req.body.affiliateBasisPoints) qs.push('affiliateBasisPoints=' + req.body.affiliateBasisPoints);
+      if (req.body.isAffiliateFeeFlat) qs.push('isAffiliateFeeFlat=' + req.body.isAffiliateFeeFlat);
+      if (req.body.allowSmartContractRecipient) qs.push('allowSmartContractRecipient=' + req.body.allowSmartContractRecipient);
 
       const URL: string = API + `/aggregator/tokens/quote?${qs.join('&')}`;
 

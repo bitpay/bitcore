@@ -269,6 +269,13 @@ export class Utils {
           );
         }
         break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        bitcoreAddress = bitcore.Address.fromPublicKey(
+          publicKeys[0],
+          network,
+          'taproot'
+        );
+        break;
     }
 
     return {
@@ -386,6 +393,7 @@ export class Utils {
           break;
         case Constants.SCRIPT_TYPES.P2WPKH:
         case Constants.SCRIPT_TYPES.P2PKH:
+        case Constants.SCRIPT_TYPES.P2TR:
           t.from(txp.inputs);
           break;
       }
@@ -477,7 +485,9 @@ export class Utils {
         multisigContractAddress,
         multiSendContractAddress,
         isTokenSwap,
-        gasLimit
+        gasLimit,
+        multiTx,
+        outputOrder
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -511,6 +521,29 @@ export class Utils {
           gasLimit
         };
         unsignedTxs.push(Transactions.create({ ...txp, ...multiSendParams }));
+      } else if (multiTx) {
+        // Add unsigned transactions in outputOrder
+        for (let index = 0; index < outputOrder.length; index++) {
+          const outputIdx = outputOrder[index];
+          if (!outputs?.[outputIdx]) {
+            throw new Error('Output index out of range');
+          }
+          const recepient = {
+            amount: outputs[outputIdx].amount,
+            address: outputs[outputIdx].toAddress,
+            tag: outputs[outputIdx].tag
+          }
+          const _tag = recepient?.tag || destinationTag;
+          const rawTx = Transactions.create({
+            ...txp,
+            ...recepient,
+            tag: _tag ? Number(_tag) : undefined,
+            chain: _chain,
+            nonce: Number(txp.nonce) + Number(index),
+            recipients: [recepient]
+          });
+          unsignedTxs.push(rawTx);
+        }
       } else {
         for (let index = 0; index < recipients.length; index++) {
           const rawTx = Transactions.create({
@@ -544,5 +577,25 @@ export class Utils {
       return `${coin.toUpperCase()}_${suffix}`;
     }
     return coin.toUpperCase();
+  }
+
+  static isNativeSegwit(addressType) {
+    return [
+      Constants.SCRIPT_TYPES.P2WPKH,
+      Constants.SCRIPT_TYPES.P2WSH,
+      Constants.SCRIPT_TYPES.P2TR,
+    ].includes(addressType);
+  }
+
+  static getSegwitVersion(addressType) {
+    switch (addressType) {
+      case Constants.SCRIPT_TYPES.P2WPKH:
+      case Constants.SCRIPT_TYPES.P2WSH:
+        return 0;
+      case Constants.SCRIPT_TYPES.P2TR:
+        return 1;
+      default:
+        return undefined; // non-segwit addressType
+    }
   }
 }

@@ -38,6 +38,15 @@ var querystring = require('querystring');
 var log = require('./log');
 const Errors = require('./errors');
 
+const NetworkChar = {
+  livenet: 'L',
+  testnet: 'T',
+  regtest: 'R'
+};
+for (const network in NetworkChar) { // invert NetworkChar
+  NetworkChar[NetworkChar[network]] = network;
+}
+
 var BASE_URL = 'http://localhost:3232/bws/api';
 
 // /**
@@ -606,15 +615,16 @@ export class API extends EventEmitter {
   }
 
   static _buildSecret(walletId, walletPrivKey, chain, network) {
-    if (_.isString(walletPrivKey)) {
+    if (typeof walletPrivKey === 'string') {
       walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
     }
     var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
+    const networkChar = NetworkChar[network] || 'L';
     return (
       _.padEnd(widBase58, 22, '0') +
       walletPrivKey.toWIF() +
-      (network == 'testnet' ? 'T' : 'L') +
+      networkChar +
       chain
     );
   }
@@ -639,15 +649,15 @@ export class API extends EventEmitter {
       var widHex = Bitcore.encoding.Base58.decode(widBase58).toString('hex');
       var walletId = split(widHex, [8, 12, 16, 20]).join('-');
 
-      var walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
-      var networkChar = secretSplit[2];
-      var coin = secretSplit[3] || 'btc';
+      const walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
+      const network = NetworkChar[secretSplit[2]] || 'livenet';
+      const coin = secretSplit[3] || 'btc';
 
       return {
         walletId,
         walletPrivKey,
         coin,
-        network: networkChar == 'T' ? 'testnet' : 'livenet'
+        network
       };
     } catch (ex) {
       throw new Error('Invalid secret');
@@ -903,7 +913,8 @@ export class API extends EventEmitter {
   // * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
-  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
+  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
+  // * @param {Number} opts.segwitVersion - 0 (default) = P2WPKH, P2WSH; 1 = P2TR
   // * @param cb
   // * @return {undefined}
   // */
@@ -957,6 +968,7 @@ export class API extends EventEmitter {
       id: opts.id,
       usePurpose48: n > 1,
       useNativeSegwit: !!opts.useNativeSegwit,
+      segwitVersion: opts.segwitVersion,
       hardwareSourcePublicKey: c.hardwareSourcePublicKey
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
@@ -964,7 +976,8 @@ export class API extends EventEmitter {
 
       var walletId = res.walletId;
       c.addWalletInfo(walletId, walletName, m, n, copayerName, {
-        useNativeSegwit: opts.useNativeSegwit
+        useNativeSegwit: opts.useNativeSegwit,
+        segwitVersion: opts.segwitVersion
       });
       var secret = API._buildSecret(
         c.walletId,
@@ -1052,8 +1065,8 @@ export class API extends EventEmitter {
             wallet.n,
             copayerName,
             {
-              useNativeSegwit:
-                wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
+              useNativeSegwit: Utils.isNativeSegwit(wallet.addressType),
+              segwitVersion: Utils.getSegwitVersion(wallet.addressType),
               allowOverwrite: true
             }
           );
@@ -1092,9 +1105,9 @@ export class API extends EventEmitter {
         var c = this.credentials;
         var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
         var walletId = c.walletId;
-        var useNativeSegwit = c.addressType === Constants.SCRIPT_TYPES.P2WPKH;
-        var supportBIP44AndP2PKH =
-          c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
+        var useNativeSegwit = Utils.isNativeSegwit(c.addressType);
+        var segwitVersion = Utils.getSegwitVersion(c.addressType);
+        var supportBIP44AndP2PKH = c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
         var encWalletName = Utils.encryptMessage(
           c.walletName || 'recovered wallet',
           c.sharedEncryptingKey
@@ -1110,11 +1123,13 @@ export class API extends EventEmitter {
           network: c.network,
           id: walletId,
           usePurpose48: c.n > 1,
-          useNativeSegwit
+          useNativeSegwit,
+          segwitVersion
         };
 
-        if (!!supportBIP44AndP2PKH)
+        if (!!supportBIP44AndP2PKH) {
           args['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
+        }
 
         this.request.post('/v2/wallets/', args, (err, body) => {
           if (err) {
@@ -3170,6 +3185,9 @@ export class API extends EventEmitter {
                   wallet.status.wallet.n == 1
                     ? Constants.SCRIPT_TYPES.P2WPKH
                     : Constants.SCRIPT_TYPES.P2WSH;
+              }
+              if (wallet.opts.coin === 'btc' && wallet.status.wallet.addressType === 'P2TR') {
+                client.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
               }
               // add client to list
               let newClient = _.cloneDeep(client);

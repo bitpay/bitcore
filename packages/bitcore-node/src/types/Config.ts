@@ -1,10 +1,13 @@
+import { FeeMode } from './namespaces/ChainStateProvider';
+
 export interface IChainConfig<T extends INetworkConfig> {
   [network: string]: T;
 }
 
 interface INetworkConfig {
-  disabled?: boolean;
-  chainSource?: 'p2p' | 'moralis';
+  disabled?: boolean; // Disables P2P worker for this network
+  module?: string; // Specific/custom module
+  chainSource?: 'p2p' | 'external';
   trustedPeers: {
     host: string;
     port: number | string;
@@ -25,7 +28,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     username: string;
     password: string;
   };
-  defaultFeeMode?: 'CONSERVATIVE' | 'ECONOMICAL';
+  defaultFeeMode?: FeeMode;
 }
 
 export interface IProvider {
@@ -36,14 +39,15 @@ export interface IProvider {
   dataType?: 'realtime' | 'historical' | 'combined';
 }
 
-interface IExternalSyncConfig {
-  type?:  'sparse' | 'full'; // sparsely sync chain data based on criteria or sync all data
-  time?: string // cron time of block sync intervals
-}
+export type IExternalSyncConfig<T> = {
+  maxBlocksToSync?: number; // Max number of blocks to look back when starting the sync process
+  syncIntervalSecs?: number; // Interval in seconds to check for new blocks
+} & T;
 
 export interface IEVMNetworkConfig extends IMultiProviderNetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
-  externalSyncConfig?: IExternalSyncConfig; // configuration for external syncing
+  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
+  provider?: IProvider;
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
   syncStartHeight?: number; // Start syncing from this block height
@@ -78,7 +82,7 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [currency: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig | ISVMNetworkConfig>;
+    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig| ISVMNetworkConfig>;
   };
   aliasMapping: {
     chains: {
@@ -88,7 +92,6 @@ export interface ConfigType {
       [chain: string]: { [alias: string]: string; }
     };
   },
-  modules?: string[];
   services: {
     api: {
       disabled?: boolean;
@@ -119,6 +122,9 @@ export interface ConfigType {
   externalProviders?: {
     moralis: {
       apiKey: string;
+      webhookBaseUrl?: string;
+      streamSecret?: string;
+      webhookCors?: object; // default: { origin: ['*'] }
     }
   };
 }

@@ -63,9 +63,11 @@ export type StreamBlocksParams = ChainNetwork & {
   res: Response;
 };
 
+export type FeeMode = 'ECONOMICAL' | 'CONSERVATIVE';
+
 export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
-  mode?: 'ECONOMICAL' | 'CONSERVATIVE';
+  mode?: FeeMode;
   txType?: number | string;
 };
 
@@ -200,5 +202,7 @@ export interface IChainStateService {
 }
 
 export interface ChainStateServices {
-  [key: string]: IChainStateService;
+  [chain: string]: {
+    [network: string]: IChainStateService;
+  }
 }

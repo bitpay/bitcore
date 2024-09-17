@@ -7,15 +7,16 @@ import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middl
 import { Web3Proxy } from './web3';
 
 const app = express();
-const bodyParser = require('body-parser');
+
+const bodyLimit = 100 * 1024 * 1024; // 100 MB
 app.use(
-  bodyParser.json({
-    limit: 100000000
+  express.json({
+    limit: bodyLimit
   })
 );
 app.use(
-  bodyParser.raw({
-    limit: 100000000
+  express.raw({
+    limit: bodyLimit
   })
 );
 const chains = Config.chains();

@@ -15,7 +15,7 @@ export abstract class BaseModel<T> {
     key: keyof T;
   }>;
 
-  constructor(private collectionName: string, private storageService = Storage) {
+  constructor(protected collectionName: string, private storageService = Storage) {
     this.handleConnection();
   }
 

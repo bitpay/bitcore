@@ -1,8 +1,9 @@
-import express = require('express');
+import express from 'express';
 import config from '../config';
 import { PerformanceTracker } from '../decorators/Loggify';
 import { StateStorage } from '../models/state';
 import { ChainNetwork } from '../types/ChainNetwork';
+
 const router = express.Router({ mergeParams: true });
 
 router.get('/enabled-chains', function(_, res) {

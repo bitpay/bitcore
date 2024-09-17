@@ -5,8 +5,7 @@ export class StringifyJsonStream extends TransformWithEventPipe {
     super({ objectMode: true });
   }
   _transform(item, _, done) {
-    this.push(JSON.stringify(item) + '\n');
-    done();
+    done(null, JSON.stringify(item) + '\n');
   }
 }
 

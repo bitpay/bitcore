@@ -9,7 +9,7 @@ import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
-require('heapdump');
+
 let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 const services: Array<any> = [];
 
@@ -48,15 +48,20 @@ const stop = async () => {
   }
   stopping = true;
 
-  logger.info(`Shutting down ${process.pid}`);
-  for (const service of services.reverse()) {
-    await service.stop();
-  }
-
   setTimeout(() => {
     logger.error('All workers did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);
   }, 30 * 1000).unref();
+
+
+  logger.info(`Shutting down ${cluster.isPrimary ? 'primary' : 'worker'} process ${process.pid}`);
+  for (const service of services.reverse()) {
+    await service.stop();
+  }
+
+  if (!cluster.isPrimary) {
+    process.removeAllListeners();
+  }
 };
 
 if (require.main === module) {

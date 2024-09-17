@@ -26,6 +26,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
   onConnect() {
     this.collection.createIndex({ chain: 1, network: 1, address: 1, wallet: 1 }, { background: true, unique: true });
     this.collection.createIndex({ chain: 1, network: 1, wallet: 1, address: 1 }, { background: true, unique: true });
+    this.collection.createIndex({ chain: 1, network: 1, address: 1, lastQueryTime: 1 }, { background: true, sparse: true });
   }
 
   _apiTransform(walletAddress: { address: string }, options?: TransformOptions) {
@@ -264,6 +265,11 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         .pipe(txUpdaterStream)
         .pipe(markProcessedStream);
     });
+  }
+
+  async updateLastQueryTime(params: { chain: string; network: string; address: string }) {
+    const { chain, network, address } = params;
+    return this.collection.updateOne({ chain, network, address }, { $set: { lastQueryTime: new Date() } });
   }
 }
 

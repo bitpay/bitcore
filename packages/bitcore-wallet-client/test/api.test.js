@@ -1362,21 +1362,21 @@ describe('client API', function() {
   });
 
   describe('Wallet secret round trip', () => {
-    it('should create secret and parse secret', () => {
-      var i = 0;
-      while (i++ < 100) {
+    for (let i = 0; i < 20; i++) {
+      const network = ['testnet', 'livenet', 'regtest'][i % 3];
+      const coin = ['bch', 'btc', 'doge', 'ltc'][i % 4];
+
+      it(`should create secret and parse secret: ${i} - ${coin}:${network}`, () => {
         var walletId = Uuid.v4();
         var walletPrivKey = new Bitcore.PrivateKey();
-        var network = i % 2 == 0 ? 'testnet' : 'livenet';
-        var coin = i % 3 == 0 ? 'bch' : 'btc';
         var secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
         var result = Client.parseSecret(secret);
         result.walletId.should.equal(walletId);
         result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
         result.coin.should.equal(coin);
         result.network.should.equal(network);
-      }
-    });
+      });
+    }
     it('should fail on invalid secret', () => {
       (() => {
         Client.parseSecret('invalidSecret');
@@ -2958,7 +2958,8 @@ describe('client API', function() {
           tasks.push(create);
         }
 
-        async.parallel(tasks, (err, results) => {
+        // Node20 http performance improvements causes async.parallel to overwhelm the server, hence parallelLimt
+        async.parallelLimit(tasks, 10, (err, results) => {
           should.not.exist(err);
           results.length.should.equal(num);
           done();

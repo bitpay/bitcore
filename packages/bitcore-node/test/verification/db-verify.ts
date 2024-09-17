@@ -18,8 +18,8 @@ if (require.main === module) {
     const chainConfig = Config.chainConfig({ chain, network });
 
     let worker: IVerificationPeer;
-    if (Verification.get(CHAIN)) {
-      const workerClass = Verification.get(CHAIN);
+    if (Verification.get(CHAIN, NETWORK)) {
+      const workerClass = Verification.get(CHAIN, NETWORK);
       worker = new workerClass({ chain, network, chainConfig });
       worker.connect();
       if (VERIFYSPENDS) {
