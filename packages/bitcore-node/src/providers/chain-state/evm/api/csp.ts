@@ -38,6 +38,10 @@ import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import ExternalProviders from '../../external/providers';
+import {
+  getProvider,
+  isValidProviderType
+} from '../../external/providers/provider';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
@@ -48,10 +52,6 @@ import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
-import {
-  getProvider,
-  isValidProviderType
-} from './provider';
 import { EVMListTransactionsStream } from './transform';
 
 export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string };

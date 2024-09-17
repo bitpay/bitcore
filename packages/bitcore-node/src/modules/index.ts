@@ -58,6 +58,7 @@ class ModuleManager extends BaseModule {
     ARB: './arbitrum',
     BASE: './base',
     OP: './optimism',
+    SOL: './solana',
   };
 
   loadConfigured() {

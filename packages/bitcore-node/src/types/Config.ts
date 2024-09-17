@@ -13,6 +13,11 @@ interface INetworkConfig {
   parentChain?: string;
 }
 
+export interface IMultiProviderNetworkConfig extends INetworkConfig {
+  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads and different provider types
+  provider?: IProvider;
+}
+
 export interface IUtxoNetworkConfig extends INetworkConfig {
   rpc: {
     host: string;
@@ -36,10 +41,8 @@ interface IExternalSyncConfig {
   time?: string // cron time of block sync intervals
 }
 
-export interface IEVMNetworkConfig extends INetworkConfig {
+export interface IEVMNetworkConfig extends IMultiProviderNetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
-  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
-  provider?: IProvider;
   externalSyncConfig?: IExternalSyncConfig; // configuration for external syncing
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
@@ -47,6 +50,11 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   threads?: number; // Defaults to your CPU's capabilities. Currently only available for EVM chains
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
+}
+
+export interface ISVMNetworkConfig extends IMultiProviderNetworkConfig {
+  publicConnection?: boolean; // Allow rpc connection to be open via bitcore-node API endpoint
+  syncStartHeight?: number; // Start syncing from this block height
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
@@ -70,7 +78,7 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [currency: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
+    [currency: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig | ISVMNetworkConfig>;
   };
   aliasMapping: {
     chains: {
