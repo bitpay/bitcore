@@ -551,10 +551,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     args.endBlock = Math.min(args.endBlock ?? tip, tip);
     args.startBlock = Math.max(args.startBlock != null ? Number(args.startBlock) : args.endBlock - 10000, 0);
     
-    if (args.endBlock - args.startBlock > 10000) {
-      throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
+    if (isNaN(args.startBlock!) || isNaN(args.endBlock!)) {
+      throw new Error('startBlock and endBlock must be numbers');
     } else if (args.endBlock < args.startBlock) {
       throw new Error('startBlock cannot be greater than endBlock');
+    } else if (args.endBlock - args.startBlock > 10000) {
+      throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
     }
 
     windowSize = Math.min(windowSize, args.endBlock - args.startBlock);
