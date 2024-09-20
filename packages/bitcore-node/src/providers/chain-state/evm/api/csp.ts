@@ -494,11 +494,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         transactionStream = transactionStream.eventPipe(internalTxTransform);
       }
 
-      if (args.tokenAddress) {
-        const erc20Transform = new Erc20RelatedFilterTransform(args.tokenAddress);
-        transactionStream = transactionStream.eventPipe(erc20Transform);
-      }
-
       transactionStream = transactionStream
         .eventPipe(populateReceipt)
         .eventPipe(ethTransactionTransform);
@@ -526,6 +521,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
 
     transactionStream = transactionStream.eventPipe(populateEffects); // For old db entires
+
+    if (params.args.tokenAddress) {
+      const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);
+      transactionStream = transactionStream.eventPipe(erc20Transform);
+    }
     return transactionStream;
   }
 

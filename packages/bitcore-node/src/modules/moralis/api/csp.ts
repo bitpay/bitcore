@@ -139,7 +139,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       network,
       address,
       args: {
-        limit: 10, // default limit
+        limit: 10, // default limit when querying by address
         ...args
       }
     });
@@ -163,7 +163,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         network,
         address,
         args: {
-          limit: 10, // default limit
+          limit: args.limit, // no default limit when querying by wallet. Note: BWS caches txs
           order: 'ASC',
           ...args
         }
@@ -271,7 +271,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const queryStr = this._buildQueryString({
       ...query,
       order: args.order || 'DESC', // default to descending order
-      limit: args.limit || 10, // limit per request/page. total limit is checked in apiStream._read()
+      limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
       include: 'internal_transactions'
     });
     args.transform = (tx) => {
@@ -302,7 +302,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const queryStr = this._buildQueryString({
       ...queryTransform,
       order: args.order || 'DESC', // default to descending order
-      limit: args?.page_limit || 10, // limit per request/page. total limit is checked in apiStream._read()
+      limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
       contract_addresses: [tokenAddress],
     });
     args.transform = (tx) => {
@@ -328,9 +328,9 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       blockTime: new Date(tx.block_timestamp ?? tx.blockTimestamp),
       blockTimeNormalized: new Date(tx.block_timestamp ?? tx.blockTimestamp),
       value: tx.value,
-      gasLimit: tx.gas,
-      gasPrice: tx.gas_price ?? tx.gasPrice,
-      fee: Number(tx.receipt_gas_used ?? tx.receiptGasUsed) * Number(tx.gas_price ?? tx.gasPrice),
+      gasLimit: tx.gas ?? 0,
+      gasPrice: tx.gas_price ?? tx.gasPrice ?? 0,
+      fee: Number(tx.receipt_gas_used ?? tx.receiptGasUsed ?? 0) * Number(tx.gas_price ?? tx.gasPrice ?? 0),
       nonce: tx.nonce,
       to: Web3.utils.toChecksumAddress(tx.to_address ?? tx.toAddress),
       from: Web3.utils.toChecksumAddress(tx.from_address ?? tx.fromAddress),
@@ -366,7 +366,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       ..._transfer,
       transactionHash: transfer.transaction_hash,
       transactionIndex: transfer.transaction_index,
-      contractAddress: transfer.contract_address,
+      contractAddress: transfer.contract_address ?? transfer.address,
       name: transfer.token_name
     } as Partial<Transaction> | any;
   }
