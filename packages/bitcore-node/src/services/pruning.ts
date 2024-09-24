@@ -284,6 +284,8 @@ export class PruningService {
       } catch (err: any) {
         logger.error(`Error invalidating tx ${tx.txid}: ${err.stack || err.message || err}`);
       }
+    } else {
+      logger.info(`Skipping invalidation of ${tx.txid} with immature replacement => ${tx.replacedByTxid}`);
     }
     return false;
   }
