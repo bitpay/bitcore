@@ -10,7 +10,7 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
 
-const { PRUNING_CHAIN, PRUNING_NETWORK, PRUNING_MEMPOOL_AGE, PRUNING_INTERVAL_HRS, PRUNING_DESCENDANT_LIMIT } = process.env;
+const { PRUNING_CHAIN, PRUNING_NETWORK, PRUNING_MEMPOOL_AGE, PRUNING_OLD_INTERVAL_HRS, PRUNING_INV_INTERVAL_MINS, PRUNING_DESCENDANT_LIMIT } = process.env;
 const args = parseArgv([], [
   { arg: 'CHAIN', type: 'string' },
   { arg: 'NETWORK', type: 'string' },
@@ -19,7 +19,8 @@ const args = parseArgv([], [
   { arg: 'EXIT', type: 'bool' },
   { arg: 'DRY', type: 'bool' },
   { arg: 'MEMPOOL_AGE', type: 'int' },
-  { arg: 'INTERVAL_HRS', type: 'float' },
+  { arg: 'OLD_INTERVAL_HRS', type: 'float' },
+  { arg: 'INV_INTERVAL_MINS', type: 'float' },
   { arg: 'DESCENDANT_LIMIT', type: 'int' },
   { arg: 'VERBOSE', type: 'bool' }
 ]);
@@ -30,7 +31,8 @@ const ONE_DAY = 24 * ONE_HOUR;
 
 const CHAIN = args.CHAIN || PRUNING_CHAIN;
 const NETWORK = args.NETWORK || PRUNING_NETWORK;
-const INTERVAL_HRS = args.INTERVAL_HRS || Number(PRUNING_INTERVAL_HRS) || 12;
+const OLD_INTERVAL_HRS = args.OLD_INTERVAL_HRS || Number(PRUNING_OLD_INTERVAL_HRS) || 12;
+const INV_INTERVAL_MINS = args.INV_INTERVAL_MINS || Number(PRUNING_INV_INTERVAL_MINS) || 10;
 const MEMPOOL_AGE = args.MEMPOOL_AGE || Number(PRUNING_MEMPOOL_AGE) || 7;
 const DESCENDANT_LIMIT = args.DESCENDANT_LIMIT || Number(PRUNING_DESCENDANT_LIMIT) || 10;
 const VERBOSE = Boolean(args.VERBOSE ?? false);
@@ -40,17 +42,26 @@ if (Object.keys(args).includes('DRY') && args.DRY === undefined) {
   args.DRY = '1';
 }
 
-if (INTERVAL_HRS > 72) {
-  throw new Error('INTERVAL_HRS cannot be over 72. Consider using a cron job.');
+if (OLD_INTERVAL_HRS > 72) {
+  throw new Error('OLD_INTERVAL_HRS cannot be over 72 hours. Consider using a cron job.');
+}
+
+if (INV_INTERVAL_MINS > 60 * 24 * 3) {
+  throw new Error('INV_INTERVAL_MINS cannot be over 72 hours. Consider using a cron job.');
+} else if (INV_INTERVAL_MINS < 2) {
+  throw new Error('INV_INTERVAL_MINS must be at least 2 minutes');
 }
 
 export class PruningService {
   transactionModel: TransactionModel;
   coinModel: CoinModel;
   stopping = false;
-  running = false;
   interval;
   rpcs: RPC[] = [];
+  runningOld = false;
+  runningInvalid = false;
+  lastRunTimeOld = 0;
+  lastRunTimeInvalid = 0;
 
   constructor({ transactionModel = TransactionStorage, coinModel = CoinStorage } = {}) {
     this.transactionModel = transactionModel;
@@ -70,8 +81,9 @@ export class PruningService {
         process.emit('SIGINT', 'SIGINT');
       });
     } else {
-      logger.info('Pruning service interval (hours): ' + INTERVAL_HRS);
-      this.interval = setInterval(this.detectAndClear.bind(this), INTERVAL_HRS * ONE_HOUR);
+      logger.info('Pruning service OLD interval (hours): ' + OLD_INTERVAL_HRS);
+      logger.info('Pruning service INVALID interval (minutes): ' + INV_INTERVAL_MINS);
+      this.interval = setInterval(this.detectAndClear.bind(this), ONE_MIN);
     }
   }
 
@@ -93,9 +105,6 @@ export class PruningService {
   }
 
   async detectAndClear() {
-    if (this.running) { return; }
-    this.running = true;
-
     try {
       if (CHAIN && NETWORK) {
         args.OLD && await this.processOldMempoolTxs(CHAIN, NETWORK, MEMPOOL_AGE);
@@ -112,144 +121,171 @@ export class PruningService {
       }
     } catch (err: any) {
       logger.error('Pruning Error: ' + err.stack || err.message || err);
-    } finally {
-      this.running = false;
     }
   }
 
   async processOldMempoolTxs(chain: string, network: string, days: number) {
-    const oldTime = new Date(Date.now() - days * ONE_DAY);
-    const count = await this.transactionModel.collection.countDocuments({
-      chain,
-      network,
-      blockHeight: SpentHeightIndicators.pending,
-      blockTimeNormalized: { $lt: oldTime }
-    });
-    logger.info(`Found ${count} outdated ${chain} ${network} mempool txs`);
-    let rmCount = 0;
-    await new Promise((resolve, reject) => {
-      this.transactionModel.collection
-        .find({ chain, network, blockHeight: SpentHeightIndicators.pending, blockTimeNormalized: { $lt: oldTime } })
-        .sort(count > 5000 ? { chain: 1, network: 1, blockTimeNormalized: 1 } : {})
-        .pipe(
-          new Transform({
-            objectMode: true,
-            transform: async (data: any, _, cb) => {
-              if (this.stopping) {
-                return cb(new Error('Stopping'));
-              }
-              const tx = data as ITransaction;
-              try {
-                const nodeTx: RPCTransaction = await this.rpcs[`${chain}:${network}`].getTransaction(tx.txid);
-                if (nodeTx) {
-                  logger.warn(`Tx ${tx.txid} is still in the mempool${VERBOSE ? ': %o' : ''}`, nodeTx);
-                  return cb();
+    try {
+      if (this.runningOld) {
+        return;
+      }
+      this.runningOld = true;
+
+      if (Date.now() - this.lastRunTimeOld < OLD_INTERVAL_HRS * ONE_HOUR) {
+        return;
+      }
+
+      const oldTime = new Date(Date.now() - days * ONE_DAY);
+      const count = await this.transactionModel.collection.countDocuments({
+        chain,
+        network,
+        blockHeight: SpentHeightIndicators.pending,
+        blockTimeNormalized: { $lt: oldTime }
+      });
+      logger.info(`Found ${count} outdated ${chain}:${network} mempool txs`);
+      let rmCount = 0;
+      await new Promise((resolve, reject) => {
+        this.transactionModel.collection
+          .find({ chain, network, blockHeight: SpentHeightIndicators.pending, blockTimeNormalized: { $lt: oldTime } })
+          .sort(count > 5000 ? { chain: 1, network: 1, blockTimeNormalized: 1 } : {})
+          .pipe(
+            new Transform({
+              objectMode: true,
+              transform: async (data: any, _, cb) => {
+                if (this.stopping) {
+                  return cb(new Error('Stopping'));
                 }
-              } catch (err: any) {
-                if (err.code !== -5) { // -5: No such mempool or blockchain transaction. Use gettransaction for wallet transactions.
-                  logger.error(`Error checking tx ${tx.txid} in the mempool: ${err.message}`);
-                  return cb();
-                }
-              }
-              logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
-              const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
-              let spentTxids = new Set<string>();
-              for await (const coin of outputGenerator) {
-                if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
-                  logger.error(`Cannot prune coin! ${coin.mintTxid}`);
-                  return cb();
-                }
-                if (coin.spentTxid) {
-                  spentTxids.add(coin.spentTxid);
-                  if (spentTxids.size > DESCENDANT_LIMIT) {
-                    logger.warn(`${tx.txid} has too many decendants`);
+                const tx = data as ITransaction;
+                try {
+                  const nodeTx: RPCTransaction = await this.rpcs[`${chain}:${network}`].getTransaction(tx.txid);
+                  if (nodeTx) {
+                    logger.warn(`Tx ${tx.txid} is still in the mempool${VERBOSE ? ': %o' : ''}`, nodeTx);
+                    return cb();
+                  }
+                } catch (err: any) {
+                  if (err.code !== -5) { // -5: No such mempool or blockchain transaction. Use gettransaction for wallet transactions.
+                    logger.error(`Error checking tx ${tx.txid} in the mempool: ${err.message}`);
                     return cb();
                   }
                 }
+                logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
+                const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
+                let spentTxids = new Set<string>();
+                for await (const coin of outputGenerator) {
+                  if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
+                    logger.error(`Cannot prune coin! ${coin.mintTxid}`);
+                    return cb();
+                  }
+                  if (coin.spentTxid) {
+                    spentTxids.add(coin.spentTxid);
+                    if (spentTxids.size > DESCENDANT_LIMIT) {
+                      logger.warn(`${tx.txid} has too many decendants`);
+                      return cb();
+                    }
+                  }
+                }
+                spentTxids.add(tx.txid);
+                rmCount += spentTxids.size;
+                const uniqueTxids = Array.from(spentTxids);
+                await this.removeOldMempool(chain, network, uniqueTxids);
+                logger.info(`Removed tx ${tx.txid} and ${spentTxids.size - 1} dependent txs`);
+                return cb();
               }
-              spentTxids.add(tx.txid);
-              rmCount += spentTxids.size;
-              const uniqueTxids = Array.from(spentTxids);
-              await this.removeOldMempool(chain, network, uniqueTxids);
-              logger.info(`Removed tx ${tx.txid} and ${spentTxids.size - 1} dependent txs`);
-              return cb();
-            }
-          })
-        )
-        .on('finish', resolve)
-        .on('error', reject);
-    });
-    logger.info(`Removed all pending txs older than ${days} days: ${rmCount}`);
+            })
+          )
+          .on('finish', resolve)
+          .on('error', reject);
+      });
+      logger.info(`Removed all pending ${chain}:${network} txs older than ${days} days: ${rmCount}`);
+      this.lastRunTimeOld = Date.now();
+    } catch (err: any) {
+      logger.error(`Error processing old mempool txs: ${err.stack || err.message || err}`);
+    } finally {
+      this.runningOld = false;
+    }
   }
 
   async processAllInvalidTxs(chain, network) {
-    const count = await this.transactionModel.collection.countDocuments({
-      chain,
-      network,
-      blockHeight: SpentHeightIndicators.conflicting
-    });
-    logger.info(`Found ${count} invalid ${chain} ${network} txs`);
-    await new Promise((resolve, reject) => {
-      this.transactionModel.collection
-        .find({ chain, network, blockHeight: SpentHeightIndicators.conflicting })
-        .pipe(
-          new Transform({
-            objectMode: true,
-            transform: async (data: any, _, cb) => {
-              if (this.stopping) {
-                return cb(new Error('Stopping'));
-              }
-              const tx = data as ITransaction;
-              logger.info(`Invalidating ${tx.txid} outputs and dependent outputs`);
-              const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
-              let spentTxids = new Set<string>();
-              for await (const coin of outputGenerator) {
-                if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
-                  return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
-                }
-                if (coin.spentTxid) {
-                  spentTxids.add(coin.spentTxid);
-                  if (spentTxids.size > DESCENDANT_LIMIT) {
-                    logger.warn(`${tx.txid} has too many decendants`);
-                    return cb();
-                  }
-                }
-              }
-              spentTxids.add(tx.txid);
-              const uniqueTxids = Array.from(spentTxids);
-              await this.clearInvalid(uniqueTxids);
-              logger.info(`Invalidated tx ${tx.txid} and ${spentTxids.size - 1} dependent txs`);
-              cb();
+    try {
+      if (this.runningInvalid) {
+        return;
+      }
+      this.runningInvalid = true;
+
+      if (Date.now() - this.lastRunTimeInvalid < INV_INTERVAL_MINS * ONE_MIN) {
+        return;
+      }
+
+      const count = await this.coinModel.collection.countDocuments({ chain, network, mintHeight: SpentHeightIndicators.pending });
+      logger.info(`Found ${count} pending ${chain}:${network} TXOs`);
+
+      // Note, realCount <= count since the coinStream returns coins dynamically and related coins are updated.
+      // The caveat is that new coins could be added to the stream while we are iterating over it.
+      let realCount = 0;
+      let invalidCount = 0;
+      const seen = new Set<string>();
+      const voutStream = this.coinModel.collection.find({ chain, network, mintHeight: SpentHeightIndicators.pending }).batchSize(1);
+      for await (const vout of voutStream) {
+        if (this.stopping) {
+          break;
+        }
+        realCount++;
+        if (seen.has(vout.mintTxid)) {
+          continue;
+        }
+        seen.add(vout.mintTxid);
+        const tx = await this.transactionModel.collection.findOne({ chain, network, txid: vout.mintTxid });
+        if (!tx) {
+          logger.error(`Coin ${vout.mintTxid} has no corresponding tx`);
+          continue;
+        }
+        if (tx.replacedByTxid) {
+          if (await this.invalidateTx(chain, network, tx)) {
+            invalidCount++;
+          }
+        } else {
+          const vins = await this.coinModel.collection.find({ chain, network, spentTxid: vout.mintTxid }).toArray();
+          const vinTxs = await this.transactionModel.collection.find({ chain, network, txid: { $in: vins.map(vin => vin.mintTxid) } }).toArray();
+          for (const tx of vinTxs) {
+            if (tx.replacedByTxid) {
+              if (await this.invalidateTx(chain, network, tx)) {
+                invalidCount++;
+              };
             }
-          })
-        )
-        .on('finish', resolve)
-        .on('error', reject);
-    });
+          }
+        }
+      }
+      logger.info(`Invalidated ${invalidCount} (processed ${realCount}) pending TXOs for ${chain}:${network}`);
+      this.lastRunTimeInvalid = Date.now();
+    } catch (err: any) {
+      logger.error(`Error processing invalid txs: ${err.stack || err.message || err}`);
+    } finally {
+      this.runningInvalid = false;
+    }
   }
 
-  async clearInvalid(invalidTxids: Array<string>) {
-    logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${invalidTxids.length} txids`);
-    if (args.DRY) {
-      return;
+  async invalidateTx(chain: string, network: string, tx: ITransaction) {
+    const tipHeight = await this.rpcs[`${chain}:${network}`].getBlockHeight();
+    const rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
+    const isMature = rTx?.blockHeight! > SpentHeightIndicators.pending && tipHeight - rTx?.blockHeight! > 3;
+    if (isMature) {
+      try {
+        logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${tx.txid} with replacement => ${tx.replacedByTxid}`);
+        if (args.DRY) {
+          return true;
+        }        
+        await this.transactionModel._invalidateTx({
+          chain,
+          network,
+          invalidTxid: tx.txid,
+          replacedByTxid: tx.replacedByTxid
+        });
+        return true;
+      } catch (err: any) {
+        logger.error(`Error invalidating tx ${tx.txid}: ${err.stack || err.message || err}`);
+      }
     }
-    return Promise.all([
-      // Set all invalid txs to conflicting status
-      this.transactionModel.collection.updateMany(
-        { txid: { $in: invalidTxids } },
-        { $set: { blockHeight: SpentHeightIndicators.conflicting } }
-      ),
-      // Set all coins that were pending to be spent by an invalid tx back to unspent
-      this.coinModel.collection.updateMany(
-        { spentTxid: { $in: invalidTxids } },
-        { $set: { spentHeight: SpentHeightIndicators.unspent } }
-      ),
-      // Set all coins that were created by invalid txs to conflicting status
-      this.coinModel.collection.updateMany(
-        { mintTxid: { $in: invalidTxids } },
-        { $set: { mintHeight: SpentHeightIndicators.conflicting } }
-      )
-    ]);
+    return false;
   }
 
   async removeOldMempool(chain, network, txids: Array<string>) {
