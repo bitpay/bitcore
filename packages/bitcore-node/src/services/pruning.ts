@@ -224,7 +224,7 @@ export class PruningService {
       let realCount = 0;
       let invalidCount = 0;
       const seen = new Set<string>();
-      const voutStream = this.coinModel.collection.find({ chain, network, mintHeight: SpentHeightIndicators.pending }).batchSize(1);
+      const voutStream = this.coinModel.collection.find({ chain, network, mintHeight: SpentHeightIndicators.pending });
       for await (const vout of voutStream) {
         if (this.stopping) {
           break;

@@ -652,7 +652,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         spentTxid: { $ne: minedTxid }
       };
 
-      const conflictingInputsStream = await CoinStorage.collection.find(conflictingInputsQuery);
+      const conflictingInputsStream = CoinStorage.collection.find(conflictingInputsQuery);
       const seenInvalidTxids = new Set();
       let input: ICoin | null;
 
@@ -689,7 +689,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       };
 
       // spent outputs of invalid tx
-      const spentOutputsStream = await CoinStorage.collection.find(spentOutputsQuery);
+      const spentOutputsStream = CoinStorage.collection.find(spentOutputsQuery);
       const seenTxids = new Set();
       let output: ICoin | null;
 
