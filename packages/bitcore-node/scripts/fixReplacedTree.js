@@ -42,6 +42,8 @@ if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain) || !['mainnet', 'testnet', 'r
 const real = !!args.find(a => a === '--real');
 const force = !!args.find(a => a === '--force');
 
+real && console.log('~~~~ DRY RUN ~~~~');
+console.log('Connecting to storage...');
 Storage.start()
   .then(async () => {
     const tx = await TransactionStorage.collection.findOne({ chain, network, txid });
