@@ -73,17 +73,17 @@ export class RPC {
     return this.asyncCall('getblockcount', []);
   }
 
-  getBlock(hash: string, verbose: boolean) {
-    return this.asyncCall<RPCBlock<RPCTransaction>>('getblock', [hash, verbose]);
+  getBlock(hash: string, verbosity: number) {
+    return this.asyncCall<RPCBlock<RPCTransaction>>('getblock', [hash, verbosity]);
   }
 
   getBlockHash(height: number) {
     return this.asyncCall<string>('getblockhash', [height]);
   }
 
-  async getBlockByHeight(height: number) {
+  async getBlockByHeight(height: number, verbosity: number) {
     const hash = await this.getBlockHash(height);
-    return this.getBlock(hash, false);
+    return this.getBlock(hash, verbosity);
   }
 
   getTransaction(txid: string) {
