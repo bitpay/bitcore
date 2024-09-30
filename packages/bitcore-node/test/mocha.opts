@@ -1,4 +1,0 @@
---require source-map-support/register
---recursive
---exit
---timeout 5000
