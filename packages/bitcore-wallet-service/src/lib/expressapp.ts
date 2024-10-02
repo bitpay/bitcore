@@ -553,7 +553,7 @@ export class ExpressApp {
         server => {
           const opts = {
             identifier: req.params['identifier'],
-            walletCheck: req.params['walletCheck']
+            walletCheck: ['1', 'true'].includes(req.query['walletCheck'])
           };
           server.getWalletFromIdentifier(opts, (err, wallet) => {
             if (err) return returnError(err, res, req);
