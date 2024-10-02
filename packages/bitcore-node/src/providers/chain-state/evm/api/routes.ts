@@ -101,7 +101,7 @@ export class EVMRouter {
         }
 
         if (!rawTx) {
-          return res.status(400).send('rawTx is required');
+          return res.status(400).send('unsigned `rawTx` is required');
         }
 
         // Reference: https://docs.optimism.io/builders/app-developers/transactions/estimates
