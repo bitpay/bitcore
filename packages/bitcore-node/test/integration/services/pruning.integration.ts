@@ -19,27 +19,40 @@ describe('Pruning Service', function() {
 
   beforeEach(async () => {
     await resetDatabase();
+    Pruning.lastRunTimeInvalid = 0;
+    Pruning.lastRunTimeOld = 0;
     Pruning.registerRpcs();
     Pruning.rpcs['BTC:mainnet'] = new RPC('user', 'pw', 'host', 'port');
+    sandbox.stub(Pruning.rpcs['BTC:mainnet'], 'getBlockHeight').resolves(1240);
     process.env.DRYRUN = 'false';
   });
   afterEach(() => {
     process.env.DRYRUN = undefined;
     sandbox.restore();
   });
+
+  const replacementTx = {
+    chain: 'BTC',
+    network: 'mainnet',
+    blockHeight: 1234,
+    txid: 'replacementTx',
+  } as MongoBound<IBtcTransaction>;
+
   const invalidTx = {
     chain: 'BTC',
     network: 'mainnet',
     blockHeight: -3,
-    txid: 'invalidCoin'
+    txid: 'invalidCoin',
+    replacedByTxid: 'replacementTx'
   } as MongoBound<IBtcTransaction>;
 
   const invalidCoin = {
     chain: 'BTC',
     network: 'mainnet',
+    mintHeight: -1,
     mintTxid: 'invalidCoin',
-    spentTxid: 'spentInMempool',
-    mintHeight: -1
+    spentHeight: -1,
+    spentTxid: 'spentInMempool'
   } as ICoin;
 
   const mempoolCoin = {
@@ -47,6 +60,7 @@ describe('Pruning Service', function() {
     network: 'mainnet',
     mintHeight: -1,
     mintTxid: 'spentInMempool',
+    spentHeight: -1,
     spentTxid: 'spentInMempoolAgain'
   } as ICoin;
 
@@ -108,6 +122,7 @@ describe('Pruning Service', function() {
     await CoinStorage.collection.insertOne(invalidCoin);
     await CoinStorage.collection.insertOne(mempoolCoin);
     await CoinStorage.collection.insertOne(mempoolCoin2);
+    await TransactionStorage.collection.insertOne(replacementTx);
 
     return [invalidCoin, mempoolCoin, mempoolCoin2];
   }

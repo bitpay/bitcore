@@ -876,8 +876,13 @@ export class API extends EventEmitter {
     );
   }
 
-  clearCache(cb) {
-    this.request.post('/v1/clearcache/', {}, (err, res) => {
+  clearCache(opts, cb) {
+    if (typeof opts === 'function') {
+      cb = opts;
+      opts = {};
+    }
+    const qs = Object.entries(opts || {}).map(([key, value]) => `${key}=${value}`).join('&');
+    this.request.post('/v1/clearcache/' + (qs ? '?' + qs : ''), {}, (err, res) => {
       return cb(err, res);
     });
   }

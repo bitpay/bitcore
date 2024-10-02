@@ -495,11 +495,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         transactionStream = transactionStream.eventPipe(internalTxTransform);
       }
 
-      if (args.tokenAddress) {
-        const erc20Transform = new Erc20RelatedFilterTransform(args.tokenAddress);
-        transactionStream = transactionStream.eventPipe(erc20Transform);
-      }
-
       transactionStream = transactionStream
         .eventPipe(populateReceipt)
         .eventPipe(ethTransactionTransform);
@@ -527,6 +522,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
 
     transactionStream = transactionStream.eventPipe(populateEffects); // For old db entires
+
+    if (params.args.tokenAddress) {
+      const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);
+      transactionStream = transactionStream.eventPipe(erc20Transform);
+    }
     return transactionStream;
   }
 
@@ -537,19 +537,50 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     args: Partial<StreamWalletTransactionsArgs> = {}
   ): Promise<Array<Partial<Transaction>>> {
     const token = await this.erc20For(network, tokenAddress);
-    const [sent, received] = await Promise.all([
-      token.getPastEvents('Transfer', {
-        filter: { _from: address },
-        fromBlock: args.startBlock || 0,
-        toBlock: args.endBlock || 'latest'
-      }),
-      token.getPastEvents('Transfer', {
-        filter: { _to: address },
-        fromBlock: args.startBlock || 0,
-        toBlock: args.endBlock || 'latest'
-      })
-    ]);
-    return this.convertTokenTransfers([...sent, ...received]);
+    let windowSize = 100;
+    const { web3 } = await this.getWeb3(network);
+    const tip = await web3.eth.getBlockNumber();
+    
+    // If endBlock or startBlock is negative, it is a block offset from the tip
+    if (args.endBlock! < 0) {
+      args.endBlock = tip + Number(args.endBlock!);
+    }
+    if (args.startBlock! < 0) {
+      args.startBlock = tip + Number(args.startBlock!);
+    }
+
+    args.endBlock = Math.min(args.endBlock ?? tip, tip);
+    args.startBlock = Math.max(args.startBlock != null ? Number(args.startBlock) : args.endBlock - 10000, 0);
+    
+    if (isNaN(args.startBlock!) || isNaN(args.endBlock!)) {
+      throw new Error('startBlock and endBlock must be numbers');
+    } else if (args.endBlock < args.startBlock) {
+      throw new Error('startBlock cannot be greater than endBlock');
+    } else if (args.endBlock - args.startBlock > 10000) {
+      throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
+    }
+
+    windowSize = Math.min(windowSize, args.endBlock - args.startBlock);
+    let endBlock = args.endBlock;
+    const tokenTransfers: Partial<Transaction>[] = [];
+    while (windowSize > 0) {
+      const [sent, received] = await Promise.all([
+        token.getPastEvents('Transfer', {
+          filter: { _from: address },
+          fromBlock: endBlock - windowSize,
+          toBlock: endBlock
+        }),
+        token.getPastEvents('Transfer', {
+          filter: { _to: address },
+          fromBlock: endBlock - windowSize,
+          toBlock: endBlock
+        })
+      ]);
+      tokenTransfers.push(...this.convertTokenTransfers([...sent, ...received]));
+      endBlock -= windowSize + 1;
+      windowSize = Math.min(windowSize, endBlock - args.startBlock);
+    }
+    return tokenTransfers;
   }
 
   convertTokenTransfers(tokenTransfers: Array<ERC20Transfer>) {
