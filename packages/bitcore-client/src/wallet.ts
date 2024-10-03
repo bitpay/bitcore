@@ -332,19 +332,25 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string, token?: string, tokenName?: string) {
+  /**
+   * Get balance for the wallet
+   * @param params
+   * @param params.time Get balance at point in time
+   * @param params.token DEPRECATED: Token to get by ticker symbol. WARNING: there could be multiple tokens with the same symbol
+   * @param params.tokenName Token to get by tokenName (Recommended over `token`)
+   * @param params.address EVM Account address to get the balance for
+   * @returns 
+   */
+  getBalance(params: { time?: string, token?: string, tokenName?: string, address?: string } = {}) {
+    const { time, token, tokenName, address } = params;
     let payload;
     if (token || tokenName) {
-      let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
-      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
-      if (!tokenObj) {
-        throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
-      }
+      const tokenObj = this.getTokenObj({ token, tokenName });
       payload = {
         tokenContractAddress: tokenObj.address
       };
     }
-    return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
+    return this.client.getBalance({ payload, pubKey: this.authPubKey, time, address });
   }
 
   getNetworkFee(params: { target?: number, txType?: number } = {}) {
@@ -382,14 +388,43 @@ export class Wallet {
     });
   }
 
+  /**
+   * Backwards compatible method for getting the token object
+   * 
+   * `token` and `tokenName` are separate parameters because there are legacy token objects
+   * without a `name` but modern implementations try to use the tokenName.
+   * e.g.:
+   * tokens = [
+   *   { token: 'USDC', address: '0x123...', decimals: '6' } // USDC.e
+   *   { token: 'USDC', address: '0xabc...', decimals: '6', name: 'USDCn_m' } // native USDC
+   * ]
+   * params1 = { token: 'USDC', tokenName: 'USDC_m' } => returns tokens[0]
+   * params2 = { token: 'USDC', tokenName: 'USDCn_m' } => returns tokens[1]
+   * 
+   * 
+   * @param tokenName The `name` field on the token object
+   * @param token The `symbol` field on the token object (deprecated)
+   */
+  getTokenObj(params: { tokenName?: string, token?: string }) {
+    const { tokenName, token } = params || {};
+    if (!tokenName && !token) {
+      return null;
+    }
+    // If tokenName was given, find the token by name (e.g. USDC_m)
+    let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
+    // If not found by name AND token was given, find the token by symbol (e.g. USDC)
+    // NOTE: we don't want to 
+    tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
+    if (!tokenObj) {
+      throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
+    }
+    return tokenObj;
+  }
+
   listTransactions(params) {
     const { token, tokenName } = params;
     if (token || tokenName) {
-      let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
-      tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
-      if (!tokenObj) {
-        throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
-      }
+      const tokenObj = this.getTokenObj({ token, tokenName });
       params.tokenContractAddress = tokenObj.address;
     }
     return this.client.listTransactions({
@@ -434,7 +469,7 @@ export class Wallet {
     nonce?: number;
     tag?: number;
     data?: string;
-    token?: string;
+    token?: string; // deprecated. tokenName is better, but old token objects don't have the `name` field.
     tokenName?: string;
     gasLimit?: number;
     gasPrice?: number;
@@ -449,11 +484,7 @@ export class Wallet {
     const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
     if (params.token || params.tokenName) {
-      let tokenObj = params.tokenName && this.tokens.find(tok => tok.name === params.tokenName);
-      tokenObj = tokenObj || (params.token && this.tokens.find(tok => tok.symbol === params.token && [params.token, undefined].includes(tok.name)));
-      if (!tokenObj) {
-        throw new Error(`${params.tokenName || params.token} not found on wallet ${this.name}`);
-      }
+      const tokenObj = this.getTokenObj(params);
       tokenContractAddress = tokenObj.address;
     }
     let change = params.change;
@@ -797,6 +828,19 @@ export class Wallet {
   async getAccountFlags({ index }) {
     const account = this.deriveAddress(index ?? 0, false);
     return this.client.getAccountFlags({ address: account });
+  }
+
+
+  async estimateGas(params: { to: string; from: string; data: string; value: string }) {
+    return this.client.estimateGas(params);
+  }
+
+  async getL1Fee(rawTx) {
+    try {
+      return this.client.getL1Fee({ rawTx });
+    } catch (err) {
+      return 0;
+    }
   }
 }
 

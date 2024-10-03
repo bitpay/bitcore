@@ -1,9 +1,9 @@
-import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../../models/base';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';
 
-export class Erc20RelatedFilterTransform extends Transform {
+export class Erc20RelatedFilterTransform extends TransformWithEventPipe {
   constructor(private tokenAddress: string) {
     super({ objectMode: true });
   }

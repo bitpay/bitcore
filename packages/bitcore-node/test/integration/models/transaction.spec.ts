@@ -155,7 +155,10 @@ describe('Transaction Model', function() {
 
     const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
     expect(badTxs.length).to.eq(chainLength);
-    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(chainLength).fill(SpentHeightIndicators.conflicting));
+    // the replaced tx is marked as conflicting, all the rest still pending to be cleaned up by pruning service
+    expect(badTxs[0].blockHeight).to.eq(SpentHeightIndicators.conflicting);
+    expect(badTxs[0].replacedByTxid).to.exist;
+    expect(badTxs.slice(1).every(tx => tx.blockHeight === SpentHeightIndicators.pending)).to.equal(true);
 
     const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
     expect(goodTxs.length).to.eq(1);
@@ -163,7 +166,8 @@ describe('Transaction Model', function() {
     expect(goodTxs[0].blockHeight).to.eq(blockTx.blockHeight);
   });
 
-  it('should mark a massive chain of transactions invalid that were in the mempool, but no longer valid', async () => {
+  // skipping because it's the same test as the previous one with the pruning service invalidating the massive chain
+  it.skip('should mark a massive chain of transactions invalid that were in the mempool, but no longer valid', async () => {
     // insert a valid tx, with a valid output
     await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);

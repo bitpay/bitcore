@@ -7,7 +7,7 @@ const endDate = new Date();
 
 const networkMapping = { 
   eth: {
-    testnet: 'goerli'
+    testnet: 'sepolia'
   },
   btc: {
     testnet: 'testnet3'
@@ -22,7 +22,7 @@ const networkMapping = {
     testnet: 'testnet4',
   },
   matic: {
-    testnet: 'mumbai'
+    testnet: 'amoy'
   },
   arb: {
     testnet: 'sepolia'
@@ -58,19 +58,33 @@ storage.connect(config.storageOpts, async (err) => {
 
   try {
     // Get all wallets
+    const walletCnt = await storage.db.collection(Storage.collections.WALLETS).count({});
     const walletStream = storage.db.collection(Storage.collections.WALLETS).find({});
 
     let fixAddressCount = 0;
     let fixWalletsCount = 0;
     let fixTxsCount = 0;
+    let skipCountMainnet = 0;
+    let skipCountOther = 0;
     let count = 0;
+
+    console.log(`  ${doit ? 'REAL:' : 'DRY RUN:'} Found ${Intl.NumberFormat().format(walletCnt)} total wallets to scan`);
+    console.log('  Pausing 10s for effect...');
+    await new Promise(resolve => setTimeout(resolve, 10000)); // sleep 10s
+
     for await (const wallet of walletStream) {
       count++;
       if (count % 100 === 0) {
-        console.log(`Processed ${count} wallets`); // shows how fast things are working
+        console.log(`Processed ${(count / walletCnt * 100).toFixed(4)}% wallets`); // shows how fast things are working
+        await new Promise(resolve => setTimeout(resolve, 250)); // cooldown
       }
       // if wallet chain is not covered or if network isn't testnet then skip
       if (!(Object.keys(networkMapping).includes(wallet.chain || wallet.coin) && wallet.network == 'testnet')) {
+        if (wallet.network === 'livenet' || wallet.network === 'mainnet') {
+          skipCountMainnet++;
+        } else {
+          skipCountOther++;
+        }
         continue;
       }
 
@@ -160,12 +174,13 @@ storage.connect(config.storageOpts, async (err) => {
 
         fixTxsCount += txsCount;
       }
-      await new Promise(resolve => setTimeout(resolve, 80)); // sleep 80ms
     }
 
     console.log(`Fixed ${fixWalletsCount} wallets`);
     console.log(`Fixed ${fixAddressCount} Addresses`);
     console.log(`Fixed ${fixTxsCount} Txs`);
+    console.log('Mainnet wallets:', skipCountMainnet);
+    console.log('Other network wallets:', skipCountOther);
 
     return done();
   } catch (err) {

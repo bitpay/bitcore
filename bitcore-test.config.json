@@ -1,12 +1,5 @@
 {
   "bitcoreNode": {
-    "modules": [
-      "./bitcoin",
-      "./bitcoin-cash",
-      "./ethereum",
-      "./matic",
-      "./ripple"
-    ],
     "services": {
       "api": {
         "wallets": {
@@ -16,6 +9,23 @@
     },
     "chains": {
       "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 8332
+            }
+          ],
+          "rpc": {
+            "host": "localhost",
+            "port": 8333,
+            "username": "bitcorenodetest",
+            "password": "local321"
+          }
+        }
+      },
+      "BCH": {
         "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
@@ -78,6 +88,7 @@
       "BASE": {
         "testnet": {
           "chainSource": "external",
+          "module": "./moralis",
           "trustedPeers": [
             {
               "host": "localhost",

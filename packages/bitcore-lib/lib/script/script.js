@@ -11,9 +11,9 @@ var Networks = require('../networks');
 var $ = require('../util/preconditions');
 var _ = require('lodash');
 var errors = require('../errors');
-var buffer = require('buffer');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
+const TaggedHash = require('../crypto/taggedhash');
 
 /**
  * A bitcoin transaction script. Each transaction's inputs and outputs
@@ -42,8 +42,6 @@ var Script = function Script(from) {
     this.set(from);
   }
 };
-
-Script.VERIFY_TAPROOT = (1 << 17);
 
 
 Script.prototype.set = function(obj) {
@@ -94,6 +92,15 @@ Script.fromBuffer = function(buffer) {
           len: len,
           opcodenum: opcodenum
         });
+      } else if (Opcode.isOpSuccess(opcodenum)) {
+        // OP_SUCCESSx processing overrides everything, including stack element size limits
+        buf = br.readAll();
+        len = buf.length;
+        script.chunks.push({
+          buf: buf,
+          len: len,
+          opcodenum: opcodenum
+        });
       } else {
         script.chunks.push({
           opcodenum: opcodenum
@@ -128,6 +135,9 @@ Script.prototype.toBuffer = function() {
         bw.write(chunk.buf);
       } else if (opcodenum === Opcode.OP_PUSHDATA4) {
         bw.writeUInt32LE(chunk.len);
+        bw.write(chunk.buf);
+      } else {
+        // Could reach here if opcodenum is OP_SUCCESSx (see comment in .fromBuffer)
         bw.write(chunk.buf);
       }
     }
@@ -356,6 +366,8 @@ Script.prototype.getPublicKeyHash = function() {
     return this.chunks[2].buf;
   } else if (this.isWitnessPublicKeyHashOut()) {
     return this.chunks[1].buf;
+  } else if (this.isTaproot()) {
+    return this.chunks[1].buf;
   } else {
     throw new Error('Can\'t retrieve PublicKeyHash from a non-PKH output');
   }
@@ -455,7 +467,7 @@ Script.prototype.isWitnessProgram = function(values) {
   }
 
   if (buf.length === buf[1] + 2) {
-    values.version = buf[0];
+    values.version = Opcode.decodeOpN(buf[0]);
     values.program = buf.slice(2, buf.length);
     return true;
   }
@@ -574,6 +586,18 @@ Script.types.MULTISIG_IN = 'Spend from multisig';
 Script.types.DATA_OUT = 'Data push';
 
 Script.OP_RETURN_STANDARD_SIZE = 80;
+
+// Tag for input annex. If there are at least two witness elements for a transaction input,
+// and the first byte of the last element is 0x50, this last element is called annex, and
+// has meanings independent of the script
+Script.ANNEX_TAG = 0x50;
+
+// Validation weight per passing signature (Tapscript only, see BIP 342).
+Script.VALIDATION_WEIGHT_PER_SIGOP_PASSED = 50;
+
+// How much weight budget is added to the witness size (Tapscript only, see BIP 342).
+Script.VALIDATION_WEIGHT_OFFSET = 50;
+
 
 /**
  * @returns {object} The Script type if it is a known form,
@@ -910,6 +934,70 @@ Script.buildWitnessV0Out = function(to) {
   return s;
 };
 
+
+/**
+ * Build Taproot script output
+ * @param {PublicKey|Address} to recipient's pubKey or address
+ * @param {Array|Object} scriptTree single leaf object OR array of leaves. leaf: { script: String, leafVersion: Integer }
+ * @returns {Script}
+ */
+Script.buildWitnessV1Out = function(to, scriptTree) {
+  $.checkArgument(to instanceof PublicKey || to instanceof Address || typeof to === 'string');
+  $.checkArgument(!scriptTree || Array.isArray(scriptTree) || !!scriptTree.script);
+
+  if (typeof to === 'string') {
+    try {
+      to = PublicKey.fromTaproot(to);
+    } catch {
+      to = Address.fromString(to);
+    }
+  }
+  
+  function buildTree(tree) {
+    if (Array.isArray(tree)) {
+      const [left, leftH] = buildTree(tree[0]);
+      const [right, rightH] = buildTree(tree[1]);
+      const ret = [[[left[0], left[1]], rightH], [[right[0], right[1]], leftH]];
+      const hWriter = TaggedHash.TAPBRANCH;
+      if (leftH.compare(rightH) === 1) {
+        hWriter.write(rightH);
+        hWriter.write(leftH);
+      } else {
+        hWriter.write(leftH);
+        hWriter.write(rightH);
+      }
+      return [ret, hWriter.finalize()];
+    } else {
+      const { leafVersion, script } = tree;
+      const scriptBuf = new Script(script).toBuffer();
+      const leafWriter = TaggedHash.TAPLEAF;
+      leafWriter.writeUInt8(leafVersion);
+      leafWriter.writeUInt8(scriptBuf.length);
+      leafWriter.write(scriptBuf);
+      const h = leafWriter.finalize();
+      return [[Buffer.from([leafVersion]), scriptBuf], h];
+    }
+  }
+
+  let taggedHash = null;
+  if (scriptTree) { 
+    const [_, h] = buildTree(scriptTree);
+    taggedHash = h;
+  }
+  
+  let tweakedPubKey;
+  if (to instanceof PublicKey) {
+    tweakedPubKey = to.createTapTweak(taggedHash).tweakedPubKey;
+  } else { // Address
+    tweakedPubKey = to.hashBuffer;
+  }
+  const s = new Script();
+  s.add(Opcode.OP_1);
+  s.add(tweakedPubKey);
+  return s;
+};
+
+
 /**
  * @returns {Script} a new pay to public key output for the given
  *  public key
@@ -1027,6 +1115,8 @@ Script.fromAddress = function(address) {
     return Script.buildWitnessV0Out(address);
   } else if (address.isPayToWitnessScriptHash()) {
     return Script.buildWitnessV0Out(address);
+  } else if (address.isPayToTaproot()) {
+    return Script.buildWitnessV1Out(address);
   }
   throw new errors.Script.UnrecognizedAddress(address);
 };
@@ -1168,20 +1258,6 @@ Script.prototype.checkMinimalPush = function(i) {
   return true;
 };
 
-/**
- * Comes from bitcoind's script DecodeOP_N function
- * @param {number} opcode
- * @returns {number} numeric value in range of 0 to 16
- */
-Script.prototype._decodeOP_N = function(opcode) {
-  if (opcode === Opcode.OP_0) {
-    return 0;
-  } else if (opcode >= Opcode.OP_1 && opcode <= Opcode.OP_16) {
-    return opcode - (Opcode.OP_1 - 1);
-  } else {
-    throw new Error('Invalid opcode: ' + JSON.stringify(opcode));
-  }
-};
 
 /**
  * Comes from bitcoind's script GetSigOpCount(boolean) function
@@ -1198,7 +1274,7 @@ Script.prototype.getSignatureOperationsCount = function(accurate) {
       n++;
     } else if (opcode == Opcode.OP_CHECKMULTISIG || opcode == Opcode.OP_CHECKMULTISIGVERIFY) {
       if (accurate && lastOpcode >= Opcode.OP_1 && lastOpcode <= Opcode.OP_16) {
-        n += this._decodeOP_N(lastOpcode);
+        n += Opcode.decodeOpN(lastOpcode);
       } else {
         n += 20;
       }

@@ -1,6 +1,7 @@
 import { Common } from '../common';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
+import logger from './../logger';
 import { ArbChain } from './arb';
 import { BaseChain } from './base';
 import { BchChain } from './bch';
@@ -44,6 +45,7 @@ export interface IChain {
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
+  checkScriptOutput(output: { script: string; amount: number; });
   getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
@@ -107,6 +109,7 @@ class ChainProxy {
       }
       return normalizedChain;
     } catch (err) {
+      logger.error(`Error getting chain for coin ${coin}: %o`, err.stack || err.message || err);
       return Defaults.CHAIN; // coin should always exist but most unit test don't have it -> return btc as default
     }
   }
@@ -133,6 +136,10 @@ class ChainProxy {
 
   checkDust(chain, output, opts) {
     return this.get(chain).checkDust(output, opts);
+  }
+
+  checkScriptOutput(chain, output) {
+    return this.get(chain).checkScriptOutput(output);
   }
 
   getFee(server, wallet, opts) {

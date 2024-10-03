@@ -157,12 +157,17 @@ export const Constants = {
     P2SH: 'P2SH',
     P2WSH: 'P2WSH',
     P2PKH: 'P2PKH',
-    P2WPKH: 'P2WPKH'
+    P2WPKH: 'P2WPKH',
+    P2TR: 'P2TR'
   },
 
   NATIVE_SEGWIT_CHAINS: {
     BTC: 'btc',
     LTC: 'ltc'
+  },
+
+  TAPROOT_CHAINS: {
+    BTC: 'btc'
   },
 
   DERIVATION_STRATEGIES: {
@@ -181,6 +186,9 @@ export const Constants = {
 
   ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
+  ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,
+  OP_TOKEN_OPTS: CWC.Constants.OP_TOKEN_OPTS,
+  BASE_TOKEN_OPTS: CWC.Constants.BASE_TOKEN_OPTS,
 
   BITPAY_CONTRACTS: {
     MULTISEND: 'MULTISEND'

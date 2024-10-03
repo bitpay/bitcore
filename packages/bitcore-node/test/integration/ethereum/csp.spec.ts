@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
 import _ from 'lodash';
 import * as sinon from 'sinon';
-import { Transform } from 'stream';
+import { Transform, Writable } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
@@ -404,42 +404,60 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
     } as IEVMTransactionInProcess;
   });
   // Invalid Transactions
-  _.times(txCount, () => txs.push({
-    ...txs[0],
-    blockHeight: -3
-  }))
+  for (let i = 0; i < txCount; i++) {
+    txs.push({
+      ...txs[0],
+      blockHeight: -3
+    })
+  }
   // Add wallet object ID to transactions
-  txs.forEach(tx => tx.wallets = [objectId]);
+  for (const tx of txs) {
+    tx.wallets = [objectId];
+  }
 
   // Stubs
   sandbox.stub(ETH, 'getWalletAddresses').resolves([address]);
+  sandbox.stub(ETH, 'isP2p').returns(true);
 
   // Test
   await EVMTransactionStorage.collection.deleteMany({});
   await EVMTransactionStorage.collection.insertMany(txs);
 
-  const res = (new Transform({
-    transform: (data, _, cb) => cb(null, data)
+  let counter = 0;
+  const req = (new Writable({
+    write: function(data, _, cb) {
+      data && counter++;
+      cb();
+    }
+  }) as unknown) as Request;
+  
+  const res = (new Writable({
+    write: function(data, _, cb) {
+      data && counter++;
+      cb();
+    }
   }) as unknown) as Response;
   res.type = () => res;
 
-  await ETH.streamWalletTransactions({
-    chain,
-    network,
-    wallet,
-    res,
-    args: {
-      includeInvalidTxs
-    }
-  } as StreamWalletTransactionsParams)
-
-  let counter = 0;
-  await new Promise(r => {
+  const err = await new Promise(r => {
     res
-      .on('data', () => counter++)
-      .on('end', r);
+      .on('error', r)
+      .on('finish', r);
+
+    ETH.streamWalletTransactions({
+      chain,
+      network,
+      wallet,
+      req,
+      res,
+      args: {
+        includeInvalidTxs
+      }
+    } as StreamWalletTransactionsParams)
+      .catch(e => r(e));
   });
 
+  expect(err).to.not.exist;
   expect(counter).to.eq(includeInvalidTxs ? txCount * 2 : txCount);
   sandbox.restore();
 };

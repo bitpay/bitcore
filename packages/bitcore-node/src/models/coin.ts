@@ -4,7 +4,7 @@ import logger from '../logger';
 import { Libs } from '../providers/libs';
 import { StorageService } from '../services/storage';
 import { CoinJSON, SpentHeightIndicators } from '../types/Coin';
-import { valueOrDefault } from '../utils/check';
+import { valueOrDefault } from '../utils';
 import { BaseModel, MongoBound } from './base';
 import { BitcoinBlockStorage } from './block';
 

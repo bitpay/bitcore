@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import logger from '../../logger';
 import { CoinStorage, ICoin } from '../../models/coin';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
-const router = require('express').Router({ mergeParams: true });
+const router = express.Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
@@ -35,7 +35,7 @@ router.get('/tip', async function(req: Request, res: Response) {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
   } catch (err: any) {
-    logger.error('Error getting tip block: %o', err.stack || err.message || err);
+    logger.error('Error getting tip block: %o:%o: %o', chain, network, err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
 });

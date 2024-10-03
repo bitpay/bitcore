@@ -1,10 +1,10 @@
-import { Transform } from 'stream';
 import Web3 from 'web3';
 import { MongoBound } from '../../../../models/base';
 import { IWalletAddress, WalletAddressStorage } from '../../../../models/walletAddress';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { Effect, IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';
 
-export class InternalTxRelatedFilterTransform extends Transform {
+export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
   private walletAddresses: IWalletAddress[] = [];
   constructor(private web3: Web3, private walletId) {
     super({ objectMode: true });
@@ -59,11 +59,10 @@ export class InternalTxRelatedFilterTransform extends Transform {
     }
 
     // Discard original tx if original value is 0 - perhaps after refunds
-    if (internalTxsToProcess.length > 0 && tx.value === 0) {
-      return done();
+    if (internalTxsToProcess.length === 0 || tx.value != 0) {
+      this.push(tx);
     }
 
-    this.push(tx);
     return done();
   }
 

@@ -1,13 +1,14 @@
 import axios from 'axios';
 import { Request, Response } from 'express';
 import { Readable, Stream, Transform, Writable } from 'stream';
+import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
 
 export interface StreamOpts {
   jsonl?: boolean;
 }
 
-export class ExternalApiStream extends Readable {
+export class ExternalApiStream extends ReadableWithEventPipe {
   url: string;
   headers: any;
   cursor: string | null;
@@ -51,9 +52,6 @@ export class ExternalApiStream extends Readable {
           // Transform data before pushing
           if (this.transform) {
             data = this.transform(data);
-          }
-          if (typeof data !== 'string') {
-            data = JSON.stringify(data);
           }
           this.push(data);
           this.results++;
@@ -102,6 +100,11 @@ export class ExternalApiStream extends Readable {
               data: err?.response?.data,
             }
           }
+          if (err.log?.data?.message?.includes('not supported')) {
+            res.write('[]');
+            res.end();
+            return resolve({ success: false, error: err });
+          }
           if (!isFirst) {
             // Data has already been written to the stream and status 200 headers have already been sent
             // We notify and log the error instead of throwing
@@ -135,6 +138,9 @@ export class ExternalApiStream extends Readable {
             // All cases need isFirst set correctly for proper error handling
             isFirst = false;
           }
+          if (typeof data !== 'string') {
+            data = JSON.stringify(data);
+          }
           res.write(data);
         } else {
           stream.destroy();
@@ -158,7 +164,7 @@ export class ExternalApiStream extends Readable {
     });
   }
 
-  static mergeStreams(streams: Stream[], destination: Writable): void {
+  static mergeStreams(streams: Stream[], destination: Writable): Writable {
     let activeStreams = streams.length;
 
     for (const stream of streams) {
@@ -173,6 +179,7 @@ export class ExternalApiStream extends Readable {
         }
       });
     };
+    return destination;
   }
 }
 
@@ -189,7 +196,7 @@ export class ParseStream extends Transform {
   }
 }
 
-export class MergedStream extends Transform {
+export class MergedStream extends TransformWithEventPipe {
   constructor() {
     super({ objectMode: true });
   }

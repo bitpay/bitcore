@@ -10,6 +10,7 @@ var Point = require('./crypto/point');
 var PublicKey = require('./publickey');
 var Random = require('./crypto/random');
 var $ = require('./util/preconditions');
+const TaggedHash = require('./crypto/taggedhash');
 
 /**
  * Instantiate a PrivateKey from a BN, Buffer and WIF.
@@ -264,7 +265,6 @@ PrivateKey.fromRandom = function(network) {
  * @param {string=} network - Either "livenet" or "testnet"
  * @returns {null|Error} An error if exists
  */
-
 PrivateKey.getValidationError = function(data, network) {
   var error;
   try {
@@ -384,6 +384,30 @@ PrivateKey.prototype.toObject = PrivateKey.prototype.toJSON = function toObject(
     bn: this.bn.toString('hex'),
     compressed: this.compressed,
     network: this.network.toString()
+  };
+};
+
+/**
+ * Create a tweaked version of this private key
+ * @param {Buffer} merkleRoot (optional)
+ * @returns {{ tweakedPrivKey: Buffer }}
+ */
+PrivateKey.prototype.createTapTweak = function(merkleRoot) {
+  const order = Point.getN();
+  const P = Point.getG().mul(this.bn);
+  const secKey = P.y.isEven() ? this.bn : order.sub(this.bn);
+  const taggedWriter = new TaggedHash('TapTweak');
+  taggedWriter.write(P.x.toBuffer({ size: 32 }));
+
+  if (merkleRoot) {
+    $.checkArgument(Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be 32 byte buffer');
+    taggedWriter.write(merkleRoot);
+  }
+  const tweakHash = taggedWriter.finalize();
+
+  $.checkState(BN.fromBuffer(tweakHash).lt(order), 'TapTweak hash failed secp256k1 order check');
+  return {
+    tweakedPrivKey: secKey.add(new BN(tweakHash)).mod(order).toBuffer({ size: 32 })
   };
 };
 

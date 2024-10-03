@@ -7,8 +7,7 @@ import logger from '../../../../logger';
 import { StateStorage } from '../../../../models/state';
 import { BaseP2PWorker } from '../../../../services/p2p';
 import { IEVMNetworkConfig } from '../../../../types/Config';
-import { valueOrDefault } from '../../../../utils/check';
-import { wait } from '../../../../utils/wait';
+import { wait } from '../../../../utils';
 import { BaseEVMStateProvider } from '../api/csp';
 import { EVMBlockModel, EVMBlockStorage } from '../models/block';
 import { EVMTransactionModel, EVMTransactionStorage } from '../models/transaction';
@@ -212,7 +211,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
 
   async processTransaction(tx: ErigonTransaction | GethTransaction) {
     const now = new Date();
-    const convertedTx = this.convertTx(tx);
+    const convertedTx = this.txModel.convertRawTx(this.chain, this.network, tx);
     this.txModel.batchImport({
       chain: this.chain,
       network: this.network,
@@ -352,58 +351,11 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const convertedTxs = block.transactions.map(t => this.convertTx(t, convertedBlock));
+    const convertedTxs = block.transactions.map(t => this.txModel.convertRawTx(this.chain, this.network, t, convertedBlock));
     const traceTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
     this.rpc!.reconcileTraces(convertedBlock, convertedTxs, traceTxs);
-    EVMTransactionStorage.addEffectsToTxs(convertedTxs);
+    this.txModel.addEffectsToTxs(convertedTxs);
     return { convertedBlock, convertedTxs };
-  }
-
-  convertTx(tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
-    if (!block) {
-      const txid = tx.hash || '';
-      const to = tx.to || '';
-      const from = tx.from || '';
-      const value = Number(tx.value);
-      const fee = Number(tx.gas) * Number(tx.gasPrice);
-      const abiType = this.txModel.abiDecode(tx.input!);
-      const nonce = tx.nonce || 0;
-      const convertedTx: IEVMTransactionInProcess = {
-        chain: this.chain,
-        network: this.network,
-        blockHeight: valueOrDefault(tx.blockNumber, -1),
-        blockHash: valueOrDefault(tx.blockHash, undefined),
-        data: Buffer.from(tx.input || '0x'),
-        txid,
-        blockTime: new Date(),
-        blockTimeNormalized: new Date(),
-        fee,
-        transactionIndex: tx.transactionIndex || 0,
-        value,
-        wallets: [],
-        to,
-        from,
-        gasLimit: Number(tx.gas),
-        gasPrice: Number(tx.gasPrice),
-        nonce,
-        internal: [],
-        calls: []
-      };
-      if (abiType) {
-        convertedTx.abiType = abiType;
-      }
-      return convertedTx;
-    } else {
-      const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
-      const noBlockTx = this.convertTx(tx);
-      return {
-        ...noBlockTx,
-        blockHeight: height,
-        blockHash,
-        blockTime,
-        blockTimeNormalized
-      };
-    }
   }
 
   async stop() {

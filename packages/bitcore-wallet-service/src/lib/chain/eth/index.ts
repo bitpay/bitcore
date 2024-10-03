@@ -93,10 +93,27 @@ export class EthChain implements IChain {
       if (err) {
         return cb(err);
       }
+      // getPendingTxs returns all txps when given a native currency
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
-        // Do not lock eth multisig amount
-        const lockedSum = opts.multisigContractAddress ? 0 : _.sumBy(txps, 'amount') || 0;
+        let fees = 0;
+        let amounts = 0;
+
+        txps = txps.filter(txp => {
+          // Add gas used for tokens when getting native balance
+          if (!opts.tokenAddress) {
+            fees += txp.fee || 0;
+          }
+          // Filter tokens when getting native balance
+          if (txp.tokenAddress && !opts.tokenAddress) {
+            return false;
+          }
+          amounts += txp.amount;
+          return true;
+        });
+
+        // TODO support big int
+        const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
@@ -148,6 +165,8 @@ export class EthChain implements IChain {
 
   checkDust(output, opts) { }
 
+  checkScriptOutput(output) { }
+
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
@@ -155,7 +174,7 @@ export class EthChain implements IChain {
         let gasPrice = inFeePerKb;
         let maxGasFee;
         let priorityGasFee;
-        const { from, txType, priorityFeePercentile } = opts;
+        const { from, txType, priorityFeePercentile, gasLimitBuffer } = opts;
         const { coin, network, chain } = wallet;
         let inGasLimit = 0; // Per recepient gas limit
         let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
@@ -164,17 +183,23 @@ export class EthChain implements IChain {
         let outputAddresses = []; // Parameter for MuliSend contract
         let outputAmounts = []; // Parameter for MuliSend contract
         let totalValue = toBN(0); // Parameter for MuliSend contract
-
+        logger.info(`getFee for address ${from} on network ${network} and chain ${chain}`);
+        logger.info('getFee.opts: %o', { from, txType, priorityFeePercentile, gasLimitBuffer });
+        logger.info(`[${from}] Add gas limit buffer?: ${!!gasLimitBuffer}`);
         for (let output of opts.outputs) {
+          // Multisend txs build contract fn parameters (addresses, amounts) and bypass output level gas estimations
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
             outputAmounts.push(toBN(BigInt(output.amount).toString()));
             if (!opts.tokenAddress) {
               totalValue = totalValue.add(toBN(BigInt(output.amount).toString()));
             }
+            // Used as a fallback value if estimateGas fails for multisend
             inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
             continue;
-          } else if (!output.gasLimit) {
+          }
+          // Estimate a standard transfer
+          if (!output.gasLimit) {
             try {
               const to = opts.payProUrl
                 ? output.toAddress
@@ -184,7 +209,8 @@ export class EthChain implements IChain {
                     ? opts.multisigContractAddress
                     : output.toAddress;
               const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
-              inGasLimit = await server.estimateGas({
+              // output.gasLimit used as the gasLimit in getBitcoreTx for non multisend transactions
+              const gasLimitEstimate = await server.estimateGas({
                 coin,
                 chain: this.chain,
                 network,
@@ -194,22 +220,32 @@ export class EthChain implements IChain {
                 data: output.data,
                 gasPrice
               });
-              output.gasLimit = inGasLimit || defaultGasLimit;
+              output.gasLimit = gasLimitEstimate || defaultGasLimit;
             } catch (err) {
               output.gasLimit = defaultGasLimit;
             }
-          } else {
-            inGasLimit = output.gasLimit;
+          }
+          inGasLimit += output.gasLimit;
+          logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output level gas limit: ${output.gasLimit}`);
+          // Add gas Limit buffer to output level gasLimit
+          if (gasLimitBuffer) {
+            const gasBuffer = Math.ceil(output.gasLimit * (gasLimitBuffer / 100));
+            output.gasLimit += gasBuffer;
+            inGasLimit += gasBuffer;
+            logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output gas limit with buffer: ${output.gasLimit}`);
           }
           if (_.isNumber(opts.fee)) {
             // This is used for sendmax
             gasPrice = feePerKb = Number((opts.fee / (inGasLimit || defaultGasLimit)).toFixed());
           }
-          gasLimit = inGasLimit || defaultGasLimit;
-          fee += feePerKb * gasLimit;
+          fee += feePerKb * output.gasLimit;
         }
-
+        // gasLimit == sum of internal gasLimits (for non Multisend)
+        gasLimit = inGasLimit;
+        logger.info(`[${from}] Current top level gas limit: ${gasLimit}`);
         if (opts.multiSendContractAddress) {
+          // Calculate gas limit for top level of txp based on multisend tx
+          let _gasLimit;
           try {
             const data = this.encodeContractParameters(
               Constants.BITPAY_CONTRACTS.MULTISEND,
@@ -217,7 +253,7 @@ export class EthChain implements IChain {
               opts
             );
 
-            gasLimit = await server.estimateGas({
+            _gasLimit = await server.estimateGas({
               coin,
               chain: this.chain,
               network,
@@ -227,14 +263,18 @@ export class EthChain implements IChain {
               data,
               gasPrice
             });
-            gasLimit += Math.ceil(gasLimit * Defaults.MS_GAS_LIMIT_BUFFER_PERCENT); // gas limit buffer
+            logger.info(`[${from}] Estimated multisend gas limit: ${_gasLimit}`);
           } catch (error) {
             logger.error('Error estimating gas for MultiSend contract: %o', error);
           }
-          gasLimit = gasLimit ? gasLimit : inGasLimit;
+          // Add gas limit buffer to top level gas limit
+          const buffer = gasLimitBuffer ? gasLimitBuffer / 100 : Defaults.MS_GAS_LIMIT_BUFFER_PERCENT;
+          // If gas estimation fails, fallback to sum of internal gasLimits
+          gasLimit = _gasLimit || gasLimit;
+          gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer 
           fee += feePerKb * gasLimit;
+          logger.info(`[${from}] Top level gas limit with buffer: ${gasLimit}`);
         }
-
         if (Number(txType) === 2) {
           maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
           priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15 });
@@ -252,8 +292,12 @@ export class EthChain implements IChain {
       tokenAddress,
       multisigContractAddress,
       multiSendContractAddress,
-      isTokenSwap
+      isTokenSwap,
+      multiTx
     } = txp;
+    if (multiTx) {
+      throw Errors.MULTI_TX_UNSUPPORTED;
+    }
     const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
     const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? `${this.chain}MULTISIG` : isERC20 ? `${this.chain}ERC20` : this.chain;
@@ -277,9 +321,11 @@ export class EthChain implements IChain {
         recipients,
         contractAddress: multiSendContractAddress
       };
+      // Uses gas limit from the txp top level
       unsignedTxs.push(Transactions.create({ ...txp, chain, ...multiSendParams }));
     } else {
       for (let index = 0; index < recipients.length; index++) {
+        // Uses gas limit from the txp output level
         let params = {
           ...recipients[index],
           nonce: Number(txp.nonce) + Number(index),
@@ -414,7 +460,7 @@ export class EthChain implements IChain {
         const txpTotalAmount =
           (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
             ? getInvoiceValue(txp)
-            : txp.getTotalAmount(opts);
+            : txp.getTotalAmount();
 
         if (totalAmount < txpTotalAmount) {
           return cb(Errors.INSUFFICIENT_FUNDS);

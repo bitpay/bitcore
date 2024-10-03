@@ -65,7 +65,7 @@ export class Address {
     x.isEscrow = opts.isEscrow;
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
-    x.coin = opts.coin;
+    x.coin = opts.chain;
     x.chain = opts.chain;
     x.network = Address.Bitcore[opts.chain]
       ? Address.Bitcore[opts.chain].Address(x.address).toObject().network
@@ -83,8 +83,8 @@ export class Address {
     x.createdOn = obj.createdOn;
     x.address = obj.address;
     x.walletId = obj.walletId;
-    x.coin = obj.coin || Defaults.COIN;
-    x.chain = obj.chain || ChainService.getChain(x.coin);
+    x.coin = obj.chain || ChainService.getChain(obj.coin);
+    x.chain = x.coin;
     x.network = Utils.getNetworkName(x.chain, obj.network) || obj.network;
     x.isChange = obj.isChange;
     x.isEscrow = obj.isEscrow;
@@ -153,6 +153,10 @@ export class Address {
           const [{ xPubKey }] = publicKeyRing;
           bitcoreAddress = Deriver.deriveAddress(chain.toUpperCase(), network, xPubKey, addressIndex, isChange);
         }
+        break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        // TODO: add support for multisig taproot
+        bitcoreAddress = Address.Bitcore[chain].Address.fromPublicKey(publicKeys[0], network, 'taproot');
         break;
     }
 

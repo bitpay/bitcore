@@ -2,10 +2,16 @@ import sinon from 'sinon';
 import chai from 'chai';
 import crypto from 'crypto';
 import * as CWC from 'crypto-wallet-core';
+import supertest from 'supertest';
+import requestStream from 'request';
+import request from 'request-promise-native';
+import { Server } from 'http';
 import { Wallet, AddressTypes } from '../../src/wallet';
-import { Client } from '../../src/client';
 import * as utils from '../../src/utils';
 
+const { Modules } = require('../../../../bitcore-node/build/src/modules');
+const { Api: bcnApi } = require('../../../../bitcore-node/build/src/services/api');
+const { Storage: bcnStorage } = require('../../../../bitcore-node/build/src/services/storage');
 
 const should = chai.should();
 const expect = chai.expect;
@@ -20,10 +26,41 @@ const libMap = {
 describe('Wallet', function() {
   const sandbox = sinon.createSandbox();
   const storageType = 'Level';
+  const baseUrl = 'http://127.0.0.1:3000/api';
   let walletName;
   let wallet: Wallet;
+  let api;
+  before(async function() {
+    this.timeout(20000);
+    await bcnStorage.start({
+      dbHost: process.env.DB_HOST || 'localhost',
+      dbPort: process.env.DB_PORT || '27017',
+      dbName: process.env.DB_NAME || 'bitcore-client-tests'
+    });
+    Modules.loadConfigured();
+    const httpServer: Server = await bcnApi.start();
+    api = supertest(httpServer);
+  });
+  after(async function() {
+    this.timeout(20000);
+    await bcnApi.stop();
+    await bcnStorage.stop();
+  });
   beforeEach(function() {
-    sandbox.stub(Client.prototype, 'register').resolves();
+    sandbox.stub(request, 'Request').callsFake(function(args) {
+      args.url = args.url.replace('https://api.bitcore.io/api', baseUrl);
+      args.url = args.url.replace(baseUrl, '/api');
+      const req = api[args.method.toLowerCase()](args.url);
+      for (const [key, value] of Object.entries(args.headers)) {
+        req.set(key, value);
+      }
+      req.send(args.body);
+      return req;
+    });
+    sandbox.stub(requestStream, 'defaults').callsFake(function(args) {
+      console.log(args);
+      throw new Error('Need to implement requestStream stub in tests');
+    });
   });
   afterEach(async function() {
     await Wallet.deleteWallet({ name: walletName, storageType });
@@ -31,9 +68,7 @@ describe('Wallet', function() {
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
     for (const addressType of Object.keys(AddressTypes[chain] || { 'pubkeyhash': 1 })) {
-      if (addressType === 'p2tr' || addressType === 'taproot') {
-        continue;
-      }
+
       it(`should create a wallet for chain and addressType: ${chain} ${addressType}`, async function() {
         walletName = 'BitcoreClientTest' + chain + addressType;
 
@@ -45,7 +80,8 @@ describe('Wallet', function() {
           password: 'abc123',
           lite: false,
           addressType,
-          storageType
+          storageType,
+          baseUrl
         });
 
         expect(wallet.addressType).to.equal(AddressTypes[chain]?.[addressType] || 'pubkeyhash');
@@ -86,6 +122,7 @@ describe('Wallet', function() {
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
+          baseUrl
         });
         await wallet.unlock('abc123');
       });
@@ -161,6 +198,7 @@ describe('Wallet', function() {
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
+          baseUrl
         });
         await wallet.unlock('abc123');
       });
@@ -219,10 +257,11 @@ describe('Wallet', function() {
             wallet = await Wallet.create({
               name: walletName,
               chain: 'BTC',
-              network: 'testnet',
+              network: 'regtest',
               password: 'abc123',
               storageType,
-              path
+              path,
+              baseUrl
             });
             await wallet.unlock('abc123');
             // 3 address pairs
@@ -263,6 +302,7 @@ describe('Wallet', function() {
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType,
+        baseUrl
       });
       await wallet.unlock('abc123');
       requestStub = sandbox.stub(wallet.client, '_request').resolves();
@@ -324,6 +364,113 @@ describe('Wallet', function() {
       requestStub.callCount.should.equal(2);
       sleepStub.callCount.should.equal(1);
       requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+    });
+  });
+
+  describe('getBalance', function() {
+    walletName = 'BitcoreClientTestGetBalance';
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        name: walletName,
+        chain: 'MATIC',
+        network: 'testnet',
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        storageType: 'Level',
+      });
+      await wallet.unlock('abc123');
+    });
+
+    it('should get correct token balance with conflicting token objects and old token object', async function() {
+      // Old token object (no name)
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0x123',
+        decimals: '6',
+      });
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0xabc',
+        decimals: '6',
+        name: 'USDCn_m'
+      });
+      sinon.stub(wallet.client, 'getBalance').callsFake(async function(params) {
+        switch (params.payload.tokenContractAddress) {
+          case '0x123':
+            return 1;
+          case '0xabc':
+            return 2;
+          default:
+            return 0;
+        }
+      });
+
+      const balance1 = await wallet.getBalance({ token: 'USDC' });
+      const balance2 = await wallet.getBalance({ token: 'USDC', tokenName: 'USDC_m' });
+      const balance3 = await wallet.getBalance({ tokenName: 'USDCn_m' });
+      const balance4 = await wallet.getBalance({ token: 'USDC', tokenName: 'USDCn_m' });
+      balance1.should.equal(1);
+      balance2.should.equal(1);
+      balance3.should.equal(2);
+      balance4.should.equal(2);
+    });
+  });
+
+  describe('getTokenObj', function() {
+    walletName = 'BitcoreClientTestGetTokenObj';
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        name: walletName,
+        chain: 'MATIC',
+        network: 'testnet',
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        storageType: 'Level',
+      });
+      await wallet.unlock('abc123');
+    })
+
+    it('should get correct token object', async function() {
+      // Old token object (no name)
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0x123',
+        decimals: '6',
+      });
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0xabc',
+        decimals: '6',
+        name: 'USDC.e'
+      });
+      const obj1 = wallet.getTokenObj({ token: 'USDC' });
+      const obj2 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.other' }); // no object with "USDC.other"
+      const obj3 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.e' });
+      const obj4 = wallet.getTokenObj({ tokenName: 'USDC.e' });
+      obj1.address.should.equal('0x123');
+      obj2.address.should.equal('0x123');
+      obj3.address.should.equal('0xabc');
+      obj4.address.should.equal('0xabc');
+    });
+
+    it('should fallback to old token object if matching `token` is given', async function() {
+      // Old token object (no name)
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0x123',
+        decimals: '6',
+      });
+
+      const obj1 = wallet.getTokenObj({ token: 'USDC' });
+      obj1.address.should.equal('0x123');
+      const obj2 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.e' }); // falls back
+      obj2.address.should.equal('0x123');
+      try {
+        const obj3 = wallet.getTokenObj({ tokenName: 'USDC.e' }); // token not given, so cannot fall back
+        should.not.exist(obj3);
+      } catch (err) {
+        err.message.should.equal('USDC.e not found on wallet ' + walletName);
+      }
     });
   });
 });

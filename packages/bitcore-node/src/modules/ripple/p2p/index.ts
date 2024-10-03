@@ -8,7 +8,7 @@ import { CacheStorage } from '../../../models/cache';
 import { StateStorage } from '../../../models/state';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
 import { BaseP2PWorker } from '../../../services/p2p';
-import { wait } from '../../../utils/wait';
+import { wait } from '../../../utils';
 import { RippleStateProvider } from '../api/csp';
 import { XrpBlockModel, XrpBlockStorage } from '../models/block';
 import { XrpTransactionStorage } from '../models/transaction';

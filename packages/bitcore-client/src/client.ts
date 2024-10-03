@@ -68,15 +68,20 @@ export class Client {
     return this._request({ method: 'GET', url, json: true });
   }
 
-  async getBalance(params: { payload?: any; pubKey: string; time?: string }) {
-    const { payload, pubKey, time } = params;
+  async getBalance(params: { payload?: any; pubKey: string; time?: string; address?: string }) {
+    const { payload, pubKey, time, address } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;
     if (time) {
       url += `/${time}`;
     }
+    const query = [];
     if (payload && payload.tokenContractAddress) {
-      url += `?tokenAddress=${payload.tokenContractAddress}`;
+      query.push(`tokenAddress=${payload.tokenContractAddress}`);
     }
+    if (address) {
+      query.push(`address=${address}`);
+    }
+    url += query.length ? `?${query.join('&')}` : '';
     const signature = this.sign({ method: 'GET', url });
     return this._request({
       method: 'GET',
@@ -226,5 +231,19 @@ export class Client {
     const { address } = params;
     const url = `${this.apiUrl}/address/${address}/flags`;
     return this._request({ method: 'GET', url, json: true });
+  }
+
+  estimateGas(params: { to: string; from: string; data: string; value: string }) {
+    const { to, from, data, value } = params;
+    const body = { to, from, data, value };
+    const url = `${this.apiUrl}/gas`;
+    return this._request({ method: 'POST', url, json: true, body });
+  }
+
+  getL1Fee(params: { rawTx: string; safe?: boolean }) {
+    const { rawTx, safe } = params;
+    const body = { rawTx };
+    const url = `${this.apiUrl}/l1/fee${safe ? '?safe=true' : ''}`;
+    return this._request({ method: 'POST', url, json: true, body });
   }
 }

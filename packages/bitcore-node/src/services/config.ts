@@ -1,7 +1,7 @@
 import config from '../config';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { ConfigType } from '../types/Config';
-import { valueOrDefault } from '../utils/check';
+import { valueOrDefault } from '../utils';
 
 type ServiceName = keyof ConfigType['services'];
 

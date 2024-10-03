@@ -1,3 +1,4 @@
+import { Binary } from 'bson';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -251,6 +252,35 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
         clearTimeout(timeout);
       }
     });
+  }
+
+  convertRawBlock(chain: string, network: string, block: any): IEVMBlock {
+    return {
+      chain,
+      network,
+      height: block.number,
+      hash: block.hash,
+      coinbase: new Binary(Buffer.from(block.miner)),
+      merkleRoot: new Binary(Buffer.from((block as any).transactionsRoot)), // TODO: rm `as any` if web3 is updated and fixes itself
+      time: new Date(Number(block.timestamp) * 1000),
+      timeNormalized: new Date(Number(block.timestamp) * 1000),
+      nonce: new Binary(Buffer.from(block.extraData)),
+      previousBlockHash: block.parentHash,
+      difficulty: block.difficulty.toString(),
+      totalDifficulty: block.totalDifficulty.toString(),
+      nextBlockHash: '',
+      transactionCount: block.transactions.length,
+      size: block.size,
+      reward: 0,
+      logsBloom: new Binary(Buffer.from(block.logsBloom)),
+      sha3Uncles: new Binary(Buffer.from(block.sha3Uncles)),
+      receiptsRoot: new Binary(Buffer.from(block.receiptsRoot)),
+      processed: false,
+      gasLimit: block.gasLimit,
+      gasUsed: block.gasUsed,
+      baseFeePerGas: block.baseFeePerGas,
+      stateRoot: new Binary(Buffer.from(block.stateRoot)),
+    } as IEVMBlock;
   }
 }
 

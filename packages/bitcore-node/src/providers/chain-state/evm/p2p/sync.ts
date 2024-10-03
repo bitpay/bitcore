@@ -7,7 +7,7 @@ import Config from '../../../../config';
 import logger, { timestamp } from '../../../../logger';
 import { StateStorage } from '../../../../models/state';
 import { IEVMNetworkConfig } from '../../../../types/Config';
-import { wait } from '../../../../utils/wait';
+import { wait } from '../../../../utils';
 import { EVMBlockStorage } from '../models/block';
 
 export class MultiThreadSync extends EventEmitter {
@@ -258,14 +258,7 @@ export class MultiThreadSync extends EventEmitter {
       this.sync();
     } else {
       logger.info(`${this.chain}:${this.network} multi-thread sync is finished. Switching to main process sync.`);
-      await StateStorage.collection.updateOne(
-        {},
-        {
-          $addToSet: { initialSyncComplete: `${this.chain}:${this.network}` },
-          $set: { [`verifiedBlockHeight.${this.chain}.${this.network}`]: this.currentHeight }
-        },
-        { upsert: true }
-      );
+      await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: this.currentHeight });
       this.emit('INITIALSYNCDONE');
       this.shutdownThreads();
       this.syncing = false;

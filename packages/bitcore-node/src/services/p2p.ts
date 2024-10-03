@@ -3,7 +3,7 @@ import logger from '../logger';
 import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
 import { IBlock } from '../types/Block';
-import { wait } from '../utils/wait';
+import { wait } from '../utils';
 import { Config, ConfigService } from './config';
 
 export class P2pManager {
@@ -17,12 +17,13 @@ export class P2pManager {
     this.workers = new Array<BaseP2PWorker>();
   }
 
-  register(chain: string, worker: Class<BaseP2PWorker<any>>) {
-    this.workerClasses[chain] = worker;
+  register(chain: string, network: string, worker: Class<BaseP2PWorker<any>>) {
+    this.workerClasses[chain] = this.workerClasses[chain] || {};
+    this.workerClasses[chain][network] = worker;
   }
 
-  get(chain: string) {
-    return this.workerClasses[chain];
+  get(chain: string, network: string) {
+    return this.workerClasses[chain][network];
   }
 
   async stop() {
@@ -46,8 +47,8 @@ export class P2pManager {
       if ((chainConfig.chainSource && chainConfig.chainSource !== 'p2p') || chainConfig.disabled) {
         continue;
       }
-      logger.info(`Starting ${chain} p2p worker`);
-      const p2pWorker = new this.workerClasses[chain]({
+      logger.info(`Starting P2P worker ${chain}:${network}`);
+      const p2pWorker = new this.workerClasses[chain][network]({
         chain,
         network,
         chainConfig
@@ -55,8 +56,8 @@ export class P2pManager {
       this.workers.push(p2pWorker);
       try {
         p2pWorker.start();
-      } catch (e) {
-        logger.error('P2P Worker died with %o', e);
+      } catch (e: any) {
+        logger.error('P2P Worker %o:%o died: %o', chain, network, e.stack || e.message || e);
       }
     }
   }

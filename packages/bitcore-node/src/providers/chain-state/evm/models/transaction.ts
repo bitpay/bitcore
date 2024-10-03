@@ -12,8 +12,7 @@ import { Storage, StorageService } from '../../../../services/storage';
 import { SpentHeightIndicators } from '../../../../types/Coin';
 import { StreamingFindOptions } from '../../../../types/Query';
 import { TransformOptions } from '../../../../types/TransformOptions';
-import { valueOrDefault } from '../../../../utils/check';
-import { partition } from '../../../../utils/partition';
+import { partition, valueOrDefault } from '../../../../utils';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
@@ -22,7 +21,7 @@ import { MultisigAbi } from '../abi/multisig';
 
 import Web3 from 'web3';
 import { IEVMNetworkConfig } from '../../../../types/Config';
-import { Effect, EVMTransactionJSON, IAbiDecodedData, IAbiDecodeResponse, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import { Effect, ErigonTransaction, EVMTransactionJSON, GethTransaction, IAbiDecodedData, IAbiDecodeResponse, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -413,8 +412,10 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             effects.push(effect);
           }
-          // Ignoring delegated calls because they are redundant
-          if (internalTx.abiType && internalTx.type != 'delegatecall') {
+          // We used to ignore delegated calls because we thought they were redundant in ERC20 transfers via proxy contract
+          //  Maybe something changed with the EVM, but they seem to be necessary now to get ERC20 transfers to show up.
+          // TODO: Revisit this logic to reduce duplicates
+          if (internalTx.abiType) { // && internalTx.type != 'delegatecall') {
             // Handle Abi related effects
             const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             if (effect) {
@@ -429,8 +430,10 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
             effects.push(effect);
           }
-          // Ignoring delegated calls because they are redundant
-          if (internalTx.abiType && internalTx.type != 'DELEGATECALL') {
+          // We used to ignore delegated calls because we thought they were redundant in ERC20 transfers via proxy contract
+          //  Maybe something changed with the EVM, but they seem to be necessary now to get ERC20 transfers to show up.
+          // TODO: Revisit this logic to reduce duplicates
+          if (internalTx.abiType) { // && internalTx.type != 'DELEGATECALL') {
             // Handle Abi related effects
             const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.to, internalTx.from, internalTx.depth);
             if (effect) {
@@ -523,6 +526,53 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return tx;
   }
 
+  convertRawTx(chain: string, network: string, tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
+    if (!block) {
+      const txid = tx.hash || '';
+      const to = tx.to || '';
+      const from = tx.from || '';
+      const value = Number(tx.value);
+      const fee = Number(tx.gas) * Number(tx.gasPrice);
+      const abiType = this.abiDecode(tx.input!);
+      const nonce = tx.nonce || 0;
+      const convertedTx: IEVMTransactionInProcess = {
+        chain,
+        network,
+        blockHeight: valueOrDefault(tx.blockNumber, -1),
+        blockHash: valueOrDefault(tx.blockHash, undefined),
+        data: Buffer.from(tx.input || '0x'),
+        txid,
+        blockTime: new Date(),
+        blockTimeNormalized: new Date(),
+        fee,
+        transactionIndex: tx.transactionIndex || 0,
+        value,
+        wallets: [],
+        to,
+        from,
+        gasLimit: Number(tx.gas),
+        gasPrice: Number(tx.gasPrice),
+        nonce,
+        internal: [],
+        calls: []
+      };
+      if (abiType) {
+        convertedTx.abiType = abiType;
+      }
+      return convertedTx;
+    } else {
+      const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
+      const noBlockTx = this.convertRawTx(chain, network, tx);
+      return {
+        ...noBlockTx,
+        blockHeight: height,
+        blockHash,
+        blockTime,
+        blockTimeNormalized
+      };
+    }
+  }
+
   // Correct tx.data.toString() => 0xa9059cbb00000000000000000000000001503dfc5ad81bf630d83697e98601871bb211b60000000000000000000000000000000000000000000000000000000000002710
   // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
 
@@ -550,7 +600,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     };
 
     // Add non-lean properties if we aren't excluding them
-    const config = (Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig);
+    const config = Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig;
     if (config && !config.leanTransactionStorage) {
       const dataStr = tx.data ? tx.data.toString() : '';
       const decodedData = this.abiDecode(dataStr);

@@ -503,6 +503,15 @@ export class PushNotificationsService {
           } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
+          } else if (Constants.ARB_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ARB_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.OP_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.OP_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.BASE_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.BASE_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
             try {

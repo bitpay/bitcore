@@ -43,10 +43,10 @@ commands:
     description: Force usage of correct node version on the executor machine
     steps:
       - run:
-          name: Use Node 18
+          name: Use Node 20
           command: |
-            nvm install 18.14.2
-            nvm alias default 18.14.2
+            nvm install 20.13.1
+            nvm alias default 20.13.1
             nvm use default
   restore_dependency_cache:
     steps:
@@ -92,7 +92,7 @@ jobs:
           command: |
             nvm use default
             set -x && node -v && npm -v && google-chrome --version && docker version && python --version
-      - restore_dependency_cache
+      # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
           npm install

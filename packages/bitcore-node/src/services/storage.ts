@@ -11,7 +11,7 @@ import { MongoBound } from '../models/base';
 import { ConfigType } from '../types/Config';
 import { StreamingFindOptions } from '../types/Query';
 import { TransformableModel } from '../types/TransformableModel';
-import { wait } from '../utils/wait';
+import { wait } from '../utils';
 import { Config, ConfigService } from './config';
 
 export { StreamingFindOptions };
