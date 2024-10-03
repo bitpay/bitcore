@@ -63,7 +63,7 @@ Schnorr.sign = function(privateKey, message, aux) {
   const Rbuf = Buffer.from(R.encodeCompressed().slice(1)); // slice(1) removes the encoding prefix byte
   const k = R.y.isEven() ? kPrime : n.sub(kPrime);
   const e = new BN(new TaggedHash('BIP0340/challenge', Buffer.concat([Rbuf, Pbuf, message])).finalize()).mod(n);
-  const sig = Buffer.concat([Rbuf, k.add(e.mul(d)).mod(n).toBuffer()]);
+  const sig = Buffer.concat([Rbuf, k.add(e.mul(d)).mod(n).toBuffer({ size: 32 })]);
 
   if (!Schnorr.verify(Pbuf, message, sig)) {
     throw new Error('Error creating schnorr signature. Verification failed');
@@ -74,7 +74,7 @@ Schnorr.sign = function(privateKey, message, aux) {
 
 /**
  * Verify a schnorr signature
- * @param {PublicKey|Buffer} publicKey 
+ * @param {PublicKey|Buffer} publicKey
  * @param {String|Buffer} message Hex string or buffer
  * @param {String|Signature|Buffer} signature Hex string, Signature instance, or buffer
  * @returns {Boolean}
