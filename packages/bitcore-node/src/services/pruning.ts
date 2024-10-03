@@ -21,6 +21,7 @@ const args = parseArgv([], [
   { arg: 'MEMPOOL_AGE', type: 'int' },
   { arg: 'OLD_INTERVAL_HRS', type: 'float' },
   { arg: 'INV_INTERVAL_MINS', type: 'float' },
+  { arg: 'INV_MATURE_LEN', type: 'int' },
   { arg: 'DESCENDANT_LIMIT', type: 'int' },
   { arg: 'VERBOSE', type: 'bool' }
 ]);
@@ -33,6 +34,7 @@ const CHAIN = args.CHAIN || PRUNING_CHAIN;
 const NETWORK = args.NETWORK || PRUNING_NETWORK;
 const OLD_INTERVAL_HRS = args.OLD_INTERVAL_HRS || Number(PRUNING_OLD_INTERVAL_HRS) || 12;
 const INV_INTERVAL_MINS = args.INV_INTERVAL_MINS || Number(PRUNING_INV_INTERVAL_MINS) || 10;
+const INV_MATURE_LEN = args.INV_MATURE_LEN || 3; // using || means INV_MATURE_LEN needs to be >0
 const MEMPOOL_AGE = args.MEMPOOL_AGE || Number(PRUNING_MEMPOOL_AGE) || 7;
 const DESCENDANT_LIMIT = args.DESCENDANT_LIMIT || Number(PRUNING_DESCENDANT_LIMIT) || 10;
 const VERBOSE = Boolean(args.VERBOSE ?? false);
@@ -266,8 +268,12 @@ export class PruningService {
 
   async invalidateTx(chain: string, network: string, tx: ITransaction) {
     const tipHeight = await this.rpcs[`${chain}:${network}`].getBlockHeight();
-    const rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
-    const isMature = rTx?.blockHeight! > SpentHeightIndicators.pending && tipHeight - rTx?.blockHeight! > 3;
+    let rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
+    while (rTx?.replacedByTxid && rTx?.blockHeight! < 0) {
+      // replacement tx has also been replaced
+      rTx = await this.transactionModel.collection.findOne({ chain, network, txid: rTx.replacedByTxid });
+    }
+    const isMature = rTx?.blockHeight! > SpentHeightIndicators.pending && tipHeight - rTx?.blockHeight! > INV_MATURE_LEN;
     if (isMature) {
       try {
         logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${tx.txid} with replacement => ${tx.replacedByTxid}`);
