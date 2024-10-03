@@ -15,19 +15,13 @@ describe('Networks', function() {
     should.exist(networks.defaultNetwork);
   });
 
-  it('will enable/disable regtest Network', function() {
+  it('should not replace testnet network with regtest', function() {
+    const beforeEnable = networks.testnet;
     networks.enableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fabfb5da', 'hex'));
-    networks.testnet.port.should.equal(18444);
-    networks.testnet.dnsSeeds.should.deep.equal([]);
-    networks.testnet.regtestEnabled.should.equal(true);
+    networks.testnet.should.deep.equal(beforeEnable);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fcc1b7dc', 'hex'));
-    networks.testnet.port.should.equal(44556);
-    networks.testnet.dnsSeeds.should.deep.equal([
-      'testseed.jrn.me.uk',
-    ]);
+    networks.testnet.should.deep.equal(beforeEnable);
   });
 
   it('will get network based on string "regtest" value', function() {
@@ -126,4 +120,17 @@ describe('Networks', function() {
     expect(fn).to.throw(TypeError)
   });
 
+  it('should have not have network magic or port for testnet', function() {
+    var testnet = networks.get('testnet');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(false);
+    isNaN(testnet.port).should.equal(true);
+  });
+
+  it('should have network magic and port for testnet variant "testnet3"', function() {
+    var testnet = networks.get('testnet3');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
+  });
 });

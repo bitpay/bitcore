@@ -1,4 +1,4 @@
-module.exports = (wallet, appName, appVersion) => {
+export const serverMessages = (wallet, appName, appVersion) => {
   if (!appVersion || !appName) return;
 
   if (wallet.network == 'livenet' && appVersion.major == 5) {

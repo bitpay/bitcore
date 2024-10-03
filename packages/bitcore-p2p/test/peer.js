@@ -89,21 +89,24 @@ describe('Peer', function() {
     var peer = new Peer({host: 'localhost', network: Networks.testnet});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
-    peer.port.should.equal(Networks.testnet.port);
+    // Default testnet doesn't have a port, it is contained in the variants properties
+    // peer.port.should.equal(Networks.testnet.port);
   });
 
   it('create instance setting a network from string', function() {
     var peer = new Peer({host: 'localhost', network: 'testnet'});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
-    peer.port.should.equal(Networks.testnet.port);
+    // Default testnet doesn't have a port, it is contained in the variants properties
+    // peer.port.should.equal(Networks.testnet.port);
   });
 
   it('create instance setting a network from xpubkey', function() {
     var peer = new Peer({host: 'localhost', network: 0x043587cf});
     peer.host.should.equal('localhost');
     peer.network.should.equal(Networks.testnet);
-    peer.port.should.equal(Networks.testnet.port);
+    // Default testnet doesn't have a port, it is contained in the variants properties
+    // peer.port.should.equal(Networks.testnet.port);
   });
 
   it('create instance setting a custom network', function() {

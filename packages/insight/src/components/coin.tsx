@@ -1,5 +1,5 @@
 import {CoinsList} from '../utilities/models';
-import {useEffect, useState} from 'react';
+import {FC, useEffect, useState, memo} from 'react';
 import {getApiRoot, getConvertedValue, getFormattedDate} from '../utilities/helper-methods';
 import {fetcher} from '../api/api';
 import {
@@ -13,17 +13,13 @@ import {
 import {Tile, TileDescription, TileLink} from '../assets/styles/tile';
 import {useNavigate} from 'react-router-dom';
 
-const Coin = ({
-  transaction,
-  currency,
-  network,
-  order,
-}: {
+interface CoinProps {
   transaction: CoinsList;
   currency: string;
   network: any;
   order: string;
-}) => {
+}
+const Coin: FC<CoinProps> = ({transaction, currency, network, order}) => {
   const navigate = useNavigate();
   const [showTimer, setShowTimer] = useState(false);
   const [time, setTime] = useState(null);
@@ -68,6 +64,8 @@ const Coin = ({
               <TransactionTileFlex justifyContent='flex-end'>
                 {height === -3 && <TransactionChip error>Invalid</TransactionChip>}
 
+                {height === -5 && <TransactionChip error>Expired</TransactionChip>}
+
                 {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}
 
                 {confirmations === 1 && <TransactionChip primary>1 Confirmation</TransactionChip>}
@@ -87,7 +85,7 @@ const Coin = ({
             {showTimer ? (
               <TileDescription value width='auto'>
                 {' '}
-                Mined on {getFormattedDate(time)}{' '}
+                {confirmations > 0 ? 'Mined' : 'Seen'} on {getFormattedDate(time)}{' '}
               </TileDescription>
             ) : (
               <TileLink value width='auto' onClick={() => getTxData(mintTxid)}>
@@ -119,6 +117,8 @@ const Coin = ({
 
                 {height === -4 && <TransactionChip error>Error</TransactionChip>}
 
+                {height === -5 && <TransactionChip error>Expired</TransactionChip>}
+
                 {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}
 
                 {confirmations === 1 && <TransactionChip primary>1 Confirmation</TransactionChip>}
@@ -138,7 +138,7 @@ const Coin = ({
             {showTimer ? (
               <TileDescription value width='auto'>
                 {' '}
-                Mined on {getFormattedDate(time)}{' '}
+                {confirmations > 0 ? 'Mined' : 'Seen'} on {getFormattedDate(time)}{' '}
               </TileDescription>
             ) : (
               <TileLink value width='auto' onClick={() => getTxData(spentTxid)}>
@@ -152,4 +152,4 @@ const Coin = ({
   );
 };
 
-export default Coin;
+export default memo(Coin);

@@ -37,13 +37,14 @@ export class BulkClient extends Request {
     }
   }
 
-  checkStateOfMultipleCredentials(failureMessage) {
+  checkStateOfMultipleCredentials(failureMessage, opts) {
+    if (!opts) opts = {};
     if (this.credentials && this.credentials.length > 0) {
       $.checkState(
         this.credentials.every(cred => {
           return (
             cred &&
-            cred.isComplete() &&
+            (opts.ignoreIncomplete || cred.isComplete()) &&
             cred.requestPrivKey == this.credentials[0].requestPrivKey
           );
         }),
@@ -56,7 +57,7 @@ export class BulkClient extends Request {
   // * Get wallet balance for all wallets
   // *
   // * @param {credentials} { requestPrivKey: string, copayerIds: string[] }
-  // * @param {Object} opts { includeExtendedInfo: boolean, twoStep: boolean, wallets: { :copayerId: { tokenAddress: string, multisigContractAddress: string} } }
+  // * @param {Object} opts { includeExtendedInfo: boolean, twoStep: boolean, silentFailure: boolean, wallets: { :copayerId: { tokenAddress: string, multisigContractAddress: string} } }
   // * @param {Callback} cb
   // */
   getStatusAll(credentials, opts, cb) {
@@ -71,23 +72,24 @@ export class BulkClient extends Request {
     qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
     qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
     qs.push('serverMessageArray=1');
+    qs.push('silentFailure=' + (opts.silentFailure ? '1' : '0'));
 
     let wallets = opts.wallets;
     if (wallets) {
       Object.keys(wallets).forEach(copayerId => {
         if (wallets[copayerId].tokenAddresses) {
           wallets[copayerId].tokenAddresses.forEach(address => {
-            qs.push(`${copayerId}[tokenAddress]=` + address);
+            qs.push(`${copayerId}:tokenAddress=` + address);
           });
         }
 
         if (wallets[copayerId].multisigContractAddress) {
           qs.push(
-            `${copayerId}[multisigContractAddress]=` +
+            `${copayerId}:multisigContractAddress=` +
               wallets[copayerId].multisigContractAddress
           );
           qs.push(
-            `${copayerId}[network]=` +
+            `${copayerId}:network=` +
               this.credentials.find(cred => cred.copayerId == copayerId).network
           );
         }
@@ -95,7 +97,8 @@ export class BulkClient extends Request {
     }
 
     this.checkStateOfMultipleCredentials(
-      'Failed state: this.credentials at <getStatusAll()>'
+      'Failed state: this.credentials at <getStatusAll()>',
+      { ignoreIncomplete: opts.ignoreIncomplete }
     );
 
     return this.get('/v1/wallets/all/?' + qs.join('&'), (err, results) => {

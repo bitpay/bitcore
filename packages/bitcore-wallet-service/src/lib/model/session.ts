@@ -1,7 +1,8 @@
 import _ from 'lodash';
+import { Common } from '../common';
 
 const Uuid = require('uuid');
-const Defaults = require('../common/defaults');
+const Defaults = Common.Defaults;
 
 export interface ISession {
   id: number;

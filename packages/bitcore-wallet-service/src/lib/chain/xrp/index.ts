@@ -1,13 +1,14 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
-import { IChain, INotificationData } from '..';
+import { IChain } from '..';
+import { Common } from '../../common';
+import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
+import { WalletService } from '../../server';
 
-const Common = require('../../common');
-const Constants = Common.Constants;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
 
 export class XrpChain implements IChain {
   /**
@@ -16,12 +17,12 @@ export class XrpChain implements IChain {
    * @param {Number} locked - Sum of txp.amount
    * @returns {Object} balance - Total amount & locked amount.
    */
-  private convertBitcoreBalance(bitcoreBalance, locked) {
+  private convertBitcoreBalance(bitcoreBalance, locked, reserve = Defaults.MIN_XRP_BALANCE) {
     const { unconfirmed, confirmed, balance } = bitcoreBalance;
     let activatedLocked = locked;
-    // If XRP address has a min balance of 20 XRP, subtract activation fee for true spendable balance.
+    // If XRP address has a min balance of 10 XRP, subtract activation fee for true spendable balance.
     if (balance > 0) {
-      activatedLocked = locked + Defaults.MIN_XRP_BALANCE;
+      activatedLocked = locked + reserve;
     }
     const convertedBalance = {
       totalAmount: balance,
@@ -47,29 +48,36 @@ export class XrpChain implements IChain {
     return 0;
   }
 
-  getWalletBalance(server, wallet, opts, cb) {
-    const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
+  getWalletBalance(server: WalletService, wallet: IWallet, opts, cb) {
+    const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
       }
-      server.getPendingTxs(opts, (err, txps) => {
-        if (err) return cb(err);
-        const lockedSum = _.sumBy(txps, 'amount') || 0;
-        const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
-        server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+      bc.getReserve((err, reserve) => {
+        if (err) {
+          return cb(err);
+        }
+        server.getPendingTxs(opts, (err, txps) => {
           if (err) return cb(err);
-          if (addresses.length > 0) {
-            const byAddress = [
-              {
-                address: addresses[0].address,
-                path: addresses[0].path,
-                amount: convertedBalance.totalAmount
-              }
-            ];
-            convertedBalance.byAddress = byAddress;
-          }
-          return cb(null, convertedBalance);
+          const lockedSum = txps.reduce((sum, txp) => {
+            return sum + txp.amount + (txp.fee || 0);
+          }, 0) || 0;
+          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserve);
+          server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+            if (err) return cb(err);
+            if (addresses.length > 0) {
+              const byAddress = [
+                {
+                  address: addresses[0].address,
+                  path: addresses[0].path,
+                  amount: convertedBalance.totalAmount
+                }
+              ];
+              convertedBalance.byAddress = byAddress;
+            }
+            return cb(null, convertedBalance);
+          });
         });
       });
     });
@@ -103,9 +111,11 @@ export class XrpChain implements IChain {
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
+
+  checkScriptOutput(output) { }
 
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
@@ -125,28 +135,37 @@ export class XrpChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { destinationTag, outputs } = txp;
+    const { destinationTag, outputs, outputOrder, multiTx } = txp;
     const chain = 'XRP';
-    const recipients = outputs.map(output => {
-      return {
-        amount: output.amount,
-        address: output.toAddress
-      };
-    });
     const unsignedTxs = [];
-    for (let index = 0; index < recipients.length; index++) {
+    const length = multiTx ? outputOrder.length : outputs.length;
+    for (let index = 0; index < length; index++) {
+      let outputIdx = index;
+      if (multiTx) {
+        outputIdx = outputOrder[index];
+      }
+      if (!outputs?.[outputIdx]) {
+        throw new Error('Output index out of range');
+      }
+      const recepient = {
+        amount: outputs[outputIdx].amount,
+        address: outputs[outputIdx].toAddress,
+        tag: outputs[outputIdx].tag
+      }
+      const _tag = recepient?.tag || destinationTag;
       const rawTx = Transactions.create({
         ...txp,
-        tag: destinationTag ? Number(destinationTag) : undefined,
+        tag: _tag ? Number(_tag) : undefined,
         chain,
         nonce: Number(txp.nonce) + Number(index),
-        recipients: [recipients[index]]
+        recipients: [recepient]
       });
       unsignedTxs.push(rawTx);
     }
     let tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
+      txids: () => txp.txid ? [txp.txid] : [],
       toObject: () => {
         let ret = _.clone(txp);
         ret.outputs[0].satoshis = ret.outputs[0].amount;
@@ -176,7 +195,7 @@ export class XrpChain implements IChain {
     try {
       this.getBitcoreTx(txp);
     } catch (ex) {
-      logger.warn('Error building XRP  transaction', ex);
+      logger.warn('Error building XRP transaction: %o', ex);
       return ex;
     }
   }
@@ -189,7 +208,7 @@ export class XrpChain implements IChain {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      const minXrpBalance = 20000000; // 20 XRP * 1e6
+      const minXrpBalance = Defaults.MIN_XRP_BALANCE;
       if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
@@ -200,7 +219,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
@@ -209,7 +228,7 @@ export class XrpChain implements IChain {
     return true;
   }
 
-  isUTXOCoin() {
+  isUTXOChain() {
     return false;
   }
   isSingleAddress() {
@@ -234,10 +253,11 @@ export class XrpChain implements IChain {
       throw new Error('Signatures Required');
     }
 
-    const chain = 'XRP';
+    const chain = 'XRP'; // TODO use lowercase always to avoid confusion
     const network = tx.network;
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
+    const txids = [];
     for (let index = 0; index < signatures.length; index++) {
       const signed = Transactions.applySignature({
         chain,
@@ -248,7 +268,9 @@ export class XrpChain implements IChain {
 
       // bitcore users id for txid...
       tx.id = Transactions.getHash({ tx: signed, chain, network });
+      txids.push(tx.id);
     }
+    tx.txids = () => txids;
     tx.uncheckedSerialize = () => signedTxs;
   }
 
@@ -257,7 +279,7 @@ export class XrpChain implements IChain {
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const chain = 'XRP';
+    const chain = 'xrp';
     const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
     if (!isValidTo) {
       throw Errors.INVALID_ADDRESS;
@@ -277,5 +299,15 @@ export class XrpChain implements IChain {
     // format tx to
     // {address, amount}
     return null;
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
+    bc.getReserve((err, reserve) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, reserve);
+    });
   }
 }

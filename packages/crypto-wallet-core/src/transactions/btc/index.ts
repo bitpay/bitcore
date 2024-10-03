@@ -21,7 +21,7 @@ export class BTCTxProvider {
 
     let index = 0;
     let utxoSum = 0;
-    let recepientSum = recipients.reduce((sum, cur) => sum + Number(cur.amount), fee);
+    let recepientSum = recipients.reduce((sum, cur) => sum + Number(cur.amount), fee || 0);
     while (utxoSum < recepientSum) {
       const utxo = utxos[index];
       utxoSum += Number(utxo.value);
@@ -31,9 +31,8 @@ export class BTCTxProvider {
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, wallet, feeRate, fee }) {
-    change = change || wallet.deriveAddress(wallet.addressIndex, true);
-    const filteredUtxos = this.selectCoins(recipients, utxos, fee);
+  create({ recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock }) {
+    const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
         amount: utxo.value / 1e8,
@@ -54,6 +53,14 @@ export class BTCTxProvider {
     }
     for (const recipient of recipients) {
       tx.to(recipient.address, parseInt(recipient.amount));
+    }
+    if (replaceByFee && typeof tx.enableRBF === 'function') {
+      tx.enableRBF();
+    }
+    if (lockUntilBlock > 0) {
+      tx.lockUntilBlockHeight(lockUntilBlock);
+    } else if (lockUntilDate > 0) {
+      tx.lockUntilDate(lockUntilDate);
     }
     return tx.uncheckedSerialize();
   }

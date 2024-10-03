@@ -12,7 +12,7 @@ import { Config, ConfigService } from './config';
 import { Event, EventService } from './event';
 
 function SanitizeWallet(x: { wallets?: ObjectID[] }) {
-  const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
+  const sanitized: any = Object.assign({}, x, { wallets: new Array<ObjectID>() });
   if (sanitized.wallets && sanitized.wallets.length > 0) {
     delete sanitized.wallets;
   }
@@ -96,6 +96,9 @@ export class SocketService {
   async stop() {
     logger.info('Stopping Socket Service');
     this.stopped = true;
+    this.eventService.txEvent.removeAllListeners();
+    this.eventService.blockEvent.removeAllListeners();
+    this.eventService.addressCoinEvent.removeAllListeners();
   }
 
   async wireup() {

@@ -59,21 +59,21 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, inde
   return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
 };
 
-/* jshint maxparams: 5 */
 /**
  * @param {Transaction} transaction - the transaction to be signed
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
  * @param {number} index - the index of the input in the transaction input vector
- * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
- * @param {Buffer=} hashData - the precalculated hash of the public key associated with the privateKey provided
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
- * @return {Array} of objects that can be
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - the precalculated hash of the public key associated with the privateKey provided
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Buffer} merkleRoot - unused for this input type
+ * @return {Array<TransactionSignature>}
  */
-PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
+PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
   $.checkState(this.output instanceof Output);
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa';
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
   var script;
   if (this.output.script.isScriptHashOut()) {
@@ -87,9 +87,9 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
     if (script.isWitnessPublicKeyHashOut()) {
       var satoshisBuffer = this.getSatoshisBuffer();
       var scriptCode = this.getScriptCode(privateKey.publicKey);
-      signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer, signingMethod);
+      signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
     } else {
-      signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod);
+      signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script);
     }
 
     return [new TransactionSignature({
@@ -108,6 +108,7 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
 /**
  * Add the provided signature
  *
+ * @param {Transaction} transaction
  * @param {Object} signature
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
@@ -155,6 +156,7 @@ PublicKeyHashInput.prototype.isFullySigned = function() {
 };
 
 PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature, signingMethod) {
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
@@ -166,8 +168,7 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
       signature.publicKey,
       signature.inputIndex,
       scriptCode,
-      satoshisBuffer,
-      signingMethod
+      satoshisBuffer
     );
   } else {
     return Sighash.verify(
@@ -175,26 +176,28 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
       signature.signature,
       signature.publicKey,
       signature.inputIndex,
-      this.output.script,
-      signingMethod
+      this.output.script
     );
   }
 };
 
 
 PublicKeyHashInput.SCRIPT_MAX_SIZE = 73 + 34; // sigsize (1 + 72) + pubkey (1 + 33)
-PublicKeyHashInput.REDEEM_SCRIPT_SIZE = 22; // OP_0 (1) pubkeyhash (1 + 20)
+PublicKeyHashInput.REDEEM_SCRIPT_SIZE = 1 + 22; // len (1) OP_0 (1) pubkeyhash (1 + 20)
 
 PublicKeyHashInput.prototype._estimateSize = function() {
-  var WITNESS_DISCOUNT = 4;
+  let result = this._getBaseSize();
+  result += 1; // script size
+  const WITNESS_DISCOUNT = 4;
   const witnessSize = PublicKeyHashInput.SCRIPT_MAX_SIZE / WITNESS_DISCOUNT;
   if (this.output.script.isWitnessPublicKeyHashOut()) {
-    return witnessSize;
+    result += witnessSize;
   } else if (this.output.script.isScriptHashOut()) {
-    return witnessSize + PublicKeyHashInput.REDEEM_SCRIPT_SIZE;
+    result += witnessSize + PublicKeyHashInput.REDEEM_SCRIPT_SIZE;
   } else {
-    return PublicKeyHashInput.SCRIPT_MAX_SIZE;
+    result += PublicKeyHashInput.SCRIPT_MAX_SIZE;
   }
+  return result;
 };
 
 module.exports = PublicKeyHashInput;

@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
+const promptly = require('promptly');
+
+program
+  .version(require('../package.json').version)
+  .description('Bump the fee of a transaction. If it\'s a UTXO chain, it will deduct from the change output.')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .option('-t, --txid <txid>', 'Transaction id (either this or --raw are required)')
+  .option('-r, --raw <hex>', 'Raw transaction (either this or --txid are required)')
+  .option('-c, --change <index>', 'Specify the change output index to deduct the new fee from (REQUIRED for UTXO chains)')
+  .option('-f, --feeRate <rate>', 'optional - Rate in sats/byte or Gwei')
+  .option('-T, --feeTarget <nBlocks>', 'optional - Number of blocks to confirm in (defaults to 2)')
+  .option('-P, --feePriority <rate>', 'optional - Priority fee for EVM type 2 txs in Gwei')
+  .option('-q, --quiet', 'optional - Do not prompt for confirmation or show raw tx data')
+  .option('--noRbf', 'optional - Disable replace-by-fee')
+  .option('--isSweep', 'optional - Treat the transaction as a sweep/max send which ensures all UTXOs are used (defaults to true if there is only one output)')
+  .option('--storageType <storageType>', 'optional - Name of the database to use (default Level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
+  .parse(process.argv);
+
+let wallet;
+
+const main = async () => {
+  const { name, path, storageType = 'Level', raw: rawTx, change, feeRate, feeTarget = 2, feePriority, quiet, noRbf, isSweep } = program.opts();
+  let { txid } = program.opts();
+  
+  if (!txid && !rawTx) {
+    return console.log('Must provide either --raw or --txid');
+  }
+
+  try {
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+
+    if (change == null && wallet.isUtxoChain()) {
+      return console.log('Must provide --change for UTXO chains');
+    }
+
+    const { tx, params } = await wallet.bumpTxFee({ txid, rawTx, changeIdx: change, feeRate, feeTarget, feePriority, noRbf, isSweep });
+    !quiet && console.log('UnsignedRawTx: ', tx);
+    const passphrase = await promptly.password('Wallet Password:');
+    wallet = await wallet.unlock(passphrase);
+    const signedTx = await wallet.signTx({ tx, passphrase, utxos: params.utxos });
+    if (!quiet) {
+      console.log('SignedRawTx: ', signedTx);
+      const confirmed = await promptly.confirm('Broadcast? (y/n)');
+      if (!confirmed) {
+        return;
+      }
+    }
+    const transaction = await wallet.broadcast({ tx: signedTx });
+    console.log('Txid: ', transaction.txid);
+    console.log('Transaction broadcasted');
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

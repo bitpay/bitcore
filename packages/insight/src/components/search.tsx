@@ -1,3 +1,4 @@
+import {FC, memo} from 'react';
 import {determineInputType, searchValue} from 'src/utilities/search-helper-methods';
 import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
@@ -38,15 +39,12 @@ const SearchForm = styled.form`
   width: 100%;
 `;
 
-const Search = ({
-  borderBottom,
-  id,
-  setErrorMessage,
-}: {
+interface SearchProps {
   borderBottom?: boolean;
   id?: string;
   setErrorMessage?: any;
-}) => {
+}
+const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const {currency, network} = useAppSelector(({APP}) => APP);
@@ -140,8 +138,10 @@ const Search = ({
           `No matching records found on the ${currency} ${network}. Select a different chain or try a different search`,
         );
         clearErrorMsg();
+      } else {
+        setErrorMessage(message);
+        clearErrorMsg();
       }
-      console.error(message);
     }
   };
 
@@ -172,4 +172,4 @@ const Search = ({
   );
 };
 
-export default Search;
+export default memo(Search);

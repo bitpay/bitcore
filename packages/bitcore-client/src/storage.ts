@@ -41,10 +41,27 @@ export class Storage {
     }
   }
 
+  async verifyDbs(dbs) {
+    for await (let db of dbs) {
+      if (typeof db.testConnection === 'function') {
+        // test mongo connection
+        if (!(await db.testConnection())) {
+          // remove from dbs
+          dbs.splice(dbs.indexOf(db), 1);
+        }
+      }
+    }
+    return dbs;
+  }
+
+  async close() {
+    this.storageType?.close?.();
+  }
+
   async loadWallet(params: { name: string }) {
     const { name } = params;
     let wallet;
-    for (let db of this.db) {
+    for (let db of await this.verifyDbs(this.db)) {
       try {
         wallet = await db.loadWallet({ name });
         if (wallet) {
@@ -62,7 +79,7 @@ export class Storage {
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    for (let db of this.db) {
+    for (let db of await this.verifyDbs(this.db)) {
       try {
         await db.deleteWallet({ name });
       } catch (e) {
@@ -73,20 +90,22 @@ export class Storage {
 
   async listWallets() {
     let passThrough = new PassThrough();
-    for (let db of this.db) {
+    const dbs = await this.verifyDbs(this.db);
+    for (let db of dbs) {
       const listWalletStream = await db.listWallets();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => this.db.length-- === 0 && passThrough.end());
+      listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
     }
     return passThrough;
   }
 
   async listKeys() {
     let passThrough = new PassThrough();
-    for (let db of this.db) {
+    const dbs = await this.verifyDbs(this.db);
+    for (let db of dbs) {
       const listWalletStream = await db.listKeys();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
-      listWalletStream.once('end', () => --this.db.length === 0 && passThrough.end());
+      listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
     }
     return passThrough;
   }
@@ -145,13 +164,13 @@ export class Storage {
     const { name, keys, encryptionKey } = params;
     let open = true;
     for (const key of keys) {
-      let { pubKey } = key;
+      let { pubKey, path } = key;
       pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {
         const toEncrypt = JSON.stringify(key);
         const encKey = Encryption.encryptPrivateKey(toEncrypt, pubKey, encryptionKey);
-        payload = { encKey, pubKey };
+        payload = { encKey, pubKey, path };
       }
       const toStore = JSON.stringify(payload);
       let keepAlive = true;
@@ -161,5 +180,15 @@ export class Storage {
       await this.storageType.addKeys({ name, key, toStore, keepAlive, open });
       open = false;
     }
+  }
+
+  async getAddress(params: { name: string; address: string }) {
+    const { name, address } = params;
+    return this.storageType.getAddress({ name, address, keepAlive: true, open: true });
+  }
+
+  async getAddresses(params: { name: string, limit?: number, skip?: number }) {
+    const { name, limit, skip } = params;
+    return this.storageType.getAddresses({ name, limit, skip });
   }
 }

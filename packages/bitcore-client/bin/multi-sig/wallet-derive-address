@@ -3,7 +3,7 @@
 const fs = require('fs');
 const CWC = require('crypto-wallet-core');
 const program = require('commander');
-const { Wallet } = require('../../ts_build/wallet');
+const { Wallet } = require('../../ts_build/src/wallet');
 const promptly = require('promptly');
 const bitcoreLibs = {
   BTC: CWC.BitcoreLib,
@@ -14,17 +14,17 @@ const bitcoreLibs = {
 
 program
   .version(require('../../package.json').version)
-  .option('--path <path>', 'REQUIRED - Filepath where wallet is stored')
-  .option('--m <m>', 'REQUIRED - Number of signers required')
-  .option('--currency <currency>', 'REQUIRED - currency. [BTC, DOGE, LTC, BCH]')
-  .option('--depth <depth>', 'REQUIRED - Number of addresses to derive (will derive that many change addresses too)')
-  .option('--network <network>', 'REQUIRED - Network to derive for')
-  .option('--input [input]', 'OPTIONAL - A json string to parse in the form {"xpubkey": "mXy1234"}')
-  .option('--file [file]', 'OPTIONAL - A jsonl file with {"xpubkey": "mXy1234"} in it')
-  .option('--prompt', 'OPTIONAL - Ask for the xpubkeys to derive from')
-  .option('--importToWallet [importToWallet]', 'OPTIONAL flag - import the derived addresses. Requires path')
-  .option('--exportToFile [export]', 'OPTIONAL flag - File path to save derived addresses to')
-  .option('--bech32', 'OPTIONAL - Use this flag if you need bech32 addresses')
+  .requiredOption('--path <path>', 'REQUIRED - Filepath where wallet is stored')
+  .requiredOption('--m <m>', 'REQUIRED - Number of signers required')
+  .requiredOption('--currency <currency>', 'REQUIRED - currency. [BTC, DOGE, LTC, BCH]')
+  .requiredOption('--depth <depth>', 'REQUIRED - Number of addresses to derive (will derive that many change addresses too)')
+  .requiredOption('--network <network>', 'REQUIRED - Network to derive for')
+  .option('--input <input>', 'optional - A json string to parse in the form {"xpubkey": "mXy1234"}')
+  .option('--file <file>', 'optional - A jsonl file with {"xpubkey": "mXy1234"} in it')
+  .option('--prompt', 'optional - Ask for the xpubkeys to derive from')
+  .option('--exportToFile <file>', 'optional flag - Export addresses')
+  .option('--importFromFile <file>', 'optional flag - Import exported addresses')
+  .option('--bech32', 'optional - Use this flag if you need bech32 addresses')
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -65,7 +65,7 @@ function getAddress(publicKeyRing, addressIndex, isChange, m, network, currency)
   });
   let nestedWitness;
   let type;
-  if (program.bech32) {
+  if (program.opts().bech32) {
     nestedWitness = false;
     type = 'witnessscripthash';
   }
@@ -99,14 +99,16 @@ async function importAddressesToWallet(path, addresses) {
   if (!password) {
     throw new Error('No password provided. Keys can\'t be imported without unlocking the wallet');
   }
-  let wallet = await Wallet.loadWallet({ path });
+  wallet = await Wallet.loadWallet({ path });
   wallet = await wallet.unlock(password);
   await wallet.importKeys({ keys: addresses });
   console.log(`${addresses.length} Adresses Imported`);
 }
 
+let wallet;
+
 const main = async () => {
-  const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth, currency } = program;
+  const { file, input, prompt, importFromFile, m, network, exportToFile, depth, currency } = program.opts();
   if (!currency || !['BTC', 'DOGE', 'LTC', 'BCH'].includes(currency)) {
     throw new Error('Invalid currency. Currency must be BTC, DOGE, LTC, or BCH');
   }
@@ -134,12 +136,14 @@ const main = async () => {
       console.log(`Exported Addresses to ${exportToFile}`);
     }
 
-    if (path && importToWallet) {
-      await importAddressesToWallet(path, allAddresses);
+    if (importFromFile) {
+      await importAddressesToWallet(importAddresses, allAddresses);
     }
   } catch (e) {
     console.error(e);
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

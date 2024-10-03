@@ -1,30 +1,36 @@
 import * as async from 'async';
+import * as crypto from 'crypto';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
+import config from '../../config';
 import { ChainService } from '../chain/index';
+import { Common } from '../common';
 import logger from '../logger';
 import { Client } from './v8/client';
 
 const $ = require('preconditions').singleton();
-const Common = require('../common');
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
+  matic: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc')
+  ltc: require('bitcore-lib-ltc'),
+  arb: Bitcore,
+  op: Bitcore,
+  base: Bitcore
 };
-const config = require('../../config');
+
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
-function v8network(bwsNetwork) {
-  if (bwsNetwork == 'livenet') return 'mainnet';
-  if (bwsNetwork == 'testnet' && config.blockchainExplorerOpts.btc.testnet.regtestEnabled) {
+function v8network(bwsNetwork, chain = 'btc') {
+  if (Utils.getGenericName(bwsNetwork) == 'livenet') return 'mainnet';
+  if (Utils.getGenericName(bwsNetwork) == 'testnet' && config.blockchainExplorerOpts?.[chain.toLowerCase()]?.[Utils.getNetworkName(chain.toLowerCase(), 'testnet')]?.regtestEnabled) {
     return 'regtest';
   }
   return bwsNetwork;
@@ -32,36 +38,36 @@ function v8network(bwsNetwork) {
 
 export class V8 {
   chain: string;
-  coin: string;
   network: string;
   v8network: string;
   // v8 is always cashaddr
   addressFormat: string;
   apiPrefix: string;
+  chainNetwork: string;
   host: string;
   userAgent: string;
   baseUrl: string;
   request: request;
   Client: typeof Client;
+  private _cachedReserve: number;
+  private _cachedReserveTs: number;
 
   constructor(opts) {
     $.checkArgument(opts);
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
     $.checkArgument(Utils.checkValueInCollection(opts.chain, Constants.CHAINS));
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain]));
     $.checkArgument(opts.url);
 
-    this.apiPrefix = _.isUndefined(opts.apiPrefix) ? '/api' : opts.apiPrefix;
-    this.chain = opts.chain.toUpperCase();
-    // This class treats `coin` as merely a lowerCase `chain` which is confusing
-    // TODO refactor to not be confusing.
-    this.coin = this.chain.toLowerCase();
+    this.apiPrefix = opts.apiPrefix == null ? '/api' : opts.apiPrefix;
+    this.chain = opts.chain;
 
     this.network = opts.network || 'livenet';
-    this.v8network = v8network(this.network);
+    this.v8network = v8network(this.network, this.chain);
 
     // v8 is always cashaddr
-    this.addressFormat = this.coin == 'bch' ? 'cashaddr' : null;
-    this.apiPrefix += `/${this.chain}/${this.v8network}`;
+    this.addressFormat = this.chain == 'bch' ? 'cashaddr' : null;
+    this.chainNetwork = `/${this.chain.toUpperCase()}/${this.v8network}`;
+    this.apiPrefix += this.chainNetwork;
 
     this.host = opts.url;
     this.userAgent = opts.userAgent || 'bws';
@@ -84,7 +90,7 @@ export class V8 {
     $.checkState(wallet.beAuthPrivateKey2, 'Failed state: wallet.beAuthPrivateKey2 at <_getAuthClient()>');
     return new this.Client({
       baseUrl: this.baseUrl,
-      authKey: Bitcore_[this.coin].PrivateKey(wallet.beAuthPrivateKey2)
+      authKey: Bitcore_[this.chain].PrivateKey(wallet.beAuthPrivateKey2)
     });
   }
 
@@ -98,14 +104,15 @@ export class V8 {
     });
 
     const k = 'addAddresses' + addresses.length;
-    console.time(k);
+    const perfKey = getPerformanceKey(k);
+    console.time(perfKey);
     client
       .importAddresses({
         payload,
         pubKey: wallet.beAuthPublicKey2
       })
       .then(ret => {
-        console.timeEnd(k);
+        console.timeEnd(perfKey);
         return cb(null, ret);
       })
       .catch(err => {
@@ -114,8 +121,8 @@ export class V8 {
   }
 
   register(wallet, cb) {
-    if (wallet.coin != this.coin || wallet.network != this.network) {
-      return cb(new Error('Network coin or network mismatch'));
+    if (wallet.chain != this.chain || wallet.network != this.network) {
+      return cb(new Error('Network chain or network mismatch'));
     }
 
     const client = this._getAuthClient(wallet);
@@ -146,14 +153,14 @@ export class V8 {
   }
 
   getConnectionInfo() {
-    return 'V8 (' + this.coin + '/' + this.v8network + ') @ ' + this.host;
+    return 'V8 (' + this.chain + '/' + this.v8network + ') @ ' + this.host;
   }
 
   _transformUtxos(utxos, bcheight) {
     $.checkState(bcheight > 0, 'Failed state: No BC height passed to _transformUtxos()');
     const ret = _.map(
       _.reject(utxos, x => {
-        return x.spentHeight && x.spentHeight <= -3;
+        return x.spentHeight && x.spentHeight <= -3; // -3 is conflicted status
       }),
       x => {
         const u = {
@@ -165,7 +172,7 @@ export class V8 {
           vout: x.mintIndex,
           locked: false,
           confirmations: x.mintHeight > 0 && bcheight >= x.mintHeight ? bcheight - x.mintHeight + 1 : 0,
-          spent: !!x.spentTxid
+          spent: x.spentHeight != -2 // -2 is unspent status
         };
 
         // v8 field name differences
@@ -185,7 +192,8 @@ export class V8 {
   getUtxos(wallet, height, cb, params: { includeSpent?: boolean } = {}) {
     $.checkArgument(cb);
     const client = this._getAuthClient(wallet);
-    console.time('V8getUtxos');
+    const perfKey = getPerformanceKey('V8getUtxos');
+    console.time(perfKey);
     client
       .getCoins({
         pubKey: wallet.beAuthPublicKey2,
@@ -193,7 +201,7 @@ export class V8 {
         ...params
       })
       .then(utxos => {
-        console.timeEnd('V8getUtxos');
+        console.timeEnd(perfKey);
         return cb(null, this._transformUtxos(utxos, height));
       })
       .catch(cb);
@@ -202,11 +210,12 @@ export class V8 {
   getCoinsForTx(txId, cb) {
     $.checkArgument(cb);
     const client = this._getClient();
-    console.time('V8getCoinsForTx');
+    const perfKey = getPerformanceKey('V8getCoinsForTx');
+    console.time(perfKey);
     client
       .getCoinsForTx({ txId, payload: {} })
       .then(coins => {
-        console.timeEnd('V8getCoinsForTx');
+        console.timeEnd(perfKey);
         return cb(null, coins);
       })
       .catch(cb);
@@ -217,11 +226,12 @@ export class V8 {
    */
   getCheckData(wallet, cb) {
     const client = this._getAuthClient(wallet);
-    console.time('WalletCheck');
+    const perfKey = getPerformanceKey('WalletCheck');
+    console.time(perfKey);
     client
       .getCheckData({ pubKey: wallet.beAuthPublicKey2, payload: {} })
       .then(checkInfo => {
-        console.timeEnd('WalletCheck');
+        console.timeEnd(perfKey);
         return cb(null, checkInfo);
       })
       .catch(cb);
@@ -234,7 +244,7 @@ export class V8 {
     const payload = {
       rawTx,
       network: this.v8network,
-      chain: this.chain
+      chain: this.chain.toUpperCase()
     };
 
     const client = this._getClient();
@@ -248,13 +258,13 @@ export class V8 {
       })
       .catch(err => {
         if (count > 3) {
-          logger.error('FINAL Broadcast error:', err);
+          logger.error('[v8.js] FINAL Broadcast error: %o', err);
           return cb(err);
         } else {
           count++;
           // retry
           setTimeout(() => {
-            logger.info('Retrying broadcast after', count * Defaults.BROADCAST_RETRY_TIME);
+            logger.info('[v8.js] Retrying broadcast after %o', count * Defaults.BROADCAST_RETRY_TIME);
             return this.broadcast(rawTx, cb, count);
           }, count * Defaults.BROADCAST_RETRY_TIME);
         }
@@ -263,7 +273,7 @@ export class V8 {
 
   // This is for internal usage, addresses should be returned on internal representation
   getTransaction(txid, cb) {
-    console.log('[v8.js.207] GET TX', txid); // TODO
+    logger.debug('[v8.js] GET TX %o', txid);
     const client = this._getClient();
     client
       .getTx({ txid })
@@ -284,7 +294,7 @@ export class V8 {
   }
 
   getAddressUtxos(address, height, cb) {
-    console.log(' GET ADDR UTXO', address, height); // TODO
+    logger.debug('[v8.js] GET ADDR UTXO, %o, %o', address, height); // TODO
     const client = this._getClient();
 
     client
@@ -296,7 +306,8 @@ export class V8 {
   }
 
   getTransactions(wallet, startBlock, cb) {
-    console.time('V8 getTxs');
+    const perfKey = getPerformanceKey('V8getTxs');
+    console.time(perfKey);
     if (startBlock) {
       logger.debug(`getTxs: startBlock ${startBlock}`);
     } else {
@@ -337,22 +348,22 @@ export class V8 {
         try {
           tx = JSON.parse(rawTx);
         } catch (e) {
-          logger.error('v8 error at JSON.parse:' + e + ' Parsing:' + rawTx + ':');
+          logger.error('[v8.js] Error at JSON.parse:' + e + ' Parsing:' + rawTx + ':');
           return cb(e);
         }
         // v8 field name differences
         if (tx.value) tx.amount = tx.satoshis / 1e8;
 
         if (tx.height >= 0) txs.push(tx);
-        else unconf.push(tx);
+        else if (tx.height >= -2) unconf.push(tx);
       });
-      console.timeEnd('V8 getTxs');
+      console.timeEnd(perfKey);
       // blockTime on unconf is 'seenTime';
       return cb(null, _.flatten(_.orderBy(unconf, 'blockTime', 'desc').concat(txs.reverse())));
     });
 
     txStream.on('error', e => {
-      logger.error('v8 error:' + e);
+      logger.error('[v8.js] Error: %o', e);
       broken = true;
       return cb(e);
     });
@@ -360,7 +371,7 @@ export class V8 {
 
   getAddressActivity(address, cb) {
     const url = this.baseUrl + '/address/' + address + '/txs?limit=1';
-    console.log('[v8.js.328:url:] CHECKING ADDRESS ACTIVITY', url); // TODO
+    logger.debug('[v8.js] CHECKING ADDRESS ACTIVITY %o', url);
     this.request
       .get(url, {})
       .then(ret => {
@@ -373,7 +384,7 @@ export class V8 {
 
   getTransactionCount(address, cb) {
     const url = this.baseUrl + '/address/' + address + '/txs/count';
-    console.log('[v8.js.364:url:] CHECKING ADDRESS NONCE', url);
+    logger.debug('[v8.js] CHECKING ADDRESS NONCE %o', url);
     this.request
       .get(url, {})
       .then(ret => {
@@ -387,7 +398,7 @@ export class V8 {
 
   estimateGas(opts, cb) {
     const url = this.baseUrl + '/gas';
-    console.log('[v8.js.378:url:] CHECKING GAS LIMIT', url);
+    logger.debug('[v8.js] CHECKING GAS LIMIT %o', url);
     this.request
       .post(url, { body: opts, json: true })
       .then(gasLimit => {
@@ -401,7 +412,7 @@ export class V8 {
 
   getMultisigContractInstantiationInfo(opts, cb) {
     const url = `${this.baseUrl}/ethmultisig/${opts.sender}/instantiation/${opts.txId}`;
-    console.log('[v8.js.378:url:] CHECKING CONTRACT INSTANTIATION INFO', url);
+    logger.debug('[v8.js] CHECKING CONTRACT INSTANTIATION INFO %o', url);
     this.request
       .get(url, {})
       .then(contractInstantiationInfo => {
@@ -415,7 +426,7 @@ export class V8 {
 
   getMultisigContractInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/info/' + opts.multisigContractAddress;
-    console.log('[v8.js.378:url:] CHECKING CONTRACT INFO', url);
+    logger.debug('[v8.js] CHECKING CONTRACT INFO %o', url);
     this.request
       .get(url, {})
       .then(contractInfo => {
@@ -429,7 +440,7 @@ export class V8 {
 
   getTokenContractInfo(opts, cb) {
     const url = this.baseUrl + '/token/' + opts.tokenAddress;
-    console.log('[v8.js.378:url:] CHECKING CONTRACT INFO', url);
+    logger.debug('[v8.js] CHECKING CONTRACT INFO %o', url);
     this.request
       .get(url, {})
       .then(contractInfo => {
@@ -441,9 +452,24 @@ export class V8 {
       });
   }
 
+  getTokenAllowance(opts, cb) {
+    const url =
+      this.baseUrl + '/token/' + opts.tokenAddress + '/allowance/' + opts.ownerAddress + '/for/' + opts.spenderAddress;
+    logger.debug('[v8.js] CHECKING TOKEN ALLOWANCE %o', url);
+    this.request
+      .get(url, {})
+      .then(allowance => {
+        allowance = JSON.parse(allowance);
+        return cb(null, allowance);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   getMultisigTxpsInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/txps/' + opts.multisigContractAddress;
-    console.log('[v8.js.378:url:] CHECKING CONTRACT TXPS INFO', url);
+    logger.debug('[v8.js] CHECKING CONTRACT TXPS INFO %o', url);
     this.request
       .get(url, {})
       .then(multisigTxpsInfo => {
@@ -471,13 +497,13 @@ export class V8 {
 
               // only process right responses.
               if (!_.isUndefined(ret.blocks) && ret.blocks != x) {
-                logger.info(`Ignoring response for ${x}:` + JSON.stringify(ret));
+                logger.info(`[v8.js] Ignoring response for ${x}: %o`, ret?.body || ret);
                 return icb();
               }
 
               result[x] = ret.feerate;
             } catch (e) {
-              logger.warn('fee error:', e);
+              logger.warn('[v8.js] Fee error: %o', e);
             }
 
             return icb();
@@ -494,6 +520,50 @@ export class V8 {
         return cb(null, result);
       }
     );
+  }
+
+  estimateFeeV2(opts, cb) {
+    const txType = opts.txType;
+    if (Number(txType) !== 2) {
+     return this.estimateFee(opts, cb);
+    }
+    const nbBlocks = Number(opts.nbBlocks) || 2;
+    const url = this.baseUrl + `/fee/${nbBlocks}?txType=${txType}`;
+    let result;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  estimatePriorityFee(opts, cb) {
+    const percentile = opts.percentile;
+    let result;
+    const url = this.baseUrl + `/priorityFee/${percentile}`;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Priority fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
   }
 
   getBlockchainHeight(cb) {
@@ -528,6 +598,29 @@ export class V8 {
       .catch(cb);
   }
 
+  getReserve(cb) {
+    if (this._cachedReserveTs && Date.now() - this._cachedReserveTs < 20 * 60 * 1000) { // cache for 20 mins
+      return cb(null, this._cachedReserve);
+    }
+    const url = this.baseUrl + '/reserve';
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          if (ret.reserve != null) {
+            this._cachedReserve = ret.reserve;
+            this._cachedReserveTs = Date.now();
+          }
+          return cb(null, ret.reserve ?? Defaults.MIN_XRP_BALANCE);
+        } catch (err) {
+          logger.error('[v8.js] Error getting reserve: %o', err);
+          return cb(null, Defaults.MIN_XRP_BALANCE);
+        }
+      })
+      .catch(cb);
+  }
+
   initSocket(callbacks) {
     logger.info('V8 connecting socket at:' + this.host);
     // sockets always use the first server on the pull
@@ -550,7 +643,7 @@ export class V8 {
 
     blockSocket.on('connect', () => {
       logger.info(`Connected to block ${this.getConnectionInfo()}`);
-      blockSocket.emit('room', `/${this.chain}/${this.v8network}/inv`);
+      blockSocket.emit('room', `${this.chainNetwork}/inv`);
     });
 
     blockSocket.on('connect_error', () => {
@@ -563,21 +656,21 @@ export class V8 {
 
     walletsSocket.on('connect', () => {
       logger.info(`Connected to wallets ${this.getConnectionInfo()}`);
-      walletsSocket.emit('room', `/${this.chain}/${this.v8network}/wallets`, getAuthPayload(this.host));
+      walletsSocket.emit('room', `${this.chainNetwork}/wallets`, getAuthPayload(this.host));
     });
 
     walletsSocket.on('connect_error', () => {
-      logger.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chain}/${this.v8network}`);
+      logger.error(`Error connecting to ${this.getConnectionInfo()} ${this.chainNetwork}`);
     });
 
     walletsSocket.on('failure', err => {
-      logger.error(`Error joining room ${err.message} ${this.chain}/${this.v8network}`);
+      logger.error(`Error joining room ${err.message} ${this.chainNetwork}`);
     });
 
     walletsSocket.on('coin', data => {
       if (!data || !data.coin) return;
 
-      const notification = ChainService.onCoin(this.coin, data.coin);
+      const notification = ChainService.onCoin(this.chain, data.coin);
       if (!notification) return;
 
       return callbacks.onIncomingPayments(notification);
@@ -586,7 +679,7 @@ export class V8 {
     walletsSocket.on('tx', data => {
       if (!data || !data.tx) return;
 
-      const notification = ChainService.onTx(this.coin, data.tx);
+      const notification = ChainService.onTx(this.chain, data.tx);
       if (!notification) return;
 
       return callbacks.onIncomingPayments(notification);
@@ -596,9 +689,13 @@ export class V8 {
 
 const _parseErr = (err, res) => {
   if (err) {
-    logger.warn('V8 error: ', err);
+    logger.warn('[v8.js] V8 raw error: %o', err);
     return 'V8 Error';
   }
-  logger.warn('V8 ' + res.request.href + ' Returned Status: ' + res.statusCode);
+  logger.warn('[v8.js] ' + res.request.href + ' Returned Status: ' + res.statusCode);
   return 'Error querying the blockchain';
+};
+
+const getPerformanceKey = (name: string) => {
+  return name + '-' + crypto.randomBytes(5).toString('hex');
 };

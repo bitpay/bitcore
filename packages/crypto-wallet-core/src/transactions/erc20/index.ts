@@ -14,13 +14,15 @@ export class ERC20TxProvider extends ETHTxProvider {
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
     nonce: number;
-    gasPrice: number;
+    gasPrice?: number;
     data: string;
     gasLimit: number;
     tokenAddress: string;
     network: string;
     chainId?: number;
     contractAddress?: string;
+    maxGasFee?: number;
+    priorityGasFee?: number;
   }) {
     const { tokenAddress, contractAddress } = params;
     const data = this.encodeData(params);
@@ -40,13 +42,13 @@ export class ERC20TxProvider extends ETHTxProvider {
       const amounts = [];
       for (let recipient of recipients) {
         addresses.push(recipient.address);
-        amounts.push(toBN(recipient.amount));
+        amounts.push(toBN(BigInt(recipient.amount).toString()));
       }
       const multisendContract = this.getMultiSendContract(contractAddress);
       return multisendContract.methods.sendErc20(tokenAddress, addresses, amounts).encodeABI();
     } else {
       const [{ address, amount }] = params.recipients;
-      const amountBN = toBN(amount);
+      const amountBN = toBN(BigInt(amount).toString());
       const data = this.getERC20Contract(tokenAddress)
         .methods.transfer(address, amountBN)
         .encodeABI();

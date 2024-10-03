@@ -1,32 +1,50 @@
 #!/usr/bin/env node
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
+const { getCurrencyObj } = require('../ts_build/src/utils');
 
 try {
   program
     .version(require('../package.json').version)
-    .option('--name <name>', 'REQUIRED - Wallet name')
-    .option('--time [time]', 'optional - Get balance at specific time')
-    .option('--path [path]', 'optional - Custom wallet storage path')
-    .option('--storageType [storageType]', 'optional - name of the database to use (default level)')
-    .option('--token [token]', 'optional - Get balance of an ERC20 token')
+    .requiredOption('--name <name>',        'REQUIRED - Wallet name')
+    .option('--token <tokenName>',          'Get balance of an ERC20 token using token name')
+    .option('--time <time>',                'Get balance at specific time')
+    .option('--path <path>',                'Custom wallet storage path')
+    .option('--storageType <storageType>',  'name of the database to use (default level)')
+    .option('--account <index>',            'EVM Account index to use (default 0). `all` for all accounts')
     .parse(process.argv);
 } catch (e) {
   console.log(e.message);
   return program.help();
 }
 
+let wallet;
+
 async function main() {
-  const { name, path, time, storageType, token } = program;
-  const wallet = await Wallet.loadWallet({ name, path, storageType });
-  const balance = await wallet.getBalance(time, token);
-  return Object.assign(balance, {
-    currency: token || wallet.chain,
-    network: wallet.network
-  });
+  const { name, path, time, storageType, token: tokenName, account = 0 } = program.opts();
+  wallet = await Wallet.loadWallet({ name, path, storageType });
+  const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
+  const currency = (await getCurrencyObj(wallet.chain, tokenObj?.address))?.displayCode || tokenName || wallet.chain;
+  let accountAddress;
+  if (!wallet.isUtxoChain() && account !== 'all') {
+    accountAddress = await wallet.deriveAddress(account);
+  }
+  const balance = await wallet.getBalance({ time, tokenName, address: accountAddress });
+  const metaData = {
+    currency,
+    chain: wallet.chain,
+    network: wallet.network,
+  };
+  if (accountAddress) {
+    metaData.account = `#${account} - ${accountAddress}`;
+  } else if (account === 'all') {
+    metaData.account = '(All accounts)';
+  }
+  return Object.assign(balance, metaData);
 }
 
 main()
   .then(res => console.log(res))
-  .catch(err => console.error(err));
+  .catch(err => console.error(err))
+  .finally(() => wallet?.storage?.close());

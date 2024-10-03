@@ -206,7 +206,7 @@ describe('Transaction', function() {
   describe('transaction creation test vector', function() {
     this.timeout(5000);
     var index = 0;
-    transactionVector.forEach(function(vector) {
+    for (const vector of transactionVector) {
       index++;
       it('case ' + index, function() {
         var i = 0;
@@ -222,7 +222,7 @@ describe('Transaction', function() {
           i += 2;
         }
       });
-    });
+    }
   });
 
   // TODO: Migrate this into a test for inputs
@@ -362,7 +362,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.getFee();
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(4973500000);
+      transaction.outputs[1].satoshis.should.equal(4977400000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -431,72 +431,80 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(10e8 - 80000 - 10000);
     });
     it('fee per kb can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 8000;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerKb(8000)
+        .feePerKb(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate / 1000 * 1, feeRate / 1000 * 1.01);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(9999037584);
+      transaction.outputs[1].satoshis.should.equal(9999037536);
     });
     it('fee per byte (low fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 1;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(1)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(9999048001, 9999049000);
     });
     it('fee per byte (high fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 2;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(2)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(9999046002, 9999048000);
     });
     it('fee per byte can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 13;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(13)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(9999024013, 9999037000);
     });
     it('fee per byte not enough for change', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -545,6 +553,23 @@ describe('Transaction', function() {
         .from(simpleUtxoWith100DOGE)
         .to(toAddress, 1e8);
       transaction.getFee().should.equal(99e8);
+    });
+    it('should not under calculate fee', function () {
+      var inputs = Array(10).fill(0).map(function (_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
+        utxo.outputIndex = i;
+        return utxo;
+      });
+      const feeRate = 1;
+      var transaction = new Transaction()
+        .from(inputs)
+        .to(toAddress, 95000)
+        .feePerByte(feeRate)
+        .change(changeAddress)
+        .sign(privateKey);
+      // actual fee rate should never be *less* than the given
+      //  fee rate and should only be over by 1% at most.
+      (transaction.getFee() / transaction.size).should.be.within(feeRate * 1, feeRate * 1.01);
     });
   });
 
@@ -600,7 +625,7 @@ describe('Transaction', function() {
     it('fails if a dust output is created', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1000DOGE)
-        .to(toAddress, 0.9e8)
+        .to(toAddress, 999999) // Less than 0.01 DOGE
         .change(changeAddress)
         .sign(privateKey);
       expect(function() {
@@ -1070,7 +1095,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1e8);
       transaction.inputAmount.should.equal(1000e8);
-      transaction.outputAmount.should.equal(99973500000);
+      transaction.outputAmount.should.equal(99977400000);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see testnet tx 41245c59aa4f06bc0f13f92ea65e275926591376dffb396a5c0efb7b8c2d0c21
@@ -1162,7 +1187,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(tenth);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89973500000);
+      tx.outputs[1].satoshis.should.equal(89977400000);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
@@ -1235,7 +1260,7 @@ describe('Transaction', function() {
           return original.indexOf(value);
         });
       };
-      fixture.inputs.forEach(function(inputSet) {
+      for (const inputSet of fixture.inputs) {
         it(inputSet.description, function() {
           var tx = new Transaction();
           inputSet.inputs = inputSet.inputs.map(function(input) {
@@ -1252,8 +1277,8 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(inputSet.inputs, tx.inputs).should.deep.equal(inputSet.expected);
         });
-      });
-      fixture.outputs.forEach(function(outputSet) {
+      }
+      for (const outputSet of fixture.outputs) {
         it(outputSet.description, function() {
           var tx = new Transaction();
           outputSet.outputs = outputSet.outputs.map(function(output) {
@@ -1266,7 +1291,7 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
         });
-      });
+      }
 
     });
   });

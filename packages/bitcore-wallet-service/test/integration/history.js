@@ -15,7 +15,7 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
-var Common = require('../../ts_build/lib/common');
+var { Common } = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
@@ -31,6 +31,8 @@ var storage, blockchainExplorer, request;
 
 
 describe('History', function() {
+  this.timeout(5000);
+  
   before(function(done) {
     helpers.before((res) => {
       done();
@@ -976,8 +978,9 @@ describe('History', function() {
           internal: [],
           dust: false,
           abiType: '{"type":"ERC20","name":"transfer","params":[{"name":"_to","value":"0xeca2486a6a213fb40537658d7360ab6221eb26be","type":"address"},{"name":"_tokenId","value":"3000000","type":"uint256"}]}',
+          effects: undefined,
           error: undefined,
-          network: 'testnet',
+          network: 'sepolia',
           chain: 'ETH',
           data: '0x',
           nonce: 57,
@@ -985,6 +988,9 @@ describe('History', function() {
           gasLimit: 163759,
           receipt: undefined,
           lowFees: false,
+          maxGasFee: undefined,
+          priorityGasFee: undefined,
+          txType: undefined,
         });
         done();
       });

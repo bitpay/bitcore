@@ -6,8 +6,9 @@ import {
   getFormattedDate,
   hasUnconfirmedInputs,
   isRBF,
+  getLib
 } from '../utilities/helper-methods';
-import {useState} from 'react';
+import {useState, useEffect, FC, memo} from 'react';
 import {
   TransactionBodyCol,
   TransactionTile,
@@ -23,36 +24,110 @@ import {
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
+import styled from 'styled-components';
+import {Slate, SlateDark} from '../assets/styles/colors';
 
-const TransactionDetails = ({
-  transaction,
-  currency,
-  network,
-}: {
+const TextElipsis = styled(ScriptText)`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: normal;
+`;
+
+const SelectedPill = styled.div`
+  margin-top: 1rem;
+  width: 100px;
+  padding: 5px 10px;
+  border: 1px solid ${({theme: {dark}}) => (dark ? SlateDark : Slate)};
+  text-align: center;
+  border-radius: 50px;
+  color: ${({theme: {dark}}) => (dark ? Slate : SlateDark)};
+  font-weight: 500;
+  font-size: 16px;
+`;
+
+interface TransactionDetailsProps {
   transaction: Transaction;
   currency: string;
   network: string;
+  refTxid?: string;
+  refVout?: number;
+}
+const TransactionDetails: FC<TransactionDetailsProps> = ({
+  transaction,
+  currency,
+  network,
+  refTxid,
+  refVout,
 }) => {
   const navigate = useNavigate();
-  const {outputs, txid, blockTime, coinbase, inputs, confirmations, fee, value} = transaction;
-
+  const [formattedInputs, setFormattedInputs] = useState<any[]>();
+  const [lib, setLib] = useState<any>(getLib(currency));
+  const {outputs, txid, blockTime, blockHeight, coinbase, inputs, confirmations, fee, value} =
+    transaction;
   const goToAddress = (address: any) => {
     return navigate(`/${currency}/${network}/address/${address}`);
   };
 
-  const goToTx = (tx: any, detailsIdx?: number, fromVout?: boolean) => {
+  const createOptionalSearchParams = (refTxid?: string, refVout?: number) => {
+    if (refTxid == null && refVout == null) {
+      return undefined;
+    }
+    return `?${createSearchParams({
+      refTxid: refTxid != undefined ? refTxid.toString() : '',
+      refVout: refVout != undefined ? refVout.toString() : '',
+    })}`;
+  };
+
+  const goToTx = (tx: any, refTxid?: string, refVout?: number) => {
     return navigate({
       pathname: `/${currency}/${network}/tx/${tx}`,
-      search: `?${createSearchParams({
-        detailsIdx: detailsIdx !== undefined ? detailsIdx.toString() : '',
-        fromVout: fromVout ? 'true' : 'false',
-      })}`,
+      search: createOptionalSearchParams(refTxid, refVout),
     });
+  };
+
+  const isInputSelected = (input: any) => {
+    // If refTxid doesn't exist then it's selecting an output (thus false)
+    // OR if refVout doesn't exist then false
+    if (refTxid == null || refTxid == '' || refVout == null) {
+      return false;
+    }
+    return input.mintTxid === refTxid && input.mintIndex === refVout;
+  };
+
+  const isOutputSelected = (outputIndex: number) => {
+    // If refTxid exists then it's selecting an input (thus false)
+    // OR if refVout doesn't exist then false
+    if ((refTxid != null && refTxid != '') || refVout == null) {
+      return false;
+    }
+    return outputIndex == refVout;
+  };
+
+  const isOpReturn = (vout: any) => {
+    const s = new lib.Script(vout.script);
+    return s.toASM().includes('OP_RETURN');
+  };
+  
+  const getOpReturnText = (vout: any) => {
+    const s = new lib.Script(vout.script);
+    const hex = s.toASM().split('OP_RETURN')[1]?.trim();
+    return Buffer.from(hex, 'hex').toString('utf8');
   };
 
   const outputsLength = outputs.length;
 
   const [showDetails, setShowDetails] = useState(false);
+
+  useEffect(() => {
+    if (!inputs) {
+      return;
+    }
+    setFormattedInputs(aggregateItems(inputs));
+  }, [inputs]);
+
+  useEffect(() => {
+    setLib(getLib(currency));
+  }, [currency]);
 
   return (
     <TransactionTile key={txid}>
@@ -65,7 +140,7 @@ const TransactionDetails = ({
         </TileDescription>
 
         <TileDescription textAlign='right' value padding='0 0 0 0.25rem'>
-          Mined on: {getFormattedDate(blockTime)}
+          {`${blockHeight > -1 ? 'Mined' : 'Seen'} on: ${getFormattedDate(blockTime)}`}
         </TileDescription>
       </TransactionTileHeader>
 
@@ -75,56 +150,76 @@ const TransactionDetails = ({
 
           {!coinbase && (
             <>
-              {aggregateItems(inputs).map((vi: any, i: number, arr: any[]) => {
+              {formattedInputs?.map((vi: any, i: number, arr: any[]) => {
                 return (
-                  <Tile key={i} invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
-                    {showDetails && (
-                      <ArrowDiv margin='auto .5rem auto 0'>
-                        <img
-                          src={ArrowSvg}
-                          width={17}
-                          height={17}
-                          alt='arrow'
-                          onClick={() => goToTx(vi.items[0].mintTxid, i, false)}
-                        />
-                      </ArrowDiv>
-                    )}
+                  <div key={i}>
+                    {vi.items.map((item: any, itemIndex: number) => (
+                      <div key={item.mintTxid + itemIndex}>
+                        {isInputSelected(item) ? <SelectedPill>Selected</SelectedPill> : null}
 
-                    <TileDescription padding='0 1rem 0 0' value>
-                      {getAddress(vi) !== 'Unparsed address' ? (
-                        <SpanLink onClick={() => goToAddress(getAddress(vi))}>
-                          {getAddress(vi)}
-                        </SpanLink>
-                      ) : (
-                        <span>Unparsed address</span>
-                      )}
-
-                      {showDetails && (
-                        <div>
-                          {confirmations > 0 && (
-                            <ScriptText>
-                              <b>Confirmations</b> {confirmations}
-                            </ScriptText>
+                        <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
+                          {showDetails && (
+                            <ArrowDiv margin='auto .5rem auto 0'>
+                              <img
+                                src={ArrowSvg}
+                                width={17}
+                                height={17}
+                                alt='arrow'
+                                onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
+                              />
+                            </ArrowDiv>
                           )}
 
-                          <ScriptText>
-                            <b>Unlocking Script</b>
-                          </ScriptText>
+                          <TileDescription padding='0 1rem 0 0' value>
+                            {getAddress(vi) !== 'Unparsed address' ? (
+                              <SpanLink onClick={() => goToAddress(getAddress(vi))}>
+                                {getAddress(vi)}
+                              </SpanLink>
+                            ) : (
+                              <span>Unparsed address</span>
+                            )}
 
-                          {vi.items.map(
-                            (item: any, index: number) =>
-                              item.scriptSig && (
-                                <ScriptText key={index}>{item.scriptSig.asm}</ScriptText>
-                              ),
-                          )}
-                        </div>
-                      )}
-                    </TileDescription>
+                            {showDetails && (
+                              <>
+                                <TextElipsis>
+                                  <b>Tx ID </b>
+                                  <SpanLink
+                                    onClick={() =>
+                                      goToTx(item.mintTxid, undefined, item.mintIndex)
+                                    }>
+                                    {item.mintTxid}
+                                  </SpanLink>
+                                </TextElipsis>
 
-                    <TileDescription value textAlign='right'>
-                      {getConvertedValue(vi.value, currency)} {currency}
-                    </TileDescription>
-                  </Tile>
+                                <TextElipsis>
+                                  <b>Tx Index</b> {item.mintIndex}
+                                </TextElipsis>
+
+                                {item.uiConfirmations && confirmations > 0 ? (
+                                  <ScriptText>
+                                    <b>Confirmations</b> {item.uiConfirmations + confirmations}
+                                  </ScriptText>
+                                ) : null}
+
+                                {item.script &&
+                                  <>
+                                    <b>Script Hex</b>
+                                    <ScriptText>{item.script}</ScriptText>
+                                    <b>Script ASM</b>
+                                    <ScriptText>{new lib.Script(item.script).toASM()}</ScriptText>
+                                  </>
+                                }
+                              </>
+                            )}
+                          </TileDescription>
+
+                          <TileDescription value textAlign='right'>
+                            {getConvertedValue(item.value, currency)} {currency}
+                          </TileDescription>
+                        </Tile>
+                      </div>
+                    ))}
+                  </div>
                 );
               })}
             </>
@@ -138,46 +233,59 @@ const TransactionDetails = ({
         <TransactionBodyCol type='Six' textAlign='right' padding='0 1rem'>
           {outputs.map((vo: any, i: number) => {
             return (
-              <Tile key={i} invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1}>
-                <TileDescription padding='0 1rem 0 0' value>
-                  {getAddress(vo) !== 'Unparsed address' ? (
-                    <SpanLink onClick={() => goToAddress(getAddress(vo))}>
-                      {getAddress(vo)}
-                    </SpanLink>
-                  ) : (
-                    <span>Unparsed address</span>
+              <div key={i}>
+                {isOutputSelected(i) ? <SelectedPill>Selected</SelectedPill> : null}
+                <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1}>
+                  <TileDescription padding='0 1rem 0 0' value>
+                    {getAddress(vo) !== 'Unparsed address' ? (
+                      <SpanLink onClick={() => goToAddress(getAddress(vo))}>
+                        {getAddress(vo)}
+                      </SpanLink>
+                    ) : (
+                      <span>{isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}</span>
+                    )}
+
+                    {showDetails && (
+                      <>
+                        {vo.spentTxid &&
+                          <TextElipsis>
+                            <b>Spent By </b>
+                            <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
+                              {vo.spentTxid}
+                            </SpanLink>
+                          </TextElipsis>
+                        }
+                        {isOpReturn(vo) &&
+                          <ScriptText>{getOpReturnText(vo)}</ScriptText>
+                        }
+                        {vo.script &&
+                          <>
+                          <b>Script Hex</b><ScriptText>{new lib.Script(vo.script).toHex()}</ScriptText>
+                          <b>Script ASM</b><ScriptText>{new lib.Script(vo.script).toASM()}</ScriptText>
+                          </>
+                        }
+                      </>
+                    )}
+                  </TileDescription>
+
+                  <TileDescription value textAlign='right'>
+                    {getConvertedValue(vo.value, currency)} {currency}{' '}
+                    {vo.spentTxid ? '(S)' : '(U)'}
+                  </TileDescription>
+
+                  {showDetails && vo.spentTxid && (
+                    <ArrowDiv margin='auto 0 auto .5rem'>
+                      <img
+                        src={ArrowSvg}
+                        width={17}
+                        height={17}
+                        alt='arrow'
+                        onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}
+                      />
+                    </ArrowDiv>
                   )}
-
-                  {showDetails && (
-                    <>
-                      <ScriptText>
-                        <b>Script Template</b>
-                        <i>{vo.script.type}</i>
-                      </ScriptText>
-                      <ScriptText>
-                        <b>Locking Script</b>
-                      </ScriptText>
-                      <ScriptText>{vo.script.asm}</ScriptText>
-                    </>
-                  )}
-                </TileDescription>
-
-                <TileDescription value textAlign='right'>
-                  {getConvertedValue(vo.value, currency)} {currency} {vo.spentTxid ? '(S)' : '(U)'}
-                </TileDescription>
-
-                {showDetails && vo.spentTxid && vo.spentTxid !== '' && (
-                  <ArrowDiv margin='auto 0 auto .5rem'>
-                    <img
-                      src={ArrowSvg}
-                      width={17}
-                      height={17}
-                      alt='arrow'
-                      onClick={() => goToTx(vo.spentTxid, i, true)}
-                    />
-                  </ArrowDiv>
-                )}
-              </Tile>
+                </Tile>
+              </div>
             );
           })}
         </TransactionBodyCol>
@@ -193,6 +301,8 @@ const TransactionDetails = ({
         </div>
 
         <TransactionTileFlex>
+          {confirmations === -5 && <TransactionChip error>Expired</TransactionChip>}
+
           {confirmations === -3 && <TransactionChip error>Invalid</TransactionChip>}
 
           {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}
@@ -220,4 +330,4 @@ const TransactionDetails = ({
   );
 };
 
-export default TransactionDetails;
+export default memo(TransactionDetails);

@@ -1,3 +1,11 @@
+import {
+  ARBERC20TxProvider,
+  ARBTxProvider
+} from './arb';
+import {
+  BASEERC20TxProvider,
+  BASETxProvider
+} from './base';
 import { BCHTxProvider } from './bch';
 import { BTCTxProvider } from './btc';
 import { DOGETxProvider } from './doge';
@@ -5,17 +13,32 @@ import { ERC20TxProvider } from './erc20';
 import { ETHTxProvider } from './eth';
 import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { LTCTxProvider } from './ltc';
+import {
+  MATICERC20TxProvider,
+  MATICTxProvider
+} from './matic';
+import { MATICMULTISIGTxProvider } from './matic-multisig';
+import { OPERC20TxProvider, OPTxProvider } from './op';
 import { XRPTxProvider } from './xrp';
 
 const providers = {
   BTC: new BTCTxProvider(),
   BCH: new BCHTxProvider(),
   ETH: new ETHTxProvider(),
-  ERC20: new ERC20TxProvider(),
+  ETHERC20: new ERC20TxProvider(),
   ETHMULTISIG: new ETHMULTISIGTxProvider(),
   XRP: new XRPTxProvider(),
   DOGE: new DOGETxProvider(),
-  LTC: new LTCTxProvider()
+  LTC: new LTCTxProvider(),
+  MATIC: new MATICTxProvider(),
+  MATICMULTISIG: new MATICMULTISIGTxProvider(),
+  MATICERC20: new MATICERC20TxProvider(),
+  ARB: new ARBTxProvider(),
+  ARBERC20: new ARBERC20TxProvider(),
+  BASE: new BASETxProvider(),
+  BASEERC20: new BASEERC20TxProvider(),
+  OP: new OPTxProvider(),
+  OPERC20: new OPERC20TxProvider(),
 };
 
 export class TransactionsProxy {

@@ -1,3 +1,4 @@
+import {FC, memo} from 'react';
 import {CoinsListEth, TransactionEth} from '../utilities/models';
 import {getConvertedValue, getFormattedDate} from '../utilities/helper-methods';
 import {
@@ -13,17 +14,18 @@ import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate} from 'react-router-dom';
 
-const TransactionDetailsEth = ({
-  transaction,
-  currency,
-  network,
-}: {
+interface TransactionDetailsEthProps {
   transaction: TransactionEth | CoinsListEth;
   currency: string;
   network: string;
+}
+const TransactionDetailsEth: FC<TransactionDetailsEthProps> = ({
+  transaction,
+  currency,
+  network,
 }) => {
   const navigate = useNavigate();
-  const {txid, blockTime, coinbase, from, to, fee, confirmations, value} = transaction;
+  const {txid, blockTime, blockHeight, coinbase, from, to, fee, confirmations, value} = transaction;
 
   const goToAddress = (address: any) => {
     return navigate(`/${currency}/${network}/address/${address}`);
@@ -41,7 +43,7 @@ const TransactionDetailsEth = ({
         </TileDescription>
 
         <TileDescription textAlign='right' value padding='0 0 0 0.25rem'>
-          Mined on: {getFormattedDate(blockTime)}
+          {`${blockHeight > -1 ? 'Mined' : 'Seen'} on: ${getFormattedDate(blockTime)}`}
         </TileDescription>
       </TransactionTileHeader>
 
@@ -83,6 +85,8 @@ const TransactionDetailsEth = ({
         </div>
 
         <TransactionTileFlex>
+          {confirmations === -5 && <TransactionChip error>Expired</TransactionChip>}
+
           {confirmations === -3 && <TransactionChip error>Invalid</TransactionChip>}
 
           {confirmations === -1 && <TransactionChip warning>Unconfirmed</TransactionChip>}
@@ -102,4 +106,4 @@ const TransactionDetailsEth = ({
   );
 };
 
-export default TransactionDetailsEth;
+export default memo(TransactionDetailsEth);

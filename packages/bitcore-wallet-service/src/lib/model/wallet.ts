@@ -1,5 +1,7 @@
 import _ from 'lodash';
+import config from '../../config';
 import { ChainService } from '../chain/index';
+import { Common } from '../common';
 import logger from '../logger';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
@@ -7,15 +9,19 @@ import { Copayer } from './copayer';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
-const config = require('../../config');
-const Common = require('../common');
+
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
+
 const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash'),
   eth: require('bitcore-lib'),
+  matic: require('bitcore-lib'),
+  arb: require('bitcore-lib'),
+  base: require('bitcore-lib'),
+  op: require('bitcore-lib'),
   xrp: require('bitcore-lib'),
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
@@ -31,10 +37,12 @@ export interface IWallet {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
+  hardwareSourcePublicKey: string;
   addressIndex: number;
   copayers: string[];
   pubKey: string;
   coin: string;
+  chain: string;
   network: string;
   derivationStrategy: string;
   addressType: string;
@@ -58,10 +66,12 @@ export class Wallet {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
+  hardwareSourcePublicKey: string;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
   coin: string;
+  chain: string;
   network: string;
   derivationStrategy: string;
   addressType: string;
@@ -80,12 +90,13 @@ export class Wallet {
   static create(opts) {
     opts = opts || {};
 
+    const chain = opts.chain || opts.coin;
     let x = new Wallet();
 
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
+    $.checkArgument(Utils.checkValueInCollection(chain, Constants.CHAINS)); // checking in chains for simplicity
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]));
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -100,6 +111,7 @@ export class Wallet {
     x.copayers = [];
     x.pubKey = opts.pubKey;
     x.coin = opts.coin;
+    x.chain = opts.chain || ChainService.getChain(x.coin);
     x.network = opts.network;
     x.derivationStrategy = opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = opts.addressType || Constants.SCRIPT_TYPES.P2SH;
@@ -117,8 +129,10 @@ export class Wallet {
     x.beAuthPublicKey2 = null;
 
     // x.nativeCashAddr opts is only for testing
-    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.coin == 'bch' ? true : null) : opts.nativeCashAddr;
+    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
 
+    // hardware wallet related
+    x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
     return x;
   }
 
@@ -142,9 +156,10 @@ export class Wallet {
     });
     x.pubKey = obj.pubKey;
     x.coin = obj.coin || Defaults.COIN;
+    x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
     x.network = obj.network;
     if (!x.network) {
-      x.network = obj.isTestnet ? 'testnet' : 'livenet';
+      x.network = obj.isTestnet ? Utils.getNetworkName(x.chain, 'testnet') : 'livenet';
     }
     x.derivationStrategy = obj.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = obj.addressType || Constants.SCRIPT_TYPES.P2SH;
@@ -156,6 +171,9 @@ export class Wallet {
 
     x.nativeCashAddr = obj.nativeCashAddr;
     x.usePurpose48 = obj.usePurpose48;
+
+    // hardware wallet related
+    x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
 
     return x;
   }
@@ -184,14 +202,14 @@ export class Wallet {
     return this.n > 1;
   }
 
-  isUTXOCoin() {
-    return !!Constants.UTXO_COINS[this.coin.toUpperCase()];
+  isUTXOChain() {
+    return !!Constants.UTXO_CHAINS[this.chain.toUpperCase()];
   }
 
   updateBEKeys() {
     $.checkState(this.isComplete(), 'Failed state: wallet incomplete at <updateBEKeys()>');
 
-    const chain = ChainService.getChain(this.coin).toLowerCase();
+    const chain = this.chain || ChainService.getChain(this.coin); // getChain -> backwards compatibility
     const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
@@ -199,7 +217,7 @@ export class Wallet {
       _.map(this.copayers, 'xPubKey')
         .sort()
         .join('') +
-      this.network +
+      Utils.getGenericName(this.network) + // Maintaining compatibility with previous versions
       this.coin +
       salt;
     seed = bitcore.crypto.Hash.sha256(Buffer.from(seed));
@@ -275,8 +293,10 @@ export class Wallet {
       this.coin,
       this.network,
       isChange,
+      this.chain,
       !this.nativeCashAddr,
-      escrowInputs
+      escrowInputs,
+      this.hardwareSourcePublicKey,
     );
     return address;
   }
@@ -295,7 +315,8 @@ export class Wallet {
       this.m,
       this.coin,
       this.network,
-      next.isChange
+      next.isChange,
+      this.chain
     );
     return address;
   }

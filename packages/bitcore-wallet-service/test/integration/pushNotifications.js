@@ -23,7 +23,9 @@ const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95
 const CUSTOM_TOKENS = ['0x0d8775f648430679a709e98d2b0cb6250d2887ef'];
 
 describe('Push notifications', function() {
-  var server, wallet, requestStub, pushNotificationsService, walletId;
+  this.timeout(5000);
+  var server, wallet, requestStub, getTokenDataStub, pushNotificationsService, walletId;
+
 
 
   before(function(done) {
@@ -376,7 +378,7 @@ describe('Push notifications', function() {
             txid: '999',
             address: address,
             amount: 12300000,
-            network: 'testnet'
+            network: 'testnet3'
           }, (err) => {
             should.not.exist(err);
 
@@ -810,6 +812,7 @@ describe('Push notifications', function() {
             pushNotificationsService = new PushNotificationsService();
             requestStub = sinon.stub(pushNotificationsService, '_makeRequest').callsFake(()=>{});
             requestStub.yields();
+            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.OneInch_ETH_Tokens.tokens);
             pushNotificationsService.start({
               lockOpts: {},
               messageBroker: server.messageBroker,
@@ -905,6 +908,7 @@ describe('Push notifications', function() {
             requestStub.yields();
 
             pushNotificationsService = new PushNotificationsService();
+            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.OneInch_ETH_Tokens.tokens);
             pushNotificationsService.start({
               lockOpts: {},
               messageBroker: server.messageBroker,
@@ -960,7 +964,7 @@ describe('Push notifications', function() {
         });
       });
     });
-    it('should send notification if the tx is PAX', (done) => {
+    it('should send notification if the tx is USDP', (done) => {
       server.savePreferences({
         language: 'es',
         unit: 'bit',
@@ -1044,7 +1048,7 @@ describe('Push notifications', function() {
           }, (err) => {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              calls.length.should.equal(2);
+              calls.length.should.equal(1);
               done();
             }, 100);
           });

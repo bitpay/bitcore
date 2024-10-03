@@ -7,10 +7,10 @@ var request = require('request');
 var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
-var config = require('../ts_build/config.js');
+var config = require('../ts_build/config.js').default;
 var log = require('npmlog');
 
-var Common = require('../ts_build/lib/common');
+var { Common } = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
 var { WalletService } = require('../ts_build/lib/server');
 
@@ -212,7 +212,7 @@ describe('ExpressApp', function() {
               res.statusCode.should.equal(200);
               server.storage.checkAndUseGlobalCache.getCalls()[0].args[0].should.equal('latest-copay-version');
               server.storage.checkAndUseGlobalCache.getCalls()[0].args[1].should.equal(360000);
-              server.storage.checkAndUseGlobalCache.getCalls()[0].args[2].should.exist();
+              server.storage.checkAndUseGlobalCache.getCalls()[0].args[2].should.exist;
               body.should.equal(JSON.stringify({"version":htmlString['tag_name']}));
               done();
             });

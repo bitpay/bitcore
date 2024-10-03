@@ -35,16 +35,16 @@ var Script = function Script(from) {
     return Script.fromAddress(from);
   } else if (from instanceof Script) {
     return Script.fromBuffer(from.toBuffer());
-  } else if (_.isString(from)) {
+  } else if (typeof from === 'string') {
     return Script.fromString(from);
-  } else if (_.isObject(from) && _.isArray(from.chunks)) {
+  } else if (_.isObject(from) && Array.isArray(from.chunks)) {
     this.set(from);
   }
 };
 
 Script.prototype.set = function(obj) {
   $.checkArgument(_.isObject(obj));
-  $.checkArgument(_.isArray(obj.chunks));
+  $.checkArgument(Array.isArray(obj.chunks));
   this.chunks = obj.chunks;
   return this;
 };
@@ -143,7 +143,7 @@ Script.fromASM = function(str) {
     var opcode = Opcode(token);
     var opcodenum = opcode.toNumber();
 
-    if (_.isUndefined(opcodenum)) {
+    if (opcodenum == null) {
       var buf = Buffer.from(tokens[i], 'hex');
       var opcodenum;
       var len = buf.length;
@@ -190,7 +190,7 @@ Script.fromString = function(str) {
     var opcode = Opcode(token);
     var opcodenum = opcode.toNumber();
 
-    if (_.isUndefined(opcodenum)) {
+    if (opcodenum == null) {
       opcodenum = parseInt(token);
       if (opcodenum > 0 && opcodenum < Opcode.OP_PUSHDATA1) {
         script.chunks.push({
@@ -394,14 +394,52 @@ Script.prototype.isPublicKeyIn = function() {
 };
 
 /**
+ * @param {Object=} values - The return values
+ * @param {Number} values.version - Set with the witness version
+ * @param {Buffer} values.program - Set with the witness program
+ * @returns {boolean} if this is a p2wpkh output script
+ */
+ Script.prototype.isWitnessProgram = function(values) {
+  if (!values) {
+    values = {};
+  }
+  var buf = this.toBuffer();
+  if (buf.length < 4 || buf.length > 42) {
+    return false;
+  }
+  if (buf[0] !== Opcode.OP_0 && !(buf[0] >= Opcode.OP_1 && buf[0] <= Opcode.OP_16)) {
+    return false;
+  }
+
+  if (buf.length === buf[1] + 2) {
+    values.version = buf[0];
+    values.program = buf.slice(2, buf.length);
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * @returns {boolean} if this is a p2sh output script
  */
-Script.prototype.isScriptHashOut = function() {
+Script.prototype.isScriptHashOut = function(fEnableP2SH32) {
   var buf = this.toBuffer();
-  return (buf.length === 23 &&
+  const isP2SH20 = (buf.length === 23 &&
     buf[0] === Opcode.OP_HASH160 &&
     buf[1] === 0x14 &&
     buf[buf.length - 1] === Opcode.OP_EQUAL);
+  if (isP2SH20) {
+    return true;
+  }
+  if (!fEnableP2SH32) {
+    return false;
+  }
+  const isP2SH32 = (buf.length === 35 &&
+    buf[0] === Opcode.OP_HASH256 &&
+    buf[1] === 0x20 &&
+    buf[buf.length - 1] === Opcode.OP_EQUAL);
+  return isP2SH32;
 };
 
 /**
@@ -479,7 +517,7 @@ Script.prototype.isDataOut = function() {
  */
 Script.prototype.getData = function() {
   if (this.isDataOut() || this.isScriptHashOut()) {
-    if (_.isUndefined(this.chunks[1])) {
+    if (this.chunks[1] == null) {
       return Buffer.alloc(0);
     } else {
       return Buffer.from(this.chunks[1].buf);
@@ -496,7 +534,7 @@ Script.prototype.getData = function() {
  * opcodes or small int opcodes (OP_0, OP_1, ..., OP_16)
  */
 Script.prototype.isPushOnly = function() {
-  return _.every(this.chunks, function(chunk) {
+  return this.chunks.every(function(chunk) {
     return chunk.opcodenum <= Opcode.OP_16 ||
       chunk.opcodenum === Opcode.OP_PUSHDATA1 ||
       chunk.opcodenum === Opcode.OP_PUSHDATA2 ||
@@ -739,7 +777,7 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
   opts = opts || {};
   var script = new Script();
   script.add(Opcode.smallInt(threshold));
-  publicKeys = _.map(publicKeys, PublicKey);
+  publicKeys = publicKeys.map(PublicKey);
   var sorted = publicKeys;
   if (!opts.noSorting) {
     sorted = _.sortBy(publicKeys, function(publicKey) {
@@ -768,9 +806,9 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
  * @returns {Script}
  */
 Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
-  $.checkArgument(_.isArray(pubkeys));
-  $.checkArgument(_.isNumber(threshold));
-  $.checkArgument(_.isArray(signatures));
+  $.checkArgument(Array.isArray(pubkeys));
+  $.checkArgument(!isNaN(threshold));
+  $.checkArgument(Array.isArray(signatures));
   opts = opts || {};
   var s = new Script();
 
@@ -809,11 +847,11 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
     }
   
   
-  _.each(signatures, function(signature) {
+  for (const signature of signatures) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
     s.add(signature);
-  });
+  }
   return s;
 };
 
@@ -832,9 +870,9 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
  * @returns {Script}
  */
 Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
-  $.checkArgument(_.isArray(pubkeys));
-  $.checkArgument(_.isNumber(threshold));
-  $.checkArgument(_.isArray(signatures));
+  $.checkArgument(Array.isArray(pubkeys));
+  $.checkArgument(!isNaN(threshold));
+  $.checkArgument(Array.isArray(signatures));
   opts = opts || {};
   var s = new Script();
   
@@ -871,11 +909,11 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
     s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
   }
   
-  _.each(signatures, function(signature) {
+  for (const signature of signatures) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
     s.add(signature);
-  });
+  }
   s.add((opts.cachedMultisig || Script.buildMultisigOut(pubkeys, threshold, opts)).toBuffer());
   return s;
 };
@@ -886,11 +924,11 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
  * @param {(Address|PublicKey)} to - destination address or public key
  */
 Script.buildPublicKeyHashOut = function(to) {
-  $.checkArgument(!_.isUndefined(to));
-  $.checkArgument(to instanceof PublicKey || to instanceof Address || _.isString(to));
+  $.checkArgument(to != null);
+  $.checkArgument(to instanceof PublicKey || to instanceof Address || typeof to === 'string');
   if (to instanceof PublicKey) {
     to = to.toAddress();
-  } else if (_.isString(to)) {
+  } else if (typeof to === 'string') {
     to = new Address(to);
   }
   var s = new Script();
@@ -921,13 +959,13 @@ Script.buildPublicKeyOut = function(pubkey) {
  * @param {(string)} encoding - the type of encoding of the string
  */
 Script.buildDataOut = function(data, encoding) {
-  $.checkArgument(_.isUndefined(data) || _.isString(data) || BufferUtil.isBuffer(data));
-  if (_.isString(data)) {
+  $.checkArgument(data == null || typeof data === 'string' || BufferUtil.isBuffer(data));
+  if (typeof data === 'string') {
     data = Buffer.from(data, encoding);
   }
   var s = new Script();
   s.add(Opcode.OP_RETURN);
-  if (!_.isUndefined(data)) {
+  if (data != null) {
     s.add(data);
   }
   return s;
@@ -958,7 +996,7 @@ Script.buildScriptHashOut = function(script) {
  */
 Script.buildPublicKeyIn = function(signature, sigtype) {
   $.checkArgument(signature instanceof Signature || BufferUtil.isBuffer(signature));
-  $.checkArgument(_.isUndefined(sigtype) || _.isNumber(sigtype));
+  $.checkArgument(sigtype == null || !isNaN(sigtype));
   if (signature instanceof Signature) {
     signature = signature.toBuffer();
   }
@@ -980,7 +1018,7 @@ Script.buildPublicKeyIn = function(signature, sigtype) {
  */
 Script.buildPublicKeyHashIn = function(publicKey, signature, sigtype) {
   $.checkArgument(signature instanceof Signature || BufferUtil.isBuffer(signature));
-  $.checkArgument(_.isUndefined(sigtype) || _.isNumber(sigtype));
+  $.checkArgument(sigtype == null || !isNaN(sigtype));
   if (signature instanceof Signature) {
     signature = signature.toBuffer();
   }
@@ -1186,23 +1224,22 @@ Script.prototype._decodeOP_N = function(opcode) {
  * @returns {number} number of signature operations required by this script
  */
 Script.prototype.getSignatureOperationsCount = function(accurate) {
-  accurate = (_.isUndefined(accurate) ? true : accurate);
-  var self = this;
+  accurate = (accurate == null ? true : accurate);
   var n = 0;
   var lastOpcode = Opcode.OP_INVALIDOPCODE;
-  _.each(self.chunks, function getChunk(chunk) {
+  for (const chunk of this.chunks) {
     var opcode = chunk.opcodenum;
     if (opcode == Opcode.OP_CHECKSIG || opcode == Opcode.OP_CHECKSIGVERIFY) {
       n++;
     } else if (opcode == Opcode.OP_CHECKMULTISIG || opcode == Opcode.OP_CHECKMULTISIGVERIFY) {
       if (accurate && lastOpcode >= Opcode.OP_1 && lastOpcode <= Opcode.OP_16) {
-        n += self._decodeOP_N(lastOpcode);
+        n += this._decodeOP_N(lastOpcode);
       } else {
         n += 20;
       }
     }
     lastOpcode = opcode;
-  });
+  }
   return n;
 };
 

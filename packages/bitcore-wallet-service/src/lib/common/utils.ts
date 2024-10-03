@@ -1,6 +1,8 @@
 import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
+import Config from '../../config';
 import { logger } from '../logger';
+import { Constants } from './constants';
 
 const $ = require('preconditions').singleton();
 const bitcore = require('bitcore-lib');
@@ -73,7 +75,7 @@ export class Utils {
       }
       return publicKeyBuffer;
     } catch (e) {
-      logger.error('_tryImportPublicKey encountered an error.', e);
+      logger.error('_tryImportPublicKey encountered an error: %o', e);
       return false;
     }
   }
@@ -84,27 +86,20 @@ export class Utils {
       if (!Buffer.isBuffer(signature)) {
         signatureBuffer = Buffer.from(signature, 'hex');
       }
-      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
-      // const sig = Bitcore.crypto.Signature.fromDER(signatureBuffer);
-      // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
+      // uses the native module (c++) for performance vs bitcore lib (javascript)
       return secp256k1.signatureImport(signatureBuffer);
     } catch (e) {
-      logger.error('_tryImportSignature encountered an error.', e);
+      logger.error('_tryImportSignature encountered an error: %o', e);
       return false;
     }
   }
 
   static _tryVerifyMessage(hash, sig, publicKeyBuffer) {
     try {
-      // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
-      // const { BN, Signature, ECDSA } = Bitcore.crypto;
-      // const { PublicKey } = Bitcore;
-      // const bitcoreSig = new Signature({ r: new BN(sig.slice(0, 32)), s: new BN(sig.slice(32)) });
-      // const bitcorePubKey = PublicKey.fromBuffer(publicKeyBuffer);
-      // return ECDSA.verify(hash, bitcoreSig, bitcorePubKey);
+      // uses the native module (c++) for performance vs bitcore lib (javascript)
       return secp256k1.ecdsaVerify(sig, hash, publicKeyBuffer);
     } catch (e) {
-      logger.error('_tryVerifyMessage encountered an error.', e);
+      logger.error('_tryVerifyMessage encountered an error: %o', e);
       return false;
     }
   }
@@ -280,5 +275,40 @@ export class Utils {
     const result = Bitcore_[coin].Address.fromObject(origObj);
     return coin == 'bch' ? result.toLegacyAddress() : result.toString();
   }
+
+  static compareNetworks(network1, network2, chain) {
+    network1 = network1 ? this.getNetworkName(chain, network1.toLowerCase()) : null;
+    network2 = network2 ? this.getNetworkName(chain, network2.toLowerCase()) : null;
+
+    if (network1 == network2) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(this.getNetworkType(network1)) && ['testnet', 'regtest'].includes(this.getNetworkType(network2))) return true;
+    return false;
+  }
+
+  // Good for going from generic 'testnet' to specific 'testnet3', 'sepolia', etc
+  static getNetworkName(chain, network) {
+    const aliases = Constants.NETWORK_ALIASES[chain];
+    if (aliases && aliases[network]) {
+      return aliases[network];
+    }
+    return network;
+  }
+
+  // Good for going from specific 'testnet3', 'sepolia', etc to generic 'testnet'
+  static getGenericName(network) {
+    if (network === 'mainnet') return 'livenet';
+    const isTestnet = !!Object.keys(Constants.NETWORK_ALIASES).find(key => Constants.NETWORK_ALIASES[key].testnet === network);
+    if (isTestnet) return 'testnet';
+    return network;
+  }
+
+  static getNetworkType(network) {
+    if (['mainnet', 'livenet'].includes(network)) {
+      return 'mainnet';
+    }
+    if (network === 'regtest') {
+       return 'regtest';
+    }
+    return 'testnet';
+  }
 }
-module.exports = Utils;

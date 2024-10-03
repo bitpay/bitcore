@@ -15,6 +15,7 @@ export interface ITransaction {
   fee: number;
   value: number;
   wallets: ObjectID[];
+  replacedByTxid?: string;
 }
 
 export abstract class BaseTransaction<T extends ITransaction> extends BaseModel<T> {

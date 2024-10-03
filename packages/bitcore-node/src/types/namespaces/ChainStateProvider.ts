@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { ObjectId } from 'mongodb';
 import { MongoBound } from '../../models/base';
-import { IBlock } from '../../models/baseBlock';
 import { IBtcBlock } from '../../models/block';
 import { ICoin } from '../../models/coin';
 import { ITransaction } from '../../models/transaction';
 import { IWallet } from '../../models/wallet';
 import { StreamingFindOptions } from '../../services/storage';
+import { IBlock } from '../../types/Block';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
@@ -42,6 +42,15 @@ export type GetBlockParams = ChainNetwork & {
   args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
 };
 
+export interface ExternalGetBlockResults {
+  block?: number | string;
+  height?: number;
+  startDateBlock?: number;
+  endDateBlock?: number;
+  startBlock: number;
+  endBlock: number;
+}
+
 export type GetBlockBeforeTimeParams = ChainNetwork & {
   time?: Date | string;
 };
@@ -53,9 +62,19 @@ export type StreamBlocksParams = ChainNetwork & {
   req: Request;
   res: Response;
 };
+
+export type FeeMode = 'ECONOMICAL' | 'CONSERVATIVE';
+
 export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
+  mode?: FeeMode;
+  txType?: number | string;
 };
+
+export type GetEstimatePriorityFeeParams = ChainNetwork & {
+  percentile?: number;
+};
+
 export type BroadcastTransactionParams = ChainNetwork & {
   rawTx: string | Array<string>;
 };
@@ -154,6 +173,7 @@ export interface IChainStateService {
   getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null>;
   streamBlocks(params: StreamBlocksParams): any;
   getFee(params: GetEstimateSmartFeeParams): any;
+  getPriorityFee?(params: GetEstimatePriorityFeeParams): any;
   broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
   createWallet(params: CreateWalletParams): Promise<IWallet>;
   getWallet(params: GetWalletParams): Promise<IWallet | null>;
@@ -182,5 +202,7 @@ export interface IChainStateService {
 }
 
 export interface ChainStateServices {
-  [key: string]: IChainStateService;
+  [chain: string]: {
+    [network: string]: IChainStateService;
+  }
 }

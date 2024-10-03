@@ -2,6 +2,7 @@ module.exports = {
   basePath: '/bws/api',
   disableLogs: false,
   port: 3232,
+  allowRegtest: false,
 
   // Uncomment to make BWS a forking server
   // cluster: true,
@@ -21,7 +22,7 @@ module.exports = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
+      uri: 'mongodb://0.0.0.0:27017/bws',
       dbname: 'bws'
     }
   },
@@ -39,30 +40,57 @@ module.exports = {
       testnet: {
         url: 'https://api.bitcore.io',
         regtestEnabled: false
-      }
+      },
+      testnet3: {
+        url: 'https://api.bitcore.io'
+      },
+      signet: {
+        url: 'https://api.bitcore.io'
+      },
     },
     bch: {
       livenet: {
         url: 'https://api.bitcore.io'
       },
       testnet: {
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
+      },
+      testnet3:{
         url: 'https://api.bitcore.io'
-      }
+      },
+      testnet4: {
+        url: 'https://api.bitcore.io'
+      },
+      scalenet: {
+        url: 'https://api.bitcore.io'
+      },
+      chipnet: {
+        url: 'https://api.bitcore.io'
+      },
     },
     eth: {
       livenet: {
         url: 'https://api-eth.bitcore.io'
       },
       testnet: {
+        url: 'https://api-eth.bitcore.io',
+        regtestEnabled: false
+      },
+      sepolia: {
         url: 'https://api-eth.bitcore.io'
-      }
+      },
+      holesky: {
+        url: 'https://api-eth.bitcore.io'
+      },
     },
     xrp: {
       livenet: {
         url: 'https://api-xrp.bitcore.io'
       },
       testnet: {
-        url: 'https://api-xrp.bitcore.io'
+        url: 'https://api-xrp.bitcore.io',
+        regtestEnabled: false
       }
     },
     doge: {
@@ -70,7 +98,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     ltc: {
@@ -78,7 +107,8 @@ module.exports = {
         url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io'
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false
       }
     },
     socketApiKey: 'socketApiKey'
@@ -99,10 +129,158 @@ module.exports = {
     maintenanceMode: false
   },
   services: {
-    buyCrypto: { simplexPromotion202002: false }
+    buyCrypto: {
+      disabled: false,
+      banxa: {
+        disabled: false,
+        removed: false
+      },
+      moonpay: {
+        disabled: false,
+        removed: false
+      },
+      ramp: {
+        disabled: false,
+        removed: false
+      },
+      sardine: {
+        disabled: false,
+        removed: false
+      },
+      simplex: {
+        disabled: false,
+        removed: false
+      },
+      transak: {
+        disabled: false,
+        removed: false
+      },
+      wyre: {
+        disabled: false,
+        removed: false
+      }
+    },
+    sellCrypto: {
+      disabled: false,
+      moonpay: {
+        disabled: false,
+        removed: false
+      }
+    },
+    swapCrypto: {
+      disabled: false,
+      changelly: {
+        disabled: false,
+        removed: false
+      },
+      thorswap: {
+        disabled: false,
+        removed: false,
+        // config: {
+        //   affiliateAddress: 'thorname_here',
+        //   affiliateBasisPoints: 'type_number_fee_here'
+        // }
+      }
+    },
   },
   suspendedChains: [],
   staticRoot: '/tmp/static'
+  // banxa : {
+  //   sandbox: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_sandbox_api_key_here',
+  //     secretKey: 'banxa_sandbox_secret_key_here',
+  //   },
+  //   production: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_production_api_key_here',
+  //     secretKey: 'banxa_production_secret_key_here',
+  //   },
+  //   sandboxWeb: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_sandbox_web_api_key_here',
+  //     secretKey: 'banxa_sandbox_web_secret_key_here',
+  //   },
+  //   productionWeb: {
+  //     api: 'https://bitpay.banxa-sandbox.com/api',
+  //     apiKey: 'banxa_production_web_api_key_here',
+  //     secretKey: 'banxa_production_web_secret_key_here',
+  //   },
+  // },
+  // moonpay: {
+  //   sandbox: {
+  //     apiKey: 'moonpay_sandbox_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy-sandbox.moonpay.com',
+  //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
+  //     secretKey: 'moonpay_sandbox_secret_key_here',
+  //   },
+  //   production: {
+  //     apiKey: 'moonpay_production_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy.moonpay.com',
+  //     sellWidgetApi: 'https://sell.moonpay.com',
+  //     secretKey: 'moonpay_production_secret_key_here',
+  //   },
+  //   sandboxWeb: {
+  //     apiKey: 'moonpay_sandbox_web_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy-sandbox.moonpay.com',
+  //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
+  //     secretKey: 'moonpay_sandbox_web_secret_key_here',
+  //   },
+  //   productionWeb: {
+  //     apiKey: 'moonpay_production_web_api_key_here',
+  //     api: 'https://api.moonpay.com',
+  //     widgetApi: 'https://buy.moonpay.com',
+  //     sellWidgetApi: 'https://sell.moonpay.com',
+  //     secretKey: 'moonpay_production_web_secret_key_here',
+  //   }
+  // },
+  // ramp: {
+  //   sandbox: {
+  //     apiKey: 'ramp_sandbox_api_key_here',
+  //     api: 'https://api.demo.ramp.network/api',
+  //     widgetApi: 'https://app.demo.ramp.network/',
+  //   },
+  //   production: {
+  //     apiKey: 'ramp_production_api_key_here',
+  //     api: 'https://api.ramp.network/api',
+  //     widgetApi: 'https://app.ramp.network',
+  //   },
+  //   sandboxWeb: {
+  //     apiKey: 'ramp_sandbox_web_api_key_here',
+  //     api: 'https://api.demo.ramp.network/api',
+  //     widgetApi: 'https://app.demo.ramp.network/',
+  //   },
+  //   productionWeb: {
+  //     apiKey: 'ramp_production_web_api_key_here',
+  //     api: 'https://api.ramp.network/api',
+  //     widgetApi: 'https://app.ramp.network',
+  //   }
+  // },
+  // sardine: {
+  //   sandbox: {
+  //     api: 'https://api.sandbox.sardine.ai',
+  //     secretKey: 'sardine_sandbox_secret_key_here',
+  //     clientId: 'sardine_sandbox_client_id_here',
+  //   },
+  //   production: {
+  //     api: 'https://api.sardine.ai/v1',
+  //     secretKey: 'sardine_production_secret_key_here',
+  //     clientId: 'sardine_production_client_id_here',
+  //   },
+  //   sandboxWeb: {
+  //     api: 'https://api.sandbox.sardine.ai',
+  //     secretKey: 'sardine_sandbox_web_secret_key_here',
+  //     clientId: 'sardine_sandbox_web_client_id_here',
+  //   },
+  //   productionWeb: {
+  //     api: 'https://api.sardine.ai/v1',
+  //     secretKey: 'sardine_production_web_secret_key_here',
+  //     clientId: 'sardine_production_web_client_id_here',
+  //   }
+  // },
   // simplex: {
   //   sandbox: {
   //     apiKey: 'simplex_sandbox_api_key_here',
@@ -113,6 +291,56 @@ module.exports = {
   //     apiKey: 'simplex_production_api_key_here',
   //     api: 'https://backend-wallet-api.simplexcc.com',
   //     appProviderId: 'simplex_provider_id_here'
+  //   },
+  //   sandboxWeb: {
+  //     apiKey: 'simplex_sandbox_web_api_key_here',
+  //     api: 'https://sandbox.test-simplexcc.com',
+  //     appProviderId: 'simplex_web_provider_id_here'
+  //   },
+  //   productionWeb: {
+  //     apiKey: 'simplex_production_web_api_key_here',
+  //     api: 'https://backend-wallet-api.simplexcc.com',
+  //     appProviderId: 'simplex_web_provider_id_here'
+  //   }
+  // },
+  // thorswap : {
+  //   sandbox: {
+  //     api: 'https://dev-api.thorswap.net',
+  //     apiKey: 'thorswap_sandbox_api_key_here',
+  //     secretKey: 'thorswap_sandbox_secret_key_here',
+  //     referer: 'thorswap_sandbox_referer_here'
+  //   },
+  //   production: {
+  //     api: 'https://api.thorswap.net',
+  //     apiKey: 'thorswap_production_api_key_here',
+  //     secretKey: 'thorswap_production_secret_key_here',
+  //     referer: 'thorswap_production_referer_here'
+  //   },
+  // },
+  // transak : {
+  //   sandbox: {
+  //     api: 'https://api-stg.transak.com',
+  //     widgetApi: 'https://global-stg.transak.com',
+  //     apiKey: 'transak_sandbox_api_key_here',
+  //     secretKey: 'transak_sandbox_secret_key_here',
+  //   },
+  //   production: {
+  //     api: 'https://api.transak.com',
+  //     widgetApi: 'https://global.transak.com',
+  //     apiKey: 'transak_production_api_key_here',
+  //     secretKey: 'transak_production_secret_key_here',
+  //   },
+  //   sandboxWeb: {
+  //     api: 'https://api-stg.transak.com',
+  //     widgetApi: 'https://global-stg.transak.com',
+  //     apiKey: 'transak_sandbox_web_api_key_here',
+  //     secretKey: 'transak_sandbox_web_secret_key_here',
+  //   },
+  //   productionWeb: {
+  //     api: 'https://api.transak.com',
+  //     widgetApi: 'https://global.transak.com',
+  //     apiKey: 'transak_production_web_api_key_here',
+  //     secretKey: 'transak_production_web_secret_key_here',
   //   }
   // },
   // wyre: {
@@ -132,14 +360,28 @@ module.exports = {
   //   }
   // },
   // changelly: {
-  //   apiKey: 'changelly_api_key',
-  //   secret: 'changelly_secret',
-  //   api: 'https://api.changelly.com'
+  //   v1: {
+  //     apiKey: 'changelly_api_key',
+  //     secret: 'changelly_secret',
+  //     api: 'https://api.changelly.com'
+  //   },
+  //   v2: {
+  //     secret: 'changelly_secret_v2',
+  //     api: 'https://api.changelly.com/v2'
+  //   }
   // },
   // oneInch: {
-  //   api: 'https://api.1inch.exchange',
+  //   api: 'https://api.1inch.dev/swap',
+  //   apiKey: 'one_inch_api_key',
   //   referrerAddress: 'one_inch_referrer_address', // ETH
   //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
+  // },
+  // coinGecko: {
+  //   api: 'https://api.coingecko.com/api',
+  // },
+  // moralis: {
+  //   apiKey: 'moralis_api_key_here',
+  //   whitelist: []
   // },
   // To use email notifications uncomment this:
   // emailOpts: {
@@ -148,6 +390,7 @@ module.exports = {
   //  ignoreTLS: true,
   //  subjectPrefix: '[Wallet Service]',
   //  from: 'wallet-service@bitcore.io',
+  //  // Note: Prod templates are in a the copay-emails repo (https://github.com/bitpay/copay-emails)
   //  templatePath: 'templates',
   //  defaultLanguage: 'en',
   //  defaultUnit: 'btc',

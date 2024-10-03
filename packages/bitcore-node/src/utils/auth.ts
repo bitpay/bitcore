@@ -39,7 +39,7 @@ export type AuthenticatedRequest = {
 
 const authenticateMiddleware: RequestHandler = async (req: Request, res: Response, next: any) => {
   const { chain, network, pubKey } = (req.params as unknown) as SignedApiRequest;
-  logger.debug('Authenticating request with pubKey: ', pubKey);
+  logger.debug('Authenticating request with pubKey: %o', pubKey);
   let wallet;
   try {
     wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });

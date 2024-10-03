@@ -17,6 +17,8 @@ var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'bina
 var dataJson = fs.readFileSync('test/data/blk86756-testnet.json').toString();
 var data = require('../data/blk86756-testnet');
 var dataBlocks = require('../data/bitcoind/blocks');
+var cashTokenBlockBuffer = fs.readFileSync('test/data/chipnet-121957.dat');
+var cashTokenBlockJson = fs.readFileSync('test/data/chipnet-121957.json').toString();
 
 describe('Block', function() {
   var blockhex;
@@ -219,6 +221,15 @@ describe('Block', function() {
       var obj = block.toObject();
       var block2 = Block.fromObject(obj);
       block2.toObject().should.deep.equal(block.toObject());
+    });
+
+    it('roundtrips with CashTokens', function() {
+      var block = Block.fromBuffer(cashTokenBlockBuffer);
+      var obj = block.toObject();
+      var block2 = Block.fromObject(obj);
+      block2.toObject().should.deep.equal(block.toObject());
+      var expected = Block.fromObject(JSON.parse(cashTokenBlockJson));
+      expected.toBuffer().should.deep.equal(block.toBuffer());
     });
 
   });

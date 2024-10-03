@@ -1,17 +1,19 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { IChain, INotificationData } from '..';
+import { WalletService } from 'src/lib/server';
+import { IChain } from '..';
+import config from '../../../config';
+import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { TxProposal } from '../../model';
+import { IWallet, TxProposal } from '../../model';
+
 const $ = require('preconditions').singleton();
-const Common = require('../../common');
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
-const config = require('../../../config');
 
 export class BtcChain implements IChain {
   protected sizeEstimationMargin: number;
@@ -208,6 +210,24 @@ export class BtcChain implements IChain {
     }
   }
 
+  checkScriptOutput(output) {
+    if (output.script) {
+      if (typeof output.script !== 'string') {
+        return Errors.SCRIPT_TYPE;
+      }
+
+      // check OP_RETURN
+      if (!output.script.startsWith('6a')) {
+        return Errors.SCRIPT_OP_RETURN;
+      }
+
+      // check OP_RETURN amount
+      if (output.script.startsWith('6a') && output.amount != 0) {
+        return Errors.SCRIPT_OP_RETURN_AMOUNT;
+      }
+    }
+  }
+
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleInput(txp, opts = { conservativeEstimation: false }) {
     const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_DATA
@@ -222,6 +242,9 @@ export class BtcChain implements IChain {
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 69 + inputSafetyMargin; // vsize
 
+      case Constants.SCRIPT_TYPES.P2TR:
+        return 58 + inputSafetyMargin; // vsize
+
       case Constants.SCRIPT_TYPES.P2WSH:
         return Math.ceil(32 + 4 + 1 + (5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4) + inputSafetyMargin; // vsize
 
@@ -229,7 +252,7 @@ export class BtcChain implements IChain {
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
 
       default:
-        logger.warn('Unknown address type at getEstimatedSizeForSingleInput:', txp.addressType);
+        logger.warn('Unknown address type at getEstimatedSizeForSingleInput: %o', txp.addressType);
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE + inputSafetyMargin;
     }
   }
@@ -262,7 +285,7 @@ export class BtcChain implements IChain {
         break;
       default:
         scriptSize = 34;
-        // logger.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
+        // logger.warn('Unknown address type at getEstimatedSizeForSingleOutput: %o', addressType);
         break;
     }
     return scriptSize + 8 + 1; // value + script length
@@ -336,7 +359,9 @@ export class BtcChain implements IChain {
       // set nLockTime (only txp.version>=4)
       if (txp.lockUntilBlockHeight) t.lockUntilBlockHeight(txp.lockUntilBlockHeight);
     }
-
+    if (txp.multiTx) {
+      throw Errors.MULTI_TX_UNSUPPORTED;
+    }
     /*
      * txp.inputs clean txp.input
      * removes possible nSequence number (BIP68)
@@ -356,18 +381,19 @@ export class BtcChain implements IChain {
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(inputs, i => {
+        for (const i of inputs) {
           $.checkState(i.publicKeys, 'Failed state: Inputs should include public keys at <getBitcoreTx()>');
           t.from(i, i.publicKeys, txp.requiredSignatures);
-        });
+        }
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
       case Constants.SCRIPT_TYPES.P2PKH:
+      case Constants.SCRIPT_TYPES.P2TR:
         t.from(inputs);
         break;
     }
 
-    _.each(txp.outputs, o => {
+    for (const o of txp.outputs || []) {
       $.checkState(
         o.script || o.toAddress,
         'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
@@ -382,7 +408,7 @@ export class BtcChain implements IChain {
       } else {
         t.to(o.toAddress, o.amount);
       }
-    });
+    }
 
     t.fee(txp.fee);
 
@@ -448,8 +474,18 @@ export class BtcChain implements IChain {
     const serializationOpts = {
       disableIsFullySigned: true,
       disableSmallFees: true,
-      disableLargeFees: true
+      disableLargeFees: true,
+      disableDustOutputs: false
     };
+
+    if (txp.outputs && Array.isArray(txp.outputs)) {
+      for (let output of txp.outputs) {
+        if (output.script && output.script.startsWith('6a')) { // check OP_RETURN
+          serializationOpts.disableDustOutputs = true;
+        }
+      }
+    }
+
     if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
 
     try {
@@ -459,7 +495,7 @@ export class BtcChain implements IChain {
         txp.fee = bitcoreTx.getFee();
       }
     } catch (ex) {
-      logger.warn('Error building Bitcore transaction', ex);
+      logger.warn('Error building Bitcore transaction: %o', ex);
       return ex;
     }
 
@@ -695,7 +731,7 @@ export class BtcChain implements IChain {
 
         if (netTotal >= fullTxpAmount) {
           const changeAmount = Math.round(total - fullTxpAmount - fee);
-          logger.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
+          logger.debug('Tx change: %o', Utils.formatAmountInBtc(changeAmount));
 
           const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
@@ -723,7 +759,7 @@ export class BtcChain implements IChain {
         selected = [];
         if (!_.isEmpty(bigInputs)) {
           const input = _.head(bigInputs);
-          logger.debug('Using big input: ', Utils.formatUtxos(input));
+          logger.debug('Using big input: %o', Utils.formatUtxos(input));
           total = input.satoshis;
           fee = Math.round(baseTxpFee + feePerInput);
           netTotal = total - fee;
@@ -860,7 +896,7 @@ export class BtcChain implements IChain {
                   Utils.formatAmountInBtc(change)
               );
             } else {
-              logger.warn('Error building transaction', err);
+              logger.warn('Error building transaction: %o', err);
             }
 
             return cb(err);
@@ -891,7 +927,7 @@ export class BtcChain implements IChain {
     return true;
   }
 
-  isUTXOCoin() {
+  isUTXOChain() {
     return true;
   }
   isSingleAddress() {
@@ -909,20 +945,22 @@ export class BtcChain implements IChain {
     let i = 0;
     const x = new this.bitcoreLib.HDPublicKey(xpub);
 
-    _.each(signatures, signatureHex => {
+    for (const signatureHex of signatures) {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
+        // tslint:disable-next-line:no-bitwise
+        const SIGHASH_TYPE = this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID;
         const s = {
           inputIndex: i,
           signature,
-          sigtype: this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
+          sigtype: SIGHASH_TYPE,
           publicKey: pub
         };
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
       } catch (e) {}
-    });
+    }
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
@@ -938,10 +976,19 @@ export class BtcChain implements IChain {
     } catch (ex) {
       throw Errors.INVALID_ADDRESS;
     }
-    if (addr.network.toString() != wallet.network) {
+    if (!this._isCorrectNetwork(wallet, addr)) {
       throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
     return;
+  }
+
+  protected _isCorrectNetwork(wallet, addr) {
+    const addrNetwork = Utils.getNetworkName(wallet.chain, addr.network.toString())
+    const walNetwork = wallet.network;
+    if (Utils.getNetworkType(addrNetwork) === 'testnet' && walNetwork === 'regtest') {
+      return !!config.allowRegtest;
+    }
+    return addrNetwork === walNetwork;
   }
 
   // Push notification handling
@@ -961,5 +1008,9 @@ export class BtcChain implements IChain {
   // Push notification handling
   onTx(tx) {
     return null;
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return cb(null, 0);
   }
 }

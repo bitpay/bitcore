@@ -1,5 +1,5 @@
+import { CryptoRpc } from 'crypto-rpc';
 import { EventEmitter } from 'events';
-import { RippleAPI } from 'ripple-lib';
 import { Transform } from 'stream';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
@@ -8,7 +8,7 @@ import { CacheStorage } from '../../../models/cache';
 import { StateStorage } from '../../../models/state';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
 import { BaseP2PWorker } from '../../../services/p2p';
-import { wait } from '../../../utils/wait';
+import { wait } from '../../../utils';
 import { RippleStateProvider } from '../api/csp';
 import { XrpBlockModel, XrpBlockStorage } from '../models/block';
 import { XrpTransactionStorage } from '../models/transaction';
@@ -26,7 +26,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
   protected invCacheLimits: any;
   public events: EventEmitter;
   public disconnecting: boolean;
-  public client?: RippleAPI;
+  public client?: CryptoRpc;
   public blockModel: XrpBlockModel;
 
   constructor({ chain, network, chainConfig, blockModel = XrpBlockStorage }) {
@@ -73,14 +73,21 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       );
     });
     this.events.on('connected', async () => {
-      this.client!.on('ledger', async () => {
+      this.client.rpc.on('ledgerClosed', async () => {
         this.sync();
       });
+      this.client.asyncRequest('subscribe', { streams: ['ledger'] });
     });
+  }
+
+  async teardownListeners() {
+    this.client.rpc.removeAllListeners('ledgerClosed');
+    await this.client.asyncRequest('unsubscribe', { streams: ['ledger'] });
   }
 
   async disconnect() {
     this.disconnecting = true;
+    await this.teardownListeners();
   }
 
   async handleReconnects() {
@@ -93,7 +100,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       try {
         try {
           this.client = await this.provider.getClient(this.network);
-          connected = this.client.isConnected();
+          connected = this.client.rpc.isConnected();
         } catch (e) {
           connected = false;
         }
@@ -135,13 +142,13 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
   }
 
   async syncWallets() {
-    return new Promise(async resolve => {
+    return new Promise<void>(async resolve => {
       try {
         const { chain, network } = this;
 
         // After wallet syncs, start block sync from the current height
         const client = await this.provider.getClient(this.network);
-        let chainBestBlock = await client.getLedgerVersion();
+        let { ledger: chainBestBlock } = await client.getBlock({ index: 'latest' });
         this.chainConfig.startHeight = chainBestBlock;
 
         const count = await WalletAddressStorage.collection.countDocuments({ chain, network });
@@ -183,7 +190,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
                 const blockCoins = new Array<IXrpCoin>();
 
                 for (const tx of txs) {
-                  const bitcoreTx = this.provider.transform(tx, network) as IXrpTransaction;
+                  const bitcoreTx = this.provider.transformAccountTx(tx, network);
                   const bitcoreCoins = this.provider.transformToCoins(tx, network);
                   const { transaction, coins } = await this.provider.tag(chain, network, bitcoreTx, bitcoreCoins);
                   blockTxs.push(transaction);
@@ -219,62 +226,37 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
             );
             resolve();
           });
-      } catch (e) {
-        logger.error(e);
+      } catch (e: any) {
+        logger.error('%o', e);
       }
-    });
+    })
+    .finally(() => {
+      if (this.disconnecting) {
+        this.client.rpc.disconnect();
+      }
+    })
   }
 
   async syncBlocks() {
     const { chain, network } = this;
     const client = await this.provider.getClient(this.network);
     let ourBestBlock = await this.provider.getLocalTip({ chain, network });
-    let chainBestBlock = await client.getLedgerVersion();
+    const serverInfo = await client.getServerInfo();
+    const [earliestLedgerIdx, latestLedgerIdx] = serverInfo.complete_ledgers.split('-');
+    let chainBestBlock = Number(latestLedgerIdx);
 
     const startTime = Date.now();
     let lastLog = Date.now();
 
-    if (!ourBestBlock || this.chainConfig.walletOnlySync) {
-      let configuredStart = this.chainConfig.startHeight;
-      const shouldResume = !configuredStart || ourBestBlock.height > configuredStart;
-      if (ourBestBlock && shouldResume) {
-        configuredStart = ourBestBlock.height;
-      }
-      if (configuredStart === undefined) {
-        configuredStart = chainBestBlock - 1;
-      }
-      const defaultBestBlock = { height: configuredStart } as IXrpBlock;
-      logger.info(`Starting XRP Sync @ ${configuredStart}`);
-      ourBestBlock = defaultBestBlock;
-    }
+    const configuredStart = Math.max(this.chainConfig.startHeight || 0, ourBestBlock?.height || 0, earliestLedgerIdx || 0);
+    logger.info(`Starting XRP Sync @ ${configuredStart}`);
+    ourBestBlock = { height: configuredStart } as IXrpBlock;
+    
     const startHeight = ourBestBlock.height;
     let currentHeight = startHeight;
-    while (ourBestBlock.height < chainBestBlock) {
+    while (ourBestBlock.height < chainBestBlock && !this.disconnecting) {
       currentHeight = ourBestBlock.height + 1;
-      let block;
-      try {
-        block = await client.getLedger({
-          ledgerVersion: currentHeight,
-          includeTransactions: true,
-          includeAllData: true
-        });
-      } catch (e) {
-        // Patch fix for some transactions not parsing.
-        block = await client.getLedger({
-          ledgerVersion: currentHeight,
-          includeTransactions: true,
-          includeAllData: false
-        });
-        block.transactions = [];
-        for (let txid of block.transactionHashes as string[]) {
-          try {
-            const tx = await client.getTransaction(txid);
-            block.transactions.push(tx);
-          } catch (e) {
-            logger.warn(`Unparseable transaction. Skipping: Block ${currentHeight} Txid: ${txid}`, e);
-          }
-        }
-      }
+      const { ledger: block } = await client.getBlock({ index: currentHeight });
       if (!block) {
         await wait(2000);
         continue;
@@ -283,10 +265,10 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       const coinsAndTxs = (block.transactions || [])
         .map((tx: any) => ({
           tx: this.provider.transform(tx, network, transformedBlock),
-          coins: this.provider.transformToCoins(tx, network)
+          coins: this.provider.transformToCoins(tx, network, transformedBlock)
         }))
         .filter(data => {
-          return 'txid' in data.tx && data.tx.txid != null;
+          return !!data.tx.txid;
         }) as Array<{ tx: IXrpTransaction; coins: Array<IXrpCoin> }>;
       const blockTxs = new Array<IXrpTransaction>();
       const blockCoins = new Array<IXrpCoin>();
@@ -313,8 +295,12 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       lastLog = Date.now();
       ourBestBlock = await this.provider.getLocalTip({ chain, network });
       if (ourBestBlock.height === chainBestBlock) {
-        chainBestBlock = await client.getLedgerVersion();
+        ({ ledger: chainBestBlock } = await client.getBlock({ index: 'latest' }));
       }
+    }
+
+    if (this.disconnecting) {
+      this.client.rpc.disconnect();
     }
   }
 
@@ -342,8 +328,8 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       );
       this.events.emit('SYNCDONE');
       return true;
-    } catch (e) {
-      logger.error(e);
+    } catch (e: any) {
+      logger.error('%o', e);
       this.syncing = false;
       await wait(2000);
       return this.sync();

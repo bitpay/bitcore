@@ -1,5 +1,5 @@
 import InfiniteScroll from 'react-infinite-scroll-component';
-import {useEffect, useState, memo} from 'react';
+import {useEffect, useState, memo, FC} from 'react';
 
 import {TransactionEth} from '../utilities/models';
 
@@ -58,14 +58,14 @@ const ToUiFriendlyEthCoin = (coin: TransactionEth, blockTipHeight: number) => {
 
 const ProcessData = (data: any, blockTipHeight: number) => {
   const txs: any = [];
-  data.map((tx: any) => {
+  for (const tx of data) {
     const {mintHeight, mintTxid, value, spentHeight, spentTxid} = tx;
     if (spentHeight >= -1) {
       txs.push({
         height: spentHeight,
         spentTxid,
         value,
-        confirmations: blockTipHeight - spentHeight + 1,
+        confirmations: spentHeight > -1 ? (blockTipHeight - spentHeight + 1) : spentHeight,
       });
     }
     if (mintHeight >= -1) {
@@ -73,28 +73,23 @@ const ProcessData = (data: any, blockTipHeight: number) => {
         height: mintHeight,
         mintTxid,
         value,
-        confirmations: blockTipHeight - mintHeight + 1,
+        confirmations: mintHeight > -1 ? (blockTipHeight - mintHeight + 1) : mintHeight,
       });
     }
-    return tx;
-  });
+  }
 
   return txs;
 };
 
-const CoinList = ({
-  txs,
-  currency,
-  network,
-  tip,
-  transactionsLength,
-}: {
+interface CoinListProps {
   txs: any;
   currency: string;
   network: string;
   tip: any;
   transactionsLength: any;
-}) => {
+}
+
+const CoinList: FC<CoinListProps> = ({txs, currency, network, tip, transactionsLength}) => {
   const [limit, setLimit] = useState(LIMIT);
   const [chunkSize, setChunkSize] = useState(CHUNK_SIZE);
   const [currentOrder, setCurrentOrder] = useState('mostRecent');
@@ -109,7 +104,6 @@ const CoinList = ({
 
   useEffect(() => {
     setIsLoading(true);
-    transactionsLength(txs.length);
 
     let _txs;
     if (currency === 'ETH') {
@@ -117,6 +111,7 @@ const CoinList = ({
     } else {
       _txs = ProcessData(txs, height);
     }
+    transactionsLength(_txs.length);
     _txs = _txs.sort((a: any, b: any) => b.height - a.height);
     setTxsCopy(_txs);
     const _transactions = _txs.slice(0, limit);

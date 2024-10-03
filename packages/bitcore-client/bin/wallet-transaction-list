@@ -1,77 +1,33 @@
 #!/usr/bin/env node
 
-const { Transform } = require('stream');
-const fs = require('fs');
-const Path = require('path');
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet name')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--startDate [startDate]')
-  .option('--endDate [endDate]')
-  .option('--startBlock [startBlock]')
-  .option('--endBlock [endBlock]')
-  .option('--includeMempool')
-  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
-  .option('--tokenContractAddress [tokenContractAddress]', 'optional - address of the token to query')
-  .option('--token [token]', 'optional - name of the token to query')
-  .option('--outFile [outFile]', 'optional - file to write transactions output to')
+  .requiredOption('--name <name>',        'REQUIRED - Wallet name')
+  .option('--startDate <startDate>',      'Start date for the query')
+  .option('--endDate <endDate>',          'End date for the query')
+  .option('--startBlock <startBlock>',    'Start block for the query')
+  .option('--endBlock <endBlock>',        'End block for the query')
+  .option('--includeMempool',             'Include unconfirmed transactions')
+  .option('--token <tokenName>',          'Get token transactions by the token name')
+  .option('--storageType <storageType>',  'Name of the database to use (default Level)')
+  .option('--path <path>',                'Custom wallet storage path')
   .parse(process.argv);
 
-const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token, tokenContractAddress, outFile } = program;
+let wallet;
 
 const main = async () => {
+  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token: tokenName } = program.opts();
   try {
-    let firstWrite = true;
-    const wallet = await Wallet.loadWallet({ name, path, storageType });
-    const txTransform = new Transform({
-      objectMode: true,
-      transform: function(txBuffer, encoding, next) {
-        try {
-          let tx = txBuffer.toString().trim();
-          tx = JSON.stringify(JSON.parse(tx), null, 2);
-          writeOutput((firstWrite ? '' : ',\n') + tx);
-          firstWrite = false;
-          next()
-        } catch (e) {
-          next(e);
-        }
-      },
-      final: function(done) {
-        writeOutput(']');
-        done();
-      }
-    });
-
-    writeOutput('[', true);
-    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, token, tokenContractAddress }).pipe(txTransform);
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, tokenName }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
   }
 };
 
-const writeOutput = (input = '', initial = false) => {
-  if (typeof input !== 'string') {
-    input = input.toString();
-  }
-  try {
-    input = JSON.stringify(JSON.parse(input), null, 2);
-  } catch {
-    input = input;
-  }
-
-  if (outFile) {
-    if (initial) {
-      fs.writeFileSync(Path.join(__dirname, outFile), input);
-    } else {
-      fs.appendFileSync(Path.join(__dirname, outFile), input);
-    }
-  } else {
-    console.log(input);
-  }
-};
-
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

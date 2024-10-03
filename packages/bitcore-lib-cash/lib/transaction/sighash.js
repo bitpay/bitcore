@@ -283,7 +283,7 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, satos
  * @param {Script} subscript
  * @param {satoshisBN} input's amount
  * @param {flags} verification flags
- * @param {signingMethod} signingMethod "ecdsa" or "schnorr" to sign a tx
+ * @param {signingMethod} signingMethod 'ecdsa' or 'schnorr' to sign a tx
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, subscript, satoshisBN, flags, signingMethod) {
@@ -291,11 +291,11 @@ function verify(transaction, signature, publicKey, inputIndex, subscript, satosh
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
   var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript, satoshisBN, flags);
   
-  signingMethod = signingMethod || "ecdsa";
+  signingMethod = signingMethod || 'ecdsa';
 
-  if (signingMethod === "schnorr") {
+  if (signingMethod === 'schnorr') {
     return Schnorr.verify(hashbuf, signature, publicKey, 'little')
-  } else if(signingMethod === "ecdsa") {
+  } else if(signingMethod === 'ecdsa') {
     return ECDSA.verify(hashbuf, signature, publicKey, 'little');
   }
 }

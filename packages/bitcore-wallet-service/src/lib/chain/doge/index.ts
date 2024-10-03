@@ -2,16 +2,16 @@ import * as async from 'async';
 import { BitcoreLibDoge } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
+import { Common } from '../../common';
+import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { TxProposal } from '../../model';
 import { BtcChain } from '../btc';
-const $ = require('preconditions').singleton();
-import { ClientError } from '../../errors/clienterror';
-const Common = require('../../common');
+
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
-const Errors = require('../../errors/errordefinitions');
 
 export class DogeChain extends BtcChain implements IChain {
   constructor(private bitcoreLibDoge = BitcoreLibDoge) {
@@ -171,7 +171,7 @@ export class DogeChain extends BtcChain implements IChain {
 
         if (netTotal >= txpAmount) {
           const changeAmount = Math.round(total - txpAmount - fee);
-          logger.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
+          logger.debug('Tx change: %o', Utils.formatAmountInBtc(changeAmount));
 
           const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLibDoge.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
@@ -199,7 +199,7 @@ export class DogeChain extends BtcChain implements IChain {
         selected = [];
         if (!_.isEmpty(bigInputs)) {
           const input = _.head(bigInputs);
-          logger.debug('Using big input: ', Utils.formatUtxos(input));
+          logger.debug('Using big input: %o', Utils.formatUtxos(input));
           total = input.satoshis;
           fee = Math.round(baseTxpFee + feePerInput);
           fee = Math.max(fee, this.bitcoreLibDoge.Transaction.DUST_AMOUNT);
@@ -316,7 +316,7 @@ export class DogeChain extends BtcChain implements IChain {
                 Utils.formatAmountInBtc(change)
             );
           } else {
-            logger.warn('Error building transaction', err);
+            logger.warn('Error building transaction: %o', err);
           }
 
           return cb(err);

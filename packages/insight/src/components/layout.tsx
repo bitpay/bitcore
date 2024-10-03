@@ -3,7 +3,7 @@ import styled, {useTheme} from 'styled-components';
 import Search from './search';
 import {device} from '../utilities/constants';
 import {MainTitle} from '../assets/styles/titles';
-import {ReactNode, useState} from 'react';
+import {ReactNode, useState, memo} from 'react';
 import Footer from './footer';
 import PlusBackgroundDark from '../assets/images/plus-dark-background.svg';
 import PlusBackgroundLight from '../assets/images/plus-light-background.svg';
@@ -84,6 +84,11 @@ const Layout = ({children}: {children?: ReactNode}) => {
     return location.pathname === '/';
   };
 
+  const isTestnet = () => {
+    const network = location.pathname.split('/')[2]?.toLowerCase();
+    return network && network !== 'mainnet';
+  };
+
   const searchAnime = {
     initial: {
       opacity: 0,
@@ -142,6 +147,15 @@ const Layout = ({children}: {children?: ReactNode}) => {
                 </motion.div>
               )}
             </AnimatePresence>
+            <AnimatePresence>
+              {isTestnet() && (
+                <Info
+                  message={'This is a test network. Testnet currencies have no real-world value.'}
+                  type={'info'}
+                  textAlign={'center'}
+                />
+              )}
+            </AnimatePresence>
             {children}
           </BodyWrapperContent>
         </BodyWrapper>
@@ -153,4 +167,4 @@ const Layout = ({children}: {children?: ReactNode}) => {
     </div>
   );
 };
-export default Layout;
+export default memo(Layout);

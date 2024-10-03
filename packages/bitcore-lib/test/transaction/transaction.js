@@ -2,25 +2,26 @@
 
 /* jshint unused: false */
 /* jshint latedef: false */
-var should = require('chai').should();
-var expect = require('chai').expect;
-var _ = require('lodash');
-var sinon = require('sinon');
+const should = require('chai').should();
+const expect = require('chai').expect;
+const _ = require('lodash');
+const sinon = require('sinon');
 
-var bitcore = require('../..');
-var BN = bitcore.crypto.BN;
-var Transaction = bitcore.Transaction;
-var Input = bitcore.Transaction.Input;
-var Output = bitcore.Transaction.Output;
-var PrivateKey = bitcore.PrivateKey;
-var Script = bitcore.Script;
-var Interpreter = bitcore.Script.Interpreter;
-var Address = bitcore.Address;
-var Networks = bitcore.Networks;
-var Opcode = bitcore.Opcode;
-var errors = bitcore.errors;
+const bitcore = require('../..');
+const BN = bitcore.crypto.BN;
+const Transaction = bitcore.Transaction;
+const Input = bitcore.Transaction.Input;
+const Output = bitcore.Transaction.Output;
+const PrivateKey = bitcore.PrivateKey;
+const Script = bitcore.Script;
+const Interpreter = bitcore.Script.Interpreter;
+const Address = bitcore.Address;
+const Networks = bitcore.Networks;
+const Opcode = bitcore.Opcode;
+const errors = bitcore.errors;
 
-var transactionVector = require('../data/tx_creation');
+const transactionVector = require('../data/tx_creation');
+const taprootVectors = require('../data/bitcoind/wallet_test_vectors.json');
 
 describe('Transaction', function() {
 
@@ -241,7 +242,7 @@ describe('Transaction', function() {
   describe('transaction creation test vector', function() {
     this.timeout(5000);
     var index = 0;
-    transactionVector.forEach(function(vector) {
+    for (const vector of transactionVector) {
       index++;
       it('case ' + index, function() {
         var i = 0;
@@ -258,7 +259,7 @@ describe('Transaction', function() {
           i += 2;
         }
       });
-    });
+    }
   });
 
   // TODO: Migrate this into a test for inputs
@@ -423,7 +424,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(473500);
+      transaction.outputs[1].satoshis.should.equal(477400);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -510,8 +511,8 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(10000);
     });
     it('fee per kb can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -523,11 +524,11 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(37584);
+      transaction.outputs[1].satoshis.should.equal(37536);
     });
     it('fee per byte (low fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -542,8 +543,8 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.be.within(48001, 49000);
     });
     it('fee per byte (high fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -558,8 +559,8 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.be.within(46002, 48000);
     });
     it('fee per byte can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -574,8 +575,8 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.be.within(24013, 37000);
     });
     it('fee per byte not enough for change', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith100000Satoshis);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -624,6 +625,23 @@ describe('Transaction', function() {
         .from(simpleUtxoWith100000Satoshis)
         .to(toAddress, 1000);
       transaction.getFee().should.equal(99000);
+    });
+    it('should not under calculate fee', function () {
+      var inputs = Array(10).fill(0).map(function (_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith100000Satoshis));
+        utxo.outputIndex = i;
+        return utxo;
+      });
+      const feeRate = 1;
+      var transaction = new Transaction()
+        .from(inputs)
+        .to(toAddress, 950000)
+        .feePerByte(feeRate)
+        .change(changeAddress)
+        .sign(privateKey);
+      // actual fee rate should never be *less* than the given
+      //  fee rate and should only be over by 1% at most.
+      (transaction.getFee() / transaction.size).should.be.within(feeRate * 1, feeRate * 1.01);
     });
   });
 
@@ -1160,7 +1178,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1000);
       transaction.inputAmount.should.equal(100000000);
-      transaction.outputAmount.should.equal(99973500);
+      transaction.outputAmount.should.equal(99977400);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718
@@ -1252,7 +1270,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(10000000);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89973500);
+      tx.outputs[1].satoshis.should.equal(89977400);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
@@ -1325,7 +1343,7 @@ describe('Transaction', function() {
           return original.indexOf(value);
         });
       };
-      fixture.inputs.forEach(function(inputSet) {
+      for (const inputSet of fixture.inputs) {
         it(inputSet.description, function() {
           var tx = new Transaction();
           inputSet.inputs = inputSet.inputs.map(function(input) {
@@ -1342,8 +1360,8 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(inputSet.inputs, tx.inputs).should.deep.equal(inputSet.expected);
         });
-      });
-      fixture.outputs.forEach(function(outputSet) {
+      }
+      for (const outputSet of fixture.outputs) {
         it(outputSet.description, function() {
           var tx = new Transaction();
           outputSet.outputs = outputSet.outputs.map(function(output) {
@@ -1356,7 +1374,7 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
         });
-      });
+      }
 
     });
   });
@@ -1966,6 +1984,181 @@ describe('Transaction', function() {
         tx.toBuffer().toString('hex').should.equal('010000000001035884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4010000006b483045022100d2ca7e63a454c9131dbc9e30e8f7868806f256f6972f0b2465a0473e30d3ac6a0220788ab0e23eb5d2a3e954fcf3fd6815d2b21152bbdacdc8e5563459a5577db76101210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff73d805aff043ff9a0d080a1cafeffbff9553651bcf66452858afc87937606b7e0000000000ffffffffd73e3975c556eab0ba28acfb79fae4e504723a113898a8d1ffc7d0a5a4535182000000001716001488d9931ea73d60eaf7e5671efc0552b912911f2affffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc095de11000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac00024730440220595ff4c358b4f888b6a8f032cd8c9660fbae9e032de2765d8043c30fe58b577a0220498951337c63632777b99f0a3d9df467f104ce62ba87c1d95ac75e932e56ab9401210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e024730440220237ef7a9380ddc38f0d7e6b90d06ec843a4f6be5f68d193678abaa21dc911fe402202e1dcc424f94286f72bf6cb33134971312f5adf2cefa7f71f79e57ab401514f701210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e00000000');
       });
     });
+  });
+
+  describe('Size calculation', function() {
+    it('should correctly calculation the size for a non-segwit tx', function() {
+      const t = new Transaction('0100000001032e38e9c0a84c6046d687d10556dcacc41d275ec55fc00779ac88fdf357a187000000008c493046022100c352d3dd993a981beba4a63ad15c209275ca9470abfcd57da93b58e4eb5dce82022100840792bc1f456062819f15d33ee7055cf7b5ee1af1ebcc6028d9cdb1c3af7748014104f46db5e9d61a9dc27b8d64ad23e7383a4e6ca164593c2527c038c0857eb67ee8e825dca65046b82c9331586c82e0fd1f633f25f87c161bc6f8a630121df2b3d3ffffffff0200e32321000000001976a914c398efa9c392ba6013c5e04ee729755ef7f58b3288ac000fe208010000001976a914948c765a6914d43f2a7ac177da2c2f6b52de3d7c88ac00000000');
+      t.size.should.equal(259);
+      t.vsize.should.equal(259);
+      t.weight.should.equal(1036);
+    });
+
+    it('should correctly calculation the size for a segwit tx', function() {
+      const t = new Transaction('020000000001015f8aa587aba19d10a1f12cd67ea3065a6eafa009ccec529597c2021cbf96e5700000000000fdffffff0280a4bf070000000016001498b78eb72df917e39769e68e9390aed719704dc958963e22010000001600141ebe37ae991227a14811cb674bd7f0f93d96a25f024730440220346178b20de865664c3c82cdf2e6ec5774995dba6854f83d5fd5d5e96f255d2902206e088257e59593365ac33334e7f2d9600d2ea69923146bfea41b0692c1e55f720121039a973d562a9efd1a55b2d12fe966529df75f31e1892cc15892ba956d96dc4d1d71000000');
+      t.size.should.equal(222);
+      t.vsize.should.equal(141);
+      t.weight.should.equal(561);
+    });
+
+    it('should correctly calculation the size for a segwit tx with a mix', function() {
+      const t = new Transaction('02000000000104cdcdb3429edd6c3a35455c167fc94c7f942cbf6f43f72f295eb3221bff1709a41d00000017160014cbb96e3fff893ca4cc5b30b6140ba633e0684ce5ffffffffdcd8ce8c29596a4100f1092e9fd7ca8c76bd45f4ed3e0188d03daa26b4b57e330500000017160014cbb96e3fff893ca4cc5b30b6140ba633e0684ce5ffffffffde5c954662d037991eea5e4d8c40c2903bebc39128454e5cf22512f3aaff9b740100000000ffffffff127bdd6f71479358fde9548f8c8e41427cfc91793c37c595d7eb1f157d739c3d0300000017160014cbb96e3fff893ca4cc5b30b6140ba633e0684ce5ffffffff07b00400000000000017a9148824d50f1e006a193d42b3e8f1b0e11411580a2c872202000000000000225120c4c57de58f78d4cb47b0a9c60e59f1a160914bcd0a405d8f4e1f23955d126dc14691150000000000225120b2a66b5e9dc1fd44ef8313d4970d6233a2c4cc2d6e77e2a749d3f585dd664434ac8a00000000000017a914ea6b832a05c6ca578baa3836f3f25553d41068a587580200000000000017a9148824d50f1e006a193d42b3e8f1b0e11411580a2c87580200000000000017a9148824d50f1e006a193d42b3e8f1b0e11411580a2c87a7c30a000000000017a9148824d50f1e006a193d42b3e8f1b0e11411580a2c8702483045022100bf84301a15e8ff8c54a29bd3c020eaa1c0e709a7e3c15461a9def844797e54f302206e449429f665b9df45444ac49ae978ece2b5183f60757a6b72812b35054c03fb01210323dbb07eb97d1524cb43ae68abdea9816346e5bfe0873d3451bcb31d58be7d7502483045022100805d548559ab39d4bec4b5efdf624a62149fb1e3471a937f22219b4a49583183022039e56d63ad4edb39aca4477e5d59c7ea6f0e9e267116ce6e03e4024a15da907201210323dbb07eb97d1524cb43ae68abdea9816346e5bfe0873d3451bcb31d58be7d7501413179caa8aef69cc3f9afb4b60283c25a4b9184f800206c5cc1761a8f341d2d61d9bb52566e71f760b0d533ba88b0affc4009c44152485a10e32c839348455c42830247304402203b443cfd56c665bf9798d24e536bee9b69b2c9f7d3daab45a31ab3eb94d1cf8a0220585ae75835aba95d4f63141dba75c3f36a3996cd6c2c1167244326fcd345fd5201210323dbb07eb97d1524cb43ae68abdea9816346e5bfe0873d3451bcb31d58be7d7500000000');
+      t.size.should.equal(881);
+      t.vsize.should.equal(587);
+      t.weight.should.equal(2348);
+    });
+  });
+
+  describe('_estimateSize', function() {
+    it('estimate an accurate size - non-segwit', function() {
+      const t = new Transaction();
+      t.from(simpleUtxoWith1BTC);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(privateKey);
+      // 225, 225, 900
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - segwit', function() {
+      const t = new Transaction();
+      t.from(simpleWitnessUtxoWith1BTC);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(privateKey);
+      // 229, 147, 586
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - wrapped segwit', function() {
+      const t = new Transaction();
+      t.from(simpleWrappedWitnessUtxoWith1BTC);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(privateKey);
+      // 252, 170, 678
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2sh 2:2 multisig', function() {
+      const t = new Transaction();
+      t.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 374, 374, 1496
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2sh 2:2 multisig', function() {
+      const t = new Transaction();
+      t.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 374, 374, 1496
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2wsh multisig', function() {
+      const t = new Transaction();
+      t.from(p2wshUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(changeAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 374, 183, 731
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+
+    it('estimate an accurate size - p2wsh multisig change', function() {
+      const t = new Transaction();
+      t.from(p2wshUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      t.to(toAddress, 50000);
+      t.change(p2wshAddress);
+      t.feePerByte(1);
+      t.sign(p2shPrivateKey1);
+      t.sign(p2shPrivateKey2);
+      // 384, 192, 768
+      t._estimateSize().should.be.gte(t.vsize);
+      (t.getFee() / t.vsize).should.be.within(1, 1.01); // within 1% error
+    });
+  });
+
+
+  describe('Taproot', function() {
+    for (let i = 0; i < taprootVectors.keyPathSpending.length; i++) {
+      const vec = taprootVectors.keyPathSpending[i];
+      it(`vector ${i}`, function() {
+        Script;
+        const tx = new Transaction(vec.given.rawUnsignedTx);
+        const tf = new Transaction(vec.auxiliary.fullySignedTx);
+        const t = new Transaction();
+        t.nLockTime = tx.nLockTime;
+        // t.lockUntilBlockHeight(tx.nLockTime)
+        for (let j = 0; j < vec.given.utxosSpent.length; j++) {
+          const utxo = new Transaction.UnspentOutput({
+            satoshis: vec.given.utxosSpent[j].amountSats,
+            script: vec.given.utxosSpent[j].scriptPubKey,
+            txid: tx.inputs[j].prevTxId.toString('hex'),
+            outputIndex: tx.inputs[j].outputIndex
+          });
+          t.from(utxo, null, null, { sequenceNumber: tx.inputs[j].sequenceNumber });
+        }
+        for (const output of tx.outputs) {
+          t.addOutput(output);
+        }
+        for (const inputSpending of vec.inputSpending) {
+          const {
+            internalPrivkey,
+            hashType,
+            merkleRoot
+          } = inputSpending.given;
+          t.sign(internalPrivkey, hashType, null, merkleRoot);
+        }
+        // NOTE: t.isFullySigned() === false b/c priv keys are not given for non-taproot inputs
+        // We'll add them below from the fully signed tx in the test vector
+        for (let i = 0; i < t.inputs.length; i++) {
+          const taprootSpending = vec.inputSpending.find(s => s.given.txinIndex == i);
+          if (taprootSpending) {
+            t.inputs[i].isFullySigned().should.equal(true);
+            for (const witness of taprootSpending.expected.witness) {
+              t.inputs[i].isValidSignature(t, {
+                signature: {
+                  toBuffer: () => Buffer.from(witness, 'hex'),
+                  nhashtype: taprootSpending.given.hashType
+                }
+              }).should.equal(true);
+            }
+          } else {
+            // non-taproot input
+            // add the signatures given from the test vector
+            if (tf.inputs[i].witnesses.length) {
+              t.inputs[i].setWitnesses(tf.inputs[i].witnesses);
+            } else {
+              t.inputs[i].setScript(tf.inputs[i].script);
+            }            
+          }
+        }
+        t.isFullySigned().should.equal(true);
+        t.hash.should.equal('fea03dc5c362e2ebd71f90960803aaa2cdbbc6cd536135f49980afedc19e3552');
+        expect(t.serialize({ disableLargeFees: true })).to.exist;
+      });
+    }
   });
 
 });

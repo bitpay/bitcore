@@ -1,5 +1,7 @@
 'use strict';
-
+// Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
+var { setDefaultResultOrder } = require('dns');
+setDefaultResultOrder('ipv4first');
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var chai = require('chai');
@@ -51,16 +53,12 @@ const helpers = {
             timeout: sinon.stub(),
             end: sinon.stub().yields(err, res)
         };
-        var reqFactory = _.reduce(
-            ['get', 'post', 'put', 'delete'],
-            (mem, verb) => {
-                mem[verb] = url => {
-                    return request;
-                };
-                return mem;
-            },
-            {}
-        );
+        var reqFactory = ['get', 'post', 'put', 'delete'].reduce((mem, verb) => {
+            mem[verb] = url => {
+                return request;
+            };
+            return mem;
+        }, {});
 
         return reqFactory;
     },
@@ -99,6 +97,7 @@ const helpers = {
         opts = opts || {};
 
         var coin = opts.coin || 'btc';
+        var chain = opts.chain || coin;
         var network = opts.network || 'testnet';
 
         let keyOpts = {
@@ -111,6 +110,7 @@ const helpers = {
         keys[0] = opts.key || new Key(keyOpts);
         let cred = keys[0].createCredentials(null, {
             coin: coin,
+            chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
             network: network,
             account: opts.account ? opts.account : 0,
             n: n,
@@ -125,6 +125,7 @@ const helpers = {
             n,
             {
                 coin: coin,
+                chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
                 network: network,
                 singleAddress: !!opts.singleAddress,
                 doNotCheck: true,
@@ -148,6 +149,7 @@ const helpers = {
                                     clients[i].fromString(
                                         keys[i].createCredentials(null, {
                                             coin: coin,
+                                            chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
                                             network: network,
                                             account: 0,
                                             n: n,
@@ -158,7 +160,8 @@ const helpers = {
                                         secret,
                                         'copayer ' + i,
                                         {
-                                            coin: coin
+                                            coin: coin,
+                                            chain: chain
                                         },
                                         cb
                                     );
@@ -227,8 +230,9 @@ const helpers = {
         extra = extra || '';
         mongodb.MongoClient.connect(config.mongoDb.uri + extra, (err, in_db) => {
             if (err) return cb(err);
-            in_db.dropDatabase(err => {
-                return cb(err, in_db);
+            let db = in_db.db(config.mongoDb.dbname + extra);
+            db.dropDatabase(function(err) {
+                return cb(err, db);
             });
         });
     }
@@ -331,6 +335,12 @@ const blockchainExplorerMock = {
         });
 
         return cb(null, levels);
+    },
+    estimateFeeV2: (opts, cb) => {
+        return cb(null, 20000);
+    },
+    estimatePriorityFee: (opts, cb) => {
+        return cb(null, 5000);
     },
     estimateGas: (nbBlocks, cb) => {
         return cb(null, '20000000000');

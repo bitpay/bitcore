@@ -1,4 +1,4 @@
-import React, {useEffect, useState, memo} from 'react';
+import {useEffect, useState, memo, FC} from 'react';
 import {
   getApiRoot,
   getConvertedValue,
@@ -48,7 +48,7 @@ const populateTxsForBlock = (txData: any, {time, height}: {time: number; height:
   return txd;
 };
 
-const BlockDetails: React.FC<BlockDetailsProps> = ({currency, network, block}) => {
+const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
   const _normalizeParams = normalizeParams(currency, network);
   currency = _normalizeParams.currency;
   network = _normalizeParams.network;
@@ -187,7 +187,7 @@ const BlockDetails: React.FC<BlockDetailsProps> = ({currency, network, block}) =
                     3,
                   )} ${currency}`}
                 />
-                <SharedTile title='Confirmation' description={summary.confirmations} />
+                <SharedTile title='Confirmations' description={summary.confirmations} />
 
                 <SharedTile title='Timestamp' description={getFormattedDate(summary.time) || ''} />
               </Grid>
