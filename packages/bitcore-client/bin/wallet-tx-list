@@ -42,7 +42,8 @@ const main = async () => {
           txs = JSON.parse(txs.trim().replaceAll('\n', ',') + ']');
           for (const tx of txs) {
             if (tx.category === 'fee') continue;
-            console.log(`[${new Date(tx.blockTime).toLocaleString()}] ${tx.txid} ${catSymbol(tx)} ${displayAmt(tx, currencyObj)}`);
+            tx.chain = wallet.chain; // tx.chain is not always populated
+            console.log(`[${new Date(tx.blockTime).toLocaleString()}] ${tx.txid} ${catSymbol(tx)} ${displayAmt(tx, tokenObj || currencyObj)}`);
           }
           done();
         }
@@ -68,9 +69,9 @@ function catSymbol(tx) {
 
 function displayAmt(tx, currObj) {
   const baseToCommon = sats => Math.abs(sats) / Math.pow(10, currObj.decimals);
-  const dc = currObj.displayCode;
+  const dc = currObj.displayCode || currObj.symbol;
   const gwei = tx.gasPrice / 1e9; // NaN if not EVM
-  const drops = currObj.chain === 'XRP' ? tx.fee : NaN;
+  const drops = tx.chain === 'XRP' ? tx.fee : NaN;
   const feeRate = tx.fee / (tx.vsize ?? tx.size);
   const feeRateStr = !isNaN(gwei) ? ` - ${gwei.toFixed(1)} gwei` :
                      !isNaN(drops) ? '' :
