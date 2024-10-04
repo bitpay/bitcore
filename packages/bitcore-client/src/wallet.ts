@@ -454,7 +454,10 @@ export class Wallet {
     if (!this.tokens) {
       return;
     }
-    this.tokens = this.tokens.filter(tok => tok.name !== tokenName || (!tok.name && tok.symbol !== tokenName));
+    this.tokens = this.tokens.filter(tok => 
+      (tok.name && tok.name !== tokenName) ||
+      /* legacy object */ (!tok.name && tok.symbol !== tokenName)
+    );
     await this.saveWallet();
   }
 

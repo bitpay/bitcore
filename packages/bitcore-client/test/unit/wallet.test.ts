@@ -473,5 +473,79 @@ describe('Wallet', function() {
       }
     });
   });
+
+  describe.only('rmToken', function() {
+    walletName = 'BitcoreClientTestRmToken';
+    const usdcLegacyObj = {
+      symbol: 'USDC',
+      address: '0x123',
+      decimals: '6',
+    };
+
+    const usdcObj = {
+      symbol: 'USDC',
+      address: '0xabc',
+      decimals: '6',
+      name: 'USDCn'
+    };
+
+    const daiObj = {
+      symbol: 'DAI',
+      address: '0x1a2b3c',
+      decimals: '6',
+      name: 'DAIn'
+    };
+
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        chain: 'ETH',
+        network: 'mainnet',
+        name: walletName,
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        lite: false,
+        storageType,
+        baseUrl
+      });
+
+      wallet.tokens = [
+        usdcLegacyObj,
+        usdcObj,
+        daiObj
+      ];
+    });
+
+    it('should remove a legacy token object', function() {
+      wallet.rmToken({ tokenName: 'USDC' });
+      wallet.tokens.length.should.equal(2);
+      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
+      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcObj);
+    });
+
+    it('should remove a token object', function() {
+      wallet.rmToken({ tokenName: 'USDCn' });
+      wallet.tokens.length.should.equal(2);
+      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
+      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcLegacyObj);
+    });
+
+    it('should remove the correct token object regardless of order', function() {
+      wallet.tokens = [
+        usdcObj,
+        daiObj,
+        usdcLegacyObj // this should be ordered after usdcObj
+      ];
+      
+      wallet.rmToken({ tokenName: 'USDC' });
+      wallet.tokens.length.should.equal(2);
+      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
+      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcObj);
+    });
+
+    it('should not remove any unmatched token object', function() {
+      wallet.rmToken({ tokenName: 'BOGUS' });
+      wallet.tokens.length.should.equal(3);
+    });
+  });
 });
 
