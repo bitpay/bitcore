@@ -553,7 +553,7 @@ Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION = (1 << 17);
 //
 Interpreter.SCRIPT_VERIFY_CONST_SCRIPTCODE = (1 << 16);
 
-// Verify taproot script 
+// Verify taproot script
 //
 Interpreter.SCRIPT_VERIFY_TAPROOT = (1 << 17);
 
@@ -670,11 +670,11 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
 
 /**
  * Verifies ECDSA signature
- * @param {Signature} sig 
- * @param {PublicKey} pubkey 
- * @param {Number} nin 
- * @param {Script} subscript 
- * @param {Number} satoshis 
+ * @param {Signature} sig
+ * @param {PublicKey} pubkey
+ * @param {Number} nin
+ * @param {Script} subscript
+ * @param {Number} satoshis
  * @returns {Boolean}
  */
 Interpreter.prototype.checkEcdsaSignature = function(sig, pubkey, nin, subscript, satoshis) {
@@ -700,10 +700,10 @@ Interpreter.prototype.checkEcdsaSignature = function(sig, pubkey, nin, subscript
 
 /**
  * Verifies Schnorr signature
- * @param {Signature|Buffer} sig 
- * @param {PublicKey|Buffer} pubkey 
- * @param {Number} sigversion 
- * @param {Object} execdata 
+ * @param {Signature|Buffer} sig
+ * @param {PublicKey|Buffer} pubkey
+ * @param {Number} sigversion
+ * @param {Object} execdata
  * @returns {Boolean}
  */
 Interpreter.prototype.checkSchnorrSignature = function(sig, pubkey, sigversion, execdata) {
@@ -788,7 +788,7 @@ Interpreter.prototype._evalChecksigPreTapscript = function(bufSig, bufPubkey) {
     this.errstr = 'SCRIPT_ERR_SIG_NULLFAIL';
     return retVal;
   }
-  
+
   // If it reaches here, then true
   retVal.result = true;
   return retVal;
@@ -959,7 +959,7 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
  * Checks a sequence parameter with the transaction's sequence.
  * @param {BN} nSequence the sequence read from the script
  * @return {boolean} true if the transaction's sequence is less than or equal to
- *                   the transaction's sequence 
+ *                   the transaction's sequence
  */
 Interpreter.prototype.checkSequence = function(nSequence) {
 
@@ -977,7 +977,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
   // constrained. Testing that the transaction's sequence number do not have
   // this bit set prevents using this property to get around a
   // CHECKSEQUENCEVERIFY check.
-  if (txToSequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+  if (txToSequence & Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) {
     return false;
   }
 
@@ -986,7 +986,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
   var nLockTimeMask =
       Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
   var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
-  var nSequenceMasked = nSequence.and(nLockTimeMask);
+  var nSequenceMasked = nSequence.and(new BN(nLockTimeMask));
 
   // There are two kinds of nSequence: lock-by-blockheight and
   // lock-by-blocktime, distinguished by whether nSequenceMasked <
@@ -996,7 +996,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
   // of nSequenceMasked being tested is the same as the nSequenceMasked in the
   // transaction.
   var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
-  
+
   if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
           nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
         (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
@@ -1058,7 +1058,7 @@ Interpreter.verifyTaprootCommitment = function(control, program, tapleafHash) {
 };
 
 
-/** 
+/**
  * Based on the inner loop of bitcoind's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
