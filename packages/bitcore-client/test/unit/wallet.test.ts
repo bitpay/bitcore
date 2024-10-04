@@ -474,7 +474,7 @@ describe('Wallet', function() {
     });
   });
 
-  describe.only('rmToken', function() {
+  describe('rmToken', function() {
     walletName = 'BitcoreClientTestRmToken';
     const usdcLegacyObj = {
       symbol: 'USDC',
@@ -535,7 +535,7 @@ describe('Wallet', function() {
         daiObj,
         usdcLegacyObj // this should be ordered after usdcObj
       ];
-      
+
       wallet.rmToken({ tokenName: 'USDC' });
       wallet.tokens.length.should.equal(2);
       wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
