@@ -70,12 +70,12 @@ function displayAmt(tx, currObj) {
   const baseToCommon = sats => Math.abs(sats) / Math.pow(10, currObj.decimals);
   const dc = currObj.displayCode;
   const gwei = tx.gasPrice / 1e9; // NaN if not EVM
-  const drops = tx.chain === 'XRP' ? tx.fee : NaN;
+  const drops = currObj.chain === 'XRP' ? tx.fee : NaN;
   const feeRate = tx.fee / (tx.vsize ?? tx.size);
-  const feeRateStr = gwei ? ` - ${gwei.toFixed(1)} gwei` :
-                     drops ? '' :
+  const feeRateStr = !isNaN(gwei) ? ` - ${gwei.toFixed(1)} gwei` :
+                     !isNaN(drops) ? '' :
                      ` - ${feeRate.toFixed(2)} sat/vB`;
-  return `${baseToCommon(tx.satoshis)} ${dc} (${baseToCommon(tx.fee)} ${dc}${feeRateStr})`;
+  return `${baseToCommon(tx.satoshis)} ${dc}${!currObj.native ? /* hide fee for tokens */ '' : ` (${baseToCommon(tx.fee)} ${dc}${feeRateStr})`}`;
 }
 
 main()
