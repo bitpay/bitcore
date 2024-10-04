@@ -246,6 +246,7 @@ export class PruningService {
             invalidCount++;
           }
         } else {
+          // Check if the parent tx was replaced since the sync process marks immediate replacements as replaced, but not descendants
           const vins = await this.coinModel.collection.find({ chain, network, spentTxid: vout.mintTxid }).toArray();
           const vinTxs = await this.transactionModel.collection.find({ chain, network, txid: { $in: vins.map(vin => vin.mintTxid) } }).toArray();
           for (const tx of vinTxs) {
@@ -267,12 +268,22 @@ export class PruningService {
   }
 
   async invalidateTx(chain: string, network: string, tx: ITransaction) {
-    const tipHeight = await this.rpcs[`${chain}:${network}`].getBlockHeight();
+    if (tx.blockHeight! >= 0) {
+      // This means that downstream coins are still pending when they should be marked as confirmed.
+      // This indicates a bug in the sync process.
+      logger.warn(`Tx ${tx.txid} is already mined`);
+      return false;
+    }
     let rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
-    while (rTx?.replacedByTxid && rTx?.blockHeight! < 0) {
+    while (rTx?.replacedByTxid && rTx?.blockHeight! < 0 && rTx?.txid !== tx.txid) {
       // replacement tx has also been replaced
+      // Note: rTx.txid === tx.txid may happen if tx.replacedByTxid => rTx.txid and rTx.replacedByTxid => tx.txid.
+      //  This might happen if tx was rebroadcast _after_ being marked as replaced by rTx, thus marking rTx as replaced by tx.
+      //  Without this check, we could end up in an infinite loop where the two txs keep finding each other as unconfirmed replacements.
       rTx = await this.transactionModel.collection.findOne({ chain, network, txid: rTx.replacedByTxid });
     }
+    // Re-org protection
+    const tipHeight = await this.rpcs[`${chain}:${network}`].getBlockHeight();
     const isMature = rTx?.blockHeight! > SpentHeightIndicators.pending && tipHeight - rTx?.blockHeight! > INV_MATURE_LEN;
     if (isMature) {
       try {
