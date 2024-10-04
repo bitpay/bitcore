@@ -117,6 +117,7 @@ export class Request {
       if (res.status !== 200) {
         if (res.status === 503) return cb(new Errors.MAINTENANCE_ERROR());
         if (res.status === 404) return cb(new Errors.NOT_FOUND());
+        if (res.status === 413) return cb(new Errors.PAYLOAD_TOO_LARGE());
         if (!res.status) return cb(new Errors.CONNECTION_ERROR());
 
         log.error('HTTP Error:' + res.status);
