@@ -3447,10 +3447,32 @@ export class API extends EventEmitter {
     });
   }
 
+  simplexGetSellQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/simplex/sellQuote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   simplexPaymentRequest(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post(
         '/v1/service/simplex/paymentRequest',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  simplexSellPaymentRequest(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/simplex/sellPaymentRequest',
         data,
         (err, data) => {
           if (err) return reject(err);

@@ -5905,8 +5905,10 @@ export class WalletService implements IWalletService {
 
     const keys = {
       API: config.simplex[env].api,
+      API_SELL: config.simplex[env].apiSell,
       API_KEY: config.simplex[env].apiKey,
-      APP_PROVIDER_ID: config.simplex[env].appProviderId
+      APP_PROVIDER_ID: config.simplex[env].appProviderId,
+      APP_SELL_REF_ID: config.simplex[env].appSellRefId
     };
 
     return keys;
@@ -5945,6 +5947,48 @@ export class WalletService implements IWalletService {
             return reject(err.body ? err.body : err);
           } else {
             return resolve(data.body ? data.body : null);
+          }
+        }
+      );
+    });
+  }
+
+  simplexGetSellQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+
+      const API = keys.API_SELL;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['base_currency', 'base_amount', 'quote_currency', 'pp_payment_method'])) {
+        return reject(new ClientError("Simplex's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'ApiKey ' + API_KEY,
+        'x-country-code': 'LT', // TODO: send the real country code
+      };
+
+      let qs = [];
+      qs.push('base_currency=' + req.body.base_currency);
+      qs.push('base_amount=' + req.body.base_amount);
+      qs.push('quote_currency=' + req.body.quote_currency);
+      qs.push('pp_payment_method=' + req.body.pp_payment_method);
+
+      const URL: string = API + `/v3/quote?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
           }
         }
       );
@@ -6005,6 +6049,46 @@ export class WalletService implements IWalletService {
             data.body.order_id = orderId;
             data.body.app_provider_id = appProviderId;
             data.body.api_host = apiHost;
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  simplexSellPaymentRequest(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+
+      const API = keys.API_SELL;
+      const API_KEY = keys.API_KEY;
+      const appSellRefId = keys.APP_SELL_REF_ID;
+
+      if (
+        !checkRequired(req.body, ['referer_url', 'return_url']) &&
+        !checkRequired(req.body.txn_details, ['quote_id'])
+      ) {
+        return reject(new ClientError("Simplex's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'ApiKey ' + API_KEY,
+        'x-country-code': 'LT', // TODO: send the real country code
+      };
+
+      this.request.post(
+        API + '/v3/initiate-sell/widget',
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            data.body.app_sell_ref_id = appSellRefId;
             return resolve(data.body);
           }
         }
