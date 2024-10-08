@@ -267,11 +267,22 @@ export class PruningService {
     }
   }
 
+  /**
+   * Invalidate a transaction and its descendants
+   * @param {string} chain
+   * @param {string} network
+   * @param {ITransaction} tx Transaction object with replacedByTxid
+   * @returns 
+   */
   async invalidateTx(chain: string, network: string, tx: ITransaction) {
     if (tx.blockHeight! >= 0) {
       // This means that downstream coins are still pending when they should be marked as confirmed.
       // This indicates a bug in the sync process.
       logger.warn(`Tx ${tx.txid} is already mined`);
+      return false;
+    }
+    if (!tx.replacedByTxid) {
+      logger.warn(`Given tx has no replacedByTxid: ${tx.txid}`);
       return false;
     }
     let rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
