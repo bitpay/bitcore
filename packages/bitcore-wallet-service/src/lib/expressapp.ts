@@ -1809,10 +1809,36 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/simplex/sellQuote', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .simplexGetSellQuote(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
     router.post('/v1/service/simplex/paymentRequest', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
           .simplexPaymentRequest(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/simplex/sellPaymentRequest', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .simplexSellPaymentRequest(req)
           .then(response => {
             res.json(response);
           })
