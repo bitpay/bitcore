@@ -1,3 +1,4 @@
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { MongoBound } from '../../../src/models/base';
@@ -183,14 +184,25 @@ describe('Pruning Service', function() {
 
     it('should not go into an infinite loop if there is a circular replacedByTxid reference', async function() {
       await insertBadCoins();
-      // invalidTx replaced by replacementTx, replacementTx replaced by invalidTx
+      console.log('point1');
+      await TransactionStorage.collection.insertOne({
+        ...replacementTx,
+        _id: new ObjectId(),
+        txid: 'replacementTx2',
+        blockHeight: SpentHeightIndicators.pending,
+        replacedByTxid: replacementTx.txid
+      });
+      console.log('point2');
       await TransactionStorage.collection.updateOne({
         txid: replacementTx.txid
       }, {
         $set: {
-          replacedByTxid: invalidTx.txid
+          replacedByTxid: 'replacementTx2'
         }
       });
+      console.log('point3');
+      // at this point, invalidTx => replacementTx => replacementTx2 => replacementTx
+
       const { chain, network } = invalidCoin;
       await Pruning.processAllInvalidTxs(chain, network);
       const shouldBeInvalid = await CoinStorage.collection
@@ -202,16 +214,24 @@ describe('Pruning Service', function() {
 
     it('should not go into an infinite loop if there is a circular, unconfirmed replacedByTxid reference', async function() {
       await insertBadCoins();
-      // invalidTx replaced by replacementTx, replacementTx replaced by invalidTx
-      // but replacementTx is still unconfirmed
+      await TransactionStorage.collection.insertOne({
+        ...replacementTx,
+        _id: new ObjectId(),
+        txid: 'replacementTx2',
+        blockHeight: SpentHeightIndicators.pending,
+        replacedByTxid: replacementTx.txid
+      });
       await TransactionStorage.collection.updateOne({
         txid: replacementTx.txid
       }, {
         $set: {
-          replacedByTxid: invalidTx.txid,
+          replacedByTxid: 'replacementTx2',
           blockHeight: SpentHeightIndicators.pending
         }
       });
+      // at this point, invalidTx => replacementTx => replacementTx2 => replacementTx
+      // but replacementTx is still unconfirmed
+
       const { chain, network } = invalidCoin;
       await Pruning.processAllInvalidTxs(chain, network);
       const shouldBePendingStill = await CoinStorage.collection

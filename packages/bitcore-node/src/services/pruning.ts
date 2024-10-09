@@ -286,11 +286,13 @@ export class PruningService {
       return false;
     }
     let rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
-    while (rTx?.replacedByTxid && rTx?.blockHeight! < 0 && rTx?.txid !== tx.txid) {
+    let txids = [tx.txid];
+    while (rTx?.replacedByTxid && rTx?.blockHeight! < 0 && !txids.includes(rTx?.txid)) {
       // replacement tx has also been replaced
       // Note: rTx.txid === tx.txid may happen if tx.replacedByTxid => rTx.txid and rTx.replacedByTxid => tx.txid.
       //  This might happen if tx was rebroadcast _after_ being marked as replaced by rTx, thus marking rTx as replaced by tx.
       //  Without this check, we could end up in an infinite loop where the two txs keep finding each other as unconfirmed replacements.
+      txids.push(rTx.txid);
       rTx = await this.transactionModel.collection.findOne({ chain, network, txid: rTx.replacedByTxid });
     }
     // Re-org protection
