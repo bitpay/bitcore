@@ -205,6 +205,25 @@ describe('Script', function() {
     });
   });
 
+  describe('#fromASM PUSHDATA', function() {
+    it('should parse this known script in ASM', function() {
+      const data0 = '01'.repeat(0x4b)
+      const data1 = '01'.repeat(0x100)
+      const data2 = '01'.repeat(0x10000)
+      const data3 = '01'.repeat(0x10000+1)
+      var asm = `${data0} ${data1} ${data2} ${data3}`;
+      var script = Script.fromASM(asm);
+      console.log("🚀 ~ it ~ script:", script)
+      script.chunks[0].opcodenum.should.equal(0x4b);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA1);
+      script.chunks[1].len.should.equal(0x100);
+      script.chunks[2].opcodenum.should.equal(Opcode.OP_PUSHDATA2);
+      script.chunks[2].len.should.equal(0x10000);
+      script.chunks[3].opcodenum.should.equal(Opcode.OP_PUSHDATA4);
+      script.chunks[3].len.should.equal(0x10000+1);
+    });
+  });
+
   describe('#fromString', function() {
 
     it('should parse these known scripts', function() {
