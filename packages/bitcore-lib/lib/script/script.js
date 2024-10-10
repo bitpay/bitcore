@@ -167,8 +167,6 @@ Script.fromASM = function(str) {
         opcodenum=Opcode.OP_PUSHDATA2
       }else if(buf.length <= 0x100000000){
         opcodenum=Opcode.OP_PUSHDATA4
-      }else{
-        throw new Error('Pushdata data is too long');
       }
       script.chunks.push({
         buf: buf,
