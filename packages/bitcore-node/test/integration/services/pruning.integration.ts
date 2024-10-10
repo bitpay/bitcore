@@ -184,7 +184,6 @@ describe('Pruning Service', function() {
 
     it('should not go into an infinite loop if there is a circular replacedByTxid reference', async function() {
       await insertBadCoins();
-      console.log('point1');
       await TransactionStorage.collection.insertOne({
         ...replacementTx,
         _id: new ObjectId(),
@@ -192,7 +191,6 @@ describe('Pruning Service', function() {
         blockHeight: SpentHeightIndicators.pending,
         replacedByTxid: replacementTx.txid
       });
-      console.log('point2');
       await TransactionStorage.collection.updateOne({
         txid: replacementTx.txid
       }, {
@@ -200,7 +198,6 @@ describe('Pruning Service', function() {
           replacedByTxid: 'replacementTx2'
         }
       });
-      console.log('point3');
       // at this point, invalidTx => replacementTx => replacementTx2 => replacementTx
 
       const { chain, network } = invalidCoin;
