@@ -963,6 +963,7 @@ Script.buildWitnessV1Out = function(to, scriptTree) {
       to = Address.fromString(to);
     }
   }
+  
 
   function buildTree(tree) {
     if (Array.isArray(tree)) {
@@ -991,11 +992,11 @@ Script.buildWitnessV1Out = function(to, scriptTree) {
   }
 
   let taggedHash = null;
-  if (scriptTree) {
+  if (scriptTree) { 
     const [_, h] = buildTree(scriptTree);
     taggedHash = h;
   }
-
+  
   let tweakedPubKey;
   if (to instanceof PublicKey) {
     tweakedPubKey = to.createTapTweak(taggedHash).tweakedPubKey;
