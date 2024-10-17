@@ -486,7 +486,8 @@ export class PushNotificationsService {
       ape: 'APE',
       euroc: 'EUROC',
       usdt: 'USDT',
-      weth: 'WETH'
+      weth: 'WETH',
+      'usdc.e': 'USDC.e'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');

@@ -253,6 +253,17 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  'usdc.e': {
+    toSatoshis: 1e6,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
   weth: {
     toSatoshis: 1e18,
     full: {
