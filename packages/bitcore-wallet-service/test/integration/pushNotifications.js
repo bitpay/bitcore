@@ -19,7 +19,7 @@ const ObjectID  = require('mongodb').ObjectID;
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
-const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95d5be530380D0eC0bd388289E1', '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd'];
+const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95d5be530380D0eC0bd388289E1', '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd', '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'];
 const CUSTOM_TOKENS = ['0x0d8775f648430679a709e98d2b0cb6250d2887ef'];
 
 describe('Push notifications', function() {
@@ -926,6 +926,40 @@ describe('Push notifications', function() {
               should.not.exist(err);
               done();
             });
+          });
+        });
+      });
+    });
+
+    it('should send notification if the tx is USDC.e', (done) => {
+      server.savePreferences({
+        language: 'en',
+        unit: 'bit',
+      }, function(err) {
+        server.createAddress({}, (err, address) => {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '996',
+            address: address,
+            amount: 4e6, // ~ 4.00 USD
+            tokenAddress: TOKENS[3]
+          }, {
+            isGlobal: true
+          }, (err) => {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(2);
+              var args = _.map(_.takeRight(calls, 2), function(c) {
+                return c.args[0];
+              });
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.title.should.contain('New payment received');
+              args[1].body.notification.body.should.contain('4.00');
+              args[1].body.data.tokenAddress.should.equal('0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174');
+              done();
+            }, 100);
           });
         });
       });

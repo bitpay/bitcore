@@ -271,7 +271,8 @@ export class EmailService {
       ape: 'APE',
       euroc: 'EUROC',
       usdt: 'USDT',
-      weth: 'WETH'
+      weth: 'WETH',
+      'usdc.e': 'USDC.e',
     };
 
     const data = _.cloneDeep(notification.data);
