@@ -1796,6 +1796,24 @@ export class ExpressApp {
         });
     });
 
+    router.post('/v1/service/simplex/getCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .simplexGetCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
         server

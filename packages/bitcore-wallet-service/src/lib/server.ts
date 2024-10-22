@@ -5907,11 +5907,41 @@ export class WalletService implements IWalletService {
       API: config.simplex[env].api,
       API_SELL: config.simplex[env].apiSell,
       API_KEY: config.simplex[env].apiKey,
+      PUBLIC_KEY: config.simplex[env].publicKey,
       APP_PROVIDER_ID: config.simplex[env].appProviderId,
       APP_SELL_REF_ID: config.simplex[env].appSellRefId
     };
 
     return keys;
+  }
+
+  simplexGetCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+      const API = keys.API;
+      const PUBLIC_KEY = keys.PUBLIC_KEY;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const URL = API + `/v2/supported_crypto_currencies?public_key=${PUBLIC_KEY}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
   }
 
   simplexGetQuote(req): Promise<any> {

@@ -292,6 +292,7 @@ module.exports = {
   //     apiSell: 'https://sell-checkout-waf.sandbox.test-simplexcc.com',
   //     appProviderId: 'simplex_provider_id_here',
   //     appSellRefId: 'simplex_sell_ref_id_here',
+  //     publicKey: 'simplex_sandbox_public_key_here',
   //   },
   //   production: {
   //     apiKey: 'simplex_production_api_key_here',
@@ -299,6 +300,7 @@ module.exports = {
   //     apiSell: 'https://sell-checkout-widget.simplex.com',
   //     appProviderId: 'simplex_provider_id_here',
   //     appSellRefId: 'simplex_sell_ref_id_here',
+  //     publicKey: 'simplex_public_key_here',
   //   },
   //   sandboxWeb: {
   //     apiKey: 'simplex_sandbox_web_api_key_here',
@@ -306,6 +308,7 @@ module.exports = {
   //     apiSell: 'https://sell-checkout-waf.sandbox.test-simplexcc.com',
   //     appProviderId: 'simplex_web_provider_id_here',
   //     appSellRefId: 'simplex_web_sell_ref_id_here',
+  //     publicKey: 'simplex_web_sandbox_public_key_here',
   //   },
   //   productionWeb: {
   //     apiKey: 'simplex_production_web_api_key_here',
@@ -313,6 +316,7 @@ module.exports = {
   //     apiSell: 'https://sell-checkout-widget.simplex.com',
   //     appProviderId: 'simplex_web_provider_id_here',
   //     appSellRefId: 'simplex_web_sell_ref_id_here',
+  //     publicKey: 'simplex_web_public_key_here',
   //   }
   // },
   // thorswap : {
