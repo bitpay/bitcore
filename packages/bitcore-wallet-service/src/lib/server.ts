@@ -7357,7 +7357,14 @@ export class WalletService implements IWalletService {
       const walletAddress = req.body.ownerAddress ?? req.body.address;
 
       let qs = [];
-      if (req.body.chain) qs.push('chain=' + req.body.chain);
+      if (req.body.chain) {
+        const chain = req.body.chain;
+        const formattedChain = typeof chain === 'number' && Number.isInteger(chain)
+          ? `0x${chain.toString(16)}`
+          : chain;
+
+        qs.push(`chain=${formattedChain}`);
+      }
       if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
       if (req.body.limit) qs.push('limit=' + req.body.limit);
 
