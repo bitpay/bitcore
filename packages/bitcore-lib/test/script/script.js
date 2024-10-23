@@ -203,6 +203,31 @@ describe('Script', function() {
       script.chunks[3].opcodenum.should.equal(Opcode.OP_EQUALVERIFY);
       script.chunks[4].opcodenum.should.equal(Opcode.OP_CHECKSIG);
     });
+
+    it('should parse OP_PUSHDATA in ASM', function() {
+      const data0 = '01'.repeat(0x4b)
+      const data1 = '01'.repeat(0x4c)
+      const data2 = '01'.repeat(0x100)
+      const data3 = '01'.repeat(0x100+1)
+      const data4 = '01'.repeat(0x10000)
+      const data5 = '01'.repeat(0x10000+1)
+      const data6 = '01'.repeat(1)
+      var asm = `${data0} ${data1} ${data2} ${data3} ${data4} ${data5} ${data6}`;
+      var script = Script.fromASM(asm);
+      script.chunks[0].opcodenum.should.equal(0x4b);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA1);
+      script.chunks[1].len.should.equal(0x4c);
+      script.chunks[2].opcodenum.should.equal(Opcode.OP_PUSHDATA1);
+      script.chunks[2].len.should.equal(0x100);
+      script.chunks[3].opcodenum.should.equal(Opcode.OP_PUSHDATA2);
+      script.chunks[3].len.should.equal(0x100+1);
+      script.chunks[4].opcodenum.should.equal(Opcode.OP_PUSHDATA2);
+      script.chunks[4].len.should.equal(0x10000);
+      script.chunks[5].opcodenum.should.equal(Opcode.OP_PUSHDATA4);
+      script.chunks[5].len.should.equal(0x10000+1);
+      script.chunks[6].opcodenum.should.equal(1);
+      script.chunks[6].len.should.equal(1);
+    });
   });
 
   describe('#fromString', function() {
