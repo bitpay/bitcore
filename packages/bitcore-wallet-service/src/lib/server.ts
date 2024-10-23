@@ -7346,19 +7346,61 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetTokenAllowance(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await Moralis.EvmApi.token.getTokenAllowance({
-          address: req.body.address,
-          chain: req.body.chain,
-          ownerAddress: req.body.ownerAddress,
-          spenderAddress: req.body.spenderAddress,
-        });
+    return new Promise((resolve, reject) => {
+      let keys, headers;
 
-        return resolve(response.raw ?? response);
-      } catch (err) {
-        reject(err);
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['address']) && !checkRequired(req.body, ['ownerAddress'])) {
+        return reject(new ClientError('moralisGetTokenAllowance request missing arguments'));
       }
+
+      const walletAddress = req.body.ownerAddress ?? req.body.address;
+
+      let qs = [];
+      if (req.body.chain) qs.push('chain=' + req.body.chain);
+      if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${walletAddress}/approvals${qs.length > 0 ? '?' + qs.join('&') : ''}`
+
+      headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            const { spenderAddress, ownerAddress, address } = req.body;
+
+            if (spenderAddress && ownerAddress) {
+              // Workaround to keep older versions running
+              const spendersList = data?.body?.result;
+
+              if (Array.isArray(spendersList)) {
+                const spenderData = spendersList.find(s => 
+                  s.spender?.address?.toLowerCase() === spenderAddress.toLowerCase() &&
+                  s.token?.address?.toLowerCase() === address.toLowerCase()
+                );
+
+                data.body = {
+                  allowance: spenderData?.value ?? "0"
+                };
+              }
+            }
+
+            return resolve(data.body ?? data);
+          }
+        }
+      );
     });
   }
 
