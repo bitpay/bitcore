@@ -165,6 +165,10 @@ module.exports = {
       moonpay: {
         disabled: false,
         removed: false
+      },
+      simplex: {
+        disabled: false,
+        removed: false
       }
     },
     swapCrypto: {
@@ -285,22 +289,34 @@ module.exports = {
   //   sandbox: {
   //     apiKey: 'simplex_sandbox_api_key_here',
   //     api: 'https://sandbox.test-simplexcc.com',
-  //     appProviderId: 'simplex_provider_id_here'
+  //     apiSell: 'https://sell-checkout-waf.sandbox.test-simplexcc.com',
+  //     appProviderId: 'simplex_provider_id_here',
+  //     appSellRefId: 'simplex_sell_ref_id_here',
+  //     publicKey: 'simplex_sandbox_public_key_here',
   //   },
   //   production: {
   //     apiKey: 'simplex_production_api_key_here',
   //     api: 'https://backend-wallet-api.simplexcc.com',
-  //     appProviderId: 'simplex_provider_id_here'
+  //     apiSell: 'https://sell-checkout-widget.simplex.com',
+  //     appProviderId: 'simplex_provider_id_here',
+  //     appSellRefId: 'simplex_sell_ref_id_here',
+  //     publicKey: 'simplex_public_key_here',
   //   },
   //   sandboxWeb: {
   //     apiKey: 'simplex_sandbox_web_api_key_here',
   //     api: 'https://sandbox.test-simplexcc.com',
-  //     appProviderId: 'simplex_web_provider_id_here'
+  //     apiSell: 'https://sell-checkout-waf.sandbox.test-simplexcc.com',
+  //     appProviderId: 'simplex_web_provider_id_here',
+  //     appSellRefId: 'simplex_web_sell_ref_id_here',
+  //     publicKey: 'simplex_web_sandbox_public_key_here',
   //   },
   //   productionWeb: {
   //     apiKey: 'simplex_production_web_api_key_here',
   //     api: 'https://backend-wallet-api.simplexcc.com',
-  //     appProviderId: 'simplex_web_provider_id_here'
+  //     apiSell: 'https://sell-checkout-widget.simplex.com',
+  //     appProviderId: 'simplex_web_provider_id_here',
+  //     appSellRefId: 'simplex_web_sell_ref_id_here',
+  //     publicKey: 'simplex_web_public_key_here',
   //   }
   // },
   // thorswap : {
