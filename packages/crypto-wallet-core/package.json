@@ -30,7 +30,7 @@
     "ethers": "^5.7.0",
     "info": "0.0.6-beta.0",
     "web3": "1.4.0",
-    "xrpl": "2.13.0"
+    "xrpl": "4.0.0"
   },
   "devDependencies": {
     "@types/chai": "4.1.7",
