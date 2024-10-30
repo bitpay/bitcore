@@ -447,7 +447,11 @@ export class InternalStateProvider implements IChainStateService {
       mintHeight: { $gt: SpentHeightIndicators.conflicting }
     };
     if (args.includeSpent !== 'true') {
-      query.spentHeight = { $lt: SpentHeightIndicators.pending };
+      if (args.includePending === 'true') {
+        query.spentHeight = { $lte: SpentHeightIndicators.pending };
+      } else {
+        query.spentHeight = { $lt: SpentHeightIndicators.pending };
+      }
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
