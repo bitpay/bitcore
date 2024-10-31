@@ -7399,7 +7399,7 @@ export class WalletService implements IWalletService {
                 );
 
                 data.body = {
-                  allowance: spenderData?.value ?? "0"
+                  allowance: spenderData?.value ?? '0'
                 };
               }
             }
