@@ -127,15 +127,16 @@ export class PruningService {
   }
 
   async processOldMempoolTxs(chain: string, network: string, days: number) {
-    try {
-      if (this.runningOld) {
-        return;
-      }
-      this.runningOld = true;
+    if (this.runningOld) {
+      return;
+    }
+    this.runningOld = true;
 
+    try {
       if (Date.now() - this.lastRunTimeOld < OLD_INTERVAL_HRS * ONE_HOUR) {
         return;
       }
+      logger.info('========== OLD STARTED ===========');
 
       const oldTime = new Date(Date.now() - days * ONE_DAY);
       const count = await this.transactionModel.collection.countDocuments({
@@ -204,19 +205,21 @@ export class PruningService {
       logger.error(`Error processing old mempool txs: ${err.stack || err.message || err}`);
     } finally {
       this.runningOld = false;
+      logger.info('========== OLD FINISHED ===========');
     }
   }
 
   async processAllInvalidTxs(chain, network) {
-    try {
-      if (this.runningInvalid) {
-        return;
-      }
-      this.runningInvalid = true;
+    if (this.runningInvalid) {
+      return;
+    }
+    this.runningInvalid = true;
 
+    try {
       if (Date.now() - this.lastRunTimeInvalid < INV_INTERVAL_MINS * ONE_MIN) {
         return;
       }
+      logger.info('========== INVALID STARTED ===========');
 
       const count = await this.coinModel.collection.countDocuments({ chain, network, mintHeight: SpentHeightIndicators.pending });
       logger.info(`Found ${count} pending ${chain}:${network} TXOs`);
@@ -264,6 +267,7 @@ export class PruningService {
       logger.error(`Error processing invalid txs: ${err.stack || err.message || err}`);
     } finally {
       this.runningInvalid = false;
+      logger.info('========== INVALID FINISHED ===========');
     }
   }
 
@@ -298,9 +302,11 @@ export class PruningService {
     // Re-org protection
     const tipHeight = await this.rpcs[`${chain}:${network}`].getBlockHeight();
     const isMature = rTx?.blockHeight! > SpentHeightIndicators.pending && tipHeight - rTx?.blockHeight! > INV_MATURE_LEN;
-    if (isMature) {
+    const isExpired = rTx?.blockHeight! === SpentHeightIndicators.expired; // Set by --OLD
+    if (isMature || isExpired) {
       try {
-        logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${tx.txid} with replacement => ${tx.replacedByTxid}`);
+        const nConfs = tipHeight - rTx?.blockHeight!;
+        logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${tx.txid} with replacement => ${tx.replacedByTxid} (${isExpired ? 'expired' : nConfs})`);
         if (args.DRY) {
           return true;
         }        
