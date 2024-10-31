@@ -201,11 +201,11 @@ export class PruningService {
       });
       logger.info(`Removed all pending ${chain}:${network} txs older than ${days} days: ${rmCount}`);
       this.lastRunTimeOld = Date.now();
+      logger.info('========== OLD FINISHED ===========');
     } catch (err: any) {
       logger.error(`Error processing old mempool txs: ${err.stack || err.message || err}`);
     } finally {
       this.runningOld = false;
-      logger.info('========== OLD FINISHED ===========');
     }
   }
 
@@ -263,11 +263,11 @@ export class PruningService {
       }
       logger.info(`Invalidated ${invalidCount} (processed ${realCount}) pending TXOs for ${chain}:${network}`);
       this.lastRunTimeInvalid = Date.now();
+      logger.info('========== INVALID FINISHED ===========');
     } catch (err: any) {
       logger.error(`Error processing invalid txs: ${err.stack || err.message || err}`);
     } finally {
       this.runningInvalid = false;
-      logger.info('========== INVALID FINISHED ===========');
     }
   }
 
