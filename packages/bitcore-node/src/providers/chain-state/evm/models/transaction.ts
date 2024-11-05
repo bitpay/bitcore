@@ -422,12 +422,6 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             }
           }
         }
-      } else if (tx.abiType) { // We recognized upstream that this is a known ABI tx
-        // Handle Abi related effects
-        const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
-        if (effect) {
-          effects.push(effect);
-        }
       } else if (tx.internal?.length) { // LEGACY: Used for converting old OpenEthereum/Parity db entries with internal[]
         for (let internalTx of tx.internal) {
           if (internalTx.action.value && BigInt(internalTx.action.value) > 0) {
@@ -443,7 +437,13 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             }
           }
         }
-      }
+      } else if (tx.abiType) { // We recognized upstream that this is a known ABI tx
+        // Handle Abi related effects
+        const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
+        if (effect) {
+          effects.push(effect);
+        }
+      } 
     } catch (err) {
       logger.error('Error Getting Effects For TxId: %o ::%o', tx.txid, err);
     }
