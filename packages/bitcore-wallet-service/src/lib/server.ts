@@ -6673,7 +6673,8 @@ export class WalletService {
       'Calle Juan de Mariana',
       'Calle Francisco de Vitoria',
       'Calle Martin de Azpilicueta',
-      'Calle Luis de Molina'
+      'Calle Luis de Molina',
+      'Albert Jay Nock Street'
     ];
     const unit = 16;
     const qpayinfo: IQPayInfo = {
