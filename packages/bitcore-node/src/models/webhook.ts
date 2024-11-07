@@ -23,7 +23,7 @@ export class WebhookModel extends BaseModel<IWebhook> {
   onConnect() {
     // capped at 100 MiB
     this.db?.createCollection(this.collectionName, { capped: true, size: (2 ** 20) * 100 })
-      .catch((err) => { if (err.codeName !== 'NamespaceExists') throw err; });
+      .catch((err) => { if (err.codeName !== 'NamespaceExists' && err.code !== 48) throw err; });
     this.collection.createIndex({ chain: 1, network: 1, source: 1 }, { background: true });
   }
 
