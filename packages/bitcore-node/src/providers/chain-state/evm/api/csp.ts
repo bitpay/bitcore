@@ -790,6 +790,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       throw new Error('Missing required chain and/or network param');
     }
 
+    // limit - 1 because startBlock is inclusive; ensure limit is >= 0
+    limit = Math.max(limit - 1, 0);
+
     let height: number | null = null;
     if (blockId && blockId.length < 64) {
       height = parseInt(blockId, 10);
@@ -848,17 +851,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       query.startBlock = query.startBlock ?? query.endBlock - limit;
     }
 
-    if (limit > 0 && (query.endBlock - query.startBlock) > limit) {
+    if (query.endBlock - query.startBlock > limit) {
       query.endBlock = query.startBlock + limit;
     }
 
-    if (sort?.height === -1) {
-      let b = query.startBlock;
-      query.startBlock = query.endBlock;
-      query.endBlock = b - 1; // subtract 1 to fix the range() below which adds 1 to the endBlock
-    }
+    const r = range(query.startBlock, query.endBlock + 1); // +1 since range is [start, end)
 
-    return range(query.startBlock, query.endBlock + 1);
+    if (sort?.height === -1 && query.startBlock < query.endBlock) {
+      return r.reverse();
+    }
+    return r;
   }
 
   async _getBlockNumberByDate(params) {

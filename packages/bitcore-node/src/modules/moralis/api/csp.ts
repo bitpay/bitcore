@@ -47,8 +47,10 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const date = new Date(time || Date.now());
     const chainId = await this.getChainId({ network });
     const blockNum = await this._getBlockNumberByDate({ chainId, date });
-    // moralis returns the block after the given date
-    const blockId = Math.max(blockNum - 1, 0).toString();
+    if (!blockNum) {
+      return null;
+    }
+    const blockId = blockNum.toString();
     const blocks = await this._getBlocks({ chain, network, blockId, args: { limit: 1 } });
     return blocks.blocks[0] || null;
   }
