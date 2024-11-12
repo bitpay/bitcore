@@ -1,9 +1,9 @@
-import TickSvg from '../assets/images/tick.svg';
-import CopySvg from '../assets/images/copy-icon.svg';
-import {useState, memo, FC} from 'react';
-import styled from 'styled-components';
 import {AnimatePresence, motion} from 'framer-motion';
+import {FC, memo, useState} from 'react';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
+import styled from 'styled-components';
+import CopySvg from '../assets/images/copy-icon.svg';
+import TickSvg from '../assets/images/tick.svg';
 
 const CopyImg = styled(motion.div)`
   margin: auto 0.25rem;
@@ -49,26 +49,32 @@ const CopyText: FC<CopyTextProps> = ({text}) => {
   };
 
   return (
-    <>
-      <AnimatePresence>
-        {copied ? (
-          <CopyImg variants={copyAnime} exit='exit' initial='initial' animate='animate'>
-            <img src={TickSvg} width={12} height={12} alt='copy' />
+    <AnimatePresence>
+      {copied ? (
+        <CopyImg
+          key='tick'
+          variants={copyAnime}
+          exit='exit'
+          initial='initial'
+          animate='animate'
+        >
+          <img src={TickSvg} width={12} height={12} alt='tick' />
+        </CopyImg>
+      ) : (
+        <CopyToClipboard text={text} onCopy={() => onClickCopy()}>
+          <CopyImg
+            key='copy'
+            variants={copyAnime}
+            whileHover='whileHover'
+            exit='exit'
+            initial='initial'
+            animate='animate'
+          >
+            <img src={CopySvg} width={12} height={12} alt='copy' />
           </CopyImg>
-        ) : (
-          <CopyToClipboard text={text} onCopy={() => onClickCopy()}>
-            <CopyImg
-              variants={copyAnime}
-              whileHover='whileHover'
-              exit='exit'
-              initial='initial'
-              animate='animate'>
-              <img src={CopySvg} width={12} height={12} alt='copy' />
-            </CopyImg>
-          </CopyToClipboard>
-        )}
-      </AnimatePresence>
-    </>
+        </CopyToClipboard>
+      )}
+    </AnimatePresence>
   );
 };
 

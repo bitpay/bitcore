@@ -1,6 +1,6 @@
+import {motion} from 'framer-motion';
 import {FC, memo} from 'react';
 import styled, {css} from 'styled-components';
-import {motion} from 'framer-motion';
 import {NeutralSlate, SlateDark} from '../assets/styles/colors';
 
 interface InfoProps {
