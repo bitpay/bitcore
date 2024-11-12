@@ -793,7 +793,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     let height: number | null = null;
     if (blockId && blockId.length < 64) {
       height = parseInt(blockId, 10);
-      if (isNaN(height) || height.toString(10) !== blockId) {
+      if (isNaN(height) || height.toString(10) != blockId) {
         throw new Error('invalid block id provided');
       }
       blockId = undefined;
@@ -816,12 +816,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     // Get range
     if (sinceBlock) {
       let height = Number(sinceBlock);
-      if (isNaN(height) || height.toString(10) !== sinceBlock) {
+      if (isNaN(height) || height.toString(10) != sinceBlock) {
         throw new Error('invalid block id provided');
       }
       const { web3 } = await this.getWeb3(network);
       const tipHeight = await web3.eth.getBlockNumber();
-      if (tipHeight > height) {
+      if (tipHeight < height) {
         return [];
       }
       query.endBlock = query.endBlock ?? tipHeight;
@@ -855,7 +855,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (sort?.height === -1) {
       let b = query.startBlock;
       query.startBlock = query.endBlock;
-      query.endBlock = b;
+      query.endBlock = b - 1; // subtract 1 to fix the range() below which adds 1 to the endBlock
     }
 
     return range(query.startBlock, query.endBlock + 1);

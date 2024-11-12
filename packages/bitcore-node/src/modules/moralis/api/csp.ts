@@ -15,7 +15,7 @@ import { ExternalApiStream } from '../../../providers/chain-state/external/strea
 import { IBlock } from '../../../types/Block';
 import { ChainId, ChainNetwork } from '../../../types/ChainNetwork';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
-import { GetBlockParams, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
+import { GetBlockBeforeTimeParams, GetBlockParams, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { isDateValid } from '../../../utils';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 
@@ -39,6 +39,18 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   constructor(chain: string) {
     super(chain);
+  }
+
+  // @override
+  async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
+    const { chain, network, time } = params;
+    const date = new Date(time || Date.now());
+    const chainId = await this.getChainId({ network });
+    const blockNum = await this._getBlockNumberByDate({ chainId, date });
+    // moralis returns the block after the given date
+    const blockId = Math.max(blockNum - 1, 0).toString();
+    const blocks = await this._getBlocks({ chain, network, blockId, args: { limit: 1 } });
+    return blocks.blocks[0] || null;
   }
 
   // @override
