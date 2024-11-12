@@ -8,7 +8,7 @@ import { VerificationPeer } from '../../src/modules/bitcoin/VerificationPeer';
 import { AsyncRPC } from '../../src/rpc';
 import { Config } from '../../src/services/config';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
-import { wait } from '../../src/utils/wait';
+import { wait } from '../../src/utils';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 

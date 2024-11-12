@@ -1362,21 +1362,21 @@ describe('client API', function() {
   });
 
   describe('Wallet secret round trip', () => {
-    it('should create secret and parse secret', () => {
-      var i = 0;
-      while (i++ < 100) {
+    for (let i = 0; i < 20; i++) {
+      const network = ['testnet', 'livenet', 'regtest'][i % 3];
+      const coin = ['bch', 'btc', 'doge', 'ltc'][i % 4];
+
+      it(`should create secret and parse secret: ${i} - ${coin}:${network}`, () => {
         var walletId = Uuid.v4();
         var walletPrivKey = new Bitcore.PrivateKey();
-        var network = i % 2 == 0 ? 'testnet' : 'livenet';
-        var coin = i % 3 == 0 ? 'bch' : 'btc';
         var secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
         var result = Client.parseSecret(secret);
         result.walletId.should.equal(walletId);
         result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
         result.coin.should.equal(coin);
         result.network.should.equal(network);
-      }
-    });
+      });
+    }
     it('should fail on invalid secret', () => {
       (() => {
         Client.parseSecret('invalidSecret');
@@ -2587,6 +2587,78 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should save and retrieve op token addresses', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'eth', chain: 'op'}, () => {
+        clients[0].getPreferences((err, preferences) => {
+          should.not.exist(err);
+          preferences.should.be.empty;
+          clients[0].savePreferences(
+            {
+              opTokenAddresses: ['0x0b2c639c533813f4aa9d7837caf62653d097ff85']
+            },
+            err => {
+              should.not.exist(err);
+              clients[0].getPreferences((err, preferences) => {
+                should.not.exist(err);
+                should.exist(preferences);
+                preferences.opTokenAddresses[0].should.exist;
+                preferences.opTokenAddresses[0].should.equal('0x0b2c639c533813f4aa9d7837caf62653d097ff85');
+                done();
+              });
+            }
+          );
+        });
+      });
+    });
+
+    it('should save and retrieve base token addresses', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'eth', chain: 'base'}, () => {
+        clients[0].getPreferences((err, preferences) => {
+          should.not.exist(err);
+          preferences.should.be.empty;
+          clients[0].savePreferences(
+            {
+              baseTokenAddresses: ['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913']
+            },
+            err => {
+              should.not.exist(err);
+              clients[0].getPreferences((err, preferences) => {
+                should.not.exist(err);
+                should.exist(preferences);
+                preferences.baseTokenAddresses[0].should.exist;
+                preferences.baseTokenAddresses[0].should.equal('0x833589fcd6edb6e08f4c7c32d4f71b54bda02913');
+                done();
+              });
+            }
+          );
+        });
+      });
+    });
+
+    it('should save and retrieve arb token addresses', done => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'eth', chain: 'arb'}, () => {
+        clients[0].getPreferences((err, preferences) => {
+          should.not.exist(err);
+          preferences.should.be.empty;
+          clients[0].savePreferences(
+            {
+              arbTokenAddresses: ['0xaf88d065e77c8cc2239327c5edb3a432268e5831']
+            },
+            err => {
+              should.not.exist(err);
+              clients[0].getPreferences((err, preferences) => {
+                should.not.exist(err);
+                should.exist(preferences);
+                preferences.arbTokenAddresses[0].should.exist;
+                preferences.arbTokenAddresses[0].should.equal('0xaf88d065e77c8cc2239327c5edb3a432268e5831');
+                done();
+              });
+            }
+          );
+        });
+      });
+    });
   });
 
   describe('Fiat rates', () => {
@@ -2886,7 +2958,8 @@ describe('client API', function() {
           tasks.push(create);
         }
 
-        async.parallel(tasks, (err, results) => {
+        // Node20 http performance improvements causes async.parallel to overwhelm the server, hence parallelLimt
+        async.parallelLimit(tasks, 10, (err, results) => {
           should.not.exist(err);
           results.length.should.equal(num);
           done();
@@ -5211,7 +5284,8 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2
+            feePerKb: 100e2,
+            txType: 2
           };
           helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
@@ -5220,6 +5294,9 @@ describe('client API', function() {
             txp.status.should.equal('pending');
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
+            txp.txType.should.equal(2);
+            txp.maxGasFee.should.equal(20000);
+            txp.priorityGasFee.should.equal(5000);
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
@@ -6590,6 +6667,409 @@ describe('client API', function() {
         });
       });
 
+      it('should be able to gain access to op tokens wallets from mnemonic', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var opTokenAddresses = [
+            '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
+            '0x68f180fcce6836688e9084f035309e29bf0a2095'
+          ];
+          clients[0].savePreferences(
+            {
+              opTokenAddresses
+            },
+            err => {
+              should.not.exist(err);
+              Client.serverAssistedImport(
+                { words, includeTestnetWallets: true  },
+                {
+                  clientFactory: () => {
+                    return helpers.newClient(app);
+                  }
+                },
+                (err, k, c) => {
+                  // the op wallet + 2 tokens.
+                  c.length.should.equal(3);
+                  let recoveryClient = c[0];
+                  recoveryClient.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.walletId.should.equal(walletId);
+                    recoveryClient.credentials.coin.should.equal('eth');
+                    recoveryClient.credentials.chain.should.equal('op');
+                    let recoveryClient2 = c[2];
+                    recoveryClient2.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient2.credentials.coin.should.equal('wbtc');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('op');
+                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${opTokenAddresses[1]}`);
+                      done();
+                    });
+                  });
+                }
+              );
+            }
+          );
+        });
+      });
+
+      it('should be able to gain access to op tokens wallets from mnemonic (Case 2)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var opTokenAddresses = [
+            '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
+          ];
+
+          clients[0].savePreferences({ opTokenAddresses }, err => {
+            should.not.exist(err);
+            Client.serverAssistedImport(
+              { words, includeTestnetWallets: true  },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the op wallet + 1 token.
+                c.length.should.equal(2);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('op');
+                  let recoveryClient2 = c[1];
+                  recoveryClient2.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('op');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${opTokenAddresses[0]}`);
+                    done();
+                  });
+                });
+              }
+            );
+          });
+        });
+      });
+      
+      it('should not fail to gain access to op wallet with unknown tokens addresses from mnemonic (Case 3)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var opTokenAddresses = [
+            '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
+          ];
+
+          clients[0].savePreferences({ opTokenAddresses }, err => {
+            should.not.exist(err);
+              Client.serverAssistedImport(
+              { words, includeTestnetWallets: true },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the op wallet + 1 unknown token addresses on preferences.
+                c.length.should.equal(1);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('op');
+                  done();
+                });
+              })
+          });
+        });
+      });
+
+      it('should be able to gain access to base tokens wallets from mnemonic', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var baseTokenAddresses = [
+            '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+            '0x4200000000000000000000000000000000000006'
+          ];
+          clients[0].savePreferences(
+            {
+              baseTokenAddresses
+            },
+            err => {
+              should.not.exist(err);
+              Client.serverAssistedImport(
+                { words, includeTestnetWallets: true },
+                {
+                  clientFactory: () => {
+                    return helpers.newClient(app);
+                  }
+                },
+                (err, k, c) => {
+                  // the base wallet + 2 tokens.
+                  c.length.should.equal(3);
+                  let recoveryClient = c[0];
+                  recoveryClient.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.walletId.should.equal(walletId);
+                    recoveryClient.credentials.coin.should.equal('eth');
+                    recoveryClient.credentials.chain.should.equal('base');
+                    let recoveryClient2 = c[2];
+                    recoveryClient2.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient2.credentials.coin.should.equal('weth');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('base');
+                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${baseTokenAddresses[1]}`);
+                      done();
+                    });
+                  });
+                }
+              );
+            }
+          );
+        });
+      });
+      
+      it('should be able to gain access to base tokens wallets from mnemonic (Case 2)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var baseTokenAddresses = [
+            '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+          ];
+
+          clients[0].savePreferences({ baseTokenAddresses }, err => {
+            should.not.exist(err);
+            Client.serverAssistedImport(
+              { words, includeTestnetWallets: true  },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the base wallet + 1 token.
+                c.length.should.equal(2);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('base');
+                  let recoveryClient2 = c[1];
+                  recoveryClient2.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('base');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${baseTokenAddresses[0]}`);
+                    done();
+                  });
+                });
+              }
+            );
+          });
+        });
+      });
+
+      it('should not fail to gain access to base wallet with unknown tokens addresses from mnemonic (Case 3)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var baseTokenAddresses = [
+            '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
+          ];
+      
+          clients[0].savePreferences({ baseTokenAddresses }, err => {
+            should.not.exist(err);
+              Client.serverAssistedImport(
+              { words, includeTestnetWallets: true },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the base wallet + unknown token addresses should be ignored.
+                c.length.should.equal(1);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('base');
+                  done();
+                });
+              })
+          });
+        });
+      });
+
+      it('should be able to gain access to arb tokens wallets from mnemonic', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var arbTokenAddresses = [
+            '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+            '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f'
+          ];
+          clients[0].savePreferences(
+            {
+              arbTokenAddresses
+            },
+            err => {
+              should.not.exist(err);
+              Client.serverAssistedImport(
+                { words, includeTestnetWallets: true },
+                {
+                  clientFactory: () => {
+                    return helpers.newClient(app);
+                  }
+                },
+                (err, k, c) => {
+                  // the arb wallet + 2 tokens.
+                  c.length.should.equal(3);
+                  let recoveryClient = c[0];
+                  recoveryClient.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.credentials.walletId.should.equal(walletId);
+                    recoveryClient.credentials.coin.should.equal('eth');
+                    recoveryClient.credentials.chain.should.equal('arb');
+                    let recoveryClient2 = c[2];
+                    recoveryClient2.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient2.credentials.coin.should.equal('wbtc');
+                      should.exist(recoveryClient2.credentials.chain);
+                      recoveryClient2.credentials.chain.should.equal('arb');
+                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${arbTokenAddresses[1]}`);
+                      done();
+                    });
+                  });
+                }
+              );
+            }
+          );
+        });
+      });
+
+      it('should be able to gain access to arb tokens wallets from mnemonic (Case 2)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var arbTokenAddresses = [
+            '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+          ];
+
+          clients[0].savePreferences({ arbTokenAddresses }, err => {
+            should.not.exist(err);
+            Client.serverAssistedImport(
+              { words, includeTestnetWallets: true  },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the arb wallet + 1 token.
+                c.length.should.equal(2);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('arb');
+                  let recoveryClient2 = c[1];
+                  recoveryClient2.openWallet(err => {
+                    should.not.exist(err);
+                    recoveryClient2.credentials.coin.should.equal('usdc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('arb');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${arbTokenAddresses[0]}`);
+                    done();
+                  });
+                });
+              }
+            );
+          });
+        });
+      });
+
+      it('should not fail to gain access to arb wallet with unknown tokens addresses from mnemonic (Case 3)', done => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb' }, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          var walletId = clients[0].credentials.walletId;
+          var arbTokenAddresses = [
+            '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
+          ];
+      
+          clients[0].savePreferences({ arbTokenAddresses }, err => {
+            should.not.exist(err);
+              Client.serverAssistedImport(
+              { words, includeTestnetWallets: true },
+              {
+                clientFactory: () => {
+                  return helpers.newClient(app);
+                }
+              },
+              (err, k, c) => {
+                // the arb wallet + unknown token addresses should be ignored.
+                c.length.should.equal(1);
+                let recoveryClient = c[0];
+                recoveryClient.openWallet(err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('arb');
+                  done();
+                });
+              })
+          });
+        });
+      });
+
+      
       it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', done => {
         let key = new Key({ seedType: 'new' });
         helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
@@ -6783,6 +7263,62 @@ describe('client API', function() {
                     });
                   });
                 });
+              });
+            });
+          });
+        });
+      });
+
+      it('should be able to gain access to three arb accounts from mnemonic and add wallet info correctly to all of them', done => {
+        let key = new Key({ seedType: 'new' });
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb'}, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb', account: 1}, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb', account: 2}, () => {
+              var words = keys[0].get(null, true).mnemonic;
+              var walletName = clients[0].credentials.walletName;
+              var copayerName = clients[0].credentials.copayerName;
+              clients[0].createAddress((err, addr) => {
+                should.not.exist(err);
+                should.exist(addr);
+                Client.serverAssistedImport(
+                  { words, includeTestnetWallets: true },
+                  {
+                    clientFactory: () => {
+                      return helpers.newClient(app);
+                    }
+                  },
+                  (err, k, c) => {
+                    should.not.exist(err);
+                    c.length.should.equal(3);
+                    c[0].credentials.coin.should.equal('eth');
+                    c[1].credentials.coin.should.equal('eth');
+                    c[2].credentials.coin.should.equal('eth');
+                    c[0].credentials.chain.should.equal('arb');
+                    c[1].credentials.chain.should.equal('arb');
+                    c[2].credentials.chain.should.equal('arb');
+                    c[0].credentials.account.should.equal(0);
+                    c[1].credentials.account.should.equal(1);
+                    c[2].credentials.account.should.equal(2);
+                    c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                    c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                    c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                    should.exist(c[0].credentials.walletId);
+                    should.exist(c[1].credentials.walletId);
+                    should.exist(c[2].credentials.walletId);
+                    let recoveryClient = c[2];
+                    recoveryClient.openWallet(err => {
+                      should.not.exist(err);
+                      recoveryClient.credentials.walletName.should.equal(walletName);
+                      recoveryClient.credentials.copayerName.should.equal(copayerName);
+                      recoveryClient.getMainAddresses({}, (err, list) => {
+                        should.not.exist(err);
+                        should.exist(list);
+                        list[0].address.should.equal(addr.address);
+                        done();
+                      });
+                    });
+                  }
+                );
               });
             });
           });

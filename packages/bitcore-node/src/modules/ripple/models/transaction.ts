@@ -12,8 +12,7 @@ import { Storage, StorageService } from '../../../services/storage';
 import { SpentHeightIndicators } from '../../../types/Coin';
 import { StreamingFindOptions } from '../../../types/Query';
 import { TransformOptions } from '../../../types/TransformOptions';
-import { valueOrDefault } from '../../../utils/check';
-import { partition } from '../../../utils/partition';
+import { partition, valueOrDefault } from '../../../utils';
 import { IXrpCoin, IXrpTransaction, XrpTransactionJSON } from '../types';
 
 @LoggifyClass

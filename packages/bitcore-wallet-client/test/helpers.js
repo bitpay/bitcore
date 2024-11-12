@@ -53,16 +53,12 @@ const helpers = {
             timeout: sinon.stub(),
             end: sinon.stub().yields(err, res)
         };
-        var reqFactory = _.reduce(
-            ['get', 'post', 'put', 'delete'],
-            (mem, verb) => {
-                mem[verb] = url => {
-                    return request;
-                };
-                return mem;
-            },
-            {}
-        );
+        var reqFactory = ['get', 'post', 'put', 'delete'].reduce((mem, verb) => {
+            mem[verb] = url => {
+                return request;
+            };
+            return mem;
+        }, {});
 
         return reqFactory;
     },
@@ -101,6 +97,7 @@ const helpers = {
         opts = opts || {};
 
         var coin = opts.coin || 'btc';
+        var chain = opts.chain || coin;
         var network = opts.network || 'testnet';
 
         let keyOpts = {
@@ -113,7 +110,7 @@ const helpers = {
         keys[0] = opts.key || new Key(keyOpts);
         let cred = keys[0].createCredentials(null, {
             coin: coin,
-            chain: coin, // chain === coin for stored clients
+            chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
             network: network,
             account: opts.account ? opts.account : 0,
             n: n,
@@ -128,6 +125,7 @@ const helpers = {
             n,
             {
                 coin: coin,
+                chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
                 network: network,
                 singleAddress: !!opts.singleAddress,
                 doNotCheck: true,
@@ -151,7 +149,7 @@ const helpers = {
                                     clients[i].fromString(
                                         keys[i].createCredentials(null, {
                                             coin: coin,
-                                            chain: opts.coin, // chain === coin for stored clients
+                                            chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
                                             network: network,
                                             account: 0,
                                             n: n,
@@ -162,7 +160,8 @@ const helpers = {
                                         secret,
                                         'copayer ' + i,
                                         {
-                                            coin: coin
+                                            coin: coin,
+                                            chain: chain
                                         },
                                         cb
                                     );
@@ -336,6 +335,12 @@ const blockchainExplorerMock = {
         });
 
         return cb(null, levels);
+    },
+    estimateFeeV2: (opts, cb) => {
+        return cb(null, 20000);
+    },
+    estimatePriorityFee: (opts, cb) => {
+        return cb(null, 5000);
     },
     estimateGas: (nbBlocks, cb) => {
         return cb(null, '20000000000');

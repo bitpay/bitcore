@@ -1,14 +1,14 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = chai || require('chai');
-var sinon = sinon || require('sinon');
-var should = chai.should();
-var {PayPro: payPro} = require('../ts_build/lib/paypro');
-var TestData = require('./testdata');
+const chai = require('chai');
+const sinon = require('sinon');
+const crypto = require('crypto');
+const should = chai.should();
+const { PayPro: payPro } = require('../ts_build/lib/paypro');
+const TestData = require('./testdata');
 
 function mockRequest(bodyBuf, headers) {
-  bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
+  bodyBuf = Array.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
   payPro.r = {
     'get': (_url) => {
       return {
@@ -110,7 +110,49 @@ describe('paypro', function () {
   });
 
   it('Should detect a tampered PP request (bad signature)', function (done) {
-    let h = _.clone(TestData.payProJson.bch.headers);
+    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
+    h.signature = crypto.randomBytes(64).toString('hex');
+    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
+    payPro.get({
+      url: 'https://test.bitpay.com/paypro',
+      network: 'testnet',
+      coin: 'bch',
+    }, function (err, res) {
+      err.toString().should.contain('signature invalid');
+      done();
+    });
+  });
+
+  it('Should detect a tampered PP request (short signature)', function (done) {
+    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
+    h.signature = h.signature.slice(0, -1);
+    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
+    payPro.get({
+      url: 'https://test.bitpay.com/paypro',
+      network: 'testnet',
+      coin: 'bch',
+    }, function (err, res) {
+      err.toString().should.contain('signature invalid');
+      done();
+    });
+  });
+
+  it('Should detect a tampered PP request (non-hex signature)', function (done) {
+    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
+    h.signature = crypto.randomBytes(64).toString('base64');
+    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
+    payPro.get({
+      url: 'https://test.bitpay.com/paypro',
+      network: 'testnet',
+      coin: 'bch',
+    }, function (err, res) {
+      err.toString().should.contain('signature invalid');
+      done();
+    });
+  });
+
+  it('Should detect a tampered PP request (bogus signature)', function (done) {
+    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = 'xx';
     mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
     payPro.get({

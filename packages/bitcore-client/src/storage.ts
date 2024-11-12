@@ -54,6 +54,10 @@ export class Storage {
     return dbs;
   }
 
+  async close() {
+    this.storageType?.close?.();
+  }
+
   async loadWallet(params: { name: string }) {
     const { name } = params;
     let wallet;
@@ -160,13 +164,13 @@ export class Storage {
     const { name, keys, encryptionKey } = params;
     let open = true;
     for (const key of keys) {
-      let { pubKey } = key;
+      let { pubKey, path } = key;
       pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {
         const toEncrypt = JSON.stringify(key);
         const encKey = Encryption.encryptPrivateKey(toEncrypt, pubKey, encryptionKey);
-        payload = { encKey, pubKey };
+        payload = { encKey, pubKey, path };
       }
       const toStore = JSON.stringify(payload);
       let keepAlive = true;
@@ -176,5 +180,15 @@ export class Storage {
       await this.storageType.addKeys({ name, key, toStore, keepAlive, open });
       open = false;
     }
+  }
+
+  async getAddress(params: { name: string; address: string }) {
+    const { name, address } = params;
+    return this.storageType.getAddress({ name, address, keepAlive: true, open: true });
+  }
+
+  async getAddresses(params: { name: string, limit?: number, skip?: number }) {
+    const { name, limit, skip } = params;
+    return this.storageType.getAddresses({ name, limit, skip });
   }
 }

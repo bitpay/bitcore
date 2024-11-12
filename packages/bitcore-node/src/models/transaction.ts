@@ -11,7 +11,7 @@ import { SpentHeightIndicators } from '../types/Coin';
 import { BitcoinTransaction } from '../types/namespaces/Bitcoin';
 import { TransactionJSON } from '../types/Transaction';
 import { TransformOptions } from '../types/TransformOptions';
-import { partition } from '../utils/partition';
+import { partition } from '../utils';
 import { MongoBound } from './base';
 import { BaseTransaction, ITransaction } from './baseTransaction';
 import { CoinStorage, ICoin } from './coin';
@@ -652,7 +652,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         spentTxid: { $ne: minedTxid }
       };
 
-      const conflictingInputsStream = await CoinStorage.collection.find(conflictingInputsQuery);
+      const conflictingInputsStream = CoinStorage.collection.find(conflictingInputsQuery);
       const seenInvalidTxids = new Set();
       let input: ICoin | null;
 
@@ -660,7 +660,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         if (seenInvalidTxids.has(input.spentTxid)) {
           continue;
         }
-        await this._invalidateTx({ chain, network, invalidTxid: input.spentTxid, replacedByTxid: minedTxid });
+        await this._invalidateTx({ chain, network, invalidTxid: input.spentTxid, replacedByTxid: minedTxid, simple: true });
         seenInvalidTxids.add(input.spentTxid);
       }
 
@@ -673,29 +673,33 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   async _invalidateTx(params: {
     chain: string;
     network: string;
-    invalidTxid: string,
-    replacedByTxid?: string // only provided at the beginning of the ancestral tree. Txs that spend unconfirmed outputs aren't "replaced"
-    invalidParentTxids?: string[] // empty at the beginning of the ancestral tree. 
+    invalidTxid: string;
+    replacedByTxid?: string; // only provided at the beginning of the ancestral tree. Txs that spend unconfirmed outputs aren't "replaced"
+    invalidParentTxids?: string[]; // empty at the beginning of the ancestral tree.
+    simple?: boolean; // if true, don't invalidate descendants
   }) {
-    const { chain, network, invalidTxid, replacedByTxid, invalidParentTxids = [] } = params;
-    const spentOutputsQuery = {
-      chain,
-      network,
-      spentHeight: SpentHeightIndicators.pending,
-      mintTxid: invalidTxid
-    };
+    const { chain, network, invalidTxid, replacedByTxid, invalidParentTxids = [], simple } = params;
+    
+    if (!simple) {
+      const spentOutputsQuery = {
+        chain,
+        network,
+        spentHeight: SpentHeightIndicators.pending,
+        mintTxid: invalidTxid
+      };
 
-    // spent outputs of invalid tx
-    const spentOutputsStream = await CoinStorage.collection.find(spentOutputsQuery);
-    const seenTxids = new Set();
-    let output: ICoin | null;
+      // spent outputs of invalid tx
+      const spentOutputsStream = CoinStorage.collection.find(spentOutputsQuery);
+      const seenTxids = new Set();
+      let output: ICoin | null;
 
-    while ((output = await spentOutputsStream.next())) {
-      if (!output.spentTxid || seenTxids.has(output.spentTxid)) {
-        continue;
+      while ((output = await spentOutputsStream.next())) {
+        if (!output.spentTxid || seenTxids.has(output.spentTxid)) {
+          continue;
+        }
+        // invalidate descendent tx (tx spending unconfirmed UTXO)
+        await this._invalidateTx({ chain, network, invalidTxid: output.spentTxid, invalidParentTxids: [...invalidParentTxids, invalidTxid], simple });
       }
-      // invalidate descendent tx (tx spending unconfirmed UTXO)
-      await this._invalidateTx({ chain, network, invalidTxid: output.spentTxid, invalidParentTxids: [...invalidParentTxids, invalidTxid] });
     }
 
     const setTx: { blockHeight: number; replacedByTxid?: string } = { blockHeight: SpentHeightIndicators.conflicting };

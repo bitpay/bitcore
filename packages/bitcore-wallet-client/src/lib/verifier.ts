@@ -50,7 +50,8 @@ export class Verifier {
       credentials.m,
       network,
       credentials.chain,
-      escrowInputs
+      escrowInputs,
+      credentials.hardwareSourcePublicKey
     );
     return (
       local.address == address.address &&

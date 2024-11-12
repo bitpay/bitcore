@@ -52,7 +52,7 @@ export class EthDeriver implements IDeriver {
     const pubKey = pubKeyObj.toString('hex');
     const pubKeyBuffer = pubKeyObj.toBuffer();
     const address = this.addressFromPublicKeyBuffer(pubKeyBuffer);
-    return { address, privKey, pubKey };
+    return { address, privKey, pubKey, path };
   }
 
   getAddress(network: string, pubKey) {

@@ -1,6 +1,4 @@
 'use strict';
-var _ = require('lodash');
-
 var BufferUtil = require('./util/buffer');
 var JSUtil = require('./util/js');
 var networks = [];
@@ -12,7 +10,7 @@ var networkMaps = {};
  * (a.k.a. "mainnet") and "testnet".
  * @constructor
  */
-function Network() {}
+function Network() { }
 
 Network.prototype.toString = function toString() {
   return this.name;
@@ -31,20 +29,32 @@ function get(arg, keys) {
     return arg;
   }
   if (keys) {
-    if (!_.isArray(keys)) {
+    if (!Array.isArray(keys)) {
       keys = [keys];
     }
-    for (var i = 0; i < networks.length; i++) {
-      var network = networks[i];
-      var filteredNet = _.pick(network, keys);
-      var netValues = _.values(filteredNet);
-      if(~netValues.indexOf(arg)) {
-	return network;
+    for (const index in networks) {
+      if (keys.some(key => networks[index][key] === arg)) {
+        return networks[index];
       }
     }
     return undefined;
   }
-  return networkMaps[arg];
+  if (networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
+}
+
+/**
+ * @function
+ * @member Networks#is
+ * Returns true if the string is the network name or alias
+ * @param {string} str - A string to check
+ * @return boolean
+ */
+function is(str) {
+  return this.name == str || this.alias == str;
 }
 
 /***
@@ -55,7 +65,7 @@ function get(arg, keys) {
  */
 function prefixToArray(prefix) {
   var result = [];
-  for (var i=0; i < prefix.length; i++) {
+  for (var i = 0; i < prefix.length; i++) {
     result.push(prefix.charCodeAt(i) & 31);
   }
   return result;
@@ -73,18 +83,20 @@ function prefixToArray(prefix) {
  * @param {Number} data.scripthash - The scripthash prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
- * @param {Number} data.networkMagic - The network magic number
- * @param {Number} data.port - The network port
- * @param {Array}  data.dnsSeeds - An array of dns seeds
+ * @param {Array}  data.variants - An array of variants
+ * @param {string} data.variants.name - The name of the variant
+ * @param {Number} data.variants.networkMagic - The network magic number
+ * @param {Number} data.variants.port - The network port
+ * @param {Array}  data.variants.dnsSeeds - An array of dns seeds
  * @return Network
  */
 function addNetwork(data) {
-
   var network = new Network();
 
   JSUtil.defineImmutable(network, {
     name: data.name,
     alias: data.alias,
+    is: data.is,
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
@@ -92,47 +104,52 @@ function addNetwork(data) {
     xprivkey: data.xprivkey,
   });
 
-  var indexBy = data.indexBy || Object.keys(data);
-
   if (data.prefix) {
-    _.extend(network, {
+    JSUtil.defineImmutable(network, {
       prefix: data.prefix,
       prefixArray: prefixToArray(data.prefix),
     });
   }
 
   if (data.networkMagic) {
-    _.extend(network, {
+    JSUtil.defineImmutable(network, {
       networkMagic: BufferUtil.integerAsBuffer(data.networkMagic)
     });
   }
 
   if (data.port) {
-    _.extend(network, {
+    JSUtil.defineImmutable(network, {
       port: data.port
     });
   }
 
   if (data.dnsSeeds) {
-    _.extend(network, {
+    JSUtil.defineImmutable(network, {
       dnsSeeds: data.dnsSeeds
     });
   }
+
+  for (const value of Object.values(network)) {
+    if (value != null && typeof value !== 'object') {
+      if (!networkMaps[value]) {
+        networkMaps[value] = [];
+      }
+      networkMaps[value].push(network);
+    }
+  };
+
   networks.push(network);
-  indexNetworkBy(network, indexBy);
+
+  for (const variant of data.variants || []) {
+    addNetwork({
+      ...data,
+      variants: undefined,
+      ...variant,
+    });
+  }
+
   return network;
 }
-
-function indexNetworkBy(network, keys) {
-  for(var i = 0; i <  keys.length; i++) {
-    var key = keys[i];
-    var networkValue = network[key];
-    if(!_.isUndefined(networkValue) && !_.isObject(networkValue)) {
-      networkMaps[networkValue] = network;
-    }
-  }
-}
-
 
 /**
  * @function
@@ -174,9 +191,10 @@ var dnsSeeds = [
   'seed.bchd.cash'
 ];
 
-var liveNetwork = {
+addNetwork({
   name: 'livenet',
   alias: 'mainnet',
+  is,
   prefix: 'bitcoincash',
   pubkeyhash: 28,
   privatekey: 0x80,
@@ -186,23 +204,63 @@ var liveNetwork = {
   networkMagic: 0xe3e1f3e8,
   port: 8333,
   dnsSeeds: dnsSeeds
-};
+});
 
-var testNetwork = {
+/**
+ * @instance
+ * @member Networks#livenet
+ */
+var livenet = get('livenet');
+
+addNetwork({
   name: 'testnet',
+  alias: 'testnet',
+  is,
   prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0xf4e5f3f4,
-  port: 18333,
-  dnsSeeds: dnsSeeds
-};
+  variants: [{
+    name: 'testnet3',
+    networkMagic: 0xf4e5f3f4,
+    port: 18333,
+    dnsSeeds: dnsSeeds
+  },
+  {
+    name: 'testnet4',
+    networkMagic: 0xe2b7daaf,
+    port: 28333,
+    dnsSeeds: dnsSeeds
+  },
+  {
+    name: 'scalenet',
+    networkMagic: 0xc3afe1a2,
+    port: 38333,
+    dnsSeeds: dnsSeeds
+  },
+  {
+    name: 'chipnet',
+    networkMagic: 0xe2b7daaf,
+    port: 48333,
+    dnsSeeds: dnsSeeds
+  }]
+});
 
-var regtestNetwork = {
+/**
+ * @instance
+ * @member Networks#testnet
+ */
+var testnet = get('testnet');
+var testnet3 = get('testnet3');
+var testnet4 = get('testnet4');
+var scalenet = get('scalenet');
+var chipnet = get('chipnet');
+
+addNetwork({
   name: 'regtest',
+  is,
   prefix: 'bchreg',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
@@ -218,19 +276,13 @@ var regtestNetwork = {
     'prefix',
     'networkMagic'
   ]
-};
+});
 
-
-// Add configurable values for testnet/regtest
-
-
-addNetwork(testNetwork);
-addNetwork(regtestNetwork);
-addNetwork(liveNetwork);
-
-var livenet = get('livenet');
+/**
+ * @instance
+ * @member Networks#regtest
+ */
 var regtest = get('regtest');
-var testnet = get('testnet');
 
 /**
  * @function
@@ -262,6 +314,10 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  testnet3: testnet3,
+  testnet4: testnet4,
+  scalenet: scalenet,
+  chipnet: chipnet,
   regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,

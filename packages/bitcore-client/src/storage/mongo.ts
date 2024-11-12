@@ -5,15 +5,17 @@ import { Transform } from 'stream';
 export class Mongo {
   path: string;
   db: Db;
-  collectionName: string;
-  collection: any;
+  walletCollectionName: string = 'wallets';
+  addressCollectionName: string = 'walletaddresses';
+  walletCollection: any;
+  addressCollection: any;
   errorIfExists?: boolean;
   createIfMissing: boolean;
   storageType: string;
   databaseName: string;
   client: MongoClient;
   port: string;
-  addressCollectionName: string;
+
   constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean }) {
     const { path, createIfMissing, errorIfExists } = params;
     if (path) {
@@ -29,39 +31,39 @@ export class Mongo {
     }
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
-    this.collectionName = 'wallets';
-    this.addressCollectionName = 'walletaddresses';
   }
 
-  async init(params) {
-    const { wallet, addresses } = params;
+  async init() {
+    if (this.db) {
+      return;
+    }
     try {
       this.client = new MongoClient(this.path, { useNewUrlParser: true, useUnifiedTopology: true });
       await this.client.connect();
       this.db = this.client.db(this.databaseName);
-      if (wallet) {
-        this.collection = this.db.collection(this.collectionName);
-      } else if (addresses) {
-        this.collection = this.db.collection(this.addressCollectionName);
-      }
-      await this.collection.createIndex({ name: 1 });
+      this.walletCollection = this.db.collection(this.walletCollectionName);
+      this.addressCollection = this.db.collection(this.addressCollectionName);
+      await this.walletCollection.createIndex({ name: 1 });
+      await this.addressCollection.createIndex({ name: 1 });
     } catch (error) {}
   }
 
   async close() {
-    await this.client.close();
+    await this.client?.close();
+    this.client = null;
+    this.db = null;
   }
 
   async testConnection() {
     try {
-      this.client = new MongoClient(this.path, {
+      const client = new MongoClient(this.path, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         noDelay: true,
         serverSelectionTimeoutMS: 5000
       });
-      await this.client.connect();
-      await this.client.close();
+      await client.connect();
+      await client.close();
       return true;
     } catch (e) {
       return false;
@@ -69,7 +71,7 @@ export class Mongo {
   }
 
   async listWallets() {
-    await this.init({ wallet: 1 });
+    await this.init();
     const stream = new Transform({
       objectMode: true,
       transform(data, enc, next) {
@@ -77,15 +79,15 @@ export class Mongo {
         next();
       }
     });
-    const cursor = this.collection
-      .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 })
+    const cursor = this.walletCollection
+      .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1, tokens: 1 })
       .pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
   }
 
   async listKeys() {
-    await this.init({ addresses: 1 });
+    await this.init();
     const stream = new Transform({
       objectMode: true,
       transform(data, enc, next) {
@@ -93,14 +95,14 @@ export class Mongo {
         next();
       }
     });
-    const cursor = this.collection.find({}, { name: 1, key: 1, toStore: 1, storageType: 1 }).pipe(stream);
+    const cursor = this.addressCollection.find({}, { name: 1, key: 1, toStore: 1, storageType: 1 }).pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
   }
 
   async saveWallet(params) {
     const { wallet } = params;
-    await this.init({ wallet: 1 });
+    await this.init();
     if (wallet.lite) {
       delete wallet.masterKey;
       delete wallet.pubKey;
@@ -110,7 +112,7 @@ export class Mongo {
       delete wallet.storage;
       delete wallet.client;
       delete wallet._id;
-      await this.collection.updateOne({ name: wallet.name }, { $set: wallet }, { upsert: 1 });
+      await this.walletCollection.updateOne({ name: wallet.name }, { $set: wallet }, { upsert: 1 });
       await this.close();
     } catch (error) {
       console.error(error);
@@ -119,9 +121,9 @@ export class Mongo {
   }
 
   async loadWallet(params: { name: string }) {
-    await this.init({ wallet: 1 });
+    await this.init();
     const { name } = params;
-    const wallet = await this.collection.findOne({ name });
+    const wallet = await this.walletCollection.findOne({ name });
     await this.close();
     if (!wallet) {
       return;
@@ -130,36 +132,56 @@ export class Mongo {
   }
 
   async deleteWallet(params: { name: string }) {
-    await this.init({ wallet: 1 });
+    await this.init();
     const { name } = params;
-    await this.collection.deleteOne({ name });
+    await this.walletCollection.deleteOne({ name });
+    await this.addressCollection.deleteMany({ name });
     await this.close();
   }
 
   async getKey(params: { address: string; name: string; keepAlive: boolean; open: boolean }) {
     if (params.open) {
-      await this.init({ addresses: 1 });
+      await this.init();
     }
     const { address, name } = params;
-    const key = await this.collection.findOne({ name, address });
+    const key = await this.addressCollection.findOne({ name, address });
     if (!params.keepAlive) {
       await this.close();
     }
-    return key.data;
+    return key?.data;
   }
 
   async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
     try {
       if (params.open) {
-        await this.init({ addresses: 1 });
+        await this.init();
       }
       const { name, key, toStore } = params;
-      await this.collection.insertOne({ name, address: key.address, data: toStore });
+      await this.addressCollection.insertOne({ name, address: key.address, data: toStore });
       if (!params.keepAlive) {
         await this.close();
       }
     } catch (error) {
       console.error(error);
     }
+  }
+
+  async getAddress(params: { name: string; address: string, keepAlive: boolean; open: boolean}) {
+    const { name, address, keepAlive, open } = params;
+    const data = await this.getKey({ address, name, keepAlive, open });
+    if (!data) {
+      return null;
+    }
+    const { pubKey, path } = JSON.parse(data);
+    return { address, pubKey, path };
+  }
+
+  async getAddresses(params: { name: string; limit?: number; skip?: number }) {
+    const { name, limit, skip } = params;
+    const keys = await this.addressCollection.find({ name }, {}, { $limit: limit, $skip: skip }).toArray();
+    return keys.map(k => {
+      const { pubKey, path } = JSON.parse(k.data);
+      return { address: k.address, pubKey, path };
+    });
   }
 }

@@ -1,10 +1,11 @@
-import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
+import { jsonStringify, overlaps } from '../../../../utils';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionTransformed } from '../types';
 
-export class EVMListTransactionsStream extends Transform {
+export class EVMListTransactionsStream extends TransformWithEventPipe {
   constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }
@@ -44,22 +45,34 @@ export class EVMListTransactionsStream extends Transform {
         baseTx.category = 'send';
         baseTx.satoshis = -transaction.value
         this.push(
-          JSON.stringify(baseTx) + '\n'
+          jsonStringify(baseTx) + '\n'
         );
       } else {
         baseTx.category = 'move';
         baseTx.satoshis = transaction.value;
         this.push(
-          JSON.stringify(baseTx) + '\n'
+          jsonStringify(baseTx) + '\n'
         );
       }
     } else {
+      baseTx.category = 'receive'; // assume it's a receive, but may not be sent
       const weReceived = this.walletAddresses.includes(transaction.to);
-      if (weReceived) {
-        baseTx.category = 'receive';
-        baseTx.satoshis = transaction.value;
+      const weReceivedInternal = overlaps(this.walletAddresses, transaction.effects?.map(e => e.to));
+      if (weReceivedInternal) {
+        baseTx.satoshis = 0n;
+        for (const effect of transaction.effects!) {
+          if (this.walletAddresses.includes(effect.to) && !effect.contractAddress) {
+            baseTx.satoshis += BigInt(effect.amount || 0);
+          }
+        }
         this.push(
-          JSON.stringify(baseTx) + '\n'
+          jsonStringify(baseTx) + '\n'
+        );
+      } else if (weReceived) {
+        // console.log(weReceived, weReceivedInternal, transaction.to, this.walletAddresses, transaction);
+        baseTx.satoshis = BigInt(transaction.value || 0);
+        this.push(
+          jsonStringify(baseTx) + '\n'
         );
       }
     }

@@ -24,6 +24,9 @@ var Bitcore_ = {
   bch: CWC.BitcoreLibCash,
   eth: CWC.BitcoreLib,
   matic: CWC.BitcoreLib,
+  arb: CWC.BitcoreLib,
+  base: CWC.BitcoreLib,
+  op: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
   ltc: CWC.BitcoreLibLtc
@@ -34,6 +37,15 @@ var querystring = require('querystring');
 
 var log = require('./log');
 const Errors = require('./errors');
+
+const NetworkChar = {
+  livenet: 'L',
+  testnet: 'T',
+  regtest: 'R'
+};
+for (const network in NetworkChar) { // invert NetworkChar
+  NetworkChar[NetworkChar[network]] = network;
+}
 
 var BASE_URL = 'http://localhost:3232/bws/api';
 
@@ -126,7 +138,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function () {};
+    cb = cb || function() { };
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -317,7 +329,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) {}
+      } catch (ex) { }
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -418,13 +430,13 @@ export class API extends EventEmitter {
     return this.fromObj(c);
   }
 
-  decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, opts, cb) {
+  decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, progressCallback, cb) {
     var Bip38 = require('bip38');
     var bip38 = new Bip38();
 
     var privateKeyWif;
     try {
-      privateKeyWif = bip38.decrypt(encryptedPrivateKeyBase58, passphrase);
+      privateKeyWif = bip38.decrypt(encryptedPrivateKeyBase58, passphrase, progressCallback);
     } catch (ex) {
       return cb(new Error('Could not decrypt BIP38 private key' + ex));
     }
@@ -602,17 +614,18 @@ export class API extends EventEmitter {
     });
   }
 
-  static _buildSecret(walletId, walletPrivKey, coin, network) {
-    if (_.isString(walletPrivKey)) {
+  static _buildSecret(walletId, walletPrivKey, chain, network) {
+    if (typeof walletPrivKey === 'string') {
       walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
     }
     var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
+    const networkChar = NetworkChar[network] || 'L';
     return (
       _.padEnd(widBase58, 22, '0') +
       walletPrivKey.toWIF() +
-      (network == 'testnet' ? 'T' : 'L') +
-      coin
+      networkChar +
+      chain
     );
   }
 
@@ -636,15 +649,15 @@ export class API extends EventEmitter {
       var widHex = Bitcore.encoding.Base58.decode(widBase58).toString('hex');
       var walletId = split(widHex, [8, 12, 16, 20]).join('-');
 
-      var walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
-      var networkChar = secretSplit[2];
-      var coin = secretSplit[3] || 'btc';
+      const walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
+      const network = NetworkChar[secretSplit[2]] || 'livenet';
+      const coin = secretSplit[3] || 'btc';
 
       return {
         walletId,
         walletPrivKey,
         coin,
-        network: networkChar == 'T' ? 'testnet' : 'livenet'
+        network
       };
     } catch (ex) {
       throw new Error('Invalid secret');
@@ -702,7 +715,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s, txp.signingMethod);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
@@ -714,6 +727,9 @@ export class API extends EventEmitter {
       case 'xrp':
       case 'eth':
       case 'matic':
+      case 'arb':
+      case 'base':
+      case 'op':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
@@ -763,6 +779,7 @@ export class API extends EventEmitter {
   // * @param {Object} Optional args
   // * @param {String} opts.customData
   // * @param {String} opts.coin
+  // * @param {String} opts.hardwareSourcePublicKey
   // * @param {Callback} cb
   // */
   _doJoinWallet(
@@ -793,10 +810,12 @@ export class API extends EventEmitter {
     var args: any = {
       walletId,
       coin: opts.coin,
+      chain: opts.chain,
       name: encCopayerName,
       xPubKey,
       requestPubKey,
-      customData: encCustomData
+      customData: encCustomData,
+      hardwareSourcePublicKey: opts.hardwareSourcePublicKey
     };
     if (opts.dryRun) args.dryRun = true;
 
@@ -847,9 +866,9 @@ export class API extends EventEmitter {
 
     this.request.get(
       '/v2/feelevels/?coin=' +
-        (chain || 'btc') +
-        '&network=' +
-        (network || 'livenet'),
+      (chain || 'btc') +
+      '&network=' +
+      (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -857,8 +876,13 @@ export class API extends EventEmitter {
     );
   }
 
-  clearCache(cb) {
-    this.request.post('/v1/clearcache/', {}, (err, res) => {
+  clearCache(opts, cb) {
+    if (typeof opts === 'function') {
+      cb = opts;
+      opts = {};
+    }
+    const qs = Object.entries(opts || {}).map(([key, value]) => `${key}=${value}`).join('&');
+    this.request.post('/v1/clearcache/' + (qs ? '?' + qs : ''), {}, (err, res) => {
       return cb(err, res);
     });
   }
@@ -889,11 +913,13 @@ export class API extends EventEmitter {
   // * @param {Number} n
   // * @param {object} opts (optional: advanced options)
   // * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch).
+  // * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch).
   // * @param {string} opts.network[='livenet']
   // * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
-  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
+  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
+  // * @param {Number} opts.segwitVersion - 0 (default) = P2WPKH, P2WSH; 1 = P2TR
   // * @param cb
   // * @return {undefined}
   // */
@@ -905,14 +931,15 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
+    var chain = opts.chain?.toLowerCase() || coin;
 
     // checking in chains for simplicity
     if (!_.includes(Constants.CHAINS, coin))
       return cb(new Error('Invalid coin'));
 
     var network = opts.network || 'livenet';
-    if (!_.includes(['testnet', 'livenet'], network))
-      return cb(new Error('Invalid network'));
+    if (!_.includes(['testnet', 'livenet', 'regtest'], network))
+      return cb(new Error('Invalid network: ' + network));
 
     if (!this.credentials) {
       return cb(new Error('Import credentials first with setCredentials()'));
@@ -939,19 +966,23 @@ export class API extends EventEmitter {
       m,
       n,
       pubKey: new Bitcore.PrivateKey(walletPrivKey).toPublicKey().toString(),
+      chain,
       coin,
       network,
       singleAddress: !!opts.singleAddress,
       id: opts.id,
       usePurpose48: n > 1,
-      useNativeSegwit: !!opts.useNativeSegwit
+      useNativeSegwit: !!opts.useNativeSegwit,
+      segwitVersion: opts.segwitVersion,
+      hardwareSourcePublicKey: c.hardwareSourcePublicKey
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
 
       var walletId = res.walletId;
       c.addWalletInfo(walletId, walletName, m, n, copayerName, {
-        useNativeSegwit: opts.useNativeSegwit
+        useNativeSegwit: opts.useNativeSegwit,
+        segwitVersion: opts.segwitVersion
       });
       var secret = API._buildSecret(
         c.walletId,
@@ -967,7 +998,9 @@ export class API extends EventEmitter {
         c.requestPubKey,
         copayerName,
         {
-          coin
+          coin,
+          chain,
+          hardwareSourcePublicKey: c.hardwareSourcePublicKey
         },
         (err, wallet) => {
           if (err) return cb(err);
@@ -1000,9 +1033,10 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    // checking in chains for simplicity
-    if (!_.includes(Constants.CHAINS, coin))
-      return cb(new Error('Invalid coin'));
+    var chain = opts.chain || coin;
+
+    if (!_.includes(Constants.CHAINS, chain))
+      return cb(new Error('Invalid chain'));
 
     try {
       var secretData = API.parseSecret(secret);
@@ -1023,6 +1057,7 @@ export class API extends EventEmitter {
       copayerName,
       {
         coin,
+        chain,
         dryRun: !!opts.dryRun
       },
       (err, wallet) => {
@@ -1035,8 +1070,8 @@ export class API extends EventEmitter {
             wallet.n,
             copayerName,
             {
-              useNativeSegwit:
-                wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
+              useNativeSegwit: Utils.isNativeSegwit(wallet.addressType),
+              segwitVersion: Utils.getSegwitVersion(wallet.addressType),
               allowOverwrite: true
             }
           );
@@ -1075,14 +1110,13 @@ export class API extends EventEmitter {
         var c = this.credentials;
         var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
         var walletId = c.walletId;
-        var useNativeSegwit = c.addressType === Constants.SCRIPT_TYPES.P2WPKH;
-        var supportBIP44AndP2PKH =
-          c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
+        var useNativeSegwit = Utils.isNativeSegwit(c.addressType);
+        var segwitVersion = Utils.getSegwitVersion(c.addressType);
+        var supportBIP44AndP2PKH = c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
         var encWalletName = Utils.encryptMessage(
           c.walletName || 'recovered wallet',
           c.sharedEncryptingKey
         );
-        var coin = c.coin;
 
         var args = {
           name: encWalletName,
@@ -1090,14 +1124,17 @@ export class API extends EventEmitter {
           n: c.n,
           pubKey: walletPrivKey.toPublicKey().toString(),
           coin: c.coin,
+          chain: c.chain,
           network: c.network,
           id: walletId,
           usePurpose48: c.n > 1,
-          useNativeSegwit
+          useNativeSegwit,
+          segwitVersion
         };
 
-        if (!!supportBIP44AndP2PKH)
+        if (!!supportBIP44AndP2PKH) {
           args['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
+        }
 
         this.request.post('/v2/wallets/', args, (err, body) => {
           if (err) {
@@ -1112,7 +1149,8 @@ export class API extends EventEmitter {
 
           var i = 1;
           var opts = {
-            coin: c.coin
+            coin: c.coin,
+            chain: c.chain
           };
           if (!!supportBIP44AndP2PKH)
             opts['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
@@ -1688,9 +1726,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                    JSON.stringify(this.credentials.publicKeyRing),
-                    this.credentials.personalEncryptingKey
-                  ),
+                  JSON.stringify(this.credentials.publicKeyRing),
+                  this.credentials.personalEncryptingKey
+                ),
               unencryptedPkr: opts.doNotEncryptPkr
                 ? JSON.stringify(this.credentials.publicKeyRing)
                 : null,
@@ -2249,18 +2287,39 @@ export class API extends EventEmitter {
   }
 
   // /**
-  // * getTx
+  // * getTxWithTransactionId
   // *
-  // * @param {String} TransactionId
+  // * @param {String} txid
   // * @return {Callback} cb - Return error or transaction
   // */
-  getTx(id, cb) {
+  getTxByHash(txid, cb) {
+    $.checkState(
+      this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <getTxByHash()>'
+    );
+
+    const url = '/v1/txproposalsbyhash/' + txid;
+    this.request.get(url, (err, txp) => {
+      if (err) return cb(err);
+
+      this._processTxps(txp);
+      return cb(null, txp);
+    });
+  }
+
+  // /**
+  // * getTx
+  // *
+  // * @param {String} txProposalId
+  // * @return {Callback} cb - Return error or transaction
+  // */
+  getTx(txProposalId, cb) {
     $.checkState(
       this.credentials && this.credentials.isComplete(),
       'Failed state: this.credentials at <getTx()>'
     );
 
-    var url = '/v1/txproposals/' + id;
+    var url = '/v1/txproposals/' + txProposalId;
     this.request.get(url, (err, txp) => {
       if (err) return cb(err);
 
@@ -2672,7 +2731,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) {}
+    } catch (e) { }
     return ret;
   }
 
@@ -2881,7 +2940,7 @@ export class API extends EventEmitter {
     const generateCredentials = (key, opts) => {
       let c = key.createCredentials(null, {
         coin: opts.coin,
-        chain: opts.coin, // chain === coin for stored clients
+        chain: opts.chain?.toLowerCase() || opts.coin, // chain === coin IS NO LONGER TRUE for Arbitrum, Base, Optimisim
         network: opts.network,
         account: opts.account,
         n: opts.n,
@@ -2900,24 +2959,27 @@ export class API extends EventEmitter {
 
     const checkKey = key => {
       let opts = [
-        // coin, network,  multisig
-        ['btc', 'livenet'],
-        ['bch', 'livenet'],
-        ['bch', 'livenet', false, true], // check for prefork bch wallet
-        ['eth', 'livenet'],
-        ['matic', 'livenet'],
-        ['xrp', 'livenet'],
-        ['doge', 'livenet'],
-        ['ltc', 'livenet'],
-        ['btc', 'livenet', true],
-        ['bch', 'livenet', true],
-        ['doge', 'livenet', true],
-        ['ltc', 'livenet', true]
+        // coin, chain, network,  multisig
+        ['btc', 'btc', 'livenet'],
+        ['bch', 'bch', 'livenet'],
+        ['bch', 'bch', 'livenet', false, true], // check for prefork bch wallet
+        ['eth', 'eth', 'livenet'],
+        ['matic', 'matic', 'livenet'],
+        ['eth', 'arb', 'livenet'],
+        ['eth', 'base', 'livenet'],
+        ['eth', 'op', 'livenet'],
+        ['xrp', 'xrp', 'livenet'],
+        ['doge', 'doge', 'livenet'],
+        ['ltc', 'ltc', 'livenet'],
+        ['btc', 'btc', 'livenet', true],
+        ['bch', 'bch', 'livenet', true],
+        ['doge', 'doge', 'livenet', true],
+        ['ltc', 'ltc', 'livenet', true]
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig
         opts = opts.filter(x => {
-          return x[2];
+          return x[3];
         });
       }
 
@@ -2931,7 +2993,7 @@ export class API extends EventEmitter {
       if (!key.nonCompliantDerivation && includeTestnetWallets) {
         let testnet = _.cloneDeep(opts);
         testnet.forEach(x => {
-          x[1] = 'testnet';
+          x[2] = 'testnet';
         });
         opts = opts.concat(testnet);
       }
@@ -2946,10 +3008,11 @@ export class API extends EventEmitter {
         let opt = opts[i];
         let optsObj = {
           coin: opt[0],
-          network: opt[1],
+          chain: opt[1],
+          network: opt[2],
           account: 0,
-          n: opt[2] ? 2 : 1,
-          use0forBCH: opt[3]
+          n: opt[3] ? 2 : 1,
+          use0forBCH: opt[4]
         };
         generateCredentials(key, optsObj);
       }
@@ -3052,8 +3115,8 @@ export class API extends EventEmitter {
         settings.account++;
         const clonedSettings = JSON.parse(JSON.stringify(settings));
         let c = key.createCredentials(null, {
-          coin: clonedSettings.coin,
-          chain: clonedSettings.coin, // chain === coin for stored clients
+          coin: clonedSettings.coin, // base currency used for fees. Helpful for UI
+          chain: clonedSettings.chain || clonedSettings.coin,
           network: clonedSettings.network,
           account: clonedSettings.account,
           n: clonedSettings.n,
@@ -3128,86 +3191,74 @@ export class API extends EventEmitter {
                     ? Constants.SCRIPT_TYPES.P2WPKH
                     : Constants.SCRIPT_TYPES.P2WSH;
               }
+              if (wallet.opts.coin === 'btc' && wallet.status.wallet.addressType === 'P2TR') {
+                client.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
+              }
               // add client to list
               let newClient = _.cloneDeep(client);
               // newClient.credentials = settings.credentials;
               newClient.fromString(wallet.credentials);
               clients.push(newClient);
-              const tokenAddresses = wallet.status.preferences.tokenAddresses;
-              const multisigEthInfo = wallet.status.preferences.multisigEthInfo;
-              const maticTokenAddresses =
-                wallet.status.preferences.maticTokenAddresses;
-              const multisigMaticInfo =
-                wallet.status.preferences.multisigMaticInfo;
 
-              // Eth wallet with tokens?
-              if (!_.isEmpty(tokenAddresses) || !_.isEmpty(multisigEthInfo)) {
+              async function handleChainTokensAndMultisig(chain, tokenAddresses, multisigInfo, tokenOpts, tokenUrlPath) {
+                // Handle importing of tokens
                 if (!_.isEmpty(tokenAddresses)) {
-                  function oneInchGetEthTokensData() {
+                  async function getNetworkTokensData() {
                     return new Promise((resolve, reject) => {
-                      newClient.request.get(
-                        '/v1/service/oneInch/getTokens/eth',
-                        (err, data) => {
-                          if (err) return reject(err);
-                          return resolve(data);
-                        }
-                      );
+                      newClient.request.get(`/v1/service/oneInch/getTokens/${tokenUrlPath}`, (err, data) => {
+                        if (err) return reject(err);
+                        return resolve(data);
+                      });
                     });
                   }
+
                   let customTokensData;
                   try {
-                    customTokensData = await oneInchGetEthTokensData();
+                    customTokensData = await getNetworkTokensData();
                   } catch (error) {
-                    log.warn('oneInchGetEthTokensData err', error);
+                    log.warn(`getNetworkTokensData err for ${chain}`, error);
                     customTokensData = null;
                   }
+
                   _.each(tokenAddresses, t => {
-                    const token =
-                      Constants.ETH_TOKEN_OPTS[t] ||
-                      (customTokensData && customTokensData[t]);
+                    const token = tokenOpts[t] || (customTokensData && customTokensData[t]);
                     if (!token) {
-                      log.warn(`Token ${t} unknown`);
+                      log.warn(`Token ${t} unknown on ${chain}`);
                       return;
                     }
-                    log.info(`Importing token: ${token.name}`);
-                    const tokenCredentials =
-                      newClient.credentials.getTokenCredentials(token, 'eth');
+                    log.info(`Importing token: ${token.name} on ${chain}`);
+                    const tokenCredentials = newClient.credentials.getTokenCredentials(token, chain);
                     let tokenClient = _.cloneDeep(newClient);
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
                   });
                 }
-                // Eth wallet with mulsig wallets?
-                if (!_.isEmpty(multisigEthInfo)) {
-                  _.each(multisigEthInfo, info => {
-                    log.info(
-                      `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
-                    );
-                    const multisigEthCredentials =
-                      newClient.credentials.getMultisigEthCredentials({
-                        walletName: info.walletName,
-                        multisigContractAddress: info.multisigContractAddress,
-                        n: info.n,
-                        m: info.m
-                      });
-                    let multisigEthClient = _.cloneDeep(newClient);
-                    multisigEthClient.credentials = multisigEthCredentials;
-                    clients.push(multisigEthClient);
-                    const tokenAddresses = info.tokenAddresses;
-                    if (!_.isEmpty(tokenAddresses)) {
-                      _.each(tokenAddresses, t => {
-                        const token = Constants.ETH_TOKEN_OPTS[t];
+
+                // Handle importing of multisig wallets
+                if (!_.isEmpty(multisigInfo)) {
+                  _.each(multisigInfo, info => {
+                    log.info(`Importing multisig wallet on ${chain}. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`);
+                    const multisigCredentials = newClient.credentials.getMultisigEthCredentials({
+                      walletName: info.walletName,
+                      multisigContractAddress: info.multisigContractAddress,
+                      n: info.n,
+                      m: info.m
+                    });
+                    let multisigClient = _.cloneDeep(newClient);
+                    multisigClient.credentials = multisigCredentials;
+                    clients.push(multisigClient);
+
+                    const multisigTokenAddresses = info.tokenAddresses;
+                    if (!_.isEmpty(multisigTokenAddresses)) {
+                      _.each(multisigTokenAddresses, t => {
+                        const token = tokenOpts[t];
                         if (!token) {
-                          log.warn(`Token ${t} unknown`);
+                          log.warn(`Token ${t} unknown in multisig on ${chain}`);
                           return;
                         }
-                        log.info(`Importing multisig token: ${token.name}`);
-                        const tokenCredentials =
-                          multisigEthClient.credentials.getTokenCredentials(
-                            token,
-                            'eth'
-                          );
-                        let tokenClient = _.cloneDeep(multisigEthClient);
+                        log.info(`Importing multisig token: ${token.name} on ${chain}`);
+                        const tokenCredentials = multisigClient.credentials.getTokenCredentials(token, chain);
+                        let tokenClient = _.cloneDeep(multisigClient);
                         tokenClient.credentials = tokenCredentials;
                         clients.push(tokenClient);
                       });
@@ -3216,83 +3267,16 @@ export class API extends EventEmitter {
                 }
               }
 
-              // matic wallet with tokens?
-              if (
-                !_.isEmpty(maticTokenAddresses) ||
-                !_.isEmpty(multisigMaticInfo)
-              ) {
-                if (!_.isEmpty(maticTokenAddresses)) {
-                  function oneInchGetMaticTokensData() {
-                    return new Promise((resolve, reject) => {
-                      newClient.request.get(
-                        '/v1/service/oneInch/getTokens/matic',
-                        (err, data) => {
-                          if (err) return reject(err);
-                          return resolve(data);
-                        }
-                      );
-                    });
-                  }
-                  let customTokensData;
-                  try {
-                    customTokensData = await oneInchGetMaticTokensData();
-                  } catch (error) {
-                    log.warn('oneInchGetMaticTokensData err', error);
-                    customTokensData = null;
-                  }
-                  _.each(maticTokenAddresses, t => {
-                    const token =
-                      Constants.MATIC_TOKEN_OPTS[t] ||
-                      (customTokensData && customTokensData[t]);
-                    if (!token) {
-                      log.warn(`Token ${t} unknown`);
-                      return;
-                    }
-                    log.info(`Importing token: ${token.name}`);
-                    const tokenCredentials =
-                      newClient.credentials.getTokenCredentials(token, 'matic');
-                    let tokenClient = _.cloneDeep(newClient);
-                    tokenClient.credentials = tokenCredentials;
-                    clients.push(tokenClient);
-                  });
-                }
-                // matic wallet with multisig wallets?
-                if (!_.isEmpty(multisigMaticInfo)) {
-                  _.each(multisigMaticInfo, info => {
-                    log.info(
-                      `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
-                    );
-                    const multisigMaticCredentials =
-                      newClient.credentials.getMultisigEthCredentials({
-                        walletName: info.walletName,
-                        multisigContractAddress: info.multisigContractAddress,
-                        n: info.n,
-                        m: info.m
-                      });
-                    let multisigMaticClient = _.cloneDeep(newClient);
-                    multisigMaticClient.credentials = multisigMaticCredentials;
-                    clients.push(multisigMaticClient);
-                    const maticTokenAddresses = info.maticTokenAddresses;
-                    if (!_.isEmpty(maticTokenAddresses)) {
-                      _.each(maticTokenAddresses, t => {
-                        const token = Constants.MATIC_TOKEN_OPTS[t];
-                        if (!token) {
-                          log.warn(`Token ${t} unknown`);
-                          return;
-                        }
-                        log.info(`Importing multisig token: ${token.name}`);
-                        const tokenCredentials =
-                          multisigMaticClient.credentials.getTokenCredentials(
-                            token,
-                            'matic'
-                          );
-                        let tokenClient = _.cloneDeep(multisigMaticClient);
-                        tokenClient.credentials = tokenCredentials;
-                        clients.push(tokenClient);
-                      });
-                    }
-                  });
-                }
+              const chainConfigurations = [
+                { chain: 'eth', tokenAddresses: wallet.status.preferences.tokenAddresses, multisigInfo: wallet.status.preferences.multisigEthInfo, tokenOpts: Constants.ETH_TOKEN_OPTS, tokenUrlPath: 'eth' },
+                { chain: 'matic', tokenAddresses: wallet.status.preferences.maticTokenAddresses, multisigInfo: wallet.status.preferences.multisigMaticInfo, tokenOpts: Constants.MATIC_TOKEN_OPTS, tokenUrlPath: 'matic' },
+                { chain: 'arb', tokenAddresses: wallet.status.preferences.arbTokenAddresses, multisigInfo: wallet.status.preferences.multisigArbInfo, tokenOpts: Constants.ARB_TOKEN_OPTS, tokenUrlPath: 'arb' },
+                { chain: 'op', tokenAddresses: wallet.status.preferences.opTokenAddresses, multisigInfo: wallet.status.preferences.multisigOpInfo, tokenOpts: Constants.OP_TOKEN_OPTS, tokenUrlPath: 'op' },
+                { chain: 'base', tokenAddresses: wallet.status.preferences.baseTokenAddresses, multisigInfo: wallet.status.preferences.multisigBaseInfo, tokenOpts: Constants.BASE_TOKEN_OPTS, tokenUrlPath: 'base' },
+              ];
+
+              for (let config of chainConfigurations) {
+                await handleChainTokensAndMultisig(config.chain, config.tokenAddresses, config.multisigInfo, config.tokenOpts, config.tokenUrlPath);
               }
               next();
             },
@@ -3370,6 +3354,15 @@ export class API extends EventEmitter {
     });
   }
 
+  moonpayGetSellQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/moonpay/sellQuote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   moonpayGetSignedPaymentUrl(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post(
@@ -3380,6 +3373,28 @@ export class API extends EventEmitter {
           return resolve(data);
         }
       );
+    });
+  }
+
+  moonpayGetSellSignedPaymentUrl(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post(
+        '/v1/service/moonpay/sellSignedPaymentUrl',
+        data,
+        (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        }
+      );
+    });
+  }
+
+  moonpayCancelSellTransaction(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/moonpay/cancelSellTransaction', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
     });
   }
 
@@ -3457,6 +3472,15 @@ export class API extends EventEmitter {
           return resolve(data);
         }
       );
+    });
+  }
+
+  thorswapGetSwapQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/thorswap/getSwapQuote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
     });
   }
 

@@ -207,6 +207,18 @@ describe('HDPrivate key interface', function() {
     derivedByNumber.xprivkey.should.equal(derivedByString.xprivkey);
   });
 
+  it('should make a new private key from random for testnet', function() {
+    var key = new HDPrivateKey('testnet');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+  it('should make a new private key from random for testnet when passing specific network "testnet4"', function() {
+    var key = new HDPrivateKey('testnet4');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
   describe('validates paths', function() {
     it('validates correct paths', function() {
       var valid;

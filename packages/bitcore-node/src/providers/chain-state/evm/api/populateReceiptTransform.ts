@@ -1,9 +1,9 @@
-import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransaction } from '../types';
 import { BaseEVMStateProvider } from './csp';
 
-export class PopulateReceiptTransform extends Transform {
+export class PopulateReceiptTransform extends TransformWithEventPipe {
   constructor() {
     super({ objectMode: true });
   }

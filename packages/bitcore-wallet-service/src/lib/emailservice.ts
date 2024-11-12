@@ -5,6 +5,7 @@ import 'source-map-support/register';
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
+import { Constants as ConstantsCWC } from 'crypto-wallet-core';
 import request from 'request';
 import config from '../config';
 import { Common } from './common';
@@ -270,7 +271,8 @@ export class EmailService {
       ape: 'APE',
       euroc: 'EUROC',
       usdt: 'USDT',
-      weth: 'WETH'
+      weth: 'WETH',
+      'usdc.e': 'USDC.e',
     };
 
     const data = _.cloneDeep(notification.data);
@@ -287,6 +289,15 @@ export class EmailService {
             label = UNIT_LABELS[unit];
           } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.ARB_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ARB_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.OP_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.OP_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.BASE_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.BASE_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
@@ -373,7 +384,7 @@ export class EmailService {
         let errStr;
         try {
           errStr = err.toString().substr(0, 100);
-        } catch (e) {}
+        } catch (e) { }
 
         logger.warn('An error occurred when trying to send email to %o %o', email.to, (errStr || err));
         return cb(err);
@@ -429,7 +440,7 @@ export class EmailService {
   }
 
   sendEmail(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     const emailType = EMAIL_TYPES[notification.type];
     if (!emailType) return cb();
@@ -500,7 +511,7 @@ export class EmailService {
                   let errStr;
                   try {
                     errStr = err.toString().substr(0, 100);
-                  } catch (e) {}
+                  } catch (e) { }
 
                   logger.warn('An error ocurred generating email notification: %o', errStr || err);
                 }
@@ -530,13 +541,11 @@ export class EmailService {
     return new Promise((resolve, reject) => {
       try {
         const credentials = this.oneInchGetCredentials();
-        const chainIdMap = {
-          eth: 1,
-          matic: 137
-        };
+        // Get mainnet chainId
+        const chainId = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[`${chain.toUpperCase()}_mainnet`]
         this.request(
           {
-            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            url: `${credentials.API}/v5.2/${chainId}/tokens`,
             method: 'GET',
             json: true,
             headers: {

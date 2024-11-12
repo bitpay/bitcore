@@ -7,6 +7,9 @@ export const Constants = {
     BCH: 'bch',
     ETH: 'eth',
     MATIC: 'matic',
+    ARB: 'arb',
+    BASE: 'base',
+    OP: 'op',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc'
@@ -79,13 +82,73 @@ export const Constants = {
 
   EVM_CHAINS: {
     ETH: 'eth',
-    MATIC: 'matic'
+    MATIC: 'matic',
+    ARB: 'arb',
+    BASE: 'base',
+    OP: 'op',
+  },
+
+  EVM_CHAINS_WITH_ETH_GAS: {
+    ETH: 'eth',
+    ARB: 'arb',
+    BASE: 'base',
+    OP: 'op',
   },
 
   NETWORKS: {
-    LIVENET: 'livenet',
-    TESTNET: 'testnet',
-    REGTEST: 'regtest'
+    btc: ['livenet', 'testnet3', 'testnet4', 'signet', 'regtest'],
+    bch: ['livenet', 'testnet3', 'testnet4', 'scalenet', 'chipnet', 'regtest'],
+    eth: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    matic: ['livenet', 'amoy', 'regtest'],
+    ltc: ['livenet', 'testnet4', 'regtest'],
+    doge: ['livenet', 'testnet3', 'regtest'],
+    xrp: ['livenet', 'testnet', 'regtest'],
+    arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    base: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    op: ['livenet', 'sepolia', 'holesky', 'regtest'],
+  } as { [chain: string]: Array<string> },
+
+  // These aliases are here to support legacy clients so don't change them lightly
+  NETWORK_ALIASES: {
+    btc: {
+      mainnet: 'livenet',
+      testnet: 'testnet3'
+    },
+    bch: {
+      mainnet: 'livenet',
+      testnet: 'testnet3'
+    },
+    ltc: {
+      mainnet: 'livenet',
+      testnet: 'testnet4'
+    },
+    doge: {
+      mainnet: 'livenet',
+      testnet: 'testnet3'
+    },
+    xrp: {
+      mainnet: 'livenet',
+    },
+    eth: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    matic: {
+      mainnet: 'livenet',
+      testnet: 'amoy'
+    },
+    arb: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    base: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    },
+    op: {
+      mainnet: 'livenet',
+      testnet: 'sepolia'
+    }
   },
 
   ADDRESS_FORMATS: ['copay', 'cashaddr', 'legacy'],
@@ -94,12 +157,17 @@ export const Constants = {
     P2SH: 'P2SH',
     P2WSH: 'P2WSH',
     P2PKH: 'P2PKH',
-    P2WPKH: 'P2WPKH'
+    P2WPKH: 'P2WPKH',
+    P2TR: 'P2TR'
   },
 
   NATIVE_SEGWIT_CHAINS: {
     BTC: 'btc',
     LTC: 'ltc'
+  },
+
+  TAPROOT_CHAINS: {
+    BTC: 'btc'
   },
 
   DERIVATION_STRATEGIES: {
@@ -118,6 +186,9 @@ export const Constants = {
 
   ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
+  ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,
+  OP_TOKEN_OPTS: CWC.Constants.OP_TOKEN_OPTS,
+  BASE_TOKEN_OPTS: CWC.Constants.BASE_TOKEN_OPTS,
 
   BITPAY_CONTRACTS: {
     MULTISEND: 'MULTISEND'

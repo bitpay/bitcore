@@ -119,7 +119,10 @@ describe('Coin Model', function() {
 
     const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
     expect(badTxs.length).to.eq(chainLength);
-    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(chainLength).fill(SpentHeightIndicators.conflicting));
+    // the replaced tx is marked as conflicting, all the rest still pending to be cleaned up by pruning service
+    expect(badTxs[0].blockHeight).to.eq(SpentHeightIndicators.conflicting);
+    expect(badTxs[0].replacedByTxid).to.exist;
+    expect(badTxs.slice(1).every(tx => tx.blockHeight === SpentHeightIndicators.pending)).to.equal(true);
 
     const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
     expect(goodTxs.length).to.eq(1);

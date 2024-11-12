@@ -40,9 +40,10 @@ const parseKeys = keys => {
   }
 };
 
+let wallet;
+
 const main = async () => {
   const { name, path, file, json, storageType, encrypted, rederive } = program.opts();
-  let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path, storageType });
@@ -74,4 +75,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

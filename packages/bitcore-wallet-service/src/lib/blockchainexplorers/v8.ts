@@ -18,7 +18,10 @@ const Bitcore_ = {
   matic: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc')
+  ltc: require('bitcore-lib-ltc'),
+  arb: Bitcore,
+  op: Bitcore,
+  base: Bitcore
 };
 
 const Constants = Common.Constants,
@@ -26,8 +29,8 @@ const Constants = Common.Constants,
   Utils = Common.Utils;
 
 function v8network(bwsNetwork, chain = 'btc') {
-  if (bwsNetwork == 'livenet') return 'mainnet';
-  if (bwsNetwork == 'testnet' && config.blockchainExplorerOpts?.[chain.toLowerCase()]?.testnet?.regtestEnabled) {
+  if (Utils.getGenericName(bwsNetwork) == 'livenet') return 'mainnet';
+  if (Utils.getGenericName(bwsNetwork) == 'testnet' && config.blockchainExplorerOpts?.[chain.toLowerCase()]?.[Utils.getNetworkName(chain.toLowerCase(), 'testnet')]?.regtestEnabled) {
     return 'regtest';
   }
   return bwsNetwork;
@@ -46,11 +49,13 @@ export class V8 {
   baseUrl: string;
   request: request;
   Client: typeof Client;
+  private _cachedReserve: number;
+  private _cachedReserveTs: number;
 
   constructor(opts) {
     $.checkArgument(opts);
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
     $.checkArgument(Utils.checkValueInCollection(opts.chain, Constants.CHAINS));
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain]));
     $.checkArgument(opts.url);
 
     this.apiPrefix = opts.apiPrefix == null ? '/api' : opts.apiPrefix;
@@ -517,6 +522,50 @@ export class V8 {
     );
   }
 
+  estimateFeeV2(opts, cb) {
+    const txType = opts.txType;
+    if (Number(txType) !== 2) {
+     return this.estimateFee(opts, cb);
+    }
+    const nbBlocks = Number(opts.nbBlocks) || 2;
+    const url = this.baseUrl + `/fee/${nbBlocks}?txType=${txType}`;
+    let result;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  estimatePriorityFee(opts, cb) {
+    const percentile = opts.percentile;
+    let result;
+    const url = this.baseUrl + `/priorityFee/${percentile}`;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          result = ret.feerate;
+        } catch (e) {
+          logger.warn('[v8.js] Priority fee error: %o', e);
+        }
+        return cb(null, result);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   getBlockchainHeight(cb) {
     const url = this.baseUrl + '/block/tip';
 
@@ -544,6 +593,29 @@ export class V8 {
           return cb(null, res);
         } catch (err) {
           return cb(new Error('Could not get height from block explorer'));
+        }
+      })
+      .catch(cb);
+  }
+
+  getReserve(cb) {
+    if (this._cachedReserveTs && Date.now() - this._cachedReserveTs < 20 * 60 * 1000) { // cache for 20 mins
+      return cb(null, this._cachedReserve);
+    }
+    const url = this.baseUrl + '/reserve';
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          if (ret.reserve != null) {
+            this._cachedReserve = ret.reserve;
+            this._cachedReserveTs = Date.now();
+          }
+          return cb(null, ret.reserve ?? Defaults.MIN_XRP_BALANCE);
+        } catch (err) {
+          logger.error('[v8.js] Error getting reserve: %o', err);
+          return cb(null, Defaults.MIN_XRP_BALANCE);
         }
       })
       .catch(cb);

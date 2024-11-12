@@ -206,7 +206,7 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Unknown network');
   }
 
-  if (!bufferVersion.network || (networkObj && networkObj !== bufferVersion.network)) {
+  if (!bufferVersion.network || (networkObj && networkObj.xpubkey !== bufferVersion.network.xpubkey)) {
     throw new TypeError('Address has mismatched network type.');
   }
 
@@ -215,7 +215,7 @@ Address._transformBuffer = function(buffer, network, type) {
   }
 
   info.hashBuffer = buffer.slice(1);
-  info.network = bufferVersion.network;
+  info.network = networkObj || bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
 };
@@ -409,7 +409,7 @@ Address._transformString = function(data, network, type) {
 
   if (data.length > 35){
     var info = decodeCashAddress(data);
-    if (!info.network || (networkObj && networkObj.name !== info.network.name)) {
+    if (!info.network || (networkObj && networkObj.prefix !== info.network.prefix)) {
       throw new TypeError('Address has mismatched network type.');
     }
     if (!info.type || (type && type !== info.type)) {

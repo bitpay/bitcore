@@ -20,13 +20,15 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, lite, file, export: doExport, import: doImport, storageType = 'Level' } = program.opts();
 
   try {
     const fileName = file || name + '.enc';
     if (doExport) {
-      let wallet = await Wallet.loadWallet({ name, storageType, path });
+      wallet = await Wallet.loadWallet({ name, storageType, path });
       if (lite) {
         delete wallet.masterKey;
         delete wallet.pubKey;
@@ -72,4 +74,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

@@ -181,6 +181,10 @@ var errorSpec = [
   {
     name: 'INVALID_REQUEST',
     message: 'The PayPro request was invalid. Please try again later.'
+  },
+  {
+    name: 'PAYLOAD_TOO_LARGE',
+    message: 'The request payload is too large.'
   }
 ];
 module.exports = errorSpec;

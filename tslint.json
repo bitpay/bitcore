@@ -27,6 +27,14 @@
     "no-var-keyword": false,
     "curly": false,
     "member-access": false,
+    "whitespace": [
+      true,
+      "check-branch",
+      "check-decl",
+      "check-operator",
+      "check-type",
+      "check-preblock"
+    ],
     "quotemark": [true, "single", "avoid-escape", "avoid-template"],
     "trailing-comma": [
       true,

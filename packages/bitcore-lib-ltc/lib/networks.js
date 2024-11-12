@@ -1,6 +1,4 @@
 'use strict';
-var _ = require('lodash');
-
 var BufferUtil = require('./util/buffer');
 var JSUtil = require('./util/js');
 var networks = [];
@@ -31,20 +29,32 @@ function get(arg, keys) {
     return arg;
   }
   if (keys) {
-    if (!_.isArray(keys)) {
+    if (!Array.isArray(keys)) {
       keys = [keys];
     }
-    var containsArg = function(key) {
-      return networks[index][key] === arg;
-    };
-    for (var index in networks) {
-      if (_.some(keys, containsArg)) {
+    for (const index in networks) {
+      if (keys.some(key => networks[index][key] === arg)) {
         return networks[index];
       }
     }
     return undefined;
   }
-  return networkMaps[arg];
+  if (networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
+}
+
+/**
+ * @function
+ * @member Networks#is
+ * Returns true if the string is the network name or alias
+ * @param {string} str - A string to check
+ * @return boolean
+ */
+function is(str) {
+  return this.name == str || this.alias == str;
 }
 
 /**
@@ -60,9 +70,11 @@ function get(arg, keys) {
  * @param {string} data.bech32prefix - The native segwit prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
- * @param {Number} data.networkMagic - The network magic number
- * @param {Number} data.port - The network port
- * @param {Array}  data.dnsSeeds - An array of dns seeds
+ * @param {Array}  data.variants - An array of variants
+ * @param {string} data.variants.name - The name of the variant
+ * @param {Number} data.variants.networkMagic - The network magic number
+ * @param {Number} data.variants.port - The network port
+ * @param {Array}  data.variants.dnsSeeds - An array of dns seeds
  * @return Network
  */
 function addNetwork(data) {
@@ -72,10 +84,12 @@ function addNetwork(data) {
   JSUtil.defineImmutable(network, {
     name: data.name,
     alias: data.alias,
+    is: data.is,
     pubkeyhash: data.pubkeyhash,
     privatekey: data.privatekey,
     scripthash: data.scripthash,
     scripthash2: data.scripthash2,
+    bech32prefix: data.bech32prefix,
     xpubkey: data.xpubkey,
     xprivkey: data.xprivkey
   });
@@ -105,16 +119,26 @@ function addNetwork(data) {
     });
   }
 
-  _.each(network, function(value) {
-    if (!_.isUndefined(value) && !_.isObject(value)) {
-      networkMaps[value] = network;
+  for (const value of Object.values(network)) {
+    if (value != null && typeof value !== 'object') {
+      if (!networkMaps[value]) {
+        networkMaps[value] = [];
+      }
+      networkMaps[value].push(network);
     }
-  });
+  };
 
   networks.push(network);
 
-  return network;
+  for (const variant of data.variants || []) {
+    addNetwork({
+      ...data,
+      variants: undefined,
+      ...variant,
+    });
+  }
 
+  return network;
 }
 
 /**
@@ -144,11 +168,13 @@ function removeNetwork(network) {
     } else if (networkMaps[key] === network) {
       delete networkMaps[key];
     }
-  }}
+  }
+}
 
 addNetwork({
   name: 'livenet',
   alias: 'mainnet',
+  is,
   pubkeyhash: 0x30, // 48
   privatekey: 0xb0, // 176
   scripthash: 0x32, // 50
@@ -176,13 +202,24 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'regtest',
+  alias: 'testnet',
+  is,
   pubkeyhash: 0x6f, // 111
   privatekey: 0xef, // 239
   scripthash: 0x3a, // 58
   scripthash2: 0xc4, // 196
+  bech32prefix: 'tltc',
   xpubkey: 0x043587cf,
-  xprivkey: 0x04358394
+  xprivkey: 0x04358394,
+  variants: [{
+    name: 'testnet4',
+    networkMagic: 0xfdd2c8f1,
+    port: 19335,
+    dnsSeeds: [
+      'testnet-seed.litecointools.com',
+      'seed-b.litecoin.loshan.co.uk'
+   ]
+  }]
 });
 
 /**
@@ -190,90 +227,33 @@ addNetwork({
  * @member Networks#testnet
  */
 var testnet = get('testnet');
+var testnet4 = get('testnet4');
 
-// Add configurable values for testnet/regtest
-
-var TESTNET = {
-  PORT: 19335,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfdd2c8f1),
-  DNS_SEEDS: [
-    'testnet-seed.litecointools.com',
-    'seed-b.litecoin.loshan.co.uk'
-  ],
-  BECH32_PREFIX: 'tltc'
-};
-
-for (var key in TESTNET) {
-  if (!_.isObject(TESTNET[key])) {
-    networkMaps[TESTNET[key]] = testnet;
-  }
-}
-networkMaps[TESTNET.NETWORK_MAGIC.toString('hex')] = testnet;
-
-var REGTEST = {
-  PORT: 19444,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfabfb5da),
-  DNS_SEEDS: [],
-  BECH32_PREFIX: 'rltc'
-};
-
-for (var key in REGTEST) {
-  if (!_.isObject(REGTEST[key])) {
-    networkMaps[REGTEST[key]] = testnet;
-  }
-}
-networkMaps[REGTEST.NETWORK_MAGIC.toString('hex')] = testnet;
-
-Object.defineProperty(testnet, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PORT;
-    } else {
-      return TESTNET.PORT;
-    }
-  }
+addNetwork({
+  name: 'regtest',
+  alias: 'dev',
+  is,
+  pubkeyhash: 0x6f, // 111
+  privatekey: 0xef, // 239
+  scripthash: 0x3a, // 58
+  scripthash2: 0xc4, // 196
+  bech32prefix: 'rltc',
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xfabfb5da,
+  port: 19444,
+  dnsSeeds: []
 });
 
-Object.defineProperty(testnet, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.NETWORK_MAGIC;
-    } else {
-      return TESTNET.NETWORK_MAGIC;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.DNS_SEEDS;
-    } else {
-      return TESTNET.DNS_SEEDS;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'bech32prefix', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.BECH32_PREFIX
-    } else {
-      return TESTNET.BECH32_PREFIX
-    }
-  }
-})
+/**
+ * @instance
+ * @member Networks#regtest
+ */
+var regtest = get('regtest');
 
 /**
  * @function
+ * @deprecated
  * @member Networks#enableRegtest
  * Will enable regtest features for testnet
  */
@@ -283,6 +263,7 @@ function enableRegtest() {
 
 /**
  * @function
+ * @deprecated
  * @member Networks#disableRegtest
  * Will disable regtest features for testnet
  */
@@ -300,6 +281,8 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  testnet4: testnet4,
+  regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest

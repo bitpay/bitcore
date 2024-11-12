@@ -11,14 +11,18 @@ program
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
   const { name, path, includeSpent, storageType } = program.opts();
   try {
-    const wallet = await Wallet.loadWallet({ name, path, storageType });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet.getUtxos({ includeSpent }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());
