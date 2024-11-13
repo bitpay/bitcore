@@ -51,13 +51,7 @@ const CopyText: FC<CopyTextProps> = ({text}) => {
   return (
     <AnimatePresence>
       {copied ? (
-        <CopyImg
-          key='tick'
-          variants={copyAnime}
-          exit='exit'
-          initial='initial'
-          animate='animate'
-        >
+        <CopyImg key='tick' variants={copyAnime} exit='exit' initial='initial' animate='animate'>
           <img src={TickSvg} width={12} height={12} alt='tick' />
         </CopyImg>
       ) : (
@@ -68,8 +62,7 @@ const CopyText: FC<CopyTextProps> = ({text}) => {
             whileHover='whileHover'
             exit='exit'
             initial='initial'
-            animate='animate'
-          >
+            animate='animate'>
             <img src={CopySvg} width={12} height={12} alt='copy' />
           </CopyImg>
         </CopyToClipboard>

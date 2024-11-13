@@ -65,7 +65,7 @@ const ProcessData = (data: any, blockTipHeight: number) => {
         height: spentHeight,
         spentTxid,
         value,
-        confirmations: spentHeight > -1 ? (blockTipHeight - spentHeight + 1) : spentHeight,
+        confirmations: spentHeight > -1 ? blockTipHeight - spentHeight + 1 : spentHeight,
       });
     }
     if (mintHeight >= -1) {
@@ -73,7 +73,7 @@ const ProcessData = (data: any, blockTipHeight: number) => {
         height: mintHeight,
         mintTxid,
         value,
-        confirmations: mintHeight > -1 ? (blockTipHeight - mintHeight + 1) : mintHeight,
+        confirmations: mintHeight > -1 ? blockTipHeight - mintHeight + 1 : mintHeight,
       });
     }
   }
@@ -108,7 +108,7 @@ const GetSortedTxs = (txList: any[], order: string) => {
 
     return orderSort;
   });
-}
+};
 
 interface CoinListProps {
   txs: any;

@@ -89,11 +89,12 @@ const Address: React.FC = () => {
                 <SupCurrencyLogo currency={currency} />
               </MainTitle>
 
-              <SecondaryTitle>{address} <CopyText text={address}></CopyText></SecondaryTitle>
+              <SecondaryTitle>
+                {address} <CopyText text={address}></CopyText>
+              </SecondaryTitle>
 
               <TransactionTileBody>
                 <TransactionBodyCol type='Nine' backgroundColor='transparent' padding='1rem 0'>
-
                   <Tile withBorderBottom>
                     <TileDescription margin='0 1rem 0 0'>Confirmed Balance</TileDescription>
                     <TileDescription value textAlign='right'>

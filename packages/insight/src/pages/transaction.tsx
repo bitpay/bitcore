@@ -23,7 +23,6 @@ import ConfirmedWav from '../assets/sounds/confirmed.wav';
 import NotConfirmedWav from '../assets/sounds/notConfirmed.wav';
 import {playSoundEffect} from 'src/utilities/sound';
 
-
 const TransactionHash: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams<{currency: string; network: string; tx: string}>();
@@ -83,7 +82,8 @@ const TransactionHash: React.FC = () => {
 
         setTransaction(_transaction);
 
-        if (_transaction.confirmations === -1) { // unconfirmed
+        if (_transaction.confirmations === -1) {
+          // unconfirmed
           listenForConfs(baseUrl, _transaction);
         }
       })
@@ -99,7 +99,7 @@ const TransactionHash: React.FC = () => {
     return () => {
       clearInterval(confInterval as NodeJS.Timer);
       confInterval = null;
-    };  
+    };
   }, [network, currency, tx]);
 
   const goToTx = (tx: any) => {
@@ -115,23 +115,23 @@ const TransactionHash: React.FC = () => {
       return;
     }
     confInterval = setInterval(() => {
-      Promise.all([
-        fetcher(`${baseUrl}/tx/${tx}`),
-        fetcher(`${baseUrl}/block/tip`)
-      ])
+      Promise.all([fetcher(`${baseUrl}/tx/${tx}`), fetcher(`${baseUrl}/block/tip`)])
         .then(([_txRefresh, _newTip]) => {
           const {blockHeight} = _txRefresh;
           const {height} = _newTip;
           const confirmations = blockHeight > 0 ? height - blockHeight + 1 : blockHeight;
-          if (confirmations !== -1) { // conf status has changed from unconfirmed
+          if (confirmations !== -1) {
+            // conf status has changed from unconfirmed
             clearInterval(confInterval as NodeJS.Timer);
             confInterval = null;
             transaction.confirmations = confirmations;
-            if (confirmations > -1) { // if confirmed
+            if (confirmations > -1) {
+              // if confirmed
               transaction.blockHash = _txRefresh.blockHash;
               transaction.blockTime = _txRefresh.blockTime;
               playSoundEffect(ConfirmedWav);
-            } else if (confirmations < -1) { // if invalid
+            } else if (confirmations < -1) {
+              // if invalid
               transaction.replacedByTxid = _txRefresh.replacedByTxid;
               playSoundEffect(NotConfirmedWav);
             }
@@ -140,14 +140,15 @@ const TransactionHash: React.FC = () => {
             setTransaction(transaction);
           }
         })
-        .catch(() => {/**/})
+        .catch(() => {
+          /**/
+        })
         .finally(() => {
           setIsLoading(false);
           nProgress.done();
-        })
+        });
     }, 10000);
   };
-
 
   return (
     <>
@@ -187,19 +188,15 @@ const TransactionHash: React.FC = () => {
                     message={`This transaction was replaced by another transaction that ${
                       transaction.chain === 'ETH'
                         ? 'used the same nonce'
-                        : 'spent some of it\'s inputs'
+                        : "spent some of it's inputs"
                     }.`}
                     type={'error'}
                   />
-                ))
-              }
+                ))}
 
-              {transaction.confirmations === -5 &&
-                <Info
-                  message={'This transaction was dropped from the mempool'}
-                  type={'error'}
-                />
-              }
+              {transaction.confirmations === -5 && (
+                <Info message={'This transaction was dropped from the mempool'} type={'error'} />
+              )}
 
               <TransactionTileBody>
                 <TransactionBodyCol
