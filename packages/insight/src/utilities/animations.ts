@@ -71,3 +71,18 @@ export const imageFadeIn = {
     opacity: 0,
   },
 };
+
+export const searchAnime = {
+  initial: {
+    opacity: 0,
+  },
+  animate: {
+    opacity: 1,
+    transition: {
+      bounce: 0,
+      duration: 0.05,
+      ease: 'linear',
+      staggerChildren: 0.02,
+    },
+  },
+};
