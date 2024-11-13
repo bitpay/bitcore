@@ -1,14 +1,24 @@
-import {FC, memo} from 'react';
-import {buildTime, getApiRoot, getDefaultRefreshInterval} from '../utilities/helper-methods';
-import styled, {css} from 'styled-components';
-import {Tile} from '../assets/styles/tile';
-import LargeThinSpinner from '../assets/images/large-thin-spinner.svg';
-import {Spinner} from '../assets/styles/spinner';
-import {Line} from 'react-chartjs-2';
-import {colorCodes} from '../utilities/constants';
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+} from 'chart.js';
+import {FC, memo, useEffect, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
+import styled, {css} from 'styled-components';
 import {useApi} from '../api/api';
+import LargeThinSpinner from '../assets/images/large-thin-spinner.svg';
 import {Error, SlateDark, White} from '../assets/styles/colors';
+import {Spinner} from '../assets/styles/spinner';
+import {Tile} from '../assets/styles/tile';
+import {colorCodes} from '../utilities/constants';
+import {buildTime, getApiRoot, getDefaultRefreshInterval} from '../utilities/helper-methods';
+
+// Register necessary Chart.js components
+ChartJS.register(CategoryScale, LinearScale, LineController, LineElement, PointElement);
 
 const gutter = '1.5rem';
 
@@ -103,30 +113,68 @@ const ChartContainer = styled.div`
 interface CurrencyTileProps {
   currency: string;
 }
+
 const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   const navigate = useNavigate();
   const apiRoot = getApiRoot(currency);
   const refreshInterval = getDefaultRefreshInterval(currency);
-  let price;
 
-  const url = `${apiRoot}/${currency}/mainnet/block?limit=1`;
-  const {data, error} = useApi(url, {refreshInterval});
+  const {data, error} = useApi(`${apiRoot}/${currency}/mainnet/block?limit=1`, {refreshInterval});
   const {data: priceDetails} = useApi(`https://bitpay.com/rates/${currency}/usd`);
   const {data: priceDisplay} = useApi(
     `https://bitpay.com/currencies/prices?currencyPairs=["${currency}:USD"]`,
   );
 
-  if (priceDetails?.data) {
-    const {
-      data: {rate},
-    } = priceDetails;
-    price = rate;
-  }
+  const chartRef = useRef<HTMLCanvasElement | null>(null);
+  const chartInstanceRef = useRef<ChartJS | null>(null);
 
-  let priceList: any[] = [];
-  if (priceDisplay?.data) {
-    priceList = priceDisplay.data[0].priceDisplay;
-  }
+  const price = priceDetails?.data?.rate;
+  const priceList = priceDisplay?.data?.[0]?.priceDisplay || [];
+
+  const chartData = {
+    labels: priceList,
+    datasets: [
+      {
+        data: priceList,
+        fill: false,
+        spanGaps: true,
+        borderColor: colorCodes[currency],
+        borderWidth: 2,
+        pointRadius: 0,
+      },
+    ],
+  };
+
+  const options = {
+    scales: {
+      x: {display: false},
+      y: {display: false},
+    },
+    plugins: {legend: {display: false}},
+    events: [], // disable default events
+    responsive: true,
+    maintainAspectRatio: false,
+    tension: 0.5,
+  };
+
+  // Create and clean up chart instance
+  useEffect(() => {
+    if (chartRef.current) {
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.destroy();
+      }
+
+      chartInstanceRef.current = new ChartJS(chartRef.current, {
+        type: 'line',
+        data: chartData,
+        options,
+      });
+    }
+
+    return () => {
+      chartInstanceRef.current?.destroy();
+    };
+  }, [chartData, options]);
 
   if (error) {
     return (
@@ -147,49 +195,16 @@ const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   }
 
   const {height, time, transactionCount, size} = data[0];
-  const gotoAllBlocks = async () => {
-    await navigate(`/${currency}/mainnet/blocks`);
-  };
   const imgSrc = `https://bitpay.com/img/icon/currencies/${currency}.svg`;
 
-  const chartData = {
-    labels: priceList,
-    datasets: [
-      {
-        data: priceList,
-        fill: false,
-        spanGaps: true,
-        borderColor: colorCodes[currency],
-        borderWidth: 2,
-        pointRadius: 0,
-      },
-    ],
-  };
-
-  const options = {
-    scales: {
-      x: {
-        display: false,
-      },
-      y: {
-        display: false,
-      },
-    },
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-    events: [], // don't listen for any default events like mouseover, click, etc.
-    responsive: true,
-    maintainAspectRatio: false,
-    tension: 0.5,
+  const gotoAllBlocks = async () => {
+    await navigate(`/${currency}/mainnet/blocks`);
   };
 
   return (
     <CurrencyTileDiv currency={currency} onClick={gotoAllBlocks} key={currency}>
       <CurrencyTileHeader>
-        <img src={imgSrc} width={35} height={35} alt={currency + ' logo'} />
+        <img src={imgSrc} width={35} height={35} alt={`${currency} logo`} />
         <div>
           <CurrencyName>{currency}</CurrencyName>
           {price && <CurrencyPrice>{price} USD</CurrencyPrice>}
@@ -198,13 +213,7 @@ const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
 
       {priceList.length > 0 && (
         <ChartContainer>
-          <Line
-            key={currency}
-            data={chartData}
-            options={options}
-            aria-label='price line chart'
-            role='img'
-          />
+          <canvas ref={chartRef} aria-label='price line chart' role='img' />
         </ChartContainer>
       )}
 
