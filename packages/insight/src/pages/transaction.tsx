@@ -1,27 +1,27 @@
-import {getApiRoot, getFormattedDate, normalizeParams} from '../utilities/helper-methods';
 import {fetcher} from '../api/api';
-import TransactionSummary from '../components/transaction-summary';
-import TransactionSummaryEth from '../components/transaction-summary-eth';
-import TransactionDetailsEth from '../components/transaction-details-eth';
-import TransactionDetails from '../components/transaction-details';
 import CopyText from '../components/copy-text';
-import Info from '../components/info';
 import SupCurrencyLogo from '../components/icons/sup-currency-logo';
+const Info = lazy(() => import('../components/info'));
+const TransactionDetails = lazy(() => import('../components/transaction-details'));
+const TransactionDetailsEth = lazy(() => import('../components/transaction-details-eth'));
+const TransactionSummary = lazy(() => import('../components/transaction-summary'));
+const TransactionSummaryEth = lazy(() => import('../components/transaction-summary-eth'));
+import {getApiRoot, getFormattedDate, normalizeParams} from '../utilities/helper-methods';
 
-import {MainTitle, SecondaryTitle} from '../assets/styles/titles';
-import {Tile, TileDescription} from '../assets/styles/tile';
-import {DisplayFlex, ConfirmationLabel} from '../assets/styles/global';
-import {TransactionBodyCol, TransactionTileBody} from '../assets/styles/transaction';
 import {motion} from 'framer-motion';
-import {routerFadeIn} from '../utilities/animations';
-import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
-import {useAppDispatch} from '../utilities/hooks';
-import React, {useEffect, useState} from 'react';
-import {changeCurrency, changeNetwork} from '../store/app.actions';
 import nProgress from 'nprogress';
+import React, {lazy, Suspense, useEffect, useState} from 'react';
+import {Link, useNavigate, useParams, useSearchParams} from 'react-router-dom';
+import {playSoundEffect} from 'src/utilities/sound';
 import ConfirmedWav from '../assets/sounds/confirmed.wav';
 import NotConfirmedWav from '../assets/sounds/notConfirmed.wav';
-import {playSoundEffect} from 'src/utilities/sound';
+import {ConfirmationLabel, DisplayFlex} from '../assets/styles/global';
+import {Tile, TileDescription} from '../assets/styles/tile';
+import {MainTitle, SecondaryTitle} from '../assets/styles/titles';
+import {TransactionBodyCol, TransactionTileBody} from '../assets/styles/transaction';
+import {changeCurrency, changeNetwork} from '../store/app.actions';
+import {routerFadeIn} from '../utilities/animations';
+import {useAppDispatch} from '../utilities/hooks';
 
 const TransactionHash: React.FC = () => {
   const navigate = useNavigate();
@@ -154,7 +154,11 @@ const TransactionHash: React.FC = () => {
     <>
       {!isLoading ? (
         <>
-          {error ? <Info type={'error'} message={error} /> : null}
+          {error ? (
+            <Suspense>
+              <Info type={'error'} message={error} />{' '}
+            </Suspense>
+          ) : null}
 
           {transaction && currency && network ? (
             <motion.div variants={routerFadeIn} animate='animate' initial='initial'>
@@ -178,24 +182,30 @@ const TransactionHash: React.FC = () => {
 
               {transaction.confirmations === -3 &&
                 (transaction.replacedByTxid ? (
-                  <Info
-                    message={`This transaction was replaced by ${transaction.replacedByTxid}`}
-                    type={'error'}
-                    onClick={() => goToTx(transaction.replacedByTxid)}
-                  />
+                  <Suspense>
+                    <Info
+                      message={`This transaction was replaced by ${transaction.replacedByTxid}`}
+                      type={'error'}
+                      onClick={() => goToTx(transaction.replacedByTxid)}
+                    />
+                  </Suspense>
                 ) : (
-                  <Info
-                    message={`This transaction was replaced by another transaction that ${
-                      transaction.chain === 'ETH'
-                        ? 'used the same nonce'
-                        : "spent some of it's inputs"
-                    }.`}
-                    type={'error'}
-                  />
+                  <Suspense>
+                    <Info
+                      message={`This transaction was replaced by another transaction that ${
+                        transaction.chain === 'ETH'
+                          ? 'used the same nonce'
+                          : "spent some of it's inputs"
+                      }.`}
+                      type={'error'}
+                    />
+                  </Suspense>
                 ))}
 
               {transaction.confirmations === -5 && (
-                <Info message={'This transaction was dropped from the mempool'} type={'error'} />
+                <Suspense>
+                  <Info message={'This transaction was dropped from the mempool'} type={'error'} />
+                </Suspense>
               )}
 
               <TransactionTileBody>
@@ -204,9 +214,13 @@ const TransactionHash: React.FC = () => {
                   backgroundColor='transparent'
                   padding='0 0 1rem 0'>
                   {currency === 'ETH' ? (
-                    <TransactionSummaryEth transaction={transaction} />
+                    <Suspense>
+                      <TransactionSummaryEth transaction={transaction} />
+                    </Suspense>
                   ) : (
-                    <TransactionSummary transaction={transaction} />
+                    <Suspense>
+                      <TransactionSummary transaction={transaction} />
+                    </Suspense>
                   )}
 
                   <Tile withBorderBottom>
@@ -240,19 +254,23 @@ const TransactionHash: React.FC = () => {
               <SecondaryTitle>Details</SecondaryTitle>
 
               {currency === 'ETH' ? (
-                <TransactionDetailsEth
-                  transaction={transaction}
-                  currency={currency}
-                  network={network}
-                />
+                <Suspense>
+                  <TransactionDetailsEth
+                    transaction={transaction}
+                    currency={currency}
+                    network={network}
+                  />
+                </Suspense>
               ) : (
-                <TransactionDetails
-                  transaction={transaction}
-                  currency={currency}
-                  network={network}
-                  refVout={refVout}
-                  refTxid={refTxid}
-                />
+                <Suspense>
+                  <TransactionDetails
+                    transaction={transaction}
+                    currency={currency}
+                    network={network}
+                    refVout={refVout}
+                    refTxid={refTxid}
+                  />
+                </Suspense>
               )}
             </motion.div>
           ) : null}

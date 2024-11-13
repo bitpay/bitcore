@@ -1,5 +1,5 @@
 import {AnimatePresence, motion} from 'framer-motion';
-import { lazy, memo, ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
+import {lazy, memo, ReactNode, Suspense, useEffect, useMemo, useState} from 'react';
 import {Parallax} from 'react-parallax';
 import {useLocation} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
@@ -87,7 +87,7 @@ const Layout = ({children}: {children?: ReactNode}) => {
     setIsHomePage(location.pathname === '/');
     const network = location.pathname.split('/')[2]?.toLowerCase();
     setIsTestnet(!!(network && network !== 'mainnet'));
-  }, [location.pathname])
+  }, [location.pathname]);
 
   return (
     <div>
