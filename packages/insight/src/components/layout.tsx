@@ -1,19 +1,19 @@
-import Header from './header';
+import {AnimatePresence, motion} from 'framer-motion';
+import { lazy, memo, ReactNode, Suspense, useEffect, useMemo, useState } from 'react';
+import {Parallax} from 'react-parallax';
+import {useLocation} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
-import Search from './search';
-import {device} from '../utilities/constants';
-import {MainTitle} from '../assets/styles/titles';
-import {ReactNode, useState, memo} from 'react';
-import Footer from './footer';
 import PlusBackgroundDark from '../assets/images/plus-dark-background.svg';
 import PlusBackgroundLight from '../assets/images/plus-light-background.svg';
-import {AnimatePresence, motion} from 'framer-motion';
-import {ErrorExitAnime, fadeIn, fadeInTransition} from '../utilities/animations';
-import {Parallax} from 'react-parallax';
-import Info from './info';
-import {useLocation} from 'react-router-dom';
-import {FooterHeight, HeaderHeight} from '../assets/styles/global';
 import {Feather} from '../assets/styles/colors';
+import {FooterHeight, HeaderHeight} from '../assets/styles/global';
+import {MainTitle} from '../assets/styles/titles';
+import {ErrorExitAnime, fadeIn, fadeInTransition, searchAnime} from '../utilities/animations';
+import {device} from '../utilities/constants';
+import Footer from './footer';
+import Header from './header';
+const Info = lazy(() => import('./info'));
+const Search = lazy(() => import('./search'));
 
 const BodyWrapper = styled.main<{marginTop: boolean}>`
   padding: 1rem calc((100% - 992px) / 4);
@@ -75,34 +75,19 @@ const ParallaxDiv = styled(Parallax)`
 
 const Layout = ({children}: {children?: ReactNode}) => {
   const theme = useTheme();
-  const url = theme.dark ? PlusBackgroundDark : PlusBackgroundLight;
   const location = useLocation();
 
+  const url = useMemo(() => (theme.dark ? PlusBackgroundDark : PlusBackgroundLight), [theme.dark]);
+
   const [searchError, setSearchError] = useState('');
+  const [isHomePage, setIsHomePage] = useState<boolean>();
+  const [isTestnet, setIsTestnet] = useState<boolean>();
 
-  const isHomePage = () => {
-    return location.pathname === '/';
-  };
-
-  const isTestnet = () => {
+  useEffect(() => {
+    setIsHomePage(location.pathname === '/');
     const network = location.pathname.split('/')[2]?.toLowerCase();
-    return network && network !== 'mainnet';
-  };
-
-  const searchAnime = {
-    initial: {
-      opacity: 0,
-    },
-    animate: {
-      opacity: 1,
-      transition: {
-        bounce: 0,
-        duration: 0.05,
-        ease: 'linear',
-        staggerChildren: 0.02,
-      },
-    },
-  };
+    setIsTestnet(!!(network && network !== 'mainnet'));
+  }, [location.pathname])
 
   return (
     <div>
@@ -111,19 +96,23 @@ const Layout = ({children}: {children?: ReactNode}) => {
       </motion.div>
 
       <BodyContainer>
-        {isHomePage() && (
+        {isHomePage && (
           <ParallaxDiv bgImage={url} strength={400}>
             <ParallaxBackgroundHeight>
               <HomePageSearch variants={searchAnime} animate='animate' initial='initial'>
                 <MainTitle variants={fadeInTransition}>Insight Blockchain Explorer</MainTitle>
                 <motion.div variants={fadeInTransition}>
-                  <Search borderBottom={true} setErrorMessage={setSearchError} />
+                  <Suspense>
+                    <Search borderBottom={true} setErrorMessage={setSearchError} />
+                  </Suspense>
                 </motion.div>
 
                 <AnimatePresence>
                   {searchError && (
                     <motion.div variants={ErrorExitAnime} exit='exit'>
-                      <Info message={searchError} type={'error'} />
+                      <Suspense>
+                        <Info message={searchError} type={'error'} />
+                      </Suspense>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -132,28 +121,34 @@ const Layout = ({children}: {children?: ReactNode}) => {
           </ParallaxDiv>
         )}
 
-        {!isHomePage() && (
+        {!isHomePage && (
           <MobileSearch>
-            <Search borderBottom={true} id='headerSearch' setErrorMessage={setSearchError} />
+            <Suspense>
+              <Search borderBottom={true} id='headerSearch' setErrorMessage={setSearchError} />
+            </Suspense>
           </MobileSearch>
         )}
 
-        <BodyWrapper marginTop={!isHomePage()}>
+        <BodyWrapper marginTop={!isHomePage}>
           <BodyWrapperContent>
             <AnimatePresence>
-              {searchError && !isHomePage() && (
+              {searchError && !isHomePage && (
                 <motion.div variants={ErrorExitAnime} exit='exit'>
-                  <Info message={searchError} type={'error'} />
+                  <Suspense>
+                    <Info message={searchError} type={'error'} />
+                  </Suspense>
                 </motion.div>
               )}
             </AnimatePresence>
             <AnimatePresence>
-              {isTestnet() && (
-                <Info
-                  message={'This is a test network. Testnet currencies have no real-world value.'}
-                  type={'info'}
-                  textAlign={'center'}
-                />
+              {isTestnet && (
+                <Suspense>
+                  <Info
+                    message={'This is a test network. Testnet currencies have no real-world value.'}
+                    type={'info'}
+                    textAlign={'center'}
+                  />
+                </Suspense>
               )}
             </AnimatePresence>
             {children}
