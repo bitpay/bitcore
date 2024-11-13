@@ -3,6 +3,8 @@
 const config = require('../../ts_build/config').default;
 const { Storage } = require('../../ts_build');
 const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
+const fs = require('fs');
+const os = require('os');
 
 const startDate = new Date('2011-01-01T00:00:00.000Z');
 const endDate = new Date();
@@ -14,6 +16,7 @@ function usage(errMsg) {
   console.log('  --oldNetwork <value>    REQUIRED - e.g. testnet3');
   console.log('  --newNetwork <value>    REQUIRED - e.g. testnet4');
   console.log('  --doit                  Save the migration to the db');
+  console.log('  --out <value>           Output file (default: <chain>-<oldNetwork>-<newNetwork>-migrate.json)');
   if (errMsg) {
     console.log('\nERROR: ' + errMsg);
   }
@@ -42,6 +45,19 @@ if (
   !newNetwork
 ) {
   usage('Missing required options.');
+}
+
+const outIdx = args.indexOf('--out');
+let outFile = (outIdx > -1 && args[outIdx + 1]) || `${chain}-${oldNetwork}-${newNetwork}-migrate.json`;
+
+if (outFile.startsWith('~')) {
+  outFile = outFile.replace('~', os.homedir());
+}
+if (outFile.startsWith('$HOME')) {
+  outFile = outFile.replace('$HOME', os.homedir());
+}
+if (!outFile.startsWith('/') && !outFile.startsWith('./') && !outFile.startsWith('../')) {
+  outFile = __dirname + '/' + outFile;
 }
 
 const doit = args.includes('--doit');
@@ -78,6 +94,7 @@ storage.connect(config.storageOpts, async (err) => {
 
     console.log(`  ${doit ? 'REAL:' : 'DRY RUN:'} Found ${Intl.NumberFormat().format(walletCnt)} total wallets to scan`);
     console.log(`  Migrating ${chain}:${oldNetwork}->${newNetwork}`);
+    console.log(`  Output file: ${outFile}`);
     const ans = await new Promise(r => rl.question('Would you like to continue? (y/N): ', r));
     if (ans?.toLowerCase() !== 'y') {
       return done('Good bye.');
@@ -93,6 +110,8 @@ storage.connect(config.storageOpts, async (err) => {
       if (wallet.chain !== chain || (!wallet.chain && wallet.coin !== chain) || wallet.network !== oldNetwork) {
         continue;
       }
+
+      fs.appendFileSync(outFile, wallet.id + '\n');
 
       if (doit) {
         // Update Wallets collection
