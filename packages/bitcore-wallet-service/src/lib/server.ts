@@ -5997,8 +5997,11 @@ export class WalletService implements IWalletService {
       const headers = {
         'Content-Type': 'application/json',
         Authorization: 'ApiKey ' + API_KEY,
-        'x-country-code': 'LT', // TODO: send the real country code
       };
+
+      if (req.body.userCountry && typeof req.body.userCountry === 'string') {
+        headers['x-country-code'] = req.body.userCountry.toUpperCase();
+      }
 
       let qs = [];
       qs.push('base_currency=' + req.body.base_currency);
@@ -6095,7 +6098,7 @@ export class WalletService implements IWalletService {
       const appSellRefId = keys.APP_SELL_REF_ID;
 
       if (
-        !checkRequired(req.body, ['referer_url', 'return_url']) &&
+        !checkRequired(req.body, ['referer_url', 'return_url']) ||
         !checkRequired(req.body.txn_details, ['quote_id'])
       ) {
         return reject(new ClientError("Simplex's request missing arguments"));
@@ -6104,8 +6107,11 @@ export class WalletService implements IWalletService {
       const headers = {
         'Content-Type': 'application/json',
         Authorization: 'ApiKey ' + API_KEY,
-        'x-country-code': 'LT', // TODO: send the real country code
       };
+
+      if (req.body.userCountry && typeof req.body.userCountry === 'string') {
+        headers['x-country-code'] = req.body.userCountry.toUpperCase();
+      }
 
       this.request.post(
         API + '/v3/initiate-sell/widget',

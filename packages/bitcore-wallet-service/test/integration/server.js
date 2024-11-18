@@ -11113,6 +11113,10 @@ describe('Wallet service', function() {
             moonpay: {
               disabled: false,
               removed: false
+            },
+            simplex: {
+              disabled: false,
+              removed: false
             }
           },
           swapCrypto: {
@@ -13234,6 +13238,83 @@ describe('Wallet service', function() {
       });
     });
 
+    describe.only('#simplexGetSellQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userCountry: 'LT',
+            base_currency: 'BTC',
+            base_amount: 1000000,
+            quote_currency: 'EUR',
+            pp_payment_method: 'sepa'
+          }
+        }
+      });
+
+      it('should work properly if req is OK', async () => {
+        server.request = fakeRequest;
+        try {
+          const data = await server.simplexGetSellQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async () => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        try {
+          const data = await server.simplexGetSellQuote(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if get returns error', async () => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        try {
+          const data = await server.simplexGetSellQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.base_amount;
+        server.request = fakeRequest;
+        try {
+          const data = await server.simplexGetSellQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Simplex\'s request missing arguments');
+        }
+      });
+
+      it('should return error if simplex is commented in config', async () => {
+        config.simplex = undefined;
+
+        server.request = fakeRequest;
+        try {
+          const data = await server.simplexGetSellQuote(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Simplex missing credentials');
+        }
+      });
+    });
+
     describe('#simplexPaymentRequest', () => {
       beforeEach(() => {
         req = {
@@ -13295,6 +13376,73 @@ describe('Wallet service', function() {
 
         server.request = fakeRequest;
         server.simplexPaymentRequest(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Simplex missing credentials');
+        });
+      });
+    });
+
+    describe.only('#simplexSellPaymentRequest', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'production',     
+            userCountry: 'LT',
+            referer_url: 'https://referer_url.com/',
+            return_url: 'https://return_url.com/',
+            txn_details: {quote_id: 'quote_id_1'},
+          },
+          ip: '1.2.3.4'
+        }
+
+        fakeRequest = {
+          post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        };
+      });
+
+      it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.simplexSellPaymentRequest(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should return error if post returns error', () => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        server.simplexSellPaymentRequest(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Error');
+        });
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        delete req.body.return_url;
+
+        server.request = fakeRequest;
+        server.simplexSellPaymentRequest(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Simplex\'s request missing arguments');
+        });
+      });
+
+      it('should return error if simplex is commented in config', () => {
+        config.simplex = undefined;
+
+        server.request = fakeRequest;
+        server.simplexSellPaymentRequest(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
