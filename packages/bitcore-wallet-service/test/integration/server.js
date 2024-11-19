@@ -13181,6 +13181,62 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('#simplexGetCurrencies', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox'
+          },
+        }
+      });
+
+      it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.simplexGetCurrencies(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should work properly if req is OK for web', () => {
+        req.body.context = 'web';
+        server.request = fakeRequest;
+        server.simplexGetCurrencies(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should return error if get returns error', () => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        server.simplexGetCurrencies(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Error');
+        });
+      });
+
+      it('should return error if simplex is commented in config', () => {
+        config.simplex = undefined;
+
+        server.request = fakeRequest;
+        server.simplexGetCurrencies(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Simplex missing credentials');
+        });
+      });
+    });
+
     describe('#simplexGetQuote', () => {
       beforeEach(() => {
         req = {
@@ -13238,7 +13294,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe.only('#simplexGetSellQuote', () => {
+    describe('#simplexGetSellQuote', () => {
       beforeEach(() => {
         req = {
           headers: {},
@@ -13384,7 +13440,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe.only('#simplexSellPaymentRequest', () => {
+    describe('#simplexSellPaymentRequest', () => {
       beforeEach(() => {
         req = {
           headers: {},
