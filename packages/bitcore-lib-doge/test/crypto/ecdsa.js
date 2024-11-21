@@ -220,6 +220,37 @@ describe('ECDSA', function() {
       signature1.should.equal(signature2);
     });
 
+    it('should generate correct signature for Uint8Array input', function() {
+      const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
+      const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
+      const ctrlSig = ECDSA.sign(hashbuf, pk);
+      const testSig = ECDSA.sign(Uint8Array.from(hashbuf), pk);
+      ctrlSig.toString('hex').should.equal('30450221009cf9c9f5e45fba55c5f3237423158ecbdb66267edfc18742bef13277d919d8e302200d83137ceaab33eea61c7a5cbbebc5856cdc524f396556eadeae2a1f1d9bb691');
+      ctrlSig.toString('hex').should.equal(testSig.toString('hex'));
+    });
+
+    it('should throw on improper input: Array', function() {
+      const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
+      const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
+      try {
+        ECDSA.sign(Array.from(hashbuf), pk);
+        throw new Error('should have thrown');
+      } catch (e) {
+        e.message.should.equal('Invalid state: Error: hashbuf must be a 32 byte buffer');
+      }
+    });
+
+    it('should throw on improper input: Uint16Array', function() {
+      const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
+      const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
+      try {
+        ECDSA.sign(Uint16Array.from(hashbuf), pk);
+        throw new Error('should have thrown');
+      } catch (e) {
+        e.message.should.equal('Invalid state: Error: hashbuf must be a 32 byte buffer');
+      }
+    });
+
   });
 
   describe('#toString', function() {

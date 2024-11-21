@@ -115,6 +115,38 @@ describe('BN', function() {
       bn.toString().should.equal('1');
     });
 
+    it('should work with Uint8Array input', function() {
+      var bn = BN.fromBuffer(Uint8Array.from([0xa1, 0xb2, 0xc3]), { endian: 'big' });
+      bn.toString(16).should.equal('a1b2c3');
+    });
+
+    it('should throw on invalid input: Array', function() {
+      try {
+        BN.fromBuffer(Array.from([0xa1, 0xb2, 0xc3]), { endian: 'big' });
+        throw new Error('should have thrown');
+      } catch(e) {
+        e.message.should.equal('Invalid Argument: first argument should be a buffer');
+      }
+    });
+
+    it('should throw on invalid input: string', function() {
+      try {
+        BN.fromBuffer('a1b2c3', { endian: 'big' });
+        throw new Error('should have thrown');
+      } catch(e) {
+        e.message.should.equal('Invalid Argument: first argument should be a buffer');
+      }
+    });
+
+    it('should throw on invalid input: Uint16Array', function() {
+      try {
+        BN.fromBuffer(Uint16Array.from([0xa1, 0xb2, 0xc3]), { endian: 'big' });
+        throw new Error('should have thrown');
+      } catch(e) {
+        e.message.should.equal('Invalid Argument: first argument should be a buffer');
+      }
+    });
+
   });
 
   describe('#toBuffer', function() {
