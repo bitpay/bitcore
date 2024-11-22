@@ -8,6 +8,7 @@ import { LtcChain } from './ltc';
 import { XecChain } from './xec';
 import { XpiChain } from './xpi';
 import { XrpChain } from './xrp';
+import { ChronikClient, ChronikClientNode } from 'chronik-client';
 
 const Common = require('../common');
 const Constants = Common.Constants;
@@ -48,6 +49,7 @@ export interface IChain {
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
   burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId);
   getChronikClient();
+  getChronikClientInNode();
   getTokenInfo(tokenId);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
@@ -98,8 +100,12 @@ class ChainProxy {
     return normalizedChain;
   }
 
-  getChronikClient(coin) {
+  getChronikClient(coin): ChronikClient {
     return this.get(coin).getChronikClient();
+  }
+
+  getChronikClientInNode(coin): ChronikClientNode {
+    return this.get(coin).getChronikClientInNode();
   }
 
   getWalletBalance(server, wallet, opts, cb) {

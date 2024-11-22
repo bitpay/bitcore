@@ -37,7 +37,7 @@
     "async": "^0.9.2",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.0",
-    "chronik-client": "^0.8.2",
+    "chronik-client": "^0.26.2",
     "compression": "^1.6.2",
     "csvtojson": "^2.0.10",
     "ecashaddrjs": "^1.0.7",

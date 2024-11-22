@@ -40,6 +40,7 @@ export class XrpChain implements IChain {
   }
 
   getChronikClient() {}
+  getChronikClientInNode() {}
 
   convertAddressToScriptPayload(address) {}
   getTokenInfo(tokenId) {}
