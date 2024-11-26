@@ -2646,7 +2646,9 @@ export class WalletService {
     }
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
-      chronikClient = ChainService.getChronikClient(coin);
+      chronikClient = coin === 'xec' ?
+        ChainService.getChronikClientInNode(coin) :
+        ChainService.getChronikClient(coin);
     } catch {
       return Promise.reject('err funtion _getUxtosByChronik in aws');
     }
@@ -2681,7 +2683,9 @@ export class WalletService {
     }
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
-      chronikClient = ChainService.getChronikClient(coin);
+      chronikClient = coin === 'xec' ?
+        ChainService.getChronikClientInNode(coin) :
+        ChainService.getChronikClient(coin);
     } catch {
       return Promise.reject('err funtion _getUxtosByChronik in aws');
     }
@@ -3804,7 +3808,9 @@ export class WalletService {
       this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
     } else {
       const coin = opts.coin;
-      const chronikClient = ChainService.getChronikClient(coin);
+      const chronikClient = coin === 'xec' ?
+        ChainService.getChronikClientInNode(coin) :
+        ChainService.getChronikClient(coin);
       this._broadcastRawTxByChronik(chronikClient, opts.rawTx, !!opts.skipSlpCheck, async (err, txid) => {
         if (err || !txid) {
           logger.warn(`Broadcast failed: ${err}`);
@@ -5174,7 +5180,9 @@ export class WalletService {
                   //   return;
                   // }
                 }
-                const txDetail = await this.getTxDetailForWalletWithPromise(
+                const txDetail = merchantOrder.coin === 'xec' ? 
+                  await this.getTxDetailForXecWalletWithPromise(merchantOrder.txIdFromUser) :
+                  await this.getTxDetailForWalletWithPromise(
                   merchantOrder.txIdFromUser,
                   merchantOrder.coin
                 );
@@ -7954,7 +7962,9 @@ export class WalletService {
     let scriptPayload;
     let totalTxs;
     try {
-      const chronikClient = ChainService.getChronikClient(wallet.coin);
+      const chronikClient = wallet.coin === 'xec' ?
+        ChainService.getChronikClientInNode(wallet.coin) :
+        ChainService.getChronikClient(wallet.coin);
       scriptPayload = ChainService.convertAddressToScriptPayload(wallet.coin, address);
       const txHistoryPage = await chronikClient.script('p2pkh', scriptPayload).history(0, limit);
       return txHistoryPage.txs;
@@ -8120,7 +8130,9 @@ export class WalletService {
                         this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
                       );
                     });
-                    const chronikClient = ChainService.getChronikClient(wallet.coin);
+                    const chronikClient = wallet.coin === 'xec' ?
+                      ChainService.getChronikClientInNode(wallet.coin) :
+                      ChainService.getChronikClient(wallet.coin);
                     await Promise.all(promiseList).then(async lastTxsChronik => {
                       lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
                       if (lastTxsChronik.length > 0) {
@@ -8212,7 +8224,9 @@ export class WalletService {
           // get all txs from chronik client
           if (wallet.coin === 'xpi' && wallet.singleAddress) {
             if (resultTxs && resultTxs.length > 0) {
-              const chronikClient = ChainService.getChronikClient(wallet.coin);
+              const chronikClient = wallet.coin === 'xec' ?
+                ChainService.getChronikClientInNode(wallet.coin) :
+                ChainService.getChronikClient(wallet.coin);
               // filter get only tx have on-chain message
               let filterResultTxs = _.filter(resultTxs, tx => {
                 // if tx action = received => get all txs because we have no clue if this tx having message or not
@@ -8277,7 +8291,9 @@ export class WalletService {
         },
         next => {
           if (this._isSupportToken(wallet)) {
-            const chronikClient = ChainService.getChronikClient(wallet.coin);
+            const chronikClient = wallet.coin === 'xec' ?
+              ChainService.getChronikClientInNode(wallet.coin) :
+              ChainService.getChronikClient(wallet.coin);
             let filterResultTxs = _.filter(resultTxs, tx => !tx.burnAmountToken);
             if (filterResultTxs.length > 0) {
               const listTxDetailFromChronik = _.map(filterResultTxs, async tx => {
@@ -10869,7 +10885,7 @@ export class WalletService {
   }
 
   async startBotNotificationForUser() {
-    const chronikClient = ChainService.getChronikClient('xec');
+    const chronikClient = ChainService.getChronikClientInNode('xec');
     ws = chronikClient.ws({
       onMessage: msg => {
         if (msg.txid && !txIdHandled.includes(msg.txid) && msg.type === 'AddedToMempool') {
