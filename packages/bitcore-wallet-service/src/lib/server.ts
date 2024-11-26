@@ -32,6 +32,18 @@ import * as forge from 'node-forge';
 
 import { Validation } from '@abcpros/crypto-wallet-core';
 import messageLib from 'bitcoinjs-message';
+import {
+  ChronikClient,
+  ChronikClientNode,
+  Tx,
+  Tx_InNode,
+  TxInput,
+  TxInput_InNode,
+  TxOutput,
+  TxOutput_InNode,
+  ScriptUtxos_InNode,
+  ScriptUtxo_InNode
+} from 'chronik-client';
 import moment from 'moment';
 import { CurrencyRateService } from './currencyrate';
 import { Appreciation } from './model/appreciation';
@@ -47,7 +59,6 @@ import { IQPayInfo } from './model/qpayinfo';
 import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { PushNotificationsService } from './pushnotificationsservice';
-import { ChronikClientNode, ChronikClient, Tx_InNode, Tx, TxInput, TxInput_InNode, TxOutput, TxOutput_InNode } from 'chronik-client';
 
 const Client = require('@abcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
@@ -2369,9 +2380,10 @@ export class WalletService {
   getTxDetail(txId, cb) {
     this.getWallet({}, async (err, wallet) => {
       try {
-        const chronikClient: ChronikClient | ChronikClientNode = wallet.coin === 'xec' ?
-          ChainService.getChronikClientInNode(wallet.coin) :
-          ChainService.getChronikClient(wallet.coin);
+        const chronikClient: ChronikClient | ChronikClientNode =
+          wallet.coin === 'xec'
+            ? ChainService.getChronikClientInNode(wallet.coin)
+            : ChainService.getChronikClient(wallet.coin);
         const txDetail: Tx | Tx_InNode = await chronikClient.tx(txId);
         if (!txDetail) return cb('no txDetail');
         const inputAddresses = _.uniq(
@@ -2380,13 +2392,13 @@ export class WalletService {
           })
         );
         const outputAddresses = _.uniq(
-          _.map(txDetail.outputs, ( item: TxOutput | TxOutput_InNode) => {
+          _.map(txDetail.outputs, (item: TxOutput | TxOutput_InNode) => {
             return this._convertAddressFormInputScript(item.outputScript, wallet.coin, true);
           })
         );
         if (inputAddresses) {
-          txDetail.inputAddresses = inputAddresses;
-          txDetail.outputAddresses = outputAddresses;
+          (txDetail as any).inputAddresses = inputAddresses;
+          (txDetail as any).outputAddresses = outputAddresses;
           this.storage.updateCacheTxHistoryByTxId(wallet.id, txId, inputAddresses, (err, result) => {
             if (err) return cb(err);
             return cb(null, txDetail);
@@ -2407,21 +2419,21 @@ export class WalletService {
   async getTxDetailForXecWallet(txId, cb) {
     try {
       const chronikClientInNode = ChainService.getChronikClientInNode('xec');
-      const txDetail: any = await chronikClientInNode.tx(txId);
+      const txDetail: Tx_InNode = await chronikClientInNode.tx(txId);
       if (!txDetail) return cb('no txDetail');
       const inputAddresses = _.uniq(
         _.map(txDetail.inputs, item => {
-          return this._convertAddressFormInputScript(item.inputScript, 'xec', !!item.slpToken);
+          return this._convertAddressFormInputScript(item.inputScript, 'xec', !!item.token);
         })
       );
       const outputAddresses = _.uniq(
         _.map(txDetail.outputs, item => {
-          return this._convertAddressFormInputScript(item.outputScript, 'xec', !!item.slpToken);
+          return this._convertAddressFormInputScript(item.outputScript, 'xec', !!item.token);
         })
       );
       if (inputAddresses) {
-        txDetail.inputAddresses = inputAddresses;
-        txDetail.outputAddresses = outputAddresses;
+        (txDetail as any).inputAddresses = inputAddresses;
+        (txDetail as any).outputAddresses = outputAddresses;
         return cb(null, txDetail);
       } else {
         return cb(null, txDetail);
@@ -2439,21 +2451,21 @@ export class WalletService {
     return new Promise(async (resolve, reject) => {
       try {
         const chronikClient = ChainService.getChronikClientInNode('xec');
-        const txDetail: any = await chronikClient.tx(txId);
+        const txDetail: Tx_InNode = await chronikClient.tx(txId);
         if (!txDetail) return reject('no txDetail');
         const inputAddresses = _.uniq(
           _.map(txDetail.inputs, item => {
-            return this._convertAddressFormInputScript(item.inputScript, 'xec', !!item.slpToken);
+            return this._convertAddressFormInputScript(item.inputScript, 'xec', !!item.token);
           })
         );
         const outputAddresses = _.uniq(
           _.map(txDetail.outputs, item => {
-            return this._convertAddressFormInputScript(item.outputScript, 'xec', !!item.slpToken);
+            return this._convertAddressFormInputScript(item.outputScript, 'xec', !!item.token);
           })
         );
         if (inputAddresses) {
-          txDetail.inputAddresses = inputAddresses;
-          txDetail.outputAddresses = outputAddresses;
+          (txDetail as any).inputAddresses = inputAddresses;
+          (txDetail as any).outputAddresses = outputAddresses;
           return resolve(txDetail);
         } else {
           return resolve(txDetail);
@@ -2470,25 +2482,52 @@ export class WalletService {
    */
   async getTxDetailForWallet(txId, coin, cb) {
     try {
-      const chronikClient = ChainService.getChronikClient(coin);
-      const txDetail: any = await chronikClient.tx(txId);
-      if (!txDetail) return cb('no txDetail');
-      const inputAddresses = _.uniq(
-        _.map(txDetail.inputs, item => {
-          return this._convertAddressFormInputScript(item.inputScript, coin, !!item.slpToken);
-        })
-      );
-      const outputAddresses = _.uniq(
-        _.map(txDetail.outputs, item => {
-          return this._convertAddressFormInputScript(item.outputScript, coin, !!item.slpToken);
-        })
-      );
-      if (inputAddresses) {
-        txDetail.inputAddresses = inputAddresses;
-        txDetail.outputAddresses = outputAddresses;
-        return cb(null, txDetail);
+      const chronikClient: ChronikClient | ChronikClientNode =
+        coin === 'xec'
+          ? ChainService.getChronikClientInNode(coin)
+          : ChainService.getChronikClient(coin);
+
+      if (coin == 'xec') {
+        const txDetail: Tx_InNode = await (chronikClient as ChronikClientNode).tx(txId);
+        if (!txDetail) return cb('no txDetail');
+
+        const inputAddresses = _.uniq(
+          _.map(txDetail.inputs, item => {
+            return this._convertAddressFormInputScript(item.inputScript, coin, !!item.token);
+          })
+        );
+        const outputAddresses = _.uniq(
+          _.map(txDetail.outputs, item => {
+            return this._convertAddressFormInputScript(item.outputScript, coin, !!item.token);
+          })
+        );
+        if (inputAddresses) {
+          (txDetail as any).inputAddresses = inputAddresses;
+          (txDetail as any).outputAddresses = outputAddresses;
+          return cb(null, txDetail);
+        } else {
+          return cb(null, txDetail);
+        }
       } else {
-        return cb(null, txDetail);
+        const txDetail: Tx = await (chronikClient as ChronikClient).tx(txId);
+        if (!txDetail) return cb('no txDetail');
+        const inputAddresses = _.uniq(
+          _.map(txDetail.inputs, item => {
+            return this._convertAddressFormInputScript(item.inputScript, coin, !!item.slpToken);
+          })
+        );
+        const outputAddresses = _.uniq(
+          _.map(txDetail.outputs, item => {
+            return this._convertAddressFormInputScript(item.outputScript, coin, !!item.slpToken);
+          })
+        );
+        if (inputAddresses) {
+          (txDetail as any).inputAddresses = inputAddresses;
+          (txDetail as any).outputAddresses = outputAddresses;
+          return cb(null, txDetail);
+        } else {
+          return cb(null, txDetail);
+        }
       }
     } catch (err) {
       return cb(err);
@@ -2502,26 +2541,54 @@ export class WalletService {
   async getTxDetailForWalletWithPromise(txId, coin): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
-        const chronikClient = ChainService.getChronikClient(coin);
-        const txDetail: any = await chronikClient.tx(txId);
-        if (!txDetail) return reject('no txDetail');
-        const inputAddresses = _.uniq(
-          _.map(txDetail.inputs, item => {
-            return this._convertAddressFormInputScript(item.inputScript, coin, !!item.slpToken);
-          })
-        );
-        const outputAddresses = _.uniq(
-          _.map(txDetail.outputs, item => {
-            return this._convertAddressFormInputScript(item.outputScript, coin, !!item.slpToken);
-          })
-        );
-        if (inputAddresses) {
-          txDetail.inputAddresses = inputAddresses;
-          txDetail.outputAddresses = outputAddresses;
-          return resolve(txDetail);
+        const chronikClient: ChronikClient | ChronikClientNode =
+          coin === 'xec'
+            ? ChainService.getChronikClientInNode(coin)
+            : ChainService.getChronikClient(coin);
+
+        if (coin == 'xec') {
+          const txDetail: Tx_InNode = await (chronikClient as ChronikClientNode).tx(txId);
+          if (!txDetail) return reject('no txDetail');
+
+          const inputAddresses = _.uniq(
+            _.map(txDetail.inputs, item => {
+              return this._convertAddressFormInputScript(item.inputScript, coin, !!item.token);
+            })
+          );
+          const outputAddresses = _.uniq(
+            _.map(txDetail.outputs, item => {
+              return this._convertAddressFormInputScript(item.outputScript, coin, !!item.token);
+            })
+          );
+          if (inputAddresses) {
+            (txDetail as any).inputAddresses = inputAddresses;
+            (txDetail as any).outputAddresses = outputAddresses;
+            return resolve(txDetail);
+          } else {
+            return resolve(txDetail);
+          }
         } else {
-          return resolve(txDetail);
+          const txDetail: Tx = await (chronikClient as ChronikClient).tx(txId);
+          if (!txDetail) return reject('no txDetail');
+          const inputAddresses = _.uniq(
+            _.map(txDetail.inputs, item => {
+              return this._convertAddressFormInputScript(item.inputScript, coin, !!item.slpToken);
+            })
+          );
+          const outputAddresses = _.uniq(
+            _.map(txDetail.outputs, item => {
+              return this._convertAddressFormInputScript(item.outputScript, coin, !!item.slpToken);
+            })
+          );
+          if (inputAddresses) {
+            (txDetail as any).inputAddresses = inputAddresses;
+            (txDetail as any).outputAddresses = outputAddresses;
+            return resolve(txDetail);
+          } else {
+            return resolve(txDetail);
+          }
         }
+
       } catch (err) {
         return reject(err);
       }
@@ -2638,7 +2705,6 @@ export class WalletService {
   }
 
   _getUxtosByChronik(coin, addressInfo) {
-    let chronikClient: ChronikClient | ChronikClientNode;
     let scriptPayload;
     let address = addressInfo.address;
     if (address.includes('ecash:')) {
@@ -2646,33 +2712,56 @@ export class WalletService {
     }
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
-      chronikClient = coin === 'xec' ?
-        ChainService.getChronikClientInNode(coin) :
-        ChainService.getChronikClient(coin);
+      if (coin === 'xec') {
+        let chronikClient: ChronikClientNode = ChainService.getChronikClientInNode(coin);
+        return chronikClient
+          .script('p2pkh', scriptPayload)
+          .utxos()
+          .then(chronikUtxos => {
+            const utxos = _.flatMap(chronikUtxos => (scriptUtxos: ScriptUtxos_InNode) => {
+              return _.map(scriptUtxos.utxos, (utxo: ScriptUtxo_InNode) => ({
+                addressInfo,
+                txid: utxo.outpoint.txid,
+                outIdx: utxo.outpoint.outIdx,
+                value: Number(utxo.value),
+                isNonSLP: utxo.token ? false : true,
+                slpMeta: utxo.token,
+                tokenId: utxo.token ? utxo.token.tokenId : undefined,
+                amountToken: utxo.token && utxo.token.amount ? Number(utxo.token.amount) : undefined
+              }));
+            });
+            return utxos;
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      } else {
+        let chronikClient: ChronikClient = ChainService.getChronikClient(coin);
+        return chronikClient
+          .script('p2pkh', scriptPayload)
+          .utxos()
+          .then(chronikUtxos => {
+            const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
+              return _.map(scriptUtxos.utxos, utxo => ({
+                addressInfo,
+                txid: utxo.outpoint.txid,
+                outIdx: utxo.outpoint.outIdx,
+                value: Number(utxo.value),
+                isNonSLP: utxo.slpToken ? false : true,
+                slpMeta: utxo.slpMeta,
+                tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
+                amountToken: utxo.slpToken && utxo.slpToken.amount ? Number(utxo.slpToken.amount) : undefined
+              }));
+            });
+            return utxos;
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
+      }
     } catch {
       return Promise.reject('err funtion _getUxtosByChronik in aws');
     }
-    return chronikClient
-      .script('p2pkh', scriptPayload)
-      .utxos()
-      .then(chronikUtxos => {
-        const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
-          return _.map(scriptUtxos.utxos, utxo => ({
-            addressInfo,
-            txid: utxo.outpoint.txid,
-            outIdx: utxo.outpoint.outIdx,
-            value: Number(utxo.value),
-            isNonSLP: utxo.slpToken ? false : true,
-            slpMeta: utxo.slpMeta,
-            tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
-            amountToken: utxo.slpToken && utxo.slpToken.amount ? Number(utxo.slpToken.amount) : undefined
-          }));
-        });
-        return utxos;
-      })
-      .catch(err => {
-        return Promise.reject(err);
-      });
   }
 
   _getUxtosByChronikOnlyByAddress(coin, address) {
@@ -2689,26 +2778,49 @@ export class WalletService {
     } catch {
       return Promise.reject('err funtion _getUxtosByChronik in aws');
     }
-    return chronikClient
-      .script('p2pkh', scriptPayload)
-      .utxos()
-      .then(chronikUtxos => {
-        const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
-          return _.map(scriptUtxos.utxos, utxo => ({
-            txid: utxo.outpoint.txid,
-            outIdx: utxo.outpoint.outIdx,
-            value: Number(utxo.value),
-            isNonSLP: utxo.slpToken ? false : true,
-            slpMeta: utxo.slpMeta,
-            tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
-            amountToken: utxo.slpToken && utxo.slpToken.amount ? Number(utxo.slpToken.amount) : undefined
-          }));
+    if (coin === 'xec') {
+      return (chronikClient as ChronikClientNode)
+        .script('p2pkh', scriptPayload)
+        .utxos()
+        .then((chronikUtxos: ScriptUtxos_InNode) => {
+          const utxos = _.flatMap(chronikUtxos, (scriptUtxos: ScriptUtxos_InNode) => {
+            return _.map(scriptUtxos.utxos, utxo => ({
+              txid: utxo.outpoint.txid,
+              outIdx: utxo.outpoint.outIdx,
+              value: Number(utxo.value),
+              isNonSLP: utxo.token ? false : true,
+              slpMeta: utxo.token,
+              tokenId: utxo.token ? utxo.token.tokenId : undefined,
+              amountToken: utxo.token && utxo.token.amount ? Number(utxo.token.amount) : undefined
+            }));
+          });
+          return utxos;
+        })
+        .catch(err => {
+          return Promise.reject(err);
         });
-        return utxos;
-      })
-      .catch(err => {
-        return Promise.reject(err);
-      });
+    } else {
+      return (chronikClient as ChronikClient)
+        .script('p2pkh', scriptPayload)
+        .utxos()
+        .then(chronikUtxos => {
+          const utxos = _.flatMap(chronikUtxos, scriptUtxos => {
+            return _.map(scriptUtxos.utxos, utxo => ({
+              txid: utxo.outpoint.txid,
+              outIdx: utxo.outpoint.outIdx,
+              value: Number(utxo.value),
+              isNonSLP: utxo.slpToken ? false : true,
+              slpMeta: utxo.slpMeta,
+              tokenId: utxo.slpMeta ? utxo.slpMeta.tokenId : undefined,
+              amountToken: utxo.slpToken && utxo.slpToken.amount ? Number(utxo.slpToken.amount) : undefined
+            }));
+          });
+          return utxos;
+        })
+        .catch(err => {
+          return Promise.reject(err);
+        });
+    }
   }
 
   getUtxosToken(opts, cb) {
@@ -5160,7 +5272,6 @@ export class WalletService {
                   // }
                   // const messageSignature =
                   //   merchantOrder.txIdFromUser + '-' + merchantOrder.merchantCode + '-' + merchantOrder.amount;
-
                   // let messagePrefix = '';
                   // let bchAddress = '';
                   // if (merchantOrder.coin === 'xec') {
@@ -5180,12 +5291,12 @@ export class WalletService {
                   //   return;
                   // }
                 }
-                const txDetail = merchantOrder.coin === 'xec' ? 
+                const txDetail = merchantOrder.coin === 'xec' ?
                   await this.getTxDetailForXecWalletWithPromise(merchantOrder.txIdFromUser) :
                   await this.getTxDetailForWalletWithPromise(
-                  merchantOrder.txIdFromUser,
-                  merchantOrder.coin
-                );
+                    merchantOrder.txIdFromUser,
+                    merchantOrder.coin
+                  );
                 const outputsConverted = _.uniq(
                   _.map(txDetail.outputs, item => {
                     return this._convertOutputScript(merchantOrder.coin, item);
@@ -6266,13 +6377,7 @@ export class WalletService {
   }
 
   async createMerchantOrder(opts, cb) {
-    if (
-      !opts.txIdFromUser ||
-      !opts.coin ||
-      !opts.merchantCode ||
-      !opts.userAddress ||
-      !opts.amount
-    ) {
+    if (!opts.txIdFromUser || !opts.coin || !opts.merchantCode || !opts.userAddress || !opts.amount) {
       // TANTMP: temp not check email list and subject.
       return cb(new Error('Missing required parameter'));
     }
@@ -7958,9 +8063,8 @@ export class WalletService {
     );
   }
 
-  async getlastTxsByChronik(wallet, address, limit) {
+  async getlastTxsByChronik(wallet, address, limit): Promise<Tx[] | Tx_InNode[]> {
     let scriptPayload;
-    let totalTxs;
     try {
       const chronikClient = wallet.coin === 'xec' ?
         ChainService.getChronikClientInNode(wallet.coin) :
@@ -7973,25 +8077,26 @@ export class WalletService {
     }
   }
 
-  updateStatusSlpTxs(inTxs, lastTxsChronik, wallet) {
+  updateStatusSlpTxs(inTxs, lastTxsChronik: Array<Tx_InNode>, wallet) {
     const validTxs = [];
     _.forEach(inTxs, item => {
       const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
-      if (txsSlp && txsSlp.slpTxData && txsSlp.slpTxData.slpMeta) {
+      if (txsSlp && txsSlp.tokenEntries && txsSlp.tokenEntries.length > 0) {
+        const tokenEntry = txsSlp.tokenEntries[0];
         item.isSlpToken = true;
-        item.tokenId = txsSlp.slpTxData.slpMeta.tokenId;
-        item.tokenType = txsSlp.slpTxData.slpMeta.tokenType;
-        item.txType = txsSlp.slpTxData.slpMeta.txType;
+        item.tokenId = tokenEntry.tokenId;
+        item.tokenType = tokenEntry.tokenType;
+        item.txType = tokenEntry.txType;
         item.inputAddresses = _.uniq(
           _.map(txsSlp.inputs, item => {
             return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
           })
         );
         item.amountTokenUnit =
-          txsSlp.outputs[1].slpToken && txsSlp.outputs[1].slpToken.amount
-            ? Number(txsSlp.outputs[1].slpToken.amount)
+          txsSlp.outputs[1].token && txsSlp.outputs[1].token.amount
+            ? Number(txsSlp.outputs[1].token.amount)
             : undefined;
-        item.burnAmountToken = this._getBurnAmountToken(txsSlp.inputs, txsSlp.slpTxData.slpMeta.txType);
+        item.burnAmountToken = this._getBurnAmountToken(txsSlp, tokenEntry.txType);
         if (item.burnAmountToken > 0) {
           item.txType = 'BURN';
         }
@@ -8001,25 +8106,11 @@ export class WalletService {
     return validTxs;
   }
 
-  _getBurnAmountToken(inputs: any[], type): number {
+  _getBurnAmountToken(tx: Tx_InNode, type: string): number {
     let burnAmount = 0;
-    if (!!type && type === 'BURN') {
-      inputs.forEach(input => {
-        if (typeof input.slpToken !== 'undefined' && input.slpToken.amount && input.slpToken.amount !== '0') {
-          burnAmount = input.slpToken.amount;
-        }
-      });
-    } else if (!!type && type === 'SEND') {
-      inputs.forEach(input => {
-        if (
-          typeof input.slpBurn !== 'undefined' &&
-          input.slpBurn.token &&
-          input.slpBurn.token.amount &&
-          input.slpBurn.token.amount !== '0'
-        ) {
-          burnAmount += Number(input.slpBurn.token.amount);
-        }
-      });
+    if (tx.tokenEntries && tx.tokenEntries.length > 0) {
+      const tokenEntry = tx.tokenEntries[0];
+      burnAmount += Number(tokenEntry.actualBurnAmount);
     }
     return Number(burnAmount);
   }
@@ -8124,19 +8215,16 @@ export class WalletService {
                 if (err) return cb(err);
                 if (this._isSupportToken(wallet) && addressesToken && _.size(inTxs) > 0) {
                   try {
-                    let promiseList = [];
+                    let promiseList: Promise<Tx[] | Tx_InNode[]>[] = [];
                     _.each(addressesToken, address => {
                       promiseList.push(
                         this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
                       );
                     });
-                    const chronikClient = wallet.coin === 'xec' ?
-                      ChainService.getChronikClientInNode(wallet.coin) :
-                      ChainService.getChronikClient(wallet.coin);
                     await Promise.all(promiseList).then(async lastTxsChronik => {
-                      lastTxsChronik = lastTxsChronik.reduce((accumulator, value) => accumulator.concat(value), []);
-                      if (lastTxsChronik.length > 0) {
-                        inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), lastTxsChronik, wallet);
+                      const result = lastTxsChronik.reduce<(Tx | Tx_InNode)[]>((accumulator, value) => [...accumulator, ...value], []);
+                      if (result.length > 0) {
+                        inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), result as Tx_InNode[], wallet);
                       }
                     });
                   } catch (err) {
@@ -8224,9 +8312,7 @@ export class WalletService {
           // get all txs from chronik client
           if (wallet.coin === 'xpi' && wallet.singleAddress) {
             if (resultTxs && resultTxs.length > 0) {
-              const chronikClient = wallet.coin === 'xec' ?
-                ChainService.getChronikClientInNode(wallet.coin) :
-                ChainService.getChronikClient(wallet.coin);
+              const chronikClient = ChainService.getChronikClient(wallet.coin);
               // filter get only tx have on-chain message
               let filterResultTxs = _.filter(resultTxs, tx => {
                 // if tx action = received => get all txs because we have no clue if this tx having message or not
@@ -9161,11 +9247,11 @@ export class WalletService {
    */
   storeLogDevice(opts, cb) {
     let device;
-    let deviceId = opts ?.deviceId;
-    let location = opts ?.location;
-    let platform = opts ?.platform;
-    let token = opts ?.token;
-    let packageName = opts ?.packageName;
+    let deviceId = opts && opts.deviceId;
+    let location = opts && opts.location;
+    let platform = opts && opts.platform;
+    let token = opts && opts.token;
+    let packageName = opts && opts.packageName;
 
     async.series(
       [
@@ -9246,10 +9332,10 @@ export class WalletService {
    */
   updateLogDevice(opts, cb) {
     let device;
-    let deviceId = opts ?.deviceId;
-    let location = opts ?.location;
-    let attendance = opts ?.attendance;
-    let token = opts ?.token;
+    let deviceId = opts && opts.deviceId;
+    let location = opts && opts.location;
+    let attendance = opts && opts.attendance;
+    let token = opts && opts.token;
     let resultUpdate;
 
     async.series(
@@ -9434,9 +9520,9 @@ export class WalletService {
    * @returns {Array} - Return List Appreciation suitable condition.
    */
   updateAppreciationClaim(opts, cb) {
-    const claimCode = opts ?.claimCode;
-    const deviceId = opts ?.deviceId;
-    const dateClaim = opts ?.dateClaim;
+    const claimCode = opts && opts.claimCode;
+    const deviceId = opts && opts.deviceId;
+    const dateClaim = opts && opts.dateClaim;
 
     let appreciation;
 
@@ -9678,7 +9764,7 @@ export class WalletService {
                 newListDeviceLow = _.clone(listDeviceLow);
                 newListDeviceLow.map((device, i) => {
                   listCodeWeeklyLowCsv.map((lixi, j) => {
-                    if (i == j && lixi ?.claimed === 'false') {
+                    if (i == j && lixi && lixi.claimed === 'false') {
                       Object.assign(device, lixi);
                     }
                   });
@@ -9690,7 +9776,7 @@ export class WalletService {
                 newListDeviceMedium = _.clone(listDeviceMedium);
                 newListDeviceMedium.map((device, i) => {
                   listCodeWeeklyMediumCsv.map((lixi, j) => {
-                    if (i == j && lixi ?.claimed === 'false') {
+                    if (i == j && lixi && lixi.claimed === 'false') {
                       Object.assign(device, lixi);
                     }
                   });
@@ -9702,7 +9788,7 @@ export class WalletService {
                 newListDeviceHigh = _.clone(listDeviceHigh);
                 newListDeviceHigh.map((device, i) => {
                   listCodeWeeklyHighCsv.map((lixi, j) => {
-                    if (i == j && lixi ?.claimed === 'false') {
+                    if (i == j && lixi && lixi.claimed === 'false') {
                       Object.assign(device, lixi);
                     }
                   });

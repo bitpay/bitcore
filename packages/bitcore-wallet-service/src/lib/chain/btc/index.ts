@@ -695,7 +695,10 @@ export class BtcChain implements IChain {
           const changeAmount = Math.round(total - txpAmount - fee);
           logger.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
 
-          const dustThreshold = txp?.chain === 'XEC' ? this.bitcoreLib.Transaction.DUST_AMOUNT : Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
+          const dustThreshold =
+            txp?.chain === 'XEC'
+              ? this.bitcoreLib.Transaction.DUST_AMOUNT
+              : Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
             logger.debug(
               'Change below dust threshold (' +

@@ -57,8 +57,8 @@ export class XecChain extends BtcChain implements IChain {
 
   constructor() {
     super(BitcoreLibXec);
-    this.sizeEstimationMargin = config.bch ?.sizeEstimationMargin ?? 0.01;
-    this.inputSizeEstimationMargin = config.bch ?.inputSizeEstimationMargin ?? 2;
+    this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
+    this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
     this.chronikClient = new ChronikClientNode(config.supportToken.xec.chronikClientUrl);
   }
 

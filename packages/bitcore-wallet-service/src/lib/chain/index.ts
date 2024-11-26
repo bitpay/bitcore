@@ -1,3 +1,4 @@
+import { ChronikClient, ChronikClientNode } from 'chronik-client';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
@@ -8,7 +9,6 @@ import { LtcChain } from './ltc';
 import { XecChain } from './xec';
 import { XpiChain } from './xpi';
 import { XrpChain } from './xrp';
-import { ChronikClient, ChronikClientNode } from 'chronik-client';
 
 const Common = require('../common');
 const Constants = Common.Constants;
