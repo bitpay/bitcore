@@ -1,18 +1,23 @@
 import * as web3 from '@solana/web3.js';
 import { IDeriver } from '..';
 
-import { derivePath, getPublicKey } from 'ed25519-hd-key';
+import { derivePath } from 'ed25519-hd-key';
 
 const BitcoreLib = require('bitcore-lib');
-const Base58 = BitcoreLib.encoding.Base58;
 
 export class SolDeriver implements IDeriver {
-  deriveAddress(network, xpubkey, addressIndex, isChange) {
-    throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
+  deriveAddress(_network, _xpubkey, _addressIndex, _isChange) {
+    if (true) {
+      throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
+    }
+    return '';
   }
 
-  deriveAddressWithPath(network: string, xpubKey: string, path: string) {
-    throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
+  deriveAddressWithPath(_network: string, _xpubKey: string, _path: string) {
+    if (true) {
+      throw new Error('Cannot derive solona addresses from just xpubkey, need to use derivePrivateKeyWithPath');
+    }
+    return '';
   }
 
   getAddress(network: string, pubKey) {
@@ -21,16 +26,16 @@ export class SolDeriver implements IDeriver {
   }
 
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
-    return Base58.fromBuffer(pubKey).toString();
+    return new web3.PublicKey(pubKey).toString();
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
     const changeNum = isChange ? 1 : 0;
-    const path = `m/${changeNum}'/${addressIndex}'`;
+    const path = `m/${addressIndex}'/${changeNum}'`;
     return this.derivePrivateKeyWithPath(network, xPriv, path);
   }
 
-  derivePrivateKeyWithPath(network: string, seed: string, path: string) {
+  derivePrivateKeyWithPath(_network: string, seed: string, path: string) {
     const keypair = web3.Keypair.fromSeed(derivePath(path, seed).key);
     const privKey = keypair.secretKey.toString();
     const pubKey = keypair.publicKey.toBase58();

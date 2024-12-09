@@ -18,11 +18,11 @@ export interface Key {
 }
 
 export interface IDeriver {
-  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean, addressType?: string): string | void;
+  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean, addressType?: string): string;
 
   derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Key;
 
-  deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string | void;
+  deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string;
 
   derivePrivateKeyWithPath(network, xprivKey: string, path: string, addressType: string): Key;
 
@@ -39,7 +39,7 @@ const derivers: { [chain: string]: IDeriver } = {
   MATIC: new MaticDeriver(),
   ARB: new ArbDeriver(),
   BASE: new BaseDeriver(),
-  OP: new OpDeriver(),,
+  OP: new OpDeriver(),
   SOL: new SolDeriver()
 };
 
