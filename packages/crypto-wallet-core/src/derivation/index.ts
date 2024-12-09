@@ -8,6 +8,7 @@ import { LtcDeriver } from './ltc';
 import { MaticDeriver } from './matic';
 import { OpDeriver } from './op';
 import { Paths } from './paths';
+import { SolDeriver } from './sol';
 import { XrpDeriver } from './xrp';
 
 export interface Key {
@@ -17,11 +18,11 @@ export interface Key {
 }
 
 export interface IDeriver {
-  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean, addressType?: string): string;
+  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean, addressType?: string): string | void;
 
   derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Key;
 
-  deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string;
+  deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string | void;
 
   derivePrivateKeyWithPath(network, xprivKey: string, path: string, addressType: string): Key;
 
@@ -38,7 +39,8 @@ const derivers: { [chain: string]: IDeriver } = {
   MATIC: new MaticDeriver(),
   ARB: new ArbDeriver(),
   BASE: new BaseDeriver(),
-  OP: new OpDeriver(),
+  OP: new OpDeriver(),,
+  SOL: new SolDeriver()
 };
 
 export class DeriverProxy {
