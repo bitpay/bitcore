@@ -23,7 +23,7 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-  "@solana/web3.js": "^1.89.1",
+    "@solana/web3.js": "^1.91.8",
     "bitcore-lib": "^10.5.3",
     "bitcore-lib-cash": "^10.5.3",
     "bitcore-lib-doge": "^10.5.3",
