@@ -54,6 +54,7 @@ const Bitcore_ = {
   base: Bitcore,
   op: Bitcore,
   xrp: Bitcore,
+  sol: Bitcore,
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
 };

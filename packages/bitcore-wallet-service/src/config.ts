@@ -128,6 +128,14 @@ const Config = (): any => {
           url: 'https://api-eth.bitcore.io'
         }
       },
+      sol: {
+        livenet: {
+          url: 'https://api-sol.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-sol.bitcore.io'
+        }
+      },
       socketApiKey: 'socketApiKey'
     },
     pushNotificationsOpts: {

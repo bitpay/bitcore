@@ -34,9 +34,7 @@ export const Paths = {
     default: "m/44'/60'/",
   },
   SOL: {
-    mainnet: "m/44'/501'/",
-    livenet: "m/44'/501'/",
-    testnet: "m/44'/501'/"
+    default: "m/44'/501'/",
   },
   default: {
     testnet: "m/44'/1'/"

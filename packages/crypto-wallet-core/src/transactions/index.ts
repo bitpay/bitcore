@@ -19,6 +19,7 @@ import {
 } from './matic';
 import { MATICMULTISIGTxProvider } from './matic-multisig';
 import { OPERC20TxProvider, OPTxProvider } from './op';
+import { SOLTxProvider } from './sol';
 import { XRPTxProvider } from './xrp';
 
 const providers = {
@@ -39,6 +40,7 @@ const providers = {
   BASEERC20: new BASEERC20TxProvider(),
   OP: new OPTxProvider(),
   OPERC20: new OPERC20TxProvider(),
+  SOL: new SOLTxProvider(),
 };
 
 export class TransactionsProxy {

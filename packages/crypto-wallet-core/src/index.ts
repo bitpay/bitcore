@@ -4,6 +4,7 @@ import * as BitcoreLibDoge from 'bitcore-lib-doge';
 import * as BitcoreLibLtc from 'bitcore-lib-ltc';
 import { ethers } from 'ethers';
 import Web3 from 'web3';
+import * as SolWeb3 from '@solana/web3.js';
 import * as xrpl from 'xrpl';
 import { Constants } from './constants';
 import Deriver from './derivation';
@@ -19,6 +20,7 @@ export {
   Validation,
   ethers,
   Web3,
+  SolWeb3,
   Constants,
   xrpl
 };
