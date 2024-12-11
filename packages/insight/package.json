@@ -27,7 +27,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "2.3.0",
     "assert": "2.1.0",
-    "axios": "0.21.1",
+    "axios": "1.7.9",
     "bitcore-lib": "^10.0.23",
     "bitcore-lib-cash": "^10.0.23",
     "bitcore-lib-doge": "^10.0.21",
