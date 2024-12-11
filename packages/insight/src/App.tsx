@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {SWRConfig} from 'swr';
 import {fetcher} from './api/api';
@@ -13,7 +13,10 @@ import nProgress from 'nprogress';
 function App() {
   const theme = useAppSelector(({APP}) => APP.theme);
   const colorScheme = theme === 'dark' ? BitPayDarkTheme : BitPayLightTheme;
-  nProgress.configure({showSpinner: false});
+
+  useEffect(() => {
+    nProgress.configure({showSpinner: false});
+  }, []);
 
   return (
     <ThemeProvider theme={colorScheme}>
