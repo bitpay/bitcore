@@ -1,13 +1,14 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { WalletService } from 'src/lib/server';
 import { IChain } from '..';
 import config from '../../../config';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { TxProposal } from '../../model';
+import { IWallet, TxProposal } from '../../model';
 
 const $ = require('preconditions').singleton();
 const Constants = Common.Constants;
@@ -209,6 +210,24 @@ export class BtcChain implements IChain {
     }
   }
 
+  checkScriptOutput(output) {
+    if (output.script) {
+      if (typeof output.script !== 'string') {
+        return Errors.SCRIPT_TYPE;
+      }
+
+      // check OP_RETURN
+      if (!output.script.startsWith('6a')) {
+        return Errors.SCRIPT_OP_RETURN;
+      }
+
+      // check OP_RETURN amount
+      if (output.script.startsWith('6a') && output.amount != 0) {
+        return Errors.SCRIPT_OP_RETURN_AMOUNT;
+      }
+    }
+  }
+
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleInput(txp, opts = { conservativeEstimation: false }) {
     const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_DATA
@@ -222,6 +241,9 @@ export class BtcChain implements IChain {
 
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 69 + inputSafetyMargin; // vsize
+
+      case Constants.SCRIPT_TYPES.P2TR:
+        return 58 + inputSafetyMargin; // vsize
 
       case Constants.SCRIPT_TYPES.P2WSH:
         return Math.ceil(32 + 4 + 1 + (5 + txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4) + inputSafetyMargin; // vsize
@@ -337,7 +359,9 @@ export class BtcChain implements IChain {
       // set nLockTime (only txp.version>=4)
       if (txp.lockUntilBlockHeight) t.lockUntilBlockHeight(txp.lockUntilBlockHeight);
     }
-
+    if (txp.multiTx) {
+      throw Errors.MULTI_TX_UNSUPPORTED;
+    }
     /*
      * txp.inputs clean txp.input
      * removes possible nSequence number (BIP68)
@@ -357,18 +381,19 @@ export class BtcChain implements IChain {
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(inputs, i => {
+        for (const i of inputs) {
           $.checkState(i.publicKeys, 'Failed state: Inputs should include public keys at <getBitcoreTx()>');
           t.from(i, i.publicKeys, txp.requiredSignatures);
-        });
+        }
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
       case Constants.SCRIPT_TYPES.P2PKH:
+      case Constants.SCRIPT_TYPES.P2TR:
         t.from(inputs);
         break;
     }
 
-    _.each(txp.outputs, o => {
+    for (const o of txp.outputs || []) {
       $.checkState(
         o.script || o.toAddress,
         'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
@@ -383,7 +408,7 @@ export class BtcChain implements IChain {
       } else {
         t.to(o.toAddress, o.amount);
       }
-    });
+    }
 
     t.fee(txp.fee);
 
@@ -449,8 +474,18 @@ export class BtcChain implements IChain {
     const serializationOpts = {
       disableIsFullySigned: true,
       disableSmallFees: true,
-      disableLargeFees: true
+      disableLargeFees: true,
+      disableDustOutputs: false
     };
+
+    if (txp.outputs && Array.isArray(txp.outputs)) {
+      for (let output of txp.outputs) {
+        if (output.script && output.script.startsWith('6a')) { // check OP_RETURN
+          serializationOpts.disableDustOutputs = true;
+        }
+      }
+    }
+
     if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
 
     try {
@@ -914,10 +949,12 @@ export class BtcChain implements IChain {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
+        // tslint:disable-next-line:no-bitwise
+        const SIGHASH_TYPE = this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID;
         const s = {
           inputIndex: i,
           signature,
-          sigtype: this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
+          sigtype: SIGHASH_TYPE,
           publicKey: pub
         };
         tx.inputs[i].addSignature(tx, s, signingMethod);
@@ -946,12 +983,10 @@ export class BtcChain implements IChain {
   }
 
   protected _isCorrectNetwork(wallet, addr) {
-    const addrNetwork = addr.network.toString();
+    const addrNetwork = Utils.getNetworkName(wallet.chain, addr.network.toString())
     const walNetwork = wallet.network;
-    const walChain = wallet.chain || wallet.coin; // wallet.coin is for backward compatibility
-
-    if (addrNetwork === 'regtest' && walNetwork === 'testnet') {
-      return config.blockchainExplorerOpts?.[walChain]?.testnet?.regtestEnabled;
+    if (Utils.getNetworkType(addrNetwork) === 'testnet' && walNetwork === 'regtest') {
+      return !!config.allowRegtest;
     }
     return addrNetwork === walNetwork;
   }
@@ -973,5 +1008,9 @@ export class BtcChain implements IChain {
   // Push notification handling
   onTx(tx) {
     return null;
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return cb(null, 0);
   }
 }

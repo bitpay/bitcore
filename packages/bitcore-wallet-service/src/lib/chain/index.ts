@@ -1,12 +1,16 @@
 import { Common } from '../common';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
+import logger from './../logger';
+import { ArbChain } from './arb';
+import { BaseChain } from './base';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
 import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
+import { OpChain } from './op';
 import { XrpChain } from './xrp';
 
 const Constants = Common.Constants;
@@ -41,6 +45,7 @@ export interface IChain {
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
+  checkScriptOutput(output: { script: string; amount: number; });
   getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
@@ -66,6 +71,7 @@ export interface IChain {
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void);
 }
 
 const chains: { [chain: string]: IChain } = {
@@ -73,6 +79,9 @@ const chains: { [chain: string]: IChain } = {
   BCH: new BchChain(),
   ETH: new EthChain(),
   MATIC: new MaticChain(),
+  ARB: new ArbChain(),
+  BASE: new BaseChain(),
+  OP: new OpChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
   LTC: new LtcChain()
@@ -100,6 +109,7 @@ class ChainProxy {
       }
       return normalizedChain;
     } catch (err) {
+      logger.error(`Error getting chain for coin ${coin}: %o`, err.stack || err.message || err);
       return Defaults.CHAIN; // coin should always exist but most unit test don't have it -> return btc as default
     }
   }
@@ -126,6 +136,10 @@ class ChainProxy {
 
   checkDust(chain, output, opts) {
     return this.get(chain).checkDust(output, opts);
+  }
+
+  checkScriptOutput(chain, output) {
+    return this.get(chain).checkScriptOutput(output);
   }
 
   getFee(server, wallet, opts) {
@@ -198,6 +212,10 @@ class ChainProxy {
 
   onTx(chain: string, tx: any) {
     return this.get(chain).onTx(tx);
+  }
+
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+    return this.get(wallet.chain).getReserve(server, wallet, cb);
   }
 }
 

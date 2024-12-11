@@ -17,4 +17,4 @@ export class EthP2pWorker extends EVMP2pWorker {
     }
     return reward;
   }
-}
+};

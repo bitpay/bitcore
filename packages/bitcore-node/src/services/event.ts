@@ -47,6 +47,10 @@ export class EventService {
     logger.info('Stopping Event Service');
     this.stopped = true;
     this.events.emit('stop');
+    this.events.removeAllListeners();
+    this.txEvent.removeAllListeners();
+    this.blockEvent.removeAllListeners();
+    this.addressCoinEvent.removeAllListeners();
   }
 
   async wireup() {

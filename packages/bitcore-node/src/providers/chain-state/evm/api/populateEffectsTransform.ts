@@ -1,9 +1,9 @@
-import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransaction } from '../types';
 import { BaseEVMStateProvider } from './csp';
 
-export class PopulateEffectsTransform extends Transform {
+export class PopulateEffectsTransform extends TransformWithEventPipe {
   constructor() {
     super({ objectMode: true });
   }

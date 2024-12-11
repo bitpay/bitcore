@@ -1,14 +1,14 @@
+import {FC, memo, useEffect, useState} from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import {useEffect, useState, memo, FC} from 'react';
 
 import {TransactionEth} from '../utilities/models';
 
-import TransactionDetailsEth from './transaction-details-eth';
-import Coin from './coin';
 import InfiniteScrollLoadSpinner from '../components/infinite-scroll-load-spinner';
+import Coin from './coin';
+import TransactionDetailsEth from './transaction-details-eth';
 
-import styled from 'styled-components';
 import {motion} from 'framer-motion';
+import styled from 'styled-components';
 import {Action} from '../assets/styles/colors';
 
 const SortDiv = styled.div`
@@ -52,20 +52,20 @@ const ToUiFriendlyEthCoin = (coin: TransactionEth, blockTipHeight: number) => {
     blockHeight,
     height: blockHeight,
     blockTime,
-    confirmations: confirmations,
+    confirmations,
   };
 };
 
 const ProcessData = (data: any, blockTipHeight: number) => {
   const txs: any = [];
-  data.map((tx: any) => {
+  for (const tx of data) {
     const {mintHeight, mintTxid, value, spentHeight, spentTxid} = tx;
     if (spentHeight >= -1) {
       txs.push({
         height: spentHeight,
         spentTxid,
         value,
-        confirmations: blockTipHeight - spentHeight + 1,
+        confirmations: spentHeight > -1 ? blockTipHeight - spentHeight + 1 : spentHeight,
       });
     }
     if (mintHeight >= -1) {
@@ -73,13 +73,41 @@ const ProcessData = (data: any, blockTipHeight: number) => {
         height: mintHeight,
         mintTxid,
         value,
-        confirmations: blockTipHeight - mintHeight + 1,
+        confirmations: mintHeight > -1 ? blockTipHeight - mintHeight + 1 : mintHeight,
       });
     }
-    return tx;
-  });
+  }
 
   return txs;
+};
+
+const GetSortedTxs = (txList: any[], order: string) => {
+  return txList.sort((a: any, b: any) => {
+    // Sort remaining confirmed transactions by height based on `order`
+    const orderSort = order === 'mostRecent' ? b.height - a.height : a.height - b.height;
+
+    // Error transactions: Invalid, Error, Expired in specified order
+    const errorOrder = [-3, -4, -5];
+    const aErrorIndex = errorOrder.indexOf(a.height);
+    const bErrorIndex = errorOrder.indexOf(b.height);
+
+    // Place error transactions at the end
+    if (aErrorIndex !== -1 && bErrorIndex !== -1) {
+      return aErrorIndex - bErrorIndex;
+    }
+    if (aErrorIndex !== -1) return 1;
+    if (bErrorIndex !== -1) return -1;
+
+    // Place unspent transactions at the end
+    if (a.height === -2) return 1;
+    if (b.height === -2) return -1;
+
+    // Place unconfirmed transactions at the beginning
+    if (a.confirmations === -1) return -1;
+    if (b.confirmations === -1) return 1;
+
+    return orderSort;
+  });
 };
 
 interface CoinListProps {
@@ -105,7 +133,6 @@ const CoinList: FC<CoinListProps> = ({txs, currency, network, tip, transactionsL
 
   useEffect(() => {
     setIsLoading(true);
-    transactionsLength(txs.length);
 
     let _txs;
     if (currency === 'ETH') {
@@ -113,7 +140,8 @@ const CoinList: FC<CoinListProps> = ({txs, currency, network, tip, transactionsL
     } else {
       _txs = ProcessData(txs, height);
     }
-    _txs = _txs.sort((a: any, b: any) => b.height - a.height);
+    transactionsLength(_txs.length);
+    _txs = GetSortedTxs(_txs, currentOrder);
     setTxsCopy(_txs);
     const _transactions = _txs.slice(0, limit);
     setTransactions(_transactions);
@@ -128,10 +156,7 @@ const CoinList: FC<CoinListProps> = ({txs, currency, network, tip, transactionsL
 
     setVal(newVal + 1);
     setCurrentOrder(order);
-    const sortedTxs =
-      order === 'mostRecent'
-        ? txsCopy.sort((a: any, b: any) => b.height - a.height)
-        : txsCopy.sort((a: any, b: any) => a.height - b.height);
+    const sortedTxs = GetSortedTxs(txsCopy, order);
     setTxsCopy(sortedTxs);
     setLimit(LIMIT);
     setChunkSize(CHUNK_SIZE);

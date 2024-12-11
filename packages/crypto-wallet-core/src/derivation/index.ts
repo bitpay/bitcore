@@ -1,9 +1,12 @@
+import { ArbDeriver } from './arb';
+import { BaseDeriver } from './base';
 import { BchDeriver } from './bch';
 import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
 import { LtcDeriver } from './ltc';
 import { MaticDeriver } from './matic';
+import { OpDeriver } from './op';
 import { Paths } from './paths';
 import { XrpDeriver } from './xrp';
 
@@ -32,7 +35,10 @@ const derivers: { [chain: string]: IDeriver } = {
   XRP: new XrpDeriver(),
   DOGE: new DogeDeriver(),
   LTC: new LtcDeriver(),
-  MATIC: new MaticDeriver()
+  MATIC: new MaticDeriver(),
+  ARB: new ArbDeriver(),
+  BASE: new BaseDeriver(),
+  OP: new OpDeriver(),
 };
 
 export class DeriverProxy {
@@ -117,10 +123,14 @@ export class DeriverProxy {
     const normalizedChain = chain.toUpperCase();
     const accountStr = `${account}'`;
     const chainConfig = Paths[normalizedChain];
-    if (chainConfig && chainConfig[network]) {
-      return chainConfig[network] + accountStr;
+    if (chainConfig) {
+      if (chainConfig[network]) {
+        return chainConfig[network] + accountStr;
+      } else {
+        return chainConfig.default + accountStr;
+      }
     } else {
-      return Paths.default.testnet + accountStr;
+      return Paths.BTC.default + accountStr;
     }
   }
 }

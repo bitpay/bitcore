@@ -1,9 +1,11 @@
+import cluster from 'cluster';
 import 'source-map-support/register';
+import logger from '../logger';
 import { Event } from '../services/event';
 import { Pruning } from '../services/pruning';
 import { Storage } from '../services/storage';
 import '../utils/polyfills';
-require('heapdump');
+
 const services: Array<any> = [];
 
 export const PruningWorker = async () => {
@@ -20,12 +22,28 @@ export const PruningWorker = async () => {
   }
 };
 
+let stopping = false;
 const stop = async () => {
-  console.log(`Shutting down ${process.pid}`);
+  if (stopping) {
+    logger.error('Force stopping Pruning Worker');
+    process.exit(1);
+  }
+  stopping = true;
+  
+  setTimeout(() => {
+    logger.error('Pruning Worker did not shut down gracefully after 30 seconds, exiting');
+    process.exit(1);
+  }, 30 * 1000).unref();
+
+
+  logger.info(`Shutting down pruning ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
   }
-  process.exit();
+
+  if (!cluster.isPrimary) {
+    process.removeAllListeners();
+  }
 };
 
 if (require.main === module) {

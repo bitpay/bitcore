@@ -1,17 +1,31 @@
 import * as Bcrypt from 'bcrypt';
-import { Deriver, Transactions } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, ethers, Transactions, Web3, xrpl } from 'crypto-wallet-core';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
-const { PrivateKey, HDPrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
+
+const { PrivateKey, HDPrivateKey } = BitcoreLib;
+const chainLibs = {
+  BTC: BitcoreLib,
+  BCH: BitcoreLibCash,
+  DOGE: BitcoreLibDoge,
+  LTC: BitcoreLibLtc,
+  ETH: { Web3, ethers },
+  MATIC: { Web3, ethers },
+  ARB: { Web3, ethers },
+  BASE: { Web3, ethers },
+  OP: { Web3, ethers },
+  XRP: xrpl
+};
 
 export interface KeyImport {
   address: string;
   privKey?: string;
   pubKey?: string;
+  path?: string;
 }
 export interface WalletObj {
   name: string;
@@ -29,6 +43,19 @@ export interface WalletObj {
   lite: boolean;
   addressType: string;
 }
+
+export interface BumpTxFeeType {
+  txid?: string;
+  rawTx?: string;
+  changeIdx?: number;
+  feeRate?: number;
+  feeTarget?: number;
+  feePriority?: number;
+  noRbf?: boolean;
+  isSweep?: boolean;
+}
+
+
 export class Wallet {
   masterKey?: any;
   baseUrl: string;
@@ -52,6 +79,8 @@ export class Wallet {
   lite: boolean;
   addressType: string;
 
+  static XrpAccountFlags = xrpl.AccountSetTfFlags;
+
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
     if (!this.baseUrl) {
@@ -72,6 +101,10 @@ export class Wallet {
 
   getApiUrl() {
     return `${this.baseUrl}/${this.chain}/${this.network}`;
+  }
+
+  getLib() {
+    return chainLibs[this.chain.toUpperCase()];
   }
 
   saveWallet() {
@@ -244,6 +277,14 @@ export class Wallet {
     return ['BTC', 'BCH', 'DOGE', 'LTC'].includes(this.chain?.toUpperCase() || 'BTC');
   }
 
+  /**
+   * Is this wallet EVM compatible?
+   * @returns {Boolean}
+   */
+  isEvmChain() {
+    return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE'].includes(this.chain?.toUpperCase());
+  }
+
   lock() {
     this.unlocked = undefined;
     return this;
@@ -291,23 +332,36 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string, token?: string) {
+  /**
+   * Get balance for the wallet
+   * @param params
+   * @param params.time Get balance at point in time
+   * @param params.token DEPRECATED: Token to get by ticker symbol. WARNING: there could be multiple tokens with the same symbol
+   * @param params.tokenName Token to get by tokenName (Recommended over `token`)
+   * @param params.address EVM Account address to get the balance for
+   * @returns 
+   */
+  getBalance(params: { time?: string, token?: string, tokenName?: string, address?: string } = {}) {
+    const { time, token, tokenName, address } = params;
     let payload;
-    if (token) {
-      let tokenContractAddress;
-      const tokenObj = this.tokens.find(tok => tok.symbol === token);
-      if (!tokenObj) {
-        throw new Error(`${token} not found on wallet ${this.name}`);
-      }
-      tokenContractAddress = tokenObj.address;
-      payload = { tokenContractAddress };
+    if (token || tokenName) {
+      const tokenObj = this.getTokenObj({ token, tokenName });
+      payload = {
+        tokenContractAddress: tokenObj.address
+      };
     }
-    return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
+    return this.client.getBalance({ payload, pubKey: this.authPubKey, time, address });
   }
 
-  getNetworkFee(params: { target?: number } = {}) {
+  getNetworkFee(params: { target?: number, txType?: number } = {}) {
     const target = params.target || 2;
-    return this.client.getFee({ target });
+    const txType = params.txType;
+    return this.client.getFee({ target, txType });
+  }
+
+  getNetworkPriorityFee(params: { percentile?: number } = {}) {
+    const percentile = params.percentile;
+    return this.client.getPriorityFee({ percentile });
   }
 
   getUtxos(params: { includeSpent?: boolean } = {}) {
@@ -334,14 +388,43 @@ export class Wallet {
     });
   }
 
+  /**
+   * Backwards compatible method for getting the token object
+   * 
+   * `token` and `tokenName` are separate parameters because there are legacy token objects
+   * without a `name` but modern implementations try to use the tokenName.
+   * e.g.:
+   * tokens = [
+   *   { token: 'USDC', address: '0x123...', decimals: '6' } // USDC.e
+   *   { token: 'USDC', address: '0xabc...', decimals: '6', name: 'USDCn_m' } // native USDC
+   * ]
+   * params1 = { token: 'USDC', tokenName: 'USDC_m' } => returns tokens[0]
+   * params2 = { token: 'USDC', tokenName: 'USDCn_m' } => returns tokens[1]
+   * 
+   * 
+   * @param tokenName The `name` field on the token object
+   * @param token The `symbol` field on the token object (deprecated)
+   */
+  getTokenObj(params: { tokenName?: string, token?: string }) {
+    const { tokenName, token } = params || {};
+    if (!tokenName && !token) {
+      return null;
+    }
+    // If tokenName was given, find the token by name (e.g. USDC_m)
+    let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
+    // If not found by name AND token was given, find the token by symbol (e.g. USDC)
+    // NOTE: we don't want to 
+    tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
+    if (!tokenObj) {
+      throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
+    }
+    return tokenObj;
+  }
+
   listTransactions(params) {
-    const { token } = params;
-    if (token) {
-      let tokenContractAddress;
-      const tokenObj = this.tokens.find(tok => tok.symbol === token);
-      if (!tokenObj) {
-        throw new Error(`${token} not found on wallet ${this.name}`);
-      }
+    const { token, tokenName } = params;
+    if (token || tokenName) {
+      const tokenObj = this.getTokenObj({ token, tokenName });
       params.tokenContractAddress = tokenObj.address;
     }
     return this.client.listTransactions({
@@ -361,8 +444,20 @@ export class Wallet {
     this.tokens.push({
       symbol: params.symbol,
       address: params.address,
-      decimals: params.decimals
+      decimals: params.decimals,
+      name: params.name
     });
+    await this.saveWallet();
+  }
+
+  async rmToken({ tokenName }) {
+    if (!this.tokens) {
+      return;
+    }
+    this.tokens = this.tokens.filter(tok => 
+      (tok.name && tok.name !== tokenName) ||
+      /* legacy object */ (!tok.name && tok.symbol !== tokenName)
+    );
     await this.saveWallet();
   }
 
@@ -377,18 +472,23 @@ export class Wallet {
     nonce?: number;
     tag?: number;
     data?: string;
-    token?: string;
+    token?: string; // deprecated. tokenName is better, but old token objects don't have the `name` field.
+    tokenName?: string;
     gasLimit?: number;
     gasPrice?: number;
     contractAddress?: string;
+    chainId?: number;
+    replaceByFee?: boolean;
+    lockUntilBlock?: number;
+    lockUntilDate?: Date;
+    isSweep?: boolean;
+    type?: string;
+    flags?: number;
   }) {
-    const chain = params.token ? this.chain + 'ERC20' : this.chain;
+    const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
-    if (params.token) {
-      const tokenObj = this.tokens.find(tok => tok.symbol === params.token);
-      if (!tokenObj) {
-        throw new Error(`${params.token} not found on wallet ${this.name}`);
-      }
+    if (params.token || params.tokenName) {
+      const tokenObj = this.getTokenObj(params);
       tokenContractAddress = tokenObj.address;
     }
     let change = params.change;
@@ -413,7 +513,14 @@ export class Wallet {
       gasLimit: params.gasLimit || 200000,
       data: params.data,
       tokenAddress: tokenContractAddress,
-      contractAddress: params.contractAddress
+      contractAddress: params.contractAddress,
+      chainId: params.chainId,
+      replaceByFee: params.replaceByFee,
+      lockUntilBlock: params.lockUntilBlock,
+      lockUntilDate: params.lockUntilDate,
+      isSweep: params.isSweep,
+      type: params.type,
+      flags: params.flags
     };
     return Transactions.create(payload);
   }
@@ -428,9 +535,9 @@ export class Wallet {
     return this.client.broadcast({ payload });
   }
 
-  async getTransactionByTxid(params: { txid: string }) {
-    const { txid } = params;
-    return this.client.getTransaction({ txid });
+  async getTransactionByTxid(params: { txid: string, populated?: boolean }) {
+    const { txid, populated } = params;
+    return this.client.getTransaction({ txid, populated });
   }
 
   async importKeys(params: { keys: KeyImport[], rederiveAddys?: boolean }) {
@@ -545,6 +652,19 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
+  async getLocalAddress(address) {
+    return this.storage.getAddress({ name: this.name, address });
+  }
+
+  async getLocalAddresses(limit?: number, skip?: number) {
+    return this.storage.getAddresses({ name: this.name, limit, skip });
+  }
+
+  async checkAddressOnServer(address) {
+    const walletAddresses = await this.getAddresses();
+    return !!walletAddresses.find(a => a === address);
+  }
+
   deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange, this.addressType);
     return address;
@@ -563,30 +683,42 @@ export class Wallet {
   }
 
   async nextAddressPair(withChangeAddress?: boolean) {
+    return this.generateAddressPair(this.addressIndex, withChangeAddress);
+  }
+
+  async generateAddressPair(addressIndex: number, withChangeAddress?: boolean) {
     if (this.lite) {
       return this.nextAddressPairLite(withChangeAddress);
     }
-    this.addressIndex = this.addressIndex || 0;
-    const newPrivateKey = await this.derivePrivateKey(false);
+    addressIndex = addressIndex || 0;
+    const newPrivateKey = await this.derivePrivateKey(false, addressIndex);
     const keys = [newPrivateKey];
     if (withChangeAddress) {
-      const newChangePrivateKey = await this.derivePrivateKey(true);
+      const newChangePrivateKey = await this.derivePrivateKey(true, addressIndex);
       keys.push(newChangePrivateKey);
     }
-    this.addressIndex++;
+    if (addressIndex === this.addressIndex) {
+      this.addressIndex++;
+    }
     await this.importKeys({ keys });
     await this.saveWallet();
     return keys.map(key => key.address.toString());
   }
 
   async nextAddressPairLite(withChangeAddress?: boolean) {
-    this.addressIndex = this.addressIndex || 0;
+    return this.generateAddressPairLite(this.addressIndex, withChangeAddress);
+  }
+
+  async generateAddressPairLite(addressIndex: number, withChangeAddress?: boolean) {
+    addressIndex = addressIndex || 0;
     const addresses = [];
     addresses.push(this.deriveAddress(this.addressIndex, false));
     if (withChangeAddress) {
       addresses.push(this.deriveAddress(this.addressIndex, true));
     }
-    this.addressIndex++;
+    if (addressIndex === this.addressIndex) {
+      this.addressIndex++;
+    }
     await this.client.importAddresses({
       pubKey: this.authPubKey,
       payload: addresses
@@ -611,6 +743,109 @@ export class Wallet {
     const key = await this.derivePrivateKey(true, this.addressIndex);
     await this.importKeys({ keys: [key] });
     return key.address;
+  }
+
+  async bumpTxFee({ txid, rawTx, changeIdx, feeRate, feeTarget, feePriority, noRbf, isSweep } = {} as BumpTxFeeType) {
+    if (changeIdx == null && this.isUtxoChain()) {
+      throw new Error('Must provide changeIdx for UTXO chains');
+    }
+
+    const lib = this.getLib();
+    let existingTx;
+    if (rawTx) {
+      if (lib.ethers) {
+        existingTx = lib.ethers.utils.parseTransaction(rawTx);
+      } else {
+        const tx = new lib.Transaction(rawTx);
+        txid = tx.id;
+      }
+    }
+    if (txid) {
+      existingTx = await this.getTransactionByTxid({ txid, populated: this.isUtxoChain() });
+    } else if (!existingTx) {
+      throw new Error('Must provide either rawTx or txid');
+    }
+
+    const params: any = {};
+
+    if (this.isUtxoChain()) {
+      const { coins: { inputs, outputs }, locktime } = existingTx;
+
+      params.utxos = inputs;
+      params.change = outputs.find(o => o.mintIndex == changeIdx).address;
+      params.recipients = outputs.filter(o => o.mintIndex != changeIdx).map(o => ({ address: o.address, amount: o.value }));
+      params.lockUntilBlock = locktime > 0 ? locktime : undefined;
+      params.replaceByFee = !noRbf;
+      params.isSweep = isSweep ?? outputs.length === 1;
+      if (feeRate) {
+        params.feeRate = feeRate;
+      } else {
+        const scale = 1e5; // convert from sat/kb to sat/byte
+        params.feeRate = Math.ceil((await this.getNetworkFee({ target: feeTarget })).feerate * scale);
+        console.log(`Bumping fee rate to ${params.feeRate} sats/byte`);
+      }
+
+    // EVM chains
+    } else {
+      const { nonce, gasLimit, gasPrice, to, data, value, chainId, type } = existingTx;
+      // converting gasLimit and value with toString avoids a bigNumber warning
+      params.nonce = nonce
+      params.gasLimit = gasLimit?.toString();
+      params.gasPrice = gasPrice;
+      params.data = data;
+      params.chainId = chainId;
+      params.type = type;
+      params.recipients = [{ address: to, amount: value.toString() }];
+      
+      // TODO fix type2 support
+      if (false && existingTx.type === 2) {
+        if (feeRate) {
+          params.maxGasFee = Web3.utils.toWei(feeRate.toString(), 'gwei');
+        } else {
+          // TODO placeholder until for type2 support is merged in another PR
+          // params.maxGasFee = (await wallet.getNetworkFee({ target: feeTarget })).feerate;
+          // console.log(`Bumping max gas price to ${Web3.utils.fromWei(params.maxGasFee.toString(), 'gwei')} gwei`);
+        }
+        if (feePriority) {    
+          params.maxPriorityFee = Web3.utils.toWei(feePriority.toString(), 'gwei');
+        } else {
+          // TODO placeholder until for type2 support is merged in another PR
+          // params.maxPriorityFee = existingTx.maxPriorityFeePerGas;
+          // console.log(`Bumping max priority fee to ${Web3.utils.fromWei(params.maxPriorityFee.toString(), 'gwei')} gwei`);
+        }
+
+      // type 0
+      } else {
+        if (feeRate) {
+          params.gasPrice = Web3.utils.toWei(feeRate.toString(), 'gwei');
+        } else {
+          params.gasPrice = (await this.getNetworkFee({ target: feeTarget })).feerate;
+          console.log(`Bumping gas price to ${Web3.utils.fromWei(params.gasPrice.toString(), 'gwei')} gwei`);
+        }
+      }
+      
+    }
+
+    const tx: string = await this.newTx(params);
+    return { tx, params };
+  }
+
+  async getAccountFlags({ index }) {
+    const account = this.deriveAddress(index ?? 0, false);
+    return this.client.getAccountFlags({ address: account });
+  }
+
+
+  async estimateGas(params: { to: string; from: string; data: string; value: string }) {
+    return this.client.estimateGas(params);
+  }
+
+  async getL1Fee(rawTx) {
+    try {
+      return this.client.getL1Fee({ rawTx });
+    } catch (err) {
+      return 0;
+    }
   }
 }
 

@@ -1,10 +1,13 @@
+import { FeeMode } from './namespaces/ChainStateProvider';
+
 export interface IChainConfig<T extends INetworkConfig> {
   [network: string]: T;
 }
 
 interface INetworkConfig {
-  disabled?: boolean;
-  chainSource?: 'p2p';
+  disabled?: boolean; // Disables P2P worker for this network
+  module?: string; // Specific/custom module
+  chainSource?: 'p2p' | 'external';
   trustedPeers: {
     host: string;
     port: number | string;
@@ -20,15 +23,21 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     username: string;
     password: string;
   };
-  defaultFeeMode?: 'CONSERVATIVE' | 'ECONOMICAL';
+  defaultFeeMode?: FeeMode;
 }
 
-interface IProvider {
+export interface IProvider {
   host: string;
   port?: number | string;
   protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
   options?: object;
+  dataType?: 'realtime' | 'historical' | 'combined';
 }
+
+export type IExternalSyncConfig<T> = {
+  maxBlocksToSync?: number; // Max number of blocks to look back when starting the sync process
+  syncIntervalSecs?: number; // Interval in seconds to check for new blocks
+} & T;
 
 export interface IEVMNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
@@ -40,6 +49,7 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   threads?: number; // Defaults to your CPU's capabilities. Currently only available for EVM chains
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
+  needsL1Fee?: boolean; // Does this chain require a layer-1 fee to be added to a transaction (e.g. OP-stack chains)?
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
@@ -63,9 +73,16 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [currency: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
+    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
   };
-  modules?: string[];
+  aliasMapping: {
+    chains: {
+      [alias: string]: string;
+    };
+    networks: {
+      [chain: string]: { [alias: string]: string; }
+    };
+  },
   services: {
     api: {
       disabled?: boolean;
@@ -92,5 +109,13 @@ export interface ConfigType {
     storage: {
       disabled?: boolean;
     };
+  };
+  externalProviders?: {
+    moralis: {
+      apiKey: string;
+      webhookBaseUrl?: string;
+      streamSecret?: string;
+      webhookCors?: object; // default: { origin: ['*'] }
+    }
   };
 }

@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2020",
     "module": "commonjs",
-    "lib": ["es2017", "esnext", "esnext.asynciterable"],
+    "lib": ["ES2020", "esnext", "esnext.asynciterable"],
     "downlevelIteration": true,
     "allowJs": true,
     "sourceMap": true,

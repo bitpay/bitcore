@@ -1,11 +1,22 @@
 import { ethers } from 'ethers';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
+import { Constants } from '../../constants';
+import { 
+  EVM_CHAIN_DEFAULT_TESTNET as defaultTestnet,
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds 
+} from '../../constants/chains';
 import { Key } from '../../derivation';
-import { ERC20Abi, MULTISENDAbi } from '../erc20/abi';
+import { MULTISENDAbi } from '../erc20/abi';
 const utils = require('web3-utils');
 const { toBN } = Web3.utils;
 export class ETHTxProvider {
+  chain: string;
+
+  constructor(chain = 'ETH') {
+    this.chain = chain;
+  }
+
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
     nonce: number;
@@ -53,7 +64,7 @@ export class ETHTxProvider {
     };
     if (maxGasFee) {
       txData.maxFeePerGas = utils.toHex(maxGasFee);
-      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || 0);
+      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
       txData.type = 2;
     } else {
       txData.gasPrice = utils.toHex(gasPrice);
@@ -67,30 +78,16 @@ export class ETHTxProvider {
     return new web3.eth.Contract(MULTISENDAbi as AbiItem[], tokenContractAddress);
   }
 
+  getPriorityFeeMinimum(chainId: number) {
+    const chain = Constants.EVM_CHAIN_ID_TO_CHAIN[chainId];
+    return Constants.FEE_MINIMUMS[chain]?.priority || 0;
+  }
+
   getChainId(network: string) {
-    let chainId = 1;
-    switch (network) {
-      case 'testnet':
-      case 'goerli':
-        chainId = 5;
-        break;
-      case 'kovan':
-        chainId = 42;
-        break;
-      case 'ropsten':
-        chainId = 3;
-        break;
-      case 'rinkeby':
-        chainId = 4;
-        break;
-      case 'regtest':
-        chainId = 1337;
-        break;
-      default:
-        chainId = 1;
-        break;
+    if (network === 'testnet') {
+      network = defaultTestnet[this.chain];
     }
-    return chainId;
+    return chainIds[`${this.chain}_${network}`] || chainIds[`${this.chain}_mainnet`];
   }
 
   getSignatureObject(params: { tx: string; key: Key }) {

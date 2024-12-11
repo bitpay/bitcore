@@ -3,7 +3,8 @@
     "lib": [
       "es5",
       "es6",
-      "es2017"
+      "es2017",
+      "es2019"
     ],
     "noImplicitAny": false,
     "removeComments": true,

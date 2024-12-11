@@ -19,7 +19,7 @@ import { Client } from 'bitcore-client';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Socket } from '../../src/services/socket';
-import { wait } from '../../src/utils/wait';
+import { wait } from '../../src/utils';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
 function getSocket() {

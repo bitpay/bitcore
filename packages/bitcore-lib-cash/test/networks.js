@@ -43,10 +43,39 @@ describe('Networks', function() {
     }
   });
 
-  it('should have network magic for testnet', function() {
+  it('should have not have network magic or port for testnet', function() {
     var testnet = networks.get('testnet');
     var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(false);
+    isNaN(testnet.port).should.equal(true);
+  });
+
+  it('should have network magic and port for testnet variant "testnet3"', function() {
+    var testnet = networks.get('testnet3');
+    var buffUtil = require('../lib/util/buffer');
     buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
+  });
+
+  it('should have network magic and port for testnet variant "testnet4"', function() {
+    var testnet = networks.get('testnet4');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
+  });
+
+  it('should have network magic and port for testnet variant "chipnet"', function() {
+    var testnet = networks.get('chipnet');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
+  });
+
+  it('should have network magic and port for testnet variant "scalenet"', function() {
+    var testnet = networks.get('scalenet');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
   });
 
   it('can remove a custom network', function() {
@@ -111,6 +140,22 @@ describe('Networks', function() {
 
   it('should have testnet network', function() {
     expect(networks.get('testnet').name).to.equal('testnet');
+  });
+
+  it('should get testnet network with name "testnet3"', function() {
+    expect(networks.get('testnet3').name).to.equal('testnet3');
+  });
+
+  it('should get testnet network with name "testnet"', function() {
+    expect(networks.get('testnet').name).to.equal('testnet');
+  });
+
+  it('should get testnet network with name "chipnet"', function() {
+    expect(networks.get('chipnet').name).to.equal('chipnet');
+  });
+
+  it('should get testnet network with name "scalenet"', function() {
+    expect(networks.get('scalenet').name).to.equal('scalenet');
   });
 
   it('should have livenet network', function() {

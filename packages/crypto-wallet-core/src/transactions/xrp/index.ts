@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
-import { decode, encode, Wallet as XrpWallet } from 'xrpl';
-import { Payment } from 'xrpl/src/models/transactions';
+import * as xrpl from 'xrpl';
 import { Key } from '../../derivation';
 
 enum HashPrefix {
@@ -11,39 +10,61 @@ enum HashPrefix {
 }
 export class XRPTxProvider {
   create(params: {
-    recipients: Array<{ address: string; amount: string }>;
+    recipients: Array<{ address: string; amount: string; tag?: number }>;
     tag?: number;
     from: string;
     invoiceID?: string;
     fee: number;
     feeRate: number;
     nonce: number;
+    type?: string;
+    flags?: number;
   }) {
-    const { recipients, tag, from, invoiceID, fee, nonce } = params;
-    const { address, amount } = recipients[0];
-    const Flags = 2147483648;
-    const txJSON: Payment = {
-      TransactionType: 'Payment',
-      Account: from,
-      Destination: address,
-      Amount: amount.toString(),
-      Flags,
-      Fee: fee.toString(),
-      Sequence: nonce
-    };
-    if (invoiceID) {
-      txJSON.InvoiceID = invoiceID;
+    const { recipients, tag, from, invoiceID, fee, nonce, type, flags } = params;
+
+    switch (type?.toLowerCase()) {
+      case 'payment':
+      default:
+        const { address, amount } = recipients[0];
+        const _tag = recipients[0]?.tag || tag;
+        const paymentTx: xrpl.Payment = {
+          TransactionType: 'Payment',
+          Account: from,
+          Destination: address,
+          Amount: amount.toString(),
+          Fee: fee.toString(),
+          Sequence: nonce,
+          Flags: 2147483648 // tfFullyCanonicalSig - DEPRECATED but still here for backward compatibility
+        };
+        if (flags != null) {
+          paymentTx.Flags = flags;
+        }
+        if (invoiceID) {
+          paymentTx.InvoiceID = invoiceID;
+        }
+        if (_tag) {
+          paymentTx.DestinationTag = _tag;
+        }
+        return xrpl.encode(paymentTx);
+      case 'accountset':
+        if (!xrpl.AccountSetTfFlags[flags]) {
+          throw new Error('Invalid tfAccountSet flag');
+        }
+        const accountSetTx: xrpl.AccountSet = {
+          TransactionType: 'AccountSet',
+          Account: from,
+          Flags: (isNaN(flags) ? xrpl.AccountSetTfFlags[flags] : flags) as number, // in testing, only the number values take effect.
+          Fee: fee.toString(),
+          Sequence: nonce
+        };
+        return xrpl.encode(accountSetTx);
     }
-    if (tag) {
-      txJSON.DestinationTag = tag;
-    }
-    return encode(txJSON);
   }
 
   getSignatureObject(params: { tx: string; key: Key }) {
     const { tx, key } = params;
-    const txJSON = (decode(tx) as unknown) as Payment;
-    const signedTx = new XrpWallet(key.pubKey.toUpperCase(), key.privKey.toUpperCase()).sign(txJSON);
+    const txJSON = (xrpl.decode(tx) as unknown) as xrpl.Payment;
+    const signedTx = new xrpl.Wallet(key.pubKey.toUpperCase(), key.privKey.toUpperCase()).sign(txJSON);
     return { signedTransaction: signedTx.tx_blob, hash: signedTx.hash };
   }
 

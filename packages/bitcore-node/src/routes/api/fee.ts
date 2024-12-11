@@ -1,11 +1,14 @@
-import { Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import config from '../../config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { QueryType } from '../../types/Api';
 import { IUtxoNetworkConfig } from '../../types/Config';
+import { FeeMode } from '../../types/namespaces/ChainStateProvider';
 import { CacheTimes } from '../middleware';
 import { CacheMiddleware } from '../middleware';
-const router = require('express').Router({ mergeParams: true });
+
+const router = express.Router({ mergeParams: true });
 const feeCache = {};
 
 const feeModes = {
@@ -14,14 +17,15 @@ const feeModes = {
 };
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
-  let { target, chain, network } = req.params;
-  let { mode } = req.query;
+  let { chain, network, target } = req.params;
+  let { mode, txType } = req.query as QueryType & { mode?: FeeMode };
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
   }
+
   chain = chain.toUpperCase();
   network = network.toLowerCase();
-  mode = mode?.toUpperCase();
+  mode = mode?.toUpperCase() as FeeMode;
   const targetNum = Number(target);
   if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
@@ -33,13 +37,18 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   } else if (!feeModes[chain]?.includes(mode)) {
     return res.status(400).send('invalid mode specified');
   }
-  const feeCacheKey = `${chain}:${network}:${target}${mode ? ':' + mode : ''}`;
+  if (txType && txType.toString() != '2') {
+    return res.status(400).send('invalid txType specified');
+  }
+  let feeCacheKey = `${chain}:${network}:${target}`;
+  feeCacheKey += `${mode ? ':' + mode : ''}`;
+  feeCacheKey += `${txType ? ':type' + txType : ''}`;
   const cachedFee = feeCache[feeCacheKey];
   if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode });
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType });
     if (!fee) {
       return res.status(404).send('not available right now');
     }

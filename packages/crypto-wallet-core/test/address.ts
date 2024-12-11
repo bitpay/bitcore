@@ -120,6 +120,14 @@ describe('Address Derivation', () => {
     expect(result.pubKey).to.equal(expectedResult.pubKey.toUpperCase());
   });
 
+  it('should be able to get a valid XRP address from pubKey', () => {
+    const pubKey = '03dbeec5e9e76da09c5b502a67136bc2d73423e8902a7c35a8cbc0c5a6ac0469e8';
+    const result = Deriver.getAddress('XRP', 'mainnet', pubKey, 'asd');
+    const expectedResult = 'r9dmAJBfBe7JL2RRLiFWGJ8kM4CHEeTpgN';
+    expect(result).to.equal(expectedResult);
+  });
+
+
   it('should be able to generate a valid MATIC address, privKey, pubKey', () => {
     const privKey = 'xprv9ypBjKErGMqCdzd44hfSdy1Vk6PGtU3si8ogZcow7rA23HTxMi9XfT99EKmiNdLMr9BAZ9S8ZKCYfN1eCmzYSmXYHje1jnYQseV1VJDDfdS';
 

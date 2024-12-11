@@ -42,6 +42,15 @@ export type GetBlockParams = ChainNetwork & {
   args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
 };
 
+export interface ExternalGetBlockResults {
+  block?: number | string;
+  height?: number;
+  startDateBlock?: number;
+  endDateBlock?: number;
+  startBlock: number;
+  endBlock: number;
+}
+
 export type GetBlockBeforeTimeParams = ChainNetwork & {
   time?: Date | string;
 };
@@ -53,10 +62,19 @@ export type StreamBlocksParams = ChainNetwork & {
   req: Request;
   res: Response;
 };
+
+export type FeeMode = 'ECONOMICAL' | 'CONSERVATIVE';
+
 export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
-  mode?: 'ECONOMICAL' | 'CONSERVATIVE';
+  mode?: FeeMode;
+  txType?: number | string;
 };
+
+export type GetEstimatePriorityFeeParams = ChainNetwork & {
+  percentile?: number;
+};
+
 export type BroadcastTransactionParams = ChainNetwork & {
   rawTx: string | Array<string>;
 };
@@ -124,6 +142,7 @@ export type StreamWalletTransactionsParams = ChainNetwork & {
 };
 export interface StreamWalletUtxosArgs {
   includeSpent: 'true' | undefined;
+  includePending: 'true' | undefined;
 }
 export type StreamWalletUtxosParams = ChainNetwork & {
   wallet: MongoBound<IWallet>;
@@ -155,6 +174,7 @@ export interface IChainStateService {
   getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null>;
   streamBlocks(params: StreamBlocksParams): any;
   getFee(params: GetEstimateSmartFeeParams): any;
+  getPriorityFee?(params: GetEstimatePriorityFeeParams): any;
   broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
   createWallet(params: CreateWalletParams): Promise<IWallet>;
   getWallet(params: GetWalletParams): Promise<IWallet | null>;
@@ -183,5 +203,7 @@ export interface IChainStateService {
 }
 
 export interface ChainStateServices {
-  [key: string]: IChainStateService;
+  [chain: string]: {
+    [network: string]: IChainStateService;
+  }
 }

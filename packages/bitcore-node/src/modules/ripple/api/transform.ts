@@ -1,8 +1,8 @@
-import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { Transform } from 'stream';
 import { ITransaction } from '../../../models/baseTransaction';
 import { IWallet } from '../../../models/wallet';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
+import { BlockTransaction } from '../types';
 import { RippleStateProvider } from './csp';
 export class RippleWalletTransactions extends Transform {
   walletAddresses?: Array<IWalletAddress>;
@@ -18,10 +18,10 @@ export class RippleWalletTransactions extends Transform {
     return this.walletAddresses;
   }
 
-  async _transform(tx: FormattedTransactionType, _, done) {
+  async _transform(tx: BlockTransaction, _, done) {
     const { network } = this.wallet;
     const transaction = this.csp.transform(tx, network) as ITransaction;
-    const changes = tx.outcome.balanceChanges;
+    const changes = (tx as any).outcome.balanceChanges;
     const changed = Object.keys(changes);
     const relevantAddresses = (await this.getAddresses()).filter(w => changed.includes(w.address)).map(w => w.address);
     let sending = false;
@@ -40,8 +40,8 @@ export class RippleWalletTransactions extends Transform {
           if (!receiving) {
             this.push(
               JSON.stringify({
-                id: tx.id,
-                txid: tx.id,
+                id: tx.hash,
+                txid: tx.hash,
                 fee: transaction.fee * 1e6,
                 size: 0,
                 category: 'send',
@@ -55,8 +55,8 @@ export class RippleWalletTransactions extends Transform {
           } else {
             this.push(
               JSON.stringify({
-                id: tx.id,
-                txid: tx.id,
+                id: tx.hash,
+                txid: tx.hash,
                 fee: transaction.fee * 1e6,
                 size: 0,
                 category: 'move',
@@ -71,8 +71,8 @@ export class RippleWalletTransactions extends Transform {
           if (transaction.fee > 0) {
             this.push(
               JSON.stringify({
-                id: tx.id,
-                txid: tx.id,
+                id: tx.hash,
+                txid: tx.hash,
                 category: 'fee',
                 satoshis: -1 * Number(transaction.fee) * 1e6,
                 height: transaction.blockHeight,
@@ -85,8 +85,8 @@ export class RippleWalletTransactions extends Transform {
           if (receiving) {
             this.push(
               JSON.stringify({
-                id: tx.id,
-                txid: tx.id,
+                id: tx.hash,
+                txid: tx.hash,
                 fee: transaction.fee * 1e6,
                 size: 0,
                 category: 'receive',

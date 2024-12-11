@@ -65,7 +65,7 @@ export class Address {
     x.isEscrow = opts.isEscrow;
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
-    x.coin = opts.coin;
+    x.coin = opts.chain;
     x.chain = opts.chain;
     x.network = Address.Bitcore[opts.chain]
       ? Address.Bitcore[opts.chain].Address(x.address).toObject().network
@@ -83,9 +83,9 @@ export class Address {
     x.createdOn = obj.createdOn;
     x.address = obj.address;
     x.walletId = obj.walletId;
-    x.coin = obj.coin || Defaults.COIN;
-    x.chain = obj.chain || ChainService.getChain(x.coin);
-    x.network = obj.network;
+    x.coin = obj.chain || ChainService.getChain(obj.coin);
+    x.chain = x.coin;
+    x.network = Utils.getNetworkName(x.chain, obj.network) || obj.network;
     x.isChange = obj.isChange;
     x.isEscrow = obj.isEscrow;
     x.path = obj.path;
@@ -96,8 +96,17 @@ export class Address {
     return x;
   }
 
-  static _deriveAddress(scriptType, publicKeyRing, path, m, chain, network, noNativeCashAddr, escrowInputs?) {
+  static _deriveAddress(scriptType, publicKeyRing, path, m, chain, network, noNativeCashAddr, escrowInputs?, hardwareSourcePublicKey?) {
     $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
+
+    if (hardwareSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+      return {
+        address: bitcoreAddress.toString(),
+        path,
+        publicKeys: [hardwareSourcePublicKey]
+      }
+    }
 
     let publicKeys = _.map(publicKeyRing, item => {
       const xpub = Address.Bitcore[chain]
@@ -145,6 +154,10 @@ export class Address {
           bitcoreAddress = Deriver.deriveAddress(chain.toUpperCase(), network, xPubKey, addressIndex, isChange);
         }
         break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        // TODO: add support for multisig taproot
+        bitcoreAddress = Address.Bitcore[chain].Address.fromPublicKey(publicKeys[0], network, 'taproot');
+        break;
     }
 
     let addrStr = bitcoreAddress.toString(true);
@@ -172,7 +185,8 @@ export class Address {
     isChange,
     chain,
     noNativeCashAddr = false,
-    escrowInputs?
+    escrowInputs?,
+    hardwareSourcePublicKey?
   ) {
     const raw = Address._deriveAddress(
       scriptType,
@@ -182,7 +196,8 @@ export class Address {
       chain || ChainService.getChain(coin), // getChain -> backwards compatibility
       network,
       noNativeCashAddr,
-      escrowInputs
+      escrowInputs,
+      hardwareSourcePublicKey,
     );
     return Address.create(
       _.extend(raw, {

@@ -33,7 +33,7 @@ const PUSHNOTIFICATIONS_TYPES = {
     filename: ['new_outgoing_tx', 'new_zero_outgoing_tx']
   },
   NewIncomingTx: {
-    filename: ['new_incoming_tx_testnet', 'new_incoming_tx']
+    filename: ['new_incoming_tx']
   },
   TxProposalFinallyRejected: {
     filename: 'txp_finally_rejected'
@@ -43,6 +43,10 @@ const PUSHNOTIFICATIONS_TYPES = {
   },
   NewAddress: {
     dataOnly: true
+  },
+  ScanFinished: {
+    dataOnly: true,
+    broadcastToActiveUsers: true
   },
   NewBlock: {
     dataOnly: true,
@@ -163,7 +167,12 @@ export class PushNotificationsService {
     if (!notifType) return cb();
 
     if (notification.type === 'NewIncomingTx') {
-      notifType.filename = notification.data.network === 'testnet' ? notifType.filename[0] : notifType.filename[1];
+      notifType.filename = notifType.filename[0];
+      if (notification.data.network && notification.data.network !== 'mainnet') {
+        notification.data.networkStr = ' on ' + notification.data.network;
+      } else {
+        notification.data.networkStr = '';
+      }
     } else if (notification.type === 'NewOutgoingTx') {
       // Handle zero amount ETH transactions to contract addresses
       notifType.filename = notification.data.amount !== 0 ? notifType.filename[0] : notifType.filename[1];
@@ -215,7 +224,7 @@ export class PushNotificationsService {
                 // chain and network are needed for NewBlock notifications
                 const chain = notification?.data?.chain || notification?.data?.coin;
                 const coin = chain; // backwards compatibility
-                const network = notification?.data?.network;
+                const network = notification?.data?.network ? Utils.getNetworkName(chain, notification.data.network) : null;
 
                 if (sub.token) {
                   notificationData = {
@@ -477,7 +486,8 @@ export class PushNotificationsService {
       ape: 'APE',
       euroc: 'EUROC',
       usdt: 'USDT',
-      weth: 'WETH'
+      weth: 'WETH',
+      'usdc.e': 'USDC.e'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -493,6 +503,15 @@ export class PushNotificationsService {
             label = UNIT_LABELS[unit];
           } else if (Constants.MATIC_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.MATIC_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.ARB_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.ARB_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.OP_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.OP_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.BASE_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.BASE_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
@@ -613,10 +632,13 @@ export class PushNotificationsService {
         // if copayerid is associated to externalUserId use Braze subscriptions
         // avoid multiple notifications
         const allSubs = allSubsWithExternalId.length > 0 ? allSubsWithExternalId : allSubsWithToken;
+        const chainOrCoin = notification.data.chain || notification.data.coin;
+        const networkInfo = notification.data.network;
+        const hasChainNetworkInfo = chainOrCoin && networkInfo;
+        const chainNetworkMessage = hasChainNetworkInfo ? ` [${chainOrCoin}/${networkInfo}]` : '';
+
         logger.info(
-          `Sending ${notification.type} [${notification.data.chain || notification.data.coin}/${
-            notification.data.network
-          }] notifications to: ${allSubs.length} devices`
+          `Sending ${notification.type}${chainNetworkMessage} notifications to: ${allSubs.length} devices`
         );
         return cb(null, allSubs);
       });

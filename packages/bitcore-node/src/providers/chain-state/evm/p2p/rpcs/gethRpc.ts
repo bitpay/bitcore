@@ -13,10 +13,10 @@ interface IGethTxTraceBase {
   gas: string;
   gasUsed: string;
   input: string;
-  output: string;
+  output?: string;
   to: string;
   type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2';
-  value: string;
+  value?: string;
   abiType?: IAbiDecodedData;
 }
 
@@ -46,7 +46,7 @@ export class GethRPC implements IRpc {
         method: 'debug_traceBlockByNumber',
         params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
         jsonrpc: '2.0',
-        id: 1
+        id: Date.now() + Math.round(Math.random() * 1000)
       });
     } catch (e: any) {
       logger.debug('%o', e);

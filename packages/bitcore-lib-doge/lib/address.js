@@ -195,10 +195,14 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Address buffers must be exactly 21 bytes.');
   }
 
-  network = Networks.get(network);
+  var networkObj = Networks.get(network);
   var bufferVersion = Address._classifyFromVersion(buffer);
 
-  if (!bufferVersion.network || (network && network !== bufferVersion.network)) {
+  if (network && !networkObj) {
+    throw new TypeError('Unknown network');
+  }
+
+  if (!bufferVersion.network || (networkObj && networkObj.xpubkey !== bufferVersion.network.xpubkey)) {
     throw new TypeError('Address has mismatched network type.');
   }
 
@@ -207,7 +211,7 @@ Address._transformBuffer = function(buffer, network, type) {
   }
 
   info.hashBuffer = buffer.slice(1);
-  info.network = bufferVersion.network;
+  info.network = networkObj || bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
 };

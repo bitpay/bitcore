@@ -1,6 +1,6 @@
 {
   "name": "crypto-wallet-core",
-  "version": "10.0.21",
+  "version": "10.5.5",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -9,8 +9,8 @@
     "clean": "rm -rf ts_build && tsc --version",
     "compile": "npm run clean && npm run build",
     "precommit": "npm run fix",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
     "test": "npm run compile && mocha -r ts-node/register test/*.ts",
     "pub": "npm run compile && npm publish"
   },
@@ -23,10 +23,10 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "bitcore-lib": "^10.0.21",
-    "bitcore-lib-cash": "^10.0.21",
-    "bitcore-lib-doge": "^10.0.21",
-    "bitcore-lib-ltc": "^10.0.21",
+    "bitcore-lib": "^10.5.3",
+    "bitcore-lib-cash": "^10.5.3",
+    "bitcore-lib-doge": "^10.5.3",
+    "bitcore-lib-ltc": "^10.5.3",
     "ethers": "^5.7.0",
     "info": "0.0.6-beta.0",
     "web3": "1.4.0",

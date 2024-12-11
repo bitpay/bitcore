@@ -5,6 +5,7 @@ import 'source-map-support/register';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { ChainService } from './chain/index';
 import { Common } from './common';
+import { Utils } from './common/utils';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
@@ -70,12 +71,15 @@ export class BlockchainMonitor {
             matic: {},
             xrp: {},
             doge: {},
-            ltc: {}
+            ltc: {},
+            arb: {},
+            base: {},
+            op: {},
           };
 
           const chainNetworkPairs = [];
           _.each(_.values(Constants.CHAINS), chain => {
-            _.each(_.values(Constants.NETWORKS), network => {
+            _.each(_.values(Constants.NETWORKS[chain]), network => {
               chainNetworkPairs.push({
                 chain,
                 network
@@ -102,7 +106,7 @@ export class BlockchainMonitor {
                 return;
               }
 
-              const bcNetwork = pair.network === 'testnet' && config.regtestEnabled ? 'regtest' : pair.network;
+              const bcNetwork = Utils.getNetworkType(pair.network) === 'testnet' && config.regtestEnabled ? 'regtest' : pair.network;
               explorer = BlockChainExplorer({
                 provider: config.provider,
                 chain: pair.chain,
@@ -279,7 +283,7 @@ export class BlockchainMonitor {
           },
           walletId
         });
-        if (network !== 'testnet') {
+        if (Utils.getNetworkType(network) !== 'testnet') {
           this.storage.fetchWallet(walletId, (err, wallet) => {
             if (err) return;
             async.each(

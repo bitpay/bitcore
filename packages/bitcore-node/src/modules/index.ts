@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import Logger from '../logger';
+import logger from '../logger';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';
 import { Api } from '../services/api';
@@ -9,6 +9,7 @@ import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { Verification } from '../services/verification';
+import { ChainNetwork } from '../types/ChainNetwork';
 
 export interface IService {
   start(): Promise<void>;
@@ -47,7 +48,7 @@ class ModuleManager extends BaseModule {
   internalServices = new Array<IService>();
 
   // Chain names -> module paths map
-  KNOWN_MODULE_PATHS = {
+  DEFAULT_MODULE_PATHS = {
     BTC: './bitcoin',
     ETH: './ethereum',
     MATIC: './matic',
@@ -57,31 +58,26 @@ class ModuleManager extends BaseModule {
     XRP: './ripple'
   };
 
-  loadConfigured() {
-    let { modules, chains } = Config.get();
-    modules = modules || [];
-
-    const registerModuleClass = modulePath => {
-      const moduleClass = require(modulePath).default || (require(modulePath) as Class<BaseModule>);
-      this.internalServices.push(new moduleClass(this.bitcoreServices));
-    };
-
-    // Register all configured modules (in case users want to add custom modules)
-    if (modules.length > 0) for (const modulePath of modules) registerModuleClass(modulePath);
+  loadConfigured(params: Partial<ChainNetwork> = {}) {
+    const chains = params.chain ? [params.chain] : Config.chains();
 
     // Auto register known modules from config.chains
-    for (const chain in chains) {
-      const modulePath = this.KNOWN_MODULE_PATHS[chain];
-      if (!modulePath) {
-        Logger.warn(
-          `Auto module registration failed for chain '${chain}'. ` +
-            'Is the chain name / module path inside of KNOWN_MODULE_PATHS?'
-        );
-        continue;
-      }
+    for (const chain of chains) {
+      let modulePath = this.DEFAULT_MODULE_PATHS[chain];
 
-      // Do not register detected modulePath if it is in config.modules as well
-      if (!_.includes(modules, modulePath)) registerModuleClass(modulePath);
+      // Register for each
+      const networks = params.network ? [params.network] : Config.networksFor(chain);
+      for (const network of networks) {
+        const config = Config.chainConfig({ chain, network });
+        modulePath = config.module || modulePath; // custom module path
+        if (!modulePath) {
+          logger.warn(`Module not found for ${chain}:${network}. Did you forget to specify 'module' in the config?`);
+          continue;
+        }
+        logger.info(`Registering module for ${chain}:${network}: ${modulePath}`);
+        const ModuleClass: Class<BaseModule> = require(modulePath).default || require(modulePath);
+        this.internalServices.push(new ModuleClass(this.bitcoreServices, chain, network, config));
+      }
     }
   }
 }

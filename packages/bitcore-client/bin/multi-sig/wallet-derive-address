@@ -99,11 +99,13 @@ async function importAddressesToWallet(path, addresses) {
   if (!password) {
     throw new Error('No password provided. Keys can\'t be imported without unlocking the wallet');
   }
-  let wallet = await Wallet.loadWallet({ path });
+  wallet = await Wallet.loadWallet({ path });
   wallet = await wallet.unlock(password);
   await wallet.importKeys({ keys: addresses });
   console.log(`${addresses.length} Adresses Imported`);
 }
+
+let wallet;
 
 const main = async () => {
   const { file, input, prompt, importFromFile, m, network, exportToFile, depth, currency } = program.opts();
@@ -142,4 +144,6 @@ const main = async () => {
   }
 };
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

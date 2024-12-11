@@ -1,16 +1,17 @@
-import { Request, Response } from 'express';
+import express, { Request, Response } from 'express';
+import logger from '../../logger';
 import { CoinStorage, ICoin } from '../../models/coin';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
-const router = require('express').Router({ mergeParams: true });
+const router = express.Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   let { sinceBlock, date, limit, since, direction, paging } = req.query as any;
   if (limit) {
-    limit = parseInt(limit);
+    limit = parseInt(limit) || undefined; // if limit is NaN or null, set it to undefined so it'll fallback to CSP default
   }
   try {
     let payload = {
@@ -22,8 +23,9 @@ router.get('/', async function(req: Request, res: Response) {
       res
     };
     return ChainStateProvider.streamBlocks(payload);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting blocks: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -32,14 +34,14 @@ router.get('/tip', async function(req: Request, res: Response) {
   try {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting tip block: %o:%o: %o', chain, network, err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
 router.get('/:blockId', async function(req: Request, res: Response) {
-  let { blockId, chain, network } = req.params;
+  let { chain, network, blockId } = req.params;
   try {
     let block = await ChainStateProvider.getBlock({ chain, network, blockId });
     if (!block) {
@@ -50,8 +52,9 @@ router.get('/:blockId', async function(req: Request, res: Response) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting blockId: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -119,13 +122,14 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 
     const sanitize = (coins: Array<ICoin>) => coins.map(c => CoinStorage._apiTransform(c, { object: true }));
     return res.json({ txids, inputs: sanitize(inputs), outputs: sanitize(outputs), previous, next });
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting block hash data: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
 router.get('/before-time/:time', async function(req: Request, res: Response) {
-  let { time, chain, network } = req.params;
+  let { chain, network, time } = req.params;
   try {
     const block = await ChainStateProvider.getBlockBeforeTime({ chain, network, time });
     if (!block) {
@@ -136,8 +140,9 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting blocks before time: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 

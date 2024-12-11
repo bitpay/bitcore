@@ -12,8 +12,7 @@ import { Storage, StorageService } from '../../../../services/storage';
 import { SpentHeightIndicators } from '../../../../types/Coin';
 import { StreamingFindOptions } from '../../../../types/Query';
 import { TransformOptions } from '../../../../types/TransformOptions';
-import { valueOrDefault } from '../../../../utils/check';
-import { partition } from '../../../../utils/partition';
+import { partition, valueOrDefault } from '../../../../utils';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
@@ -22,7 +21,7 @@ import { MultisigAbi } from '../abi/multisig';
 
 import Web3 from 'web3';
 import { IEVMNetworkConfig } from '../../../../types/Config';
-import { Effect, EVMTransactionJSON, IAbiDecodedData, IAbiDecodeResponse, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import { Effect, ErigonTransaction, EVMTransactionJSON, GethTransaction, IAbiDecodedData, IAbiDecodeResponse, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -159,8 +158,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     }
   }
 
-  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[], froms: IEVMCachedAddress[] }  {
-    const {to, from, effects} = tx;
+  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[], froms: IEVMCachedAddress[] } {
+    const { to, from, effects } = tx;
     let toBatch = new Set<string>();
     let fromBatch = new Set<string>();
     const addToBatch = (batch: Set<string>, obj: IEVMCachedAddress) => {
@@ -179,7 +178,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           // Handle ERC20s
           addToBatch(toBatch, { address: effect.to, tokenAddress: effect.contractAddress });
           addToBatch(fromBatch, { address: effect.from, tokenAddress: effect.contractAddress });
-        } 
+        }
       }
     }
 
@@ -254,7 +253,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             walletsAddys.map(w => w.wallet),
             w => w.toHexString()
           );
-          
+
           // If config value is set then only store needed tx properties
           let leanTx: IEVMTransaction | IEVMTransactionInProcess = tx;
           if ((Config.chainConfig({ chain, network }) as IEVMNetworkConfig).leanTransactionStorage) {
@@ -325,7 +324,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc20Data
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const erc721Data: IAbiDecodeResponse = getErc721Decoder().decodeMethod(input);
       if (erc721Data) {
@@ -334,7 +333,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc721Data
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const invoiceData: IAbiDecodeResponse = getInvoiceDecoder().decodeMethod(input);
       if (invoiceData) {
@@ -343,7 +342,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...invoiceData
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const multisendData: IAbiDecodeResponse = getMultisendDecoder().decodeMethod(input);
       if (multisendData) {
@@ -352,7 +351,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisendData
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       const multisigData: IAbiDecodeResponse = getMultisigDecoder().decodeMethod(input);
       if (multisigData) {
@@ -361,10 +360,10 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisigData
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     return undefined;
   }
-  
+
   /**
    * Creates an object with param names as keys instead of an array of objects
    * @param abi 
@@ -397,24 +396,40 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   getEffects(tx: IEVMTransactionInProcess): Effect[] {
     const effects = [] as Effect[];
     try {
-      // Top level tx effects
-      if (tx.abiType) {
-        // Handle Abi related effects
-        const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
-        if (effect) {
-          effects.push(effect);
+      if (tx.calls?.length) { // Geth trace calls[]
+        for (let call of tx.calls) {
+          if (call.value && BigInt(call.value) > 0) {
+            // Handle native asset transfer
+            const effect = this._getEffectForNativeTransfer(BigInt(call.value).toString(), call.to, call.from, call.depth);
+            effects.push(effect);
+          }
+          if (call.abiType) { // If there was a known ABI (ERC20, Invoice) transfer within the tx execution
+            // Handle Abi related effects
+            let effect: Effect | undefined;
+            if (call.type === 'DELEGATECALL') { // Delegate calls are proxy calls within a smart contract
+              // find parent call that's one level up. E.g. if depth = '0_1_2', then find '0_1'
+              const parent = tx.calls.find(c => c.depth === call.depth.split('_').slice(0, -1).join('_')) || { to: tx.to, from: tx.from, input: null }; // Fallback to tx.to and tx.from if no parent found
+              if (parent?.to === call.from && parent?.input === call.input) {
+                // If parent is the same as the current call, then it's just a proxy call
+                continue;
+              }
+              effect = this._getEffectForAbiType(call.abiType, parent.to, parent.from, call.depth);
+            } else {
+              effect = this._getEffectForAbiType(call.abiType, call.to, call.from, call.depth);
+            }
+            if (effect) {
+              effects.push(effect);
+            }
+          }
         }
-      }
-      // Internal tx effects
-      if (tx.internal && tx.internal.length) {
+      } else if (tx.internal?.length) { // LEGACY: Used for converting old OpenEthereum/Parity db entries with internal[]
         for (let internalTx of tx.internal) {
           if (internalTx.action.value && BigInt(internalTx.action.value) > 0) {
             // Handle native asset transfer
             const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             effects.push(effect);
           }
-          // Ignoring delegated calls because they are redundant
-          if (internalTx.abiType && internalTx.type != 'delegatecall') {
+          if (internalTx.abiType) {
             // Handle Abi related effects
             const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             if (effect) {
@@ -422,23 +437,13 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             }
           }
         }
-      } else if (tx.calls && tx.calls.length) {
-        for (let internalTx of tx.calls) {
-          if (internalTx.value && BigInt(internalTx.value) > 0) {
-            // Handle native asset transfer
-            const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
-            effects.push(effect);
-          }
-          // Ignoring delegated calls because they are redundant
-          if (internalTx.abiType && internalTx.type != 'DELEGATECALL') {
-            // Handle Abi related effects
-            const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.to, internalTx.from, internalTx.depth);
-            if (effect) {
-              effects.push(effect);
-            }
-          }
+      } else if (tx.abiType) { // We recognized upstream that this is a known ABI tx
+        // Handle Abi related effects
+        const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
+        if (effect) {
+          effects.push(effect);
         }
-      }
+      } 
     } catch (err) {
       logger.error('Error Getting Effects For TxId: %o ::%o', tx.txid, err);
     }
@@ -500,7 +505,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return;
   }
 
-  _getEffectForNativeTransfer(value:string, to:string, from:string, callStack: string): Effect {
+  _getEffectForNativeTransfer(value: string, to: string, from: string, callStack: string): Effect {
     const effect = {
       to: Web3.utils.toChecksumAddress(to),
       from: Web3.utils.toChecksumAddress(from),
@@ -523,6 +528,53 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return tx;
   }
 
+  convertRawTx(chain: string, network: string, tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
+    if (!block) {
+      const txid = tx.hash || '';
+      const to = tx.to || '';
+      const from = tx.from || '';
+      const value = Number(tx.value);
+      const fee = Number(tx.gas) * Number(tx.gasPrice);
+      const abiType = this.abiDecode(tx.input!);
+      const nonce = tx.nonce || 0;
+      const convertedTx: IEVMTransactionInProcess = {
+        chain,
+        network,
+        blockHeight: valueOrDefault(tx.blockNumber, -1),
+        blockHash: valueOrDefault(tx.blockHash, undefined),
+        data: Buffer.from(tx.input || '0x'),
+        txid,
+        blockTime: new Date(),
+        blockTimeNormalized: new Date(),
+        fee,
+        transactionIndex: tx.transactionIndex || 0,
+        value,
+        wallets: [],
+        to,
+        from,
+        gasLimit: Number(tx.gas),
+        gasPrice: Number(tx.gasPrice),
+        nonce,
+        internal: [],
+        calls: []
+      };
+      if (abiType) {
+        convertedTx.abiType = abiType;
+      }
+      return convertedTx;
+    } else {
+      const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
+      const noBlockTx = this.convertRawTx(chain, network, tx);
+      return {
+        ...noBlockTx,
+        blockHeight: height,
+        blockHash,
+        blockTime,
+        blockTimeNormalized
+      };
+    }
+  }
+
   // Correct tx.data.toString() => 0xa9059cbb00000000000000000000000001503dfc5ad81bf630d83697e98601871bb211b60000000000000000000000000000000000000000000000000000000000002710
   // Incorrect: tx.data.toString('hex') => 307861393035396362623030303030303030303030303030303030303030303030303031353033646663356164383162663633306438333639376539383630313837316262323131623630303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303032373130
 
@@ -530,7 +582,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     tx: IEVMTransactionInProcess | Partial<MongoBound<IEVMTransactionInProcess>>,
     options?: TransformOptions
   ): EVMTransactionJSON | string {
-    
+
     let transaction: EVMTransactionJSON = {
       txid: tx.txid || '',
       network: tx.network || '',
@@ -548,9 +600,9 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       from: tx.from || '',
       effects: tx.effects || []
     };
-    
+
     // Add non-lean properties if we aren't excluding them
-    const config = (Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig);
+    const config = Config.chainConfig({ chain: tx.chain as string, network: tx.network as string }) as IEVMNetworkConfig;
     if (config && !config.leanTransactionStorage) {
       const dataStr = tx.data ? tx.data.toString() : '';
       const decodedData = this.abiDecode(dataStr);
@@ -558,7 +610,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         data: dataStr,
         abiType: tx.abiType || valueOrDefault(decodedData, undefined),
         internal: tx.internal
-          ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
+          ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t?.action?.input || '0x') }))
           : [],
         calls: tx.calls ? tx.calls.map(t => ({ ...t, decodedData: this.abiDecode(t.input || '0x') })) : []
       };

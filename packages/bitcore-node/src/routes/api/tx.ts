@@ -60,8 +60,9 @@ router.get('/:txId', async (req: Request, res: Response) => {
       }
       return res.send(tx);
     }
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting transaction: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -97,8 +98,9 @@ router.get('/:txId/populated', async (req: Request, res: Response) => {
       tx.coins = coins;
       return res.send(tx);
     }
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting populated transaction: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -116,8 +118,9 @@ router.get('/:txId/authhead', async (req: Request, res: Response) => {
     } else {
       return res.send(authhead);
     }
-  } catch (err) {
-    return res.status(500).send(err);
+  } catch (err: any) {
+    logger.error('Error getting transaction authhead: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
 });
 
@@ -156,7 +159,7 @@ router.post('/send', async function(req: Request, res: Response) {
     });
     return res.send({ txid });
   } catch (err: any) {
-    logger.error('Broadcast error: %o %o %o %o', chain, network, rawTx, err);
+    logger.error('Broadcast error: %o %o %o %o', chain, network, rawTx, err.stack || err.message || err);
     return res.status(500).send(err.message);
   }
 });

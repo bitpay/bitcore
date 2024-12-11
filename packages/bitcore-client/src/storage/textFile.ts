@@ -53,8 +53,8 @@ export class TextFile {
     });
   }
 
-  async deleteWallet(params: { name: string }) {
-    const { name } = params;
+  async deleteWallet(params: { name: string; keepAddresses: boolean }) {
+    const { name, keepAddresses } = params;
     const wallets: Array<object> = await new Promise((resolve, reject) => {
       const walletArray = [];
       fs.createReadStream(this.walletFileName, { flags: 'r', encoding: 'utf8' })
@@ -69,7 +69,7 @@ export class TextFile {
         })
         .on('error', err => reject(err));
     });
-    return new Promise<void>(resolve => {
+    await new Promise<void>(resolve => {
       const walletStream = new stream.Readable({ objectMode: true });
       for (const wallet of wallets) {
         walletStream.push(wallet);
@@ -81,6 +81,34 @@ export class TextFile {
         resolve();
       });
     });
+    if (!keepAddresses) {
+      const addresses: Array<object> = await new Promise((resolve, reject) => {
+        const addressArray = [];
+        fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' })
+          .pipe(StreamUtil.jsonlBufferToObjectMode())
+          .on('data', address => {
+            if (address.name !== name) {
+              addressArray.push(address);
+            }
+          })
+          .on('end', () => {
+            resolve(addressArray);
+          })
+          .on('error', err => reject(err));
+      });
+      await new Promise<void>(resolve => {
+        const addressStream = new stream.Readable({ objectMode: true });
+        for (const address of addresses) {
+          addressStream.push(address);
+        }
+        addressStream.push(null);
+        const writeStream = fs.createWriteStream(this.addressFileName, { flags: 'w', encoding: 'utf8' });
+        addressStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
+        writeStream.once('close', () => {
+          resolve();
+        });
+      });
+    }
   }
 
   async listWallets() {
@@ -131,7 +159,7 @@ export class TextFile {
     });
     const walletAlreadyExists = wallets.find(savedWallet => savedWallet.name === wallet.name);
     if (walletAlreadyExists) {
-      await this.deleteWallet({ name: wallet.name });
+      await this.deleteWallet({ name: wallet.name, keepAddresses: true });
     }
     return new Promise<void>(resolve => {
       const walletStream = new stream.Readable({ objectMode: true });
@@ -147,7 +175,7 @@ export class TextFile {
 
   async getKey(params: { address: string; name: string; keepAlive: boolean; open: boolean }) {
     const { address, name } = params;
-    return new Promise<void>(resolve => {
+    return new Promise(resolve => {
       fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' })
         .pipe(StreamUtil.jsonlBufferToObjectMode())
         .on('data', data => {
@@ -156,7 +184,7 @@ export class TextFile {
           }
         })
         .on('end', () => {
-          resolve();
+          resolve(null);
         });
     });
   }
@@ -173,6 +201,48 @@ export class TextFile {
       writeStream.once('close', () => {
         resolve();
       });
+    });
+  }
+
+  async getAddress(params: { name: string; address: string; keepAlive: boolean; open: boolean }) {
+    const { name, address, keepAlive, open } = params;
+    const key: any = await this.getKey({ name, address, keepAlive, open });
+    if (!key) {
+      return null;
+    }
+    const { pubKey, path } = JSON.parse(key);
+    return { address, pubKey, path };
+  }
+
+  async getAddresses(params: { name: string; limit?: number; skip?: number }) {
+    const { name, limit, skip } = params;
+    const addresses = [];
+    let skipped = 0;
+    return new Promise((resolve, reject) => {
+      const stream = fs.createReadStream(this.addressFileName, { flags: 'r', encoding: 'utf8' });
+      stream.pipe(StreamUtil.jsonlBufferToObjectMode())
+        .on('data', data => {
+          if (data.name === name) {
+            if (skipped <= skip) {
+              skipped++;
+              return;
+            }
+            if (limit && addresses.length >= limit) {
+              stream.destroy();
+              resolve(addresses);
+            }
+
+            const address = data.address;
+            const valJSON = JSON.parse(data.toStore.toString());
+            addresses.push({ address, pubKey: valJSON.pubKey, path: valJSON.path });
+          }
+        })
+        .on(('error'), err => {
+          reject(err);
+        })
+        .on('end', () => {
+          resolve(addresses);
+        });
     });
   }
 }
