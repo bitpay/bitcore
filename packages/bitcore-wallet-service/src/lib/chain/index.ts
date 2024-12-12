@@ -11,8 +11,8 @@ import { EthChain } from './eth';
 import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { OpChain } from './op';
-import { XrpChain } from './xrp';
 import { SolChain } from './sol';
+import { XrpChain } from './xrp';
 
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;

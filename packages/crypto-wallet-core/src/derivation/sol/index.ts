@@ -30,13 +30,14 @@ export class SolDeriver implements IDeriver {
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
+    const { privateKey } = xPriv;
     const changeNum = isChange ? 1 : 0;
     const path = `m/${addressIndex}'/${changeNum}'`;
-    return this.derivePrivateKeyWithPath(network, xPriv, path);
+    return this.derivePrivateKeyWithPath(network, privateKey || xPriv, path);
   }
 
   derivePrivateKeyWithPath(_network: string, seed: string, path: string) {
-    const keypair = web3.Keypair.fromSeed(derivePath(path, seed).key);
+    const keypair = web3.Keypair.fromSeed(derivePath(path, seed).key); // TODO move derive path into mnemonic.js toSeed/fromSeed ?!
     const privKey = keypair.secretKey.toString();
     const pubKey = keypair.publicKey.toBase58();
     const address = pubKey;
