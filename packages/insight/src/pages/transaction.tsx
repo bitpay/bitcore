@@ -195,7 +195,7 @@ const TransactionHash: React.FC = () => {
                       message={`This transaction was replaced by another transaction that ${
                         transaction.chain === 'ETH'
                           ? 'used the same nonce'
-                          : "spent some of it's inputs"
+                          : 'spent some of it\'s inputs'
                       }.`}
                       type={'error'}
                     />

@@ -8,6 +8,17 @@ import TickSvg from '../assets/images/tick.svg';
 const CopyImg = styled(motion.div)`
   margin: auto 0.25rem;
   display: inline-block;
+  width: 12px;
+  height: 12px;
+  position: relative;
+`;
+
+const IconImage = styled(motion.img)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 `;
 
 interface CopyTextProps {
@@ -49,25 +60,33 @@ const CopyText: FC<CopyTextProps> = ({text}) => {
   };
 
   return (
-    <AnimatePresence>
-      {copied ? (
-        <CopyImg key='tick' variants={copyAnime} exit='exit' initial='initial' animate='animate'>
-          <img src={TickSvg} width={12} height={12} alt='tick' />
-        </CopyImg>
-      ) : (
-        <CopyToClipboard text={text} onCopy={() => onClickCopy()}>
-          <CopyImg
-            key='copy'
+    <CopyImg>
+      <AnimatePresence mode={'wait'}>
+        {copied ? (
+          <IconImage
+            key='tick'
+            src={TickSvg}
+            alt='tick'
             variants={copyAnime}
-            whileHover='whileHover'
-            exit='exit'
             initial='initial'
-            animate='animate'>
-            <img src={CopySvg} width={12} height={12} alt='copy' />
-          </CopyImg>
-        </CopyToClipboard>
-      )}
-    </AnimatePresence>
+            animate='animate'
+            exit='exit'
+          />
+        ) : (
+          <CopyToClipboard text={text} onCopy={() => onClickCopy()}>
+            <IconImage
+              key='copy'
+              src={CopySvg}
+              alt='copy'
+              variants={copyAnime}
+              initial='initial'
+              animate='animate'
+              whileHover='whileHover'
+            />
+          </CopyToClipboard>
+        )}
+      </AnimatePresence>
+    </CopyImg>
   );
 };
 
