@@ -125,6 +125,11 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
+    },
+    quicknode: {
+      apiKey: string;
+      webhookBaseUrl?: string;
+      streamSecret?: string;
     }
   };
 }

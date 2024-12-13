@@ -1,13 +1,9 @@
-// import { Router } from 'express';
-// import { EVMRouter } from '../../../providers/chain-state/evm/api/routes';
-// import { SOL } from './csp';
+import { SVMRouter } from '../../../providers/chain-state/svm/api/routes';
+import { SOL } from './csp';
 
-import { Router } from 'express';
-
-// class SOLRouter extends EVMRouter {
-//   constructor() {
-//     super(SOL, 'SOL');
-//   }
-// }
-
-export const SOLRoutes =  Router();
+class SOLRouter extends SVMRouter {
+  constructor() {
+    super(SOL, 'SOL');
+  }
+}
+export const SOLRoutes = new SOLRouter().getRouter();

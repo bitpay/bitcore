@@ -89,6 +89,9 @@ const Config = function(): ConfigType {
     externalProviders: {
       moralis: {
         apiKey: 'string'
+      },
+      quicknode: {
+        apiKey: 'string'
       }
     }
   };
