@@ -93,7 +93,7 @@ export class ETHTxProvider {
   getSignatureObject(params: { tx: string; key: Key }) {
     const { tx, key } = params;
     // To complain with new ethers
-    let k = key.privKey;
+    let k = key.privKey as string;
     if (k.substr(0, 2) != '0x') {
       k = '0x' + k;
     }
@@ -111,6 +111,7 @@ export class ETHTxProvider {
   getHash(params: { tx: string }) {
     const { tx } = params;
     // tx must be signed, for hash to exist
+
     return ethers.utils.parseTransaction(tx).hash;
   }
 

@@ -413,6 +413,8 @@ export class Key {
       coinCode = '3';
     } else if (chain == 'ltc') {
       coinCode = '2';
+    } else if (chain == 'sol') {
+      coinCode = '501';
     } else {
       throw new Error('unknown chain: ' + chain);
     }

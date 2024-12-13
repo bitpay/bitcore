@@ -231,7 +231,14 @@ export const Defaults = {
         nbBlocks: 24,
         defaultValue: 10000
       }
-    ]
+    ],
+    sol: [
+      {
+        name: 'normal',
+        nbBlocks: 1,
+        defaultValue: 5000
+      }
+    ],
   },
 
   // How many levels to fallback to if the value returned by the network for a given nbBlocks is -1
@@ -357,7 +364,8 @@ export const Defaults = {
     op: 1000000000000, // 50 Gwei,
     xrp: 1000000000000,
     doge: 100000000 * 100,
-    ltc: 10000 * 1000 // 10k sat/b
+    ltc: 10000 * 1000, // 10k sat/b
+    sol: 15000 // Lamports per signature
   },
 
   MIN_TX_FEE: {
@@ -370,7 +378,8 @@ export const Defaults = {
     op: 0,
     xrp: 0,
     doge: 0,
-    ltc: 0
+    ltc: 0,
+    sol: 0,
   },
 
   MAX_TX_FEE: {
@@ -383,7 +392,8 @@ export const Defaults = {
     op: 1 * 1e18, // 1 eth
     xrp: 1 * 1e6, // 1 xrp
     doge: 400 * 1e8,
-    ltc: 0.05 * 1e8
+    ltc: 0.05 * 1e8,
+    sol: 1 * 1e9// 1 sol
   },
 
   // ETH
@@ -399,6 +409,9 @@ export const Defaults = {
 
   // XRP has a non-refundable mininum activation fee / balance
   MIN_XRP_BALANCE: 1000000,
+
+  // SOL has a non-refundable rent fee / balance
+  MIN_SOL_BALANCE: 1002240,
 
   // Time to get the latest push notification subscriptions. In ms.
   PUSH_NOTIFICATION_SUBS_TIME: 10 * 60 * 1000, // 10 min.
