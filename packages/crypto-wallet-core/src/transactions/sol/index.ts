@@ -38,16 +38,6 @@ export class SOLTxProvider {
       case 'createAcccount':
         const _space = space || 200;
         const _amount = Number(amount);
-        const connection = new Web3.Connection(this.connectionConfig(network))
-        // should we pass this in? we should try not to make this fn async
-        // const rentExemptionAmount =
-        //   await connection.getMinimumBalanceForRentExemption(space);
-
-        // if (rentExemptionAmount > _amount) {
-        //   // TODO check this before calling create
-        //   throw new Error(`Amount to transfer does not meet minimum balance for rent exemption: ${rentExemptionAmount}`);
-        // }
-
         const createAccountParams = {
           fromPubkey,
           newAccountPubkey: new Web3.PublicKey(address),
