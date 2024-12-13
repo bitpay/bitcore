@@ -16,11 +16,6 @@ interface INetworkConfig {
   parentChain?: string;
 }
 
-export interface IMultiProviderNetworkConfig extends INetworkConfig {
-  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads and different provider types
-  provider?: IProvider;
-}
-
 export interface IUtxoNetworkConfig extends INetworkConfig {
   rpc: {
     host: string;
@@ -44,7 +39,7 @@ export type IExternalSyncConfig<T> = {
   syncIntervalSecs?: number; // Interval in seconds to check for new blocks
 } & T;
 
-export interface IEVMNetworkConfig extends IMultiProviderNetworkConfig {
+export interface IEVMNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
   providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
   provider?: IProvider;
@@ -56,7 +51,7 @@ export interface IEVMNetworkConfig extends IMultiProviderNetworkConfig {
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
 }
 
-export interface ISVMNetworkConfig extends IMultiProviderNetworkConfig {
+export interface ISVMNetworkConfig extends INetworkConfig {
   publicConnection?: boolean; // Allow rpc connection to be open via bitcore-node API endpoint
   syncStartHeight?: number; // Start syncing from this block height
 }

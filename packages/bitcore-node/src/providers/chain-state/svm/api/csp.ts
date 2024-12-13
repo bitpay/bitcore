@@ -9,12 +9,12 @@ import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
 import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams } from '../../../../types/namespaces/ChainStateProvider';
-import { ISVMTransaction } from '../../svm/types';
 import {
   getProvider,
   isValidProviderType
 } from '../../external/providers/provider';
 import { InternalStateProvider } from '../../internal/internal';
+import { ISVMTransaction } from '../../svm/types';
 
 export interface GetSolWeb3Response { rpc: CryptoRpc; connection: Web3.Connection; web3: any; dataType: string; };
 

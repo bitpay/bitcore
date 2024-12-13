@@ -1,4 +1,4 @@
-import { ITransaction } from "../../../models/baseTransaction";
+import { ITransaction } from '../../../models/baseTransaction';
 
 export type ISVMTransaction = ITransaction & {
   category?: string;
