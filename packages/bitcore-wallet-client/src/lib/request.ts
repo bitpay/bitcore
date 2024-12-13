@@ -117,12 +117,13 @@ export class Request {
       if (res.status !== 200) {
         if (res.status === 503) return cb(new Errors.MAINTENANCE_ERROR());
         if (res.status === 404) return cb(new Errors.NOT_FOUND());
-
+        if (res.status === 413) return cb(new Errors.PAYLOAD_TOO_LARGE());
         if (!res.status) return cb(new Errors.CONNECTION_ERROR());
 
         log.error('HTTP Error:' + res.status);
 
-        if (!res.body) return cb(new Error(res.status));
+        if (!res.body || !Object.keys(res.body).length)
+          return cb(new Error(res.status + `${err?.message ? ': ' + err.message : ''}`));
         return cb(Request._parseError(res.body));
       }
 

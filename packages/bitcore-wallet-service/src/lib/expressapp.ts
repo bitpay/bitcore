@@ -553,7 +553,7 @@ export class ExpressApp {
         server => {
           const opts = {
             identifier: req.params['identifier'],
-            walletCheck: req.params['walletCheck']
+            walletCheck: ['1', 'true'].includes(req.query['walletCheck'])
           };
           server.getWalletFromIdentifier(opts, (err, wallet) => {
             if (err) return returnError(err, res, req);
@@ -1336,7 +1336,8 @@ export class ExpressApp {
 
     router.post('/v1/clearcache/', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server.clearWalletCache().then(val => {
+        const opts = req.query;
+        server.clearWalletCache(opts).then(val => {
           if (val) {
             res.sendStatus(200);
           } else {
@@ -1795,6 +1796,24 @@ export class ExpressApp {
         });
     });
 
+    router.post('/v1/service/simplex/getCurrencies', (req, res) => {
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server
+        .simplexGetCurrencies(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
@@ -1808,10 +1827,36 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/simplex/sellQuote', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .simplexGetSellQuote(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
     router.post('/v1/service/simplex/paymentRequest', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
           .simplexPaymentRequest(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            return returnError(err ?? 'unknown', res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/simplex/sellPaymentRequest', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .simplexSellPaymentRequest(req)
           .then(response => {
             res.json(response);
           })

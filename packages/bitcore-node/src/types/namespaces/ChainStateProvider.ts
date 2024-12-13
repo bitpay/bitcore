@@ -145,6 +145,7 @@ export type StreamWalletTransactionsParams = ChainNetwork & {
 };
 export interface StreamWalletUtxosArgs {
   includeSpent: 'true' | undefined;
+  includePending: 'true' | undefined;
 }
 export type StreamWalletUtxosParams = ChainNetwork & {
   wallet: MongoBound<IWallet>;

@@ -77,3 +77,10 @@ export function range(start: number, end?: number): number[] {
     return Array.from({ length: start - end }, (_, i) => start - i);
   }
 }
+
+export function castToBool(input: any): boolean {
+  if (input?.toLowerCase() === 'true' || input == '1') {
+    return true;
+  }
+  return false;
+}

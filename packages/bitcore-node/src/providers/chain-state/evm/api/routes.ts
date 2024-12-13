@@ -5,6 +5,9 @@ import config from '../../../../config';
 import logger from '../../../../logger';
 import { WebhookStorage } from '../../../../models/webhook';
 import { Config } from '../../../../services/config';
+import { IEVMNetworkConfig } from '../../../../types/Config';
+import { castToBool } from '../../../../utils';
+import { OPGasPriceOracleAbi, OPGasPriceOracleAddress } from '../abi/opGasPriceOracle';
 import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
@@ -40,6 +43,7 @@ export class EVMRouter {
     this.getTokenInfo(router);
     this.getERC20TokenAllowance(router);
     this.getPriorityFee(router);
+    this.estimateL1Fee(router);
   };
   
   private setMultiSigRoutes(router: Router) {
@@ -68,10 +72,10 @@ export class EVMRouter {
 
   private estimateGas(router: Router) {
     router.post(`/api/${this.chain}/:network/gas`, async (req, res) => {
-      const { from, to, value, data, gasPrice } = req.body;
+      const { from, to, value, data } = req.body;
       const { network } = req.params;
       try {
-        const gasLimit = await this.csp.estimateGas({ network, from, to, value, data, gasPrice });
+        const gasLimit = await this.csp.estimateGas({ network, from, to, value, data });
         res.json(gasLimit);
       } catch (err: any) {
         if (err?.code != null) { // Preventable error from geth (probably due to insufficient funds or similar)
@@ -83,6 +87,42 @@ export class EVMRouter {
       }
     });
   };
+
+  private estimateL1Fee(router: Router) {
+    router.post(`/api/${this.chain}/:network/l1/fee`, async (req, res) => {
+      try {
+        const { network } = req.params;
+        const { rawTx } = req.body;
+        const { safe } = req.query;
+
+        const { needsL1Fee } = Config.chainConfig({ chain: this.chain, network }) as IEVMNetworkConfig;
+        if (!needsL1Fee) {
+          return res.json('0'); // No L1 fee required
+        }
+
+        if (!rawTx) {
+          return res.status(400).send('unsigned `rawTx` is required');
+        }
+
+        // Reference: https://docs.optimism.io/builders/app-developers/transactions/estimates
+        const packedRawTx = Web3.utils.encodePacked(rawTx);
+        const rawTxBuf = Buffer.from(packedRawTx!.slice(2), 'hex');
+        
+        const { web3 } = await this.csp.getWeb3(network);
+        const gasPriceOracle = new web3.eth.Contract(OPGasPriceOracleAbi, OPGasPriceOracleAddress);
+        let l1DataFee;
+        if (castToBool(safe)) {
+          l1DataFee = await gasPriceOracle.methods.getL1FeeUpperBound(rawTxBuf.length).call();
+        } else {
+          l1DataFee = await gasPriceOracle.methods.getL1Fee(rawTxBuf).call();
+        }
+        return res.json(l1DataFee.toString()); // this is the total L1 fee in wei (i.e. L1 feeRate * gas).
+      } catch (err: any) {
+        logger.error('L1 Fee Error::%o', err.stack || err.message || err);
+        return res.status(500).send(err.message || err);
+      }
+    });
+  }
 
   private getTokenInfo(router: Router) {
     router.get(`/api/${this.chain}/:network/token/:tokenAddress`, async (req, res) => {

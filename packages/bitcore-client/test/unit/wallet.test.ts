@@ -366,5 +366,186 @@ describe('Wallet', function() {
       requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
     });
   });
+
+  describe('getBalance', function() {
+    walletName = 'BitcoreClientTestGetBalance';
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        name: walletName,
+        chain: 'MATIC',
+        network: 'testnet',
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        storageType: 'Level',
+      });
+      await wallet.unlock('abc123');
+    });
+
+    it('should get correct token balance with conflicting token objects and old token object', async function() {
+      // Old token object (no name)
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0x123',
+        decimals: '6',
+      });
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0xabc',
+        decimals: '6',
+        name: 'USDCn_m'
+      });
+      sinon.stub(wallet.client, 'getBalance').callsFake(async function(params) {
+        switch (params.payload.tokenContractAddress) {
+          case '0x123':
+            return 1;
+          case '0xabc':
+            return 2;
+          default:
+            return 0;
+        }
+      });
+
+      const balance1 = await wallet.getBalance({ token: 'USDC' });
+      const balance2 = await wallet.getBalance({ token: 'USDC', tokenName: 'USDC_m' });
+      const balance3 = await wallet.getBalance({ tokenName: 'USDCn_m' });
+      const balance4 = await wallet.getBalance({ token: 'USDC', tokenName: 'USDCn_m' });
+      balance1.should.equal(1);
+      balance2.should.equal(1);
+      balance3.should.equal(2);
+      balance4.should.equal(2);
+    });
+  });
+
+  describe('getTokenObj', function() {
+    walletName = 'BitcoreClientTestGetTokenObj';
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        name: walletName,
+        chain: 'MATIC',
+        network: 'testnet',
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        storageType: 'Level',
+      });
+      await wallet.unlock('abc123');
+    })
+
+    it('should get correct token object', async function() {
+      // Old token object (no name)
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0x123',
+        decimals: '6',
+      });
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0xabc',
+        decimals: '6',
+        name: 'USDC.e'
+      });
+      const obj1 = wallet.getTokenObj({ token: 'USDC' });
+      const obj2 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.other' }); // no object with "USDC.other"
+      const obj3 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.e' });
+      const obj4 = wallet.getTokenObj({ tokenName: 'USDC.e' });
+      obj1.address.should.equal('0x123');
+      obj2.address.should.equal('0x123');
+      obj3.address.should.equal('0xabc');
+      obj4.address.should.equal('0xabc');
+    });
+
+    it('should fallback to old token object if matching `token` is given', async function() {
+      // Old token object (no name)
+      wallet.tokens.push({
+        symbol: 'USDC',
+        address: '0x123',
+        decimals: '6',
+      });
+
+      const obj1 = wallet.getTokenObj({ token: 'USDC' });
+      obj1.address.should.equal('0x123');
+      const obj2 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.e' }); // falls back
+      obj2.address.should.equal('0x123');
+      try {
+        const obj3 = wallet.getTokenObj({ tokenName: 'USDC.e' }); // token not given, so cannot fall back
+        should.not.exist(obj3);
+      } catch (err) {
+        err.message.should.equal('USDC.e not found on wallet ' + walletName);
+      }
+    });
+  });
+
+  describe('rmToken', function() {
+    walletName = 'BitcoreClientTestRmToken';
+    const usdcLegacyObj = {
+      symbol: 'USDC',
+      address: '0x123',
+      decimals: '6',
+    };
+
+    const usdcObj = {
+      symbol: 'USDC',
+      address: '0xabc',
+      decimals: '6',
+      name: 'USDCn'
+    };
+
+    const daiObj = {
+      symbol: 'DAI',
+      address: '0x1a2b3c',
+      decimals: '6',
+      name: 'DAIn'
+    };
+
+    beforeEach(async function() {
+      wallet = await Wallet.create({
+        chain: 'ETH',
+        network: 'mainnet',
+        name: walletName,
+        phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+        password: 'abc123',
+        lite: false,
+        storageType,
+        baseUrl
+      });
+
+      wallet.tokens = [
+        usdcLegacyObj,
+        usdcObj,
+        daiObj
+      ];
+    });
+
+    it('should remove a legacy token object', function() {
+      wallet.rmToken({ tokenName: 'USDC' });
+      wallet.tokens.length.should.equal(2);
+      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
+      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcObj);
+    });
+
+    it('should remove a token object', function() {
+      wallet.rmToken({ tokenName: 'USDCn' });
+      wallet.tokens.length.should.equal(2);
+      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
+      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcLegacyObj);
+    });
+
+    it('should remove the correct token object regardless of order', function() {
+      wallet.tokens = [
+        usdcObj,
+        daiObj,
+        usdcLegacyObj // this should be ordered after usdcObj
+      ];
+
+      wallet.rmToken({ tokenName: 'USDC' });
+      wallet.tokens.length.should.equal(2);
+      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
+      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcObj);
+    });
+
+    it('should not remove any unmatched token object', function() {
+      wallet.rmToken({ tokenName: 'BOGUS' });
+      wallet.tokens.length.should.equal(3);
+    });
+  });
 });
 

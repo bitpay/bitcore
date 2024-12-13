@@ -3554,7 +3554,7 @@ export class WalletService implements IWalletService {
             txid: tx.txid,
             confirmations: c,
             blockheight: tx.height > 0 ? tx.height : null,
-            fees: tx.fee || (indexedFee[tx.txid] ? Math.abs(indexedFee[tx.txid].satoshis) : null),
+            fees: tx.fee ?? (indexedFee[tx.txid] ? Math.abs(indexedFee[tx.txid].satoshis) : null),
             time: t,
             size: tx.size,
             amount: 0,
@@ -5905,11 +5905,43 @@ export class WalletService implements IWalletService {
 
     const keys = {
       API: config.simplex[env].api,
+      API_SELL: config.simplex[env].apiSell,
       API_KEY: config.simplex[env].apiKey,
-      APP_PROVIDER_ID: config.simplex[env].appProviderId
+      PUBLIC_KEY: config.simplex[env].publicKey,
+      APP_PROVIDER_ID: config.simplex[env].appProviderId,
+      APP_SELL_REF_ID: config.simplex[env].appSellRefId
     };
 
     return keys;
+  }
+
+  simplexGetCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+      const API = keys.API;
+      const PUBLIC_KEY = keys.PUBLIC_KEY;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const URL = API + `/v2/supported_crypto_currencies?public_key=${PUBLIC_KEY}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
   }
 
   simplexGetQuote(req): Promise<any> {
@@ -5945,6 +5977,51 @@ export class WalletService implements IWalletService {
             return reject(err.body ? err.body : err);
           } else {
             return resolve(data.body ? data.body : null);
+          }
+        }
+      );
+    });
+  }
+
+  simplexGetSellQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+
+      const API = keys.API_SELL;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['base_currency', 'base_amount', 'quote_currency', 'pp_payment_method'])) {
+        return reject(new ClientError("Simplex's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'ApiKey ' + API_KEY,
+      };
+
+      if (req.body.userCountry && typeof req.body.userCountry === 'string') {
+        headers['x-country-code'] = req.body.userCountry.toUpperCase();
+      }
+
+      let qs = [];
+      qs.push('base_currency=' + req.body.base_currency);
+      qs.push('base_amount=' + req.body.base_amount);
+      qs.push('quote_currency=' + req.body.quote_currency);
+      qs.push('pp_payment_method=' + req.body.pp_payment_method);
+
+      const URL: string = API + `/v3/quote?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
           }
         }
       );
@@ -6005,6 +6082,49 @@ export class WalletService implements IWalletService {
             data.body.order_id = orderId;
             data.body.app_provider_id = appProviderId;
             data.body.api_host = apiHost;
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  simplexSellPaymentRequest(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+
+      const API = keys.API_SELL;
+      const API_KEY = keys.API_KEY;
+      const appSellRefId = keys.APP_SELL_REF_ID;
+
+      if (
+        !checkRequired(req.body, ['referer_url', 'return_url']) ||
+        !checkRequired(req.body.txn_details, ['quote_id'])
+      ) {
+        return reject(new ClientError("Simplex's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'ApiKey ' + API_KEY,
+      };
+
+      if (req.body.userCountry && typeof req.body.userCountry === 'string') {
+        headers['x-country-code'] = req.body.userCountry.toUpperCase();
+      }
+
+      this.request.post(
+        API + '/v3/initiate-sell/widget',
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            data.body.app_sell_ref_id = appSellRefId;
             return resolve(data.body);
           }
         }
@@ -7311,9 +7431,16 @@ export class WalletService implements IWalletService {
     });
   }
 
-  clearWalletCache(): Promise<boolean> {
+  /**
+   * Clear wallet cache
+   * @param {Object} opts
+   * @param {String} opts.tokenAddress (optional) - Token address
+   * @returns {Boolean}
+   */
+  clearWalletCache(opts): Promise<boolean> {
     return new Promise(resolve => {
-      this.storage.clearWalletCache(this.walletId, () => {
+      const cacheKey = this.walletId + (opts.tokenAddress ? '-' + opts.tokenAddress : '');
+      this.storage.clearWalletCache(cacheKey, () => {
         resolve(true);
       });
     });
@@ -7339,19 +7466,68 @@ export class WalletService implements IWalletService {
   }
 
   moralisGetTokenAllowance(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await Moralis.EvmApi.token.getTokenAllowance({
-          address: req.body.address,
-          chain: req.body.chain,
-          ownerAddress: req.body.ownerAddress,
-          spenderAddress: req.body.spenderAddress,
-        });
+    return new Promise((resolve, reject) => {
+      let keys, headers;
 
-        return resolve(response.raw ?? response);
-      } catch (err) {
-        reject(err);
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['address']) && !checkRequired(req.body, ['ownerAddress'])) {
+        return reject(new ClientError('moralisGetTokenAllowance request missing arguments'));
       }
+
+      const walletAddress = req.body.ownerAddress ?? req.body.address;
+
+      let qs = [];
+      if (req.body.chain) {
+        const chain = req.body.chain;
+        const formattedChain = typeof chain === 'number' && Number.isInteger(chain)
+          ? `0x${chain.toString(16)}`
+          : chain;
+
+        qs.push(`chain=${formattedChain}`);
+      }
+      if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${walletAddress}/approvals${qs.length > 0 ? '?' + qs.join('&') : ''}`
+
+      headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            const { spenderAddress, ownerAddress, address } = req.body;
+
+            if (spenderAddress && ownerAddress) {
+              // Workaround to keep older versions running
+              const spendersList = data?.body?.result;
+
+              if (Array.isArray(spendersList)) {
+                const spenderData = spendersList.find(s => 
+                  s.spender?.address?.toLowerCase() === spenderAddress.toLowerCase() &&
+                  s.token?.address?.toLowerCase() === address.toLowerCase()
+                );
+
+                data.body = {
+                  allowance: spenderData?.value ?? '0'
+                };
+              }
+            }
+
+            return resolve(data.body ?? data);
+          }
+        }
+      );
     });
   }
 

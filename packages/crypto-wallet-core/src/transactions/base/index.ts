@@ -1,13 +1,12 @@
-import { ERC20TxProvider } from '../erc20';
-import { ETHTxProvider } from '../eth';
+import { OPERC20TxProvider, OPTxProvider } from '../op';
 
-export class BASETxProvider extends ETHTxProvider {
+export class BASETxProvider extends OPTxProvider {
   constructor() {
     super('BASE');
   }
 }
 
-export class BASEERC20TxProvider extends ERC20TxProvider {
+export class BASEERC20TxProvider extends OPERC20TxProvider {
   constructor() {
     super('BASE');
   }

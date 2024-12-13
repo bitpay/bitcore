@@ -8,7 +8,7 @@ program
   .version(require('../package.json').version)
   .requiredOption('--name <name>', 'REQUIRED - Wallet name')
   .requiredOption('--contractAddress <contractAddress>', 'REQUIRED - Token contract address')
-  .option('--tokenName <tokenName>', 'optional - Custom name for token')
+  .option('--tokenName <tokenName>', 'optional - Custom name for token (default - contract\'s ticker)')
   .option('--storageType <storageType>', 'optional - Name of the database to use (Mongo | Level | TextFile)')
   .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
@@ -19,8 +19,8 @@ const main = async () => {
   const { name, path, contractAddress, storageType, tokenName } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
-    if (!['MATIC', 'ETH', 'ARB', 'OP', 'BASE'].includes(wallet.chain)) {
-      throw new Error('Cannot add token to non-ETH wallet.');
+    if (!wallet.isEvmChain()) {
+      throw new Error('Cannot add token to non-EVM wallet.');
     }
     const token = await wallet.getToken(contractAddress);
     const tokenObj = {

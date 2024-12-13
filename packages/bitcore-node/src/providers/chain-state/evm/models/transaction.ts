@@ -396,26 +396,40 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   getEffects(tx: IEVMTransactionInProcess): Effect[] {
     const effects = [] as Effect[];
     try {
-      // Top level tx effects
-      if (tx.abiType) {
-        // Handle Abi related effects
-        const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
-        if (effect) {
-          effects.push(effect);
+      if (tx.calls?.length) { // Geth trace calls[]
+        for (let call of tx.calls) {
+          if (call.value && BigInt(call.value) > 0) {
+            // Handle native asset transfer
+            const effect = this._getEffectForNativeTransfer(BigInt(call.value).toString(), call.to, call.from, call.depth);
+            effects.push(effect);
+          }
+          if (call.abiType) { // If there was a known ABI (ERC20, Invoice) transfer within the tx execution
+            // Handle Abi related effects
+            let effect: Effect | undefined;
+            if (call.type === 'DELEGATECALL') { // Delegate calls are proxy calls within a smart contract
+              // find parent call that's one level up. E.g. if depth = '0_1_2', then find '0_1'
+              const parent = tx.calls.find(c => c.depth === call.depth.split('_').slice(0, -1).join('_')) || { to: tx.to, from: tx.from, input: null }; // Fallback to tx.to and tx.from if no parent found
+              if (parent?.to === call.from && parent?.input === call.input) {
+                // If parent is the same as the current call, then it's just a proxy call
+                continue;
+              }
+              effect = this._getEffectForAbiType(call.abiType, parent.to, parent.from, call.depth);
+            } else {
+              effect = this._getEffectForAbiType(call.abiType, call.to, call.from, call.depth);
+            }
+            if (effect) {
+              effects.push(effect);
+            }
+          }
         }
-      }
-      // Internal tx effects
-      if (tx.internal && tx.internal.length) {
+      } else if (tx.internal?.length) { // LEGACY: Used for converting old OpenEthereum/Parity db entries with internal[]
         for (let internalTx of tx.internal) {
           if (internalTx.action.value && BigInt(internalTx.action.value) > 0) {
             // Handle native asset transfer
             const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             effects.push(effect);
           }
-          // We used to ignore delegated calls because we thought they were redundant in ERC20 transfers via proxy contract
-          //  Maybe something changed with the EVM, but they seem to be necessary now to get ERC20 transfers to show up.
-          // TODO: Revisit this logic to reduce duplicates
-          if (internalTx.abiType) { // && internalTx.type != 'delegatecall') {
+          if (internalTx.abiType) {
             // Handle Abi related effects
             const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
             if (effect) {
@@ -423,25 +437,13 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             }
           }
         }
-      } else if (tx.calls && tx.calls.length) {
-        for (let internalTx of tx.calls) {
-          if (internalTx.value && BigInt(internalTx.value) > 0) {
-            // Handle native asset transfer
-            const effect = this._getEffectForNativeTransfer(BigInt(internalTx.value).toString(), internalTx.to, internalTx.from, internalTx.depth);
-            effects.push(effect);
-          }
-          // We used to ignore delegated calls because we thought they were redundant in ERC20 transfers via proxy contract
-          //  Maybe something changed with the EVM, but they seem to be necessary now to get ERC20 transfers to show up.
-          // TODO: Revisit this logic to reduce duplicates
-          if (internalTx.abiType) { // && internalTx.type != 'DELEGATECALL') {
-            // Handle Abi related effects
-            const effect = this._getEffectForAbiType(internalTx.abiType, internalTx.to, internalTx.from, internalTx.depth);
-            if (effect) {
-              effects.push(effect);
-            }
-          }
+      } else if (tx.abiType) { // We recognized upstream that this is a known ABI tx
+        // Handle Abi related effects
+        const effect = this._getEffectForAbiType(tx.abiType, tx.to, tx.from, '');
+        if (effect) {
+          effects.push(effect);
         }
-      }
+      } 
     } catch (err) {
       logger.error('Error Getting Effects For TxId: %o ::%o', tx.txid, err);
     }

@@ -68,7 +68,8 @@ const authenticateMiddleware: RequestHandler = async (req: Request, res: Respons
       return res.status(401).send('Authentication failed');
     }
     return next();
-  } catch (e) {
+  } catch (e: any) {
+    logger.error('Unexpected error authenticating request: %o', e?.stack || e?.message || e);
     return res.status(401).send('Authentication failed');
   }
 };

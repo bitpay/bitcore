@@ -1,4 +1,14 @@
-import {useEffect, useState, memo, FC} from 'react';
+import {motion} from 'framer-motion';
+import nProgress from 'nprogress';
+import {FC, memo, useEffect, useState} from 'react';
+import InfiniteScroll from 'react-infinite-scroll-component';
+import {useNavigate} from 'react-router-dom';
+import {fetcher} from '../api/api';
+import {DisplayFlex} from '../assets/styles/global';
+import {Grid} from '../assets/styles/grid';
+import {Tile, TileDescription, TileLink} from '../assets/styles/tile';
+import {MainTitle, SecondaryTitle} from '../assets/styles/titles';
+import {routerFadeIn} from '../utilities/animations';
 import {
   getApiRoot,
   getConvertedValue,
@@ -6,22 +16,12 @@ import {
   getFormattedDate,
   normalizeParams,
 } from '../utilities/helper-methods';
+import CopyText from './copy-text';
+import SupCurrencyLogo from './icons/sup-currency-logo';
 import InfiniteScrollLoadSpinner from './infinite-scroll-load-spinner';
 import Info from './info';
-import {routerFadeIn} from '../utilities/animations';
-import {motion} from 'framer-motion';
-import {useNavigate} from 'react-router-dom';
-import {fetcher} from '../api/api';
-import {MainTitle, SecondaryTitle} from '../assets/styles/titles';
-import SupCurrencyLogo from './icons/sup-currency-logo';
-import {DisplayFlex} from '../assets/styles/global';
-import {Tile, TileDescription, TileLink} from '../assets/styles/tile';
-import CopyText from './copy-text';
-import {Grid} from '../assets/styles/grid';
 import {SharedTile} from './shared';
-import InfiniteScroll from 'react-infinite-scroll-component';
 import TransactionDetails from './transaction-details';
-import nProgress from 'nprogress';
 
 interface BlockDetailsProps {
   currency: string;

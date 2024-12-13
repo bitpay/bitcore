@@ -565,6 +565,10 @@ export class Utils {
     if (coin.toLowerCase() === chain.toLowerCase()) {
       return coin.toUpperCase();
     }
+    // TODO - remove this special case once migration to POL is complete
+    if (coin.toLowerCase() === 'pol') {
+      return 'MATIC';
+    }
     const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
     const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
     if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {

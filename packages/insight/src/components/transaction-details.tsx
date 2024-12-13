@@ -6,7 +6,7 @@ import {
   getFormattedDate,
   hasUnconfirmedInputs,
   isRBF,
-  getLib
+  getLib,
 } from '../utilities/helper-methods';
 import {useState, useEffect, FC, memo} from 'react';
 import {
@@ -107,7 +107,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
     const s = new lib.Script(vout.script);
     return s.toASM().includes('OP_RETURN');
   };
-  
+
   const getOpReturnText = (vout: any) => {
     const s = new lib.Script(vout.script);
     const hex = s.toASM().split('OP_RETURN')[1]?.trim();
@@ -201,14 +201,14 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                   </ScriptText>
                                 ) : null}
 
-                                {item.script &&
+                                {item.script && (
                                   <>
                                     <b>Script Hex</b>
                                     <ScriptText>{item.script}</ScriptText>
                                     <b>Script ASM</b>
                                     <ScriptText>{new lib.Script(item.script).toASM()}</ScriptText>
                                   </>
-                                }
+                                )}
                               </>
                             )}
                           </TileDescription>
@@ -247,23 +247,23 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                     {showDetails && (
                       <>
-                        {vo.spentTxid &&
+                        {vo.spentTxid && (
                           <TextElipsis>
                             <b>Spent By </b>
                             <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
                               {vo.spentTxid}
                             </SpanLink>
                           </TextElipsis>
-                        }
-                        {isOpReturn(vo) &&
-                          <ScriptText>{getOpReturnText(vo)}</ScriptText>
-                        }
-                        {vo.script &&
+                        )}
+                        {isOpReturn(vo) && <ScriptText>{getOpReturnText(vo)}</ScriptText>}
+                        {vo.script && (
                           <>
-                          <b>Script Hex</b><ScriptText>{new lib.Script(vo.script).toHex()}</ScriptText>
-                          <b>Script ASM</b><ScriptText>{new lib.Script(vo.script).toASM()}</ScriptText>
+                            <b>Script Hex</b>
+                            <ScriptText>{new lib.Script(vo.script).toHex()}</ScriptText>
+                            <b>Script ASM</b>
+                            <ScriptText>{new lib.Script(vo.script).toASM()}</ScriptText>
                           </>
-                        }
+                        )}
                       </>
                     )}
                   </TileDescription>

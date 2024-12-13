@@ -404,11 +404,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @realtime
   async getWalletBalance(params: GetWalletBalanceParams) {
-    const { network } = params;
+    const { network, args } = params;
     if (params.wallet._id === undefined) {
       throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
     }
     let addresses = await this.getWalletAddresses(params.wallet._id);
+    addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
     );
@@ -494,11 +495,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         transactionStream = transactionStream.eventPipe(internalTxTransform);
       }
 
-      if (args.tokenAddress) {
-        const erc20Transform = new Erc20RelatedFilterTransform(args.tokenAddress);
-        transactionStream = transactionStream.eventPipe(erc20Transform);
-      }
-
       transactionStream = transactionStream
         .eventPipe(populateReceipt)
         .eventPipe(ethTransactionTransform);
@@ -526,6 +522,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
 
     transactionStream = transactionStream.eventPipe(populateEffects); // For old db entires
+
+    if (params.args.tokenAddress) {
+      const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);
+      transactionStream = transactionStream.eventPipe(erc20Transform);
+    }
     return transactionStream;
   }
 
@@ -536,19 +537,50 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     args: Partial<StreamWalletTransactionsArgs> = {}
   ): Promise<Array<Partial<Transaction>>> {
     const token = await this.erc20For(network, tokenAddress);
-    const [sent, received] = await Promise.all([
-      token.getPastEvents('Transfer', {
-        filter: { _from: address },
-        fromBlock: args.startBlock || 0,
-        toBlock: args.endBlock || 'latest'
-      }),
-      token.getPastEvents('Transfer', {
-        filter: { _to: address },
-        fromBlock: args.startBlock || 0,
-        toBlock: args.endBlock || 'latest'
-      })
-    ]);
-    return this.convertTokenTransfers([...sent, ...received]);
+    let windowSize = 100;
+    const { web3 } = await this.getWeb3(network);
+    const tip = await web3.eth.getBlockNumber();
+    
+    // If endBlock or startBlock is negative, it is a block offset from the tip
+    if (args.endBlock! < 0) {
+      args.endBlock = tip + Number(args.endBlock!);
+    }
+    if (args.startBlock! < 0) {
+      args.startBlock = tip + Number(args.startBlock!);
+    }
+
+    args.endBlock = Math.min(args.endBlock ?? tip, tip);
+    args.startBlock = Math.max(args.startBlock != null ? Number(args.startBlock) : args.endBlock - 10000, 0);
+    
+    if (isNaN(args.startBlock!) || isNaN(args.endBlock!)) {
+      throw new Error('startBlock and endBlock must be numbers');
+    } else if (args.endBlock < args.startBlock) {
+      throw new Error('startBlock cannot be greater than endBlock');
+    } else if (args.endBlock - args.startBlock > 10000) {
+      throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
+    }
+
+    windowSize = Math.min(windowSize, args.endBlock - args.startBlock);
+    let endBlock = args.endBlock;
+    const tokenTransfers: Partial<Transaction>[] = [];
+    while (windowSize > 0) {
+      const [sent, received] = await Promise.all([
+        token.getPastEvents('Transfer', {
+          filter: { _from: address },
+          fromBlock: endBlock - windowSize,
+          toBlock: endBlock
+        }),
+        token.getPastEvents('Transfer', {
+          filter: { _to: address },
+          fromBlock: endBlock - windowSize,
+          toBlock: endBlock
+        })
+      ]);
+      tokenTransfers.push(...this.convertTokenTransfers([...sent, ...received]));
+      endBlock -= windowSize + 1;
+      windowSize = Math.min(windowSize, endBlock - args.startBlock);
+    }
+    return tokenTransfers;
   }
 
   convertTokenTransfers(tokenTransfers: Array<ERC20Transfer>) {
@@ -758,10 +790,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       throw new Error('Missing required chain and/or network param');
     }
 
+    // limit - 1 because startBlock is inclusive; ensure limit is >= 0
+    limit = Math.max(limit - 1, 0);
+
     let height: number | null = null;
     if (blockId && blockId.length < 64) {
       height = parseInt(blockId, 10);
-      if (isNaN(height) || height.toString(10) !== blockId) {
+      if (isNaN(height) || height.toString(10) != blockId) {
         throw new Error('invalid block id provided');
       }
       blockId = undefined;
@@ -784,12 +819,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     // Get range
     if (sinceBlock) {
       let height = Number(sinceBlock);
-      if (isNaN(height) || height.toString(10) !== sinceBlock) {
+      if (isNaN(height) || height.toString(10) != sinceBlock) {
         throw new Error('invalid block id provided');
       }
       const { web3 } = await this.getWeb3(network);
       const tipHeight = await web3.eth.getBlockNumber();
-      if (tipHeight > height) {
+      if (tipHeight < height) {
         return [];
       }
       query.endBlock = query.endBlock ?? tipHeight;
@@ -816,17 +851,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       query.startBlock = query.startBlock ?? query.endBlock - limit;
     }
 
-    if (limit > 0 && (query.endBlock - query.startBlock) > limit) {
+    if (query.endBlock - query.startBlock > limit) {
       query.endBlock = query.startBlock + limit;
     }
 
-    if (sort?.height === -1) {
-      let b = query.startBlock;
-      query.startBlock = query.endBlock;
-      query.endBlock = b;
-    }
+    const r = range(query.startBlock, query.endBlock + 1); // +1 since range is [start, end)
 
-    return range(query.startBlock, query.endBlock + 1);
+    if (sort?.height === -1 && query.startBlock < query.endBlock) {
+      return r.reverse();
+    }
+    return r;
   }
 
   async _getBlockNumberByDate(params) {
