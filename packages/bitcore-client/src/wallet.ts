@@ -605,7 +605,7 @@ export class Wallet {
       });
     } else if (!signingKeys) {
       addresses.push(keys[0]);
-      utxos.forEach(function (element) {
+      utxos.forEach(function(element) {
         let keyToDecrypt = keys.find(key => key.address === element.address);
         addresses.push(keyToDecrypt);
       });
