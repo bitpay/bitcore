@@ -13,7 +13,7 @@ import { XrpDeriver } from './xrp';
 
 export interface Key {
   address: string;
-  privKey?: string | Uint8Array;
+  privKey?: string;
   pubKey?: string;
 }
 

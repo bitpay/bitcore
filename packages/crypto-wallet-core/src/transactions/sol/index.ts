@@ -125,7 +125,8 @@ export class SOLTxProvider {
 
   getSignatureObject(params: { tx: string; key: Key; hash?: string; }) {
     const { tx, key, hash } = params;    
-    const keypair = Web3.Keypair.fromSecretKey((key?.privKey as Uint8Array))
+    const privateKey =  this.base64ToUint8Array(key?.privKey)
+    const keypair = Web3.Keypair.fromSecretKey(privateKey);
     const decodedTx = (this.decodeRawTransaction({ rawTx: tx }) as unknown) as Web3.VersionedTransaction;
     if (hash) { // update to recent hash
       decodedTx.message.recentBlockhash = hash;
@@ -177,19 +178,6 @@ export class SOLTxProvider {
     // Convert the Buffer to a Uint8Array
     const uint8Array = new Uint8Array(buffer);
     return uint8Array;
-  }
-
-  connectionConfig(network) {
-    let url = 'https://api.devnet.solana.com';
-    switch (network) {
-      case 'devnet':
-        url = Web3.clusterApiUrl('devnet');
-      case 'testnet':
-        url = Web3.clusterApiUrl('testnet');
-      case 'mainnet':
-        url = Web3.clusterApiUrl('mainnet-beta');
-    }
-    return url;
   }
 
   toBuffer(arr) {
