@@ -1,4 +1,4 @@
-import { ObjectID } from 'bson';
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../src/models/base';
@@ -62,7 +62,7 @@ describe('Wallet Model', function() {
       });
 
       let wallet = {
-        _id: new ObjectID(),
+        _id: new ObjectId(),
         name: 'Wallet1',
         singleAddress: true,
         pubKey:
