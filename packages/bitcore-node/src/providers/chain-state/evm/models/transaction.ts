@@ -1,3 +1,4 @@
+import { ObjectId } from 'bson';
 import * as _ from 'lodash';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
@@ -229,7 +230,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
             update: {
               $set: {
                 ...parentTx,
-                wallets: new Array<ObjectID>()
+                wallets: new Array<ObjectId>()
               }
             },
             upsert: true,
