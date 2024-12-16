@@ -214,8 +214,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       ({ blockHeight: height, blockTime, blockhash: blockHash } = block);
     }
     transactions = transactions || block.transactions;
-    if (!transactions || !transactions.length[0] || transactions.length === 0) {
-      return null;
+    if (!transactions || transactions.length === 0) {
+      return [];
     }
 
     return transactions.map((tx, index) => {
