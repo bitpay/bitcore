@@ -121,7 +121,7 @@ const getRandomK = function() {
  * REF: https://tools.ietf.org/html/rfc6979#section-3.2
  * @param {Buffer} hashbuf
  * @param {PrivateKey} privkey
- * @param {Number} badrs increment this number until a valid k is found
+ * @param {Number} badrs Increment until a valid k is found
  * @returns {BN}
  */
 const getDeterministicK = function(hashbuf, privkey, badrs) {
@@ -166,7 +166,7 @@ const getDeterministicK = function(hashbuf, privkey, badrs) {
  * @returns {BN}
  */
 const toLowS = function(s) {
-  if (s.gt(BN.fromBuffer(Buffer.from('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex')))) {
+  if (s.gt(new BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex'))) {
     s = Point.getN().sub(s);
   }
   return s;
@@ -177,13 +177,13 @@ const toLowS = function(s) {
  * Sign a hash with a private key.
  * @param {Buffer|Uint8Array} hashbuf
  * @param {PrivateKey} privkey
- * @param {Object} opts an object of optional parameters
+ * @param {Object|undefined} opts An object of optional parameters
  * @param {String} opts.endian 'big' or 'little' (default: big)
- * @param {Boolean} opts.randomK use a random value for k - produces a non-deterministic signature
+ * @param {Boolean} opts.randomK Use a random value for k - produces a non-deterministic signature (default: false)
  * @returns {Signature}
  */
 const sign = function(hashbuf, privkey, opts) {
-  const { endian, randomK } = opts || {};
+  const { endian = 'big', randomK = false } = opts || {};
   $.checkState(BufferUtil.isBuffer(hashbuf) && hashbuf.length === 32, 'hashbuf must be a 32 byte buffer');
   $.checkState(privkey && privkey.bn, 'privkey must be a PrivateKey');
   
@@ -218,16 +218,16 @@ const sign = function(hashbuf, privkey, opts) {
 
 
 /**
- * Get signature verification error
+ * Get signature verification error string
  * @param {Buffer} hashbuf
  * @param {Signature} sig
  * @param {PublicKey} pubkey
- * @param {Object} opts an object of optional parameters
- * @param {Number} opts.endian 'big' or 'little' (default: big)
- * @returns {String|undefined} Returns a string error, or undefined if there is no error.
+ * @param {Object|undefined} opts An object of optional parameters
+ * @param {String} opts.endian 'big' or 'little' (default: big)
+ * @returns {String|undefined} Returns an error string, or undefined if there is no error
  */
 const verificationError = function(hashbuf, sig, pubkey, opts) {
-  const { endian } = opts || {};
+  const { endian = 'big' } = opts || {};
 
   if (!BufferUtil.isBuffer(hashbuf) || hashbuf.length !== 32) {
     return 'hashbuf must be a 32 byte buffer';
@@ -239,7 +239,7 @@ const verificationError = function(hashbuf, sig, pubkey, opts) {
     return 'r and s not in range';
   }
 
-  var e = BN.fromBuffer(hashbuf, endian ? { endian } : undefined);
+  var e = BN.fromBuffer(hashbuf, { endian });
   var n = Point.getN();
   var sinv = s.invm(n);
   var u1 = sinv.mul(e).umod(n);
@@ -263,8 +263,8 @@ const verificationError = function(hashbuf, sig, pubkey, opts) {
  * @param {Buffer} hashbuf
  * @param {Signature} sig
  * @param {PublicKey} pubkey
- * @param {Object} opts an object of optional parameters
- * @param {Number} opts.endian 'big' or 'little' (default: big)
+ * @param {Object|undefined} opts An object of optional parameters
+ * @param {String} opts.endian 'big' or 'little' (default: big)
  * @returns {Boolean}
  */
 const verify = function(hashbuf, sig, pubkey, opts) {
