@@ -135,7 +135,7 @@ describe('PrivateKey', function() {
     it('should not be able to instantiate private key WIF is too long', function() {
       expect(function() {
         var buf = Base58Check.decode('QPn542uVdzBgCfV6nEViShboFTpDd1at8mQpQugEQHgpuLbsgcZe');
-        var buf2 = Buffer.concat([buf, Buffer.from(0x01)]);
+        var buf2 = Buffer.concat([buf, Buffer.from([0x01])]);
         return new PrivateKey(buf2);
       }).to.throw('Length of buffer must be 33 (uncompressed) or 34 (compressed');
     });
