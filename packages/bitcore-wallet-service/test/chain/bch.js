@@ -6,7 +6,6 @@ var chai = require('chai');
 var mongodb = require('mongodb');
 var should = chai.should();
 const { BitcoreLibCash } = require ('crypto-wallet-core');
-const { ChainService } = require('../../ts_build/lib/chain');
 const { BchChain } = require('../../ts_build/lib/chain/bch');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 

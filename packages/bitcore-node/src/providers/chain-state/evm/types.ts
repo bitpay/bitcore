@@ -266,9 +266,9 @@ export interface EventLog<T> {
 export interface ERC20Transfer
   extends EventLog<{
     [key: string]: string;
-  }> {}
+  }> { }
 
-  export interface IEVMCachedAddress {
-    address: string;
-    tokenAddress?: string;
-  }
+export interface IEVMCachedAddress {
+  address: string;
+  tokenAddress?: string;
+}

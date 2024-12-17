@@ -54,6 +54,7 @@ const Bitcore_ = {
   base: Bitcore,
   op: Bitcore,
   xrp: Bitcore,
+  sol: Bitcore, // Make sure we have this setup
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
 };
@@ -2035,7 +2036,7 @@ export class WalletService implements IWalletService {
           if (feePerKb < 0) failed.push(p);
 
           // NOTE: ONLY BTC/BCH/DOGE/LTC expect feePerKb to be Bitcoin amounts
-          // others... expect wei.
+          // EVM expects wei, Solana expects Lamports.
 
           return ChainService.convertFeePerKb(chain, p, feePerKb);
         })
@@ -2584,7 +2585,7 @@ export class WalletService implements IWalletService {
                     from: opts.from, fee: opts.fee, input: opts.inputs?.length, gasLimit: opts.gasLimit, gasLimitBuffer: opts.gasLimitBuffer
                   });
                   if (!isNaN(opts.fee) && (opts.inputs || []).length > 0) return next();
-                  try {
+                  try { // what other steps needed for a solana tx?
                     ({ feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
                     logger.info('ChainService.getFee return value %o', {
                       from: opts.from, feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee
@@ -2595,7 +2596,7 @@ export class WalletService implements IWalletService {
                   next();
                 },
                 async next => {
-                  if (!opts.nonce) {
+                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) {
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {

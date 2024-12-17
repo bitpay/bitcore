@@ -101,7 +101,7 @@
     "bitcore-p2p-doge": "^10.5.3",
     "bitcore-wallet-client": "^10.6.1",
     "cors": "2.8.4",
-    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#370b201c98f4616b378290dc30486df5c1c769e0",
+    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#c286e967f2dba56e9196d5474503b352e4387d1c",
     "crypto-wallet-core": "^10.5.5",
     "express": "4.19.2",
     "lodash": "4.17.11",

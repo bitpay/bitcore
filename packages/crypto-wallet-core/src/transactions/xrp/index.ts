@@ -64,7 +64,7 @@ export class XRPTxProvider {
   getSignatureObject(params: { tx: string; key: Key }) {
     const { tx, key } = params;
     const txJSON = (xrpl.decode(tx) as unknown) as xrpl.Payment;
-    const signedTx = new xrpl.Wallet(key.pubKey.toUpperCase(), key.privKey.toUpperCase()).sign(txJSON);
+    const signedTx = new xrpl.Wallet(key.pubKey.toUpperCase(), (key.privKey as string).toUpperCase()).sign(txJSON);
     return { signedTransaction: signedTx.tx_blob, hash: signedTx.hash };
   }
 

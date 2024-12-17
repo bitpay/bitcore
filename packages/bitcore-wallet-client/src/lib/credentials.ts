@@ -231,6 +231,8 @@ export class Credentials {
         chainPath = '3';
       } else if (chain == 'ltc') {
         chainPath = '2';
+      } else if (chain == 'sol') {
+        chainPath = '501';
       } else {
         throw new Error('unknown chain: ' + chain);
       }

@@ -12,7 +12,8 @@ export const Constants = {
     OP: 'op',
     XRP: 'xrp',
     DOGE: 'doge',
-    LTC: 'ltc'
+    LTC: 'ltc',
+    SOL: 'sol'
   },
 
   BITPAY_SUPPORTED_COINS: {
@@ -36,7 +37,8 @@ export const Constants = {
     WBTC: 'wbtc',
     EUROC: 'euroc',
     USDT: 'usdt',
-    WETH: 'weth'
+    WETH: 'weth',
+    SOL: 'sol'
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
@@ -95,6 +97,10 @@ export const Constants = {
     OP: 'op',
   },
 
+  SVM_CHAINS: {
+    SOL: 'sol'
+  },
+
   NETWORKS: {
     btc: ['livenet', 'testnet3', 'testnet4', 'signet', 'regtest'],
     bch: ['livenet', 'testnet3', 'testnet4', 'scalenet', 'chipnet', 'regtest'],
@@ -106,6 +112,7 @@ export const Constants = {
     arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
     base: ['livenet', 'sepolia', 'holesky', 'regtest'],
     op: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    sol: ['livenet', 'testnet', 'devnet']
   } as { [chain: string]: Array<string> },
 
   // These aliases are here to support legacy clients so don't change them lightly
@@ -148,6 +155,10 @@ export const Constants = {
     op: {
       mainnet: 'livenet',
       testnet: 'sepolia'
+    },
+    sol: {
+      mainnet: 'livenet',
+      testnet: 'testnet'
     }
   },
 

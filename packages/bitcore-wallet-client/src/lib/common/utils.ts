@@ -28,7 +28,8 @@ const Bitcore_ = {
   op: Bitcore,
   xrp: Bitcore,
   doge: BitcoreLibDoge,
-  ltc: BitcoreLibLtc
+  ltc: BitcoreLibLtc,
+  sol: Bitcore
 };
 const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;
@@ -202,6 +203,30 @@ export class Utils {
     }
 
     chain = chain || 'btc';
+
+    if (chain.toLowerCase() === 'sol') {
+      // For Solana we need the seed/private key to do derivations
+      const [{ key }] = publicKeyRing;
+      if (!key?.get()?.xPrivKey) {
+        throw new Error('Solana requires private key for address derivation');
+      }
+
+      const { addressIndex, isChange } = this.parseDerivationPath(path);
+      const { address, pubKey } = Deriver.derivePrivateKey(
+        chain.toUpperCase(),
+        network,
+        key?.get()?.xPrivKey,
+        addressIndex,
+        isChange
+      );
+
+      return {
+        address,
+        path,
+        publicKeys: [pubKey]
+      };
+    }
+
     var bitcore = Bitcore_[chain];
     var publicKeys = _.map(publicKeyRing, item => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
@@ -475,7 +500,7 @@ export class Utils {
 
       return t;
     } else {
-      // ETH ERC20 XRP
+      // ETH ERC20 XRP SOL
       const {
         data,
         destinationTag,
@@ -503,13 +528,17 @@ export class Utils {
       }
       const unsignedTxs = [];
       // If it is a token swap its an already created ERC20 transaction so we skip it and go directly to ETH transaction create
-      const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
+      const isToken = tokenAddress && !payProUrl && !isTokenSwap;
       const isMULTISIG = multisigContractAddress;
       const chainName = chain.toUpperCase();
+      let tokenType = 'ERC20'
+      if (chainName === 'SOL') {
+        tokenType = 'SPL';
+      }
       const _chain = isMULTISIG
         ? chainName + 'MULTISIG'
-        : isERC20
-          ? chainName + 'ERC20'
+        : isToken
+          ? chainName + tokenType
           : chainName;
 
       if (multiSendContractAddress) {

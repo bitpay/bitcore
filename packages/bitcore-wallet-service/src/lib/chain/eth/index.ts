@@ -136,7 +136,7 @@ export class EthChain implements IChain {
   getWalletSendMaxInfo(server, wallet, opts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
-      const { totalAmount, availableAmount } = balance;
+      const { availableAmount } = balance;
       let fee = opts.feePerKb * Defaults.MIN_GAS_LIMIT;
       return cb(null, {
         utxosBelowFee: 0,
