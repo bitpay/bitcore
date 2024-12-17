@@ -408,7 +408,7 @@ describe('PrivateKey', function() {
     it('should convert this known PrivateKey to known PublicKey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(privhex, 'hex'));
       var pubkey = privkey.toPublicKey();
       pubkey.toString().should.equal(pubhex);
     });
@@ -416,7 +416,7 @@ describe('PrivateKey', function() {
     it('should have a "publicKey" property', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(privhex, 'hex'));
       privkey.publicKey.toString().should.equal(pubhex);
     });
 
