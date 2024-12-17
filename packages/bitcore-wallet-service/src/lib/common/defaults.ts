@@ -398,7 +398,7 @@ export const Defaults = {
   MS_GAS_LIMIT_BUFFER_PERCENT: 10 / 100,
 
   // XRP has a non-refundable mininum activation fee / balance
-  MIN_XRP_BALANCE: 10000000,
+  MIN_XRP_BALANCE: 1000000,
 
   // Time to get the latest push notification subscriptions. In ms.
   PUSH_NOTIFICATION_SUBS_TIME: 10 * 60 * 1000, // 10 min.
