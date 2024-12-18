@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { Key } from '../../derivation';
 
 export class BTCTxProvider {
@@ -81,15 +80,19 @@ export class BTCTxProvider {
   sign(params: { tx: string; keys: Array<Key>; utxos: any[]; pubkeys?: any[]; threshold?: number; opts: any }) {
     const { tx, keys, pubkeys, threshold, opts } = params;
     let utxos = params.utxos || [];
-    let inputAddresses = this.getSigningAddresses({ tx, utxos });
     let bitcoreTx = new this.lib.Transaction(tx);
     let applicableUtxos = this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
       utxos
     });
     bitcoreTx.associateInputs(applicableUtxos, pubkeys, threshold, opts);
-    const privKeys = _.uniq(keys.map(key => key.privKey.toString()));
-    const signedTx = bitcoreTx.sign(privKeys).toString();
+    const uniqePrivKeys = Object.values(keys.reduce((map, key) => {
+      // Need to preserve (un)compressed property, so don't use key.privKey.toString();
+      const pk = new this.lib.PrivateKey(key.privKey);
+      map[pk.publicKey.toString()] = pk;
+      return map;
+    }, {}));
+    const signedTx = bitcoreTx.sign(uniqePrivKeys).toString();
     return signedTx;
   }
 
