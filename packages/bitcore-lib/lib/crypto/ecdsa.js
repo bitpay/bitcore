@@ -142,6 +142,7 @@ const getDeterministicK = function(hashbuf, privkey, badrs) {
   k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00]), x, hashbuf]), k);
   v = Hash.sha256hmac(v, k);
   k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x01]), x, hashbuf]), k);
+  // double hash v
   v = Hash.sha256hmac(v, k);
   v = Hash.sha256hmac(v, k);
   var T = BN.fromBuffer(v);
@@ -150,6 +151,7 @@ const getDeterministicK = function(hashbuf, privkey, badrs) {
   // also explained in 3.2, we must ensure T is in the proper range (0, N)
   for (var i = 0; i < badrs || !(T.lt(N) && T.gt(BN.Zero)); i++) {
     k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00])]), k);
+    // double hash v
     v = Hash.sha256hmac(v, k);
     v = Hash.sha256hmac(v, k);
     T = BN.fromBuffer(v);
