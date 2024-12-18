@@ -1,14 +1,14 @@
 'use strict';
 
-var ECDSA = require('../../lib/crypto/ecdsa');
-var Hash = require('../../lib/crypto/hash');
-var Privkey = require('../../lib/privatekey');
-var Pubkey = require('../../lib/publickey');
-var Signature = require('../../lib/crypto/signature');
-var BN = require('../../lib/crypto/bn');
-var point = require('../../lib/crypto/point');
-var should = require('chai').should();
-var vectors = require('../data/ecdsa');
+const should = require('chai').should();
+const ECDSA = require('../../lib/crypto/ecdsa');
+const Hash = require('../../lib/crypto/hash');
+const Privkey = require('../../lib/privatekey');
+const Pubkey = require('../../lib/publickey');
+const Signature = require('../../lib/crypto/signature');
+const BN = require('../../lib/crypto/bn');
+const point = require('../../lib/crypto/point');
+const vectors = require('../data/ecdsa');
 
 describe('ECDSA', function() {
 
@@ -232,23 +232,19 @@ describe('ECDSA', function() {
     it('should throw on improper input: Array', function() {
       const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
-      try {
-        ECDSA.sign(Array.from(hashbuf), pk);
-        throw new Error('should have thrown');
-      } catch (e) {
-        e.message.should.equal('Invalid state: Error: hashbuf must be a 32 byte buffer');
-      }
+      should.throw(
+        () => ECDSA.sign(Array.from(hashbuf), pk),
+        'Invalid state: Error: hashbuf must be a 32 byte buffer'
+      );
     });
 
     it('should throw on improper input: Uint16Array', function() {
       const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
-      try {
-        ECDSA.sign(Uint16Array.from(hashbuf), pk);
-        throw new Error('should have thrown');
-      } catch (e) {
-        e.message.should.equal('Invalid state: Error: hashbuf must be a 32 byte buffer');
-      }
+      should.throw(
+        () => ECDSA.sign(Uint16Array.from(hashbuf), pk),
+        'Invalid state: Error: hashbuf must be a 32 byte buffer'
+      );
     });
 
   });
