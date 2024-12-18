@@ -267,7 +267,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
       nonce: new Binary(Buffer.from(block.extraData)),
       previousBlockHash: block.parentHash,
       difficulty: block.difficulty.toString(),
-      totalDifficulty: block.totalDifficulty.toString(),
+      totalDifficulty: block.totalDifficulty?.toString(),
       nextBlockHash: '',
       transactionCount: block.transactions.length,
       size: block.size,
