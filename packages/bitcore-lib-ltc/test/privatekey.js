@@ -25,18 +25,26 @@ describe('PrivateKey', function() {
   var wifNamecoin = '74pxNKNpByQ2kMow4d9kF6Z77BYeKztQNLq3dSyU4ES1K5KLNiz';
 
   it('should create a new random private key', function() {
-    var a = new PrivateKey();
+    const a = new PrivateKey();
     should.exist(a);
     should.exist(a.bn);
-    var b = PrivateKey();
+    const b = PrivateKey();
     should.exist(b);
     should.exist(b.bn);
+    a.bn.toString().should.not.equal(b.bn.toString());
   });
 
   it('should create a privatekey from hexa string', function() {
-    var a = new PrivateKey(hex2);
+    const a = new PrivateKey(hex2);
     should.exist(a);
     should.exist(a.bn);
+    a.toString().should.equal(hex2);
+  });
+
+  it('should create a privatekey from a non-standard hex string', function() {
+    const hex = '9aea0e90d2dae1b52f6e5fcfd9f7a6a984db2cdcff0704c2d732ac862770ed8'; // length 63...no leading 0
+    const a = new PrivateKey(hex);
+    a.toString().should.equal('09aea0e90d2dae1b52f6e5fcfd9f7a6a984db2cdcff0704c2d732ac862770ed8'); // has leading 0
   });
 
   it('should create a new random testnet private key with only one argument', function() {
@@ -400,7 +408,7 @@ describe('PrivateKey', function() {
     it('should convert this known PrivateKey to known PublicKey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(privhex, 'hex'));
       var pubkey = privkey.toPublicKey();
       pubkey.toString().should.equal(pubhex);
     });
@@ -408,7 +416,7 @@ describe('PrivateKey', function() {
     it('should have a "publicKey" property', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(privhex, 'hex'));
       privkey.publicKey.toString().should.equal(pubhex);
     });
 

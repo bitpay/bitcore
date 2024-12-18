@@ -251,8 +251,8 @@ describe('Transaction', function() {
   var changeAddress = 'DAPkqFzgrXVsUU7WkSf1GYMmFzEGvuK4SK';
   var changeAddressP2SH = 'A7HRQk3GFCW2QasvdZxXuYj8kkQK5QrYLs';
   var privateKey = 'dd7bdefb163b31eb706ec43589c24cd27fc7878216836468bf216845c7c4aa1c';
-  var private1 = 'ba9bb7f48969e94301025313c298916b2913fb7eecefe98b9128ef4d87e40ea40';
-  var private2 = '6403e70451390134f2bddbe5ecb33c5b264af292fcbf2cdd97deaac7e1e8f7ba0';
+  var private1 = '74a605e8593ace50e1a5d20a57ae7bf3a172d6b4d5d9280ee5519946ec1a039b';
+  var private2 = '62314e4414b9deb3ce85e4d512c2fbce52a48804e7412a8dec6201f0f996cc82';
   var public1 = new PrivateKey(private1).publicKey;
   var public2 = new PrivateKey(private2).publicKey;
 
