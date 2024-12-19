@@ -1,125 +1,58 @@
 'use strict';
 
-var BN = require('./bn');
-var Point = require('./point');
-var Signature = require('./signature');
-var PublicKey = require('../publickey');
-var Random = require('./random');
-var Hash = require('./hash');
-var BufferUtil = require('../util/buffer');
-var _ = require('lodash');
-var $ = require('../util/preconditions');
+const BN = require('./bn');
+const Point = require('./point');
+const Signature = require('./signature');
+const PublicKey = require('../publickey');
+const Random = require('./random');
+const Hash = require('./hash');
+const BufferUtil = require('../util/buffer');
+const $ = require('../util/preconditions');
 
-var ECDSA = function ECDSA(obj) {
-  if (!(this instanceof ECDSA)) {
-    return new ECDSA(obj);
-  }
-  if (obj) {
-    this.set(obj);
-  }
-};
 
-/* jshint maxcomplexity: 9 */
-ECDSA.prototype.set = function(obj) {
-  this.hashbuf = obj.hashbuf || this.hashbuf;
-  this.endian = obj.endian || this.endian; //the endianness of hashbuf
-  this.privkey = obj.privkey || this.privkey;
-  this.pubkey = obj.pubkey || (this.privkey ? this.privkey.publicKey : this.pubkey);
-  this.sig = obj.sig || this.sig;
-  this.k = obj.k || this.k;
-  this.verified = obj.verified || this.verified;
-  return this;
-};
-
-ECDSA.prototype.privkey2pubkey = function() {
-  this.pubkey = this.privkey.toPublicKey();
-};
-
-ECDSA.prototype.calci = function() {
+/**
+ * Attach the recovery factor i to an ECDSA signature.
+ * @param {Buffer} hashbuf
+ * @param {Signature} sig
+ * @param {PulicKey} pubkey
+ * @returns {Signature}
+ */
+const calci = function(hashbuf, sig, pubkey) {
   for (var i = 0; i < 4; i++) {
-    this.sig.i = i;
     var Qprime;
     try {
-      Qprime = this.toPublicKey();
+      Qprime = getPublicKey(hashbuf, sig, i);
     } catch (e) {
       console.error(e);
       continue;
     }
 
-    if (Qprime.point.eq(this.pubkey.point)) {
-      this.sig.compressed = this.pubkey.compressed;
-      return this;
+    if (Qprime.point.eq(pubkey.point)) {
+      sig.i = i;
+      sig.compressed = pubkey.compressed;
+      return sig;
     }
   }
 
-  this.sig.i = undefined;
   throw new Error('Unable to find valid recovery factor');
 };
 
-ECDSA.fromString = function(str) {
-  var obj = JSON.parse(str);
-  return new ECDSA(obj);
-};
-
-ECDSA.prototype.randomK = function() {
-  var N = Point.getN();
-  var k;
-  do {
-    k = BN.fromBuffer(Random.getRandomBuffer(32));
-  } while (!(k.lt(N) && k.gt(BN.Zero)));
-  this.k = k;
-  return this;
-};
-
-
-// https://tools.ietf.org/html/rfc6979#section-3.2
-ECDSA.prototype.deterministicK = function(badrs) {
+/**
+ * Information about public key recovery:
+ * https://bitcointalk.org/index.php?topic=6430.0
+ * http://stackoverflow.com/questions/19665491/how-do-i-get-an-ecdsa-public-key-from-just-a-bitcoin-signature-sec1-4-1-6-k 
+ * @param {Buffer} hashbuf
+ * @param {Signature} sig
+ * @param {Number} i
+ * @returns {PublicKey}
+ */
+const getPublicKey = function(hashbuf, sig, i) {
   /* jshint maxstatements: 25 */
-  // if r or s were invalid when this function was used in signing,
-  // we do not want to actually compute r, s here for efficiency, so,
-  // we can increment badrs. explained at end of RFC 6979 section 3.2
-  if (_.isUndefined(badrs)) {
-    badrs = 0;
-  }
-  var v = Buffer.alloc(32);
-  v.fill(0x01);
-  var k = Buffer.alloc(32);
-  k.fill(0x00);
-  var x = this.privkey.bn.toBuffer({
-    size: 32
-  });
-  var hashbuf = this.endian === 'little' ? BufferUtil.reverse(this.hashbuf) : this.hashbuf
-  k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00]), x, hashbuf]), k);
-  v = Hash.sha256hmac(v, k);
-  k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x01]), x, hashbuf]), k);
-  v = Hash.sha256hmac(v, k);
-  v = Hash.sha256hmac(v, k);
-  var T = BN.fromBuffer(v);
-  var N = Point.getN();
-
-  // also explained in 3.2, we must ensure T is in the proper range (0, N)
-  for (var i = 0; i < badrs || !(T.lt(N) && T.gt(BN.Zero)); i++) {
-    k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00])]), k);
-    v = Hash.sha256hmac(v, k);
-    v = Hash.sha256hmac(v, k);
-    T = BN.fromBuffer(v);
-  }
-
-  this.k = T;
-  return this;
-};
-
-// Information about public key recovery:
-// https://bitcointalk.org/index.php?topic=6430.0
-// http://stackoverflow.com/questions/19665491/how-do-i-get-an-ecdsa-public-key-from-just-a-bitcoin-signature-sec1-4-1-6-k
-ECDSA.prototype.toPublicKey = function() {
-  /* jshint maxstatements: 25 */
-  var i = this.sig.i;
   $.checkArgument(i === 0 || i === 1 || i === 2 || i === 3, new Error('i must be equal to 0, 1, 2, or 3'));
 
-  var e = BN.fromBuffer(this.hashbuf);
-  var r = this.sig.r;
-  var s = this.sig.s;
+  var e = BN.fromBuffer(hashbuf);
+  var r = sig.r;
+  var s = sig.s;
 
   // A set LSB signifies that the y-coordinate is odd
   var isYOdd = i & 1;
@@ -152,145 +85,218 @@ ECDSA.prototype.toPublicKey = function() {
   //var Q = R.multiplyTwo(s, G, eNeg).mul(rInv);
   var Q = R.mul(s).add(G.mul(eNeg)).mul(rInv);
 
-  var pubkey = PublicKey.fromPoint(Q, this.sig.compressed);
+  var pubkey = PublicKey.fromPoint(Q, sig.compressed);
 
   return pubkey;
 };
 
-ECDSA.prototype.sigError = function() {
-  /* jshint maxstatements: 25 */
-  if (!BufferUtil.isBuffer(this.hashbuf) || this.hashbuf.length !== 32) {
-    return 'hashbuf must be a 32 byte buffer';
-  }
 
-  var r = this.sig.r;
-  var s = this.sig.s;
-  if (!(r.gt(BN.Zero) && r.lt(Point.getN())) || !(s.gt(BN.Zero) && s.lt(Point.getN()))) {
-    return 'r and s not in range';
-  }
-
-  var e = BN.fromBuffer(this.hashbuf, this.endian ? {
-    endian: this.endian
-  } : undefined);
-  var n = Point.getN();
-  var sinv = s.invm(n);
-  var u1 = sinv.mul(e).umod(n);
-  var u2 = sinv.mul(r).umod(n);
-
-  var p = Point.getG().mulAdd(u1, this.pubkey.point, u2);
-  if (p.isInfinity()) {
-    return 'p is infinity';
-  }
-
-  if (p.getX().umod(n).cmp(r) !== 0) {
-    return 'Invalid signature';
-  } else {
-    return false;
-  }
+/**
+ * Recover a public key from a signature.
+ * @param {Buffer} hashbuf
+ * @param {Signature} sig Signature with the recovery factor i.
+ * @returns {PublicKey}
+ */
+const recoverPublicKey = function(hashbuf, sig) {
+  return getPublicKey(hashbuf, sig, sig.i);
 };
 
-ECDSA.toLowS = function(s) {
-  //enforce low s
-  //see BIP 62, "low S values in signatures"
-  if (s.gt(BN.fromBuffer(Buffer.from('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex')))) {
+
+/**
+ * Generate a random k
+ * @returns {BN}
+ */
+const getRandomK = function() {
+  var N = Point.getN();
+  var k;
+  do {
+    k = BN.fromBuffer(Random.getRandomBuffer(32));
+  } while (!(k.lt(N) && k.gt(BN.Zero)));
+  return k;
+};
+
+
+/**
+ * Generate a deterministic k
+ * REF: https://tools.ietf.org/html/rfc6979#section-3.2
+ * @param {Buffer} hashbuf
+ * @param {PrivateKey} privkey
+ * @param {Number} badrs Increment until a valid k is found
+ * @returns {BN}
+ */
+const getDeterministicK = function(hashbuf, privkey, badrs) {
+  /* jshint maxstatements: 25 */
+  // if r or s were invalid when this function was used in signing,
+  // we do not want to actually compute r, s here for efficiency, so,
+  // we can increment badrs. explained at end of RFC 6979 section 3.2
+  if (!badrs) {
+    badrs = 0;
+  }
+  var v = Buffer.alloc(32);
+  v.fill(0x01);
+  var k = Buffer.alloc(32);
+  k.fill(0x00);
+  var x = privkey.bn.toBuffer({
+    size: 32
+  });
+  k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00]), x, hashbuf]), k);
+  v = Hash.sha256hmac(v, k);
+  k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x01]), x, hashbuf]), k);
+  // double hash v
+  v = Hash.sha256hmac(v, k);
+  v = Hash.sha256hmac(v, k);
+  var T = BN.fromBuffer(v);
+  var N = Point.getN();
+
+  // also explained in 3.2, we must ensure T is in the proper range (0, N)
+  for (var i = 0; i < badrs || !(T.lt(N) && T.gt(BN.Zero)); i++) {
+    k = Hash.sha256hmac(Buffer.concat([v, Buffer.from([0x00])]), k);
+    // double hash v
+    v = Hash.sha256hmac(v, k);
+    v = Hash.sha256hmac(v, k);
+    T = BN.fromBuffer(v);
+  }
+
+  return T;
+};
+
+
+/**
+ * Convert s to a low s
+ * see BIP 62, "low S values in signatures"
+ * @param {BN} s
+ * @returns {BN}
+ */
+const toLowS = function(s) {
+  if (s.gt(new BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex'))) {
     s = Point.getN().sub(s);
   }
   return s;
 };
 
-ECDSA.prototype._findSignature = function(d, e) {
+
+/**
+ * Sign a hash with a private key.
+ * @param {Buffer|Uint8Array} hashbuf
+ * @param {PrivateKey} privkey
+ * @param {Object|undefined} opts An object of optional parameters
+ * @param {String} opts.endian 'big' or 'little' (default: big)
+ * @param {Boolean} opts.randomK Use a random value for k - produces a non-deterministic signature (default: false)
+ * @returns {Signature}
+ */
+const sign = function(hashbuf, privkey, opts) {
+  const { endian = 'big', randomK = false } = opts || {};
+  $.checkState(BufferUtil.isBuffer(hashbuf) && hashbuf.length === 32, 'hashbuf must be a 32 byte buffer');
+  $.checkState(privkey && privkey.bn, 'privkey must be a PrivateKey');
+  
+  var d = privkey.bn;
+  hashbuf = Buffer.from(hashbuf);
+  if (endian === 'little') {
+    hashbuf.reverse();
+  }
+
+  var e = BN.fromBuffer(hashbuf);
   var N = Point.getN();
   var G = Point.getG();
   // try different values of k until r, s are valid
   var badrs = 0;
   var k, Q, r, s;
   do {
-    if (!this.k || badrs > 0) {
-      this.deterministicK(badrs);
-    }
+    k = randomK ? getRandomK() : getDeterministicK(hashbuf, privkey, badrs);
     badrs++;
-    k = this.k;
     Q = G.mul(k);
     r = Q.x.umod(N);
     s = k.invm(N).mul(e.add(d.mul(r))).umod(N);
   } while (r.cmp(BN.Zero) <= 0 || s.cmp(BN.Zero) <= 0);
 
-  s = ECDSA.toLowS(s);
-  return {
-    s: s,
-    r: r
-  };
+  s = toLowS(s);
 
+  return new Signature({
+    s,
+    r,
+    compressed: privkey.publicKey.compressed
+  });
 };
 
-ECDSA.prototype.sign = function() {
-  var hashbuf = this.hashbuf;
-  var privkey = this.privkey;
-  var d = privkey.bn;
 
-  $.checkState(hashbuf && privkey && d, new Error('invalid parameters'));
-  $.checkState(BufferUtil.isBuffer(hashbuf) && hashbuf.length === 32, new Error('hashbuf must be a 32 byte buffer'));
+/**
+ * Get signature verification error string
+ * @param {Buffer} hashbuf
+ * @param {Signature} sig
+ * @param {PublicKey} pubkey
+ * @param {Object|undefined} opts An object of optional parameters
+ * @param {String} opts.endian 'big' or 'little' (default: big)
+ * @returns {String|undefined} Returns an error string, or undefined if there is no error
+ */
+const verificationError = function(hashbuf, sig, pubkey, opts) {
+  const { endian = 'big' } = opts || {};
 
-  var e = BN.fromBuffer(hashbuf, this.endian ? {
-    endian: this.endian
-  } : undefined);
-
-  var obj = this._findSignature(d, e);
-  obj.compressed = this.pubkey.compressed;
-
-  this.sig = new Signature(obj);
-  return this;
-};
-
-ECDSA.prototype.signRandomK = function() {
-  this.randomK();
-  return this.sign();
-};
-
-ECDSA.prototype.toString = function() {
-  var obj = {};
-  if (this.hashbuf) {
-    obj.hashbuf = this.hashbuf.toString('hex');
+  if (!BufferUtil.isBuffer(hashbuf) || hashbuf.length !== 32) {
+    return 'hashbuf must be a 32 byte buffer';
   }
-  if (this.privkey) {
-    obj.privkey = this.privkey.toString();
+
+  var r = sig.r;
+  var s = sig.s;
+  if (!(r.gt(BN.Zero) && r.lt(Point.getN())) || !(s.gt(BN.Zero) && s.lt(Point.getN()))) {
+    return 'r and s not in range';
   }
-  if (this.pubkey) {
-    obj.pubkey = this.pubkey.toString();
+
+  var e = BN.fromBuffer(hashbuf, { endian });
+  var n = Point.getN();
+  var sinv = s.invm(n);
+  var u1 = sinv.mul(e).umod(n);
+  var u2 = sinv.mul(r).umod(n);
+
+  var p = Point.getG().mulAdd(u1, pubkey.point, u2);
+  if (p.isInfinity()) {
+    return 'p is infinity';
   }
-  if (this.sig) {
-    obj.sig = this.sig.toString();
+
+  if (p.getX().umod(n).cmp(r) !== 0) {
+    return 'Invalid signature';
   }
-  if (this.k) {
-    obj.k = this.k.toString();
-  }
-  return JSON.stringify(obj);
+
+  return; // no error
 };
 
-ECDSA.prototype.verify = function() {
-  if (!this.sigError()) {
-    this.verified = true;
-  } else {
-    this.verified = false;
+
+/**
+ * Verify a signature
+ * @param {Buffer} hashbuf
+ * @param {Signature} sig
+ * @param {PublicKey} pubkey
+ * @param {Object|undefined} opts An object of optional parameters
+ * @param {String} opts.endian 'big' or 'little' (default: big)
+ * @returns {Boolean}
+ */
+const verify = function(hashbuf, sig, pubkey, opts) {
+  if (!pubkey) {
+    throw new Error('pubkey required for signature verification');
   }
-  return this;
+  pubkey = new PublicKey(pubkey);
+  
+  if (!sig) {
+    throw new Error('signature required for verification');
+  }
+  sig = new Signature(sig);
+
+  return !verificationError(hashbuf, sig, pubkey, opts);
 };
 
-ECDSA.sign = function(hashbuf, privkey, endian) {
-  return ECDSA().set({
-    hashbuf: hashbuf,
-    endian: endian,
-    privkey: privkey
-  }).sign().sig;
+module.exports = {
+  sign,
+  verify,
+  verificationError,
+ 
+  // pubkey recovery methods
+  calci,
+  recoverPublicKey,
 };
 
-ECDSA.verify = function(hashbuf, sig, pubkey, endian) {
-  return ECDSA().set({
-    hashbuf: hashbuf,
-    endian: endian,
-    sig: sig,
-    pubkey: pubkey
-  }).verify().verified;
+module.exports.__testing__ = {
+  getDeterministicK,
+  getPublicKey,
+  getRandomK,
+  toLowS,
 };
 
-module.exports = ECDSA;

@@ -102,9 +102,8 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
  */
 function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
   var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
-  var sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
+  const sig = ECDSA.sign(hashbuf, privateKey, { endian: 'little' });
+  sig.nhashtype = sighashType;
   return sig;
 }
 
@@ -122,8 +121,8 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
 function verify(transaction, signature, publicKey, inputIndex, subscript) {
   $.checkArgument(!_.isUndefined(transaction));
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
-  return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+  const hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
+  return ECDSA.verify(hashbuf, signature, publicKey, { endian: 'little' });
 }
 
 /**
