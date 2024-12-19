@@ -196,7 +196,7 @@ describe('ECDSA', function() {
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
       should.throw(
         () => ECDSA.sign(Array.from(hashbuf), pk),
-        'Invalid state: Error: hashbuf must be a 32 byte buffer'
+        'Invalid state: hashbuf must be a 32 byte buffer'
       );
     });
 
@@ -205,7 +205,7 @@ describe('ECDSA', function() {
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
       should.throw(
         () => ECDSA.sign(Uint16Array.from(hashbuf), pk),
-        'Invalid state: Error: hashbuf must be a 32 byte buffer'
+        'Invalid state: hashbuf must be a 32 byte buffer'
       );
     });
 
