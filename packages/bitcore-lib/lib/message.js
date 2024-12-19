@@ -34,14 +34,10 @@ Message.prototype.magicHash = function magicHash() {
 
 Message.prototype._sign = function _sign(privateKey) {
   $.checkArgument(privateKey instanceof PrivateKey, 'First argument should be an instance of PrivateKey');
-  var hash = this.magicHash();
-  var ecdsa = new ECDSA();
-  ecdsa.hashbuf = hash;
-  ecdsa.privkey = privateKey;
-  ecdsa.pubkey = privateKey.toPublicKey();
-  ecdsa.signRandomK();
-  ecdsa.calci();
-  return ecdsa.sig;
+  const hash = this.magicHash();
+  const sig = ECDSA.sign(hash, privateKey, { randomK: true });
+  ECDSA.calci(hash, sig, privateKey.toPublicKey());
+  return sig;
 };
 
 /**
@@ -84,10 +80,8 @@ Message.prototype.verify = function verify(bitcoinAddress, signatureString) {
   var signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
 
   // recover the public key
-  var ecdsa = new ECDSA();
-  ecdsa.hashbuf = this.magicHash();
-  ecdsa.sig = signature;
-  var publicKey = ecdsa.toPublicKey();
+  const hashbuf = this.magicHash();
+  var publicKey = ECDSA.recoverPublicKey(hashbuf, signature);
 
   var signatureAddress = Address.fromPublicKey(publicKey, bitcoinAddress.network);
 
@@ -118,10 +112,8 @@ Message.prototype.recoverPublicKey = function recoverPublicKey(bitcoinAddress, s
   var signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
 
   // recover the public key
-  var ecdsa = new ECDSA();
-  ecdsa.hashbuf = this.magicHash();
-  ecdsa.sig = signature;
-  var publicKey = ecdsa.toPublicKey();
+  const hashbuf = this.magicHash();
+  var publicKey = ECDSA.recoverPublicKey(hashbuf, signature);
 
   var signatureAddress = Address.fromPublicKey(publicKey, bitcoinAddress.network);
 

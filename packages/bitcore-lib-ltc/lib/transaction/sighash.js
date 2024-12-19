@@ -102,14 +102,12 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
 function sign(transaction, privateKey, sighashType, inputIndex, subscript, signingMethod) {
   signingMethod = signingMethod || 'ecdsa';
 
-  var sig;
   if(signingMethod === 'ecdsa') {
-    var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
-    sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
-  return sig;
- }
+    const hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+    const sig = ECDSA.sign(hashbuf, privateKey, { endian: 'little' });
+    sig.nhashtype = sighashType;
+    return sig;
+   }
   throw new Error('signingMethod not supported ', signingMethod);
 }
 
@@ -132,7 +130,7 @@ function verify(transaction, signature, publicKey, inputIndex, subscript, signin
   signingMethod = signingMethod || 'ecdsa';
   if (signingMethod === 'ecdsa') {
     var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
-    return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+    return ECDSA.verify(hashbuf, signature, publicKey, { endian: 'little' });
   }
   throw new Error('signingMethod not supported ', signingMethod);
 }

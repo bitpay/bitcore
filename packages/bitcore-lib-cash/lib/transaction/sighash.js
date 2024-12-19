@@ -257,17 +257,15 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, satos
   var hashbuf = sighash(transaction, sighashType, inputIndex, subscript, satoshisBN, flags);
 
   signingMethod = signingMethod || "ecdsa";
-  let sig;
 
   if (signingMethod === "schnorr") {
-    sig = Schnorr.sign(hashbuf, privateKey, 'little').set({
+    const sig = Schnorr.sign(hashbuf, privateKey, 'little').set({
       nhashtype: sighashType
     });
     return sig;
   } else if (signingMethod === "ecdsa") {
-    sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-      nhashtype: sighashType
-    });
+    const sig = ECDSA.sign(hashbuf, privateKey, { endian: 'little' });
+    sig.nhashtype = sighashType;
     return sig;
   }
 }
@@ -296,7 +294,7 @@ function verify(transaction, signature, publicKey, inputIndex, subscript, satosh
   if (signingMethod === 'schnorr') {
     return Schnorr.verify(hashbuf, signature, publicKey, 'little')
   } else if(signingMethod === 'ecdsa') {
-    return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+    return ECDSA.verify(hashbuf, signature, publicKey, { endian: 'little' });
   }
 }
 
