@@ -183,7 +183,7 @@ describe('ECDSA', function() {
     });
 
     it('should generate correct signature for Uint8Array input', function() {
-      const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
+      const pk = PrivateKey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
       const ctrlSig = ECDSA.sign(hashbuf, pk);
       const testSig = ECDSA.sign(Uint8Array.from(hashbuf), pk);
@@ -192,7 +192,7 @@ describe('ECDSA', function() {
     });
 
     it('should throw on improper input: Array', function() {
-      const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
+      const pk = PrivateKey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
       should.throw(
         () => ECDSA.sign(Array.from(hashbuf), pk),
@@ -201,7 +201,7 @@ describe('ECDSA', function() {
     });
 
     it('should throw on improper input: Uint16Array', function() {
-      const pk = Privkey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
+      const pk = PrivateKey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
       should.throw(
         () => ECDSA.sign(Uint16Array.from(hashbuf), pk),
