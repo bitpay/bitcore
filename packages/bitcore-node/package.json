@@ -88,7 +88,7 @@
     "sinon": "4.4.8",
     "supertest": "3.0.0",
     "ts-node": "^9.0.0",
-    "typescript": "3.3.4000",
+    "typescript": "4.9.4",
     "typescript-eslint-parser": "15.0.0"
   },
   "dependencies": {

@@ -146,7 +146,7 @@ const Errors = require('./errors/errordefinitions');
 
 const shell = require('shelljs');
 
-const BCHJS = require('@abcpros/xpi-js');
+const BCHJS = require('@bcpros/xpi-js');
 const bchURL = config.supportToken.xec.bchUrl;
 const bchjs = new BCHJS({ restURL: bchURL });
 
@@ -8339,7 +8339,7 @@ export class WalletService {
                     // mapping tx details from chronik with only 2 att : txid and outputScript
                     const opReturnScript =
                       Constants.opReturn.opReturnPrefixHex + Constants.opReturn.opReturnAppPrefixLengthHex;
-                    listTx = _.map(listTx, function (tx) {
+                    const txs = _.map(listTx, function (tx) {
                       if (tx) {
                         return {
                           txid: tx.txid,
@@ -8351,7 +8351,7 @@ export class WalletService {
                     });
 
                     // mapping txs from chronik with txs already on node or bws
-                    _.each(listTx, txDetail => {
+                    _.each(txs, txDetail => {
                       const txFound = _.find(filterResultTxs, tx => txDetail.outputScript && tx.txid === txDetail.txid);
                       if (txFound) {
                         const outputFalse = _.find(txFound.outputs, o => o.address === 'false' || !o.address);
@@ -8388,42 +8388,31 @@ export class WalletService {
               });
 
               return Promise.all(listTxDetailFromChronik).then(listTx => {
-                listTx = _.compact(listTx);
+                const txs: Tx_InNode[] = _.compact(listTx) as Tx_InNode[];
                 if (!!listTx && listTx.length > 0) {
                   // remove undefined, false value from list txs return from chronik
-                  _.each(listTx, async txDetail => {
+                  _.each(txs, async txDetail => {
                     const tx = _.find(
                       filterResultTxs,
                       tx =>
                         tx.txid === txDetail.txid &&
                         !!txDetail &&
-                        !!txDetail.slpTxData &&
-                        !!txDetail.slpTxData.slpMeta &&
-                        !!txDetail.slpTxData.slpMeta.txType
+                        !!txDetail.tokenEntries &&
+                        !!(txDetail.tokenEntries.length > 0) &&
+                        !!txDetail.tokenEntries[0].txType
                     );
                     if (!!tx) {
                       let burnAmount = 0;
-                      const type = txDetail.slpTxData.slpMeta.txType;
+                      const type = txDetail.tokenEntries[0].txType;
                       const inputs = txDetail.inputs;
                       if (!!type && type === 'BURN') {
                         inputs.forEach(input => {
                           if (
-                            typeof input.slpToken !== 'undefined' &&
-                            input.slpToken.amount &&
-                            input.slpToken.amount !== '0'
+                            typeof input.token !== 'undefined' &&
+                            input.token.amount &&
+                            input.token.amount !== '0'
                           ) {
-                            burnAmount = Number(input.slpToken.amount);
-                          }
-                        });
-                      } else if (!!type && type === 'SEND') {
-                        inputs.forEach(input => {
-                          if (
-                            typeof input.slpBurn !== 'undefined' &&
-                            input.slpBurn.token &&
-                            input.slpBurn.token.amount &&
-                            input.slpBurn.token.amount !== '0'
-                          ) {
-                            burnAmount += Number(input.slpBurn.token.amount);
+                            burnAmount = Number(input.token.amount);
                           }
                         });
                       }
@@ -10974,7 +10963,7 @@ export class WalletService {
     const chronikClient = ChainService.getChronikClientInNode('xec');
     ws = chronikClient.ws({
       onMessage: msg => {
-        if (msg.txid && !txIdHandled.includes(msg.txid) && msg.type === 'AddedToMempool') {
+        if (msg.type === 'Tx' && !txIdHandled.includes(msg.txid) && msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
           txIdHandled.push(msg.txid);
           this.getTxDetailForXecWallet(msg.txid, (err, result: TxDetail) => {
             if (err) {

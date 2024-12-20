@@ -11,7 +11,7 @@ const config = require('../../../config');
 const Errors = require('../../errors/errordefinitions');
 const Common = require('../../common');
 const Utils = Common.Utils;
-const BCHJS = require('@abcpros/xpi-js');
+const BCHJS = require('@bcpros/xpi-js');
 const bchjs = new BCHJS({ restURL: '' });
 const ecashaddr = require('ecashaddrjs');
 const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
@@ -59,7 +59,7 @@ export class XecChain extends BtcChain implements IChain {
     super(BitcoreLibXec);
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
-    this.chronikClient = new ChronikClientNode(config.supportToken.xec.chronikClientUrl);
+    this.chronikClientInNode = new ChronikClientNode(config.supportToken.xec.chronikClientUrl);
   }
 
   convertAddressToScriptPayload(address) {
