@@ -60,6 +60,7 @@ export class EthChain implements IChain {
   burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {}
 
   getChronikClient() {}
+  getChronikClientInNode() {}
   getTokenInfo(tokenId) {}
 
   getInputSizeSafetyMargin() {
