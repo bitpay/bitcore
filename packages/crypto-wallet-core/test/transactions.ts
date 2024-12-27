@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ethers } from 'ethers';
+import * as bitcoreLib from 'bitcore-lib';
 import { Transactions } from '../src';
 
 describe('Transaction Creation', () => {
@@ -64,6 +65,37 @@ describe('Transaction Creation', () => {
     const expected =
       '0200000001ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64010000006b483045022100a3e6e04d311930ec19b11033e77d973ae37181ead6b2db582ec1c21028c469350220602faacf6f6753b271571452e4597205971ab1d790e60080d50c206c8c327f86012102c8f8fa438666cbd287e28fb384b99555e4acce610e8141e887c9c458bba5db5cffffffff0200000000000000000b6a096a07696f6e3a61626340420f00000000001976a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac00000000';
     expect(signed).to.eq(expected);
+  });
+
+  it('should sign a BTC tx with uncompressed pubkey inputs', () => {
+    const uncompPk = new bitcoreLib.PrivateKey({ bn: '86d32c754853c7d5788d101f0aa5c3ea4da69c0f42ffc3f7403aafba23112b0c', network: 'mainnet', compressed: false });
+    const uncompAddy = uncompPk.publicKey.toAddress();
+    const compPk = new bitcoreLib.PrivateKey('86d32c754853c7d5788d101f0aa5c3ea4da69c0f42ffc3f7403aafba23112b0c');
+    const compAddy = compPk.publicKey.toAddress();
+    
+    const tx = new bitcoreLib.Transaction();
+    const utxos = [{
+      mintTxid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+      mintIndex: 0,
+      value: 1e8,
+      address: uncompAddy,
+      script: bitcoreLib.Script.fromAddress(uncompAddy)
+    }, {
+      mintTxid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+      mintIndex: 1,
+      value: 1e8,
+      address: compAddy,
+      script: bitcoreLib.Script.fromAddress(compAddy)
+    }];
+    const bitcoreUtxos = utxos.map(utxo => new bitcoreLib.Transaction.UnspentOutput({ txid: utxo.mintTxid, vout: utxo.mintIndex, satoshis: utxo.value, ...utxo }));
+    tx.from(bitcoreUtxos);
+    tx.change('mpNpzMoprLnSBu8CWDunNCYeJq3Mzdk59V');
+    expect(tx.inputs.every(input => input._scriptBuffer?.length === 0)).to.be.true;
+
+    const keys = [{ privKey: uncompPk, address: uncompAddy.toString() }, { privKey: compPk, address: compAddy.toString() }];
+    const signed = Transactions.sign({ chain: 'BTC', tx: tx.uncheckedSerialize(), utxos, keys });
+    const signedTx = new bitcoreLib.Transaction(signed);
+    expect(signedTx.inputs.every(input => input._scriptBuffer?.length > 0)).to.be.true;
   });
 
   it.skip('should fail to get signatures on a BTC txs', () => {

@@ -125,7 +125,7 @@ export class Utils {
     var priv = new PrivateKey(privKey);
     const flattenedMessage = _.isArray(message) ? _.join(message) : message;
     var hash = this.hashMessage(flattenedMessage);
-    return crypto.ECDSA.sign(hash, priv, 'little').toString();
+    return crypto.ECDSA.sign(hash, priv, { endian: 'little' }).toString();
   }
 
   static verifyMessage(message: Array<string> | string, signature, pubKey) {
@@ -139,7 +139,7 @@ export class Utils {
     const hash = this.hashMessage(flattenedMessage);
     try {
       var sig = new crypto.Signature.fromString(signature);
-      return crypto.ECDSA.verify(hash, sig, pub, 'little');
+      return crypto.ECDSA.verify(hash, sig, pub, { endian: 'little' });
     } catch (e) {
       return false;
     }

@@ -23,11 +23,6 @@ export class Client {
     const message = this.getMessage(params);
     const privateKey = this.authKey.bn.toBuffer({ size: 32 });
     const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
-
-    // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
-    // const privateKey = bitcoreLib.PrivateKey.fromBuffer(this.authKey.bn.toBuffer({ size: 32 }));
-    // const sig = bitcoreLib.crypto.ECDSA.sign(messageHash, privateKey);
-    // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
     return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey).signature).toString('hex');
   }
 

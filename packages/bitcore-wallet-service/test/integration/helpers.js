@@ -152,7 +152,7 @@ helpers.signMessage = function(message, privKey) {
   var priv = new Bitcore.PrivateKey(privKey);
   const flattenedMessage = _.isArray(message)? _.join(message) : message;
   var hash = Utils.hashMessage(flattenedMessage);
-  return Bitcore.crypto.ECDSA.sign(hash, priv, 'little').toString();
+  return Bitcore.crypto.ECDSA.sign(hash, priv, { endian: 'little' }).toString();
 };
 
 helpers.signRequestPubKey = function(requestPubKey, xPrivKey) {
