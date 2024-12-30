@@ -383,6 +383,9 @@ export class InternalStateProvider implements IChainStateService {
       wallets: wallet._id,
       'wallets.0': { $exists: true }
     };
+    if (wallet.chain === 'BTC' && ['testnet3', 'testnet4'].includes(wallet.network)) {
+      query['network'] = wallet.network;
+    }
 
     if (args) {
       if (args.startBlock || args.endBlock) {
@@ -430,12 +433,18 @@ export class InternalStateProvider implements IChainStateService {
       spentHeight: { $lt: SpentHeightIndicators.minimum },
       mintHeight: { $gt: SpentHeightIndicators.conflicting }
     };
+    if (params.wallet.chain === 'BTC' && ['testnet3', 'testnet4'].includes(params.wallet.network)) {
+      query['network'] = params.wallet.network;
+    }
     return CoinStorage.getBalance({ query });
   }
 
   async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams) {
     const { chain, network, time } = params;
     let query = { wallets: params.wallet._id, 'wallets.0': { $exists: true } };
+    if (params.wallet.chain === 'BTC' && ['testnet3', 'testnet4'].includes(params.wallet.network)) {
+      query['network'] = params.wallet.network;
+    }
     return CoinStorage.getBalanceAtTime({ query, time, chain, network });
   }
 
@@ -446,6 +455,9 @@ export class InternalStateProvider implements IChainStateService {
       'wallets.0': { $exists: true },
       mintHeight: { $gt: SpentHeightIndicators.conflicting }
     };
+    if (wallet.chain === 'BTC' && ['testnet3', 'testnet4'].includes(wallet.network)) {
+      query['network'] = wallet.network;
+    }
     if (args.includeSpent !== 'true') {
       if (args.includePending === 'true') {
         query.spentHeight = { $lte: SpentHeightIndicators.pending };
@@ -591,7 +603,7 @@ export class InternalStateProvider implements IChainStateService {
    *
    * @returns Array<string>
    */
-  async getLocatorHashes(params) {
+  async getLocatorHashes(params): Promise<Array<string>> {
     const { chain, network, startHeight, endHeight } = params;
     const query =
       startHeight && endHeight
@@ -607,7 +619,7 @@ export class InternalStateProvider implements IChainStateService {
             network
           };
     const locatorBlocks = await BitcoinBlockStorage.collection
-      .find(query, { sort: { height: -1 }, limit: 30 })
+      .find(query).sort({ height: -1 }).limit(30)
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
     if (locatorBlocks.length < 2) {
