@@ -6,7 +6,7 @@ const { TransactionStorage } = require('../build/src/models/transaction');
 const { WalletStorage } = require('../build/src/models/wallet');
 const { WalletAddressStorage } = require('../build/src/models/walletAddress');
 const { Storage } = require('../build/src/services/storage');
-const { wait } = require('../build/src/utils/wait');
+const { wait } = require('../build/src/utils');
 
 const chain = 'LTC';
 const oldNetwork = 'testnet';
