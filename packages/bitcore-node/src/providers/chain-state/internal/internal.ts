@@ -601,7 +601,7 @@ export class InternalStateProvider implements IChainStateService {
   /**
    * Get a series of hashes that come before a given height, or the 30 most recent hashes
    *
-   * @returns Array<string>
+   * @returns {Promise<Array<string>>}
    */
   async getLocatorHashes(params): Promise<Array<string>> {
     const { chain, network, startHeight, endHeight } = params;
