@@ -52,6 +52,11 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   needsL1Fee?: boolean; // Does this chain require a layer-1 fee to be added to a transaction (e.g. OP-stack chains)?
 }
 
+export interface ISVMNetworkConfig extends INetworkConfig {
+  publicConnection?: boolean; // Allow rpc connection to be open via bitcore-node API endpoint
+  syncStartHeight?: number; // Start syncing from this block height
+}
+
 export interface IXrpNetworkConfig extends INetworkConfig {
   provider: IProvider & {
     dataHost: string;
@@ -73,7 +78,7 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
+    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig| ISVMNetworkConfig>;
   };
   aliasMapping: {
     chains: {
@@ -116,6 +121,11 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
+    },
+    quicknode: {
+      apiKey: string;
+      webhookBaseUrl?: string;
+      streamSecret?: string;
     }
   };
 }

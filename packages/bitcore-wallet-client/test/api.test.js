@@ -642,6 +642,39 @@ describe('client API', function() {
           '0xec068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b80008081898080'
         ]);
       });
+      it('should build a sol txp correctly', () => {
+        const toAddress = '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR';
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const path = "m/44'/501'/0'";
+        const publicKeyRing = [
+          {
+            xPubKey: new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString(),
+            key 
+          }
+        ];
+        const from = Utils.deriveAddress('P2PKH', publicKeyRing, 'm/0/0', 1, 'livenet', 'sol');
+        const txp = {
+          version: 3,
+          from: from.address,
+          coin: 'sol',
+          chain: 'sol',
+          outputs: [
+            {
+              toAddress: toAddress,
+              amount: 389600000,
+            }
+          ],
+          fee: 5000,
+          blockHash: '2dD4aojrdtiCJxiFpAforKgsUwSqDv8X6M7idYWzgeYH',
+          blockHeight: 10000,
+          amount: 389600000
+        };
+        var t = Utils.buildTx(txp);
+        const rawTxp = t.uncheckedSerialize();
+        rawTxp.should.deep.equal([
+          'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABAxC5iuKRj2q/7Agvd7IBlFBYk1kH8wHrs2/QvuLqa3Pcb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgiO/3z3L1FBtYjPN66TUtEBCBDQteuURACCy4Icf3SAQICAAEMAgAAAADTOBcAAAAAAA=='
+        ]);
+      });
       it('should protect from creating excessive fee DOGE', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';

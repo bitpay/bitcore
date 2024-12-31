@@ -44,7 +44,11 @@ const PROVIDERS = {
     op: {
       livenet: 'https://api-eth.bitcore.io',
       sepolia: 'https://api-eth.bitcore.io'
-    }
+    },
+    sol: {
+      livenet: 'https://api-sol.bitcore.io',
+      testnet: 'https://api-sol.bitcore.io'
+    },
   }
 };
 

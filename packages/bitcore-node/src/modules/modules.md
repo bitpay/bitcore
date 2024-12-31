@@ -13,6 +13,7 @@ The modules in this table will automatically register with `bitcore-node` if you
 | DOGE           | dogecoin       | ./dogecoin     |
 | XRP            | ripple         | ./ripple       |
 | MATIC          | matic          | ./matic        |
+| SOLANA         | solana         | ./solana       |
 | Multiple (EVM) | moralis        | ./moralis      |
 
 If there is a custom or third-party module you'd like to use, follow the example below.

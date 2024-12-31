@@ -39,7 +39,8 @@ const BASE = {
   OP: `https://api-eth.bitcore.io/api/OP/${network}`,
   XRP: `https://api-xrp.bitcore.io/api/${coin}/${network}`,
   DOGE: `https://api.bitcore.io/api/${coin}/${network}`,
-  LTC: `https://api.bitcore.io/api/${coin}/${network}`
+  LTC: `https://api.bitcore.io/api/${coin}/${network}`,
+  SOL: `https://api-sol.bitcore.io/api/${coin}/${network}`
 };
 
 let baseUrl = BASE[coin];

@@ -75,6 +75,7 @@ export class BlockchainMonitor {
             arb: {},
             base: {},
             op: {},
+            sol: {}
           };
 
           const chainNetworkPairs = [];

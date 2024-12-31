@@ -1,3 +1,4 @@
+import * as SolWeb3 from '@solana/web3.js';
 import * as BitcoreLib from 'bitcore-lib';
 import * as BitcoreLibCash from 'bitcore-lib-cash';
 import * as BitcoreLibDoge from 'bitcore-lib-doge';
@@ -19,6 +20,7 @@ export {
   Validation,
   ethers,
   Web3,
+  SolWeb3,
   Constants,
   xrpl
 };
