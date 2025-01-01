@@ -112,11 +112,11 @@ export const Constants = {
   NETWORK_ALIASES: {
     btc: {
       mainnet: 'livenet',
-      testnet: 'testnet3'
+      testnet: 'testnet4'
     },
     bch: {
       mainnet: 'livenet',
-      testnet: 'testnet3'
+      testnet: 'testnet4'
     },
     ltc: {
       mainnet: 'livenet',

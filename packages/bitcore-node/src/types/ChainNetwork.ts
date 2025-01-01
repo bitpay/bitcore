@@ -1,4 +1,6 @@
-export type NetworkType = 'mainnet' | 'testnet' | 'regtest';
+export type BtcNetworks = 'mainnet' | 'testnet3' | 'testnet4' | 'regtest';
+
+export type NetworkType = 'mainnet' | 'testnet' | 'regtest' | BtcNetworks;
 
 export interface Chain {
   chain: string;

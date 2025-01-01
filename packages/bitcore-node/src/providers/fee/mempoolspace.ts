@@ -9,18 +9,24 @@ export class MempoolSpaceClass implements IFeeProvider {
   // TODO run our own mempool.space server
   private feeUrls = {
     mainnet: 'https://mempool.space/api/v1/fees/recommended',
-    testnet: 'https://mempool.space/testnet/api/v1/fees/recommended'
+    testnet3: 'https://mempool.space/testnet/api/v1/fees/recommended',
+    testnet4: 'https://mempool.space/testnet4/api/v1/fees/recommended'
   };
 
   private cache: {
     mainnet: FeeCacheType;
-    testnet: FeeCacheType
+    testnet3: FeeCacheType;
+    testnet4: FeeCacheType;
   } = {
     mainnet: {
       timestamp: 0,
       response: null
     },
-    testnet: {
+    testnet3: {
+      timestamp: 0,
+      response: null
+    },
+    testnet4: {
       timestamp: 0,
       response: null
     }
@@ -29,7 +35,7 @@ export class MempoolSpaceClass implements IFeeProvider {
   private cacheTime = 1000 * 90; // 90 seconds
 
   public async getFee(network: NetworkType, nblocks: number): Promise<number> {
-    network = network === 'regtest' ? 'testnet' : network;
+    network = network === 'regtest' ? 'testnet4' : network;
     
     if (this.cache[network] && this.cache[network].timestamp > Date.now() - this.cacheTime) {
       return this._getFeeLevel(this.cache[network].response, nblocks);
