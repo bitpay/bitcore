@@ -2131,7 +2131,7 @@ describe('Wallet service', function() {
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 1, {
           coin: 'bch',
-          network: 'testnet3',
+          network: 'testnet4',
         }, function(s, w) {
           server = s;
           wallet = w;
