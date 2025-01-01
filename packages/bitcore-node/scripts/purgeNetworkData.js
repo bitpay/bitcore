@@ -80,7 +80,7 @@ Storage.start()
       progressCnt = 0;
       let blkIds = await BlockStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       while (blkIds.length && !quit) {
-        process.stdout.write(`Blocks: ${(progressCnt / blkCount).toFixed(2)}% (${progressCnt} / ${blkCount})\r`);
+        process.stdout.write(`Blocks: ${(progressCnt / blkCount * 100).toFixed(2)}% (${progressCnt} / ${blkCount})\r`);
         const res = await BlockStorage.collection.deleteMany({ _id: { $in: blkIds.map(a => a._id) } });
         progressCnt += blkIds.length;
         if (progressCnt % nSleep === 0) {
@@ -95,7 +95,7 @@ Storage.start()
       progressCnt = 0;
       let txIds = await TransactionStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       while (txIds.length && !quit) {
-        process.stdout.write(`Transactions: ${(progressCnt / txCount).toFixed(2)}% (${progressCnt} / ${txCount})\r`);
+        process.stdout.write(`Transactions: ${(progressCnt / txCount * 100).toFixed(2)}% (${progressCnt} / ${txCount})\r`);
         const res = await TransactionStorage.collection.deleteMany({ _id: { $in: txIds.map(a => a._id) } });
         progressCnt += txIds.length;
         if (progressCnt % nSleep === 0) {
@@ -110,7 +110,7 @@ Storage.start()
       progressCnt = 0;
       let coinIds = await CoinStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       while (coinIds.length && !quit) {
-        process.stdout.write(`Coins: ${(progressCnt / coinCount).toFixed(2)}% (${progressCnt} / ${coinCount})\r`);
+        process.stdout.write(`Coins: ${(progressCnt / coinCount * 100).toFixed(2)}% (${progressCnt} / ${coinCount})\r`);
         const res = await CoinStorage.collection.deleteMany({ _id: { $in: coinIds.map(a => a._id) } });
         progressCnt += coinIds.length;
         if (progressCnt % nSleep === 0) {
