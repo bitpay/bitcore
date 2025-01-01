@@ -14,7 +14,7 @@ function usage(errMsg) {
   console.log('  --network <value>    REQUIRED - e.g. mainnet, testnet3, regtest...');
   console.log('  --limit <value>      Number of documents to delete at a time. Default: 250');
   console.log('  --sleep <value>      Sleep time in milliseconds between deletions. Default: 50');
-  console.log('  --every <value>      Sleep for --sleep milliseconds every --every loop iteration. Default: 1');
+  console.log('  --every <value>      Sleep for --sleep milliseconds every --every loop iteration. Default: 10');
   if (errMsg) {
     console.log('\nERROR: ' + errMsg);
   }
@@ -42,7 +42,7 @@ const limit = (limitIdx > -1 && parseInt(args[limitIdx + 1])) || 250;
 const sleepIdx = args.indexOf('--sleep');
 const sleepMs = (sleepIdx > -1 && parseInt(args[sleepIdx + 1])) || 50;
 const everyIdx = args.indexOf('--every');
-const nSleep = (everyIdx > -1 && parseInt(args[everyIdx + 1])) || 1;
+const nSleep = (everyIdx > -1 && parseInt(args[everyIdx + 1])) || 10;
 
 console.log('Connecting to database...');
 
