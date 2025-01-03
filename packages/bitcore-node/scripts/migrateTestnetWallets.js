@@ -12,7 +12,7 @@ function usage(errMsg) {
   console.log('  --oldNetwork <value>    REQUIRED - e.g. testnet3');
   console.log('  --newNetwork <value>    REQUIRED - e.g. testnet4');
   console.log('  --batchSize <value>     Number of documents to update at a time. Default: 10000');
-  console.log('  --deDup                 Delete duplicate walletAddresses (can happen if users');
+  console.log('  --deDup                 Delete duplicate walletAddresses (dups can happen if an updated wallet is queried before addresses are updated)');
   console.log('  --doit                  Save the migration to the db. Make sure you stop sync services before running this script');
   if (errMsg) {
     console.log('\nERROR: ' + errMsg);
@@ -32,7 +32,7 @@ const newNetworkIdx = args.indexOf('--newNetwork');
 const chain = args[chainIdx + 1]?.toUpperCase();
 const oldNetwork = args[oldNetworkIdx + 1]?.toLowerCase();
 const newNetwork = args[newNetworkIdx + 1]?.toLowerCase();
-const deDup = !args.includes('--deDup');
+const deDup = args.includes('--deDup');
 const dryRun = !args.includes('--doit');
 
 if (
