@@ -7,18 +7,18 @@ import { FeeCacheType, IFeeProvider } from '../../types/FeeProvider';
 export class BlockCypherClass implements IFeeProvider {
   private feeUrls = {
     mainnet: 'https://api.blockcypher.com/v1/btc/main',
-    testnet: 'https://api.blockcypher.com/v1/btc/test3'
+    testnet3: 'https://api.blockcypher.com/v1/btc/test3'
   };
 
   private cache: {
     mainnet: FeeCacheType;
-    testnet: FeeCacheType
+    testnet3: FeeCacheType;
   } = {
     mainnet: {
       timestamp: 0,
       response: null
     },
-    testnet: {
+    testnet3: {
       timestamp: 0,
       response: null
     }
@@ -26,7 +26,7 @@ export class BlockCypherClass implements IFeeProvider {
 
   public async getFee(network: NetworkType, nblocks: number): Promise<number> {
     try {
-      network = network === 'regtest' ? 'testnet' : network;
+      network = network === 'regtest' ? 'testnet3' : network;
 
       // blockcypher rate limits to 3 req/s or 100 req/hr, so cache for 1.5 minutes
       if (this.cache[network] && this.cache[network].timestamp > Date.now() - 1000 * 90) {

@@ -7,12 +7,13 @@ import { IFeeProvider } from '../../types/FeeProvider';
 export class BitgoClass implements IFeeProvider {
   private feeUrls = {
     mainnet: 'https://www.bitgo.com/api/v2/btc/tx/fee',
-    testnet: 'https://www.bitgo-test.com/api/v2/tbtc/tx/fee'
+    testnet3: 'https://www.bitgo-test.com/api/v2/tbtc/tx/fee',
+    testnet4: 'https://www.bitgo-test.com/api/v2/tbtc4/tx/fee'
   };
 
   public async getFee(network: NetworkType, nblocks: number): Promise<number> {
     try {
-      network = network === 'regtest' ? 'testnet' : network;
+      network = network === 'regtest' ? 'testnet4' : network;
       nblocks = Math.min(Math.max(nblocks, 2), 1000); // min 2, max 1000
 
       const res = await util.promisify(request.get).call(request, {
