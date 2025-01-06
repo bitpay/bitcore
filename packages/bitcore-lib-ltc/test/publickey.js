@@ -49,7 +49,7 @@ describe('PublicKey', function() {
     it('from a private key', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(privhex, 'hex'));
       var pk = new PublicKey(privkey);
       pk.toString().should.equal(pubhex);
     });
