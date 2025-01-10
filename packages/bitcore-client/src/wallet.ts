@@ -339,10 +339,11 @@ export class Wallet {
    * @param params.token DEPRECATED: Token to get by ticker symbol. WARNING: there could be multiple tokens with the same symbol
    * @param params.tokenName Token to get by tokenName (Recommended over `token`)
    * @param params.address EVM Account address to get the balance for
+   * @param params.hex Return the balance in hex
    * @returns 
    */
-  getBalance(params: { time?: string, token?: string, tokenName?: string, address?: string } = {}) {
-    const { time, token, tokenName, address } = params;
+  getBalance(params: { time?: string, token?: string, tokenName?: string, address?: string; hex?: boolean } = {}) {
+    const { time, token, tokenName, address, hex } = params;
     let payload;
     if (token || tokenName) {
       const tokenObj = this.getTokenObj({ token, tokenName });
@@ -350,7 +351,7 @@ export class Wallet {
         tokenContractAddress: tokenObj.address
       };
     }
-    return this.client.getBalance({ payload, pubKey: this.authPubKey, time, address });
+    return this.client.getBalance({ payload, pubKey: this.authPubKey, time, address, hex });
   }
 
   getNetworkFee(params: { target?: number, txType?: number } = {}) {
