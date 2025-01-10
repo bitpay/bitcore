@@ -141,11 +141,11 @@ export type StreamWalletTransactionsParams = ChainNetwork & {
   args: StreamWalletTransactionsArgs & any;
 };
 
-export type WalletBalanceType = {
+export interface WalletBalanceType {
   confirmed: number | string | bigint;
   unconfirmed: number | string | bigint;
   balance: number | string | bigint;
-};
+}
 
 export interface StreamWalletUtxosArgs {
   includeSpent: 'true' | undefined;
