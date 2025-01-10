@@ -1,4 +1,4 @@
-import { GetBlockBeforeTimeParams, StreamTransactionParams } from '../../../types/namespaces/ChainStateProvider';
+import { GetBlockBeforeTimeParams, StreamTransactionParams, WalletBalanceType } from '../../../types/namespaces/ChainStateProvider';
 import { StreamBlocksParams } from '../../../types/namespaces/ChainStateProvider';
 
 import { Validation } from 'crypto-wallet-core';
@@ -89,7 +89,7 @@ export class InternalStateProvider implements IChainStateService {
     Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
   }
 
-  async getBalanceForAddress(params: GetBalanceForAddressParams) {
+  async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
     const { chain, network, address } = params;
     const query = {
       chain,
@@ -426,7 +426,7 @@ export class InternalStateProvider implements IChainStateService {
     transactionStream.pipe(listTransactionsStream).pipe(res);
   }
 
-  async getWalletBalance(params: GetWalletBalanceParams) {
+  async getWalletBalance(params: GetWalletBalanceParams): Promise<WalletBalanceType> {
     const query = {
       wallets: params.wallet._id,
       'wallets.0': { $exists: true },
@@ -439,7 +439,7 @@ export class InternalStateProvider implements IChainStateService {
     return CoinStorage.getBalance({ query });
   }
 
-  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams) {
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<WalletBalanceType> {
     const { chain, network, time } = params;
     let query = { wallets: params.wallet._id, 'wallets.0': { $exists: true } };
     if (params.wallet.chain === 'BTC' && ['testnet3', 'testnet4'].includes(params.wallet.network)) {

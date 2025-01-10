@@ -140,6 +140,13 @@ export type StreamWalletTransactionsParams = ChainNetwork & {
   res: Response;
   args: StreamWalletTransactionsArgs & any;
 };
+
+export type WalletBalanceType = {
+  confirmed: number | string | bigint;
+  unconfirmed: number | string | bigint;
+  balance: number | string | bigint;
+};
+
 export interface StreamWalletUtxosArgs {
   includeSpent: 'true' | undefined;
   includePending: 'true' | undefined;
@@ -169,7 +176,7 @@ export type IChainStateProvider = Provider<IChainStateService> & IChainStateServ
 export interface IChainStateService {
   getBalanceForAddress(
     params: GetBalanceForAddressParams
-  ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
+  ): Promise<WalletBalanceType>;
   getBlock(params: GetBlockParams): Promise<IBlock>;
   getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null>;
   streamBlocks(params: StreamBlocksParams): any;
@@ -181,10 +188,10 @@ export interface IChainStateService {
   updateWallet(params: UpdateWalletParams): Promise<void>;
   getWalletBalance(
     params: GetWalletBalanceParams
-  ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
+  ): Promise<WalletBalanceType>;
   getWalletBalanceAtTime(
     params: GetWalletBalanceAtTimeParams
-  ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
+  ): Promise<WalletBalanceType>;
   streamAddressUtxos(params: StreamAddressUtxosParams): any;
   streamAddressTransactions(params: StreamAddressUtxosParams): any;
   streamTransactions(params: StreamTransactionsParams): any;
