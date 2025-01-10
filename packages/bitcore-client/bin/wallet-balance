@@ -10,9 +10,10 @@ try {
     .requiredOption('--name <name>',        'REQUIRED - Wallet name')
     .option('--token <tokenName>',          'Get balance of an ERC20 token using token name')
     .option('--time <time>',                'Get balance at specific time')
+    .option('--account <index>',            'EVM Account index to use (default 0). `all` for all accounts')
+    .option('--normalize',                  'Display the balance in the smallest denomination (e.g. sats, wei, etc.)')
     .option('--path <path>',                'Custom wallet storage path')
     .option('--storageType <storageType>',  'name of the database to use (default level)')
-    .option('--account <index>',            'EVM Account index to use (default 0). `all` for all accounts')
     .parse(process.argv);
 } catch (e) {
   console.log(e.message);
@@ -22,16 +23,27 @@ try {
 let wallet;
 
 async function main() {
-  const { name, path, time, storageType, token: tokenName, account = 0 } = program.opts();
+  const { name, path, time, storageType, token: tokenName, account = 0, normalize } = program.opts();
   wallet = await Wallet.loadWallet({ name, path, storageType });
   const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
-  const currency = (await getCurrencyObj(wallet.chain, tokenObj?.address))?.displayCode || tokenName || wallet.chain;
+  const currencyObj = await getCurrencyObj(wallet.chain, tokenObj?.address);
+  const currency = currencyObj?.displayCode || tokenName || wallet.chain;
+  const decimals = Number(tokenObj?.decimals || currencyObj?.decimals || 0);
   let accountAddress;
   if (!wallet.isUtxoChain() && account !== 'all') {
     accountAddress = await wallet.deriveAddress(account);
   }
-  const balance = await wallet.getBalance({ time, tokenName, address: accountAddress });
+  const balance = await wallet.getBalance({ time, tokenName, address: accountAddress, hex: true });
+  const formatBal = (bal) => {
+    if (bal == 0) { return '0'; }
+    const balString = BigInt(bal).toString(10).padStart(decimals + 1, '0');
+    return balString.slice(0, -decimals) + '.' + balString.slice(-decimals);
+  };
   const metaData = {
+    ...balance,
+    balance: normalize ? BigInt(balance.balance) : formatBal(balance.balance),
+    unconfirmed: normalize ? BigInt(balance.unconfirmed) : formatBal(balance.unconfirmed),
+    confirmed: normalize ? BigInt(balance.confirmed) : formatBal(balance.confirmed),
     currency,
     chain: wallet.chain,
     network: wallet.network,
@@ -41,7 +53,7 @@ async function main() {
   } else if (account === 'all') {
     metaData.account = '(All accounts)';
   }
-  return Object.assign(balance, metaData);
+  return metaData;
 }
 
 main()
