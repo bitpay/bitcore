@@ -319,7 +319,7 @@ export class ExpressApp {
           json: true
         };
 
-        let server;
+        let server: WalletService;
         try {
           server = getServer(req, res);
         } catch (ex) {
@@ -376,7 +376,7 @@ export class ExpressApp {
 
     router.put('/v1/copayers/:id/', (req, res) => {
       req.body.copayerId = req.params['id'];
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -656,7 +656,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/advertisements/', (req, res) => {
-      let server;
+      let server: WalletService;
       let testing = req.query.testing;
 
       try {
@@ -680,7 +680,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/advertisements/:adId/', (req, res) => {
-      let server;
+      let server: WalletService;
 
       try {
         server = getServer(req, res);
@@ -699,7 +699,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/advertisements/country/:country', (req, res) => {
-      let server;
+      let server: WalletService;
       let country = req.params['country'];
 
       let opts = { country };
@@ -892,7 +892,7 @@ export class ExpressApp {
       logDeprecated(req);
       const opts: { network?: string } = {};
       if (req.query.network) opts.network = req.query.network as string;
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -916,7 +916,7 @@ export class ExpressApp {
       if (req.query.chain || req.query.coin) opts.chain = (req.query.chain || req.query.coin) as string;
       if (req.query.network) opts.network = req.query.network as string;
 
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1349,7 +1349,7 @@ export class ExpressApp {
 
     router.get('/v1/fiatrates/:code/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
-      let server;
+      let server: WalletService;
       const opts = {
         code: req.params['code'],
         coin: req.query.coin || 'btc',
@@ -1368,7 +1368,7 @@ export class ExpressApp {
 
     router.get('/v2/fiatrates/:code/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
-      let server;
+      let server: WalletService;
       const opts = {
         code: req.params['code'],
         ts: req.query.ts ? +req.query.ts : null
@@ -1386,7 +1386,7 @@ export class ExpressApp {
 
     router.get('/v3/fiatrates/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
-      let server;
+      let server: WalletService;
       const opts = {
         code: req.query.code || null,
         ts: req.query.ts ? +req.query.ts : null
@@ -1404,7 +1404,7 @@ export class ExpressApp {
 
     router.get('/v3/fiatrates/:coin/', (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
-      let server;
+      let server: WalletService;
       const opts = {
         coin: req.params['coin'],
         code: req.query.code || null,
@@ -1503,7 +1503,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/services', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1517,7 +1517,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/checkAvailability', (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = server.checkServiceAvailability(req);
@@ -1528,7 +1528,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/banxa/paymentMethods', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.banxaGetPaymentMethods(req);
@@ -1563,7 +1563,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/banxa/getOrder', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.banxaGetOrder(req);
@@ -1574,7 +1574,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/moonpay/getCurrencies', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.moonpayGetCurrencies(req);
@@ -1609,7 +1609,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/moonpay/currencyLimits', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.moonpayGetCurrencyLimits(req);
@@ -1644,7 +1644,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/moonpay/transactionDetails', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.moonpayGetTransactionDetails(req);
@@ -1655,7 +1655,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/moonpay/sellTransactionDetails', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.moonpayGetSellTransactionDetails(req);
@@ -1678,7 +1678,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/moonpay/accountDetails', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.moonpayGetAccountDetails(req);
@@ -1713,7 +1713,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/ramp/assets', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.rampGetAssets(req);
@@ -1750,7 +1750,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/sardine/getSupportedTokens', async (req, res) => {
-      let server, response;
+      let server: WalletService, response;
       try {
         server = getServer(req, res);
         response = await server.sardineGetSupportedTokens(req);
@@ -1761,7 +1761,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/sardine/currencyLimits', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1779,7 +1779,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/sardine/ordersDetails', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1797,7 +1797,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/simplex/getCurrencies', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1893,7 +1893,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/thorswap/supportedChains', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1911,7 +1911,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/thorswap/cryptoCurrencies', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1941,7 +1941,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/thorswap/getSwapTx', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1959,7 +1959,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/transak/cryptoCurrencies', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -1977,7 +1977,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/transak/fiatCurrencies', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2019,7 +2019,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/transak/orderDetails', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2063,7 +2063,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/changelly/getCurrencies', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2119,7 +2119,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/changelly/getTransactions', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2136,7 +2136,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/changelly/getStatus', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2153,7 +2153,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/service/oneInch/getReferrerFee', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2184,7 +2184,7 @@ export class ExpressApp {
 
     router.get('/v1/service/oneInch/getTokens/:chain?', (req, res) => {
       SetPublicCache(res, 1 * ONE_MINUTE);
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2201,7 +2201,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/services/dex/getSpenderApprovalWhitelist', (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2215,7 +2215,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/service/payId/:payId', (req, res) => {
-      let server;
+      let server: WalletService;
       const payId = req.params['payId'];
       const opts = {
         handle: payId.split('$')[0],
@@ -2248,7 +2248,7 @@ export class ExpressApp {
     };
 
     router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2265,7 +2265,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2282,7 +2282,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/moralis/moralisGetNativeBalance', cors(moralisCorsOptions), (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2299,7 +2299,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/moralis/GetTokenPrice', cors(moralisCorsOptions), (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2316,7 +2316,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/moralis/getMultipleERC20TokenPrices', cors(moralisCorsOptions), (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2333,7 +2333,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/moralis/getERC20TokenBalancesWithPricesByWallet', cors(moralisCorsOptions), (req, res) => {
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
@@ -2351,7 +2351,7 @@ export class ExpressApp {
 
     router.get('/v1/service/coinGecko/getRates/:contractAddresses/:altCurrencies/:chain', (req, res) => {
       SetPublicCache(res, 1 * ONE_MINUTE);
-      let server;
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
