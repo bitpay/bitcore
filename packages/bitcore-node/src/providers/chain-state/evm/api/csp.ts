@@ -225,27 +225,27 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
-    const balances = await CacheStorage.getGlobalOrRefresh(
+    const balance = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
         if (tokenAddress) {
           const token = await this.erc20For(network, tokenAddress);
           const balance = await token.methods.balanceOf(address).call();
-          const numberBalance = BigInt(balance);
-          return { confirmed: numberBalance, unconfirmed: 0n, balance: numberBalance };
+          const numberBalance = '0x' + BigInt(balance).toString(16);
+          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         } else {
           const balance = await web3.eth.getBalance(address);
-          const numberBalance = BigInt(balance);
-          return { confirmed: numberBalance, unconfirmed: 0n, balance: numberBalance };
+          const numberBalance = '0x' + BigInt(balance).toString(16);
+          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         }
       },
       CacheStorage.Times.Minute
     );
-    return balances.map(b => ({
-      confirmed: hex ? '0x' + b.confirmed.toString(16) : Number(b.confirmed),
-      unconfirmed: hex ? '0x' + b.unconfirmed.toString(16) : Number(b.unconfirmed),
-      balance: hex ? '0x' + b.balance.toString(16) : Number(b.balance)
-    }));
+    return {
+      confirmed: hex ? balance.confirmed : Number(balance.confirmed),
+      unconfirmed: hex ? balance.unconfirmed : Number(balance.unconfirmed),
+      balance: hex ? balance.balance : Number(balance.balance)
+    };
   }
 
   async getLocalTip({ chain, network }): Promise<IBlock> {
