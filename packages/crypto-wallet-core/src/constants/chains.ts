@@ -1,6 +1,6 @@
 export const EVM_CHAIN_DEFAULT_TESTNET = {
   ETH: 'sepolia',
-  MATIC: 'mumbai',
+  MATIC: 'amoy',
   ARB: 'sepolia',
   BASE: 'sepolia',
   OP: 'sepolia'
