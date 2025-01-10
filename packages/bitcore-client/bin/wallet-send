@@ -74,22 +74,42 @@ const main = async () => {
       console.log('Fee rate:', Web3.utils.fromWei(params.feeRate.toString(), 'Gwei'), 'Gwei');
     }
 
-    if (sendMax) {
+    if (!sendMax) {
+      params.recipients.push({ address: to, amount: amount * scale });
+    } else {
+      // Send max amount
       if (wallet.isUtxoChain()) {
         params.change = to; // send all
-      } else {
-        const balance = await wallet.getBalance({ tokenName, address: from });
+      } else if (wallet.isEvmChain()) {
+        const balance = await wallet.getBalance({ tokenName, address: from, hex: true });
         const tx = await wallet.newTx({ ...params, recipients: [{ address: to, amount: 1 }] }); // create dummy tx to estimate gas
         const { data } = wallet.getLib().ethers.utils.parseTransaction(tx);
-        const gasLimit = await wallet.estimateGas({ to, from, data, value: balance.confirmed });
+        const gasLimit = await wallet.estimateGas({ to, from, data, value: BigInt(balance.confirmed).toString() });
         const l1FeeWei = await wallet.getL1Fee(tx); // OP-stack chains have a "hidden" layer-1 data fee (in wei). Returns 0 for non-OP-stack chains.
         const amtToSend = (BigInt(balance.confirmed) - (BigInt(gasLimit) * BigInt(params.feeRate)) - BigInt(l1FeeWei)).toString();
         params.recipients.push({ address: to, amount: amtToSend });
         params.gasLimit = gasLimit;
+      } else if (wallet.chain.toUpperCase() === 'XRP') {
+        const delWallet = await promptly.confirm('Would you like to send the reserve and delete your XRP wallet from the blockchain? (y/N)', { default: 'n' });
+        if (delWallet) {
+          const baseUrl = wallet.client.apiUrl;
+          const tip = JSON.parse(await wallet.client._request({ url: baseUrl + '/block/tip', method: 'GET' }));
+          if (params.nonce + 256 >= tip.height) {
+            throw new Error(`Cannot delete wallet: wallet sequence needs to be at least 256 less than the current ledger index. Current sequence: ${sequence}, current ledger: ${tip.height}`);
+          }
+          params.recipients = [{ address: to, amount: null }];
+          params.fee = 2 * scale; // 2 XRP fee for AccountDelete
+          params.type = 'AccountDelete';
+        } else {
+          const balance = await wallet.getBalance();
+          params.recipients = [{ address: to, amount: balance.confirmed }];
+          console.log(`Sending ${balance.confirmed / scale} XRP to ${to}`);
+        }
+      } else {
+        throw new Error(`sendMax not supported for ${wallet.chain}`);
       }
-    } else {
-      params.recipients.push({ address: to, amount: amount * scale });
     }
+    
 
     params.change = wallet.isUtxoChain() ? wallet.deriveAddress(wallet.addressIndex, true) : null;
     const changeIdx = params.change ? wallet.addressIndex : null;
