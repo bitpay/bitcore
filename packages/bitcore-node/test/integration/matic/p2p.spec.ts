@@ -115,7 +115,7 @@ describe('Polygon', function() {
   it('should be able to get the balance for the address', async () => {
     const wallet = await getWallet();
     const balance = await wallet.getBalance({ hex: true });
-    expect(balance.confirmed).to.be.gt(0);
+    expect(Number(balance.confirmed)).to.be.gt(0);
 
     const key = 'getBalanceForAddress-MATIC-regtest-0xa4e131d8c33fc059e9d245489db03a4a61a2f32b';
     const cached = await CacheStorage.collection.findOne({ key });
