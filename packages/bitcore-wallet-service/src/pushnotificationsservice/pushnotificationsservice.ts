@@ -1,8 +1,7 @@
 #!/usr/bin/env node
+import config from '../config';
 import logger from '../lib/logger';
 import { PushNotificationsService } from '../lib/pushnotificationsservice';
-
-const config = require('../config');
 
 const pushNotificationsService = new PushNotificationsService();
 pushNotificationsService.start(config, err => {

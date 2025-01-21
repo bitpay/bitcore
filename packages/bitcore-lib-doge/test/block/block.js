@@ -19,22 +19,35 @@ var data = require('../data/blk3086559-testnet');
 var dataBlocks = require('../data/bitcoind/blocks');
 
 describe('Block', function() {
-
-  var blockhex = data.blockhex;
-  var blockbuf = Buffer.from(blockhex, 'hex');
-  var bh = BlockHeader.fromBuffer(Buffer.from(data.blockheaderhex, 'hex'));
+  var blockhex;
+  var blockbuf;
+  var bh;
   var txs = [];
-  JSON.parse(dataJson).transactions.forEach(function(tx) {
-    txs.push(new Transaction().fromObject(tx));
-  });
-  var json = dataJson;
+  var json;
+  var genesishex;
+  var genesisbuf;
+  var genesisidhex;
+  var blockOneHex;
+  var blockOneBuf;
+  var blockOneId;
 
-  var genesishex = '010000000000000000000000000000000000000000000000000000000000000000000000696ad20e2dd4365c7459b4a4a5af743d5e92c6da3229e6532cd605f6533f2a5b24a6a152f0ff0f1e678601000101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff1004ffff001d0104084e696e746f6e646fffffffff010058850c020000004341040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9ac00000000';
-  var genesisbuf = Buffer.from(genesishex, 'hex');
-  var genesisidhex = '1a91e3dace36e2be3bf030a65679fe821aa1d6ef92e7c9902eb318182c355691';
-  var blockOneHex = '010000009156352c1818b32e90c9e792efd6a11a82fe7956a630f03bbee236cedae3911a1c525f1049e519256961f407e96e22aef391581de98686524ef500769f777e5fafeda352f0ff0f1e001083540101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0e04afeda3520102062f503253482fffffffff01004023ef3806000023210338bf57d51a50184cf5ef0dc42ecd519fb19e24574c057620262cc1df94da2ae5ac00000000';
-  var blockOneBuf = Buffer.from(blockOneHex, 'hex');
-  var blockOneId = '82bc68038f6034c0596b6e313729793a887fded6e92a31fbdf70863f89d9bea2';
+  before(function() {
+    blockhex = data.blockhex;
+    blockbuf = Buffer.from(blockhex, 'hex');
+    bh = BlockHeader.fromBuffer(Buffer.from(data.blockheaderhex, 'hex'));
+    txs = [];
+    for (const tx of JSON.parse(dataJson).transactions) {
+      txs.push(new Transaction().fromObject(tx));
+    }
+    json = dataJson;
+    
+    genesishex = '010000000000000000000000000000000000000000000000000000000000000000000000696ad20e2dd4365c7459b4a4a5af743d5e92c6da3229e6532cd605f6533f2a5b24a6a152f0ff0f1e678601000101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff1004ffff001d0104084e696e746f6e646fffffffff010058850c020000004341040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9ac00000000';
+    genesisbuf = Buffer.from(genesishex, 'hex');
+    genesisidhex = '1a91e3dace36e2be3bf030a65679fe821aa1d6ef92e7c9902eb318182c355691';
+    blockOneHex = '010000009156352c1818b32e90c9e792efd6a11a82fe7956a630f03bbee236cedae3911a1c525f1049e519256961f407e96e22aef391581de98686524ef500769f777e5fafeda352f0ff0f1e001083540101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0e04afeda3520102062f503253482fffffffff01004023ef3806000023210338bf57d51a50184cf5ef0dc42ecd519fb19e24574c057620262cc1df94da2ae5ac00000000';
+    blockOneBuf = Buffer.from(blockOneHex, 'hex');
+    blockOneId = '82bc68038f6034c0596b6e313729793a887fded6e92a31fbdf70863f89d9bea2';
+  });
 
   it('should make a new block', function() {
     var b = Block(blockbuf);

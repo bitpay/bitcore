@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+
+  # This is a docker runner that communicates with the other containers in docker-compose.test.base.yml
+  test_runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8100:8100
+      - 3000:3000
+    environment:
+      - DB_HOST=db
+      - DB_NAME=bitcore-test
+      - BITCORE_CONFIG_PATH=../../../../bitcore-test.config.js
+    depends_on:
+      - db
+      - bitcoin
+      - erigon
+      - geth
+      - rippled

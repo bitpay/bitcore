@@ -1,16 +1,26 @@
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
+import _ from 'lodash';
 import * as sinon from 'sinon';
-import { Transform } from 'stream';
+import { Transform, Writable } from 'stream';
+import Web3 from 'web3';
+import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
+import { IWallet, WalletStorage } from '../../../src/models/wallet';
+import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { ETH } from '../../../src/modules/ethereum/api/csp';
-import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
-import { IEthTransaction } from '../../../src/modules/ethereum/types';
+import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
+import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
+import { IEVMTransactionInProcess } from '../../../src/providers/chain-state/evm/types';
+import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
+import { ErigonEthBlocks } from '../../data/ETH/erigonDbBlocks';
+import { ErigonEthTransactions } from '../../data/ETH/erigonDbTransactions';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Ethereum API', function() {
   const chain = 'ETH';
-  const network = 'testnet';
+  const network = 'regtest';
 
   const suite = this;
   this.timeout(30000);
@@ -19,51 +29,51 @@ describe('Ethereum API', function() {
 
   it('should return undefined for garbage data', () => {
     const data = 'garbage';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.be.undefined;
   });
   it('should be able to classify ERC20 data', () => {
     const data =
       '0x095ea7b300000000000000000000000052de8d3febd3a06d3c627f59d56e6892b80dcf1200000000000000000000000000000000000000000000000000000000000f4240';
-    EthTransactionStorage.abiDecode(data);
-    const decoded = EthTransactionStorage.abiDecode(data);
+    EVMTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('ERC20');
+    expect(decoded!.type).to.eq('ERC20');
   });
   it('should be able to classify ERC721 data', () => {
     const data =
       '0xa22cb465000000000000000000000000efc70a1b18c432bdc64b596838b4d138f6bc6cad0000000000000000000000000000000000000000000000000000000000000001';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('ERC721');
+    expect(decoded!.type).to.eq('ERC721');
   });
   it('should be able to classify Invoice data', () => {
     const data =
       '0xb6b4af0500000000000000000000000000000000000000000000000000000000000f4240000000000000000000000000000000000000000000000000000000033ec500800000000000000000000000000000000000000000000000000000016e00f7b3d3c72c929edaf203cfabf7a0513cb8cee277a84ec3fd56bcf3f396b6d665c8abe6c4432f916bacafc94982b45050513de2ee5544aa855d9b5b60e8c1c94e71ffca000000000000000000000000000000000000000000000000000000000000001cfd9150848849c7aff74939535afe5e56dcac5f2f553467ae0e9181d14c0e49c9799433220e288e282376b86aae1bc1d683af4708b38999d59b5d65ff29a85705000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('INVOICE');
+    expect(decoded!.type).to.eq('INVOICE');
   });
 
   it('should handle multiple decodes', () => {
     const data =
       '0x095ea7b300000000000000000000000052de8d3febd3a06d3c627f59d56e6892b80dcf1200000000000000000000000000000000000000000000000000000000000f4240';
-    EthTransactionStorage.abiDecode(data);
-    const decoded = EthTransactionStorage.abiDecode(data);
+    EVMTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.exist;
-    expect(decoded.type).to.eq('ERC20');
+    expect(decoded!.type).to.eq('ERC20');
     const data2 =
       '0xa22cb465000000000000000000000000efc70a1b18c432bdc64b596838b4d138f6bc6cad0000000000000000000000000000000000000000000000000000000000000001';
-    EthTransactionStorage.abiDecode(data);
-    const decoded2 = EthTransactionStorage.abiDecode(data2);
+    EVMTransactionStorage.abiDecode(data);
+    const decoded2 = EVMTransactionStorage.abiDecode(data2);
     expect(decoded2).to.exist;
-    expect(decoded2.type).to.eq('ERC721');
+    expect(decoded2!.type).to.eq('ERC721');
   });
 
   it('should not crash when called with almost correct data', () => {
     const data =
       '0xa9059cbb0000000000000000000000000797350000000000000000000000000000000000000000000005150ac4c39a6f3f0000';
-    const decoded = EthTransactionStorage.abiDecode(data);
+    const decoded = EVMTransactionStorage.abiDecode(data);
     expect(decoded).to.be.undefined;
   });
 
@@ -81,6 +91,39 @@ describe('Ethereum API', function() {
     }
   });
 
+  it('should be able to get type 2 fees', async () => {
+    const sandbox = sinon.createSandbox();
+    const chain = 'ETH';
+    const network = 'mainnet';
+    const rpc = {
+      estimateMaxPriorityFee: ({}) => { return 2; },
+      estimateFee: ({}) => { return 4; }
+    };
+    let err;
+
+    sandbox.stub(ETH, 'getWeb3').resolves({ rpc });
+    try {
+      // max fee
+      const cacheKey = `getFee-${chain}-${network}-2-type2`;
+      const fee = await ETH.getFee({ chain, network, target: 2, txType: 2 });
+      expect(fee).to.exist;
+      expect(fee.feerate).to.equal(4);
+      const cached = await CacheStorage.getGlobal(cacheKey);
+      expect(fee).to.deep.eq(cached);
+      // priority fee
+      const cacheKeyPriorityFee = `getFee-${chain}-${network}-priorityFee-15`;
+      const priorityFee  = await ETH.getPriorityFee({ chain, network, percentile: 15 });
+      expect(priorityFee).to.exist;
+      expect(priorityFee.feerate).to.equal(2);
+      const cachedPriorityFee  = await CacheStorage.getGlobal(cacheKeyPriorityFee);
+      expect(priorityFee).to.deep.eq(cachedPriorityFee);
+    } catch (error) {
+      err = error;
+    }
+    sandbox.restore();
+    expect(err).to.be.undefined;
+  });
+
   it('should estimate fees by most recent transactions', async () => {
     const chain = 'ETH';
     const network = 'testnet';
@@ -90,11 +133,11 @@ describe('Ethereum API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEthTransaction;
+      } as IEVMTransactionInProcess;
     });
     await CacheStorage.collection.remove({});
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
     const estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
     for (const estimate of estimates) {
       expect(estimate.feerate).to.be.gt(0);
@@ -111,14 +154,14 @@ describe('Ethereum API', function() {
         network,
         blockHeight: 1,
         gasPrice: 10 * 1e9
-      } as IEthTransaction;
+      } as IEVMTransactionInProcess;
     });
     await CacheStorage.collection.remove({})
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
     let estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
 
-    await EthTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.deleteMany({});
     estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
     for (const estimate of estimates) {
       expect(estimate.feerate).to.be.gt(0);
@@ -166,34 +209,26 @@ describe('Ethereum API', function() {
         gasPrice: 10 * 1e9,
         data: Buffer.from(''),
         from: address
-      } as IEthTransaction;
+      } as IEVMTransactionInProcess;
     });
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
 
     const res = (new Transform({
-      transform: (data, _, cb) => {
-        cb(null, data);
-      }
+      transform: (data, _, cb) => cb(null, data)
     }) as unknown) as Response;
     res.type = () => res;
 
     const req = (new Transform({
-      transform: (_data, _, cb) => {
-        cb(null);
-      }
+      transform: (_data, _, cb) => cb(null)
     }) as unknown) as Request;
 
     await ETH.streamAddressTransactions({ chain, network, address, res, req, args: {} });
     let counter = 0;
     await new Promise(r => {
       res
-        .on('data', () => {
-          counter++;
-        })
-        .on('end', () => {
-          r();
-        });
+        .on('data', () => counter++)
+        .on('end', r);
     });
 
     const commaCount = txCount - 1;
@@ -211,10 +246,10 @@ describe('Ethereum API', function() {
         blockHeight: 1,
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEthTransaction;
+      } as IEVMTransactionInProcess;
     });
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
 
     const res = (new Transform({
       transform: (data, _, cb) => {
@@ -231,7 +266,7 @@ describe('Ethereum API', function() {
 
     await ETH.streamTransactions({ chain, network, res, req, args: { blockHeight: 1 } });
     let counter = 0;
-    await new Promise(r => {
+    await new Promise<void>(r => {
       res
         .on('data', () => {
           counter++;
@@ -256,10 +291,10 @@ describe('Ethereum API', function() {
         blockHash: '12345',
         gasPrice: 10 * 1e9,
         data: Buffer.from('')
-      } as IEthTransaction;
+      } as IEVMTransactionInProcess;
     });
-    await EthTransactionStorage.collection.deleteMany({});
-    await EthTransactionStorage.collection.insertMany(txs);
+    await EVMTransactionStorage.collection.deleteMany({});
+    await EVMTransactionStorage.collection.insertMany(txs);
 
     const res = (new Transform({
       transform: (data, _, cb) => {
@@ -276,7 +311,7 @@ describe('Ethereum API', function() {
 
     await ETH.streamTransactions({ chain, network, res, req, args: { blockHash: '12345' } });
     let counter = 0;
-    await new Promise(r => {
+    await new Promise<void>(r => {
       res
         .on('data', () => {
           counter++;
@@ -291,4 +326,197 @@ describe('Ethereum API', function() {
     const expected = txCount + commaCount + bracketCount;
     expect(counter).to.eq(expected);
   });
+
+  describe('#streamWalletTransactions', () => {
+    let sandbox = sinon.createSandbox();
+    let chain = 'ETH';
+    let network = 'mainnet';
+    let address = '0x1Eee23160Db790ee48Fd39871A64b13e76Fc2C3C';
+    let wallet: IWallet = {
+      chain,
+      network,
+      pubKey: '',
+      name: 'this-name',
+      singleAddress: false,
+      path: 'm/0/0'
+    }
+    let web3 = new Web3();
+
+    before(async () => {
+      const res = await WalletStorage.collection.findOneAndUpdate({ name: wallet.name }, { $set: wallet }, { returnOriginal: false, upsert: true });
+      wallet = res.value as IWallet;
+      await WalletAddressStorage.collection.updateOne({ network, address }, { $set: { chain, network, wallet: (wallet._id as ObjectId), processed: true, address } }, { upsert: true })
+      sandbox.stub(ETH, 'getWeb3').resolves({ web3 });
+    });
+
+    afterEach(async () => {
+      await EVMBlockStorage.collection.deleteMany({});
+      await EVMTransactionStorage.collection.deleteMany({});
+    });
+
+    after(async () => { 
+      sandbox.restore();
+    });
+
+    it('should stream wallet\'s valid ETH transactions', async () =>
+      await streamWalletTransactionsTest(chain, network)
+    );
+
+    it('should stream wallet\'s valid & invalid ETH transactions', async () =>
+      await streamWalletTransactionsTest(chain, network, true)
+    );
+
+    it('should stream DEX wallet transactions with erigon trace blocks', async () => {
+      await EVMBlockStorage.collection.insertMany(ErigonEthBlocks as any);
+      await EVMTransactionStorage.collection.insertMany(ErigonEthTransactions as any);
+
+      await streamDexWalletTransactions(chain, network, wallet, address, web3);
+    });
+  });
 });
+
+const streamWalletTransactionsTest = async (chain: string, network: string, includeInvalidTxs: boolean = false) => {
+  const sandbox = sinon.createSandbox();
+
+  // Constants
+  const address = '0x7F17aF79AABC4A297A58D389ab5905fEd4Ec9502';
+  const objectId = ObjectId.createFromHexString('60f9abed0e32086bf9903bb5');
+  const wallet = {
+    _id: objectId,
+    chain,
+    network,
+    name: 'Ganache',
+    pubKey: '0x029ec2ebdebe6966259cf3c6f35c4f126b82fe072bf9d0e81dad375f1d6d2d9054',
+    path: 'm/44\'/60\'/0\'/0/0',
+    singleAddress: true
+  } as MongoBound<IWallet>;
+  const txCount = 100;
+
+  // Valid Transactions
+  const txs = new Array(txCount).fill({}).map(() => {
+    return {
+      chain,
+      network,
+      blockHeight: 1,
+      gasPrice: 10 * 1e9,
+      data: Buffer.from(''),
+      from: address
+    } as IEVMTransactionInProcess;
+  });
+  // Invalid Transactions
+  for (let i = 0; i < txCount; i++) {
+    txs.push({
+      ...txs[0],
+      blockHeight: -3
+    })
+  }
+  // Add wallet object ID to transactions
+  for (const tx of txs) {
+    tx.wallets = [objectId];
+  }
+
+  // Stubs
+  sandbox.stub(ETH, 'getWalletAddresses').resolves([address]);
+  sandbox.stub(ETH, 'isP2p').returns(true);
+
+  // Test
+  await EVMTransactionStorage.collection.deleteMany({});
+  await EVMTransactionStorage.collection.insertMany(txs);
+
+  let counter = 0;
+  const req = (new Writable({
+    write: function(data, _, cb) {
+      data && counter++;
+      cb();
+    }
+  }) as unknown) as Request;
+  
+  const res = (new Writable({
+    write: function(data, _, cb) {
+      data && counter++;
+      cb();
+    }
+  }) as unknown) as Response;
+  res.type = () => res;
+
+  const err = await new Promise(r => {
+    res
+      .on('error', r)
+      .on('finish', r);
+
+    ETH.streamWalletTransactions({
+      chain,
+      network,
+      wallet,
+      req,
+      res,
+      args: {
+        includeInvalidTxs
+      }
+    } as StreamWalletTransactionsParams)
+      .catch(e => r(e));
+  });
+
+  expect(err).to.not.exist;
+  expect(counter).to.eq(includeInvalidTxs ? txCount * 2 : txCount);
+  sandbox.restore();
+};
+
+const streamDexWalletTransactions = async (chain, network, wallet, address, web3) => {
+  await ETH.updateWallet({ chain, network, wallet, addresses: [address] });
+
+  const res = (new Transform({
+    transform: (data, _, cb) => {
+      cb(null, data);
+    }
+  }) as unknown) as Response;
+  res.type = () => res;
+
+  const req = (new Transform({
+    transform: (_data, _, cb) => {
+      cb(null);
+    }
+  }) as unknown) as Request;
+
+  ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
+  let total = BigInt(0);
+  let totalRejected = BigInt(0);
+  let totalFee = BigInt(0);
+
+  await new Promise((resolve, reject) => {
+    res.on('data', (data) => {
+      try {
+        const doc = JSON.parse(data.toString())
+        if (doc.error) {
+          totalRejected += BigInt(doc.satoshis);
+        } else {
+          total += BigInt(doc.satoshis);
+        }
+
+        if (doc.category !== 'receive' || doc.initialFrom === address) {
+          totalFee += BigInt(doc.fee);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    res.on('finish', () => {
+      try {
+        let totalETH = web3.utils.fromWei(total.toString());
+        let totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
+        let totalFeeETH = web3.utils.fromWei(totalFee.toString());
+        let balanceETH = web3.utils.fromWei((total - totalFee).toString());
+
+        // Need to slice b/c we're using Number rounding instead of BigInt
+        expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));
+        expect(totalETH.slice(0, -6)).to.equal('309.833211546562');
+        expect(totalFeeETH).to.equal('0.16692773559');
+        expect(totalRejectedETH.slice(0, -4)).to.equal('-3.99999999192707');
+        resolve(true);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+};

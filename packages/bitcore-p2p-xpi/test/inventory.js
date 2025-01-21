@@ -4,7 +4,7 @@
 
 var should = require('chai').should();
 
-var bitcore = require('@abcpros/bitcore-lib-xpi');
+var bitcore = require('@bcpros/bitcore-lib-xpi');
 var P2P = require('../');
 var Inventory = P2P.Inventory;
 var BufferUtils = bitcore.util.buffer;

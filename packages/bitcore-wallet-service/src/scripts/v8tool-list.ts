@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 const request = require('request');
-const Bitcore = require('@abcpros/bitcore-lib');
+const Bitcore = require('@bcpros/bitcore-lib');
 const requestStream = require('request');
 import { Client } from '../lib//blockchainexplorers/v8/client';
 
@@ -33,6 +33,10 @@ const BASE = {
   BTC: `https://api.bitcore.io/api/${coin}/${network}`,
   BCH: `https://api.bitcore.io/api/${coin}/${network}`,
   ETH: `https://api-eth.bitcore.io/api/${coin}/${network}`,
+  MATIC: `https://api-matic.bitcore.io/api/${coin}/${network}`,
+  ARB: `https://api-eth.bitcore.io/api/ARB/${network}`,
+  BASE: `https://api-eth.bitcore.io/api/BASE/${network}`,
+  OP: `https://api-eth.bitcore.io/api/OP/${network}`,
   XRP: `https://api-xrp.bitcore.io/api/${coin}/${network}`,
   DOGE: `https://api.bitcore.io/api/${coin}/${network}`,
   LTC: `https://api.bitcore.io/api/${coin}/${network}`

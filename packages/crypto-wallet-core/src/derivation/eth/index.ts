@@ -2,7 +2,7 @@ import { IDeriver } from '..';
 
 import utils from 'web3-utils';
 
-const BitcoreLib = require('@abcpros/bitcore-lib');
+const BitcoreLib = require('@bcpros/bitcore-lib');
 
 export class EthDeriver implements IDeriver {
   padTo32(msg) {

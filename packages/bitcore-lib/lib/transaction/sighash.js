@@ -1,7 +1,5 @@
 'use strict';
 
-var buffer = require('buffer');
-
 var Signature = require('../crypto/signature');
 var Script = require('../script');
 var Output = require('./output');
@@ -29,6 +27,9 @@ var BITS_64_ON = 'ffffffffffffffff';
 var sighash = function sighash(transaction, sighashType, inputNumber, subscript) {
   var Transaction = require('./transaction');
   var Input = require('./input');
+
+  // Convert a string to a number
+  inputNumber = parseInt(inputNumber);
 
   var i;
   // Copy transaction
@@ -98,22 +99,14 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
  * @param {number} sighash
  * @param {number} inputIndex
  * @param {Script} subscript
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, subscript, signingMethod) {
-  signingMethod = signingMethod || 'ecdsa';
-
-  var sig;
-  if(signingMethod === 'ecdsa') {
-    var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
-    sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
+function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
+  let hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+  const sig = ECDSA.sign(hashbuf, privateKey, { endian: 'little' });
+  sig.nhashtype = sighashType;
   return sig;
- }
-  throw new Error("signingMethod not supported ", signingMethod);
-}
+};
 
 /**
  * Verify a signature
@@ -124,20 +117,15 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, signi
  * @param {PublicKey} publicKey
  * @param {number} inputIndex
  * @param {Script} subscript
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, subscript, signingMethod) {
+function verify(transaction, signature, publicKey, inputIndex, subscript) {
   $.checkArgument(!_.isUndefined(transaction), "Transaction Undefined");
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype), "Signature Undefined");
 
-  signingMethod = signingMethod || 'ecdsa';
-  if (signingMethod === 'ecdsa') {
-    var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
-    return ECDSA.verify(hashbuf, signature, publicKey, 'little');
-  }
-  throw new Error("signingMethod not supported ", signingMethod);
-}
+  let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
+  return ECDSA.verify(hashbuf, signature, publicKey, { endian: 'little' });
+};
 
 /**
  * @namespace Signing

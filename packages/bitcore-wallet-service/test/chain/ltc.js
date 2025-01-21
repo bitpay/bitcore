@@ -3,12 +3,12 @@
 const _ = require('lodash');
 const chai = require('chai');
 const should = chai.should();
-const { BitcoreLibLtc } = require('crypto-wallet-core');
+const { BitcoreLibLtc } = require('@abcpros/crypto-wallet-core');
 const { ChainService } = require('../../ts_build/lib/chain');
 const { LtcChain } = require('../../ts_build/lib/chain/ltc');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
 describe('Chain LTC', () => {

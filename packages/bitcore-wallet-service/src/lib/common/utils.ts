@@ -1,18 +1,21 @@
-import * as CWC from '@abcpros/crypto-wallet-core';
+import * as CWC from '@bcpros/crypto-wallet-core';
 import _ from 'lodash';
+import Config from '../../config';
+import { logger } from '../logger';
+import { Constants } from './constants';
 
 const $ = require('preconditions').singleton();
-const bitcore = require('@abcpros/bitcore-lib');
+const bitcore = require('@bcpros/bitcore-lib');
 const crypto = bitcore.crypto;
 const secp256k1 = require('secp256k1');
-const Bitcore = require('@abcpros/bitcore-lib');
+const Bitcore = require('@bcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('@abcpros/bitcore-lib-cash'),
-  xec: require('@abcpros/bitcore-lib-xec'),
-  doge: require('@abcpros/bitcore-lib-doge'),
-  xpi: require('@abcpros/bitcore-lib-xpi'),
-  ltc: require('@abcpros/bitcore-lib-ltc')
+  bch: require('@bcpros/bitcore-lib-cash'),
+  xec: require('@bcpros/bitcore-lib-xec'),
+  doge: require('@bcpros/bitcore-lib-doge'),
+  xpi: require('@bcpros/bitcore-lib-xpi'),
+  ltc: require('@bcpros/bitcore-lib-ltc')
 };
 
 export class Utils {
@@ -74,6 +77,7 @@ export class Utils {
       }
       return publicKeyBuffer;
     } catch (e) {
+      logger.error('_tryImportPublicKey encountered an error: %o', e);
       return false;
     }
   }
@@ -84,16 +88,20 @@ export class Utils {
       if (!Buffer.isBuffer(signature)) {
         signatureBuffer = Buffer.from(signature, 'hex');
       }
+      // uses the native module (c++) for performance vs bitcore lib (javascript)
       return secp256k1.signatureImport(signatureBuffer);
     } catch (e) {
+      logger.error('_tryImportSignature encountered an error: %o', e);
       return false;
     }
   }
 
   static _tryVerifyMessage(hash, sig, publicKeyBuffer) {
     try {
-      return secp256k1.verify(hash, sig, publicKeyBuffer);
+      // uses the native module (c++) for performance vs bitcore lib (javascript)
+      return secp256k1.ecdsaVerify(sig, hash, publicKeyBuffer);
     } catch (e) {
+      logger.error('_tryVerifyMessage encountered an error: %o', e);
       return false;
     }
   }
@@ -109,7 +117,6 @@ export class Utils {
     }, {} as { [currency: string]: { toSatoshis: number; maxDecimals: number; minDecimals: number } });
 
     $.shouldBeNumber(satoshis);
-    $.checkArgument(_.includes(_.keys(UNITS), unit));
 
     function addSeparators(nStr, thousands, decimal, minDecimals) {
       nStr = nStr.replace('.', decimal);
@@ -128,12 +135,16 @@ export class Utils {
 
     opts = opts || {};
 
-    if (!UNITS[unit]) {
+    if (!UNITS[unit] && !opts.decimals && !opts.toSatoshis) {
       return Number(satoshis).toLocaleString();
     }
+
     const u = _.assign(UNITS[unit], opts);
-    const amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
-    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);
+    var decimals = opts.decimals ? opts.decimals : u;
+    var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
+
+    const amount = (satoshis / toSatoshis).toFixed(decimals.maxDecimals);
+    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', decimals.minDecimals);
   }
 
   static formatAmountInBtc(amount) {
@@ -265,6 +276,42 @@ export class Utils {
 
     const result = Bitcore_[coin].Address.fromObject(origObj);
     return coin == 'bch' ? result.toLegacyAddress() : result.toString();
+  }
+
+  static compareNetworks(network1, network2, chain) {
+    network1 = network1 ? this.getNetworkName(chain, network1.toLowerCase()) : null;
+    network2 = network2 ? this.getNetworkName(chain, network2.toLowerCase()) : null;
+
+    if (network1 == network2) return true;
+    if (Config.allowRegtest && ['testnet', 'regtest'].includes(this.getNetworkType(network1)) && ['testnet', 'regtest'].includes(this.getNetworkType(network2))) return true;
+    return false;
+  }
+
+  // Good for going from generic 'testnet' to specific 'testnet3', 'sepolia', etc
+  static getNetworkName(chain, network) {
+    const aliases = Constants.NETWORK_ALIASES[chain];
+    if (aliases && aliases[network]) {
+      return aliases[network];
+    }
+    return network;
+  }
+
+  // Good for going from specific 'testnet3', 'sepolia', etc to generic 'testnet'
+  static getGenericName(network) {
+    if (network === 'mainnet') return 'livenet';
+    const isTestnet = !!Object.keys(Constants.NETWORK_ALIASES).find(key => Constants.NETWORK_ALIASES[key].testnet === network);
+    if (isTestnet) return 'testnet';
+    return network;
+  }
+
+  static getNetworkType(network) {
+    if (['mainnet', 'livenet'].includes(network)) {
+      return 'mainnet';
+    }
+    if (network === 'regtest') {
+       return 'regtest';
+    }
+    return 'testnet';
   }
 }
 module.exports = Utils;

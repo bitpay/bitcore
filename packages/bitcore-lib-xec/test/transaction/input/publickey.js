@@ -12,7 +12,7 @@ describe('PublicKeyInput', function() {
   var utxo = {
     txid: '7f3b688cb224ed83e12d9454145c26ac913687086a0a62f2ae0bc10934a4030f',
     vout: 0,
-    address: 'ectest:qragvhtwjfqgcx7p96yv460m5myfv0qgfyj5rw7mp8',
+    address: 'bchtest:qragvhtwjfqgcx7p96yv460m5myfv0qgfyfqdzqmra',
     scriptPubKey: '2103c9594cb2ebfebcb0cfd29eacd40ba012606a197beef76f0269ed8c101e56ceddac',
     amount: 50,
     confirmations: 104,
@@ -47,7 +47,7 @@ describe('PublicKeyInput', function() {
     tx.from(utxo);
     tx.to(destKey.toAddress(), 10000);
     var input = tx.inputs[0];
-    input._estimateSize().should.equal(73);
+    input._estimateSize().should.equal(113);
   });
 
   it('it\'s signature can be removed', function() {

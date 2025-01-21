@@ -72,6 +72,10 @@ var errorSpec = [
     message: 'Your linked ETH wallet does not have enough ETH for fee.'
   },
   {
+    name: 'INSUFFICIENT_MATIC_FEE',
+    message: 'Your linked POLYGON wallet does not have enough MATIC for fee.'
+  },
+  {
     name: 'LOCKED_FUNDS',
     message: 'Locked funds.'
   },
@@ -79,6 +83,11 @@ var errorSpec = [
     name: 'LOCKED_ETH_FEE',
     message:
       'Your ETH linked wallet funds are locked by pending spend proposals.'
+  },
+  {
+    name: 'LOCKED_MATIC_FEE',
+    message:
+      'Your POLYGON linked wallet funds are locked by pending spend proposals.'
   },
   {
     name: 'DUST_AMOUNT',
@@ -172,6 +181,10 @@ var errorSpec = [
   {
     name: 'INVALID_REQUEST',
     message: 'The PayPro request was invalid. Please try again later.'
+  },
+  {
+    name: 'PAYLOAD_TOO_LARGE',
+    message: 'The request payload is too large.'
   }
 ];
 module.exports = errorSpec;

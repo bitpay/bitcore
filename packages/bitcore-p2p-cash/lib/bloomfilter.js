@@ -1,6 +1,6 @@
 'use strict';
 
-var bitcore = require('@abcpros/bitcore-lib-cash');
+var bitcore = require('@bcpros/bitcore-lib-cash');
 var BloomFilter = require('bloom-filter');
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;

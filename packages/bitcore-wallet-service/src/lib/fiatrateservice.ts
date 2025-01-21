@@ -8,7 +8,7 @@ const Common = require('./common');
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 const config = require('../config');
-const Bitcore = require('@abcpros/bitcore-lib');
+const Bitcore = require('@bcpros/bitcore-lib');
 
 const ELECTRICITY_RATE = config.fiatRateServiceOpts.lotusFormula.ELECTRICITY_RATE;
 const MINER_MARGIN = config.fiatRateServiceOpts.lotusFormula.MINER_MARGIN;

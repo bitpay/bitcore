@@ -93,7 +93,8 @@ PublicKeyHashInput.prototype.isFullySigned = function() {
 PublicKeyHashInput.SCRIPT_MAX_SIZE = 73 + 34; // sigsize (1 + 72) + pubkey (1 + 33)
 
 PublicKeyHashInput.prototype._estimateSize = function() {
-  return PublicKeyHashInput.SCRIPT_MAX_SIZE;
+  // 1 byte for script size
+  return this._getBaseSize() + 1 + PublicKeyHashInput.SCRIPT_MAX_SIZE;
 };
 
 module.exports = PublicKeyHashInput;

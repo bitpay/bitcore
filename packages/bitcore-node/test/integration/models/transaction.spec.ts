@@ -1,8 +1,12 @@
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import * as crypto from 'crypto';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/models/transaction';
+import { WalletAddressStorage } from '../../../src/models/walletAddress';
+import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
+import { unprocessedEthBlocks } from '../../data/ETH/unprocessedBlocksETH';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
@@ -151,7 +155,10 @@ describe('Transaction Model', function() {
 
     const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
     expect(badTxs.length).to.eq(chainLength);
-    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(chainLength).fill(SpentHeightIndicators.conflicting));
+    // the replaced tx is marked as conflicting, all the rest still pending to be cleaned up by pruning service
+    expect(badTxs[0].blockHeight).to.eq(SpentHeightIndicators.conflicting);
+    expect(badTxs[0].replacedByTxid).to.exist;
+    expect(badTxs.slice(1).every(tx => tx.blockHeight === SpentHeightIndicators.pending)).to.equal(true);
 
     const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
     expect(goodTxs.length).to.eq(1);
@@ -159,7 +166,8 @@ describe('Transaction Model', function() {
     expect(goodTxs[0].blockHeight).to.eq(blockTx.blockHeight);
   });
 
-  it('should mark a massive chain of transactions invalid that were in the mempool, but no longer valid', async () => {
+  // skipping because it's the same test as the previous one with the pruning service invalidating the massive chain
+  it.skip('should mark a massive chain of transactions invalid that were in the mempool, but no longer valid', async () => {
     // insert a valid tx, with a valid output
     await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
@@ -199,4 +207,37 @@ describe('Transaction Model', function() {
     expect(goodTxs[0].txid).to.eq(blockTx.txid);
     expect(goodTxs[0].blockHeight).to.eq(blockTx.blockHeight);
   });
+
+  describe('#batchImport', () => {
+    const chain = 'ETH';
+    const network = 'regtest';
+
+    const wallet = new ObjectId();
+    const address = '0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef';
+    
+    beforeEach(async () => {
+      await WalletAddressStorage.collection.insertOne({
+        chain,
+        network,
+        wallet,
+        address,
+        processed: true
+      });
+    });
+
+    it('should update eth transactions with related wallet id correctly (incoming)', async () => {
+      const block = unprocessedEthBlocks[0] as any; // block containing an eth transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
+      await EVMTransactionStorage.batchImport({...block});
+      const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      expect(walletTxs.length).eq(1);
+    });
+
+    it('should update erc20 transactions with related wallet id correctly (incoming)', async () => {
+      const block = unprocessedEthBlocks[1] as any; // block containing an ERC20 transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
+      await EVMTransactionStorage.batchImport({...block});
+      const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+      expect(walletTxs.length).eq(1);
+    });
+  });
+
 });

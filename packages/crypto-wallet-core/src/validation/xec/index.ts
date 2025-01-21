@@ -1,5 +1,5 @@
 import { IValidation } from '..';
-const BitcoreXec = require('@abcpros/bitcore-lib-xec');
+const BitcoreXec = require('@bcpros/bitcore-lib-xec');
 
 export class XecValidation implements IValidation {
   validateAddress(network: string, address: string): boolean {

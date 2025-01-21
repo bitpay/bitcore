@@ -10,7 +10,7 @@ const { ChainService } = require('../../ts_build/lib/chain');
 const { BchChain } = require('../../ts_build/lib/chain/bch');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
 describe('Chain BCH', function() {

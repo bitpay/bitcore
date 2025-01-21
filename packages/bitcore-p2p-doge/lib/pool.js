@@ -2,7 +2,7 @@
 
 var dns = require('dns');
 var EventEmitter = require('events').EventEmitter;
-var bitcore = require('@abcpros/bitcore-lib-doge');
+var bitcore = require('@bcpros/bitcore-lib-doge');
 var sha256 = bitcore.crypto.Hash.sha256;
 var Peer = require('./peer');
 var Networks = bitcore.Networks;

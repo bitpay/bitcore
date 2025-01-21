@@ -1,6 +1,6 @@
 'use strict';
 
-var bitcore = require('@abcpros/bitcore-lib-doge');
+var bitcore = require('@bcpros/bitcore-lib-doge');
 var BloomFilter = require('bloom-filter');
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;

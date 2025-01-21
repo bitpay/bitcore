@@ -1,8 +1,9 @@
 import * as os from 'os';
 import logger from '../logger';
-import { BaseBlock, IBlock } from '../models/baseBlock';
+import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
-import { wait } from '../utils/wait';
+import { IBlock } from '../types/Block';
+import { wait } from '../utils';
 import { Config, ConfigService } from './config';
 
 export class P2pManager {
@@ -16,12 +17,13 @@ export class P2pManager {
     this.workers = new Array<BaseP2PWorker>();
   }
 
-  register(chain: string, worker: Class<BaseP2PWorker<any>>) {
-    this.workerClasses[chain] = worker;
+  register(chain: string, network: string, worker: Class<BaseP2PWorker<any>>) {
+    this.workerClasses[chain] = this.workerClasses[chain] || {};
+    this.workerClasses[chain][network] = worker;
   }
 
-  get(chain: string) {
-    return this.workerClasses[chain];
+  get(chain: string, network: string) {
+    return this.workerClasses[chain][network];
   }
 
   async stop() {
@@ -45,8 +47,8 @@ export class P2pManager {
       if ((chainConfig.chainSource && chainConfig.chainSource !== 'p2p') || chainConfig.disabled) {
         continue;
       }
-      logger.info(`Starting ${chain} p2p worker`);
-      const p2pWorker = new this.workerClasses[chain]({
+      logger.info(`Starting P2P worker ${chain}:${network}`);
+      const p2pWorker = new this.workerClasses[chain][network]({
         chain,
         network,
         chainConfig
@@ -54,8 +56,8 @@ export class P2pManager {
       this.workers.push(p2pWorker);
       try {
         p2pWorker.start();
-      } catch (e) {
-        logger.error('P2P Worker died with', e);
+      } catch (e: any) {
+        logger.error('P2P Worker %o:%o died: %o', chain, network, e.stack || e.message || e);
       }
     }
   }
@@ -144,9 +146,9 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
           lastHeartBeat: this.lastHeartBeat
         });
       }
-    } catch (e) {
+    } catch (e: any) {
       logger.warn('Issue unregistering');
-      logger.error(e);
+      logger.error('%o', e);
     }
   }
 }

@@ -1,9 +1,8 @@
 import { BTCTxProvider } from '../btc';
 
 export class XPITxProvider extends BTCTxProvider {
-  lib = require('@abcpros/bitcore-lib-xpi');
-  create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
-    change = change || wallet.deriveAddress(wallet.addressIndex, true);
+  lib = require('@bcpros/bitcore-lib-xpi');
+  create({ recipients, utxos = [], change, fee = 20000 }) {
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {

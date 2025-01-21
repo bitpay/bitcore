@@ -280,6 +280,8 @@ curl -v localhost:3000/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJ
 
 GET `/api/BTC/mainnet/address/:address/?unspent=true`
 
+**if you want to filter out conflicting utxos, you can add `excludeConflicting=true` to the end of the url.**
+
 <details>
 <summary><b>Response</b></summary>
 <br>
@@ -729,6 +731,28 @@ curl -v localhost:3000/api/BTC/mainnet/fee/22
 {
     "blocks": "22",
     "feerate": "0.00002003"
+}
+```
+
+</details>
+
+### Get Priority Fee estimate at a percentile level (type 2 EVM transactions)
+
+GET `/api/ETH/mainnet/priorityFee/:percentile`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Use Curl command in terminal to get a response</b>
+
+```sh
+curl -v localhost:3000/api/ETH/mainnet/priorityFee/15
+```
+
+```json
+{
+    "feerate": "0.02003"
 }
 ```
 

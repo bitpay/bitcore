@@ -2,6 +2,7 @@
 
 mkdir -p logs
 mkdir -p pids
+
 # run_program (nodefile, pidfile, logfile)
 run_program ()
 {
@@ -35,11 +36,11 @@ run_program ./ts_build/pushnotificationsservice/pushnotificationsservice.js pids
 run_program ./ts_build/fiatrateservice/fiatrateservice.js pids/fiatrateservice.pid logs/fiatrateservice.log
 run_program ./ts_build/currencyrateservice/currencyrate.js pids/currencyrateservice.pid logs/currencyrateservice.log
 
-if [ $1 -eq 1 ]
-then
-   run_program "--inspect ./ts_build/bws.js" pids/bws.pid logs/bws.log
-else
-   run_program ./ts_build/bws.js pids/bws.pid logs/bws.log
-fi
+# if [ $1 -eq 1 ]
+# then
+#    run_program "--inspect ./ts_build/bws.js" pids/bws.pid logs/bws.log
+# else
+#    run_program ./ts_build/bws.js pids/bws.pid logs/bws.log
+# fi
 
 

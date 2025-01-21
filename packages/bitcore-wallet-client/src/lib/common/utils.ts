@@ -9,7 +9,7 @@ import {
   BitcoreLibXpi,
   Deriver,
   Transactions
-} from '@abcpros/crypto-wallet-core';
+} from '@bcpros/crypto-wallet-core';
 
 import * as _ from 'lodash';
 import { Constants } from './constants';
@@ -36,16 +36,25 @@ const crypto = Bitcore.crypto;
 
 let SJCL = {};
 
-const MAX_DECIMAL_ANY_COIN = 18; // more that 14 gives rounding errors
-export class Utils {
-  static encryptMessageOnchain(message, privKey, addressTo) {}
+const MAX_DECIMAL_ANY_CHAIN = 18; // more that 14 gives rounding errors
 
+export class Utils {
+  // only used for backwards compatibility
   static getChain(coin: string): string {
-    let normalizedChain = coin.toUpperCase();
-    if (Constants.ERC20.includes(coin)) {
-      normalizedChain = 'ETH';
+    try {
+      // TODO add a warning that we are not including chain
+      let normalizedChain = coin.toLowerCase();
+      if (
+        Constants.BITPAY_SUPPORTED_ETH_ERC20.includes(normalizedChain) ||
+        !Constants.CHAINS.includes(normalizedChain)
+      ) {
+        // default to eth if it's an ETH ERC20 or if we don't know the chain
+        normalizedChain = 'eth';
+      }
+      return normalizedChain;
+    } catch (_) {
+      return 'btc'; // coin should always exist but most unit test don't have it -> return btc as default
     }
-    return normalizedChain;
   }
 
   static encryptMessage(message, encryptingKey) {
@@ -171,11 +180,28 @@ export class Utils {
     return { _input, addressIndex, isChange };
   }
 
-  static deriveAddress(scriptType, publicKeyRing, path, m, network, coin) {
+  static deriveAddress(
+    scriptType,
+    publicKeyRing,
+    path,
+    m,
+    network,
+    chain,
+    escrowInputs?,
+    hardwareSourcePublicKey?
+  ) {
     $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
-    coin = coin || 'btc';
-    const chain = this.getChain(coin).toLowerCase();
+    if (hardwareSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+      return {
+        address: bitcoreAddress.toString(),
+        path,
+        publicKeys: [hardwareSourcePublicKey]
+      }
+    }
+
+    chain = chain || 'btc';
     var bitcore = Bitcore_[chain];
     var publicKeys = _.map(publicKeyRing, item => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
@@ -195,7 +221,24 @@ export class Utils {
         );
         break;
       case Constants.SCRIPT_TYPES.P2SH:
-        bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
+        if (escrowInputs) {
+          var xpub = new bitcore.HDPublicKey(publicKeyRing[0].xPubKey);
+          const inputPublicKeys = escrowInputs.map(
+            input => xpub.deriveChild(input.path).publicKey
+          );
+          bitcoreAddress = bitcore.Address.createEscrow(
+            inputPublicKeys,
+            publicKeys[0],
+            network
+          );
+          publicKeys = [publicKeys[0], ...inputPublicKeys];
+        } else {
+          bitcoreAddress = bitcore.Address.createMultisig(
+            publicKeys,
+            m,
+            network
+          );
+        }
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
         bitcoreAddress = bitcore.Address.fromPublicKey(
@@ -209,7 +252,7 @@ export class Utils {
           _.isArray(publicKeys) && publicKeys.length == 1,
           'publicKeys array undefined'
         );
-        if (Constants.UTXO_COINS.includes(coin)) {
+        if (Constants.UTXO_CHAINS.includes(chain)) {
           bitcoreAddress = bitcore.Address.fromPublicKey(
             publicKeys[0],
             network
@@ -226,6 +269,13 @@ export class Utils {
           );
         }
         break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        bitcoreAddress = bitcore.Address.fromPublicKey(
+          publicKeys[0],
+          network,
+          'taproot'
+        );
+        break;
     }
 
     return {
@@ -239,13 +289,13 @@ export class Utils {
   // serialized by BITCORE BTC.
   // testnet xpub starts with t.
   // livenet xpub starts with x.
-  // no matter WHICH coin
-  static xPubToCopayerId(coin, xpub) {
-    // this was introduced because we allowed coin = 0' wallets for BCH
+  // no matter WHICH chain
+  static xPubToCopayerId(_chain, xpub) {
+    // this was introduced because we allowed coinType = 0' wallets for BCH
     // for the  "wallet duplication" feature
     // now it is effective for all coins.
 
-    const chain = this.getChain(coin).toLowerCase();
+    const chain = _chain.toLowerCase();
     var str = chain == 'btc' ? xpub : chain + xpub;
 
     var hash = sjcl.hash.sha256.hash(str);
@@ -273,7 +323,7 @@ export class Utils {
       let str = number.toString();
       if (str.indexOf('e') >= 0) {
         // fixes eth small balances
-        str = number.toFixed(MAX_DECIMAL_ANY_COIN);
+        str = number.toFixed(MAX_DECIMAL_ANY_CHAIN);
       }
       var x = str.split('.');
 
@@ -316,10 +366,10 @@ export class Utils {
   }
 
   static buildTx(txp) {
-    var coin = txp.coin || 'btc';
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
 
-    if (Constants.UTXO_COINS.includes(coin)) {
-      var bitcore = Bitcore_[coin];
+    if (Constants.UTXO_CHAINS.includes(chain)) {
+      var bitcore = Bitcore_[chain];
 
       var t = new bitcore.Transaction();
 
@@ -343,9 +393,11 @@ export class Utils {
           break;
         case Constants.SCRIPT_TYPES.P2WPKH:
         case Constants.SCRIPT_TYPES.P2PKH:
+        case Constants.SCRIPT_TYPES.P2TR:
           t.from(txp.inputs);
           break;
       }
+
       if (txp.toAddress && txp.amount && !txp.outputs) {
         t.to(txp.toAddress, txp.amount);
       } else if (txp.outputs) {
@@ -385,13 +437,18 @@ export class Utils {
       }
 
       t.fee(txp.fee);
+
+      if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
+        t.escrow(
+          txp.escrowAddress.address,
+          txp.instantAcceptanceEscrow + txp.fee
+        );
+      }
+
       t.change(txp.changeAddress.address);
 
-      // backup opreturnOutput for checking other output
-      let opReturnOutput = null;
-      if (txp.messageOnChain) {
-        opReturnOutput = t.outputs.shift();
-      }
+      if (txp.enableRBF) t.enableRBF();
+
       // Shuffle outputs for improved privacy
       if (t.outputs.length > 1) {
         var outputOrder = _.reject(txp.outputOrder, order => {
@@ -429,8 +486,8 @@ export class Utils {
         'Failed state: totalInputs - totalOutputs >= 0 at buildTx'
       );
       $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin),
-        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(coin) at buildTx'
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain),
+        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx'
       );
 
       // Return opreturnOuput after checking other output
@@ -439,6 +496,7 @@ export class Utils {
       }
       return t;
     } else {
+      // ETH ERC20 XRP
       const {
         data,
         destinationTag,
@@ -446,7 +504,11 @@ export class Utils {
         payProUrl,
         tokenAddress,
         multisigContractAddress,
-        isTokenSwap
+        multiSendContractAddress,
+        isTokenSwap,
+        gasLimit,
+        multiTx,
+        outputOrder
       } = txp;
       const recipients = outputs.map(output => {
         return {
@@ -461,25 +523,104 @@ export class Utils {
         recipients[0].data = data;
       }
       const unsignedTxs = [];
+      // If it is a token swap its an already created ERC20 transaction so we skip it and go directly to ETH transaction create
       const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
-      const isETHMULTISIG = multisigContractAddress;
-      const chain = isETHMULTISIG
-        ? 'ETHMULTISIG'
+      const isMULTISIG = multisigContractAddress;
+      const chainName = chain.toUpperCase();
+      const _chain = isMULTISIG
+        ? chainName + 'MULTISIG'
         : isERC20
-        ? 'ERC20'
-        : this.getChain(coin);
-      for (let index = 0; index < recipients.length; index++) {
-        const rawTx = Transactions.create({
-          ...txp,
-          ...recipients[index],
-          tag: destinationTag ? Number(destinationTag) : undefined,
-          chain,
-          nonce: Number(txp.nonce) + Number(index),
-          recipients: [recipients[index]]
-        });
-        unsignedTxs.push(rawTx);
+          ? chainName + 'ERC20'
+          : chainName;
+
+      if (multiSendContractAddress) {
+        let multiSendParams = {
+          nonce: Number(txp.nonce),
+          recipients,
+          chain: _chain,
+          contractAddress: multiSendContractAddress,
+          gasLimit
+        };
+        unsignedTxs.push(Transactions.create({ ...txp, ...multiSendParams }));
+      } else if (multiTx) {
+        // Add unsigned transactions in outputOrder
+        for (let index = 0; index < outputOrder.length; index++) {
+          const outputIdx = outputOrder[index];
+          if (!outputs?.[outputIdx]) {
+            throw new Error('Output index out of range');
+          }
+          const recepient = {
+            amount: outputs[outputIdx].amount,
+            address: outputs[outputIdx].toAddress,
+            tag: outputs[outputIdx].tag
+          }
+          const _tag = recepient?.tag || destinationTag;
+          const rawTx = Transactions.create({
+            ...txp,
+            ...recepient,
+            tag: _tag ? Number(_tag) : undefined,
+            chain: _chain,
+            nonce: Number(txp.nonce) + Number(index),
+            recipients: [recepient]
+          });
+          unsignedTxs.push(rawTx);
+        }
+      } else {
+        for (let index = 0; index < recipients.length; index++) {
+          const rawTx = Transactions.create({
+            ...txp,
+            ...recipients[index],
+            tag: destinationTag ? Number(destinationTag) : undefined,
+            chain: _chain,
+            nonce: Number(txp.nonce) + Number(index),
+            recipients: [recipients[index]]
+          });
+          unsignedTxs.push(rawTx);
+        }
       }
       return { uncheckedSerialize: () => unsignedTxs };
+    }
+  }
+
+  static getCurrencyCodeFromCoinAndChain(coin: string, chain: string): string {
+    if (coin.toLowerCase() === chain.toLowerCase()) {
+      return coin.toUpperCase();
+    }
+    // TODO - remove this special case once migration to POL is complete
+    if (coin.toLowerCase() === 'pol') {
+      return 'MATIC';
+    }
+    const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
+    const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
+    if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
+      // Special handling for usdc.e and usdc on matic
+      if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc.e') {
+        return 'USDC_m';
+      } else if (chain.toLowerCase() === 'matic' && coin.toLowerCase() === 'usdc') {
+        return 'USDCn_m';
+      }
+      return `${coin.toUpperCase()}_${suffix}`;
+    }
+    return coin.toUpperCase();
+  }
+
+  static isNativeSegwit(addressType) {
+    return [
+      Constants.SCRIPT_TYPES.P2WPKH,
+      Constants.SCRIPT_TYPES.P2WSH,
+      Constants.SCRIPT_TYPES.P2TR,
+    ].includes(addressType);
+  }
+
+  static getSegwitVersion(addressType) {
+    switch (addressType) {
+      case Constants.SCRIPT_TYPES.P2WPKH:
+      case Constants.SCRIPT_TYPES.P2WSH:
+        return 0;
+      case Constants.SCRIPT_TYPES.P2TR:
+        return 1;
+      default:
+        return undefined; // non-segwit addressType
     }
   }
 }

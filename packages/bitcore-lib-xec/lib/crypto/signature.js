@@ -30,7 +30,7 @@ Signature.prototype.set = function(obj) {
   this.i = typeof obj.i !== 'undefined' ? obj.i : this.i; //public key recovery parameter in range [0, 3]
   this.compressed = typeof obj.compressed !== 'undefined' ?
     obj.compressed : this.compressed; // whether the recovered pubkey is compressed
-  this.isSchnorr = obj.isSchnorr;
+  this.isSchnorr = obj.isSchnorr || this.isSchnorr;
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;
 };
@@ -63,16 +63,15 @@ Signature.fromCompact = function(buf) {
 };
 
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
-  // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype 
-  if((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
+  // Schnorr signatures are 64 bytes: r [len] 32 || s [len] 32
+  //  There can be a 65th byte that is the nhashtype. It needs to be trimmed before calling this.
+  if (buf.length === 64) {
     let obj = Signature.parseSchnorrEncodedSig(buf);
     let sig = new Signature();
     sig.r = obj.r;
     sig.s = obj.s;
     sig.isSchnorr = true;
     return sig;
-  } if (buf.length === 64 && buf[0] === 0x30) {
-    return "64 DER (ecdsa) signatures not allowed";
   }
   
   var obj = Signature.parseDER(buf, strict);
@@ -102,11 +101,18 @@ Signature.fromDataFormat = function(buf) {
 };
 
 
+// This assumes the str is a raw signature DER and does not have nhashtype
+// Use Signature.fromTxString when decoding a tx
 Signature.fromString = function(str) {
   var buf = Buffer.from(str, 'hex');
   
   return Signature.fromDER(buf);
 };
+
+// Use this when decoding a tx signature string
+Signature.fromTxString = function(str, encoding = 'hex') {
+  return Signature.fromTxFormat(Buffer.from(str, encoding))
+}
 
 
 Signature.parseSchnorrEncodedSig = function(buf) {
@@ -207,14 +213,12 @@ Signature.prototype.toCompact = function(i, compressed) {
   return Buffer.concat([b1, b2, b3]);
 };
 
-Signature.prototype.toBuffer = Signature.prototype.toDER = function(signingMethod) {
+Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
 
   // Schnorr signatures use a 64 byte r,s format, where as ECDSA takes the form decribed
   // below, above the isDER function signature.
 
-  signingMethod = signingMethod || "ecdsa";
-
-  if(signingMethod === "schnorr") {
+  if(this.isSchnorr) {
     return Buffer.concat([this.r.toBuffer({size: 32}), this.s.toBuffer({size: 32})]);
   }
 

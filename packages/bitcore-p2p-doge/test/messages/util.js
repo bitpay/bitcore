@@ -4,7 +4,7 @@
 
 var should = require('chai').should();
 var utils = require('../../lib/messages/utils');
-var bitcore = require('@abcpros/bitcore-lib-doge');
+var bitcore = require('@bcpros/bitcore-lib-doge');
 var BufferReader = bitcore.encoding.BufferReader;
 
 describe('Message Utils', function() {

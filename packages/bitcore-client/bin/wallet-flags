@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const promptly = require('promptly');
+const { Wallet } = require('../ts_build/src/wallet');
+
+function flagsDisplay() {
+  const flags = Object.keys(Wallet.XrpAccountFlags);
+  const half = flags.splice(flags.length / 2);
+  return 'Possible flags are: \n\t' + flags.map((f, i) => `${f} | ${half[i]}`).join('\n\t');
+}
+
+program
+  .version(require('../package.json').version)
+  .description('Show or modify flag(s) on an XRP account wallet. Only one mod operation can be done at a time. \n' +
+    flagsDisplay() + '\n' +
+    'Examples: \n' +
+    '\t./wallet flags --name my-xrp-wallet \n' +
+    '\t./wallet flags --name my-xrp-wallet --set tfRequireDestTag \n' +
+    '\t./wallet flags --name my-xrp-wallet --set 65536'
+  )
+  .requiredOption('--name <name>', 'REQUIRED - Wallet name')
+  .option('--set <flags>', 'optional - set wallet flag')
+  .option('--fee <fee>', 'optional - fee in drops')
+  .option('--index <index>', 'optional - index of the account (default: 0) (uncommon - only use this if you have multiple accounts)')
+  .option('--storageType <storageType>', 'optional - name of the database to use (default Level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
+  .parse(process.argv);
+
+let wallet;
+
+const main = async () => {
+  const { name, set, index, path, storageType = 'Level' } = program.opts();
+  let { fee } = program.opts();
+
+  wallet = await Wallet.loadWallet({ name, path, storageType });
+  if (wallet.chain.toLowerCase() !== 'xrp') {
+    console.log('Wallet is not an XRP wallet');
+    return;
+  }
+  const account = wallet.deriveAddress(index || 0);
+
+  if (!set) {
+    const flags = await wallet.getAccountFlags({ index });
+    console.log(`Flags for account ${account}:`, flags);
+    return;
+  }
+
+  if (!Wallet.XrpAccountFlags[set]) {
+    console.log('Invalid flag to set: ' + set);
+    return;
+  }
+  console.log('Setting flag ' + (isNaN(set) ? set : Wallet.XrpAccountFlags[set]) + ' on account ' + account);
+
+  const nonce = parseInt(await wallet.getNonce());
+  
+  if (!fee) {
+    const feerate = await wallet.getNetworkFee();
+    fee = feerate.feerate;
+  }
+
+  const tx = await wallet.newTx({
+    type: 'AccountSet',
+    from: account,
+    flags: set,
+    nonce,
+    fee
+  });
+  const passphrase = await promptly.password('Wallet Password:');
+  await wallet.unlock(passphrase);
+  const signedTx = await wallet.signTx({ tx, passphrase });
+  console.log('SignedRawTx: ', signedTx);
+  const confirmed = await promptly.confirm('Broadcast? (y/n)');
+  if (!confirmed) {
+    return;
+  }
+  const transaction = await wallet.broadcast({ tx: signedTx });
+  console.log('Txid: ', transaction.txid);
+  console.log('Transaction broadcasted');
+};
+
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

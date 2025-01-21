@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
-import { partition } from '../../../src/utils/partition';
+import { partition } from '../../../src/utils';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Partition', () => {

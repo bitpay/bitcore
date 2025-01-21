@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const { Writable } = require('stream');
+const { Wallet } = require('../ts_build/src/wallet');
+const { getCurrencyObj } = require('../ts_build/src/utils');
+
+program
+  .version(require('../package.json').version)
+  .requiredOption('--name <name>',        'REQUIRED - Wallet name')
+  .option('--startDate <startDate>',      'Start date for the query')
+  .option('--endDate <endDate>',          'End date for the query')
+  .option('--startBlock <startBlock>',    'Start block for the query')
+  .option('--endBlock <endBlock>',        'End block for the query')
+  .option('--includeMempool',             'Include unconfirmed transactions')
+  .option('--token <tokenName>',          'Get token transactions by the token name')
+  .option('--raw',                        'Output raw transaction data')
+  .option('--storageType <storageType>',  'Name of the database to use (default Level)')
+  .option('--path <path>',                'Custom wallet storage path')
+  .parse(process.argv);
+
+let wallet;
+
+const main = async () => {
+  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token: tokenName, raw } = program.opts();
+  try {
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+    const list = wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, tokenName });
+    if (raw) {
+      list.pipe(process.stdout);
+    } else {
+      const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
+      const currencyObj = await getCurrencyObj(wallet.chain, tokenObj?.address);
+      let txs = '[';
+      list.pipe(new Writable({
+        objectMode: true,
+        write: function(tx, _, next) {
+          txs += tx.toString();
+          next();
+        },
+        final: function(done) {
+          txs = JSON.parse(txs.trim().replaceAll('\n', ',') + ']');
+          for (const tx of txs) {
+            if (tx.category === 'fee') continue;
+            tx.chain = wallet.chain; // tx.chain is not always populated
+            console.log(`[${new Date(tx.blockTime).toLocaleString()}] ${tx.txid} ${catSymbol(tx)} ${displayAmt(tx, tokenObj || currencyObj)}`);
+          }
+          done();
+        }
+      }))
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+function catSymbol(tx) {
+  switch (tx.category) {
+    case 'send':
+      return '=>';
+    case 'receive':
+      return '<=';
+    case 'move':
+      return '<>';
+    default:
+      return '=?';
+  }
+}
+
+function displayAmt(tx, currObj) {
+  const baseToCommon = sats => Math.abs(sats) / Math.pow(10, currObj.decimals);
+  const dc = currObj.displayCode || currObj.symbol;
+  const gwei = tx.gasPrice / 1e9; // NaN if not EVM
+  const drops = tx.chain === 'XRP' ? tx.fee : NaN;
+  const feeRate = tx.fee / (tx.vsize ?? tx.size);
+  const feeRateStr = !isNaN(gwei) ? ` - ${gwei.toFixed(1)} gwei` :
+                     !isNaN(drops) ? '' :
+                     ` - ${feeRate.toFixed(2)} sat/vB`;
+  return `${baseToCommon(tx.satoshis)} ${dc}${!currObj.native ? /* hide fee for tokens */ '' : ` (${baseToCommon(tx.fee)} ${dc}${feeRateStr})`}`;
+}
+
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

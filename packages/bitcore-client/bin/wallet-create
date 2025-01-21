@@ -2,27 +2,26 @@
 
 'use strict';
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--chain <chain>', 'REQUIRED - Chain (BTC/BCH/ETH, etc)')
-  .option(
-    '--network <network>',
-    'REQUIRED - Network (livenet/testnet/regtest, etc)'
-  )
-  .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')
-  .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
-  .option('--lite [lite]', 'optional - Create a wallet lite')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .requiredOption('--chain <chain>', 'REQUIRED - Chain (BTC/BCH/ETH, etc)')
+  .requiredOption('--network <network>', 'REQUIRED - Network (livenet/testnet/regtest, etc)')
+  .option('--addressType <type>', 'optional - Specify the address type (default: pubkeyhash)')
+  .option('--baseUrl <host>', 'optional - Specify custom Bitcore API URL')
+  .option('--phrase <phrase>', 'optional - Seed using existing backup phrase')
+  .option('--xpriv <xpriv>', 'optional - Create using an extended private key')
+  .option('--lite', 'optional - Create a read-only wallet')
+  .option('--storageType <storageType>', 'optional - name of the database to use (Mongo | Level | TextFile)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, baseUrl, chain, network, path, phrase, storageType, lite } = program;
+  const { name, baseUrl, chain, network, path, phrase, xpriv, storageType = 'Level', lite, addressType } = program.opts();
   try {
     const password = await promptly.password('Wallet Password:');
     await Wallet.create({
@@ -32,9 +31,11 @@ const main = async () => {
       network,
       path,
       phrase,
+      xpriv,
       password,
       storageType,
-      lite
+      lite,
+      addressType
     });
     console.log('Wallet created!');
   } catch (e) {

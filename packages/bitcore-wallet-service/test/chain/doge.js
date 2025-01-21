@@ -3,12 +3,12 @@
 const  _ = require('lodash');
 const chai = require('chai');
 const should = chai.should();
-const { BitcoreLibDoge } = require ('crypto-wallet-core');
+const { BitcoreLibDoge } = require ('@abcpros/crypto-wallet-core');
 const { ChainService } = require('../../ts_build/lib/chain');
 const { DogeChain } = require('../../ts_build/lib/chain/doge');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
 describe('Chain DOGE', () => {
@@ -204,7 +204,7 @@ const aTXP = () => {
     'outputs': [
       {
         'toAddress': 'DKdkvdJfQwQmnT9Hvq1CdB9kzsy76f1Qsd',
-        'amount': 77700000000000,
+        'amount': 7770000000000,
         'message': 'first message'
       }, {
         'toAddress': 'DL2EGukahtib57Sg7FtHsvf8HgwMJtbBA3',

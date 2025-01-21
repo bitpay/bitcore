@@ -1,7 +1,8 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { ETHTxProvider } from '../eth';
-import { ERC20Abi } from './abi';
+import { ERC20Abi, MULTISENDAbi } from './abi';
+const { toBN } = Web3.utils;
 
 export class ERC20TxProvider extends ETHTxProvider {
   getERC20Contract(tokenContractAddress: string) {
@@ -13,27 +14,45 @@ export class ERC20TxProvider extends ETHTxProvider {
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
     nonce: number;
-    gasPrice: number;
+    gasPrice?: number;
     data: string;
     gasLimit: number;
     tokenAddress: string;
     network: string;
     chainId?: number;
+    contractAddress?: string;
+    maxGasFee?: number;
+    priorityGasFee?: number;
   }) {
-    const { tokenAddress } = params;
+    const { tokenAddress, contractAddress } = params;
     const data = this.encodeData(params);
-    const recipients = [{ address: tokenAddress, amount: '0' }];
+    const recipients = [{ address: contractAddress || tokenAddress, amount: '0' }];
     const newParams = { ...params, recipients, data };
     return super.create(newParams);
   }
 
-  encodeData(params: { recipients: Array<{ address: string; amount: string }>; tokenAddress: string }) {
-    const { tokenAddress } = params;
-    const [{ address, amount }] = params.recipients;
-    const amountStr = Number(amount).toLocaleString('en', { useGrouping: false });
-    const data = this.getERC20Contract(tokenAddress)
-      .methods.transfer(address, amountStr)
-      .encodeABI();
-    return data;
+  encodeData(params: {
+    recipients: Array<{ address: string; amount: string }>;
+    tokenAddress: string;
+    contractAddress?: string;
+  }) {
+    const { tokenAddress, recipients, contractAddress } = params;
+    if (recipients.length > 1) {
+      const addresses = [];
+      const amounts = [];
+      for (let recipient of recipients) {
+        addresses.push(recipient.address);
+        amounts.push(toBN(BigInt(recipient.amount).toString()));
+      }
+      const multisendContract = this.getMultiSendContract(contractAddress);
+      return multisendContract.methods.sendErc20(tokenAddress, addresses, amounts).encodeABI();
+    } else {
+      const [{ address, amount }] = params.recipients;
+      const amountBN = toBN(BigInt(amount).toString());
+      const data = this.getERC20Contract(tokenAddress)
+        .methods.transfer(address, amountBN)
+        .encodeABI();
+      return data;
+    }
   }
 }

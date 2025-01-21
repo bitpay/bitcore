@@ -10,6 +10,7 @@ var Signature = require('../crypto/signature');
 var PublicKey = require('../publickey');
 var ECDSA = require('../crypto/ecdsa');
 var Schnorr = require('../crypto/schnorr');
+var BufferWriter = require('../encoding/bufferwriter');
 
 
 
@@ -52,6 +53,8 @@ var Interpreter = function Interpreter(obj) {
 Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, satoshisBN) {
   var Transaction = require('../transaction');
 
+  this.nSigChecks = 0;
+
   if (_.isUndefined(tx)) {
     tx = new Transaction();
   }
@@ -69,6 +72,10 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     // If FORKID is enabled, we need the input amount.
     if (!satoshisBN) {
       throw new Error('internal error - need satoshisBN to verify FORKID transactions');
+    }
+
+    if (tx.toBuffer().length < 65) {
+      throw new Error('bad-txns-undersize');
     }
   }
 
@@ -123,7 +130,8 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
   }
 
   // Additional validation for spend-to-script-hash transactions:
-  if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) && scriptPubkey.isScriptHashOut()) {
+  const fEnableP2SH32 = (flags & Interpreter.SCRIPT_ENABLE_P2SH_32) !== 0;
+  if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) && scriptPubkey.isScriptHashOut(fEnableP2SH32)) {
     // scriptSig must be literals-only or validation fails
     if (!scriptSig.isPushOnly()) {
       this.errstr = 'SCRIPT_ERR_SIG_PUSHONLY';
@@ -150,6 +158,12 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       flags: flags,
       satoshisBN: satoshisBN,
     });
+
+    // Bail out early if SCRIPT_DISALLOW_SEGWIT_RECOVERY is not set, the redeem script is a p2sh segwit program, and it was the
+    // only item pushed onto the stack.
+    if ((flags & Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY) == 0 && stackCopy.length === 0 && redeemScript.isWitnessProgram()) {
+      return true;
+    }
 
     // evaluate redeemScript
     if (!this.evaluate()) {
@@ -179,10 +193,29 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
         throw new Error('internal error - CLEANSTACK without P2SH');
       }
 
-      if (stackCopy.length != 1) {
+      if (this.stack.length != 1) {
         this.errstr = 'SCRIPT_ERR_CLEANSTACK';
         return false;
       }
+  }
+
+  if (flags & Interpreter.SCRIPT_VERIFY_INPUT_SIGCHECKS) {
+    // This limit is intended for standard use, and is based on an
+    // examination of typical and historical standard uses.
+    // - allowing P2SH ECDSA multisig with compressed keys, which at an
+    // extreme (1-of-15) may have 15 SigChecks in ~590 bytes of scriptSig.
+    // - allowing Bare ECDSA multisig, which at an extreme (1-of-3) may have
+    // 3 sigchecks in ~72 bytes of scriptSig.
+    // - Since the size of an input is 41 bytes + length of scriptSig, then
+    // the most dense possible inputs satisfying this rule would be:
+    //   2 sigchecks and 26 bytes: 1/33.50 sigchecks/byte.
+    //   3 sigchecks and 69 bytes: 1/36.66 sigchecks/byte.
+    // The latter can be readily done with 1-of-3 bare multisignatures,
+    // however the former is not practically doable with standard scripts,
+    // so the practical density limit is 1/36.66.
+    if (scriptSig.toBuffer().length < this.nSigChecks * 43 - 60) {
+      return false;
+    }
   }
 
   return true;
@@ -274,7 +307,7 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // one stack element must remain, and when interpreted as a boolean, it must // be true".
 // (softfork safe, BIP62 rule 6)
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
-Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
+Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8);
 
 // CLTV See BIP65 for details.
 Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9);
@@ -306,18 +339,18 @@ Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION = (1 << 17);
 
 // Enable new opcodes.
 //
-Interpreter.SCRIPT_ENABLE_CHECKDATASIG = (1 << 18),
+Interpreter.SCRIPT_ENABLE_CHECKDATASIG = (1 << 18);
 
 
 // The exception to CLEANSTACK and P2SH for the recovery of coins sent
 // to p2sh segwit addresses is not allowed.
 
-Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY = (1 << 20)
+Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY = (1 << 20);
 
 
 // Whether to allow new OP_CHECKMULTISIG logic to trigger. (new multisig
 // logic verifies faster, and only allows Schnorr signatures)
-Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG = (1 << 21),
+Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG = (1 << 21);
 
 
 /* Below flags apply in the context of BIP 68*/
@@ -340,6 +373,29 @@ Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22);
  */
 Interpreter.SEQUENCE_LOCKTIME_MASK = 0x0000ffff;
 
+// Require the number of sigchecks in an input to satisfy a specific
+// bound, defined by scriptSig length.
+Interpreter.SCRIPT_VERIFY_INPUT_SIGCHECKS = (1 << 22);
+
+// A utility flag to decide whether we must enforce the per-tx consensus
+// sigcheck limit. It does not control the sigcheck limits in
+// policy/consensus.h .
+Interpreter.SCRIPT_ENFORCE_SIGCHECKS = (1 << 23);
+
+// Flag that allows us to determine if the script interpreter should allow
+// 64-bit integer arithmetic and the return of OP_MUL or use the previous
+// semantics.
+Interpreter.SCRIPT_64_BIT_INTEGERS = (1 << 24);
+
+// Native Introspection opcodes.
+Interpreter.SCRIPT_NATIVE_INTROSPECTION = (1 << 25);
+
+// Enable p2sh32 (uses OP_HASH256 rather than OP_HASH160)
+Interpreter.SCRIPT_ENABLE_P2SH_32 = (1 << 26);
+
+// Enable native tokens support, including all consensus rules & native
+// introspection op-codes related to them.
+Interpreter.SCRIPT_ENABLE_TOKENS = (1 << 27);
 
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
@@ -752,12 +808,11 @@ Interpreter.prototype.step = function() {
     return self.stack[self.stack.length+i];
   }
 
-  function isOpcodeDisabled(opcode) {
+  function isOpcodeDisabled(opcode, f64BitIntegers) {
     switch (opcode) {
       case Opcode.OP_INVERT:
       case Opcode.OP_2MUL:
       case Opcode.OP_2DIV:
-      case Opcode.OP_MUL:
       case Opcode.OP_LSHIFT:
       case Opcode.OP_RSHIFT:
 
@@ -778,6 +833,10 @@ Interpreter.prototype.step = function() {
         // Opcodes that have been reenabled and do not need any flag as for Nov 14,2018
         return false;
 
+      case Opcode.OP_MUL:
+        // OP_MUL was reenabled as part of the Bigger Script Integers upgrade on May 15, 2022
+        return !f64BitIntegers;
+
       default:
         break;
     }
@@ -785,7 +844,11 @@ Interpreter.prototype.step = function() {
     return false;
   }
 
-  var fRequireMinimal = (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALDATA) !== 0;
+  const fRequireMinimal = (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALDATA) !== 0;
+  const f64BitIntegers = (this.flags & Interpreter.SCRIPT_64_BIT_INTEGERS) !== 0;
+  const fNativeIntrospection = (this.flags & Interpreter.SCRIPT_NATIVE_INTROSPECTION) !== 0;
+  const fNativeTokens = (this.flags & Interpreter.SCRIPT_ENABLE_TOKENS) !== 0;
+  const maxScriptIntegerSize = f64BitIntegers ? 8 : 4;
 
   //bool fExec = !count(vfExec.begin(), vfExec.end(), false);
   var fExec = (this.vfExec.indexOf(false) === -1);
@@ -812,7 +875,7 @@ Interpreter.prototype.step = function() {
     return false;
   }
 
-  if (isOpcodeDisabled(opcodenum)) {
+  if (isOpcodeDisabled(opcodenum, f64BitIntegers)) {
     this.errstr = 'SCRIPT_ERR_DISABLED_OPCODE';
     return false;
   }
@@ -1404,13 +1467,13 @@ Interpreter.prototype.step = function() {
             return false;
           }
           buf = stacktop(-1);
-          bn = BN.fromScriptNumBuffer(buf, fRequireMinimal);
+          bn = BN.fromScriptNumBuffer(buf, fRequireMinimal, maxScriptIntegerSize);
           switch (opcodenum) {
             case Opcode.OP_1ADD:
-              bn = bn.add(BN.One);
+              bn = bn.safeAdd(BN.One, maxScriptIntegerSize);
               break;
             case Opcode.OP_1SUB:
-              bn = bn.sub(BN.One);
+              bn = bn.safeSub(BN.One, maxScriptIntegerSize);
               break;
             case Opcode.OP_NEGATE:
               bn = bn.neg();
@@ -1436,6 +1499,7 @@ Interpreter.prototype.step = function() {
       case Opcode.OP_ADD:
       case Opcode.OP_SUB:
       case Opcode.OP_MOD:
+      case Opcode.OP_MUL:
       case Opcode.OP_DIV:
       case Opcode.OP_BOOLAND:
       case Opcode.OP_BOOLOR:
@@ -1454,17 +1518,17 @@ Interpreter.prototype.step = function() {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
-          bn1 = BN.fromScriptNumBuffer(stacktop(-2), fRequireMinimal);
-          bn2 = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal);
+          bn1 = BN.fromScriptNumBuffer(stacktop(-2), fRequireMinimal, maxScriptIntegerSize);
+          bn2 = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, maxScriptIntegerSize);
           bn = new BN(0);
 
           switch (opcodenum) {
             case Opcode.OP_ADD:
-              bn = bn1.add(bn2);
+              bn = bn1.safeAdd(bn2, maxScriptIntegerSize);
               break;
 
             case Opcode.OP_SUB:
-              bn = bn1.sub(bn2);
+              bn = bn1.safeSub(bn2, maxScriptIntegerSize);
               break;
 
             case Opcode.OP_DIV:
@@ -1474,6 +1538,10 @@ Interpreter.prototype.step = function() {
                 return false;
               }
               bn = bn1.div(bn2);
+              break;
+
+            case Opcode.OP_MUL:
+              bn = bn1.safeMul(bn2, maxScriptIntegerSize);
               break;
 
             case Opcode.OP_MOD:
@@ -1551,9 +1619,9 @@ Interpreter.prototype.step = function() {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
-          bn1 = BN.fromScriptNumBuffer(stacktop(-3), fRequireMinimal);
-          bn2 = BN.fromScriptNumBuffer(stacktop(-2), fRequireMinimal);
-          var bn3 = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal);
+          bn1 = BN.fromScriptNumBuffer(stacktop(-3), fRequireMinimal, maxScriptIntegerSize);
+          bn2 = BN.fromScriptNumBuffer(stacktop(-2), fRequireMinimal, maxScriptIntegerSize);
+          var bn3 = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, maxScriptIntegerSize);
           //bool fValue = (bn2 <= bn1 && bn1 < bn3);
           fValue = (bn2.cmp(bn1) <= 0) && (bn1.cmp(bn3) < 0);
           this.stack.pop();
@@ -1638,11 +1706,15 @@ Interpreter.prototype.step = function() {
             if(!sig.isSchnorr) {
               fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
             } else {
-              fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, "schnorr");
+              fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, 'schnorr');
             }
           } catch (e) {
             //invalid sig or pubkey
             fSuccess = false;
+          }
+
+          if (bufSig.length) {
+            this.nSigChecks += 1;
           }
 
           if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
@@ -1701,6 +1773,10 @@ Interpreter.prototype.step = function() {
           } catch (e) {
             //invalid sig or pubkey
             fSuccess = false;
+          }
+
+          if (bufSig.length) {
+            this.nSigChecks += 1;
           }
 
           if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
@@ -1871,6 +1947,10 @@ Interpreter.prototype.step = function() {
                   this.errstr = "SIG_NULLFAIL"
                   fSuccess = false;
                 }
+
+                if (bufsig.length) {
+                  this.nSigChecks += 1;
+                }
               }
 
               if ((bitfieldObj["bitfield"] >> iKey) != 0) {
@@ -1887,12 +1967,14 @@ Interpreter.prototype.step = function() {
               subscript.findAndDelete(new Script().add(bufSig));
             }
 
-            while (fSuccess && nSigsCount > 0) {
-
-                  // valtype& vchSig  = stacktop(-isig);
-                bufSig = stacktop(-isig);
-                // valtype& vchPubKey = stacktop(-ikey);
-                bufPubkey = stacktop(-ikey);
+            let nSigsRemaining = nSigsCount;
+            let nKeysRemaining = nKeysCount;
+            while (fSuccess && nSigsRemaining > 0) {
+                bufSig = stacktop(-isig - (nSigsCount - nSigsRemaining));
+                if (bufSig.length === 65) {
+                  return false;
+                }
+                bufPubkey = stacktop(-ikey - (nKeysCount - nKeysRemaining));
 
                 if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
                   return false;
@@ -1909,17 +1991,27 @@ Interpreter.prototype.step = function() {
                 }
 
                 if (fOk) {
-                  isig++;
-                  nSigsCount--;
+                  nSigsRemaining--;
                 }
-                ikey++;
-                nKeysCount--;
+                nKeysRemaining--;
 
                 // If there are more signatures left than keys left,
                 // then too many signatures have failed
-                if (nSigsCount > nKeysCount) {
+                if (nSigsRemaining > nKeysRemaining) {
                   fSuccess = false;
                 }
+              }
+
+              let areAllSignaturesNull = true;
+              for (let l = 0; l < nSigsCount; l++) {
+                if (stacktop(-isig-l) && stacktop(-isig-l).length) {
+                  areAllSignaturesNull = false;
+                  break;
+                }
+              }
+
+              if (!areAllSignaturesNull) {
+                this.nSigChecks += nKeysCount;
               }
           }
 
@@ -2086,14 +2178,245 @@ Interpreter.prototype.step = function() {
           this.stack[this.stack.length - 1] = buf2;
 
           // The resulting number must be a valid number.
-          if (!Interpreter._isMinimallyEncoded(buf2)) {
+          if (!Interpreter._isMinimallyEncoded(buf2, maxScriptIntegerSize)) {
             this.errstr = 'SCRIPT_ERR_INVALID_NUMBER_RANGE';
             return false;
           }
         }
         break;
 
+        // Native Introspection opcodes (Nullary)
+        case Opcode.OP_INPUTINDEX:
+        case Opcode.OP_ACTIVEBYTECODE:
+        case Opcode.OP_TXVERSION:
+        case Opcode.OP_TXINPUTCOUNT:
+        case Opcode.OP_TXOUTPUTCOUNT:
+        case Opcode.OP_TXLOCKTIME: {
+          if (!fNativeIntrospection) {
+            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+            return false;
+          }
+          if (!this.tx || !this.tx.inputs.every(input => input.output)) {
+            this.errstr = 'SCRIPT_ERR_CONTEXT_NOT_PRESENT';
+            return false;
+          }
 
+          switch (opcodenum) {
+            case Opcode.OP_INPUTINDEX: {
+              const bn = BN.fromNumber(this.nin);
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_ACTIVEBYTECODE: {
+              // Subset of script starting at the most recent code separator (if any)
+              // or the entire script if no code separators are present.
+              subscript = new Script().set({
+                chunks: this.script.chunks.slice(this.pbegincodehash)
+              });
+              this.stack.push(subscript.toBuffer());
+            } break;
+            case Opcode.OP_TXVERSION: {
+              const bn = BN.fromNumber(this.tx.version);
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_TXINPUTCOUNT: {
+              const bn = BN.fromNumber(this.tx.inputs.length);
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_TXOUTPUTCOUNT: {
+              const bn = BN.fromNumber(this.tx.outputs.length);
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_TXLOCKTIME: {
+              const bn = BN.fromNumber(this.tx.nLockTime);
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            default: {
+              this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+              return false;
+            }
+          }
+        } break; // end of Native Introspection opcodes (Nullary)
+
+        // Native Introspection opcodes (Unary)
+        case Opcode.OP_UTXOTOKENCATEGORY:
+        case Opcode.OP_UTXOTOKENCOMMITMENT:
+        case Opcode.OP_UTXOTOKENAMOUNT:
+        case Opcode.OP_OUTPUTTOKENCATEGORY:
+        case Opcode.OP_OUTPUTTOKENCOMMITMENT:
+        case Opcode.OP_OUTPUTTOKENAMOUNT:
+          if (!fNativeTokens) {
+            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+            return false;
+          }
+        case Opcode.OP_UTXOVALUE:
+        case Opcode.OP_UTXOBYTECODE:
+        case Opcode.OP_OUTPOINTTXHASH:
+        case Opcode.OP_OUTPOINTINDEX:
+        case Opcode.OP_INPUTBYTECODE:
+        case Opcode.OP_INPUTSEQUENCENUMBER:
+        case Opcode.OP_OUTPUTVALUE:
+        case Opcode.OP_OUTPUTBYTECODE: {
+          if (!fNativeIntrospection) {
+            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+            return false;
+          }
+          if (!this.tx || !this.tx.inputs.every(input => input.output)) {
+            this.errstr = 'SCRIPT_ERR_CONTEXT_NOT_PRESENT';
+            return false;
+          }
+          const bn = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, maxScriptIntegerSize);
+          const index = bn.toNumber();
+          this.stack.pop();
+
+          const indexType = [
+            Opcode.OP_OUTPUTVALUE,
+            Opcode.OP_OUTPUTBYTECODE,
+            Opcode.OP_OUTPUTTOKENCATEGORY,
+            Opcode.OP_OUTPUTTOKENCOMMITMENT,
+            Opcode.OP_OUTPUTTOKENAMOUNT
+          ].includes(opcodenum) ? 'OUTPUT' : 'INPUT';
+
+          const maxIndex = indexType === 'OUTPUT' 
+            ? this.tx.outputs.length 
+            : this.tx.inputs.length;
+
+          if (index < 0 || index >= maxIndex) {
+            this.errstr = `SCRIPT_ERR_INVALID_TX_${indexType}_INDEX`;
+            return false;
+          }
+
+          const tokenCapabilities = {
+            mutable: 1,
+            minting: 2,
+          };
+
+          switch (opcodenum) {
+            case Opcode.OP_UTXOVALUE: {
+              const bn = this.tx.inputs[index].output.satoshisBN;
+              if (bn.getSize() > maxScriptIntegerSize) {
+                this.errstr = 'SCRIPT_ERR_INTEGER_SIZE';
+                return false;
+              }
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_UTXOBYTECODE: {
+              const bytecode = this.tx.inputs[index].output.script.toBuffer();
+              if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+                this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+                return false;
+              }
+              this.stack.push(bytecode);
+            } break;
+            case Opcode.OP_OUTPOINTTXHASH: {
+              const writer = new BufferWriter();
+              writer.writeReverse(this.tx.inputs[index].prevTxId);
+              this.stack.push(writer.toBuffer());
+            } break;
+            case Opcode.OP_OUTPOINTINDEX: {
+              const bn = BN.fromNumber(this.tx.inputs[index].outputIndex);
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_INPUTBYTECODE: {
+              const bytecode = this.tx.inputs[index].script.toBuffer();
+              if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+                this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+                return false;
+              }
+              this.stack.push(bytecode);
+            } break;
+            case Opcode.OP_INPUTSEQUENCENUMBER: {
+              const bn = BN.fromNumber(this.tx.inputs[index].sequenceNumber);
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_OUTPUTVALUE: {
+              const bn = this.tx.outputs[index].satoshisBN;
+              if (bn.getSize() > maxScriptIntegerSize) {
+                this.errstr = 'SCRIPT_ERR_INTEGER_SIZE';
+                return false;
+              }
+              this.stack.push(bn.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_OUTPUTBYTECODE: {
+              const bytecode = this.tx.outputs[index].script.toBuffer();
+              if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+                this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+                return false;
+              }
+              this.stack.push(bytecode);
+            } break;
+            // Token introspection
+            case Opcode.OP_UTXOTOKENCATEGORY: {
+              const tokenData = this.tx.inputs[index].output.tokenData;
+              if (!tokenData) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const category = tokenData.category;
+              const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
+              const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
+              const categoryBuf = Buffer.from(category, 'hex').reverse();
+              const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
+              this.stack.push(fullBuffer);
+            } break;
+            case Opcode.OP_UTXOTOKENCOMMITMENT: {
+              const tokenData = this.tx.inputs[index].output.tokenData;
+              if (!tokenData || !tokenData.nft) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const commitment = tokenData.nft.commitment;
+              this.stack.push(Buffer.from(commitment, 'hex'));
+            } break;
+            case Opcode.OP_UTXOTOKENAMOUNT: {
+              const tokenData = this.tx.inputs[index].output.tokenData;
+              if (!tokenData || !tokenData.amount) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              this.stack.push(tokenData.amount.toScriptNumBuffer());
+            } break;
+            case Opcode.OP_OUTPUTTOKENCATEGORY: {
+              const tokenData = this.tx.outputs[index].tokenData;
+              if (!tokenData) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const category = tokenData.category;
+              const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
+              const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
+              const categoryBuf = Buffer.from(category, 'hex').reverse();
+              const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
+              this.stack.push(fullBuffer);
+            } break;
+            case Opcode.OP_OUTPUTTOKENCOMMITMENT: {
+              const tokenData = this.tx.outputs[index].tokenData;
+              if (!tokenData || !tokenData.nft) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              const commitment = tokenData.nft.commitment;
+              this.stack.push(Buffer.from(commitment, 'hex'));
+            } break;
+            case Opcode.OP_OUTPUTTOKENAMOUNT: {
+              const tokenData = this.tx.outputs[index].tokenData;
+              if (!tokenData || !tokenData.amount) {
+                const bn = BN.fromNumber(0);
+                this.stack.push(bn.toScriptNumBuffer());
+                break;
+              }
+              this.stack.push(tokenData.amount.toScriptNumBuffer());
+            } break;
+            default: {
+              this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+              return false;
+            }
+          }
+        } break; // end of Native Introspection opcodes (Unary)
 
 
       default:

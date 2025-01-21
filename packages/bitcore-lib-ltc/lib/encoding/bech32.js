@@ -1,6 +1,6 @@
 'use strict';
 
-var bech32 = require('bech32');
+var bech32 = require('bech32').bech32;
 
 var decode = function(str) {
   if (typeof str !== 'string') {

@@ -38,7 +38,7 @@ var client = new Client({
 
 client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(err, secret) {
   if (err) {
-    console.log('error: ',err); 
+    console.log('error: ',err);
     return
   };
   // Handle err
@@ -131,7 +131,7 @@ Return: [...]
 
 Note that the scripts created two files named `irene.dat` and `tomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.The MIT License
 
-Copyright (c) 2015-2020 BitPay
+Copyright (c) 2015-2021 BitPay
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

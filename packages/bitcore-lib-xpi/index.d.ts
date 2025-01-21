@@ -1,5 +1,5 @@
 // Type definitions for bitcore-lib-xpi
-// Project: https://www.npmjs.com/package/@abcpros/bitcore-lib-xpi
+// Project: https://www.npmjs.com/package/@bcpros/bitcore-lib-xpi
 
 export namespace crypto {
 

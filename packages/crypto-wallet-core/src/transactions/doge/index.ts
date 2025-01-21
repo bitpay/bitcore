@@ -1,9 +1,8 @@
 import { BTCTxProvider } from '../btc';
 
 export class DOGETxProvider extends BTCTxProvider {
-  lib = require('@abcpros/bitcore-lib-doge');
-  create({ recipients, utxos = [], change, wallet, feeRate, fee = 20000 }) {
-    change = change || wallet.deriveAddress(wallet.addressIndex, true);
+  lib = require('@bcpros/bitcore-lib-doge');
+  create({ recipients, utxos = [], change, feeRate, fee = 20000 }) {
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {

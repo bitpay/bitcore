@@ -1,0 +1,40 @@
+{
+  "_comment_note": "This file is example content private Key of Lotus. It is Privacy and not share for anyone. Detail information in : https://gitlab.com/abcpros/bitcore/-/issues/5",
+  "key": {
+    "xPrivKey": "xprv9s21ZrQH143K2L8sZm8nKVg3aeYFFGYzBbabZLy5nQG6Xv3kjuwsc9WssHwFqsVArRC5cNWFGNGyZQP1V8h5hZMZJM686atdc7LNinFJF7y",
+    "mnemonic": "deny cherry usage utility cool salon game they spare absurd immense diagram",
+    "version": 1,
+    "mnemonicHasPassphrase": false,
+    "fingerPrint": "0f599c7b",
+    "compliantDerivation": true,
+    "id": "658582ba-f924-4cd9-85e8-35f89630cbeb"
+  },
+  "cred": {
+    "coin": "xpi",
+    "network": "livenet",
+    "xPubKey": "xpub6DTiFKzKrXH3wLU7TVqYnBRpRETUSthdiGZpdzAetgeg8xvFR4jD2VN4EMSFQkhv23qrmi7tMpD9Hhjuq2Q54aPFy2Qp8HVUDTDTTGf7ZmB",
+    "requestPrivKey": "e2ce6736b8e374cf5859d467be951c1cb4089d19268dbcc1cab341a207c16175",
+    "requestPubKey": "039c4d6370c903ceedede1596b55ffb3be523ebf67800de644f82f2f2c6accf18a",
+    "copayerId": "ffc68eb2fe01c1d7a30efea2ab99d6dd341fbb22416d80e61a01c852f73ff0f3",
+    "publicKeyRing": [
+      {
+        "xPubKey": "xpub6DTiFKzKrXH3wLU7TVqYnBRpRETUSthdiGZpdzAetgeg8xvFR4jD2VN4EMSFQkhv23qrmi7tMpD9Hhjuq2Q54aPFy2Qp8HVUDTDTTGf7ZmB",
+        "requestPubKey": "039c4d6370c903ceedede1596b55ffb3be523ebf67800de644f82f2f2c6accf18a",
+        "copayerName": "me"
+      }
+    ],
+    "walletId": "04b6918b-955c-4253-ba93-2d20de415dda",
+    "walletName": "Develop",
+    "m": 1,
+    "n": 1,
+    "walletPrivKey": "32041468aec234d93b268a9284b78ce47bd31fcf4ef00cd9435f2ade499dea6a",
+    "personalEncryptingKey": "otUPYDgpMRTGT6pOEADSmA==",
+    "sharedEncryptingKey": "+j/oNqswVCtzu/P0fZJTnw==",
+    "copayerName": "me",
+    "account": 1,
+    "addressType": "P2PKH",
+    "version": 2,
+    "rootPath": "m/44'/10605'/1'",
+    "keyId": "658582ba-f924-4cd9-85e8-35f89630cbeb"
+  }
+}

@@ -41,9 +41,9 @@ function UnspentOutput(data) {
   if (!_.isNumber(outputIndex)) {
     throw new Error('Invalid outputIndex, received ' + outputIndex);
   }
-  $.checkArgument(!_.isUndefined(data.scriptPubKey) || !_.isUndefined(data.script),
-                  'Must provide the scriptPubKey for that output!');
-  var script = new Script(data.scriptPubKey || data.script);
+  $.checkArgument(!_.isUndefined(data.scriptPubKey) || !_.isUndefined(data.script) || !_.isUndefined(address),
+                  'Must provide the scriptPubKey, script, or address for that output!');
+  var script = new Script(data.scriptPubKey || data.script || Script.fromAddress(address));
   $.checkArgument(!_.isUndefined(data.amount) || !_.isUndefined(data.satoshis),
                   'Must provide an amount for the output');
   var amount = !_.isUndefined(data.amount) ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;

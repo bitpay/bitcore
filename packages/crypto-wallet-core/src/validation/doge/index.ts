@@ -1,5 +1,5 @@
 import { IValidation } from '..';
-const BitcoreDoge = require('@abcpros/bitcore-lib-doge');
+const BitcoreDoge = require('@bcpros/bitcore-lib-doge');
 
 export class DogeValidation implements IValidation {
   validateAddress(network: string, address: string): boolean {

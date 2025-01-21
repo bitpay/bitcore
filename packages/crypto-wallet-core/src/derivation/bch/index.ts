@@ -1,4 +1,4 @@
-const BitcoreLibCash = require('@abcpros/bitcore-lib-cash');
+const BitcoreLibCash = require('@bcpros/bitcore-lib-cash');
 import { AbstractBitcoreLibDeriver } from '../btc';
 export class BchDeriver extends AbstractBitcoreLibDeriver {
   bitcoreLib = BitcoreLibCash;

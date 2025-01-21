@@ -1,22 +1,30 @@
 #!/usr/bin/env node
 'use strict';
 
-const { Storage } = require('../ts_build/storage');
-const program = require('../ts_build/program');
+const program = require('commander');
+const { Storage } = require('../ts_build/src/storage');
 
 program
   .version(require('../package.json').version)
-  .option('--path [path]', 'optional - Where wallets are stored')
-  .option('--storageType [storageType]', 'optional - default Level - choose the database from where to list wallets')
+  .option('--chain <chain>', 'optional - filter the wallets by chain')
+  .option('--network <network>', 'optional - filter the wallets by network')
+  .option('--storageType <storageType>', 'optional - choose the database from where to list wallets')
+  .option('--path <path>', 'optional - where wallets are stored')
   .parse(process.argv);
 
 const main = async () => {
-  const { path, storageType } = program;
-  const storage = new Storage({createIfMissing: false, errorIfExists: false, path, storageType});
+  const { path, storageType, chain: chainParam, network: networkParam } = program.opts();
+  const storage = new Storage({ createIfMissing: false, errorIfExists: false, path, storageType });
   const walletStream = await storage.listWallets();
   walletStream.on('data', (wallet) => {
-    const { name, chain, network, baseUrl, storageType } = JSON.parse(wallet.toString());
-    console.log({name, chain, network, baseUrl, storageType});
+    const { name, chain, network, baseUrl, storageType, tokens } = JSON.parse(wallet.toString());
+    if (chainParam && chainParam.toUpperCase() !== chain.toUpperCase()) return;
+    if (networkParam && networkParam.toUpperCase() !== network.toUpperCase()) return;
+    let walletObj = { name, chain, network, baseUrl, storageType };
+    if (tokens && tokens.length) {
+      walletObj.tokens = tokens;
+    }
+    console.log(walletObj);
   });
 };
 

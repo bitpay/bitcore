@@ -57,7 +57,29 @@ export class Level {
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    await this.db.del(`wallet|${name}`);
+    // await this.db.del(`wallet|${name}`);
+    const keysToDelete = await new Promise<string[]>((resolve, reject) => {
+      let walletKeys = [];
+      this.db.createKeyStream()
+        .on('data', (key: Buffer) => {
+          if (key.toString().startsWith(`wallet|${name}`)) {
+            walletKeys.push(key);
+          } else if (key.toString().startsWith(`key|${name}|`)) {
+            walletKeys.push(key);
+          }
+        })
+        .on('error', (err: Error) => {
+          reject(err);
+        })
+        .on('end', () => {
+          resolve(walletKeys);
+        });
+    });
+    let batch = this.db.batch();
+    for (let key of keysToDelete) {
+      batch = batch.del(key);
+    }
+    await batch.write();
   }
 
   async listWallets() {
@@ -108,5 +130,47 @@ export class Level {
   async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
     const { name, key, toStore } = params;
     await this.db.put(`key|${name}|${key.address}`, toStore);
+  }
+
+  async getAddress(params: { name: string; address: string; keepAlive: boolean; open: boolean }) {
+    const { name, address, keepAlive, open } = params;
+    const data: string = (await this.getKey({ address, name, keepAlive, open })).toString();
+    if (!data) {
+      return null;
+    }
+    const { pubKey, path } = JSON.parse(data);
+    return { address, pubKey, path };
+  }
+  
+  async getAddresses(params: { name: string; limit?: number; skip?: number }) {
+    const { name, limit, skip } = params;
+    const addresses = [];
+    let skipped = 0;
+    const stream = this.db.createReadStream();
+    return new Promise((resolve, reject) => {
+      stream
+        .on('data', function({ key, value }) {
+          if (key.toString().startsWith(`key|${name}|`)) {
+            if (skipped <= skip) {
+              skipped++;
+              return;
+            }
+            if (limit && addresses.length >= limit) {
+              stream.destroy();
+              resolve(addresses);
+            }
+            
+            const address = key.toString().split('|')[2];
+            const valJSON = JSON.parse(value.toString());
+            addresses.push({ address, pubKey: valJSON.pubKey, path: valJSON.path });
+          }
+        })
+        .on('error', function(err) {
+          reject(err);
+        })
+        .on('end', function() {
+          resolve(addresses);
+        });
+    });
   }
 }

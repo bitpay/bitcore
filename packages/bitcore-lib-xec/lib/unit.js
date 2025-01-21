@@ -6,8 +6,8 @@ var errors = require('./errors');
 var $ = require('./util/preconditions');
 
 var UNITS = {
-  'BTC'      : [1e2, 2],
-  'mBTC'     : [1e-1, -1],
+  'BTC'      : [1e8, 8],
+  'mBTC'     : [1e5, 5],
   'uBTC'     : [1e2, 2],
   'bits'     : [1e2, 2],
   'satoshis' : [1, 0]

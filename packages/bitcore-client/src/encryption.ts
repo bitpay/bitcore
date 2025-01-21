@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
-const bitcore = require('@abcpros/crypto-wallet-core').BitcoreLib;
+const bitcore = require('@bcpros/crypto-wallet-core').BitcoreLib;
 const crypto = {
   createHash,
   createCipheriv,

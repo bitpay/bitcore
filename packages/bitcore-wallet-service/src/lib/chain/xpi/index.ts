@@ -1,4 +1,4 @@
-import { BitcoreLibXpi } from '@abcpros/crypto-wallet-core';
+import { BitcoreLibXpi } from '@bcpros/crypto-wallet-core';
 import { ChronikClient } from 'chronik-client';
 import _ from 'lodash';
 import { IChain } from '..';

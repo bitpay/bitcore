@@ -1,4 +1,4 @@
-FROM node:10
+FROM node:18-bullseye
 
 # Install Chrome
 
@@ -18,10 +18,10 @@ ENV CHROME_BIN /usr/bin/google-chrome
 RUN set -x \
     && node -v \
     && npm -v \
-    && google-chrome --version 
+    && google-chrome --version
 
 
-RUN npm i -g npm@6.14.5
+RUN npm i -g npm@8.19.3
 
 WORKDIR /bitcore
 
@@ -75,7 +75,7 @@ COPY  ./packages/bitcore-p2p-doge/package.json ./packages/bitcore-p2p-doge/packa
 COPY  ./packages/bitcore-p2p-doge/package-lock.json ./packages/bitcore-p2p-doge/package-lock.json
 
 
-RUN npm install
+RUN npm install --ignore-scripts
 RUN npm run bootstrap
 ADD . .
 RUN npm run compile

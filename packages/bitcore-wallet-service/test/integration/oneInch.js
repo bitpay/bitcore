@@ -6,10 +6,12 @@ const { WalletService } = require('../../ts_build/lib/server');
 const TestData = require('../testdata');
 const helpers = require('./helpers');
 
-let config = require('../../ts_build/config.js');
+let config = require('../../ts_build/config.js').default;
 let server, wallet, fakeRequest, req;
 
-describe('OneInch integration', () => {
+describe('OneInch integration', function() {
+  this.timeout(5000);
+  
   before((done) => {
     helpers.before((res) => {
       done();
@@ -138,6 +140,36 @@ describe('OneInch integration', () => {
 
       server.request = fakeRequest;
       server.oneInchGetSwap(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('1Inch missing credentials');
+      });
+    });
+  });
+
+  describe('#oneInchGetTokens', () => {
+    beforeEach(() => {
+      req = {};
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { body: { tokens: 'data'}}) },
+      };
+    });
+
+    it('should get oneInch list of supported tokens', () => {
+      server.request = fakeRequest;
+      server.oneInchGetTokens(req).then(data => {
+        should.exist(data);
+      }).catch(err => {
+        should.not.exist(err);
+      });
+    });
+
+    it('should return error if oneInch is commented in config', () => {
+      config.oneInch = undefined;
+
+      server.request = fakeRequest;
+      server.oneInchGetTokens(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);

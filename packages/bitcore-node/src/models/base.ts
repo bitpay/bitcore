@@ -15,7 +15,7 @@ export abstract class BaseModel<T> {
     key: keyof T;
   }>;
 
-  constructor(private collectionName: string, private storageService = Storage) {
+  constructor(protected collectionName: string, private storageService = Storage) {
     this.handleConnection();
   }
 
@@ -39,7 +39,7 @@ export abstract class BaseModel<T> {
     }
   }
 
-  abstract async onConnect();
+  abstract onConnect();
 
   get collection(): Collection<MongoBound<T>> {
     if (this.storageService.db) {

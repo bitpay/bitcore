@@ -1,7 +1,7 @@
-import { BitcoreLibXec } from '@abcpros/crypto-wallet-core';
+import { BitcoreLibXec } from '@bcpros/crypto-wallet-core';
 import BN from 'bignumber.js';
 import { BigNumber } from 'bignumber.js';
-import { ChronikClient } from 'chronik-client';
+import { ChronikClientNode, TokenInfo as TokenInfoInNode } from 'chronik-client';
 import _, { isNumber } from 'lodash';
 import { Token } from 'typescript';
 import { IChain } from '..';
@@ -11,7 +11,7 @@ const config = require('../../../config');
 const Errors = require('../../errors/errordefinitions');
 const Common = require('../../common');
 const Utils = Common.Utils;
-const BCHJS = require('@abcpros/xpi-js');
+const BCHJS = require('@bcpros/xpi-js');
 const bchjs = new BCHJS({ restURL: '' });
 const ecashaddr = require('ecashaddrjs');
 const protocolPrefix = { livenet: 'ecash', testnet: 'ectest' };
@@ -53,13 +53,13 @@ export interface TokenInfo {
   documentUri: string;
 }
 export class XecChain extends BtcChain implements IChain {
-  chronikClient: ChronikClient;
+  chronikClientInNode: ChronikClientNode;
 
   constructor() {
     super(BitcoreLibXec);
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
-    this.chronikClient = new ChronikClient(config.supportToken.xec.chronikClientUrl);
+    this.chronikClientInNode = new ChronikClientNode(config.supportToken.xec.chronikClientUrl);
   }
 
   convertAddressToScriptPayload(address) {
@@ -74,23 +74,21 @@ export class XecChain extends BtcChain implements IChain {
     }
   }
 
-  getChronikClient() {
-    return this.chronikClient;
+  getChronikClientInNode() {
+    return this.chronikClientInNode;
   }
 
   async getTokenInfo(tokenId) {
-    const tx = await this.chronikClient.tx(tokenId);
+    const token: TokenInfoInNode = await this.chronikClientInNode.token(tokenId);
+    if (!token) return null;
     return {
       coin: 'xec',
-      id: tx.slpTxData?.slpMeta.tokenId || '',
-      symbol: tx.slpTxData?.genesisInfo?.tokenTicker || '',
-      name: tx.slpTxData?.genesisInfo?.tokenName || '',
-      documentUri: tx.slpTxData?.genesisInfo?.tokenDocumentUrl || '',
-      documentHash: tx.slpTxData?.genesisInfo?.tokenDocumentHash || '',
-      decimals:
-        tx.slpTxData && tx.slpTxData.genesisInfo && isNumber(tx.slpTxData.genesisInfo.decimals)
-          ? tx.slpTxData.genesisInfo.decimals
-          : NaN
+      id: token.tokenId || '',
+      symbol: token.genesisInfo.tokenTicker || '',
+      name: token.genesisInfo.tokenName || '',
+      documentUri: token.genesisInfo.url || '',
+      documentHash: token.genesisInfo.hash || '',
+      decimals: token.genesisInfo.decimals || NaN
     } as TokenInfo;
   }
 
@@ -377,6 +375,7 @@ export class XecChain extends BtcChain implements IChain {
       );
     });
   }
+
   convertFeePerKb(p, feePerKb) {
     return [p, Utils.strip(feePerKb * 1e2)];
   }
@@ -425,7 +424,6 @@ export class XecChain extends BtcChain implements IChain {
       throw new Error('does not support bigger pushes yet');
     }
   }
-  6;
 
   BNToInt64BE(bn: BN): Buffer {
     if (!bn.isInteger()) {

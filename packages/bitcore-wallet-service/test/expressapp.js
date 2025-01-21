@@ -7,10 +7,10 @@ var request = require('request');
 var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
-var config = require('../ts_build/config.js');
+var config = require('../ts_build/config.js').default;
 var log = require('npmlog');
 
-var Common = require('../ts_build/lib/common');
+var { Common } = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
 var { WalletService } = require('../ts_build/lib/server');
 
@@ -212,7 +212,7 @@ describe('ExpressApp', function() {
               res.statusCode.should.equal(200);
               server.storage.checkAndUseGlobalCache.getCalls()[0].args[0].should.equal('latest-copay-version');
               server.storage.checkAndUseGlobalCache.getCalls()[0].args[1].should.equal(360000);
-              server.storage.checkAndUseGlobalCache.getCalls()[0].args[2].should.exist();
+              server.storage.checkAndUseGlobalCache.getCalls()[0].args[2].should.exist;
               body.should.equal(JSON.stringify({"version":htmlString['tag_name']}));
               done();
             });
@@ -288,9 +288,106 @@ describe('ExpressApp', function() {
                 should.not.exist(err);
                 res.statusCode.should.equal(200);
                 var args = server.getBalance.getCalls()[1].args[0];
+                should.exist(args.twoStep);
                 args.twoStep.should.equal(true);
                 done();
               });
+            });
+          });
+        });
+      });
+
+      describe('v1/wallets/all', function() {
+        it('should return a wallet for each identity/sig pair given', function(done) {
+          var server = {
+            getStatus: sinon.stub().callsArgWith(1, null, 
+              {
+                walletId: "walletId",
+                success: true,
+                status: {
+                  wallet: {
+                    version: "1.0.0",
+                    createdOn: 1650990065,
+                    id: "walletId",
+                    name: "myWallet",
+                    m: 1,
+                    n: 1,
+                    singleAddress: false,
+                    status: "complete",
+                    copayers: [
+                      {
+                        version: 2,
+                        createdOn: 1650990066,
+                        coin: "",
+                        id: "",
+                        name: "",
+                        requestPubKeys: [
+                          {
+                            key: "035141682a552b9e4c202a15ac6ab053259d287f1e6005dcb0f0bf84d85ceb104b",
+                            signature: "30440220557faf80ba92db79e4f0b9f132d9f6faf312afa30ba126a9c1915b47f227e77a02204367ee72bb15494c548bc094461efd1b0def3a050ac625cbcdeb2db7310bb19e",
+                          },
+                        ],
+                      },
+                    ],
+                    coin: "btc",
+                    network: "testnet",
+                    derivationStrategy: "BIP44",
+                    addressType: "P2PKH",
+                    scanStatus: null,
+                    beRegistered: true,
+                    beAuthPrivateKey2: "531782d0744909da635dd93c89631853db396392805b9addae8ed6ec0a04e0cc",
+                    beAuthPublicKey2: "04a862a8a90ed5ded167a1f0faf9f22e61e5f9d60ddd876cab1907dca8c8039981a41a76abb40f1930a5a579f11c1b4671cba9ec04cf1ddc12b2fa0029c9fe213e",
+                    nativeCashAddr: null,
+                    usePurpose48: false,
+                  },
+                  serverMessages: [
+                  ],
+                  preferences: {
+                  },
+                  pendingTxps: [
+                  ],
+                  balance: {
+                    totalAmount: 0,
+                    lockedAmount: 0,
+                    totalConfirmedAmount: 0,
+                    lockedConfirmedAmount: 0,
+                    availableAmount: 0,
+                    availableConfirmedAmount: 0,
+                    byAddress: [
+                    ],
+                  },
+                },
+              }
+            ),
+            walletId: 'walletId',
+          };
+          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+            './server': {
+              WalletService : {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
+            }
+          });
+          start(TestExpressApp, function() {
+            var reqOpts = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/wallets/all',
+              headers: {
+                'x-identities': 'identity1,identity2,identity3',
+                'x-signature': 'signature'
+              }
+            };
+            reqOpts.url += '?includeExtendedInfo=1';
+            request(reqOpts, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              var bodyObj = JSON.parse(body);
+              bodyObj.length.should.equal(3);
+              var args = server.getStatus.getCalls()[0].args[0];
+              should.exist(args.includeExtendedInfo);
+              args.includeExtendedInfo.should.equal(true);
+              done();
             });
           });
         });

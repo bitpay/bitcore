@@ -1,4 +1,4 @@
 'use strict';
 
-var startGulp = require('@abcpros/bitcore-build');
+var startGulp = require('@bcpros/bitcore-build');
 module.exports = startGulp('p2p', {skipBrowser: true})

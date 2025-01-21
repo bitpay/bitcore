@@ -97,7 +97,7 @@ describe('Block Model', function() {
     it('should return the new tip', async () => {
       let newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
       mockStorage(newBlock);
-      const params = { chain: 'XPI', network: 'regtest' };
+      const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocalTip(params);
       expect(result!.height).to.deep.equal(addBlockParams.height);
       expect(result!.chain).to.deep.equal(addBlockParams.chain);
@@ -118,7 +118,7 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should return 65 zeros if there are no processed blocks for the chain and network', async () => {
-      const params = { chain: 'XPI', network: 'regtest' };
+      const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocatorHashes(params);
       expect(result).to.deep.equal([Array(65).join('0')]);
     });

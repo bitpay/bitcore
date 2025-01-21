@@ -1,8 +1,8 @@
 import { CacheStorage } from '../../../models/cache';
 import { GetEstimateSmartFeeParams } from '../../../types/namespaces/ChainStateProvider';
-import { BTCStateProvider } from '../btc/btc';
+import { InternalStateProvider } from '../internal/internal';
 
-export class XPIStateProvider extends BTCStateProvider {
+export class XPIStateProvider extends InternalStateProvider {
   constructor(chain: string = 'XPI') {
     super(chain);
   }

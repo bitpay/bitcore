@@ -1,3 +1,4 @@
+import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
@@ -25,6 +26,35 @@ const passport = require('passport');
 const listAccount = require('../../../../accounts.json');
 import cron from 'node-cron';
 
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = ['https://wallet.abcpay.test'];
+
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'x-signature',
+    'x-identity',
+    'x-identities',
+    'x-session',
+    'x-client-version',
+    'x-wallet-id',
+    'X-Requested-With',
+    'Content-Type',
+    'Authorization'
+  ],
+  credentials: true, // Allow credentials
+  maxAge: 86400 // Cache preflight requests for 24 hours
+};
+
 export class ExpressApp {
   app: express.Express;
 
@@ -43,15 +73,19 @@ export class ExpressApp {
   start(opts, cb) {
     opts = opts || {};
 
+    // Add cors middleware before other middleware
+    this.app.use(cors(corsOptions));
+
     this.app.use(compression());
 
     this.app.use((req, res, next) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Origin', 'https://wallet.abcpay.test');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'x-signature,x-identity,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
+        'x-signature,x-identity,x-identities,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
       );
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
     });
@@ -109,13 +143,17 @@ export class ExpressApp {
       next();
     });
 
-    const POST_LIMIT = 1024 * 100 /* Max POST 100 kb */;
+    const POST_LIMIT = 1024 * 100; // Max POST 100 KB
+    const POST_LIMIT_LARGE = 2 * 1024 * 1024; // Max POST 2 MB
 
-    this.app.use(
-      bodyParser.json({
-        limit: POST_LIMIT
-      })
-    );
+    this.app.use((req, res, next) => {
+      if (req.path.includes('/txproposals')) {
+        // Pushing a lot of utxos to txproposals can make the request much bigger than 100 MB
+        return express.json({ limit: POST_LIMIT_LARGE })(req, res, next);
+      } else {
+        return express.json({ limit: POST_LIMIT })(req, res, next);
+      }
+    });
 
     this.app.use((req, res, next) => {
       if (config.maintenanceOpts.maintenanceMode === true) {
@@ -152,6 +190,10 @@ export class ExpressApp {
     const router = express.Router();
 
     const returnError = (err, res, req) => {
+      // make sure headers have not been sent as this leads to an uncaught error
+      if (res.headersSent) {
+        return;
+      }
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
@@ -173,7 +215,7 @@ export class ExpressApp {
           message = err.message || err.body;
         }
 
-        const m = message || err.message || err.toString();
+        const m = message || err.toString();
 
         if (!opts.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
 
@@ -2408,9 +2450,9 @@ export class ExpressApp {
     this.app.use(express.static(`${__dirname}/../../public/csv/`));
 
     WalletService.initialize(opts, data => {
-      const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
-      const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
-      const botSwap = new TelegramBot(config.swapTelegram.botTokenId, { polling: true });
+      // const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
+      // const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
+      // const botSwap = new TelegramBot(config.swapTelegram.botTokenId, { polling: true });
       const server = WalletService.getInstance(opts);
       if (listAccount && listAccount.length > 0) {
         listAccount.forEach(account => {
@@ -2434,9 +2476,9 @@ export class ExpressApp {
         });
       }
 
-      server.createBot({ bot, botNotification, botSwap }, finish => {
-        server.initializeBot();
-      });
+      // server.createBot({ bot, botNotification, botSwap }, finish => {
+      //   server.initializeBot();
+      // });
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
         // Start cron job to update daily limit usage for coin config at midnght everyday to 0

@@ -1,17 +1,17 @@
-import { BitcoinBlockType, BlockHeader, BlockHeaderObj } from './Block';
+import { BitcoinBlockType as BBT, BlockHeader, BlockHeaderObj } from './Block';
 import {
-  BitcoinAddress,
+  BitcoinAddress as BA,
   BitcoinInput,
   BitcoinInputObj,
   BitcoinOutput,
-  BitcoinScript,
+  BitcoinScript as BS,
   BitcoinTransactionType
 } from './Transaction';
 
-export type BitcoinBlockType = BitcoinBlockType;
+export type BitcoinBlockType = BBT;
 export type BitcoinTransaction = BitcoinTransactionType;
-export type BitcoinScript = BitcoinScript;
-export type BitcoinAddress = BitcoinAddress;
+export type BitcoinScript = BS;
+export type BitcoinAddress = BA;
 
 export type TransactionOutput = BitcoinOutput;
 export type TransactionInput = BitcoinInput;

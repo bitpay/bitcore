@@ -1,7 +1,7 @@
 import config from '../config';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { ConfigType } from '../types/Config';
-import { valueOrDefault } from '../utils/check';
+import { valueOrDefault } from '../utils';
 
 type ServiceName = keyof ConfigType['services'];
 
@@ -52,6 +52,19 @@ export class ConfigService {
     const isDefined = x => x !== undefined;
     const disabled = isDefined(serviceConfig) ? valueOrDefault(serviceConfig.disabled, false) : false;
     return disabled;
+  }
+
+  public aliasFor({chain, network}: { chain: string, network: string }) {
+    let aliasChain = chain;
+    let aliasNetwork = network;
+    const aliasMapping = this.get().aliasMapping;
+    if (aliasMapping.chains[chain]) {
+      aliasChain = aliasMapping.chains[chain];
+    }
+    if (aliasMapping.networks[aliasChain]?.[network]) {
+      aliasNetwork = aliasMapping.networks[aliasChain][network];
+    }
+    return { chain: aliasChain, network: aliasNetwork };
   }
 }
 
