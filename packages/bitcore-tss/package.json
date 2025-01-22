@@ -1,0 +1,26 @@
+{
+  "name": "bitcore-tss",
+  "version": "10.7.0",
+  "description": "Bitcore Library for Threshold Signature Schemes",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "testt": "npx mocha ./test",
+    "test": "node --test $(find test -name *.test.js)"
+  },
+  "keywords": [
+    "tss",
+    "ethereum",
+    "evm"
+  ],
+  "author": "Kenny Joseph",
+  "license": "MIT",
+  "dependencies": {
+    "@bitgo/sdk-lib-mpc": "^10.1.0",
+    "bitcore-lib": "^10.7.0",
+    "bitcore-ecies": "^1.0.3"
+  },
+  "devDependencies": {
+    "crypto-wallet-core": "^10.7.0"
+  }
+}
