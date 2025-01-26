@@ -30,7 +30,7 @@ const main = async () => {
       list.pipe(process.stdout);
     } else {
       const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
-      const currencyObj = await getCurrencyObj(wallet.chain, tokenObj?.address);
+      const currencyObj = await getCurrencyObj(wallet.chain, wallet.network, tokenObj?.address);
       let txs = '[';
       list.pipe(new Writable({
         objectMode: true,
