@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import io = require('socket.io-client');
+import * as io from 'socket.io-client';
 import config from '../../src/config';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 import { AsyncRPC } from '../../src/rpc';
