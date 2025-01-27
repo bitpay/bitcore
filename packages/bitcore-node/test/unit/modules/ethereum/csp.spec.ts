@@ -9,7 +9,7 @@ import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/
 import { IEVMBlock, IEVMTransactionInProcess } from '../../../../src/providers/chain-state/evm/types';
 import { mockModel } from '../../../helpers';
 
-describe.only('ETH Chain State Provider', function() {
+describe('ETH Chain State Provider', function() {
   const chain = 'ETH';
   const network = 'regtest';
   const sandbox = sinon.createSandbox();
