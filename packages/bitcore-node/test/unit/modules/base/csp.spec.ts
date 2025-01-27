@@ -23,7 +23,7 @@ describe.only('BASE Chain State Provider', function() {
     sandbox.restore();
   });
 
-  it.skip('should be able to get web3', async () => {
+  it('should be able to get web3', async () => {
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ BASE: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await BASE.getWeb3(network);
