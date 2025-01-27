@@ -1,5 +1,5 @@
 import { describe, it, before, after, afterEach } from 'node:test';
-import assert, { strictEqual } from 'assert';
+import assert from 'assert';
 import { ObjectID } from 'mongodb';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../src/models/base';
