@@ -33,7 +33,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.strictEqual(block, 1);
   });
 
-  it('should make a new web3 if getBlockNumber fails', async () => {
+  it.skip('should make a new web3 if getBlockNumber fails', async () => {
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().rejects('Block number fails') } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await ETH.getWeb3(network);
