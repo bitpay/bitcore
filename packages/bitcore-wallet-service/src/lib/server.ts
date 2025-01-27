@@ -6257,7 +6257,7 @@ export class WalletService implements IWalletService {
       };
 
       let qs = [];
-      qs.push('categories=' + req?.body?.categories ?? 'all');
+      qs.push('categories=' + (req?.body?.categories ?? 'all'));
 
       const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/currencies/details' : '/tokenlist/utils/currencies';
       const URL: string = API + `${uriPath}?${qs.join('&')}`;

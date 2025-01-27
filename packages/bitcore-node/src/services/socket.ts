@@ -1,6 +1,6 @@
 import * as http from 'http';
 import { ObjectID } from 'mongodb';
-import SocketIO = require('socket.io');
+import SocketIO from 'socket.io';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { CoinEvent, EventModel, EventStorage, TxEvent } from '../models/events';
@@ -61,7 +61,7 @@ export class SocketService {
       this.stopped = false;
       logger.info('Starting Socket Service');
       this.httpServer = server;
-      this.io = SocketIO(server);
+      this.io = new SocketIO.Server(server);
       this.io.sockets.on('connection', socket => {
         socket.on('room', (room: string, payload: VerificationPayload) => {
           const chainNetwork = room.slice(0, room.lastIndexOf('/') + 1);

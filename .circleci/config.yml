@@ -43,10 +43,10 @@ commands:
     description: Force usage of correct node version on the executor machine
     steps:
       - run:
-          name: Use Node 20
+          name: Use Node 22
           command: |
-            nvm install 20.13.1
-            nvm alias default 20.13.1
+            nvm install 22.13.1
+            nvm alias default 22.13.1
             nvm use default
   restore_dependency_cache:
     steps:
@@ -180,6 +180,11 @@ jobs:
     steps:
       - run_test:
           package: bitcore-client
+  bitcore-tss:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-tss
       
 workflows:
   version: 2
@@ -217,5 +222,8 @@ workflows:
           requires:
             - build
       - bitcore-client:
+          requires:
+            - build
+      - bitcore-tss:
           requires:
             - build

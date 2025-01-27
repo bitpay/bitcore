@@ -23,7 +23,7 @@ describe('ECDSA', function() {
         authKeys[`party${i}`] = bitcoreLib.PrivateKey(vector[`party${i}`].authKey);
       }
 
-      describe.only('KeyGen', function() {
+      describe('KeyGen', function() {
         const seeds = {};
         for (let i = 0; i < vector.n; i++) {
           seeds[`party${i}`] = vector[`party${i}`].seed;

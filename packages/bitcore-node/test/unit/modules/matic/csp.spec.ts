@@ -1,5 +1,6 @@
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import assert from 'assert';
 import { ObjectId } from 'bson';
-import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
@@ -11,31 +12,31 @@ import { mockModel } from '../../../helpers';
 describe('MATIC Chain State Provider', function() {
   const chain = 'MATIC';
   const network = 'regtest';
+  const sandbox = sinon.createSandbox();
+
+  afterEach(function() {
+    sandbox.restore();
+  });
 
   it('should be able to get web3', async () => {
-    const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await MATIC.getWeb3(network);
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
-    expect(stub.callCount).to.eq(2);
-    expect(block).to.eq(1);
-    sandbox.restore();
+    assert.strictEqual(stub.callCount, 2);
+    assert.strictEqual(block, 1);
   });
 
   it('should make a new web3 if getBlockNumber fails', async () => {
-    const sandbox = sinon.createSandbox();
-    const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
+    const web3Stub = { eth: { getBlockNumber: sandbox.stub().rejects('Block number fails') } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await MATIC.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
-    expect(stub.callCount).to.not.exist;
-    sandbox.restore();
+    assert.equal(stub.callCount, null, 'stub.callCount should not exist');
   });
 
   it('should get ERC20 information', async () => {
-    const sandbox = sinon.createSandbox();
     const expected = {
       name: 'Test Token',
       decimals: 10,
@@ -50,14 +51,12 @@ describe('MATIC Chain State Provider', function() {
     };
     sandbox.stub(MATIC, 'erc20For').resolves(tokenStub);
     const token = await MATIC.getERC20TokenInfo(network, '0x123');
-    expect(token.name).to.eq(expected.name);
-    expect(token.symbol).to.eq(expected.symbol);
-    expect(token.decimals).to.eq(expected.decimals);
-    sandbox.restore();
+    assert.strictEqual(token.name, expected.name);
+    assert.strictEqual(token.symbol, expected.symbol);
+    assert.strictEqual(token.decimals, expected.decimals);
   });
 
   it('should be able to find an MATIC transaction', async () => {
-    const sandbox = sinon.createSandbox();
     const mockTx = {
       _id: new ObjectId(),
       chain: 'MATIC', 
@@ -71,14 +70,12 @@ describe('MATIC Chain State Provider', function() {
     sandbox.stub(MATIC, 'getLocalTip').resolves({ height: 1 });
     mockModel('transactions', mockTx);
     const found = await MATIC.getTransaction({ chain: 'MATIC', network: 'testnet', txId: '123' });
-    expect(found).to.exist;
-    expect(found!.fee).to.eq(21000 * 10);
-    expect(found!.confirmations).to.eq(1);
-    sandbox.restore();
+    assert.notEqual(found, null);
+    assert.strictEqual(found!.fee, 21000 * 10);
+    assert.strictEqual(found!.confirmations, 1);
   });
 
   it('should be able to broadcast an array of txs', async () => {
-    const sandbox = sinon.createSandbox();
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
@@ -94,14 +91,12 @@ describe('MATIC Chain State Provider', function() {
     };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const txids = await MATIC.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
-    expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
-    expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(true);
-    expect(txids).to.deep.eq(['123', '456']);
-    sandbox.restore();
+    assert.strictEqual(web3Stub.eth.sendSignedTransaction.calledWith('123'), true);
+    assert.strictEqual(web3Stub.eth.sendSignedTransaction.calledWith('456'), true);
+    assert.deepEqual(txids, ['123', '456']);
   });
 
   it('should be able to broadcast a single tx', async () => {
-    const sandbox = sinon.createSandbox();
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
@@ -117,13 +112,11 @@ describe('MATIC Chain State Provider', function() {
     };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const txid = await MATIC.broadcastTransaction({ chain, network, rawTx: '123' });
-    expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
-    expect(txid).to.eq('123');
-    sandbox.restore();
+    assert.strictEqual(web3Stub.eth.sendSignedTransaction.calledWith('123'), true);
+    assert.strictEqual(txid, '123');
   });
 
   it('should stop broadcasting txs on error', async () => {
-    const sandbox = sinon.createSandbox();
     let shouldThrow = false;
     const web3Stub = {
       eth: {
@@ -153,14 +146,12 @@ describe('MATIC Chain State Provider', function() {
     } catch (e) {
       thrown = true;
     }
-    expect(thrown).to.eq(true);
-    expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
-    expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(false);
-    sandbox.restore();
+    assert.strictEqual(thrown, true);
+    assert.strictEqual(web3Stub.eth.sendSignedTransaction.calledWith('123'), true);
+    assert.strictEqual(web3Stub.eth.sendSignedTransaction.calledWith('456'), false);
   });
 
   it('should be able to find an MATIC block', async () => {
-    const sandbox = sinon.createSandbox();
     const mockBlock = {
       _id: new ObjectId(),
       hash: '55555',
@@ -168,15 +159,13 @@ describe('MATIC Chain State Provider', function() {
     } as MongoBound<IEVMBlock>;
     mockModel('blocks', mockBlock);
     const found = await MATIC.getBlocks({ chain, network, blockId: mockBlock.hash });
-    expect(found).to.exist;
-    expect(found[0]).to.exist;
-    expect(found[0].hash).to.eq(mockBlock.hash);
-    expect(found[0].height).to.eq(mockBlock.height);
-    sandbox.restore();
+    assert.notEqual(found, null, 'found should exist');
+    assert.notEqual(found[0], null, 'found[0] should exist');
+    assert.strictEqual(found[0].hash, mockBlock.hash);
+    assert.strictEqual(found[0].height, mockBlock.height);
   });
 
   describe('estimateGas', () => {
-    const sandbox = sinon.createSandbox();
     const web3Stub: any = {
       utils: {
         toHex: (val) => val && Buffer.from(val.toString()).toString('hex')
@@ -193,76 +182,41 @@ describe('MATIC Chain State Provider', function() {
       sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     });
 
-    afterEach(() => {
-      sandbox.restore();
-    });
-
     it('it should return gas', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
       const gas = await MATIC.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
-      expect(gas).to.equal(12345);
+      assert.strictEqual(gas, 12345);
     });
 
     it('should return gas for optional params', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, { result: '1234' });
-      
       const gas = await MATIC.estimateGas({ network });
-      expect(gas).to.equal(1234);
+      assert.strictEqual(gas, 1234);
     });
 
     it('should reject an error response', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, 'Unavailable server', null); // body is null
-  
-      try {
-        await MATIC.estimateGas({ network });
-        throw new Error('should have thrown');
-      } catch (err) {
-        expect(err).to.equal('Unavailable server');
-      }
+      assert.rejects(async () => await MATIC.estimateGas({ network }), (e) => e === 'Unavailable server');
     });
 
     it('should reject if response body is missing result', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, { message: 'need some param' });
-  
-      try {
-        await MATIC.estimateGas({ network });
-        throw new Error('should have thrown');
-      } catch (err) {
-        expect(err).to.deep.equal({ message: 'need some param' });
-      }
+      assert.rejects(async () => await MATIC.estimateGas({ network }), { message: 'need some param' });
     });
 
     it('should reject if response body is missing result and has error', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, { error: { code: 2, message: 'need some param' } });
-  
-      try {
-        await MATIC.estimateGas({ network });
-        throw new Error('should have thrown');
-      } catch (err) {
-        expect(err).to.deep.equal({ code: 2, message: 'need some param' });
-      }
+      assert.rejects(async () => await MATIC.estimateGas({ network }), { code: 2, message: 'need some param' });
     });
 
     it('should reject on unexpected error', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
-  
-      try {
-        await MATIC.estimateGas({ network: 'unexpected' });
-        throw new Error('should have thrown');
-      } catch (err: any) {
-        expect(err.message).to.equal('No configuration found for unexpected and "realtime" compatible dataType');
-      }
+      assert.rejects(async () => await MATIC.estimateGas({ network: 'unexpected' }), { message: 'No configuration found for unexpected and "realtime" compatible dataType' });
     });
 
     it('should reject on unexpected error in callback', async () => {
       web3Stub.currentProvider.send.callsArgWith(1, null, null); // body is null
-  
-      try {
-        await MATIC.estimateGas({ network });
-        throw new Error('should have thrown');
-      } catch (err: any) {
-        expect(err.message).to.equal('Cannot read properties of null (reading \'result\')');
-      }
+      assert.rejects(async () => await MATIC.estimateGas({ network }), { message: 'Cannot read properties of null (reading \'result\')' });
     });
   });
 });
