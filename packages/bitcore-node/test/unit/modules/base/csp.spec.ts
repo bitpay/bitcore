@@ -1,11 +1,11 @@
-import { describe, it, before, afterEach } from 'node:test';
+import { describe, it, before, after, afterEach } from 'node:test';
 import assert from 'assert';
 import * as sinon from 'sinon';
 import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
 
 
-describe.skip('BASE Chain State Provider', function() {
+describe.only('BASE Chain State Provider', function() {
   const network = 'sepolia';
   const sandbox = sinon.createSandbox();
   let BASE;
@@ -14,7 +14,12 @@ describe.skip('BASE Chain State Provider', function() {
     BASE = new MoralisStateProvider('BASE');
   });
 
+  after(() => {
+    console.log('BaseEVMStateProvider.rpcs', BaseEVMStateProvider.rpcs);
+  });
+
   afterEach(function() {
+    console.log(BaseEVMStateProvider.rpcs);
     sandbox.restore();
   });
 
