@@ -5,7 +5,7 @@ import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
 
 
-describe.only('BASE Chain State Provider', function() {
+describe('BASE Chain State Provider', function() {
   const network = 'sepolia';
   const sandbox = sinon.createSandbox();
   let BASE;
