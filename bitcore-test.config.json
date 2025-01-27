@@ -86,7 +86,7 @@
         }
       },
       "BASE": {
-        "testnet": {
+        "sepolia": {
           "chainSource": "external",
           "module": "./moralis",
           "trustedPeers": [
