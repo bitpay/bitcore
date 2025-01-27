@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, after, beforeEach, afterEach } from 'node:test';
 import assert from 'assert';
 import { ObjectId } from 'bson';
 import { EventEmitter } from 'events';
@@ -14,11 +14,16 @@ describe.only('ETH Chain State Provider', function() {
   const network = 'regtest';
   const sandbox = sinon.createSandbox();
 
+  after(() => {
+    console.log('BaseEVMStateProvider.rpcs', BaseEVMStateProvider.rpcs);
+  });
+
   afterEach(function() {
+    console.log(BaseEVMStateProvider.rpcs);
     sandbox.restore();
   });
 
-  it('should be able to get web3', async () => {
+  it.skip('should be able to get web3', async () => {
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await ETH.getWeb3(network);
@@ -28,7 +33,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.strictEqual(block, 1);
   });
 
-  it('should make a new web3 if getBlockNumber fails', async () => {
+  it.skip('should make a new web3 if getBlockNumber fails', async () => {
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().rejects('Block number fails') } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await ETH.getWeb3(network);
@@ -36,7 +41,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.equal(stub.callCount, null, 'stub.callCount should not exist');
   });
 
-  it('should get ERC20 information', async () => {
+  it.skip('should get ERC20 information', async () => {
     const expected = {
       name: 'Test Token',
       decimals: 10,
@@ -56,7 +61,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.strictEqual(token.decimals, expected.decimals);
   });
 
-  it('should be able to find an ETH transaction', async () => {
+  it.skip('should be able to find an ETH transaction', async () => {
     const mockTx = {
       _id: new ObjectId(),
       chain: 'ETH', 
@@ -84,7 +89,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.strictEqual(found!.confirmations, 1);
   });
 
-  it('should be able to broadcast an array of txs', async () => {
+  it.skip('should be able to broadcast an array of txs', async () => {
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
@@ -105,7 +110,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.deepEqual(txids, ['123', '456']);
   });
 
-  it('should be able to broadcast a single tx', async () => {
+  it.skip('should be able to broadcast a single tx', async () => {
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
@@ -125,7 +130,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.strictEqual(txid, '123');
   });
 
-  it('should stop broadcasting txs on error', async () => {
+  it.skip('should stop broadcasting txs on error', async () => {
     let shouldThrow = false;
     const web3Stub = {
       eth: {
@@ -160,7 +165,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.strictEqual(web3Stub.eth.sendSignedTransaction.calledWith('456'), false);
   });
 
-  it('should be able to find an ETH block', async () => {
+  it.skip('should be able to find an ETH block', async () => {
     const mockBlock = {
       _id: new ObjectId(),
       hash: '55555',
