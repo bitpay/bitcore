@@ -36,7 +36,7 @@ describe('Modules', function() {
     const chainsNetworks = Config.chainNetworks();
     for (const { chain, network } of chainsNetworks) {
       const service = ChainStateProvider.get({ chain, network });
-      assert.notEqual(service, null);
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 
@@ -44,7 +44,7 @@ describe('Modules', function() {
     const chains = ['BTC', 'BCH'];
     for (const chain of chains) {
       const service = Libs.get(chain);
-      assert.notEqual(service, null);
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 
@@ -52,7 +52,7 @@ describe('Modules', function() {
     const chains = [['BTC', 'regtest'], ['BCH', 'regtest']];
     for (const [chain, network] of chains) {
       const service = P2P.get(chain, network);
-      assert.notEqual(service, null);
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 
@@ -60,7 +60,7 @@ describe('Modules', function() {
     const chains = [['BTC', 'regtest'], ['BCH', 'regtest']];
     for (const [chain, network] of chains) {
       const service = Verification.get(chain, network);
-      assert.notEqual(service, null);
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 });

@@ -29,7 +29,7 @@ describe('BASE Chain State Provider', function() {
   });
 
   it('should make a new web3 if getBlockNumber fails', async () => {
-    const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
+    const web3Stub = { eth: { getBlockNumber: sandbox.stub().rejects('Block number fails') } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ BASE: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await BASE.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
