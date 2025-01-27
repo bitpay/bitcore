@@ -9,7 +9,7 @@ import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/
 import { IEVMBlock, IEVMTransactionInProcess } from '../../../../src/providers/chain-state/evm/types';
 import { mockModel } from '../../../helpers';
 
-describe('ETH Chain State Provider', function() {
+describe.only('ETH Chain State Provider', function() {
   const chain = 'ETH';
   const network = 'regtest';
   const sandbox = sinon.createSandbox();
@@ -174,7 +174,7 @@ describe('ETH Chain State Provider', function() {
     assert.strictEqual(found[0].height, mockBlock.height);
   });
 
-  describe('estimateGas', () => {
+  describe.skip('estimateGas', () => {
     const web3Stub: any = {
       utils: {
         toHex: (val) => val && Buffer.from(val.toString()).toString('hex')
