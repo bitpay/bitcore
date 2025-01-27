@@ -23,7 +23,7 @@ describe.only('ETH Chain State Provider', function() {
     sandbox.restore();
   });
 
-  it.skip('should be able to get web3', async () => {
+  it('should be able to get web3', async () => {
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await ETH.getWeb3(network);
@@ -33,7 +33,7 @@ describe.only('ETH Chain State Provider', function() {
     assert.strictEqual(block, 1);
   });
 
-  it.skip('should make a new web3 if getBlockNumber fails', async () => {
+  it('should make a new web3 if getBlockNumber fails', async () => {
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().rejects('Block number fails') } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ ETH: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await ETH.getWeb3(network);
