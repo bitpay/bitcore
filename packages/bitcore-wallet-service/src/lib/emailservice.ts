@@ -273,6 +273,7 @@ export class EmailService {
       usdt: 'USDT',
       weth: 'WETH',
       'usdc.e': 'USDC.e',
+      sol: 'SOL',
     };
 
     const data = _.cloneDeep(notification.data);

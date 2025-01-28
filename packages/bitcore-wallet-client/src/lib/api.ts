@@ -29,7 +29,8 @@ var Bitcore_ = {
   op: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
-  ltc: CWC.BitcoreLibLtc
+  ltc: CWC.BitcoreLibLtc,
+  sol: CWC.BitcoreLib,
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -730,6 +731,7 @@ export class API extends EventEmitter {
       case 'arb':
       case 'base':
       case 'op':
+      case 'sol':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
@@ -2974,7 +2976,8 @@ export class API extends EventEmitter {
         ['btc', 'btc', 'livenet', true],
         ['bch', 'bch', 'livenet', true],
         ['doge', 'doge', 'livenet', true],
-        ['ltc', 'ltc', 'livenet', true]
+        ['ltc', 'ltc', 'livenet', true],
+        ['sol', 'sol', 'livenet']
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig

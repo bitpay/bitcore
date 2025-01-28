@@ -8,6 +8,7 @@ import { LtcDeriver } from './ltc';
 import { MaticDeriver } from './matic';
 import { OpDeriver } from './op';
 import { Paths } from './paths';
+import { SolDeriver } from './sol';
 import { XrpDeriver } from './xrp';
 
 export interface Key {
@@ -39,6 +40,7 @@ const derivers: { [chain: string]: IDeriver } = {
   ARB: new ArbDeriver(),
   BASE: new BaseDeriver(),
   OP: new OpDeriver(),
+  SOL: new SolDeriver()
 };
 
 export class DeriverProxy {
