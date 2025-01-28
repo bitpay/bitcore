@@ -15,6 +15,7 @@ import {
 } from '../../external/providers/provider';
 import { InternalStateProvider } from '../../internal/internal';
 import { ISVMTransaction } from '../../svm/types';
+import { ExternalApiStream } from '../../external/streams/apiStream';
 
 export interface GetSolWeb3Response { rpc: CryptoRpc; connection: Web3.Connection; web3: any; dataType: string; };
 
@@ -170,7 +171,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
         parsedTxs.map(tx => stream.push(tx));
         stream.push(null);
-        Storage.stream(stream, req!, res!);
+        ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
         return resolve();
       } catch (err: any) {
         logger.error('Error streaming wallet transactions: %o', err.stack || err.message || err);
@@ -188,7 +189,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       const parsedTxs = await this.getParsedAddressTransactions(address, network, limit);
       parsedTxs.map(tx => stream.push(tx));
       stream.push(null); // End stream
-      Storage.stream(stream, req!, res!);
+      ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
     } catch (err: any) {
       logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
       throw err;
@@ -311,7 +312,38 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         instructions
       } as ISVMTransaction;
 
-      return outputTx;
+      // Move this into its own transaform function
+      const baseTx = {
+        txid: outputTx.txid,
+        fee: outputTx.fee,
+        height: outputTx.blockHeight,
+        from: outputTx.from,
+        category: outputTx.category,
+        initialFrom: outputTx.from,
+        txType: outputTx.txType,
+        address: outputTx.to,
+        blockTime: outputTx.blockTimeNormalized,
+        error: outputTx.error,
+        network: outputTx.network,
+        chain: outputTx.chain,
+        effects: outputTx.accountData,
+        internal: outputTx.tokenTransfers,
+        satoshis: outputTx.value
+      } as any;
+
+      if (outputTx.category == 'transfer') {
+        const balanceChange = outputTx.accountData.filter(data => data?.account === outputTx.from)[0]?.nativeBalanceChange;
+        console.log(balanceChange)
+        if (outputTx.to === outputTx.from) {
+          baseTx.category = 'move';
+        } else if (balanceChange > 0) {
+          baseTx.category = 'receive';
+        } else {
+          baseTx.category = 'send';
+        }
+      }
+
+      return baseTx;
     });
   }
 
@@ -382,7 +414,21 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { network } = params;
     const { connection, rpc } = await this.getWeb3(network);
     const height = await connection.getSlot({ commitment: 'confirmed' });
-    const block: IBlock = await rpc.getBlock({ height });
-    return block;
+    const block = await rpc.getBlock({ height });
+    const txs = block?.transactions?.map(tx => tx?.transaction?.signatures[0]);
+    return {
+      chain: this.chain,
+      network,
+      height: block?.blockHeight,
+      hash: block?.blockhash,
+      time: new Date(block?.blockTime * 1000),
+      timeNormalized: new Date(block?.blockTime * 1000),
+      previousBlockHash: block?.previousBlockHash,
+      transactions: txs,
+      transactionCount:  block?.transactions?.length,
+      size: block?.transactions?.length,
+      reward: block?.rewards[0]?.lamports,
+      processed: true,
+    } as IBlock;
   }
 }

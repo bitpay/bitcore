@@ -2672,7 +2672,11 @@ export class WalletService implements IWalletService {
                       isTokenSwap: opts.isTokenSwap,
                       enableRBF: opts.enableRBF,
                       replaceTxByFee: opts.replaceTxByFee,
-                      multiTx: opts.multiTx
+                      multiTx: opts.multiTx,
+                      blockHash: opts.blockHash,
+                      blockHeight: opts.blockHeight,
+                      nonceAddress: opts.nonceAddress,
+                      category: opts.category
                     };
                     txp = TxProposal.create(txOpts);
                     next();

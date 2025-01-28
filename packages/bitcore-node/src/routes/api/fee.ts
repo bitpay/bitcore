@@ -26,13 +26,14 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   chain = chain.toUpperCase();
   network = network.toLowerCase();
   mode = mode?.toUpperCase() as FeeMode;
-  const _signatures = Number(signatures);
+  let _signatures = Number(signatures);
   const targetNum = Number(target);
   if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
   }
   if (chain === 'SOL' && !signatures) {
-    return res.status(400).send('Missing required param signatures');
+    _signatures = 1; // defaulting to 1
+    // return res.status(400).send('Missing required param signatures');
   }
   if (!mode) {
     mode = (config.chains[chain]?.[network] as IUtxoNetworkConfig)?.defaultFeeMode;
