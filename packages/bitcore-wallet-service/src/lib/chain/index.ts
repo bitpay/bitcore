@@ -10,6 +10,8 @@ import { BtcChain } from './btc';
 import { DogeChain } from './doge';
 import { EthChain } from './eth';
 import { LtcChain } from './ltc';
+import { MaticChain } from './matic';
+import { OpChain } from './op';
 import { XecChain } from './xec';
 import { XpiChain } from './xpi';
 import { XrpChain } from './xrp';
@@ -78,15 +80,20 @@ export interface IChain {
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;
+  getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void);
 }
 
 const chains: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
-  XEC: new XecChain(),
   ETH: new EthChain(),
+  MATIC: new MaticChain(),
+  ARB: new ArbChain(),
+  BASE: new BaseChain(),
+  OP: new OpChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
+  XEC: new XecChain(),
   XPI: new XpiChain(),
   LTC: new LtcChain()
 };
@@ -228,6 +235,18 @@ class ChainProxy {
 
   onTx(chain: string, tx: any) {
     return this.get(chain).onTx(tx);
+  }
+
+  getTokenInfo(chain: string, token: string) {
+    return this.get(chain).getTokenInfo(token);
+  }
+
+  async sendToken(chain: string, wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {
+    return await this.get(chain).sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
+  }
+
+  async burnToken(chain: string, wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {
+    return await this.get(chain).burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId);
   }
 
   getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {

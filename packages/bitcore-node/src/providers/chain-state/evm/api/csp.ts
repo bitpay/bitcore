@@ -31,7 +31,8 @@ import {
   StreamTransactionsParams,
   StreamWalletTransactionsArgs,
   StreamWalletTransactionsParams,
-  UpdateWalletParams
+  UpdateWalletParams,
+  WalletBalanceType
 } from '../../../../types/namespaces/ChainStateProvider';
 import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
@@ -52,7 +53,7 @@ import {
 } from './provider';
 import { EVMListTransactionsStream } from './transform';
 
-export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string };
+export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number; };
 
 export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
@@ -77,13 +78,18 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       }
 
       try {
+        if (Date.now() - (rpc.lastPingTime || 0) < 10000) { // Keep the rpc from being blasted with ping calls
+          return rpc;
+        }
         await Promise.race([
           rpc.web3.eth.getBlockNumber(),
           new Promise((_, reject) => setTimeout(reject, 5000))
         ]);
+        rpc.lastPingTime = Date.now();
         return rpc; // return the first applicable rpc that's responsive
       } catch (e) {
         // try reconnecting
+        logger.info(`Reconnecting to ${this.chain}:${network}`);
         if (typeof (rpc.web3.currentProvider as any)?.disconnect === 'function') {
           (rpc.web3.currentProvider as any)?.disconnect?.();
           (rpc.web3.currentProvider as any)?.connect?.();
@@ -210,31 +216,36 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     );
   }
 
-  async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    const { chain, network, address } = params;
+  async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
+    const { chain, network, address, args } = params;
     const { web3 } = await this.getWeb3(network, { type: 'realtime' });
-    const tokenAddress = params.args && params.args.tokenAddress;
+    const tokenAddress = args?.tokenAddress;
     const addressLower = address.toLowerCase();
+    const hex = args?.hex === 'true' || args?.hex === '1';
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
-    const balances = await CacheStorage.getGlobalOrRefresh(
+    const balance = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
         if (tokenAddress) {
           const token = await this.erc20For(network, tokenAddress);
           const balance = await token.methods.balanceOf(address).call();
-          const numberBalance = Number(balance);
-          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+          const numberBalance = '0x' + BigInt(balance).toString(16);
+          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         } else {
           const balance = await web3.eth.getBalance(address);
-          const numberBalance = Number(balance);
-          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+          const numberBalance = '0x' + BigInt(balance).toString(16);
+          return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         }
       },
       CacheStorage.Times.Minute
     );
-    return balances;
+    return {
+      confirmed: hex ? balance.confirmed : Number(balance.confirmed),
+      unconfirmed: hex ? balance.unconfirmed : Number(balance.unconfirmed),
+      balance: hex ? balance.balance : Number(balance.balance)
+    };
   }
 
   async getLocalTip({ chain, network }): Promise<IBlock> {
@@ -403,28 +414,30 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   @realtime
-  async getWalletBalance(params: GetWalletBalanceParams) {
-    const { network, args } = params;
-    if (params.wallet._id === undefined) {
+  async getWalletBalance(params: GetWalletBalanceParams): Promise<WalletBalanceType> {
+    const { network, args, wallet } = params;
+    const hex = args.hex === 'true' || args.hex === '1';
+    if (wallet._id === undefined) {
       throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
     }
-    let addresses = await this.getWalletAddresses(params.wallet._id);
+    let addresses = await this.getWalletAddresses(wallet._id);
     addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
-    let addressBalancePromises = addresses.map(({ address }) =>
-      this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
-    );
-    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number; balance: number }>(
-      addressBalancePromises
-    );
+    let addressBalances = await Promise.all<WalletBalanceType>(addresses.map(({ address }) =>
+      this.getBalanceForAddress({ chain: this.chain, network, address, args })
+    ));
     let balance = addressBalances.reduce(
       (prev, cur) => ({
-        unconfirmed: prev.unconfirmed + Number(cur.unconfirmed),
-        confirmed: prev.confirmed + Number(cur.confirmed),
-        balance: prev.balance + Number(cur.balance)
+        unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
+        confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
+        balance: BigInt(prev.balance) + BigInt(cur.balance)
       }),
-      { unconfirmed: 0, confirmed: 0, balance: 0 }
+      { unconfirmed: 0n, confirmed: 0n, balance: 0n }
     );
-    return balance;
+    return {
+      unconfirmed: hex ? '0x' + balance.unconfirmed.toString(16) : Number(balance.unconfirmed),
+      confirmed: hex ? '0x' + balance.confirmed.toString(16) : Number(balance.confirmed),
+      balance: hex ? '0x' + balance.balance.toString(16) : Number(balance.balance)
+    };
   }
 
   getWalletTransactionQuery(params: StreamWalletTransactionsParams) {
@@ -790,10 +803,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       throw new Error('Missing required chain and/or network param');
     }
 
+    // limit - 1 because startBlock is inclusive; ensure limit is >= 0
+    limit = Math.max(limit - 1, 0);
+
     let height: number | null = null;
     if (blockId && blockId.length < 64) {
       height = parseInt(blockId, 10);
-      if (isNaN(height) || height.toString(10) !== blockId) {
+      if (isNaN(height) || height.toString(10) != blockId) {
         throw new Error('invalid block id provided');
       }
       blockId = undefined;
@@ -816,12 +832,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     // Get range
     if (sinceBlock) {
       let height = Number(sinceBlock);
-      if (isNaN(height) || height.toString(10) !== sinceBlock) {
+      if (isNaN(height) || height.toString(10) != sinceBlock) {
         throw new Error('invalid block id provided');
       }
       const { web3 } = await this.getWeb3(network);
       const tipHeight = await web3.eth.getBlockNumber();
-      if (tipHeight > height) {
+      if (tipHeight < height) {
         return [];
       }
       query.endBlock = query.endBlock ?? tipHeight;
@@ -848,17 +864,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       query.startBlock = query.startBlock ?? query.endBlock - limit;
     }
 
-    if (limit > 0 && (query.endBlock - query.startBlock) > limit) {
+    if (query.endBlock - query.startBlock > limit) {
       query.endBlock = query.startBlock + limit;
     }
 
-    if (sort?.height === -1) {
-      let b = query.startBlock;
-      query.startBlock = query.endBlock;
-      query.endBlock = b;
-    }
+    const r = range(query.startBlock, query.endBlock + 1); // +1 since range is [start, end)
 
-    return range(query.startBlock, query.endBlock + 1);
+    if (sort?.height === -1 && query.startBlock < query.endBlock) {
+      return r.reverse();
+    }
+    return r;
   }
 
   async _getBlockNumberByDate(params) {

@@ -92,6 +92,14 @@ export const Constants = {
     OP: 'op',
   },
 
+  EVM_CHAINSUFFIXMAP: {
+    eth: 'e',
+    matic: 'm',
+    arb: 'arb',
+    base: 'base',
+    op: 'op',
+  },
+
   EVM_CHAINS_WITH_ETH_GAS: {
     ETH: 'eth',
     ARB: 'arb',
@@ -118,7 +126,7 @@ export const Constants = {
   NETWORK_ALIASES: {
     btc: {
       mainnet: 'livenet',
-      testnet: 'testnet3'
+      testnet: 'testnet4'
     },
     bch: {
       mainnet: 'livenet',
@@ -203,6 +211,7 @@ export const Constants = {
   ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,
   OP_TOKEN_OPTS: CWC.Constants.OP_TOKEN_OPTS,
   BASE_TOKEN_OPTS: CWC.Constants.BASE_TOKEN_OPTS,
+  UNITS: CWC.Constants.UNITS,
 
   BITPAY_CONTRACTS: {
     MULTISEND: 'MULTISEND'

@@ -13,10 +13,10 @@ interface IGethTxTraceBase {
   gas: string;
   gasUsed: string;
   input: string;
-  output: string;
+  output?: string;
   to: string;
   type: 'CALL' | 'STATICCALL' | 'DELEGATECALL' | 'CREATE' | 'CREATE2';
-  value: string;
+  value?: string;
   abiType?: IAbiDecodedData;
 }
 

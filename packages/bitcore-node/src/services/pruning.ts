@@ -21,6 +21,7 @@ const args = parseArgv([], [
   { arg: 'MEMPOOL_AGE', type: 'int' },
   { arg: 'OLD_INTERVAL_HRS', type: 'float' },
   { arg: 'INV_INTERVAL_MINS', type: 'float' },
+  { arg: 'INV_MATURE_LEN', type: 'int' },
   { arg: 'DESCENDANT_LIMIT', type: 'int' },
   { arg: 'VERBOSE', type: 'bool' }
 ]);
@@ -33,6 +34,7 @@ const CHAIN = args.CHAIN || PRUNING_CHAIN;
 const NETWORK = args.NETWORK || PRUNING_NETWORK;
 const OLD_INTERVAL_HRS = args.OLD_INTERVAL_HRS || Number(PRUNING_OLD_INTERVAL_HRS) || 12;
 const INV_INTERVAL_MINS = args.INV_INTERVAL_MINS || Number(PRUNING_INV_INTERVAL_MINS) || 10;
+const INV_MATURE_LEN = args.INV_MATURE_LEN || 3; // using || means INV_MATURE_LEN needs to be >0
 const MEMPOOL_AGE = args.MEMPOOL_AGE || Number(PRUNING_MEMPOOL_AGE) || 7;
 const DESCENDANT_LIMIT = args.DESCENDANT_LIMIT || Number(PRUNING_DESCENDANT_LIMIT) || 10;
 const VERBOSE = Boolean(args.VERBOSE ?? false);
@@ -125,15 +127,16 @@ export class PruningService {
   }
 
   async processOldMempoolTxs(chain: string, network: string, days: number) {
-    try {
-      if (this.runningOld) {
-        return;
-      }
-      this.runningOld = true;
+    if (this.runningOld) {
+      return;
+    }
+    this.runningOld = true;
 
+    try {
       if (Date.now() - this.lastRunTimeOld < OLD_INTERVAL_HRS * ONE_HOUR) {
         return;
       }
+      logger.info('========== OLD STARTED ===========');
 
       const oldTime = new Date(Date.now() - days * ONE_DAY);
       const count = await this.transactionModel.collection.countDocuments({
@@ -198,6 +201,7 @@ export class PruningService {
       });
       logger.info(`Removed all pending ${chain}:${network} txs older than ${days} days: ${rmCount}`);
       this.lastRunTimeOld = Date.now();
+      logger.info('========== OLD FINISHED ===========');
     } catch (err: any) {
       logger.error(`Error processing old mempool txs: ${err.stack || err.message || err}`);
     } finally {
@@ -206,15 +210,16 @@ export class PruningService {
   }
 
   async processAllInvalidTxs(chain, network) {
-    try {
-      if (this.runningInvalid) {
-        return;
-      }
-      this.runningInvalid = true;
+    if (this.runningInvalid) {
+      return;
+    }
+    this.runningInvalid = true;
 
+    try {
       if (Date.now() - this.lastRunTimeInvalid < INV_INTERVAL_MINS * ONE_MIN) {
         return;
       }
+      logger.info('========== INVALID STARTED ===========');
 
       const count = await this.coinModel.collection.countDocuments({ chain, network, mintHeight: SpentHeightIndicators.pending });
       logger.info(`Found ${count} pending ${chain}:${network} TXOs`);
@@ -244,6 +249,7 @@ export class PruningService {
             invalidCount++;
           }
         } else {
+          // Check if the parent tx was replaced since the sync process marks immediate replacements as replaced, but not descendants
           const vins = await this.coinModel.collection.find({ chain, network, spentTxid: vout.mintTxid }).toArray();
           const vinTxs = await this.transactionModel.collection.find({ chain, network, txid: { $in: vins.map(vin => vin.mintTxid) } }).toArray();
           for (const tx of vinTxs) {
@@ -257,6 +263,7 @@ export class PruningService {
       }
       logger.info(`Invalidated ${invalidCount} (processed ${realCount}) pending TXOs for ${chain}:${network}`);
       this.lastRunTimeInvalid = Date.now();
+      logger.info('========== INVALID FINISHED ===========');
     } catch (err: any) {
       logger.error(`Error processing invalid txs: ${err.stack || err.message || err}`);
     } finally {
@@ -264,13 +271,42 @@ export class PruningService {
     }
   }
 
+  /**
+   * Invalidate a transaction and its descendants
+   * @param {string} chain
+   * @param {string} network
+   * @param {ITransaction} tx Transaction object with replacedByTxid
+   * @returns 
+   */
   async invalidateTx(chain: string, network: string, tx: ITransaction) {
+    if (tx.blockHeight! >= 0) {
+      // This means that downstream coins are still pending when they should be marked as confirmed.
+      // This indicates a bug in the sync process.
+      logger.warn(`Tx ${tx.txid} is already mined`);
+      return false;
+    }
+    if (!tx.replacedByTxid) {
+      logger.warn(`Given tx has no replacedByTxid: ${tx.txid}`);
+      return false;
+    }
+    let rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
+    let txids = [tx.txid];
+    while (rTx?.replacedByTxid && rTx?.blockHeight! < 0 && !txids.includes(rTx?.txid)) {
+      // replacement tx has also been replaced
+      // Note: rTx.txid === tx.txid may happen if tx.replacedByTxid => rTx.txid and rTx.replacedByTxid => tx.txid.
+      //  This might happen if tx was rebroadcast _after_ being marked as replaced by rTx, thus marking rTx as replaced by tx.
+      //  Without this check, we could end up in an infinite loop where the two txs keep finding each other as unconfirmed replacements.
+      txids.push(rTx.txid);
+      rTx = await this.transactionModel.collection.findOne({ chain, network, txid: rTx.replacedByTxid });
+    }
+    // Re-org protection
     const tipHeight = await this.rpcs[`${chain}:${network}`].getBlockHeight();
-    const rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
-    const isMature = rTx?.blockHeight! > SpentHeightIndicators.pending && tipHeight - rTx?.blockHeight! > 3;
-    if (isMature) {
+    const isMature = rTx?.blockHeight! > SpentHeightIndicators.pending && tipHeight - rTx?.blockHeight! > INV_MATURE_LEN;
+    const isExpired = rTx?.blockHeight! === SpentHeightIndicators.expired; // Set by --OLD
+    if (isMature || isExpired) {
       try {
-        logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${tx.txid} with replacement => ${tx.replacedByTxid}`);
+        const nConfs = tipHeight - rTx?.blockHeight!;
+        logger.info(`${args.DRY ? 'DRY RUN - ' : ''}Invalidating ${tx.txid} with replacement => ${tx.replacedByTxid} (${isExpired ? 'expired' : nConfs})`);
         if (args.DRY) {
           return true;
         }        

@@ -1,10 +1,9 @@
+import * as async from 'async';
+import * as crypto from 'crypto'
 import {
   Constants as ConstantsCWC,
   Validation
 } from '@bcpros/crypto-wallet-core';
-import { UNITS } from '@bcpros/crypto-wallet-core/ts_build/src/constants/units';
-import * as async from 'async';
-import * as crypto from 'crypto'
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import config from '../config';
@@ -71,8 +70,8 @@ import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { PushNotificationsService } from './pushnotificationsservice';
 
-// const Client = require('@bcpros/bitcore-wallet-client').default;
-// const Key = Client.Key;
+const Client = require('@bcpros/bitcore-wallet-client').default;
+const Key = Client.Key;
 const commonBWC = require('@bcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
 const merchantList = require('../../../../merchant-list.json');
@@ -85,9 +84,6 @@ const appDir = dirname(require.main.filename);
 
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
-const deprecatedServerMessage = require('../deprecated-serverMessages');
-const serverMessages = require('../serverMessages');
-const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
@@ -141,6 +137,10 @@ const Bitcore_ = {
   bch: require('@bcpros/bitcore-lib-cash'),
   xec: require('@bcpros/bitcore-lib-xec'),
   eth: Bitcore,
+  matic: Bitcore,
+  arb: Bitcore,
+  base: Bitcore,
+  op: Bitcore,
   xrp: Bitcore,
   doge: require('@bcpros/bitcore-lib-doge'),
   xpi: require('@bcpros/bitcore-lib-xpi'),
@@ -153,9 +153,6 @@ const Defaults = Common.Defaults;
 const Services = Common.Services;
 
 
-const Errors = require('./errors/errordefinitions');
-
-const shell = require('shelljs');
 
 const BCHJS = require('@bcpros/xpi-js');
 const bchURL = config.supportToken.xec.bchUrl;
@@ -166,6 +163,7 @@ const ecashaddr = require('ecashaddrjs');
 let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
+let isMoralisInitialized = false;
 
 let lock;
 let storage;
@@ -2363,7 +2361,7 @@ export class WalletService implements IWalletService {
         },
         next => {
           if (this._isSupportToken(wallet)) {
-            this.storage.fetchAddresses(walletId, async (err, addresses) => {
+            this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
               if (err) return next(err);
               if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
               let promiseList = [];
@@ -2508,7 +2506,7 @@ export class WalletService implements IWalletService {
 
       this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
         if (err) return cb(err);
-        bc.getAddressUtxos(address, height, wallet.chain, async (err, allUtxos) => {
+        bc.getAddressUtxos(address, height, async (err, allUtxos) => {
           if (err) return cb(err);
           let promiseList = [];
           if (wallet.isTokenSupport) {
@@ -2852,7 +2850,7 @@ export class WalletService implements IWalletService {
     const setWallet = cb1 => {
       const walletIdDonation = config.donationWalletId;
       if (wallet) return cb1();
-      this.getWalletFromId(walletIdDonation, (err, ret) => {
+      this.getWalletFromIdentifier(walletIdDonation, (err, ret) => {
         if (err) return cb(err);
         wallet = ret;
         return cb1(null, wallet);
@@ -4226,7 +4224,7 @@ export class WalletService implements IWalletService {
     if (!checkRequired(opts, ['network', 'rawTx'], cb)) return;
     const ischronik = opts.ischronik ? opts.ischronik : undefined;
     opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
+    if (!Utils.checkValueInCollection(opts.coin, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     opts.chain = opts.chain || opts.coin || Defaults.COIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
@@ -5765,7 +5763,7 @@ export class WalletService implements IWalletService {
                             saveError(merchantOrder, data, Errors.NOT_FOUND_RATE_TOKEN);
                             return;
                           }
-                          accountTo.amount = accountTo.amount / UNITS[merchantOrder.coin].toSatoshis;
+                          accountTo.amount = accountTo.amount / Constants.UNITS[merchantOrder.coin].toSatoshis;
                           amountCoinUserSentToServer = accountTo.amount;
                           accountTo.amount = this._calculateRaipayFee(merchantOrder.coin, accountTo.amount);
                           const rate =
@@ -6354,18 +6352,18 @@ export class WalletService implements IWalletService {
     let listCoinSwapCode = [];
     if (orderInfo) {
       if (!(orderInfo.fromCoinCode && orderInfo.toCoinCode && orderInfo.createdRate && orderInfo.addressUserReceive)) {
-        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+        throw new Error(Errors.MISSING_REQUIRED_FIELD as unknown as string);
       }
 
       if (
         orderInfo.isFromToken &&
         (!orderInfo.fromTokenId || !(orderInfo.fromTokenInfo && orderInfo.fromTokenInfo.decimals))
       ) {
-        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+        throw new Error(Errors.MISSING_REQUIRED_FIELD as unknown as string);
       }
 
       if (orderInfo.isToToken && (!orderInfo.toTokenId || !(orderInfo.toTokenInfo && orderInfo.toTokenInfo.decimals))) {
-        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+        throw new Error(Errors.MISSING_REQUIRED_FIELD as unknown as string);
       }
 
       const now = new Date();
@@ -6386,7 +6384,7 @@ export class WalletService implements IWalletService {
         config => config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode
       );
       if (indexCoinReceiveFound < 0 || indexCoinSwapfound < 0) {
-        throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
+        throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG as unknown as string);
       }
     } else throw new Error('Not found config swap');
     return true;
@@ -6564,13 +6562,13 @@ export class WalletService implements IWalletService {
         if (orderInfo.isFromToken) {
           orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
         } else {
-          orderInfo.fromSatUnit = UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
+          orderInfo.fromSatUnit = Constants.UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
         }
 
         if (orderInfo.isToToken) {
           orderInfo.toSatUnit = Math.pow(10, orderInfo.toTokenInfo.decimals);
         } else {
-          orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+          orderInfo.toSatUnit = Constants.UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
         }
         const depositClient = clientsReceive.find(
           client => client.credentials.coin === fromCoinCode && client.credentials.network === orderInfo.fromNetwork
@@ -7306,7 +7304,7 @@ export class WalletService implements IWalletService {
             network: fundingWallet.credentials.network
           });
           if (!!balanceCoin) {
-            balanceFinal = balanceCoin.balance.totalAmount / UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+            balanceFinal = balanceCoin.balance.totalAmount / Constants.UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
           }
         }
 
@@ -7704,7 +7702,7 @@ export class WalletService implements IWalletService {
     return { address, amount };
   }
 
-  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
+  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, wallet, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
 
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
@@ -8560,7 +8558,7 @@ export class WalletService implements IWalletService {
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
             const dustThreshold = ChainService.getDustAmountValue(wallet.chain);
-            this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, (err, inTxs: any[]) => {
+            this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, wallet, async (err, inTxs: any[]) => {
               if (err) return cb(err);
                 if (err) return cb(err);
                 if (this._isSupportToken(wallet) && addressesToken && _.size(inTxs) > 0) {
@@ -9282,11 +9280,11 @@ export class WalletService implements IWalletService {
         );
         if (balanceFound) {
           const balanceTotal = balanceFound.balance.totalAmount;
-          coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-          coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-          coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
+          coin.minConvertToSat = coinQuantityFromUSDMin * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+          coin.maxConvertToSat = coinQuantityFromUSDMax * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+          coin.fund = (balanceTotal / Constants.UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
           coin.fundConvertToSat = balanceTotal;
-          coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
+          coin.decimals = Constants.UNITS[coin.code.toLowerCase()].full.maxDecimals;
         }
       }
       coin.rate = fiatRates[coin.code.toLowerCase()];
@@ -9305,9 +9303,9 @@ export class WalletService implements IWalletService {
         coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
         coin.decimals = tokenDecimals;
       } else {
-        coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-        coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-        coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
+        coin.minConvertToSat = coinQuantityFromUSDMin * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+        coin.maxConvertToSat = coinQuantityFromUSDMax * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+        coin.decimals = Constants.UNITS[coin.code.toLowerCase()].full.maxDecimals;
       }
       coin.rate = fiatRates[coin.code.toLowerCase()];
     }
@@ -9390,11 +9388,11 @@ export class WalletService implements IWalletService {
       );
       if (coinReceiveFound && coinReceiveFound.networkFee === 0) {
         const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
-        coinReceiveFound.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+        coinReceiveFound.networkFee = estimatedFee / Constants.UNITS[coinCode].toSatoshis;
       }
       if (coinSwapFound && coinSwapFound.networkFee === 0) {
         const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
-        coinSwapFound.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+        coinSwapFound.networkFee = estimatedFee / Constants.UNITS[coinCode].toSatoshis;
       }
     });
   }

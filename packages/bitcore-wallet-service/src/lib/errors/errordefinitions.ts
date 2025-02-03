@@ -1,5 +1,6 @@
 import { ClientError } from './clienterror';
 
+
 interface Errors<T> {
   AD_ALREADY_EXISTS: T;
   BAD_SIGNATURES: T;
@@ -60,6 +61,32 @@ interface Errors<T> {
   WALLET_NOT_FOUND: T;
   WALLET_NEED_SCAN: T;
   WRONG_SIGNING_METHOD: T;
+  OUT_OF_FUND: T,
+  BELOW_MIN_LIMIT: T,
+  EXCEED_MAX_LIMIT: T,
+  NOT_FOUND_KEY_FUND: T,
+  NOT_FOUND_KEY_RECEIVE: T,
+  NOT_FOUND_KEY_CONVERSION: T,
+  MISSING_REQUIRED_FIELD: T,
+  ORDER_EXPIRED: T,
+  NO_AVAILABLE_SWAP_COIN: T,
+  NO_AVAILABLE_RECEIVE_COIN: T,
+  NOT_FOUND_COIN_IN_CONFIG: T,
+  NOT_STABLE_RATE: T,
+  INVALID_AMOUNT: T,
+  NOT_FOUND_TXDETAIL: T,
+  INVALID_ADDRESS_TO: T,
+  INSUFFICIENT_FUND_XEC: T,
+  INSUFFICIENT_FUND_TOKEN: T,
+  NOT_FOUND_XEC_WALLET_BALANCE: T,
+  NOT_FOUND_TOKEN_WALLET: T,
+  NOT_FOUND_RATE_XEC: T,
+  NOT_FOUND_RATE_TOKEN: T,
+  INVALID_TX_ID: T,
+  BELOW_MINIMUM_XEC: T,
+  BELOW_MINIMUM_TOKEN: T,
+  EXCEED_DAILY_LIMIT: T,
+  LONG_MESSAGE: T;
 };
 
 const errors: Errors<string> = {
@@ -90,7 +117,6 @@ const errors: Errors<string> = {
   INVALID_CHANGE_ADDRESS: 'Invalid change address',
   KEY_IN_COPAYER: 'Key already registered',
   LOCKED_FUNDS: 'Funds are locked by pending transaction proposals',
-  LOCKED_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee',
   HISTORY_LIMIT_EXCEEDED: 'Requested page limit is above allowed maximum',
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
   MULTI_TX_UNSUPPORTED: 'Desired chain does not support multi transaction proposals',
@@ -142,7 +168,8 @@ const errors: Errors<string> = {
   INVALID_TX_ID: 'Invalid txid',
   BELOW_MINIMUM_XEC: 'FUND XEC REACHED THRESHOLD LIMIT',
   BELOW_MINIMUM_TOKEN: 'FUND TOKEN REACHED THRESHOLD LIMIT',
-  EXCEED_DAILY_LIMIT: 'Order exceeds maximum allowed daily usage'
+  EXCEED_DAILY_LIMIT: 'Order exceeds maximum allowed daily usage',
+  LONG_MESSAGE: 'Message is too long'
 };
 
 const errorsObject = { codes: {} };

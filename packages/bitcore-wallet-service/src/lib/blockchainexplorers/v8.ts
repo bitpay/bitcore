@@ -15,11 +15,15 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: require('@bcpros/bitcore-lib-cash'),
   xec: require('@bcpros/bitcore-lib-xec'),
+  matic: Bitcore,
   eth: Bitcore,
   xrp: Bitcore,
   doge: require('@bcpros/bitcore-lib-doge'),
   xpi: require('@bcpros/bitcore-lib-xpi'),
-  ltc: require('@bcpros/bitcore-lib-ltc')
+  ltc: require('@bcpros/bitcore-lib-ltc'),
+  arb: Bitcore,
+  op: Bitcore,
+  base: Bitcore
 };
 
 const Constants = Common.Constants,
@@ -523,7 +527,7 @@ export class V8 {
   estimateFeeV2(opts, cb) {
     const txType = opts.txType;
     if (Number(txType) !== 2) {
-     return this.estimateFee(opts, cb);
+      return this.estimateFee(opts, cb);
     }
     const nbBlocks = Number(opts.nbBlocks) || 2;
     const url = this.baseUrl + `/fee/${nbBlocks}?txType=${txType}`;
@@ -562,6 +566,21 @@ export class V8 {
       .catch(err => {
         return cb(err);
       });
+  }
+
+  getBlockBits(cb) {
+    const url = this.baseUrl + '/block/tip';
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = JSON.parse(ret);
+          return cb(null, ret.bits);
+        } catch (err) {
+          return cb(new Error('Could not get bits from block explorer'));
+        }
+      })
+      .catch(cb);
   }
 
   getBlockchainHeight(cb) {

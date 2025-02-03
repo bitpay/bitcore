@@ -106,7 +106,7 @@ export class Utils {
     }
   }
 
-  static formatAmount(satoshis, unit, opts) {
+  static formatAmount(satoshis, unit, opts?) {
     const UNITS = Object.entries(CWC.Constants.UNITS).reduce((units, [currency, currencyConfig]) => {
       units[currency] = {
         toSatoshis: currencyConfig.toSatoshis,
@@ -139,7 +139,7 @@ export class Utils {
       return Number(satoshis).toLocaleString();
     }
 
-    const u = _.assign(UNITS[unit], opts);
+    var u = Constants.UNITS[unit];
     var decimals = opts.decimals ? opts.decimals : u;
     var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
 
@@ -314,4 +314,3 @@ export class Utils {
     return 'testnet';
   }
 }
-module.exports = Utils;

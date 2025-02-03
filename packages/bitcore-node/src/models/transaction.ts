@@ -614,12 +614,10 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     const seen = {};
     const batchStream = CoinStorage.collection.find({ mintTxid: forTx, mintHeight: { $ne: SpentHeightIndicators.conflicting } });
     let coin: ICoin | null;
-    while (true) {
-      coin = (await batchStream.next());
-      if (!coin) break;
+    while (coin = (await batchStream.next())) {
       seen[coin.mintTxid] = true;
       yield coin;
-
+      
       if (coin.spentTxid && !seen[coin.spentTxid]) {
         yield * this.yieldRelatedOutputs(coin.spentTxid);
         seen[coin.spentTxid] = true;
@@ -658,9 +656,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       const seenInvalidTxids = new Set();
       let input: ICoin | null;
 
-      while (true) {
-        input = await conflictingInputsStream.next()
-        if (!input) break;
+      while ((input = await conflictingInputsStream.next())) {
         if (seenInvalidTxids.has(input.spentTxid)) {
           continue;
         }
@@ -683,7 +679,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     simple?: boolean; // if true, don't invalidate descendants
   }) {
     const { chain, network, invalidTxid, replacedByTxid, invalidParentTxids = [], simple } = params;
-
+    
     if (!simple) {
       const spentOutputsQuery = {
         chain,
@@ -697,9 +693,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       const seenTxids = new Set();
       let output: ICoin | null;
 
-        while (true) {
-        output = await spentOutputsStream.next();
-        if (!output) break;
+      while ((output = await spentOutputsStream.next())) {
         if (!output.spentTxid || seenTxids.has(output.spentTxid)) {
           continue;
         }

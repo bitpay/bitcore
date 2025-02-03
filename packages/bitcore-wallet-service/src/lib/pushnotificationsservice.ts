@@ -18,7 +18,6 @@ const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 const sjcl = require('sjcl');
-const config = require('../config');
 const admin = require('firebase-admin');
 const serviceAccount = require('../../config/serviceAccountKey.json');
 admin.initializeApp({
@@ -502,12 +501,12 @@ export class PushNotificationsService {
       busd: 'BUSD',
       wbtc: 'WBTC',
       dai: 'DAI',
-      wbtc: 'WBTC',
       shib: 'SHIB',
       ape: 'APE',
       euroc: 'EUROC',
       usdt: 'USDT',
       weth: 'WETH',
+     'usdc.e': 'USDC.e',
       xpi: 'XPI'
     };
     const data = _.cloneDeep(notification.data);
@@ -561,7 +560,7 @@ export class PushNotificationsService {
           };
           data.amount = caculateAmountToken(data.amount, recipient.tokenDecimals) + ' ' + label;
         } else {
-          data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
+          data.amount = Utils.formatAmount(+data.amount, unit, opts) + ' ' + label;
         }
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));

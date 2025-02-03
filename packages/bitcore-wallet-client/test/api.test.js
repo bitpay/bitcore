@@ -10,7 +10,7 @@ var Uuid = require('uuid');
 var log = require('../ts_build/lib/log');
 var oldCredentials = require('./legacyCredentialsExports');
 
-var CWC = require('@abcpros/crypto-wallet-core');
+var CWC = require('@bcpros/crypto-wallet-core');
 
 var Bitcore = CWC.BitcoreLib;
 var Bitcore_ = {
