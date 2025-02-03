@@ -191,7 +191,7 @@ export interface IChainStateService {
   ): Promise<WalletBalanceType>;
   getWalletBalanceAtTime(
     params: GetWalletBalanceAtTimeParams
-  ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
+  ): Promise<WalletBalanceType>;
   streamAddressUtxos(params: StreamAddressUtxosParams): any;
   streamAddressTransactions(params: StreamAddressUtxosParams): any;
   streamTransactions(params: StreamTransactionsParams): any;

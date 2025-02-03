@@ -1,9 +1,9 @@
-import * as async from 'async';
-import * as crypto from 'crypto'
 import {
   Constants as ConstantsCWC,
   Validation
 } from '@bcpros/crypto-wallet-core';
+import * as async from 'async';
+import * as crypto from 'crypto'
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import config from '../config';

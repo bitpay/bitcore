@@ -31,7 +31,7 @@
     "@bcpros/bitcore-lib-xpi": "^9.0.2",
     "ethers": "^5.7.0",
     "info": "0.0.6-beta.0",
-    "web3": "1.4.0",
+    "web3": "1.7.1",
     "xrpl": "2.13.0"
   },
   "devDependencies": {

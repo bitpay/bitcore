@@ -1,6 +1,6 @@
-import * as BitcoreClient from 'bitcore-client';
+import * as BitcoreClient from '@bcpros/bitcore-client';
 import { expect } from 'chai';
-import { Web3 } from 'crypto-wallet-core';
+import { Web3 } from '@bcpros/crypto-wallet-core';
 import sinon from 'sinon';
 import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
@@ -127,8 +127,8 @@ describe('Ethereum', function() {
 
   it('should be able to get the balance for the address', async () => {
     const wallet = await getWallet();
-    const balance = await wallet.getBalance();
-    expect(balance.confirmed).to.be.gt(0);
+    const balance = await wallet.getBalance({ hex: true });
+    expect(Number(balance.confirmed)).to.be.gt(0);
 
     const key = 'getBalanceForAddress-ETH-regtest-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
     const cached = await CacheStorage.collection.findOne({ key });

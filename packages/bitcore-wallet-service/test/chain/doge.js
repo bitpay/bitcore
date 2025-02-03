@@ -3,7 +3,7 @@
 const  _ = require('lodash');
 const chai = require('chai');
 const should = chai.should();
-const { BitcoreLibDoge } = require ('@abcpros/crypto-wallet-core');
+const { BitcoreLibDoge } = require ('@bcpros/crypto-wallet-core');
 const { ChainService } = require('../../ts_build/lib/chain');
 const { DogeChain } = require('../../ts_build/lib/chain/doge');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');

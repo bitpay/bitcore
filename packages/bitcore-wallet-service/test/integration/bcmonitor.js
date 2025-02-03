@@ -1,8 +1,8 @@
-'use strict'; 
+'use strict';
 var _ = require('lodash');
 var async = require('async');
 
-const CWC = require('@abcpros/crypto-wallet-core');
+const CWC = require('@bcpros/crypto-wallet-core');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();

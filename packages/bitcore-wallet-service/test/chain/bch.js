@@ -5,7 +5,7 @@ var async = require('async');
 var chai = require('chai');
 var mongodb = require('mongodb');
 var should = chai.should();
-const { BitcoreLibCash } = require ('@abcpros/crypto-wallet-core');
+const { BitcoreLibCash } = require ('@bcpros/crypto-wallet-core');
 const { ChainService } = require('../../ts_build/lib/chain');
 const { BchChain } = require('../../ts_build/lib/chain/bch');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
@@ -14,7 +14,7 @@ const { Common } = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
 describe('Chain BCH', function() {
- 
+
 
   describe('#getEstimatedSize', function() {
     let bch, fromAddress, simpleUtxoWith1BTC, changeAddress, toAddress, privateKey;
@@ -56,7 +56,7 @@ describe('Chain BCH', function() {
       ((Math.abs(actualLength-estimatedLength))/actualLength).should.not.be.above(0.05);
     });
 
- 
+
   });
 });
 

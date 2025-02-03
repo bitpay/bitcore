@@ -121,13 +121,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async erc20For(network: string, address: string) {
     const { web3 } = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], address);
+    const contract = new web3.eth.Contract(ERC20Abi as unknown as AbiItem[], address);
     return contract;
   }
 
   async getMultisendContract(network: string, address: string) {
     const { web3 } = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(MultisendAbi as AbiItem[], address);
+    const contract = new web3.eth.Contract(MultisendAbi as unknown as AbiItem[], address);
     return contract;
   }
 
@@ -516,7 +516,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         const result = await ExternalApiStream.onStream(transactionStream, req!, res!, { jsonl: true });
         if (!result?.success) {
           logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
-        }  
+        }
         return resolve();
       } catch (err) {
         return reject(err);
@@ -553,7 +553,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     let windowSize = 100;
     const { web3 } = await this.getWeb3(network);
     const tip = await web3.eth.getBlockNumber();
-    
+
     // If endBlock or startBlock is negative, it is a block offset from the tip
     if (args.endBlock! < 0) {
       args.endBlock = tip + Number(args.endBlock!);
@@ -564,7 +564,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     args.endBlock = Math.min(args.endBlock ?? tip, tip);
     args.startBlock = Math.max(args.startBlock != null ? Number(args.startBlock) : args.endBlock - 10000, 0);
-    
+
     if (isNaN(args.startBlock!) || isNaN(args.endBlock!)) {
       throw new Error('startBlock and endBlock must be numbers');
     } else if (args.endBlock < args.startBlock) {
@@ -814,7 +814,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       }
       blockId = undefined;
     }
-  
+
     if (date) {
       startDate = new Date(date);
       endDate = new Date(date);

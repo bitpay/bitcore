@@ -1,4 +1,4 @@
-import { Wallet } from 'bitcore-client';
+import { Wallet } from '@bcpros/bitcore-client';
 import * as _ from 'lodash';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';

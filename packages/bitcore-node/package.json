@@ -1,5 +1,5 @@
 {
-  "name": "@abcpros/bitcore-node",
+  "name": "@bcpros/bitcore-node",
   "description": "A blockchain indexing node with extended capabilities using bitcore",
   "engines": {
     "node": ">=18.0.0"
@@ -90,7 +90,7 @@
     "typescript-eslint-parser": "15.0.0"
   },
   "dependencies": {
-    "@abcpros/bitcore-client": "^9.0.2",
+    "@bcpros/bitcore-client": "^9.0.2",
     "@bcpros/bitcore-lib": "^9.0.2",
     "@bcpros/bitcore-lib-cash": "^9.0.2",
     "@bcpros/bitcore-lib-doge": "^9.0.2",
@@ -114,9 +114,9 @@
     "secp256k1": "4.0.3",
     "socket.io": "2.1.1",
     "source-map-support": "^0.5.13",
-    "web3": "1.7.0",
+    "web3": "1.7.1",
     "winston": "3.2.0",
-    "xrpl": "2.6.0"
+    "xrpl": "2.13.0"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }

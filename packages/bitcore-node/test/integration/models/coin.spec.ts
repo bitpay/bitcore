@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as crypto from 'crypto';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@bcpros/crypto-wallet-core';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/models/transaction';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
@@ -186,7 +186,7 @@ describe('Coin Model', function() {
       } as ICoin;
     });
     await addTx(mempoolTx, mempoolOutputs);
-    
+
     // update existing outputs to be spent by mempool tx
     await CoinStorage.collection.updateMany(
       { chain, network, mintTxid: tx1.hash },

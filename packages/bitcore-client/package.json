@@ -1,5 +1,5 @@
 {
-  "name": "@abcpros/bitcore-client",
+  "name": "@bcpros/bitcore-client",
   "description": "Wallet client for Bitcore node",
   "engines": {
     "node": ">=18.0.0"
