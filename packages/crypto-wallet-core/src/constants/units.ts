@@ -32,6 +32,17 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  xpi: {
+    toSatoshis: 1000000,
+    full: {
+      maxDecimals: 6,
+      minDecimals: 6
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
   eth: {
     toSatoshis: 1e18,
     full: {
@@ -66,6 +77,17 @@ export let UNITS = {
     }
   },
   base: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  op: {
     toSatoshis: 1e18,
     full: {
       maxDecimals: 8,
@@ -198,19 +220,19 @@ export let UNITS = {
       minDecimals: 2
     }
   },
-  xpi: {
-    toSatoshis: 1000000,
+  ltc: {
+    toSatoshis: 100000000,
     full: {
-      maxDecimals: 6,
-      minDecimals: 6
+      maxDecimals: 8,
+      minDecimals: 8
     },
     short: {
       maxDecimals: 6,
       minDecimals: 2
     }
   },
-  ltc: {
-    toSatoshis: 100000000,
+  shib: {
+    toSatoshis: 1e18,
     full: {
       maxDecimals: 8,
       minDecimals: 8
@@ -243,6 +265,17 @@ export let UNITS = {
     }
   },
   usdt: {
+    toSatoshis: 1e6,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  'usdc.e': {
     toSatoshis: 1e6,
     full: {
       maxDecimals: 8,
