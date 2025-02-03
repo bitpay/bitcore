@@ -8,7 +8,7 @@
   "scripts": {
     "build": "docker build -t bitcore-node . ",
     "watch": "./node_modules/.bin/lerna run watch --parallel",
-    "postinstall": "npm run bootstrap && npm run compile",
+    "postinstall": "npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
@@ -87,7 +87,7 @@
     "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {
-    "lerna": "^3.22.1",
+    "lerna": "^8.1.9",
     "typescript": "4.9.4"
   },
   "husky": {
