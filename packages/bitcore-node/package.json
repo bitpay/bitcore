@@ -1,6 +1,7 @@
 {
   "name": "@bcpros/bitcore-node",
   "description": "A blockchain indexing node with extended capabilities using bitcore",
+  "private": true,
   "engines": {
     "node": ">=18.0.0"
   },
@@ -118,5 +119,5 @@
     "winston": "3.2.0",
     "xrpl": "2.13.0"
   },
-  "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
+  "gitHead": "169e28b0b13c25c386faccf38a2fdc4e1275a5db"
 }
