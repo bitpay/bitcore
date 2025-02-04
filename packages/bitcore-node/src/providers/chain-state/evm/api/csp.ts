@@ -121,13 +121,19 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async erc20For(network: string, address: string) {
     const { web3 } = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(ERC20Abi as unknown as AbiItem[], address);
+    const contract = new web3.eth.Contract(
+      (ERC20Abi as AbiItem[]) as unknown as (AbiItem | AbiItem[]),
+      address
+    );
     return contract;
   }
 
   async getMultisendContract(network: string, address: string) {
     const { web3 } = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(MultisendAbi as unknown as AbiItem[], address);
+    const contract = new web3.eth.Contract(
+      (MultisendAbi as AbiItem[]) as unknown as (AbiItem | AbiItem[]),
+      address
+    );
     return contract;
   }
 
