@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "9.0.4",
+  "version": "9.0.5",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -20,8 +20,8 @@
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"
   },
   "dependencies": {
-    "@bcpros/bitcore-mnemonic": "^9.0.4",
-    "@bcpros/crypto-wallet-core": "^9.0.4",
+    "@bcpros/bitcore-mnemonic": "^9.0.5",
+    "@bcpros/crypto-wallet-core": "^9.0.5",
     "JSONStream": "~1.3.1",
     "async": "2.5.0",
     "bcrypt": "5.1.0",
