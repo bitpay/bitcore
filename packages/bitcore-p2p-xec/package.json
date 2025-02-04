@@ -1,6 +1,6 @@
 {
   "name": "@bcpros/bitcore-p2p-xec",
-  "version": "9.0.5",
+  "version": "9.0.6",
   "description": "Interface to the bitcoin P2P network for ecash",
   "author": "Viet <vince.tran8x@gmail.com>",
   "main": "index.js",
@@ -60,14 +60,14 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "@bcpros/bitcore-lib": "^9.0.5",
-    "@bcpros/bitcore-lib-xec": "^9.0.5",
+    "@bcpros/bitcore-lib": "^9.0.6",
+    "@bcpros/bitcore-lib-xec": "^9.0.6",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "@bcpros/bitcore-build": "^9.0.5",
+    "@bcpros/bitcore-build": "^9.0.6",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",
