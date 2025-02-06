@@ -1382,18 +1382,16 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v4/allFiatrates/', (req, res) => {
+    router.get('/v4/allfiatrates/', async (req, res) => {
       SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       try {
         server = getServer(req, res);
+        const rates = await server.getAllFiatRates();
+        res.json(rates);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getAllFiatRates((err, rates) => {
-        if (err) return returnError(err, res, req);
-        res.json(rates);
-      });
     });
 
     router.get('/v3/getKeyFund/', (req, res) => {

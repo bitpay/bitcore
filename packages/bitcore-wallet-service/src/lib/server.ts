@@ -9164,7 +9164,7 @@ export class WalletService implements IWalletService {
    */
   getAllFiatRates(cb) {
 
-    this.fiatRateService.getAllRates((err, rates) => {
+     return this.fiatRateService.getAllRates((err, rates) => {
       if (err) return cb(err);
       return cb(null, rates);
     });

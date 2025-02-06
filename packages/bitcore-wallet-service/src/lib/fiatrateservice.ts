@@ -346,50 +346,48 @@ export class FiatRateService {
     );
   }
 
-  getAllRates(cb) {
+  async getAllRates(cb) {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRates()>');
 
-    const now = Date.now();
-    const ts = now;
+    const ts = Date.now();
     let rates = [];
 
-    const currencies: { code: string; name: string }[] = Defaults.SUPPORT_FIAT_CURRENCIES;
+    const currencies = Defaults.SUPPORT_FIAT_CURRENCIES;
     const coins = _.values(Constants.CHAINS_RATES);
 
-    async.map(
-      currencies,
-      (currency, cb) => {
-        rates[currency.code] = [];
-        async.map(
-          coins,
-          (coin, cb) => {
-            let c = coin;
-            this.storage.fetchFiatRate(c, currency.code, ts, (err, rate) => {
-              if (err) return cb(err);
-              if (!rate) return cb();
-              if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
-              return cb(null, {
-                coin,
-                ts: +ts,
-                rate: rate ? rate.value : undefined,
-              });
-            });
-          },
-          (err, res: any) => {
-            if (err) return cb(err);
-            if (!res) return cb();
-            var obj = {};
-            obj[currency.code] = res;
-            return cb(null, obj);
+    const fetchRate = async (coin: string, currencyCode: string) => {
+      return new Promise((resolve, reject) => {
+        this.storage.fetchFiatRate(coin, currencyCode, ts, (err, rate) => {
+          if (err) return reject(err);
+          if (!rate || (ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000)) {
+            return resolve(null);
           }
-        );
-      },
-      (err, res: any) => {
-        if (err) return cb(err);
-        if (!res) return cb();
-        return cb(null, Object.assign({}, ...res));
-      }
-    );
+          resolve({
+            coin,
+            ts: +ts,
+            rate: rate.value
+          });
+        });
+      });
+    };
+
+    try {
+      const results = await Promise.all(
+        currencies.map(async (currency) => {
+          const rates = await Promise.all(
+            coins.map(coin => fetchRate(coin, currency.code))
+          );
+          
+          return {
+            [currency.code]: rates.filter(rate => rate !== null)
+          };
+        })
+      );
+  
+      return Object.assign({}, ...results);
+    } catch (error) {
+      throw error;
+    }
   }
 
   public getRatesByCoin(opts, cb) {
