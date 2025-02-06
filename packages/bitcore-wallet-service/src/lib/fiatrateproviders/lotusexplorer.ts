@@ -1,4 +1,4 @@
-const Config = require('../../config');
+import Config from '../../config'
 
 const ELECTRICITY_RATE = Config.fiatRateServiceOpts.lotusProvider.electricityRate;
 const MINER_MARGIN = Config.fiatRateServiceOpts.lotusProvider.minerMargin;

@@ -18,11 +18,11 @@ const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 const sjcl = require('sjcl');
-const admin = require('firebase-admin');
-const serviceAccount = require('../../config/serviceAccountKey.json');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// const admin = require('firebase-admin');
+// const serviceAccount = require(path.resolve(__dirname, '../../src/serviceAccountKey.json'));
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -102,11 +102,11 @@ export class PushNotificationsService {
     opts = opts || {};
     this.request = opts.request || defaultRequest;
 
-    const getAccessToken = async () => {
-      const customCredential = admin.credential.cert(serviceAccount);
-      const token = await customCredential.getAccessToken();
-      return token.access_token;
-    };
+    // const getAccessToken = async () => {
+    //   const customCredential = admin.credential.cert(serviceAccount);
+    //   const token = await customCredential.getAccessToken();
+    //   return token.access_token;
+    // };
 
     const _readDirectories = (basePath, cb) => {
       fs.readdir(basePath, (err, files) => {

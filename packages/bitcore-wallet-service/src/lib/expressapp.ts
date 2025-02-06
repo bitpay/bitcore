@@ -4,6 +4,8 @@ import _ from 'lodash';
 import 'source-map-support/register';
 import { logger, transport } from './logger';
 
+import config from '../config'
+import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
 import { IUser } from './model/user';
@@ -12,9 +14,7 @@ import { Stats } from './stats';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
-const config = require('../config');
 const RateLimit = require('express-rate-limit');
-const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 const TelegramBot = require('node-telegram-bot-api');
@@ -1377,6 +1377,20 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
       server.getFiatRates(opts, (err, rates) => {
+        if (err) return returnError(err, res, req);
+        res.json(rates);
+      });
+    });
+
+    router.get('/v4/allFiatrates/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getAllFiatRates((err, rates) => {
         if (err) return returnError(err, res, req);
         res.json(rates);
       });

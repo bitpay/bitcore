@@ -1,6 +1,7 @@
 import _ from 'lodash';
+import { Common } from '../common';
 const Config = require('../../config');
-const Common = require('../common');
+
 const Defaults = Common.Defaults;
 
 module.exports = {
@@ -11,7 +12,7 @@ module.exports = {
     tsyms: Defaults.FIAT_CURRENCY.code
   },
   headers: {
-    authorization: Config.fiatRateServiceOpts.cryptoCompareApiKey
+    authorization: Config.fiatRateServiceOpts?.cryptoCompareApiKey ?? ''
   },
   parseFn(raw) {
     const rates = _.compact(

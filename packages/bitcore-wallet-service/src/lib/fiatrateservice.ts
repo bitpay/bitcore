@@ -1,20 +1,19 @@
 import * as async from 'async';
 import _, { countBy, reject } from 'lodash';
 import * as request from 'request';
+import config from '../config'
+import { Common } from './common';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
-const Defaults = Common.Defaults;
-const Constants = Common.Constants;
-const config = require('../config');
 const Bitcore = require('@bcpros/bitcore-lib');
 
-const ELECTRICITY_RATE = config.fiatRateServiceOpts.lotusFormula.ELECTRICITY_RATE;
-const MINER_MARGIN = config.fiatRateServiceOpts.lotusFormula.MINER_MARGIN;
-const RIG_HASHRATE = config.fiatRateServiceOpts.lotusFormula.RIG_HASHRATE;
-const RIG_POWER = config.fiatRateServiceOpts.lotusFormula.RIG_POWER;
-const MINING_EFFICIENCY = RIG_HASHRATE / RIG_POWER;
+const Defaults = Common.Defaults;
+const Constants = Common.Constants;
+
+const ELECTRICITY_RATE = config.fiatRateServiceOpts.lotusProvider.electricityRate;
+const MINER_MARGIN = config.fiatRateServiceOpts.lotusProvider.minerMargin;
+const MINING_EFFICIENCY = config.fiatRateServiceOpts.lotusProvider.miningEfficiency;
 
 import { BlockChainExplorer } from './blockchainexplorer';
 import logger from './logger';
@@ -307,7 +306,7 @@ export class FiatRateService {
       ? fiatFiltered
       : Defaults.SUPPORT_FIAT_CURRENCIES;
     const etoken = this._getEtokenSupportPrice();
-    const coins = _.concat(_.values(Constants.COINS), etoken);
+    const coins = _.concat(_.values(Constants.CHAINS), etoken);
     async.map(
       coins,
       (coin, cb) => {
@@ -342,6 +341,52 @@ export class FiatRateService {
       },
       (err, res: any) => {
         if (err) return cb(err);
+        return cb(null, Object.assign({}, ...res));
+      }
+    );
+  }
+
+  getAllRates(cb) {
+    $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRates()>');
+
+    const now = Date.now();
+    const ts = now;
+    let rates = [];
+
+    const currencies: { code: string; name: string }[] = Defaults.SUPPORT_FIAT_CURRENCIES;
+    const coins = _.values(Constants.CHAINS_RATES);
+
+    async.map(
+      currencies,
+      (currency, cb) => {
+        rates[currency.code] = [];
+        async.map(
+          coins,
+          (coin, cb) => {
+            let c = coin;
+            this.storage.fetchFiatRate(c, currency.code, ts, (err, rate) => {
+              if (err) return cb(err);
+              if (!rate) return cb();
+              if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
+              return cb(null, {
+                coin,
+                ts: +ts,
+                rate: rate ? rate.value : undefined,
+              });
+            });
+          },
+          (err, res: any) => {
+            if (err) return cb(err);
+            if (!res) return cb();
+            var obj = {};
+            obj[currency.code] = res;
+            return cb(null, obj);
+          }
+        );
+      },
+      (err, res: any) => {
+        if (err) return cb(err);
+        if (!res) return cb();
         return cb(null, Object.assign({}, ...res));
       }
     );
@@ -400,7 +445,7 @@ export class FiatRateService {
     // Oldest date in timestamp range in epoch number ex. 24 hours ago
     const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
     const ts = _.isNumber(opts.ts) ? opts.ts : now;
-    const coins = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
+    const coins = Constants.CHAINS_RATES;
 
     async.map(
       coins,

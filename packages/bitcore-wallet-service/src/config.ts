@@ -286,6 +286,18 @@ const Config = (): any => {
       tokenCodeUnit: 'TYD',
       minXecSatConversion: 10000,
       minTokenConversion: 0.02
+    },
+    chronik: {
+      xpiUrl: 'https://chronik01.abcpay.cash/xpi,https://chronik.be.cash/xpi',
+      xecUrl: 'https://chronik.pay2stay.com/xec,https://chronik.lixi.app/xec'
+    },
+    emailMerchant: {
+      SENDGRID_API_KEY: ''
+    },
+    queueNoti: {
+      GAP_RESTART_QUEUE: '',
+      NOTI_AFTER_MANY_RESTART: '',
+      MAXIMUM_NOTI: ''
     }
     // banxa : {
     //   sandbox: {
