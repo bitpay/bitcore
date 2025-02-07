@@ -1,18 +1,30 @@
-import { UNITS } from '@abcpros/crypto-wallet-core/ts_build/src/constants/units';
+import {
+  Constants as ConstantsCWC,
+  Validation
+} from '@bcpros/crypto-wallet-core';
 import * as async from 'async';
+import * as crypto from 'crypto'
 import * as _ from 'lodash';
 import 'source-map-support/register';
+import config from '../config';
+import logger from './logger';
+
+import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
+import { serverMessages } from '../serverMessages';
+import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
+import { Common } from './common';
 import { ClientError } from './errors/clienterror';
+import { Errors } from './errors/errordefinitions';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
-import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
   Copayer,
+  ExternalServicesConfig,
   INotification,
   ITxProposal,
   IWallet,
@@ -30,8 +42,6 @@ import { Storage } from './storage';
 import cuid from 'cuid';
 import * as forge from 'node-forge';
 
-import { Validation } from '@abcpros/crypto-wallet-core';
-import messageLib from 'bitcoinjs-message';
 import {
   ChronikClient,
   ChronikClientNode,
@@ -60,9 +70,9 @@ import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
 import { PushNotificationsService } from './pushnotificationsservice';
 
-const Client = require('@abcpros/bitcore-wallet-client').default;
+const Client = require('@bcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
-const commonBWC = require('@abcpros/bitcore-wallet-client/ts_build/lib/common');
+const commonBWC = require('@bcpros/bitcore-wallet-client/ts_build/lib/common');
 const walletLotus = require('../../../../wallet-lotus-donation.json');
 const merchantList = require('../../../../merchant-list.json');
 const raipayFee = require('../../../../raipay-fee.json');
@@ -72,12 +82,8 @@ const appDir = dirname(require.main.filename);
 // import * as swapConfigFile from './admin-config.json';
 // var obj = JSON.parse(fs.readFileSync(swapConfig, 'utf8'));
 
-const config = require('../config');
 const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
-const deprecatedServerMessage = require('../deprecated-serverMessages');
-const serverMessages = require('../serverMessages');
-const BCHAddressTranslator = require('./bchaddresstranslator');
 const EmailValidator = require('email-validator');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(config.emailMerchant.SENDGRID_API_KEY);
@@ -125,36 +131,39 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 let txIdHandled = [];
 let ws = null;
-const Bitcore = require('@abcpros/bitcore-lib');
+const Bitcore = require('@bcpros/bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('@abcpros/bitcore-lib-cash'),
-  xec: require('@abcpros/bitcore-lib-xec'),
+  bch: require('@bcpros/bitcore-lib-cash'),
+  xec: require('@bcpros/bitcore-lib-xec'),
   eth: Bitcore,
+  matic: Bitcore,
+  arb: Bitcore,
+  base: Bitcore,
+  op: Bitcore,
   xrp: Bitcore,
-  doge: require('@abcpros/bitcore-lib-doge'),
-  xpi: require('@abcpros/bitcore-lib-xpi'),
-  ltc: require('@abcpros/bitcore-lib-ltc')
+  doge: require('@bcpros/bitcore-lib-doge'),
+  xpi: require('@bcpros/bitcore-lib-xpi'),
+  ltc: require('@bcpros/bitcore-lib-ltc')
 };
 
-const Common = require('./common');
 const Utils = Common.Utils;
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
+const Services = Common.Services;
 
-const Errors = require('./errors/errordefinitions');
 
-const shell = require('shelljs');
 
-const BCHJS = require('@bcpros/xpi-js');
-const bchURL = config.supportToken.xec.bchUrl;
-const bchjs = new BCHJS({ restURL: bchURL });
+// const BCHJS = require('@bcpros/xpi-js');
+// const bchURL = config.supportToken.xec.bchUrl;
+// const bchjs = new BCHJS({ restURL: bchURL });
 
 const ecashaddr = require('ecashaddrjs');
 
 let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
+let isMoralisInitialized = false;
 
 let lock;
 let storage;
@@ -169,6 +178,7 @@ let fundingWalletClients: any;
 let receivingWalletClients: any;
 interface IAddress {
   coin: string;
+  chain: string;
   network: string;
   address: string;
   hasActivity: boolean;
@@ -188,11 +198,12 @@ export interface IWalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: string;
-  parsedClientVersion: { agent: number; major: number; minor: number };
+  appVersion: { agent?: string; major?: number; minor?: number };
+  parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
+  request: any;
 }
 
 export interface ICoinConfigFilter {
@@ -214,7 +225,7 @@ function boolToNum(x: boolean) {
  * Creates an instance of the Bitcore Wallet Service.
  * @constructor
  */
-export class WalletService {
+export class WalletService implements IWalletService {
   lock: any;
   storage: Storage;
   blockchainExplorer: V8;
@@ -227,12 +238,12 @@ export class WalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: string;
-  parsedClientVersion: { agent: string; major: number; minor: number };
+  appVersion: { agent?: string; major?: number; minor?: number };
+  parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
-  request;
+  request: any;
 
   constructor() {
     if (!initialized) {
@@ -393,7 +404,7 @@ export class WalletService {
         lock = opts.lock || new Lock(storage);
 
         if (err) {
-          logger.error('Could not initialize', err);
+          logger.error('Could not initialize: %o', err);
           throw err;
         }
         initialized = true;
@@ -403,7 +414,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -551,6 +562,12 @@ export class WalletService {
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
   logi(message, ...args) {
+    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
+      for (let i = 0; i < args.length; i++) {
+        message += ' %o';
+      }
+    }
+
     if (!this || !this.walletId) {
       return logger.warn(message, ...args);
     }
@@ -560,6 +577,13 @@ export class WalletService {
   }
 
   logw(message, ...args) {
+    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
+      for (let i = 0; i < args.length; i++) {
+        message += ' %o';
+        args[i] = args[i]?.stack || args[i]?.message || args[i];
+      }
+    }
+
     if (!this || !this.walletId) {
       return logger.warn(message, ...args);
     }
@@ -569,6 +593,12 @@ export class WalletService {
   }
 
   logd(message, ...args) {
+    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
+      for (let i = 0; i < args.length; i++) {
+        message += ' %o';
+      }
+    }
+
     if (!this || !this.walletId) {
       return logger.verbose(message, ...args);
     }
@@ -630,17 +660,25 @@ export class WalletService {
    * @param {number} opts.m - Required copayers.
    * @param {number} opts.n - Total copayers.
    * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
+   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
+   * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
    * @param {string} opts.account[=0] - BIP44 account number
    * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
-   * @param {string} opts.useNativeSegwit - for Segwit address, set addressType to P2WPKH or P2WSH
+   * @param {boolean} opts.useNativeSegwit - set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
+   * @param {number} opts.segwitVersion - 0 (default) = P2WPKH, P2WSH; 1 = P2TR
    */
   createWallet(opts, cb) {
     let pubKey;
 
-    if (opts.coin === 'bch' && opts.n > 1) {
+    opts.coin = opts.coin || Defaults.COIN;
+    if (!opts.chain) {
+      opts.chain = opts.coin; // chain === coin for stored clients
+    }
+
+    if (opts.chain === 'bch' && opts.n > 1) {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -666,21 +704,35 @@ export class WalletService {
       return cb(new ClientError('Invalid combination of required copayers / total copayers'));
     }
 
-    opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) {
-      return cb(new ClientError('Invalid coin'));
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) {
+      return cb(new ClientError('Invalid chain'));
     }
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) {
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) {
       return cb(new ClientError('Invalid network'));
+    }
+
+    if (opts.network === 'regtest' && !config.allowRegtest) {
+      return cb(new ClientError('Regtest is not allowed for this environment'));
     }
 
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
     let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
 
-    if (opts.useNativeSegwit) {
-      addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+    if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
+      switch (Number(opts.segwitVersion)) {
+        case 0:
+        default:
+          addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          break;
+        case 1:
+          if (!Utils.checkValueInCollection(opts.chain, Constants.TAPROOT_CHAINS)) {
+            return cb(new ClientError('Invalid chain for P2TR'));
+          }
+          addressType = Constants.SCRIPT_TYPES.P2TR;
+          break;
+      }
     }
 
     try {
@@ -689,11 +741,13 @@ export class WalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-    if (opts.n > 1 && !ChainService.supportsMultisig(opts.coin)) {
+    // using coin for simplicity
+    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain)) {
       return cb(new ClientError('Multisig wallets are not supported for this coin'));
     }
 
-    if (ChainService.isSingleAddress(opts.coin)) {
+    // using coin for simplicity
+    if (ChainService.isSingleAddress(opts.chain)) {
       opts.singleAddress = true;
     }
 
@@ -719,6 +773,7 @@ export class WalletService {
             m: opts.m,
             n: opts.n,
             coin: opts.coin,
+            chain: opts.chain, // chain === coin for stored wallets
             network: opts.network,
             pubKey: pubKey.toString(),
             singleAddress: !!opts.singleAddress,
@@ -726,6 +781,7 @@ export class WalletService {
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
             usePurpose48: opts.n > 1 && !!opts.usePurpose48,
+            hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
             isSlpToken: !!opts.isSlpToken,
             isFromRaipay: !!opts.isFromRaipay,
             isPath899: !!opts.isPath899
@@ -750,11 +806,7 @@ export class WalletService {
    * @returns {Object} wallet
    */
   getWallet(opts, cb) {
-    let walletId = this.walletId;
-    if (opts.walletId) {
-      walletId = opts.walletId;
-    }
-    this.storage.fetchWallet(walletId, (err, wallet) => {
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
@@ -764,35 +816,12 @@ export class WalletService {
       // only for testing
       if (opts.doNotMigrate) return cb(null, wallet);
 
-      // remove someday...
-      logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
-      this.storage.migrateToCashAddr(walletId, e => {
-        if (e) return cb(e);
-        wallet.nativeCashAddr = true;
-        return this.storage.storeWallet(wallet, e => {
-          if (e) return cb(e);
-          return cb(e, wallet);
-        });
-      });
-    });
-  }
-
-  /**
-   * Retrieves a wallet from storage.
-   * @param {Object} opts
-   * @returns {Object} wallet
-   */
-  getWalletFromId(walletId, cb) {
-    this.storage.fetchWallet(walletId, (err, wallet) => {
-      if (err) return cb(err);
-      if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
-
-      // cashAddress migration
-      if (wallet.coin != 'bch' || wallet.nativeCashAddr) return cb(null, wallet);
+      // backwards compatibility
+      if (!wallet.chain) wallet.chain = ChainService.getChain(wallet.coin);
 
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
-      this.storage.migrateToCashAddr(walletId, e => {
+      this.storage.migrateToCashAddr(this.walletId, e => {
         if (e) return cb(e);
         wallet.nativeCashAddr = true;
         return this.storage.storeWallet(wallet, e => {
@@ -831,7 +860,7 @@ export class WalletService {
           });
         },
         done => {
-          this.storage.fetchAddressByCoin(Defaults.COIN, opts.identifier, (err, address) => {
+          this.storage.fetchAddressByChain(Defaults.CHAIN, opts.identifier, (err, address) => {
             if (address) walletId = address.walletId;
             return done(err);
           });
@@ -1012,7 +1041,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -1056,9 +1085,11 @@ export class WalletService {
   _addCopayerToWallet(wallet, opts, cb) {
     const copayer = Copayer.create({
       coin: wallet.coin,
+      chain: wallet.chain, // chain === coin for stored clients
       name: opts.name,
       copayerIndex: wallet.copayers.length,
       xPubKey: opts.xPubKey,
+      hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
       requestPubKey: opts.requestPubKey,
       signature: opts.copayerSignature,
       customData: opts.customData,
@@ -1583,29 +1614,36 @@ export class WalletService {
    * @param {Object} opts
    * @param {string} opts.walletId - The wallet id.
    * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge, ltc).
+   * @param {string} opts.chain[='btc'] - The expected chain for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.name - The copayer name.
-   * @param {string} opts.xPubKey - Extended Public Key for this copayer.
+   * @param {string} opts.xPubKey - Extended Public Key for this copayer
+   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
    * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
    * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
    * @param {string} opts.customData - (optional) Custom data for this copayer.
    * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
-    if (!checkRequired(opts, ['walletId', 'name', 'xPubKey', 'requestPubKey', 'copayerSignature'], cb)) return;
-
+    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
     if (_.isEmpty(opts.name)) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
+    if (!opts.chain) {
+      opts.chain = opts.coin; // chain === coin for stored clients
+    }
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
-    try {
-      xPubKey = Bitcore_[opts.coin].HDPublicKey(opts.xPubKey);
-    } catch (ex) {
-      return cb(new ClientError('Invalid extended public key'));
-    }
-    if (_.isUndefined(xPubKey.network)) {
-      return cb(new ClientError('Invalid extended public key'));
+    if (!opts.hardwareSourcePublicKey) {
+      if (!checkRequired(opts, ['xPubKey'], cb)) return;
+      try {
+        xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
+      } catch (ex) {
+        return cb(new ClientError('Invalid extended public key'));
+      }
+      if (_.isUndefined(xPubKey.network)) {
+        return cb(new ClientError('Invalid extended public key'));
+      }
     }
 
     this.walletId = opts.walletId;
@@ -1614,7 +1652,12 @@ export class WalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if (opts.coin === 'bch' && wallet.n > 1) {
+        if (opts.hardwareSourcePublicKey) {
+          this._addCopayerToWallet(wallet, opts, cb);
+          return;
+        }
+
+        if (opts.chain === 'bch' && wallet.n > 1) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
@@ -1650,11 +1693,11 @@ export class WalletService {
           }
         }
 
-        if (opts.coin != wallet.coin) {
-          return cb(new ClientError('The wallet you are trying to join was created for a different coin'));
+        if (opts.chain != wallet.chain) {
+          return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (wallet.network != xPubKey.network.name) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 
@@ -1692,6 +1735,11 @@ export class WalletService {
    * @param {string} opts.unit - Bitcoin unit used to format amounts in notifications.
    * @param {string} opts.tokenAddresses - Linked token addresses
    * @param {string} opts.multisigEthInfo - Linked multisig eth wallet info
+   * @param {string} opts.maticTokenAddresses - Linked token addresses
+   * @param {string} opts.opTokenAddresses - Linked token addresses
+   * @param {string} opts.baseTokenAddresses - Linked token addresses
+   * @param {string} opts.arbTokenAddresses - Linked token addresses
+   * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
    */
   savePreferences(opts, cb) {
@@ -1730,7 +1778,40 @@ export class WalletService {
             value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress))
           );
         }
-      }
+      },
+      {
+        name: 'maticTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('matic', 'mainnet', x));
+        }
+      },
+      {
+        name: 'multisigMaticInfo',
+        isValid(value) {
+          return (
+            _.isArray(value) &&
+            value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress))
+          );
+        }
+      },
+      {
+        name: 'opTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('op', 'mainnet', x));
+        }
+      },
+      {
+        name: 'baseTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('base', 'mainnet', x));
+        }
+      },
+      {
+        name: 'arbTokenAddresses',
+        isValid(value) {
+          return _.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
+        }
+      },
     ];
 
     opts = _.pick(opts, _.map(preferences, 'name'));
@@ -1749,9 +1830,14 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (wallet.coin != 'eth') {
+      if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
         opts.tokenAddresses = null;
         opts.multisigEthInfo = null;
+      }
+
+      if (wallet.coin != 'matic') {
+        opts.maticTokenAddresses = null;
+        opts.multisigMaticInfo = null;
       }
 
       this._runLocked(cb, cb => {
@@ -1764,14 +1850,14 @@ export class WalletService {
           });
           const preferences = Preferences.fromObj(_.defaults(newPref, opts, oldPref));
 
-          // merge tokenAddresses
+          // merge eth tokenAddresses
           if (opts.tokenAddresses) {
             oldPref = oldPref || {};
             oldPref.tokenAddresses = oldPref.tokenAddresses || [];
             preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
           }
 
-          // merge multisigEthInfo
+          // merge eth multisigEthInfo
           if (opts.multisigEthInfo) {
             oldPref = oldPref || {};
             oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
@@ -1793,6 +1879,55 @@ export class WalletService {
             );
           }
 
+          // merge matic tokenAddresses
+          if (opts.maticTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.maticTokenAddresses = oldPref.maticTokenAddresses || [];
+            preferences.maticTokenAddresses = _.uniq(oldPref.maticTokenAddresses.concat(opts.maticTokenAddresses));
+          }
+
+          // merge op tokenAddresses
+          if (opts.opTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.opTokenAddresses = oldPref.opTokenAddresses || [];
+            preferences.opTokenAddresses = _.uniq(oldPref.opTokenAddresses.concat(opts.opTokenAddresses));
+          }
+
+          // merge base tokenAddresses
+          if (opts.baseTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.baseTokenAddresses = oldPref.baseTokenAddresses || [];
+            preferences.baseTokenAddresses = _.uniq(oldPref.baseTokenAddresses.concat(opts.baseTokenAddresses));
+          }
+
+          // merge arb tokenAddresses
+          if (opts.arbTokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
+            preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
+          }
+
+          // merge matic multisigMaticInfo
+          if (opts.multisigMaticInfo) {
+            oldPref = oldPref || {};
+            oldPref.multisigMaticInfo = oldPref.multisigMaticInfo || [];
+
+            preferences.multisigMaticInfo = _.uniq(
+              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x, y) => {
+                let exists = false;
+                x.forEach(e => {
+                  // add new token addresses linked to the multisig wallet
+                  if (e.multisigContractAddress === y.multisigContractAddress) {
+                    e.maticTokenAddresses = e.maticTokenAddresses || [];
+                    y.maticTokenAddresses = _.uniq(e.maticTokenAddresses.concat(y.maticTokenAddresses));
+                    e = Object.assign(e, y);
+                    exists = true;
+                  }
+                });
+                return exists ? x : [...x, y];
+              }, [])
+            );
+          }
           this.storage.storePreferences(preferences, err => {
             return cb(err);
           });
@@ -1858,7 +1993,7 @@ export class WalletService {
 
   _store(wallet, address, cb, checkSync = false) {
     let stoAddress = _.clone(address);
-    ChainService.addressToStorageTransform(wallet.coin, wallet.network, stoAddress);
+    ChainService.addressToStorageTransform(wallet.chain, wallet.network, stoAddress);
     this.storage.storeAddressAndWallet(wallet, stoAddress, (err, isDuplicate) => {
       if (err) return cb(err);
       this.syncWallet(
@@ -1887,7 +2022,7 @@ export class WalletService {
     const createNewAddress = (wallet, cb) => {
       let address;
       try {
-        address = wallet.createAddress(false);
+        address = wallet.createAddress(!!opts.isChange);
       } catch (e) {
         this.logw('Error creating address', e);
         return cb('Bad xPub');
@@ -1899,7 +2034,7 @@ export class WalletService {
         (err, duplicate) => {
           if (err) return cb(err);
           if (duplicate) return cb(null, address);
-          if (wallet.coin == 'bch' && opts.noCashAddr) {
+          if (wallet.chain == 'bch' && opts.noCashAddr) {
             address = _.cloneDeep(address);
             address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }
@@ -1923,7 +2058,7 @@ export class WalletService {
         if (err) return cb(err);
         if (!_.isEmpty(addresses)) {
           let x = _.head(addresses);
-          ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+          ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
           return cb(null, x);
         }
         return createNewAddress(wallet, cb);
@@ -1933,7 +2068,7 @@ export class WalletService {
     this.getWallet({ doNotMigrate: opts.doNotMigrate }, (err, wallet) => {
       if (err) return cb(err);
 
-      if (ChainService.isSingleAddress(wallet.coin)) {
+      if (ChainService.isSingleAddress(wallet.chain)) {
         opts.ignoreMaxGap = true;
         opts.singleAddress = true;
       }
@@ -1984,7 +2119,7 @@ export class WalletService {
 
       this.getWallet({}, (err, wallet) => {
         _.each(onlyMain, x => {
-          ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+          ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
         });
         return cb(null, onlyMain);
       });
@@ -2011,28 +2146,31 @@ export class WalletService {
     });
   }
 
-  _getBlockchainExplorer(coin, network): ReturnType<typeof BlockChainExplorer> {
+  _getBlockchainExplorer(chain, network): ReturnType<typeof BlockChainExplorer> {
     let opts: Partial<{
       provider: string;
-      coin: string;
+      chain: string;
       network: string;
       userAgent: string;
     }> = {};
 
     let provider;
 
+    // blockchainExplorerOpts has lowercased fields
+    chain = chain.toLowerCase();
+
     if (this.blockchainExplorer) return this.blockchainExplorer;
     if (this.blockchainExplorerOpts) {
-      if (this.blockchainExplorerOpts[coin] && this.blockchainExplorerOpts[coin][network]) {
-        opts = this.blockchainExplorerOpts[coin][network];
+      if (this.blockchainExplorerOpts[chain] && this.blockchainExplorerOpts[chain][network]) {
+        opts = this.blockchainExplorerOpts[chain][network];
         provider = opts.provider;
       } else if (this.blockchainExplorerOpts[network]) {
         opts = this.blockchainExplorerOpts[network];
       }
     }
     opts.provider = provider;
-    opts.coin = coin;
-    opts.network = network;
+    opts.chain = chain;
+    opts.network = Utils.getNetworkName(chain, network);
     opts.userAgent = WalletService.getServiceVersion();
     let bc;
     try {
@@ -2045,28 +2183,23 @@ export class WalletService {
 
   getUtxosForCurrentWallet(opts, cb) {
     opts = opts || {};
-    let walletId = this.walletId;
-    if (opts.walletId) {
-      walletId = opts.walletId;
-    }
+
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet;
+    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet, blockchainHeight;
     async.series(
       [
         next => {
-          this.getWallet({ walletId }, (err, w) => {
+          this.getWallet({}, (err, w) => {
             if (err) return next(err);
 
             wallet = w;
 
             if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
-            coin = wallet.coin;
-
-            bc = this._getBlockchainExplorer(coin, wallet.network);
+            bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             return next();
           });
@@ -2078,9 +2211,9 @@ export class WalletService {
           }
 
           // even with Grouping we need address for pubkeys and path (see last step)
-          this.storage.fetchAddresses(walletId, (err, addresses) => {
+          this.storage.fetchAddresses(this.walletId, (err, addresses) => {
             _.each(addresses, x => {
-              ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+              ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
             });
             allAddresses = addresses;
             if (allAddresses.length == 0) return cb(null, []);
@@ -2094,26 +2227,78 @@ export class WalletService {
         },
         next => {
           if (!wallet.isComplete()) return next();
-
-          this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+          this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
             if (err) return next(err);
-
-            const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
-            bc.getUtxos(wallet, height, (err, utxos) => {
-              if (err) return next(err);
-              if (utxos.length == 0) return cb(null, []);
-
-              // filter out DUST
-              allUtxos = _.filter(utxos, x => {
-                return x.satoshis >= dustThreshold;
-              });
-
-              utxoIndex = _.keyBy(allUtxos, utxoKey);
-              return next();
-            });
+            blockchainHeight = height;
+            next();
           });
         },
         next => {
+          if (!wallet.isComplete()) return next();
+
+          const dustThreshold = Bitcore_[wallet.chain].Transaction.DUST_AMOUNT;
+          const isEscrowPayment = wallet.isZceCompatible() && opts.instantAcceptanceEscrow ? true : false;
+          const replaceTxByFee = opts.replaceTxByFee ? true : false;
+          bc.getUtxos(
+            wallet,
+            blockchainHeight,
+            (err, utxos) => {
+              if (err) return next(err);
+              if (utxos.length == 0) return cb(null, []);
+
+              let unusableAddresses = [];
+              if (isEscrowPayment) {
+                const unusableUtxos = utxos.filter(utxo => utxo.spent || utxo.address.startsWith('p'));
+                unusableAddresses = unusableUtxos.map(utxo => utxo.address);
+              }
+
+              allUtxos = utxos.filter(x => x.satoshis >= dustThreshold && !unusableAddresses.includes(x.address));
+
+              return next();
+            },
+            { includeSpent: isEscrowPayment || replaceTxByFee }
+          );
+        },
+        next => {
+          if (!wallet.isComplete() || !wallet.isZceCompatible()) return next();
+
+          // Ensure no UTXOs which originate from addresses that were recently used to fund a currently
+          // insufficiently confirmed ZCE-secured payment can be used to fund any subsequent transactions
+          // until the ZCE-secured payment (and escrow reclaim tx) receives 11 confirmations.
+          // Rationale: https://github.com/bitjson/bch-zce#wallet-utxo-selection
+
+          const bchRollingBlockCheckpointNumber = 10;
+          const bchReorgSafeBlockHeight = blockchainHeight - bchRollingBlockCheckpointNumber - 1;
+          let lockedAddresses = [];
+          bc.getTransactions(wallet, bchReorgSafeBlockHeight, (err, txs) => {
+            if (err) return next(err);
+            const unconfirmedZceTxs = txs.filter(tx => tx.category === 'move' && tx.address.startsWith('p'));
+            async.each(
+              unconfirmedZceTxs,
+              (tx: any, next) => {
+                this.getCoinsForTx({ txId: tx.txid }, (err, coins) => {
+                  if (err) return next(err);
+                  const inputAddresses = coins.inputs.map(input => input.address);
+                  lockedAddresses = [...lockedAddresses, ...inputAddresses];
+                  return next();
+                });
+              },
+              err => {
+                if (err) return next(err);
+                allUtxos = allUtxos.map(utxo => {
+                  if (lockedAddresses.includes(utxo.address)) {
+                    utxo.locked = true;
+                  }
+                  return utxo;
+                });
+                return next();
+              }
+            );
+          });
+        },
+        next => {
+          utxoIndex = _.keyBy(allUtxos, utxoKey);
+
           this.getPendingTxs({}, (err, txps) => {
             if (err) return next(err);
 
@@ -2134,7 +2319,7 @@ export class WalletService {
           // effects between broadcasting a tx and getting the list of UTXOs.
           // This is especially true in the case of having multiple instances of the block explorer.
           this.storage.fetchBroadcastedTxs(
-            walletId,
+            this.walletId,
             {
               minTs: now - 24 * 3600,
               limit: 100
@@ -2142,13 +2327,19 @@ export class WalletService {
             (err, txs) => {
               if (err) return next(err);
               const spentInputs = _.map(_.flatten(_.map(txs, 'inputs')), utxoKey);
+              const txIdArray = _.map(opts.inputs, 'txid');
+
               _.each(spentInputs, input => {
                 if (utxoIndex[input]) {
                   utxoIndex[input].spent = true;
                 }
               });
-              allUtxos = _.reject(allUtxos, {
-                spent: true
+              // except spent inputs of the RBF transaction if it's a replacement
+              allUtxos = _.reject(allUtxos, utxo => {
+                return (
+                  (!opts.replaceTxByFee && utxo.spent) ||
+                  (utxo.spent && opts.replaceTxByFee && !_.includes(txIdArray, utxo.txid))
+                );
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
@@ -2170,12 +2361,12 @@ export class WalletService {
         },
         next => {
           if (this._isSupportToken(wallet)) {
-            this.storage.fetchAddresses(walletId, async (err, addresses) => {
+            this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
               if (err) return next(err);
               if (_.size(addresses) < 1 || !addresses[0].address) return next('no addresss');
               let promiseList = [];
               _.each(addresses, address => {
-                promiseList.push(this._getUxtosByChronik(wallet.coin, address));
+                promiseList.push(this._getUxtosByChronik(wallet.chain, address));
               });
 
               await Promise.all(promiseList)
@@ -2214,7 +2405,7 @@ export class WalletService {
   }
 
   _isSupportToken(wallet: any): boolean {
-    const isSupportToken = _.get(config, `supportToken[${wallet.coin}].isSupportToken`, false);
+    const isSupportToken = _.get(config, `supportToken[${wallet.chain}].isSupportToken`, false);
     return wallet.isSlpToken && isSupportToken;
   }
 
@@ -2226,6 +2417,7 @@ export class WalletService {
    */
   getUtxos(opts, cb) {
     opts = opts || {};
+
     if (opts.coin) {
       return cb(new ClientError('coins option no longer supported'));
     }
@@ -2235,27 +2427,27 @@ export class WalletService {
 
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
-
-        const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+        console.log('wallet:', wallet.chain, wallet.network);
+        const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
         if (!bc) {
           return cb(new Error('Could not get blockchain explorer instance'));
         }
 
         const address = opts.addresses[0];
-        const A = Bitcore_[wallet.coin].Address;
+        const A = Bitcore_[wallet.chain].Address;
         let addrObj: { network?: { name?: string } } = {};
         try {
           addrObj = new A(address);
         } catch (ex) {
           return cb(null, []);
         }
-        if (addrObj.network.name != wallet.network) {
+        if (!Utils.compareNetworks(addrObj.network.name.toLowerCase(), wallet.network.toLowerCase(), wallet.chain)) {
           return cb(null, []);
         }
 
-        this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+        this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
           if (err) return cb(err);
-          bc.getAddressUtxos(address, height, wallet.coin, (err, allUtxos) => {
+          bc.getAddressUtxos(address, height, (err, allUtxos) => {
             if (err) return cb(err);
             if (this._isSupportToken(wallet)) {
               this.storage.fetchAddresses(this.walletId, async (err, addresses) => {
@@ -2263,7 +2455,7 @@ export class WalletService {
                 if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
                 let promiseList = [];
                 _.each(addresses, address => {
-                  promiseList.push(this._getUxtosByChronik(wallet.coin, address));
+                  promiseList.push(this._getUxtosByChronik(wallet.chain, address));
                 });
                 await Promise.all(promiseList)
                   .then(async utxos => {
@@ -2295,13 +2487,13 @@ export class WalletService {
 
       let wallet = opts;
 
-      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
       if (!bc) {
         return cb(new Error('Could not get blockchain explorer instance'));
       }
 
       const address = opts.addresses[0];
-      const A = Bitcore_[wallet.coin].Address;
+      const A = Bitcore_[wallet.chain].Address;
       let addrObj: { network?: { name?: string } } = {};
       try {
         addrObj = new A(address);
@@ -2312,13 +2504,13 @@ export class WalletService {
         return cb(null, []);
       }
 
-      this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+      this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
         if (err) return cb(err);
-        bc.getAddressUtxos(address, height, wallet.coin, async (err, allUtxos) => {
+        bc.getAddressUtxos(address, height, async (err, allUtxos) => {
           if (err) return cb(err);
           let promiseList = [];
           if (wallet.isTokenSupport) {
-            this._getUxtosByChronikOnlyByAddress(wallet.coin, address)
+            this._getUxtosByChronikOnlyByAddress(wallet.chain, address)
               .then(utxos => {
                 // utxos = utxos.reduce((accumulator, value) => accumulator.concat(value), []);
                 // const utxoNonSlpChronik = _.filter(utxos, item => !item.isNonSLP && item.slpMeta.tokenId === wallet.tokenId);
@@ -2353,14 +2545,14 @@ export class WalletService {
    */
   getCoinsForTx(opts, cb) {
     this.getWallet({}, (err, wallet) => {
-      if (!ChainService.isUTXOCoin(wallet.coin)) {
+      if (!ChainService.isUTXOChain(wallet.chain)) {
         // this prevents old BWC clients to break
         return cb(null, {
           inputs: [],
           outputs: []
         });
       }
-      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
       if (!bc) {
         return cb(new Error('Could not get blockchain explorer instance'));
       }
@@ -2381,19 +2573,19 @@ export class WalletService {
     this.getWallet({}, async (err, wallet) => {
       try {
         const chronikClient: ChronikClient | ChronikClientNode =
-          wallet.coin === 'xec'
-            ? ChainService.getChronikClientInNode(wallet.coin)
-            : ChainService.getChronikClient(wallet.coin);
+          wallet.chain === 'xec'
+            ? ChainService.getChronikClientInNode(wallet.chain)
+            : ChainService.getChronikClient(wallet.chain);
         const txDetail: Tx | Tx_InNode = await chronikClient.tx(txId);
         if (!txDetail) return cb('no txDetail');
         const inputAddresses = _.uniq(
           _.map(txDetail.inputs, (item: TxInput | TxInput_InNode) => {
-            return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
+            return this._convertAddressFormInputScript(item.inputScript, wallet.chain, true);
           })
         );
         const outputAddresses = _.uniq(
           _.map(txDetail.outputs, (item: TxOutput | TxOutput_InNode) => {
-            return this._convertAddressFormInputScript(item.outputScript, wallet.coin, true);
+            return this._convertAddressFormInputScript(item.outputScript, wallet.chain, true);
           })
         );
         if (inputAddresses) {
@@ -2606,11 +2798,7 @@ export class WalletService {
 
     const setWallet = cb1 => {
       if (wallet) return cb1();
-      let optsReturn = {};
-      if (opts.walletId) {
-        optsReturn = opts;
-      }
-      this.getWallet(optsReturn, (err, ret) => {
+      this.getWallet({}, (err, ret) => {
         if (err) return cb(err);
         wallet = ret;
         return cb1(null, wallet);
@@ -2662,7 +2850,7 @@ export class WalletService {
     const setWallet = cb1 => {
       const walletIdDonation = config.donationWalletId;
       if (wallet) return cb1();
-      this.getWalletFromId(walletIdDonation, (err, ret) => {
+      this.getWalletFromIdentifier(walletIdDonation, (err, ret) => {
         if (err) return cb(err);
         wallet = ret;
         return cb1(null, wallet);
@@ -2713,9 +2901,8 @@ export class WalletService {
           .script('p2pkh', scriptPayload)
           .utxos()
           .then(chronikUtxos => {
-            const utxos = _.flatMap(chronikUtxos => (scriptUtxos: ScriptUtxos_InNode) => {
-              return _.map(scriptUtxos.utxos, (utxo: ScriptUtxo_InNode) => ({
-                addressInfo,
+            const utxos = _.map(chronikUtxos.utxos, (utxo: ScriptUtxo_InNode) => {
+              return {
                 txid: utxo.outpoint.txid,
                 outIdx: utxo.outpoint.outIdx,
                 value: Number(utxo.value),
@@ -2723,7 +2910,7 @@ export class WalletService {
                 slpMeta: utxo.token,
                 tokenId: utxo.token ? utxo.token.tokenId : undefined,
                 amountToken: utxo.token && utxo.token.amount ? Number(utxo.token.amount) : undefined
-              }));
+              };
             });
             return utxos;
           })
@@ -2826,7 +3013,7 @@ export class WalletService {
         if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
         let promiseList = [];
         _.each(addresses, address => {
-          promiseList.push(this._getUxtosByChronik(wallet.coin, address));
+          promiseList.push(this._getUxtosByChronik(wallet.chain, address));
         });
 
         await Promise.all(promiseList)
@@ -2889,7 +3076,7 @@ export class WalletService {
         if (_.size(addresses) < 1 || !addresses[0].address) return cb('no addresss');
         let promiseList = [];
         _.each(addresses, address => {
-          promiseList.push(this._getUxtosByChronik(wallet.coin, address));
+          promiseList.push(this._getUxtosByChronik(wallet.chain, address));
         });
 
         await Promise.all(promiseList)
@@ -2901,7 +3088,7 @@ export class WalletService {
               if (tokenId == 'undefined') continue;
               if (groupTokenId.hasOwnProperty(tokenId)) {
                 try {
-                  const tokenInfor: TokenInfo = await this._getAndStoreTokenInfo(wallet.coin, tokenId);
+                  const tokenInfor: TokenInfo = await this._getAndStoreTokenInfo(wallet.chain, tokenId);
                   const tokenItem = {
                     tokenId,
                     tokenInfo: tokenInfor,
@@ -2984,7 +3171,7 @@ export class WalletService {
         opts.feeLevel = 'normal';
       }
 
-      const feeLevels = Defaults.FEE_LEVELS[wallet.coin];
+      const feeLevels = Defaults.FEE_LEVELS[wallet.chain];
       if (opts.feeLevel) {
         if (
           !_.some(feeLevels, {
@@ -2995,7 +3182,7 @@ export class WalletService {
       }
 
       if (_.isNumber(opts.feePerKb)) {
-        if (opts.feePerKb < Defaults.MIN_FEE_PER_KB || opts.feePerKb > Defaults.MAX_FEE_PER_KB[wallet.coin])
+        if (opts.feePerKb < Defaults.MIN_FEE_PER_KB || opts.feePerKb > Defaults.MAX_FEE_PER_KB[wallet.chain])
           return cb(new ClientError('Invalid fee per KB'));
       }
 
@@ -3003,8 +3190,8 @@ export class WalletService {
     });
   }
 
-  _sampleFeeLevels(coin, network, points, cb) {
-    const bc = this._getBlockchainExplorer(coin, network);
+  _sampleFeeLevels(chain, network, points, cb) {
+    const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.estimateFee(points, (err, result) => {
       if (err) {
@@ -3021,7 +3208,7 @@ export class WalletService {
           // NOTE: ONLY BTC/BCH/DOGE/LTC expect feePerKb to be Bitcoin amounts
           // others... expect wei.
 
-          return ChainService.convertFeePerKb(coin, p, feePerKb);
+          return ChainService.convertFeePerKb(chain, p, feePerKb);
         })
       );
 
@@ -3034,32 +3221,63 @@ export class WalletService {
     });
   }
 
+  estimateFee(opts) {
+    opts = opts || {};
+    return new Promise((resolve, reject) => {
+      const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.estimateFeeV2(opts, (err, result) => {
+        if (err) {
+          this.logw('Error estimating fee', err);
+          return reject(err);
+        }
+        return resolve(result);
+      });
+    });
+  }
+
+  estimatePriorityFee(opts) {
+    opts = opts || {};
+    return new Promise((resolve, reject) => {
+      const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.estimatePriorityFee(opts, (err, result) => {
+        if (err) {
+          this.logw('Error estimating priority fee', err);
+          return reject(err);
+        }
+        return resolve(result);
+      });
+    });
+  }
+
   /**
    * Returns fee levels for the current state of the network.
    * @param {Object} opts
    * @param {string} [opts.coin = 'btc'] - The coin to estimate fee levels from.
+   * @param {string} [opts.chain = 'btc'] - The coin to estimate fee levels from.
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network to estimate fee levels from.
    * @returns {Object} feeLevels - A list of fee levels & associated amount per kB in satoshi.
    */
-  async getFeeLevels(opts, cb) {
+  getFeeLevels(opts, cb) {
     opts = opts || {};
 
-    opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
+    opts.chain = opts.chain || Defaults.CHAIN;
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
+    opts.network = Utils.getNetworkName(opts.chain, opts.network) || 'livenet';
+    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS[opts.chain])) return cb(new ClientError('Invalid network'));
 
-    const cacheKey = 'feeLevel:' + opts.coin + ':' + opts.network;
+    const cacheKey = 'feeLevel:' + opts.chain + ':' + opts.network;
 
     this.storage.checkAndUseGlobalCache(cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values, oldvalues) => {
       if (err) return cb(err);
-      if (!_.isEmpty(values)) return cb(null, values, true);
+      if (values) return cb(null, values, true);
 
-      const feeLevels = Defaults.FEE_LEVELS[opts.coin];
+      const feeLevels = Defaults.FEE_LEVELS[opts.chain];
 
       /*
-      if (opts.coin === 'doge') {
+      if (opts.chain === 'doge') {
         const defaultDogeFeeLevels = feeLevels[0];
         const result: {
           feePerKb?: number;
@@ -3106,7 +3324,7 @@ export class WalletService {
         return result;
       };
 
-      this._sampleFeeLevels(opts.coin, opts.network, samplePoints(), (err, feeSamples, failed) => {
+      this._sampleFeeLevels(opts.chain, opts.network, samplePoints(), (err, feeSamples, failed) => {
         if (err) {
           if (oldvalues) {
             this.logw('##  There was an error estimating fees... using old cached values');
@@ -3185,21 +3403,31 @@ export class WalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      try {
-        ChainService.validateAddress(wallet, output.toAddress, opts);
-      } catch (addrErr) {
-        return addrErr;
+      if (ChainService.isUTXOChain(wallet.chain) && output.script) {
+        const error = ChainService.checkScriptOutput(wallet.chain, output);
+        if (error) return error;
+        output.valid = true;
+      } else {
+        try {
+          ChainService.validateAddress(wallet, output.toAddress, opts);
+        } catch (addrErr) {
+          return addrErr;
+        }
+
+        if (!checkRequired(output, ['toAddress', 'amount'])) {
+          return new ClientError('Argument missing in output #' + (i + 1) + '.');
+        }
+
+        if (!ChainService.checkValidTxAmount(wallet.chain, output)) {
+          return new ClientError('Invalid amount');
+        }
+
+        const error = ChainService.checkDust(wallet.chain, output, opts);
+        if (error) return error;
+        output.valid = true;
       }
 
-      if (!checkRequired(output, ['toAddress', 'amount'])) {
-        return new ClientError('Argument missing in output #' + (i + 1) + '.');
-      }
-
-      if (!ChainService.checkValidTxAmount(wallet.coin, output)) {
-        return new ClientError('Invalid amount');
-      }
-
-      const error = ChainService.checkDust(wallet.coin, output, opts);
+      const error = ChainService.checkDust(wallet.chain, output, opts);
       if (error) return error;
       output.valid = true;
     }
@@ -3218,7 +3446,7 @@ export class WalletService {
             opts.feeLevel = 'normal';
           }
 
-          const feeLevels = Defaults.FEE_LEVELS[wallet.coin];
+          const feeLevels = Defaults.FEE_LEVELS[wallet.chain];
           if (opts.feeLevel) {
             if (
               !_.some(feeLevels, {
@@ -3230,7 +3458,7 @@ export class WalletService {
               );
           }
 
-          const error = ChainService.checkUtxos(wallet.coin, opts);
+          const error = ChainService.checkUtxos(wallet.chain, opts);
           if (error) {
             return next(new ClientError('fee can only be set when inputs are specified'));
           }
@@ -3278,7 +3506,7 @@ export class WalletService {
         },
         next => {
           // check outputs are on 'copay' format for BCH
-          if (wallet.coin != 'bch') return next();
+          if (wallet.chain != 'bch') return next();
           if (!opts.noCashAddr) return next();
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
@@ -3287,11 +3515,13 @@ export class WalletService {
               toAddress?: string;
               amount?: number;
               message?: string;
+              script?: string;
             } = {
               toAddress: x.toAddress,
               amount: x.amount
             };
             if (x.message) ret.message = x.message;
+            if (x.script) ret.script = x.script;
 
             return ret;
           });
@@ -3321,7 +3551,7 @@ export class WalletService {
     if (_.isNumber(opts.feePerKb)) return cb(null, opts.feePerKb);
     this.getFeeLevels(
       {
-        coin: wallet.coin,
+        chain: wallet.chain,
         network: wallet.network
       },
       (err, levels) => {
@@ -3355,7 +3585,7 @@ export class WalletService {
   }
 
   _getTransactionCount(wallet, address, cb) {
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getTransactionCount(address, (err, nonce) => {
       if (err) {
@@ -3367,7 +3597,7 @@ export class WalletService {
   }
 
   getNonce(opts) {
-    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTransactionCount(opts.address, (err, nonce) => {
@@ -3381,7 +3611,7 @@ export class WalletService {
   }
 
   estimateGas(opts) {
-    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.estimateGas(opts, (err, gasLimit) => {
@@ -3395,7 +3625,7 @@ export class WalletService {
   }
 
   getMultisigContractInstantiationInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInstantiationInfo(opts, (err, contractInstantiationInfo) => {
@@ -3409,7 +3639,7 @@ export class WalletService {
   }
 
   getMultisigContractInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInfo(opts, (err, contractInfo) => {
@@ -3423,7 +3653,7 @@ export class WalletService {
   }
 
   getTokenContractInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTokenContractInfo(opts, (err, contractInfo) => {
@@ -3437,7 +3667,7 @@ export class WalletService {
   }
 
   getMultisigTxpsInfo(opts) {
-    const bc = this._getBlockchainExplorer('eth', opts.network);
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigTxpsInfo(opts, (err, multisigTxpsInfo) => {
@@ -3456,6 +3686,7 @@ export class WalletService {
    * @param {String} opts.walletId - Select wallet to create tx.
    * @param {string} opts.txProposalId - Optional. If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet.
    * @param {String} opts.coin - tx coin.
+   * @param {String} opts.chain - tx chain.
    * @param {Array} opts.outputs - List of outputs.
    * @param {string} opts.outputs[].toAddress - Destination address.
    * @param {number} opts.outputs[].amount - Amount to transfer in satoshi.
@@ -3478,30 +3709,35 @@ export class WalletService {
    * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
    * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
    * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
+   * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
+   * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
+   * @param {number} opts.txType - Optional. Type of EVM transaction
+   * @param {number} opts.gasLimitBuffer - Optional. Percentage of buffer to add to the gasLimit
+   * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
+   * @param {Boolean} opts.multiTx - Optional. Proposal will create multiple transactions
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
     opts = opts ? _.clone(opts) : {};
-    const walletId = opts.walletId ? opts.walletId : this.walletId;
-    const copayerId = opts.copayerId ? opts.copayerId : this.copayerId;
+
     const checkTxpAlreadyExists = (txProposalId, cb) => {
       if (!txProposalId) return cb();
-      this.storage.fetchTx(walletId, txProposalId, cb);
+      this.storage.fetchTx(this.walletId, txProposalId, cb);
     };
 
     this._runLocked(
       cb,
       cb => {
-        let changeAddress, feePerKb, gasPrice, gasLimit, fee;
-        this.getWallet(walletId, (err, wallet) => {
+        let changeAddress, feePerKb, gasPrice, gasLimit, fee, maxGasFee, priorityGasFee;
+        this.getWallet({}, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
-          if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+          if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
             let Err = Errors.NETWORK_SUSPENDED;
-            Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+            Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
             return cb(Err);
           }
 
@@ -3512,7 +3748,7 @@ export class WalletService {
             async.series(
               [
                 next => {
-                  if (ChainService.isUTXOCoin(wallet.coin)) return next();
+                  if (ChainService.isUTXOChain(wallet.chain)) return next();
                   this.getMainAddresses({ reverse: true, limit: 1 }, (err, mainAddr) => {
                     if (err) return next(err);
                     opts.from = mainAddr[0].address;
@@ -3539,10 +3775,15 @@ export class WalletService {
                   return next();
                 },
                 async next => {
-                  if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
-
+                  logger.info('Calculating fee for new tx: %o', {
+                    from: opts.from, fee: opts.fee, input: opts.inputs?.length, gasLimit: opts.gasLimit, gasLimitBuffer: opts.gasLimitBuffer
+                  });
+                  if (!isNaN(opts.fee) && (opts.inputs || []).length > 0) return next();
                   try {
-                    ({ feePerKb, gasPrice, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
+                    ({ feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
+                    logger.info('ChainService.getFee return value %o', {
+                      from: opts.from, feePerKb, gasPrice, maxGasFee, priorityGasFee, gasLimit, fee
+                    });
                   } catch (error) {
                     return next(error);
                   }
@@ -3581,61 +3822,114 @@ export class WalletService {
                   return next();
                 },
                 next => {
-                  let txOptsFee = fee;
+                  try {
+                    let txOptsFee = fee;
 
-                  if (!txOptsFee) {
-                    const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
-                    const isNotUtxoCoin = !ChainService.isUTXOCoin(wallet.coin);
-                    const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
+                    if (!txOptsFee) {
+                      const useInputFee = opts.inputs && isNaN(opts.feePerKb);
+                      const isNotUtxoCoin = !ChainService.isUTXOChain(wallet.chain);
+                      const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 
-                    if (shouldUseOptsFee) {
-                      txOptsFee = opts.fee;
+                      if (shouldUseOptsFee) {
+                        txOptsFee = opts.fee;
+                      }
                     }
-                  }
 
-                  const txOpts = {
-                    id: opts.txProposalId,
-                    walletId,
-                    creatorId: copayerId,
-                    coin: opts.coin,
-                    chain: opts.chain ? opts.chain : ChainService.getChain(opts.coin),
-                    network: wallet.network,
-                    outputs: opts.outputs,
-                    message: opts.message,
-                    messageOnChain: opts.messageOnChain,
-                    from: opts.from,
-                    changeAddress,
-                    feeLevel: opts.feeLevel,
-                    feePerKb,
-                    payProUrl: opts.payProUrl,
-                    walletM: wallet.m,
-                    walletN: wallet.n,
-                    excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
-                    validateOutputs: !opts.validateOutputs,
-                    addressType: wallet.addressType,
-                    customData: opts.customData,
-                    inputs: opts.inputs,
-                    version: opts.txpVersion,
-                    fee: txOptsFee,
-                    noShuffleOutputs: opts.noShuffleOutputs,
-                    gasPrice,
-                    nonce: opts.nonce,
-                    gasLimit, // Backward compatibility for BWC < v7.1.1
-                    data: opts.data, // Backward compatibility for BWC < v7.1.1
-                    tokenAddress: opts.tokenAddress,
-                    multisigContractAddress: opts.multisigContractAddress,
-                    destinationTag: opts.destinationTag,
-                    invoiceID: opts.invoiceID,
-                    signingMethod: opts.signingMethod,
-                    isDonation: opts.isDonation,
-                    receiveLotusAddress: opts.receiveLotusAddress,
-                    isTokenSwap: opts.isTokenSwap
-                  };
-                  txp = TxProposal.create(txOpts);
-                  next();
+                    const txOpts = {
+                      id: opts.txProposalId,
+                      walletId: this.walletId,
+                      creatorId: this.copayerId,
+                      coin: opts.coin,
+                      chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
+                      network: wallet.network,
+                      outputs: opts.outputs,
+                      message: opts.message,
+                      from: opts.from,
+                      changeAddress,
+                      feeLevel: opts.feeLevel,
+                      feePerKb,
+                      payProUrl: opts.payProUrl,
+                      walletM: wallet.m,
+                      walletN: wallet.n,
+                      excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
+                      instantAcceptanceEscrow: opts.instantAcceptanceEscrow,
+                      addressType: wallet.addressType,
+                      customData: opts.customData,
+                      inputs: opts.inputs,
+                      version: opts.txpVersion,
+                      fee: txOptsFee,
+                      noShuffleOutputs: opts.noShuffleOutputs,
+                      gasPrice,
+                      maxGasFee,
+                      priorityGasFee,
+                      txType: opts.txType,
+                      nonce: opts.nonce,
+                      gasLimit, // For Multisend and Backward compatibility for BWC < v7.1.1
+                      data: opts.data, // Backward compatibility for BWC < v7.1.1
+                      tokenAddress: opts.tokenAddress,
+                      multisigContractAddress: opts.multisigContractAddress,
+                      multiSendContractAddress: opts.multiSendContractAddress,
+                      destinationTag: opts.destinationTag,
+                      invoiceID: opts.invoiceID,
+                      signingMethod: opts.signingMethod,
+                      isTokenSwap: opts.isTokenSwap,
+                      isDonation: opts.isDonation,
+                      receiveLotusAddress: opts.receiveLotusAddress,
+                      enableRBF: opts.enableRBF,
+                      replaceTxByFee: opts.replaceTxByFee,
+                      multiTx: opts.multiTx
+                    };
+                    txp = TxProposal.create(txOpts);
+                    next();
+                  } catch (e) {
+                    logger.error('Error creating TX: %o', e.stack || e.message || e);
+                    return next(e);
+                  }
+                },
+                async next => {
+                  if (opts.chain != 'xrp') return next();
+                  this.getBalance({ chain: opts.chain, wallet }, async (err, bal) => {
+                    if (err) return next(err);
+                    ChainService.getReserve(this, wallet, (err, reserve) => {
+                      if (err) return next(err);
+                      if (reserve > bal.totalConfirmedAmount - txp.getTotalAmount() - txp.fee) return next(Errors.BALANCE_BELOW_RESERVE);
+                      return next();
+                    });
+                  });
                 },
                 next => {
                   return ChainService.selectTxInputs(this, txp, wallet, opts, next);
+                },
+                async next => {
+                  if (!wallet.isZceCompatible() || !opts.instantAcceptanceEscrow) return next();
+                  try {
+                    opts.inputs = txp.inputs;
+                    const escrowAddress = await ChainService.getChangeAddress(this, wallet, opts);
+                    txp.escrowAddress = escrowAddress;
+                  } catch (error) {
+                    return next(error);
+                  }
+                  if (opts.dryRun) return next();
+                  this._store(wallet, txp.escrowAddress, next, true);
+                },
+                next => {
+                  if (!txp.multiSendContractAddress || !txp.tokenAddress) {
+                    return next();
+                  }
+                  // Check that the multisend contract is approved in the token contract for the total amount
+                  const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+                  if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
+                  bc.getTokenAllowance({
+                    tokenAddress: txp.tokenAddress,
+                    ownerAddress: txp.from,
+                    spenderAddress: txp.multiSendContractAddress
+                  }, (err, allowance) => {
+                    if (err) { return next(err); }
+                    if (BigInt(allowance) < BigInt(txp.getTotalAmount())) {
+                      return next(new Error(`Insufficient token allowance. Allowed: ${BigInt(allowance)}, Want: ${BigInt(txp.getTotalAmount())}`));
+                    }
+                    return next();
+                  });
                 },
                 next => {
                   if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress) return next();
@@ -3649,6 +3943,7 @@ export class WalletService {
                     const format = opts.noCashAddr ? 'copay' : 'cashaddr';
                     txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
                   }
+
                   this.storage.storeTx(wallet.id, txp, next);
                 }
               ],
@@ -3679,27 +3974,24 @@ export class WalletService {
    * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
    */
   publishTx(opts, cb) {
-    const walletId = opts.walletId ? opts.walletId : this.walletId;
-    const copayerId = opts.copayerId ? opts.copayerId : this.copayerId;
-
     if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
     this._runLocked(cb, cb => {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
 
-        if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+        if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
           let Err = Errors.NETWORK_SUSPENDED;
-          Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+          Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
           return cb(Err);
         }
 
-        this.storage.fetchTx(walletId, opts.txProposalId, (err, txp) => {
+        this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
           if (!txp.isTemporary()) return cb(null, txp);
 
-          const copayer = wallet.getCopayer(copayerId);
+          const copayer = wallet.getCopayer(this.copayerId);
 
           let raw;
           try {
@@ -3722,7 +4014,7 @@ export class WalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
-            this.storage.storeTx(walletId, txp, err => {
+            this.storage.storeTx(this.walletId, txp, err => {
               if (err) return cb(err);
 
               this._notifyTxProposalAction('NewTxProposal', txp, () => {
@@ -3742,11 +4034,34 @@ export class WalletService {
   /**
    * Retrieves a tx from storage.
    * @param {Object} opts
-   * @param {string} opts.txProposalId - The tx id.
+   * @param {string} opts.txProposalId - The tx proposal id.
    * @returns {Object} txProposal
    */
   getTx(opts, cb) {
     this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+      if (err) return cb(err);
+      if (!txp) return cb(Errors.TX_NOT_FOUND);
+
+      if (!txp.txid) return cb(null, txp);
+
+      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+        if (err) {
+          this.logw('Error fetching tx note for ' + txp.txid);
+        }
+        txp.note = note;
+        return cb(null, txp);
+      });
+    });
+  }
+
+  /**
+   * Retrieves a tx from storage using txid
+   * @param {Object} opts
+   * @param {string} opts.txid - The tx blockchain id.
+   * @returns {Object} txProposal
+   */
+  getTxByHash(opts, cb) {
+    this.storage.fetchTxByHash(opts.txid, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
 
@@ -3873,11 +4188,14 @@ export class WalletService {
     });
   }
 
-  _broadcastRawTx(coin, network, raw, cb) {
-    const bc = this._getBlockchainExplorer(coin, network);
+  _broadcastRawTx(chain, network, raw, cb) {
+    const bc = this._getBlockchainExplorer(chain, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.broadcast(raw, (err, txid) => {
-      if (err) return cb(err);
+      if (err) {
+        logger.info('Error broadcasting tx: %o %o %o %o', chain, network, raw, err);
+        return cb(err);
+      }
       return cb(null, txid);
     });
   }
@@ -3897,18 +4215,19 @@ export class WalletService {
    * Broadcast a raw transaction.
    * @param {Object} opts
    * @param {string} [opts.coin = 'btc'] - The coin for this transaction.
+   * @param {string} [opts.chain = 'btc'] - The coin for this transaction.
    * @param {string} [opts.network = 'livenet'] - The Bitcoin network for this transaction.
    * @param {string} [opts.skipSlpCheck = false] - If set this prop to false, chronik will check tx doesn't burn. Default to false
    * @param {string} opts.rawTx - Raw tx data.
    */
-  async broadcastRawTx(opts, cb) {
+  broadcastRawTx(opts, cb) {
     if (!checkRequired(opts, ['network', 'rawTx'], cb)) return;
     const ischronik = opts.ischronik ? opts.ischronik : undefined;
     opts.coin = opts.coin || Defaults.COIN;
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS)) return cb(new ClientError('Invalid coin'));
+    if (!Utils.checkValueInCollection(opts.coin, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
-    opts.network = opts.network || 'livenet';
-    if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS)) return cb(new ClientError('Invalid network'));
+    opts.chain = opts.chain || opts.coin || Defaults.COIN;
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
     if (!ischronik) {
       this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
     } else {
@@ -3943,7 +4262,7 @@ export class WalletService {
 
   _checkTxInBlockchain(txp, cb) {
     if (!txp.txid) return cb();
-    const bc = this._getBlockchainExplorer(txp.coin, txp.network);
+    const bc = this._getBlockchainExplorer(txp.chain, txp.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getTransaction(txp.txid, (err, tx) => {
       if (err) return cb(err);
@@ -3966,9 +4285,9 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
         let Err = Errors.NETWORK_SUSPENDED;
-        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
         return cb(Err);
       }
 
@@ -3976,7 +4295,7 @@ export class WalletService {
         {
           txProposalId: opts.txProposalId
         },
-        (err, txp) => {
+        async (err, txp) => {
           if (err) return cb(err);
 
           if (opts.maxTxpVersion < txp.version) {
@@ -3995,6 +4314,19 @@ export class WalletService {
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
+
+          if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+            try {
+              const txps = await this.getPendingTxsPromise({});
+              for (let t of txps) {
+                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
+                  return cb(Errors.TX_NONCE_CONFLICT);
+                }
+              }
+            } catch (err) {
+              return cb(err);
+            }
+          }
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -4054,7 +4386,7 @@ export class WalletService {
       if (err) return cb(err);
 
       const extraArgs = {
-        txid: txp.txid
+        txid: txp?.txids?.length ? txp.txids : txp.txid
       };
       if (opts.byThirdParty) {
         this._notifyTxProposalAction('NewOutgoingTxByThirdParty', txp, extraArgs);
@@ -5431,7 +5763,7 @@ export class WalletService {
                             saveError(merchantOrder, data, Errors.NOT_FOUND_RATE_TOKEN);
                             return;
                           }
-                          accountTo.amount = accountTo.amount / UNITS[merchantOrder.coin].toSatoshis;
+                          accountTo.amount = accountTo.amount / Constants.UNITS[merchantOrder.coin].toSatoshis;
                           amountCoinUserSentToServer = accountTo.amount;
                           accountTo.amount = this._calculateRaipayFee(merchantOrder.coin, accountTo.amount);
                           const rate =
@@ -5859,61 +6191,61 @@ export class WalletService {
   }
 
   checkMerchantOrderQueueAndNoti() {
-    setInterval(() => {
-      if (!merchantOrderQueueInterval) {
-        merchantQueueFailed += 1;
-        if (merchantQueueFailed > NOTI_AFTER_MANY_RESTART) {
-          merchantQueueFailed = 0;
-          merchantNotiCount += 1;
-          // notification to telegram
-          if (merchantNotiCount < MAXIMUM_NOTI + 1) {
-            botSwap.sendMessage(
-              config.queueNoti.channelId,
-              `Merchant service is not running. Try to restart (${merchantNotiCount})…`
-            );
-          }
-        } else {
-          this.restartHandleMerchantQueue((err, result) => {
-            if (err) logger.debug('Restart merchant order queue error: ', err);
-          });
-        }
-      } else {
-        if (merchantQueueFailed > 0) {
-          botSwap.sendMessage(config.queueNoti.channelId, 'Merchant service is running');
-        }
-        merchantNotiCount = 0;
-        merchantQueueFailed = 0;
-      }
-    }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
+    // setInterval(() => {
+    //   if (!merchantOrderQueueInterval) {
+    //     merchantQueueFailed += 1;
+    //     if (merchantQueueFailed > NOTI_AFTER_MANY_RESTART) {
+    //       merchantQueueFailed = 0;
+    //       merchantNotiCount += 1;
+    //       // notification to telegram
+    //       if (merchantNotiCount < MAXIMUM_NOTI + 1) {
+    //         botSwap.sendMessage(
+    //           config.queueNoti.channelId,
+    //           `Merchant service is not running. Try to restart (${merchantNotiCount})…`
+    //         );
+    //       }
+    //     } else {
+    //       this.restartHandleMerchantQueue((err, result) => {
+    //         if (err) logger.debug('Restart merchant order queue error: ', err);
+    //       });
+    //     }
+    //   } else {
+    //     if (merchantQueueFailed > 0) {
+    //       botSwap.sendMessage(config.queueNoti.channelId, 'Merchant service is running');
+    //     }
+    //     merchantNotiCount = 0;
+    //     merchantQueueFailed = 0;
+    //   }
+    // }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
   }
 
   checkConversionOrderQueueAndNoti() {
-    setInterval(() => {
-      if (!conversionQueueInterval) {
-        conversionQueueFailed += 1;
-        if (conversionQueueFailed > NOTI_AFTER_MANY_RESTART) {
-          conversionQueueFailed = 0;
-          conversionNotiCount += 1;
-          // notification to telegram
-          if (conversionNotiCount < MAXIMUM_NOTI + 1) {
-            botSwap.sendMessage(
-              config.queueNoti.channelId,
-              `Conversion service is not running. Try to restart (${conversionNotiCount})…`
-            );
-          }
-        } else {
-          this.restartHandleConversionQueue((err, result) => {
-            if (err) logger.debug('Restart conversion order queue error: ', err);
-          });
-        }
-      } else {
-        if (conversionQueueFailed > 0) {
-          botSwap.sendMessage(config.queueNoti.channelId, 'Conversion service is running');
-        }
-        conversionNotiCount = 0;
-        conversionQueueFailed = 0;
-      }
-    }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
+    // setInterval(() => {
+    //   if (!conversionQueueInterval) {
+    //     conversionQueueFailed += 1;
+    //     if (conversionQueueFailed > NOTI_AFTER_MANY_RESTART) {
+    //       conversionQueueFailed = 0;
+    //       conversionNotiCount += 1;
+    //       // notification to telegram
+    //       if (conversionNotiCount < MAXIMUM_NOTI + 1) {
+    //         botSwap.sendMessage(
+    //           config.queueNoti.channelId,
+    //           `Conversion service is not running. Try to restart (${conversionNotiCount})…`
+    //         );
+    //       }
+    //     } else {
+    //       this.restartHandleConversionQueue((err, result) => {
+    //         if (err) logger.debug('Restart conversion order queue error: ', err);
+    //       });
+    //     }
+    //   } else {
+    //     if (conversionQueueFailed > 0) {
+    //       botSwap.sendMessage(config.queueNoti.channelId, 'Conversion service is running');
+    //     }
+    //     conversionNotiCount = 0;
+    //     conversionQueueFailed = 0;
+    //   }
+    // }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
   }
 
   checkSwapQueueAndNoti() {
@@ -6020,18 +6352,18 @@ export class WalletService {
     let listCoinSwapCode = [];
     if (orderInfo) {
       if (!(orderInfo.fromCoinCode && orderInfo.toCoinCode && orderInfo.createdRate && orderInfo.addressUserReceive)) {
-        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+        throw new Error(Errors.MISSING_REQUIRED_FIELD as unknown as string);
       }
 
       if (
         orderInfo.isFromToken &&
         (!orderInfo.fromTokenId || !(orderInfo.fromTokenInfo && orderInfo.fromTokenInfo.decimals))
       ) {
-        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+        throw new Error(Errors.MISSING_REQUIRED_FIELD as unknown as string);
       }
 
       if (orderInfo.isToToken && (!orderInfo.toTokenId || !(orderInfo.toTokenInfo && orderInfo.toTokenInfo.decimals))) {
-        throw new Error(Errors.MISSING_REQUIRED_FIELD);
+        throw new Error(Errors.MISSING_REQUIRED_FIELD as unknown as string);
       }
 
       const now = new Date();
@@ -6052,7 +6384,7 @@ export class WalletService {
         config => config.network === orderInfo.fromNetwork && config.code === orderInfo.fromCoinCode
       );
       if (indexCoinReceiveFound < 0 || indexCoinSwapfound < 0) {
-        throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG);
+        throw new Error(Errors.NOT_FOUND_COIN_IN_CONFIG as unknown as string);
       }
     } else throw new Error('Not found config swap');
     return true;
@@ -6068,7 +6400,7 @@ export class WalletService {
       } catch (ex) {
         return cb(ex);
       }
-      this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
+      this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
         if (err || txid != txp.txid) {
           if (err) return cb(err);
           if (!err || txp.txid != txid) {
@@ -6166,7 +6498,7 @@ export class WalletService {
     // }
     this.getFiatRates({}, (err, fiatRates) => {
       try {
-        _.map(fiatRates, (rates, coin) => {
+        _.map(fiatRates, (rates, coin: any) => {
           const coinRates = {};
           _.each(rates, r => {
             const rate = { [r.code]: r.rate };
@@ -6186,7 +6518,7 @@ export class WalletService {
       let rateList = [];
       this.getFiatRates({}, (err, fiatRates) => {
         try {
-          _.map(fiatRates, (rates, coin) => {
+          _.map(fiatRates, (rates, coin: any) => {
             const coinRates = {};
             _.each(rates, r => {
               const rate = { [r.code]: r.rate };
@@ -6230,13 +6562,13 @@ export class WalletService {
         if (orderInfo.isFromToken) {
           orderInfo.fromSatUnit = Math.pow(10, orderInfo.fromTokenInfo.decimals);
         } else {
-          orderInfo.fromSatUnit = UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
+          orderInfo.fromSatUnit = Constants.UNITS[orderInfo.fromCoinCode.toLowerCase()].toSatoshis;
         }
 
         if (orderInfo.isToToken) {
           orderInfo.toSatUnit = Math.pow(10, orderInfo.toTokenInfo.decimals);
         } else {
-          orderInfo.toSatUnit = UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+          orderInfo.toSatUnit = Constants.UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
         }
         const depositClient = clientsReceive.find(
           client => client.credentials.coin === fromCoinCode && client.credentials.network === orderInfo.fromNetwork
@@ -6972,7 +7304,7 @@ export class WalletService {
             network: fundingWallet.credentials.network
           });
           if (!!balanceCoin) {
-            balanceFinal = balanceCoin.balance.totalAmount / UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
+            balanceFinal = balanceCoin.balance.totalAmount / Constants.UNITS[orderInfo.toCoinCode.toLowerCase()].toSatoshis;
           }
         }
 
@@ -7060,9 +7392,9 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      if (config.suspendedChains && config.suspendedChains.includes(wallet.coin)) {
+      if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
         let Err = Errors.NETWORK_SUSPENDED;
-        Err.message = Err.message.replace('$network', wallet.coin.toUpperCase());
+        Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
         return cb(Err);
       }
 
@@ -7112,6 +7444,7 @@ export class WalletService {
       );
     });
   }
+
   /**
    * Reject a transaction proposal.
    * @param {Object} opts
@@ -7210,7 +7543,6 @@ export class WalletService {
         _.each(txps, txp => {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
         });
-
         async.each(
           txps,
           (txp: ITxProposal, next) => {
@@ -7228,11 +7560,9 @@ export class WalletService {
             });
           },
           err => {
-            txps = _.reject(txps, txp => {
-              return txp.status == 'broadcasted';
-            });
+            txps = txps.filter(txp => txp.status !== 'broadcasted');
 
-            if (txps[0] && txps[0].coin == 'bch') {
+            if (txps[0] && txps[0].chain == 'bch') {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
               _.each(txps, x => {
                 if (x.changeAddress) {
@@ -7250,6 +7580,15 @@ export class WalletService {
         );
       });
     }
+  }
+
+  getPendingTxsPromise(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.getPendingTxs(opts, (err, txps) => {
+        if (err) return reject(err);
+        return resolve(txps)
+      });
+    });
   }
 
   /**
@@ -7283,7 +7622,7 @@ export class WalletService {
       if (err) return cb(err);
 
       async.map(
-        [`${wallet.coin}:${wallet.network}`, this.walletId],
+        [`${wallet.chain}:${wallet.network}`, this.walletId],
         (walletId, next) => {
           this.storage.fetchNotifications(walletId, opts.notificationId, opts.minTs || 0, next);
         },
@@ -7363,7 +7702,7 @@ export class WalletService {
     return { address, amount };
   }
 
-  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, includeImmatureStatus, wallet, cb) {
+  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, wallet, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
 
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
@@ -7376,7 +7715,6 @@ export class WalletService {
     const seenReceive = {};
 
     const moves: { [txid: string]: ITxProposal } = {};
-
     // remove 'fees' and 'moves' (probably change addresses)
     txs = _.filter(txs, tx => {
       // double spend or error
@@ -7468,12 +7806,27 @@ export class WalletService {
         _.map([].concat(txs), tx => {
           const t = new Date(tx.blockTime).getTime() / 1000;
           const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
+
+          // This adapter rebuilds the abiType property from data contained in the effects so that it returns what wallet is used to
+          // If we remove the slight reliance in the wallet on abiType then we can remove this adapter
+          function recreateAbiType(effects) {
+            // Check if any top level effects are ERC20 transfers
+            if (effects && effects.length) {
+              const erc20Transfer = effects.find(e => e.type == 'ERC20:transfer' && e.callStack == '');
+              if (erc20Transfer) {
+                // This is the only data used in old wallet and bitpay-app
+                return { name: 'transfer' };
+              }
+            }
+            return undefined;
+          }
+
           const ret = {
             id: tx.id,
             txid: tx.txid,
             confirmations: c,
             blockheight: tx.height > 0 ? tx.height : null,
-            fees: tx.fee || (indexedFee[tx.txid] ? Math.abs(indexedFee[tx.txid].satoshis) : null),
+            fees: tx.fee ?? (indexedFee[tx.txid] ? Math.abs(indexedFee[tx.txid].satoshis) : null),
             time: t,
             size: tx.size,
             amount: 0,
@@ -7481,10 +7834,24 @@ export class WalletService {
             addressTo: undefined,
             outputs: undefined,
             dust: false,
+            error: tx.error,
+            internal: tx.internal,
+            network: tx.network,
+            chain: tx.chain,
+            data: tx.data,
+            abiType: tx.abiType || recreateAbiType(tx.effects),
+            gasPrice: tx.gasPrice,
+            maxGasFee: tx.maxGasFee,
+            priorityGasFee: tx.priorityGasFee,
+            txType: tx.txType,
+            gasLimit: tx.gasLimit,
+            receipt: tx.receipt,
+            nonce: tx.nonce,
+            effects: tx.effects,
             coinbase: tx.coinbase,
             inputAddresses: _.uniq(
               _.map(tx.inputs, item => {
-                return this._convertAddressFormInputScript(item.script, wallet.coin, wallet.isSlpToken);
+                return this._convertAddressFormInputScript(item.script, wallet.chain, wallet.isSlpToken);
               })
             )
           };
@@ -7496,11 +7863,7 @@ export class WalletService {
               ret.outputs = tx.outputs;
               break;
             case 'receive':
-              let action = 'received';
-              if (tx.coinbase && includeImmatureStatus) {
-                action = c >= Defaults.COINBASE_MATURITY ? 'mined' : 'immature';
-              }
-              ret.action = action;
+              ret.action = 'received';
               ret.outputs = tx.outputs;
               ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
               ret.dust = ret.amount < dustThreshold;
@@ -7531,8 +7894,8 @@ export class WalletService {
     });
   }
 
-  _getBlockchainHeight(coin, network, cb) {
-    const cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
+  _getBlockchainHeight(chain, network, cb) {
+    const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
 
     this.storage.checkAndUseGlobalCache(cacheKey, Defaults.BLOCKHEIGHT_CACHE_TIME, (err, values) => {
       if (err) return cb(err);
@@ -7541,7 +7904,7 @@ export class WalletService {
 
       values = {};
 
-      const bc = this._getBlockchainExplorer(coin, network);
+      const bc = this._getBlockchainExplorer(chain, network);
       if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
       bc.getBlockchainHeight((err, height, hash) => {
         if (!err && height > 0) {
@@ -7572,7 +7935,7 @@ export class WalletService {
     if (wallet.beRegistered) {
       return cb();
     }
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
 
     this.logd('Registering wallet');
     bc.register(wallet, err => {
@@ -7612,7 +7975,7 @@ export class WalletService {
           if (isOK) {
             logger.debug('Wallet Sync Check OK');
           } else {
-            logger.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
+            logger.warn('ERROR: Wallet check failed: %o', { localCheck, serverCheck });
             return cb(null, isOK);
           }
 
@@ -7627,7 +7990,7 @@ export class WalletService {
   // Syncs wallet regitration and address with a V8 type blockexplorerer
   syncWallet(wallet, cb, skipCheck?, count?) {
     count = count || 0;
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
     if (!bc) {
       return cb(new Error('Could not get blockchain explorer instance'));
     }
@@ -7655,7 +8018,7 @@ export class WalletService {
             }
 
             const addressStr = _.map(addresses, x => {
-              ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+              ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
               return x.address;
             });
 
@@ -8031,7 +8394,7 @@ export class WalletService {
 
     this.getFeeLevels(
       {
-        coin: wallet.coin,
+        chain: wallet.chain,
         network: wallet.network
       },
       (err, levels) => {
@@ -8057,10 +8420,10 @@ export class WalletService {
     let scriptPayload;
     try {
       const chronikClient =
-        wallet.coin === 'xec'
-          ? ChainService.getChronikClientInNode(wallet.coin)
-          : ChainService.getChronikClient(wallet.coin);
-      scriptPayload = ChainService.convertAddressToScriptPayload(wallet.coin, address);
+        wallet.chain === 'xec'
+          ? ChainService.getChronikClientInNode(wallet.chain)
+          : ChainService.getChronikClient(wallet.chain);
+      scriptPayload = ChainService.convertAddressToScriptPayload(wallet.chain, address);
       const txHistoryPage = await chronikClient.script('p2pkh', scriptPayload).history(0, limit);
       return txHistoryPage.txs;
     } catch (err) {
@@ -8080,7 +8443,7 @@ export class WalletService {
         item.txType = tokenEntry.txType;
         item.inputAddresses = _.uniq(
           _.map(txsSlp.inputs, item => {
-            return this._convertAddressFormInputScript(item.inputScript, wallet.coin, true);
+            return this._convertAddressFormInputScript(item.inputScript, wallet.chain, true);
           })
         );
         item.amountTokenUnit =
@@ -8106,7 +8469,7 @@ export class WalletService {
     return Number(burnAmount);
   }
 
-  getTxHistoryV8(bc, wallet, opts, skip, limit, cb) {
+ getTxHistoryV8(bc: V8, wallet, opts, skip, limit, cb) {
     let bcHeight,
       bcHash,
       sinceTx,
@@ -8137,7 +8500,7 @@ export class WalletService {
           this.syncWallet(wallet, next, true);
         },
         next => {
-          this._getBlockchainHeight(wallet.coin, wallet.network, (err, height, hash) => {
+          this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
             if (err) return next(err);
             bcHeight = height;
             bcHash = hash;
@@ -8155,7 +8518,7 @@ export class WalletService {
         next => {
           if (skip == 0 || !streamKey) return next();
 
-          logger.debug('Checking streamKey/skip', streamKey, skip);
+          logger.debug('Checking streamKey/skip %o', { streamKey, skip });
           this.storage.getTxHistoryStreamV8(walletCacheKey, (err, result) => {
             if (err) return next(err);
             if (!result) return next();
@@ -8190,19 +8553,13 @@ export class WalletService {
           }
 
           const startBlock = cacheStatus.updatedHeight || 0;
-          logger.debug(' ########### GET HISTORY v8 startBlock/bcH]', startBlock, bcHeight); // TODO
+          logger.debug(' ########### GET HISTORY v8 startBlock/bcH] %o', { startBlock, bcHeight });
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
-            const dustThreshold = ChainService.getDustAmountValue(wallet.coin);
-            this._normalizeTxHistory(
-              walletCacheKey,
-              txs,
-              dustThreshold,
-              bcHeight,
-              opts.includeImmatureStatus,
-              wallet,
-              async (err, inTxs: any[]) => {
+            const dustThreshold = ChainService.getDustAmountValue(wallet.chain);
+            this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, wallet, async (err, inTxs: any[]) => {
+              if (err) return cb(err);
                 if (err) return cb(err);
                 if (this._isSupportToken(wallet) && addressesToken && _.size(inTxs) > 0) {
                   try {
@@ -8226,24 +8583,23 @@ export class WalletService {
                   }
                 }
 
-                if (cacheStatus.tipTxId) {
-                  // first item is the most recent tx.
-                  // removes already cache txs
-                  lastTxs = _.takeWhile(inTxs, tx => {
-                    // cacheTxs are very confirmed, so can't be reorged
-                    return tx.txid != cacheStatus.tipTxId;
-                  });
+              if (cacheStatus.tipTxId) {
+                // first item is the most recent tx.
+                // removes already cache txs
+                lastTxs = _.takeWhile(inTxs, tx => {
+                  // cacheTxs are very confirmed, so can't be reorged
+                  return tx.txid != cacheStatus.tipTxId;
+                });
 
-                  // only store stream IF cache is been used.
-                  //
-                  logger.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
-                  return this.storage.storeTxHistoryStreamV8(walletCacheKey, streamKey, lastTxs, next);
-                }
-
-                lastTxs = inTxs;
-                return next();
+                // only store stream IF cache is been used.
+                //
+                logger.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
+                return this.storage.storeTxHistoryStreamV8(walletCacheKey, streamKey, lastTxs, next);
               }
-            );
+
+              lastTxs = inTxs;
+              return next();
+            });
           });
         },
         next => {
@@ -8293,9 +8649,6 @@ export class WalletService {
               if (x.blockheight > 0 && bcHeight >= x.blockheight) {
                 x.confirmations = bcHeight - x.blockheight + 1;
               }
-              if (x.action == 'immature' && x.confirmations >= Defaults.COINBASE_MATURITY) {
-                x.action = 'mined';
-              }
             });
 
             resultTxs = resultTxs.concat(oldTxs);
@@ -8304,9 +8657,9 @@ export class WalletService {
         },
         next => {
           // get all txs from chronik client
-          if (wallet.coin === 'xpi' && wallet.singleAddress) {
+          if (wallet.chain === 'xpi' && wallet.singleAddress) {
             if (resultTxs && resultTxs.length > 0) {
-              const chronikClient = ChainService.getChronikClient(wallet.coin);
+              const chronikClient = ChainService.getChronikClient(wallet.chain);
               // filter get only tx have on-chain message
               let filterResultTxs = _.filter(resultTxs, tx => {
                 // if tx action = received => get all txs because we have no clue if this tx having message or not
@@ -8372,9 +8725,9 @@ export class WalletService {
         next => {
           if (this._isSupportToken(wallet)) {
             const chronikClient =
-              wallet.coin === 'xec'
-                ? ChainService.getChronikClientInNode(wallet.coin)
-                : ChainService.getChronikClient(wallet.coin);
+              wallet.chain === 'xec'
+                ? ChainService.getChronikClientInNode(wallet.chain)
+                : ChainService.getChronikClient(wallet.chain);
             let filterResultTxs = _.filter(resultTxs, tx => !tx.burnAmountToken);
             if (filterResultTxs.length > 0) {
               const listTxDetailFromChronik = _.map(filterResultTxs, async tx => {
@@ -8427,8 +8780,13 @@ export class WalletService {
           // We have now TXs from 'tipHeight` to end in `lastTxs`.
           // Store hard confirmed TXs
           // confirmations here is bcHeight - tip + 1, so OK.
+          let CONFIRMATIONS_TO_START_CACHING = Defaults.CONFIRMATIONS_TO_START_CACHING;
+          if (Constants.CONFIRMATIONS_TO_START_CACHING[wallet.chain] != null) {
+            CONFIRMATIONS_TO_START_CACHING = Constants.CONFIRMATIONS_TO_START_CACHING[wallet.chain];
+          }
+
           txsToCache = _.filter(lastTxs, i => {
-            if (i.confirmations < Defaults.CONFIRMATIONS_TO_START_CACHING) {
+            if (i.confirmations < CONFIRMATIONS_TO_START_CACHING) {
               return false;
             }
             if (!cacheStatus.tipHeight) return true;
@@ -8441,7 +8799,7 @@ export class WalletService {
             return next();
           }
 
-          const updateHeight = bcHeight - Defaults.CONFIRMATIONS_TO_START_CACHING;
+          const updateHeight = bcHeight - CONFIRMATIONS_TO_START_CACHING;
           this.storage.storeTxHistoryCacheV8(walletCacheKey, cacheStatus.tipIndex, txsToCache, updateHeight, next);
         }
       ],
@@ -8485,7 +8843,7 @@ export class WalletService {
 
       if (wallet.scanStatus == 'running') return cb(Errors.WALLET_BUSY);
 
-      bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
       if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
 
       const from = opts.skip || 0;
@@ -8596,17 +8954,33 @@ export class WalletService {
       }
 
       this.storage.clearWalletCache(this.walletId, () => {
-        // non UTXO coins do not scan.
-        if (!ChainService.isUTXOCoin(wallet.coin)) return cb();
+        // do not scan single address UTXO wallets.
+        if (wallet.singleAddress && ChainService.isUTXOChain(wallet.chain)) return cb();
 
         this._runLocked(cb, cb => {
           wallet.scanStatus = 'running';
           this.storage.storeWallet(wallet, err => {
             if (err) return cb(err);
 
-            const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+            const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             opts.bc = bc;
+
+            const scanComplete = error => {
+              this.storage.fetchWallet(wallet.id, (err, wallet) => {
+                if (err) return cb(err);
+                wallet.scanStatus = error ? 'error' : 'success';
+                this.storage.storeWallet(wallet, err => {
+                  return cb(error || err);
+                });
+              });
+            };
+
+            if (!ChainService.isUTXOChain(wallet.chain)) {
+              // non-UTXO chain "scan" is just a resync
+              return this.syncWallet(wallet, scanComplete);
+            }
+
             let step = opts.startingStep;
             async.doWhilst(
               next => {
@@ -8616,7 +8990,7 @@ export class WalletService {
                 step = step / 10;
                 return step >= 1;
               },
-              cb
+              scanComplete
             );
           });
         });
@@ -8707,15 +9081,7 @@ export class WalletService {
           this._store(wallet, addresses, next);
         });
       },
-      error => {
-        this.storage.fetchWallet(wallet.id, (err, wallet) => {
-          if (err) return cb(err);
-          wallet.scanStatus = error ? 'error' : 'success';
-          this.storage.storeWallet(wallet, err => {
-            return cb(error || err);
-          });
-        });
-      }
+      cb
     );
   }
 
@@ -8741,8 +9107,8 @@ export class WalletService {
       if (err) return cb(err);
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
-      // non UTXO coins do not scan.
-      if (!ChainService.isUTXOCoin(wallet.coin)) return cb();
+      // do not scan single address UTXO wallets.
+      if (wallet.singleAddress && ChainService.isUTXOChain(wallet.chain)) return cb();
 
       setTimeout(() => {
         wallet.beRegistered = false;
@@ -8786,6 +9152,19 @@ export class WalletService {
     if (_.isNaN(opts.ts) || _.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
 
     this.fiatRateService.getRates(opts, (err, rates) => {
+      if (err) return cb(err);
+      return cb(null, rates);
+    });
+  }
+
+
+  /**
+   * Returns exchange rates of the supported fiat currencies for all coins.
+   * @returns {Array} rates - The exchange rate.
+   */
+  getAllFiatRates(cb) {
+
+     return this.fiatRateService.getAllRates((err, rates) => {
       if (err) return cb(err);
       return cb(null, rates);
     });
@@ -8914,11 +9293,11 @@ export class WalletService {
         );
         if (balanceFound) {
           const balanceTotal = balanceFound.balance.totalAmount;
-          coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-          coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-          coin.fund = (balanceTotal / UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
+          coin.minConvertToSat = coinQuantityFromUSDMin * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+          coin.maxConvertToSat = coinQuantityFromUSDMax * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+          coin.fund = (balanceTotal / Constants.UNITS[coin.code.toLowerCase()].toSatoshis) * rateCoinUsd;
           coin.fundConvertToSat = balanceTotal;
-          coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
+          coin.decimals = Constants.UNITS[coin.code.toLowerCase()].full.maxDecimals;
         }
       }
       coin.rate = fiatRates[coin.code.toLowerCase()];
@@ -8937,9 +9316,9 @@ export class WalletService {
         coin.maxConvertToSat = coinQuantityFromUSDMax * Math.pow(10, tokenDecimals);
         coin.decimals = tokenDecimals;
       } else {
-        coin.minConvertToSat = coinQuantityFromUSDMin * UNITS[coin.code.toLowerCase()].toSatoshis;
-        coin.maxConvertToSat = coinQuantityFromUSDMax * UNITS[coin.code.toLowerCase()].toSatoshis;
-        coin.decimals = UNITS[coin.code.toLowerCase()].full.maxDecimals;
+        coin.minConvertToSat = coinQuantityFromUSDMin * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+        coin.maxConvertToSat = coinQuantityFromUSDMax * Constants.UNITS[coin.code.toLowerCase()].toSatoshis;
+        coin.decimals = Constants.UNITS[coin.code.toLowerCase()].full.maxDecimals;
       }
       coin.rate = fiatRates[coin.code.toLowerCase()];
     }
@@ -9022,11 +9401,11 @@ export class WalletService {
       );
       if (coinReceiveFound && coinReceiveFound.networkFee === 0) {
         const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
-        coinReceiveFound.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+        coinReceiveFound.networkFee = estimatedFee / Constants.UNITS[coinCode].toSatoshis;
       }
       if (coinSwapFound && coinSwapFound.networkFee === 0) {
         const coinCode = coin.isToken ? 'xec' : coin.code.toLowerCase();
-        coinSwapFound.networkFee = estimatedFee / UNITS[coinCode].toSatoshis;
+        coinSwapFound.networkFee = estimatedFee / Constants.UNITS[coinCode].toSatoshis;
       }
     });
   }
@@ -10238,22 +10617,57 @@ export class WalletService {
     return cb(null, data);
   }
 
-  simplexGetKeys(req) {
+  private simplexGetKeys(req) {
     if (!config.simplex) throw new Error('Simplex missing credentials');
 
-    let env = 'sandbox';
-    if (req.body.env && req.body.env == 'production') {
-      env = 'production';
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
     }
+
     delete req.body.env;
+    delete req.body.context;
 
     const keys = {
       API: config.simplex[env].api,
+      API_SELL: config.simplex[env].apiSell,
       API_KEY: config.simplex[env].apiKey,
-      APP_PROVIDER_ID: config.simplex[env].appProviderId
+      PUBLIC_KEY: config.simplex[env].publicKey,
+      APP_PROVIDER_ID: config.simplex[env].appProviderId,
+      APP_SELL_REF_ID: config.simplex[env].appSellRefId
     };
 
     return keys;
+  }
+
+  simplexGetCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+      const API = keys.API;
+      const PUBLIC_KEY = keys.PUBLIC_KEY;
+
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+
+      const URL = API + `/v2/supported_crypto_currencies?public_key=${PUBLIC_KEY}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
   }
 
   simplexGetQuote(req): Promise<any> {
@@ -10272,6 +10686,11 @@ export class WalletService {
         Authorization: 'ApiKey ' + API_KEY
       };
 
+      if (req.body && req.body.payment_methods && Array.isArray(req.body.payment_methods)) {
+        // Workaround to fix older versions of the app
+        req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
+      }
+
       this.request.post(
         API + '/wallet/merchant/v2/quote',
         {
@@ -10284,6 +10703,51 @@ export class WalletService {
             return reject(err.body ? err.body : err);
           } else {
             return resolve(data.body ? data.body : null);
+          }
+        }
+      );
+    });
+  }
+
+  simplexGetSellQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.simplexGetKeys(req);
+
+      const API = keys.API_SELL;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['base_currency', 'base_amount', 'quote_currency', 'pp_payment_method'])) {
+        return reject(new ClientError("Simplex's request missing arguments"));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'ApiKey ' + API_KEY,
+      };
+
+      if (req.body.userCountry && typeof req.body.userCountry === 'string') {
+        headers['x-country-code'] = req.body.userCountry.toUpperCase();
+      }
+
+      let qs = [];
+      qs.push('base_currency=' + req.body.base_currency);
+      qs.push('base_amount=' + req.body.base_amount);
+      qs.push('quote_currency=' + req.body.quote_currency);
+      qs.push('pp_payment_method=' + req.body.pp_payment_method);
+
+      const URL: string = API + `/v3/quote?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
           }
         }
       );
@@ -10381,7 +10845,7 @@ export class WalletService {
     });
   }
 
-  wyreGetKeys(req) {
+  private wyreGetKeys(req) {
     if (!config.wyre) throw new Error('Wyre missing credentials');
 
     let env = 'sandbox';
@@ -10399,6 +10863,480 @@ export class WalletService {
 
     return keys;
   }
+
+  private thorswapGetKeys(req) {
+    if (!config.thorswap) throw new Error('Thorswap missing credentials');
+
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
+    }
+
+    delete req.body.env;
+    delete req.body.context;
+
+    const keys: {
+      API: string;
+      API_KEY: string;
+      SECRET_KEY: string;
+      REFERER: string;
+    } = {
+      API: config.thorswap[env].api,
+      API_KEY: config.thorswap[env].apiKey,
+      SECRET_KEY: config.thorswap[env].secretKey,
+      REFERER: config.thorswap[env].referer
+    };
+
+    return keys;
+  }
+
+  thorswapGetSupportedChains(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.thorswapGetKeys(req);
+      const API = keys.API;
+      const REFERER = keys.REFERER;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Referer': REFERER,
+        'x-api-key': API_KEY
+      };
+
+      const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/chains/details' : '/tokenlist/utils/chains';
+      const URL: string = API + uriPath;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  thorswapGetCryptoCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.thorswapGetKeys(req);
+      const API = keys.API;
+      const REFERER = keys.REFERER;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Referer': REFERER,
+        'x-api-key': API_KEY
+      };
+
+      let qs = [];
+      qs.push('categories=' + (req?.body?.categories ?? 'all'));
+
+      const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/currencies/details' : '/tokenlist/utils/currencies';
+      const URL: string = API + `${uriPath}?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  thorswapGetSwapQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.thorswapGetKeys(req);
+      const API = keys.API;
+      const REFERER = keys.REFERER;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Referer': REFERER,
+        'x-api-key': API_KEY
+      };
+
+      let qs = [];
+      if (!checkRequired(req.body, ['sellAsset', 'buyAsset', 'sellAmount'])) {
+        return reject(new ClientError("Thorswap's request missing arguments"));
+      }
+      qs.push('sellAsset=' + req.body.sellAsset);
+      qs.push('buyAsset=' + req.body.buyAsset);
+      qs.push('sellAmount=' + req.body.sellAmount);
+      if (req.body.senderAddress) qs.push('senderAddress=' + req.body.senderAddress);
+      if (req.body.recipientAddress) qs.push('recipientAddress=' + req.body.recipientAddress);
+      if (req.body.slippage) qs.push('slippage=' + req.body.slippage);
+      if (req.body.limit) qs.push('limit=' + req.body.limit);
+      if (req.body.providers) qs.push('providers=' + req.body.providers);
+      if (req.body.subProviders) qs.push('subProviders=' + req.body.subProviders);
+      if (req.body.preferredProvider) qs.push('preferredProvider=' + req.body.preferredProvider);
+      if (req.body.affiliateAddress) qs.push('affiliateAddress=' + req.body.affiliateAddress);
+      if (req.body.affiliateBasisPoints) qs.push('affiliateBasisPoints=' + req.body.affiliateBasisPoints);
+      if (req.body.isAffiliateFeeFlat) qs.push('isAffiliateFeeFlat=' + req.body.isAffiliateFeeFlat);
+      if (req.body.allowSmartContractRecipient) qs.push('allowSmartContractRecipient=' + req.body.allowSmartContractRecipient);
+
+      const URL: string = API + `/aggregator/tokens/quote?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  thorswapGetSwapTx(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.thorswapGetKeys(req);
+      const API = keys.API;
+      const REFERER = keys.REFERER;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Referer': REFERER,
+        'x-api-key': API_KEY
+      };
+
+      if (!checkRequired(req.body, ['hash']) && !checkRequired(req.body, ['txn'])) {
+        return reject(new ClientError("Thorswap's request missing arguments"));
+      }
+
+      this.request.post(
+        API + '/tracker/v2/txn',
+        // API + '/apiusage/v2/txn',
+        // 'https://api.swapkit.dev/track',
+        // /apiusage/v2/txn
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  private transakGetKeys(req) {
+    if (!config.transak) throw new Error('Transak missing credentials');
+
+    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
+    env = req.body.env === 'production' ? 'production' : 'sandbox';
+    if (req.body.context === 'web') {
+      env += 'Web';
+    }
+
+    delete req.body.env;
+    delete req.body.context;
+
+    const keys: {
+      API: string;
+      API_KEY: string;
+      SECRET_KEY: string;
+      WIDGET_API: string;
+    } = {
+      API: config.transak[env].api,
+      API_KEY: config.transak[env].apiKey,
+      SECRET_KEY: config.transak[env].secretKey,
+      WIDGET_API: config.transak[env].widgetApi
+    };
+
+    return keys;
+  }
+
+  transakGetAccessToken(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'api-secret': SECRET_KEY,
+      };
+
+      req.body = {
+        apiKey: API_KEY
+      }
+
+      const URL: string = API + '/partners/api/v2/refresh-token';
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetCryptoCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+
+      const URL: string = API + '/api/v2/currencies/crypto-currencies';
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetFiatCurrencies(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+
+      const URL: string = API + `/api/v2/currencies/fiat-currencies?apiKey=${API_KEY}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+
+      if (!checkRequired(req.body, ['fiatCurrency', 'cryptoCurrency', 'network', 'paymentMethod'])) {
+        return reject(new ClientError("Transak's request missing arguments"));
+      }
+
+      const headers = {
+        Accept: 'application/json',
+      };
+
+      let qs = [];
+      qs.push('partnerApiKey=' + API_KEY);
+      qs.push('fiatCurrency=' + req.body.fiatCurrency);
+      qs.push('cryptoCurrency=' + req.body.cryptoCurrency);
+      qs.push('isBuyOrSell=BUY');
+      qs.push('network=' + req.body.network);
+      qs.push('paymentMethod=' + req.body.paymentMethod);
+
+      if (req.body.fiatAmount) qs.push('fiatAmount=' + req.body.fiatAmount);
+      if (req.body.cryptoAmount) qs.push('cryptoAmount=' + req.body.cryptoAmount);
+
+      const URL: string = API + `/api/v2/currencies/price?${qs.join('&')}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  transakGetSignedPaymentUrl(req): { urlWithSignature: string } {
+    const appRequiredParams = [
+      'walletAddress',
+      'redirectURL',
+      'fiatAmount',
+      'fiatCurrency',
+      'network',
+      'cryptoCurrencyCode',
+      'partnerOrderId',
+      'partnerCustomerId',
+    ];
+
+    const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
+    const keys = this.transakGetKeys(req);
+    const API_KEY = keys.API_KEY;
+    const WIDGET_API = keys.WIDGET_API;
+
+    if (
+      !checkRequired(req.body, requiredParams)
+    ) {
+      throw new ClientError("Transak's request missing arguments");
+    }
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    let qs = [];
+    // Recommended parameters to customize from the app
+    if (req.body.walletAddress) qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
+    if (req.body.disableWalletAddressForm) qs.push('disableWalletAddressForm=' + encodeURIComponent(req.body.disableWalletAddressForm));
+    if (req.body.redirectURL) qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
+    if (req.body.exchangeScreenTitle) qs.push('exchangeScreenTitle=' + encodeURIComponent(req.body.exchangeScreenTitle));
+    if (req.body.fiatAmount) qs.push('fiatAmount=' + encodeURIComponent(req.body.fiatAmount));
+    if (req.body.fiatCurrency) qs.push('fiatCurrency=' + encodeURIComponent(req.body.fiatCurrency));
+    if (req.body.network) qs.push('network=' + encodeURIComponent(req.body.network));
+    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
+    if (req.body.cryptoCurrencyCode) qs.push('cryptoCurrencyCode=' + encodeURIComponent(req.body.cryptoCurrencyCode));
+    if (req.body.cryptoCurrencyList) qs.push('cryptoCurrencyList=' + encodeURIComponent(req.body.cryptoCurrencyList));
+    if (req.body.hideExchangeScreen) qs.push('hideExchangeScreen=' + encodeURIComponent(req.body.hideExchangeScreen));
+    if (req.body.themeColor) qs.push('themeColor=' + encodeURIComponent(req.body.themeColor));
+    if (req.body.hideMenu) qs.push('hideMenu=' + encodeURIComponent(req.body.hideMenu));
+    if (req.body.partnerOrderId) qs.push('partnerOrderId=' + encodeURIComponent(req.body.partnerOrderId));
+    if (req.body.partnerCustomerId) qs.push('partnerCustomerId=' + encodeURIComponent(req.body.partnerCustomerId));
+    // Other parameters
+    if (req.body.environment) qs.push('environment=' + encodeURIComponent(req.body.environment));
+    if (req.body.widgetHeight) qs.push('widgetHeight=' + encodeURIComponent(req.body.widgetHeight));
+    if (req.body.widgetWidth) qs.push('widgetWidth=' + encodeURIComponent(req.body.widgetWidth));
+    if (req.body.productsAvailed) qs.push('productsAvailed=' + encodeURIComponent(req.body.productsAvailed));
+    if (req.body.defaultFiatAmount) qs.push('defaultFiatAmount=' + encodeURIComponent(req.body.defaultFiatAmount));
+    if (req.body.countryCode) qs.push('countryCode=' + encodeURIComponent(req.body.countryCode));
+    if (req.body.excludeFiatCurrencies) qs.push('excludeFiatCurrencies=' + encodeURIComponent(req.body.excludeFiatCurrencies));
+    if (req.body.defaultNetwork) qs.push('defaultNetwork=' + encodeURIComponent(req.body.defaultNetwork));
+    if (req.body.networks) qs.push('networks=' + encodeURIComponent(req.body.networks));
+    if (req.body.defaultPaymentMethod) qs.push('defaultPaymentMethod=' + encodeURIComponent(req.body.defaultPaymentMethod));
+    if (req.body.disablePaymentMethods) qs.push('disablePaymentMethods=' + encodeURIComponent(req.body.disablePaymentMethods));
+    if (req.body.defaultCryptoAmount) qs.push('defaultCryptoAmount=' + encodeURIComponent(req.body.defaultCryptoAmount));
+    if (req.body.cryptoAmount) qs.push('cryptoAmount=' + encodeURIComponent(req.body.cryptoAmount));
+    if (req.body.defaultCryptoCurrency) qs.push('defaultCryptoCurrency=' + encodeURIComponent(req.body.defaultCryptoCurrency));
+    if (req.body.isFeeCalculationHidden) qs.push('isFeeCalculationHidden=' + encodeURIComponent(req.body.isFeeCalculationHidden));
+    if (req.body.walletAddressesData) qs.push('walletAddressesData=' + encodeURIComponent(req.body.walletAddressesData));
+    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
+    if (req.body.userData) qs.push('userData=' + encodeURIComponent(req.body.userData));
+    if (req.body.isAutoFillUserData) qs.push('isAutoFillUserData=' + encodeURIComponent(req.body.isAutoFillUserData));
+
+    const URL_SEARCH: string = `?apiKey=${API_KEY}&${qs.join('&')}`;
+
+    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}`;
+
+    return { urlWithSignature };
+  }
+
+  transakGetOrderDetails(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      const env = _.cloneDeep(req.body.env);
+      const keys = this.transakGetKeys(req);
+      const API = keys.API;
+
+      if (!checkRequired(req.body, ['orderId'])) {
+        return reject(new ClientError("Transak's request missing arguments"));
+      }
+
+      let accessToken;
+      if (req.body.accessToken) {
+        accessToken = req.body.accessToken;
+      } else {
+        try {
+          const accessTokenData = await this.transakGetAccessToken({ body: env });
+          accessToken = accessTokenData?.data?.accessToken;
+        } catch (err) {
+          return reject(err?.body ? err.body : err);
+        }
+      }
+
+      const headers = {
+        Accept: 'application/json',
+        'access-token': accessToken,
+      };
+
+      const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
 
   wyreWalletOrderQuotation(req): Promise<any> {
     return new Promise((resolve, reject) => {
@@ -10503,23 +11441,45 @@ export class WalletService {
     });
   }
 
-  changellyGetKeys(req) {
+  private changellyGetKeys(req) {
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
       throw new Error('ClientError: Service not configured.');
+      if (!config.changelly.v1) {
+        logger.warn('Changelly v1 missing credentials');
+        throw new Error('ClientError: Service v1 not configured.');
+      }
     }
 
     const keys = {
-      API: config.changelly.api,
-      API_KEY: config.changelly.apiKey,
-      SECRET: config.changelly.secret
+      API: config.changelly.v1.api,
+      API_KEY: config.changelly.v1.apiKey,
+      SECRET: config.changelly.v1.secret
+    };
+
+    return keys;
+  }
+
+  private changellyGetKeysV2(req) {
+    if (!config.changelly) {
+      logger.warn('Changelly missing credentials');
+      throw new Error('ClientError: Service not configured.');
+      if (!config.changelly.v2) {
+        logger.warn('Changelly v2 missing credentials');
+        throw new Error('ClientError: Service v2 not configured.');
+      }
+    }
+
+    const keys = {
+      API: config.changelly.v2.api,
+      SECRET: config.changelly.v2.secret
     };
 
     return keys;
   }
 
   changellySignRequests(message, secret: string) {
-    if (!message || !secret) throw new Error('Missing parameters to sign Changelly request');
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v1 request');
 
     const sign: string = Bitcore.crypto.Hash.sha512hmac(
       Buffer.from(JSON.stringify(message)),
@@ -10529,9 +11489,34 @@ export class WalletService {
     return sign;
   }
 
+
+  changellySignRequestsV2(message, secret: string) {
+    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v2 request');
+
+    const privateKey = crypto.createPrivateKey({
+      key: Buffer.from(secret, 'hex'),
+      format: 'der',
+      type: 'pkcs8',
+    });
+
+    const publicKey = crypto.createPublicKey(privateKey).export({
+      type: 'pkcs1',
+      format: 'der'
+    });
+
+    const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), privateKey);
+
+    return { signature, publicKey };
+  }
+
   changellyGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id'])) {
         return reject(new ClientError('changellyGetCurrencies request missing arguments'));
@@ -10545,13 +11530,22 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -10573,7 +11567,12 @@ export class WalletService {
 
   changellyGetPairsParams(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
         return reject(new ClientError('changellyGetPairsParams request missing arguments'));
@@ -10592,13 +11591,21 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
-
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -10620,7 +11627,12 @@ export class WalletService {
 
   changellyGetFixRateForAmount(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
         return reject(new ClientError('changellyGetFixRateForAmount request missing arguments'));
@@ -10640,13 +11652,22 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -10668,7 +11689,12 @@ export class WalletService {
 
   changellyCreateFixTransaction(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (
         !checkRequired(req.body, [
@@ -10699,13 +11725,82 @@ export class WalletService {
       };
 
       const URL: string = keys.API;
-      const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
+      if (req.body.useV2) {
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: message,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  changellyGetTransactions(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
+
+      if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
+        return reject(new ClientError('changellyGetTransactions request missing arguments'));
+      }
+
+      const message = {
+        id: req.body.id,
+        jsonrpc: '2.0',
+        method: 'getTransactions',
+        params:
+        {
+          id: req.body.exchangeTxId,
+          limit: req.body.limit ?? 1,
+        }
       };
+
+      const URL: string = keys.API;
+
+      if (req.body.useV2) {
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -10727,7 +11822,12 @@ export class WalletService {
 
   changellyGetStatus(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.changellyGetKeys(req);
+      let keys, headers;
+      if (req.body.useV2) {
+        keys = this.changellyGetKeysV2(req);
+      } else {
+        keys = this.changellyGetKeys(req);
+      }
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
         return reject(new ClientError('changellyGetStatus request missing arguments'));
@@ -10745,11 +11845,21 @@ export class WalletService {
       const URL: string = keys.API;
       const sign: string = this.changellySignRequests(message, keys.SECRET);
 
-      const headers = {
-        'Content-Type': 'application/json',
-        sign,
-        'api-key': keys.API_KEY
-      };
+      if (req.body.useV2) {
+        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+          'X-Api-Signature': signature.toString('base64'),
+        };
+      } else {
+        const sign: string = this.changellySignRequests(message, keys.SECRET);
+        headers = {
+          'Content-Type': 'application/json',
+          sign,
+          'api-key': keys.API_KEY
+        };
+      }
 
       this.request.post(
         URL,
@@ -10769,11 +11879,12 @@ export class WalletService {
     });
   }
 
-  oneInchGetCredentials() {
+  private oneInchGetCredentials() {
     if (!config.oneInch) throw new Error('1Inch missing credentials');
 
     const credentials = {
       API: config.oneInch.api,
+      API_KEY: config.oneInch.apiKey,
       referrerAddress: config.oneInch.referrerAddress,
       referrerFee: config.oneInch.referrerFee
     };
@@ -10823,7 +11934,10 @@ export class WalletService {
       if (credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
       if (credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
 
-      const URL: string = credentials.API + '/v3.0/1/swap/?' + qs.join('&');
+      const chainNetwork: string = `${req.params?.['chain']?.toUpperCase()}_mainnet` || 'eth_mainnet';
+      const chainId: number = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[chainNetwork];
+
+      const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -10840,6 +11954,105 @@ export class WalletService {
         }
       );
     });
+  }
+
+  oneInchGetTokens(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+
+      const credentials = this.oneInchGetCredentials();
+      const chain = req.params?.['chain'] || 'eth';
+      const cacheKey = `oneInchTokens:${chain}`;
+
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.ONE_INCH_CACHE_DURATION, (err, values, oldvalues) => {
+        if (err) this.logw('Could not get stored tokens list', err);
+        if (values) return resolve(values);
+
+        const headers = {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: 'Bearer ' + credentials.API_KEY,
+        };
+
+        const chainIdMap = {
+          eth: 1,
+          matic: 137,
+          arb: 42161,
+          base: 8453,
+          op: 10,
+        };
+
+        const chainId = chainIdMap[chain];
+
+        const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
+
+        this.request.get(
+          URL,
+          {
+            headers,
+            json: true
+          },
+          (err, data) => {
+            if (err) {
+              this.logw('An error occured while retrieving the token list', err);
+              if (oldvalues) {
+                this.logw('Using old cached values');
+                return resolve(oldvalues);
+              }
+              return reject(err.body ?? err);
+            } else if (data?.statusCode === 429 && oldvalues) {
+              // oneinch rate limit
+              return resolve(oldvalues);
+            } else {
+              if (!data?.body?.tokens) {
+                if (oldvalues) {
+                  this.logw('No token list available... using old cached values');
+                  return resolve(oldvalues);
+                }
+                return reject(new Error('Could not get tokens list'));
+              }
+              this.storage.storeGlobalCache(cacheKey, data.body.tokens, err => {
+                if (err) {
+                  this.logw('Could not store tokens list');
+                }
+                return resolve(data.body.tokens);
+              });
+            }
+          }
+        );
+      });
+    });
+  }
+
+  checkServiceAvailability(req): boolean {
+    if (!checkRequired(req.body, ['service', 'opts'])) {
+      throw new ClientError('checkServiceAvailability request missing arguments');
+    }
+
+    let serviceEnabled: boolean;
+
+    switch (req.body.service) {
+      case '1inch':
+        if (req.body.opts?.country?.toUpperCase() === 'US') {
+          serviceEnabled = false;
+        } else {
+          serviceEnabled = true;
+        }
+        break;
+
+      default:
+        serviceEnabled = true;
+        break;
+    }
+
+    return serviceEnabled;
+  }
+
+  getSpenderApprovalWhitelist(cb) {
+    if (Services.ERC20_SPENDER_APPROVAL_WHITELIST) {
+      return cb(null, Services.ERC20_SPENDER_APPROVAL_WHITELIST);
+    } else {
+      return cb(new Error('Could not get ERC20 spender approval whitelist'));
+    }
   }
 
   getPayId(url: string): Promise<any> {
@@ -10902,9 +12115,16 @@ export class WalletService {
     });
   }
 
-  clearWalletCache(): Promise<boolean> {
+  /**
+   * Clear wallet cache
+   * @param {Object} opts
+   * @param {String} opts.tokenAddress (optional) - Token address
+   * @returns {Boolean}
+   */
+  clearWalletCache(opts): Promise<boolean> {
     return new Promise(resolve => {
-      this.storage.clearWalletCache(this.walletId, () => {
+      const cacheKey = this.walletId + (opts.tokenAddress ? '-' + opts.tokenAddress : '');
+      this.storage.clearWalletCache(cacheKey, () => {
         resolve(true);
       });
     });

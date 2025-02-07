@@ -25,18 +25,18 @@ describe("#Schnorr", function() {
     var schnorr = new Schnorr();
 
     it("Sign/Verify bitcoin-abc-test-spec",  function() {
-        schnorr.hashbuf =  Hash.sha256((Buffer.from('Very deterministic message', 'utf-8')));
+        schnorr.hashbuf =  Hash.sha256(Buffer.from('Very deterministic message', 'utf-8'));
         schnorr.endianess = 'big';
-        schnorr.privkey = new Privkey(BN.fromBuffer('12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747','hex'), 'livenet');
+        schnorr.privkey = new Privkey(BN.fromBuffer(Buffer.from('12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747','hex')), 'livenet');
         schnorr.privkey2pubkey();
         schnorr.sign();
         schnorr.verify().verified.should.equal(true);
     });
 
     it("Sign Schnorr padding",  function() {
-        schnorr.hashbuf =  Hash.sha256((Buffer.from('Very deterministic messageg6', 'utf-8')));
+        schnorr.hashbuf =  Hash.sha256(Buffer.from('Very deterministic messageg6', 'utf-8'));
         schnorr.endianess = 'big';
-        schnorr.privkey = new Privkey(BN.fromBuffer('12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747','hex'), 'livenet');
+        schnorr.privkey = new Privkey(BN.fromBuffer(Buffer.from('12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747','hex')), 'livenet');
         schnorr.privkey2pubkey();
         schnorr.sign();
         schnorr.verify().verified.should.equal(true);
@@ -71,7 +71,7 @@ describe("#Schnorr", function() {
     it("Sign/Verify 3",  function() {
         schnorr.hashbuf = Buffer.from('243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89', 'hex');
         schnorr.endianess = 'big';
-        schnorr.privkey = new Privkey(BN.fromBuffer('B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF','hex'), 'livenet');
+        schnorr.privkey = new Privkey(BN.fromBuffer(Buffer.from('B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF','hex')), 'livenet');
         schnorr.privkey2pubkey();
         schnorr.sign();
         schnorr.verify().verified.should.equal(true);
@@ -81,7 +81,7 @@ describe("#Schnorr", function() {
         var schnorr = new Schnorr();
         schnorr.hashbuf = Buffer.from('5E2D58D8B3BCDF1ABADEC7829054F90DDA9805AAB56C77333024B9D0A508B75C', 'hex');
         schnorr.endianess = 'big';
-        schnorr.privkey = new Privkey(BN.fromBuffer('C90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B14E5C9','hex'), 'livenet');
+        schnorr.privkey = new Privkey(BN.fromBuffer(Buffer.from('C90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B14E5C9','hex')), 'livenet');
         schnorr.privkey2pubkey();
         schnorr.sign();
         schnorr.verify().verified.should.equal(true);
@@ -90,7 +90,7 @@ describe("#Schnorr", function() {
     it('Verify Test 5', function() {
         schnorr.hashbuf = Buffer.from('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', 'hex');
         schnorr.endianess = 'big';
-        schnorr.privkey = new Privkey(BN.fromBuffer('0B432B2677937381AEF05BB02A66ECD012773062CF3FA2549E44F58ED2401710','hex'), 'livenet');
+        schnorr.privkey = new Privkey(BN.fromBuffer(Buffer.from('0B432B2677937381AEF05BB02A66ECD012773062CF3FA2549E44F58ED2401710','hex')), 'livenet');
         schnorr.privkey2pubkey();
         schnorr.sign();
         schnorr.verify().verified.should.equal(true);

@@ -1,6 +1,6 @@
 {
-  "name": "@abcpros/bitcore-lib-doge",
-  "version": "8.25.43",
+  "name": "@bcpros/bitcore-lib-doge",
+  "version": "9.0.7",
   "description": "A pure and powerful JavaScript Dogecoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -36,7 +36,6 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bech32": "=1.1.3",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
@@ -46,7 +45,7 @@
     "scryptsy": "2.1.0"
   },
   "devDependencies": {
-    "@abcpros/bitcore-build": "^8.25.30",
+    "@bcpros/bitcore-build": "^9.0.7",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
@@ -55,5 +54,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "gitHead": "169e28b0b13c25c386faccf38a2fdc4e1275a5db"
 }

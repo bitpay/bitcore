@@ -1,0 +1,313 @@
+{
+  "header": {
+    "hash": "0000000056087dee73fb66178ca70da89dfd0be098b1a63cf6fe93934cd04c78",
+    "version": 536870912,
+    "prevHash": "000000009abf339fdf4490d7244678340145cdf5d3158e5af5a25e7ea371fe3d",
+    "merkleRoot": "ea6b623cc007f2000328aa49caa4aa898948b132249f84cecffee712a9150f44",
+    "time": 1668517526,
+    "bits": 486580570,
+    "nonce": 849021968
+  },
+  "transactions": [
+    {
+      "hash": "ff2a2365d0cd49fefd1afcf4b24a69dd4a8aadb42e170c449dd05e9719e2604f",
+      "version": 1,
+      "inputs": [
+        {
+          "prevTxId": "0000000000000000000000000000000000000000000000000000000000000000",
+          "outputIndex": 4294967295,
+          "sequenceNumber": 4294967295,
+          "script": "0365dc0100112f636861696e67726170682e636173682f08000000000000000000"
+        }
+      ],
+      "outputs": [{ "satoshis": 5000119224, "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac" }],
+      "nLockTime": 0
+    },
+    {
+      "hash": "04dcb6a5895906b52767f53369ebaeaf26de389ac796711de43b18c3de035e74",
+      "version": 2,
+      "inputs": [
+        {
+          "prevTxId": "3ab698f4aedca421c380bca5a91b5ef7e11e365db2d9c8ed5459148c80ed90ac",
+          "outputIndex": 2,
+          "sequenceNumber": 0,
+          "script": "5100",
+          "scriptString": "OP_1 OP_0"
+        }
+      ],
+      "outputs": [{ "satoshis": 99000, "script": "76a914c5eb5dde0efe57884810d3e5ada12c6ada6a06b188ac" }],
+      "nLockTime": 0
+    },
+    {
+      "hash": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+      "version": 2,
+      "inputs": [
+        {
+          "prevTxId": "3ab698f4aedca421c380bca5a91b5ef7e11e365db2d9c8ed5459148c80ed90ac",
+          "outputIndex": 1,
+          "sequenceNumber": 0,
+          "script": "5100",
+          "scriptString": "OP_1 OP_0"
+        }
+      ],
+      "outputs": [{ "satoshis": 99000, "script": "76a914c5eb5dde0efe57884810d3e5ada12c6ada6a06b188ac" }],
+      "nLockTime": 0
+    },
+    {
+      "hash": "670a0402bd50af7fee349511221e5b92eb90dcc4e1d3dce451e228fc1c6aa39a",
+      "version": 2,
+      "inputs": [
+        {
+          "prevTxId": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+          "outputIndex": 7,
+          "sequenceNumber": 0,
+          "script": "4156f294d366166fae8b69777ed6cc6e55a09022c58785fc1ef35f68671487f18b25855138110caa205322551b19f1f87cd36c73ffe92ee2072b3dd9d583c3b95e61210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b",
+          "scriptString": "65 0x56f294d366166fae8b69777ed6cc6e55a09022c58785fc1ef35f68671487f18b25855138110caa205322551b19f1f87cd36c73ffe92ee2072b3dd9d583c3b95e61 33 0x0286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b"
+        }
+      ],
+      "outputs": [
+        {
+          "satoshis": 776,
+          "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "0",
+            "nft": { "capability": "none", "commitment": "f09f8c8e" }
+          }
+        }
+      ],
+      "nLockTime": 0
+    },
+    {
+      "hash": "856c7b8a7607b7302cbe21a03944ead936e4486bd1f3e030b7f1b53af0338f0f",
+      "version": 2,
+      "inputs": [
+        {
+          "prevTxId": "3ab698f4aedca421c380bca5a91b5ef7e11e365db2d9c8ed5459148c80ed90ac",
+          "outputIndex": 0,
+          "sequenceNumber": 0,
+          "script": "5100",
+          "scriptString": "OP_1 OP_0"
+        }
+      ],
+      "outputs": [{ "satoshis": 99000, "script": "76a914c5eb5dde0efe57884810d3e5ada12c6ada6a06b188ac" }],
+      "nLockTime": 0
+    },
+    {
+      "hash": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+      "version": 2,
+      "inputs": [
+        {
+          "prevTxId": "856c7b8a7607b7302cbe21a03944ead936e4486bd1f3e030b7f1b53af0338f0f",
+          "outputIndex": 0,
+          "sequenceNumber": 0,
+          "script": "4193a6da81a0e8b450da0c4b7cb0f902fbaecbff9854757b254b33b5e23dc2177c2b9e415330db601b19ae10e5a7fc457a5f940dd86d024f7f7dcaa6e7d34d7ecf61210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b",
+          "scriptString": "65 0x93a6da81a0e8b450da0c4b7cb0f902fbaecbff9854757b254b33b5e23dc2177c2b9e415330db601b19ae10e5a7fc457a5f940dd86d024f7f7dcaa6e7d34d7ecf61 33 0x0286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b"
+        },
+        {
+          "prevTxId": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+          "outputIndex": 0,
+          "sequenceNumber": 0,
+          "script": "41f871109bf0dbf8a44a57cf7e534ddb76fe4f4f84c06f598d2244cf99bb7346d0fad90a9ea3770b2fc668a2a4ecf7ac89c4480127655009e13a6c4ae583cea85c61210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b",
+          "scriptString": "65 0xf871109bf0dbf8a44a57cf7e534ddb76fe4f4f84c06f598d2244cf99bb7346d0fad90a9ea3770b2fc668a2a4ecf7ac89c4480127655009e13a6c4ae583cea85c61 33 0x0286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b"
+        }
+      ],
+      "outputs": [
+        {
+          "satoshis": 100000,
+          "script": "a91406c841f122afb58b095c30e238e769bf082244da87",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "9223372032559742472",
+            "nft": { "capability": "mutable", "commitment": "" }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "aa206f906e2c68bce70eed90113203158cae49f072ac7a3a02257ba76be68a80db1f87",
+          "tokenData": {
+            "category": "856c7b8a7607b7302cbe21a03944ead936e4486bd1f3e030b7f1b53af0338f0f",
+            "amount": "0",
+            "nft": {
+              "capability": "minting",
+              "commitment": "01020304050607080910111213141516171819202122232425262728293031323334353637383940"
+            }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "52210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b21028e068c5cd8de3e20625f3df40aa5a84d97552f326001160c793a0eb78b5e7f2c52ae",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "4294967295"
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "76a914c5eb5dde0efe57884810d3e5ada12c6ada6a06b188ac",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "65535"
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3bac",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "253"
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3bac",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "252"
+          }
+        },
+        {
+          "satoshis": 20000,
+          "script": "76a914c5eb5dde0efe57884810d3e5ada12c6ada6a06b188ac",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "0",
+            "nft": { "capability": "none", "commitment": "68656c6c6f" }
+          }
+        },
+        {
+          "satoshis": 1000,
+          "script": "76a914c5eb5dde0efe57884810d3e5ada12c6ada6a06b188ac",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "0",
+            "nft": { "capability": "none", "commitment": "f09f8c8e" }
+          }
+        },
+        { "satoshis": 0, "script": "6a04010101010a43617368546f6b656e73" }
+      ],
+      "nLockTime": 0
+    },
+    {
+      "hash": "b84debf788680257285e8a67e3a52592bc17089f1dce997c0f8255b4e9608c41",
+      "version": 2,
+      "inputs": [
+        {
+          "prevTxId": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+          "outputIndex": 0,
+          "sequenceNumber": 0,
+          "script": "00473044022015b502292af070332c5d6ef03d348ea3a24fdfcf0f0189b4edb42ca6b31459b2022001534b13dc608e2112cc31a6560b0d6998d663b9ceecbf237e290afd7c3e7d106147304402206edda52b9f6cafd2c4be4c6511bc2f9cb434910d590119abf1e1eb9400126dc60220330d089c870ef20a3c11c86b8f3d4fe109309aeb49c9149056d15e17c200c44b614c6952210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b21028e068c5cd8de3e20625f3df40aa5a84d97552f326001160c793a0eb78b5e7f2c2102a316f62fbac800938e68600e1e5c8763267ed63d89fdb3bc0666d8375da7e19f53ae",
+          "scriptString": "OP_0 71 0x3044022015b502292af070332c5d6ef03d348ea3a24fdfcf0f0189b4edb42ca6b31459b2022001534b13dc608e2112cc31a6560b0d6998d663b9ceecbf237e290afd7c3e7d1061 71 0x304402206edda52b9f6cafd2c4be4c6511bc2f9cb434910d590119abf1e1eb9400126dc60220330d089c870ef20a3c11c86b8f3d4fe109309aeb49c9149056d15e17c200c44b61 OP_PUSHDATA1 105 0x52210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b21028e068c5cd8de3e20625f3df40aa5a84d97552f326001160c793a0eb78b5e7f2c2102a316f62fbac800938e68600e1e5c8763267ed63d89fdb3bc0666d8375da7e19f53ae"
+        },
+        {
+          "prevTxId": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+          "outputIndex": 1,
+          "sequenceNumber": 0,
+          "script": "004730440220132e219253c5673210d5298dd23577f354e07f56e66aaa9b59f4b3b9985b868d022025f8ac8f8bcc755b895630d35b130785a8092252b4f279081fd35f64efcff039614751210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b21028e068c5cd8de3e20625f3df40aa5a84d97552f326001160c793a0eb78b5e7f2c52ae",
+          "scriptString": "OP_0 71 0x30440220132e219253c5673210d5298dd23577f354e07f56e66aaa9b59f4b3b9985b868d022025f8ac8f8bcc755b895630d35b130785a8092252b4f279081fd35f64efcff03961 71 0x51210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b21028e068c5cd8de3e20625f3df40aa5a84d97552f326001160c793a0eb78b5e7f2c52ae"
+        },
+        {
+          "prevTxId": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+          "outputIndex": 2,
+          "sequenceNumber": 0,
+          "script": "00483045022100dfd59f4412145e9e62c0476c3a545cdef36c39d534725d55bd0eb113caa3dd5a02201bd82739031237db29f08ca40c7ec9f32355193a57afa7c174eff1f8f9a3ce1561483045022100c69b7a256c6632de1cacd3dec5877ea768a6ae136514173dbf14fc392d922eac02206fc23cb54e8e66416212c21c19397b63019250ae2a76f8965355c2a6f62f70cb61",
+          "scriptString": "OP_0 72 0x3045022100dfd59f4412145e9e62c0476c3a545cdef36c39d534725d55bd0eb113caa3dd5a02201bd82739031237db29f08ca40c7ec9f32355193a57afa7c174eff1f8f9a3ce1561 72 0x3045022100c69b7a256c6632de1cacd3dec5877ea768a6ae136514173dbf14fc392d922eac02206fc23cb54e8e66416212c21c19397b63019250ae2a76f8965355c2a6f62f70cb61"
+        },
+        {
+          "prevTxId": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+          "outputIndex": 3,
+          "sequenceNumber": 0,
+          "script": "41b07433e9955cc1760a0502ae9739dfd24853137658c4bb5c63f46f90f00182b620c2bb457018192ae5568e6324717063690cddb3569638cca66d9e8e83cfdaeb61210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b",
+          "scriptString": "65 0xb07433e9955cc1760a0502ae9739dfd24853137658c4bb5c63f46f90f00182b620c2bb457018192ae5568e6324717063690cddb3569638cca66d9e8e83cfdaeb61 33 0x0286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b"
+        },
+        {
+          "prevTxId": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+          "outputIndex": 4,
+          "sequenceNumber": 0,
+          "script": "41fa1510ff389b9ead3382978d070a38bda9c1ced27fbadc862ef8739a8d435ba251cda1e1d8fd71303d00356aa693852882a88c60fcc4e2ba17c0a3e61d906c7861",
+          "scriptString": "65 0xfa1510ff389b9ead3382978d070a38bda9c1ced27fbadc862ef8739a8d435ba251cda1e1d8fd71303d00356aa693852882a88c60fcc4e2ba17c0a3e61d906c7861"
+        },
+        {
+          "prevTxId": "a0152b142c7acafbc2af757754797dfde62582db3ed0edd380a0e977cae0f777",
+          "outputIndex": 5,
+          "sequenceNumber": 0,
+          "script": "41a1f2e434fd87adcdfd21b355bc58af6650c8e8b1600da27e67aefd49c7244463736a282fa8f78dc7d2b50b3d4bf0b7ac0508be3b542b7cc0fa011f294b32e4f661",
+          "scriptString": "65 0xa1f2e434fd87adcdfd21b355bc58af6650c8e8b1600da27e67aefd49c7244463736a282fa8f78dc7d2b50b3d4bf0b7ac0508be3b542b7cc0fa011f294b32e4f661"
+        },
+        {
+          "prevTxId": "04dcb6a5895906b52767f53369ebaeaf26de389ac796711de43b18c3de035e74",
+          "outputIndex": 0,
+          "sequenceNumber": 0,
+          "script": "41c9bffb43ffc13e2f800b0406b60ae62426c3b6cabb4588229c02daaa527c2e9c94cbce0ee0ed8e5d3b3f37e377e5dad7840a1342f9b13b1bcd14e57d4378052061210286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b",
+          "scriptString": "65 0xc9bffb43ffc13e2f800b0406b60ae62426c3b6cabb4588229c02daaa527c2e9c94cbce0ee0ed8e5d3b3f37e377e5dad7840a1342f9b13b1bcd14e57d4378052061 33 0x0286a8bcf759f185897babfc08d69c84dcc627fa70f8952d4152f1f6afb186fd3b"
+        }
+      ],
+      "outputs": [
+        {
+          "satoshis": 100000,
+          "script": "a914a0219cf9e73843fb9d198b61e397a0604a8848bc87",
+          "tokenData": {
+            "category": "3a29bd2fe2ca319181035844dcff236c518bae26f417911043dc653b1a9dedc7",
+            "amount": "9223372036854775807",
+            "nft": { "capability": "mutable", "commitment": "f09282bcf0928484" }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac",
+          "tokenData": {
+            "category": "856c7b8a7607b7302cbe21a03944ead936e4486bd1f3e030b7f1b53af0338f0f",
+            "amount": "0",
+            "nft": { "capability": "minting", "commitment": "" }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac",
+          "tokenData": {
+            "category": "856c7b8a7607b7302cbe21a03944ead936e4486bd1f3e030b7f1b53af0338f0f",
+            "amount": "0",
+            "nft": { "capability": "minting", "commitment": "" }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac",
+          "tokenData": {
+            "category": "856c7b8a7607b7302cbe21a03944ead936e4486bd1f3e030b7f1b53af0338f0f",
+            "amount": "0",
+            "nft": { "capability": "mutable", "commitment": "" }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac",
+          "tokenData": {
+            "category": "04dcb6a5895906b52767f53369ebaeaf26de389ac796711de43b18c3de035e74",
+            "amount": "0",
+            "nft": { "capability": "minting", "commitment": "" }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac",
+          "tokenData": {
+            "category": "04dcb6a5895906b52767f53369ebaeaf26de389ac796711de43b18c3de035e74",
+            "amount": "0",
+            "nft": { "capability": "none", "commitment": "010203" }
+          }
+        },
+        {
+          "satoshis": 10000,
+          "script": "76a914738a53805e89e816312aa08907edb1cd3f5c5f7088ac",
+          "tokenData": {
+            "category": "04dcb6a5895906b52767f53369ebaeaf26de389ac796711de43b18c3de035e74",
+            "amount": "0",
+            "nft": { "capability": "none", "commitment": "010203" }
+          }
+        }
+      ],
+      "nLockTime": 0
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
+import config from '../config'
 import logger from '../lib/logger';
-const config = require('../config');
 
 import { CurrencyRateService } from '../lib/currencyrate';
 

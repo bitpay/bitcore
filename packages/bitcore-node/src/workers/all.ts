@@ -1,5 +1,6 @@
-import cluster = require('cluster');
+import cluster from 'cluster';
 import 'source-map-support/register';
+import logger from '../logger';
 import { Modules } from '../modules';
 import { Api } from '../services/api';
 import { Event } from '../services/event';
@@ -8,11 +9,12 @@ import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
-let args = parseArgv([], ['DEBUG']);
+
+let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 const services: Array<any> = [];
 
 export const FullClusteredWorker = async () => {
-  process.on('unhandledRejection', error => {
+  process.on('unhandledRejection', (error: any) => {
     console.error('Unhandled Rejection at:', error.stack || error);
     stop();
   });
@@ -20,7 +22,7 @@ export const FullClusteredWorker = async () => {
   process.on('SIGINT', stop);
 
   services.push(Storage, Event);
-  if (cluster.isMaster) {
+  if (cluster.isPrimary) {
     services.push(P2P);
     if (args.DEBUG) {
       services.push(Api);
@@ -38,12 +40,28 @@ export const FullClusteredWorker = async () => {
   }
 };
 
+let stopping = false;
 const stop = async () => {
-  console.log(`Shutting down ${process.pid}`);
+  if (stopping) {
+    logger.error('Force stopping all workers');
+    process.exit(1);
+  }
+  stopping = true;
+
+  setTimeout(() => {
+    logger.error('All workers did not shut down gracefully after 30 seconds, exiting');
+    process.exit(1);
+  }, 30 * 1000).unref();
+
+
+  logger.info(`Shutting down ${cluster.isPrimary ? 'primary' : 'worker'} process ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
   }
-  process.exit();
+
+  if (!cluster.isPrimary) {
+    process.removeAllListeners();
+  }
 };
 
 if (require.main === module) {

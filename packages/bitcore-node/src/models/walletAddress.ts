@@ -2,7 +2,7 @@ import { ObjectID } from 'mongodb';
 import { Readable, Transform, Writable } from 'stream';
 import { StorageService } from '../services/storage';
 import { TransformOptions } from '../types/TransformOptions';
-import { partition } from '../utils/partition';
+import { partition } from '../utils';
 import { BaseModel } from './base';
 import { CoinStorage, ICoin } from './coin';
 import { TransactionStorage } from './transaction';
@@ -26,6 +26,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
   onConnect() {
     this.collection.createIndex({ chain: 1, network: 1, address: 1, wallet: 1 }, { background: true, unique: true });
     this.collection.createIndex({ chain: 1, network: 1, wallet: 1, address: 1 }, { background: true, unique: true });
+    this.collection.createIndex({ chain: 1, network: 1, address: 1, lastQueryTime: 1 }, { background: true, sparse: true });
   }
 
   _apiTransform(walletAddress: { address: string }, options?: TransformOptions) {
@@ -103,7 +104,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             })
           ),
             { ordered: false };
-        } catch (err) {
+        } catch (err: any) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {
             return callback(err);
@@ -244,7 +245,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         return reject(err);
       });
     };
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       markProcessedStream.on('unpipe', () => {
         return resolve();
       });
@@ -264,6 +265,11 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         .pipe(txUpdaterStream)
         .pipe(markProcessedStream);
     });
+  }
+
+  async updateLastQueryTime(params: { chain: string; network: string; address: string }) {
+    const { chain, network, address } = params;
+    return this.collection.updateOne({ chain, network, address }, { $set: { lastQueryTime: new Date() } });
   }
 }
 

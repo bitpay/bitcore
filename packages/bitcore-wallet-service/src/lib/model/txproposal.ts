@@ -1,6 +1,7 @@
-import { Transactions } from '@abcpros/crypto-wallet-core';
+import { Transactions } from '@bcpros/crypto-wallet-core';
 import _ from 'lodash';
 import { ChainService } from '../chain/index';
+import { Common } from '../common';
 import logger from '../logger';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
@@ -8,16 +9,18 @@ import { TxProposalAction } from './txproposalaction';
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
 
-const Common = require('../common');
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
+
+type TxProposalStatus = 'temporary' | 'pending' | 'accepted' | 'rejected' | 'broadcasted';
 
 export interface ITxProposal {
   type: string;
   creatorName: string;
   createdOn: number;
   txid: string;
+  txids?: Array<string>;
   id: string;
   walletId: string;
   creatorId: string;
@@ -29,6 +32,7 @@ export interface ITxProposal {
   payProUrl: string;
   from: string;
   changeAddress: string;
+  escrowAddress: string;
   inputs: any[];
   outputs: Array<{
     amount: number;
@@ -38,13 +42,14 @@ export interface ITxProposal {
     data?: string;
     gasLimit?: number;
     script?: string;
+    tag?: string;
   }>;
-  outputOrder: number;
+  outputOrder: number[];
   walletM: number;
   walletN: number;
   requiredSignatures: number;
   requiredRejections: number;
-  status: string;
+  status: TxProposalStatus;
   actions: [];
   feeLevel: number;
   feePerKb: number;
@@ -63,6 +68,9 @@ export interface ITxProposal {
   lowFees: boolean;
   nonce?: number;
   gasPrice?: number;
+  maxGasFee?: number;
+  priorityGasFee?: number;
+  txType?: number;
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
@@ -70,7 +78,11 @@ export interface ITxProposal {
   destinationTag?: string;
   invoiceID?: string;
   lockUntilBlockHeight?: number;
+  instantAcceptanceEscrow?: number;
   isTokenSwap?: boolean;
+  enableRBF?: boolean;
+  replaceTxByFee?: boolean;
+  multiTx?: boolean; // proposal contains multiple transactions
 }
 
 export class TxProposal {
@@ -79,6 +91,7 @@ export class TxProposal {
   createdOn: number;
   id: string;
   txid: string;
+  txids?: Array<string>;
   walletId: string;
   creatorId: string;
   coin: string;
@@ -89,6 +102,7 @@ export class TxProposal {
   payProUrl: string;
   from: string;
   changeAddress: any;
+  escrowAddress: any;
   inputs: any[];
   outputs: Array<{
     amount: number;
@@ -105,7 +119,7 @@ export class TxProposal {
   walletN: number;
   requiredSignatures: number;
   requiredRejections: number;
-  status: string;
+  status: TxProposalStatus;
   actions: any[] = [];
   feeLevel: number;
   feePerKb: number;
@@ -124,6 +138,9 @@ export class TxProposal {
   raw?: Array<string> | string;
   nonce?: number;
   gasPrice?: number;
+  maxGasFee?: number;
+  priorityGasFee?: number;
+  txType?: number;
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
@@ -134,12 +151,18 @@ export class TxProposal {
   lockUntilBlockHeight?: number;
   isDonation?: boolean;
   receiveLotusAddress?: string;
+  instantAcceptanceEscrow?: number;
   isTokenSwap?: boolean;
+  multiSendContractAddress?: string;
+  enableRBF?: boolean;
+  replaceTxByFee?: boolean;
+  multiTx?: boolean;
 
   static create(opts) {
     opts = opts || {};
 
-    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
+    const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]), `Invalid network: ${opts.network} at TxProposal.create()`);
 
     const x = new TxProposal();
 
@@ -153,7 +176,7 @@ export class TxProposal {
 
     // x.version = opts.version || 5; // DISABLED 2020-04-07
     x.version = opts.version || 3;
-    $.checkState(x.version <= 3, 'Failed state: txp version 4 not allowed yet at <create()>');
+    $.checkState(x.version <= 3, 'Failed state: txp version 4 not allowed yet at TxProposal.create()');
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
@@ -161,17 +184,33 @@ export class TxProposal {
     x.walletId = opts.walletId;
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
-    x.chain = opts.chain;
+    x.chain = chain;
     x.network = opts.network;
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
     x.messageOnChain = opts.messageOnChain;
     x.payProUrl = opts.payProUrl;
     x.changeAddress = opts.changeAddress;
+    x.escrowAddress = opts.escrowAddress;
+    x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
     x.outputs = _.map(opts.outputs, output => {
-      return _.pick(output, ['amount', 'toAddress', 'message', 'data', 'gasLimit', 'script']);
+      return _.pick(output, ['amount', 'toAddress', 'message', 'data', 'gasLimit', 'script']) as {
+        amount: number;
+        toAddress?: string;
+        message?: string;
+        data?: string;
+        gasLimit?: number;
+        script?: string;
+      };
     });
-    x.outputOrder = _.range(x.outputs.length + 1);
+    let numOutputs = x.outputs.length;
+    if (!opts.multiTx) {
+      numOutputs++;
+    }
+    if (x.instantAcceptanceEscrow) {
+      numOutputs++;
+    }
+    x.outputOrder = _.range(numOutputs);
     if (!opts.noShuffleOutputs) {
       x.outputOrder = _.shuffle(x.outputOrder);
     }
@@ -202,21 +241,29 @@ export class TxProposal {
     }
 
     // Coin specific features
+    // BTC
+    x.enableRBF = opts.enableRBF;
+    x.replaceTxByFee = opts.replaceTxByFee;
 
     // ETH
-    x.gasPrice = opts.gasPrice;
+    x.gasPrice = opts.gasPrice; // type 0 txs
+    x.maxGasFee = opts.maxGasFee; // type 2 txs
+    x.priorityGasFee = opts.priorityGasFee; // type 2 txs
+    x.txType = opts.txType;
     x.from = opts.from;
     x.nonce = opts.nonce;
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
+    x.multiSendContractAddress = opts.multiSendContractAddress;
     x.isTokenSwap = opts.isTokenSwap;
     x.multisigContractAddress = opts.multisigContractAddress;
 
     // XRP
     x.destinationTag = opts.destinationTag;
     x.invoiceID = opts.invoiceID;
-
+    x.multiTx = opts.multiTx; // proposal contains multiple transactions
+  
     return x;
   }
 
@@ -235,7 +282,7 @@ export class TxProposal {
     x.walletId = obj.walletId;
     x.creatorId = obj.creatorId;
     x.coin = obj.coin || Defaults.COIN;
-    x.chain = obj.chain ? obj.chain : ChainService.getChain(x.coin);
+    x.chain = obj.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
     x.network = obj.network;
     x.outputs = obj.outputs;
     x.amount = obj.amount;
@@ -243,6 +290,8 @@ export class TxProposal {
     x.messageOnChain = obj.messageOnChain;
     x.payProUrl = obj.payProUrl;
     x.changeAddress = obj.changeAddress;
+    x.escrowAddress = obj.escrowAddress;
+    x.instantAcceptanceEscrow = obj.instantAcceptanceEscrow;
     x.inputs = obj.inputs;
     x.walletM = obj.walletM;
     x.walletN = obj.walletN;
@@ -250,6 +299,7 @@ export class TxProposal {
     x.requiredRejections = obj.requiredRejections;
     x.status = obj.status;
     x.txid = obj.txid;
+    x.txids = obj.txids;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
     x.actions = _.map(obj.actions, action => {
@@ -270,20 +320,29 @@ export class TxProposal {
 
     x.lockUntilBlockHeight = obj.lockUntilBlockHeight;
 
+    // BTC
+    x.enableRBF = obj.enableRBF;
+    x.replaceTxByFee = obj.replaceTxByFee;
+
     // ETH
     x.gasPrice = obj.gasPrice;
+    x.maxGasFee = obj.maxGasFee; // type 2 txs
+    x.priorityGasFee = obj.priorityGasFee; // type 2 txs
+    x.txType = obj.txType;
     x.from = obj.from;
     x.nonce = obj.nonce;
     x.gasLimit = obj.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
     x.isTokenSwap = obj.isTokenSwap;
+    x.multiSendContractAddress = obj.multiSendContractAddress;
     x.multisigContractAddress = obj.multisigContractAddress;
     x.multisigTxId = obj.multisigTxId;
 
     // XRP
     x.destinationTag = obj.destinationTag;
     x.invoiceID = obj.invoiceID;
+    x.multiTx = obj.multiTx;
 
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;
@@ -337,7 +396,7 @@ export class TxProposal {
    * @return {Number} total amount of all outputs excluding change output
    */
   getTotalAmount() {
-    return _.sumBy(this.outputs, 'amount');
+    return Number((this.outputs || []).reduce((total, o) => total += BigInt(o.amount), 0n));
   }
 
   /**
@@ -405,11 +464,14 @@ export class TxProposal {
       if (this.status == 'accepted') {
         this.raw = tx.uncheckedSerialize();
         this.txid = tx.id;
+        if (this.multiTx) {
+          this.txids = tx?.txids && tx.txids() || [tx.id];
+        }
       }
 
       return true;
     } catch (e) {
-      logger.debug(e);
+      logger.debug('%o', e);
       return false;
     }
   }

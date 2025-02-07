@@ -1,10 +1,12 @@
 import * as async from 'async';
 import { AnyRecordWithTtl } from 'dns';
-import _, { countBy, isNull, isUndefined } from 'lodash';
+import _ from 'lodash';
 import moment from 'moment';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import { BCHAddressTranslator } from './bchaddresstranslator'; // only for migration
 import { TokenInfo } from './chain/xec';
+import { Common } from './common';
 import logger from './logger';
 import {
   Address,
@@ -32,7 +34,6 @@ import { ICoinConfigFilter } from './server';
 // import { Order } from './model/order';
 const mongoDbQueue = require('../../node_modules/mongodb-queue');
 
-const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
 
 const collections = {
@@ -69,7 +70,6 @@ const collections = {
   APPRECIATION: 'appreciation'
 };
 
-const Common = require('./common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 
@@ -96,8 +96,7 @@ export class Storage {
   static createIndexes(db) {
     logger.info('Creating DB indexes');
     if (!db.collection) {
-      console.log('[storage.ts.55] no db.collection'); // TODO
-      logger.error('DB not ready');
+      logger.error('DB not ready: [storage.ts] no db.collection');
       return;
     }
     db.collection(collections.USER).createIndex({
@@ -176,10 +175,10 @@ export class Storage {
       walletId: 1,
       createdOn: 1
     });
-
     db.collection(collections.ADDRESSES).createIndex(
       {
-        address: 1
+        address: 1,
+        coin: 1
       },
       { unique: true }
     );
@@ -223,6 +222,7 @@ export class Storage {
     });
     db.collection(collections.TX_CONFIRMATION_SUBS).createIndex({
       isActive: 1,
+      txid: 1,
       copayerId: 1
     });
     db.collection(collections.SESSIONS).createIndex({
@@ -1073,7 +1073,7 @@ export class Storage {
       if (coinConfigFilter.status) {
         queryStatus = { status: coinConfigFilter.status };
       }
-      if (!isUndefined(coinConfigFilter.isInQueue) && !isNull(coinConfigFilter.isInQueue)) {
+      if (!_.isUndefined(coinConfigFilter.isInQueue) && !_.isNull(coinConfigFilter.isInQueue)) {
         queryIsInQueue = { status: coinConfigFilter.status };
       }
       if (coinConfigFilter.orderId && coinConfigFilter.orderId.length > 0) {
@@ -1161,7 +1161,7 @@ export class Storage {
       if (coinConfigFilter.status) {
         queryStatus = { status: coinConfigFilter.status };
       }
-      if (!isUndefined(coinConfigFilter.isInQueue) && !isNull(coinConfigFilter.isInQueue)) {
+      if (!_.isUndefined(coinConfigFilter.isInQueue) && !_.isNull(coinConfigFilter.isInQueue)) {
         queryIsInQueue = { status: coinConfigFilter.status };
       }
       if (coinConfigFilter.orderId && coinConfigFilter.orderId.length > 0) {
@@ -1645,7 +1645,7 @@ export class Storage {
   storeNotification(walletId, notification, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
-      logger.warn('Trying to store a notification with close DB', notification);
+      logger.warn('Trying to store a notification with close DB %o', notification);
       return;
     }
 
@@ -1871,7 +1871,7 @@ export class Storage {
           } else {
             // just return it
             duplicate = true;
-            logger.warn('Found duplicate address: ' + _.join(_.map(clonedAddresses, 'address'), ','));
+            logger.warn('Found duplicate address: ' + clonedAddresses.map(a => a.address).join(','));
           }
         }
         this.storeWallet(wallet, err => {
@@ -1926,7 +1926,7 @@ export class Storage {
       });
   }
 
-  fetchAddressByCoin(coin, address, cb) {
+  fetchAddressByChain(chain, address, cb) {
     if (!this.db) return cb();
 
     this.db
@@ -1939,7 +1939,7 @@ export class Storage {
         if (!result || _.isEmpty(result)) return cb();
         if (result.length > 1) {
           result = _.find(result, address => {
-            return coin == (address.coin || 'btc');
+            return chain == (address.chain || address.coin || 'btc');
           });
         } else {
           result = _.head(result);
@@ -2835,32 +2835,52 @@ export class Storage {
     );
   }
 
-  fetchActiveTxConfirmationSubs(copayerId, cb) {
+  storePushNotificationBrazeSub(pushNotificationSub, cb) {
+    this.db.collection(collections.PUSH_NOTIFICATION_SUBS).replaceOne(
+      {
+        copayerId: pushNotificationSub.copayerId,
+        externalUserId: pushNotificationSub.externalUserId
+      },
+      pushNotificationSub,
+      {
+        w: 1,
+        upsert: true
+      },
+      cb
+    );
+  }
+
+  removePushNotificationBrazeSub(copayerId, externalUserId, cb) {
+    this.db.collection(collections.PUSH_NOTIFICATION_SUBS).deleteMany(
+      {
+        copayerId,
+        externalUserId
+      },
+      {
+        w: 1
+      },
+      cb
+    );
+  }
+
+  streamActiveTxConfirmationSubs(copayerId: string, txids: string[]) {
     // This should only happens in certain tests.
     if (!this.db) {
       logger.warn('Trying to fetch notifications with closed DB');
       return;
     }
 
-    const filter: { isActive: boolean; copayerId?: string } = {
-      isActive: true
+    const filter: { isActive: boolean; txid: { $in: string[] }; copayerId?: string } = {
+      isActive: true,
+      txid: { $in: txids }
     };
 
     if (copayerId) filter.copayerId = copayerId;
 
-    this.db
+    return this.db
       .collection(collections.TX_CONFIRMATION_SUBS)
       .find(filter)
-      .toArray((err, result) => {
-        if (err) return cb(err);
-
-        if (!result) return cb();
-
-        const subs = _.map([].concat(result), r => {
-          return TxConfirmationSub.fromObj(r);
-        });
-        return cb(null, subs);
-      });
+      .addCursorFlag('noCursorTimeout', true);
   }
 
   storeTxConfirmationSub(txConfirmationSub, cb) {
@@ -2937,7 +2957,7 @@ export class Storage {
 
   storeGlobalCache(key, values, cb) {
     const now = Date.now();
-    this.db.collection(collections.CACHE).findOneAndUpdate(
+    this.db.collection(collections.CACHE).updateOne(
       {
         key,
         walletId: null,

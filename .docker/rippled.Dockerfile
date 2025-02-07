@@ -1,4 +1,4 @@
-FROM node:10-stretch
+FROM node:18-bullseye
 
 RUN apt-get update
 RUN apt-get install sudo
@@ -10,7 +10,7 @@ USER docker
 RUN sudo apt -y update
 RUN sudo apt -y install apt-transport-https ca-certificates wget gnupg
 RUN wget -q -O - "https://repos.ripple.com/repos/api/gpg/key/public" | sudo apt-key add -
-RUN echo "deb https://repos.ripple.com/repos/rippled-deb stretch stable" | sudo tee -a /etc/apt/sources.list.d/ripple.list
+RUN echo "deb https://repos.ripple.com/repos/rippled-deb bullseye stable" | sudo tee -a /etc/apt/sources.list.d/ripple.list
 RUN sudo apt -y update
 RUN sudo apt -y install rippled
 

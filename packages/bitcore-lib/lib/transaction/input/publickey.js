@@ -25,13 +25,15 @@ inherits(PublicKeyInput, Input);
  * @param {Transaction} transaction - the transaction to be signed
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
  * @param {number} index - the index of the input in the transaction input vector
- * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
- * @param {String} signingMethod - method used to sign input - 'ecdsa' or 'schnorr' (future signing method)
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type 
+ * @param {String} signingMethod DEPRECATED - method used to sign input - 'ecdsa' or 'schnorr'
  * @return {Array} of objects that can be
  */
 PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
   var publicKey = privateKey.toPublicKey();
   if (publicKey.toString() === this.output.script.getPublicKey().toString('hex')) {
     return [new TransactionSignature({
@@ -39,7 +41,7 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod),
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script),
       sigtype: sigtype
     })];
   }
@@ -85,7 +87,7 @@ PublicKeyInput.prototype.isFullySigned = function() {
 PublicKeyInput.SCRIPT_MAX_SIZE = 73; // sigsize (1 + 72)
 
 PublicKeyInput.prototype._estimateSize = function() {
-  return PublicKeyInput.SCRIPT_MAX_SIZE;
+  return this._getBaseSize() + PublicKeyInput.SCRIPT_MAX_SIZE;
 };
 
 module.exports = PublicKeyInput;

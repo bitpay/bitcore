@@ -7,7 +7,6 @@ var expect = require('chai').expect;
 var bitcore = require('..');
 var errors = bitcore.errors;
 var hdErrors = errors.HDPrivateKey;
-var buffer = require('buffer');
 var Networks = bitcore.Networks;
 var BufferUtil = bitcore.util.buffer;
 var HDPrivateKey = bitcore.HDPrivateKey;
@@ -52,6 +51,30 @@ describe('HDPrivate key interface', function() {
 
   it('should make a new private key from random for testnet', function() {
     var key = new HDPrivateKey('testnet');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+  it('should make a new private key from random for testnet with specific network "testnet3"', function() {
+    var key = new HDPrivateKey('testnet3');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+  it('should make a new private key from random for testnet with specific network "testnet4"', function() {
+    var key = new HDPrivateKey('testnet4');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+  it('should make a new private key from random for testnet with specific network "chipnet"', function() {
+    var key = new HDPrivateKey('chipnet');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+  it('should make a new private key from random for testnet with specific network "scalenet"', function() {
+    var key = new HDPrivateKey('scalenet');
     should.exist(key.xprivkey);
     key.network.name.should.equal('testnet');
   });

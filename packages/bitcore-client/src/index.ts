@@ -1,4 +1,4 @@
-import * as CryptoWalletCore from '@abcpros/crypto-wallet-core';
+import * as CryptoWalletCore from '@bcpros/crypto-wallet-core';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';

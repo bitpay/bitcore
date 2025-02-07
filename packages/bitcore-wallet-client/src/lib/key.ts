@@ -6,14 +6,14 @@ import {
   BitcoreLibCash,
   Deriver,
   Transactions
-} from '@abcpros/crypto-wallet-core';
+} from '@bcpros/crypto-wallet-core';
 import * as _ from 'lodash';
 import 'source-map-support/register';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
 var Bitcore = BitcoreLib;
-var Mnemonic = require('@abcpros/bitcore-mnemonic');
+var Mnemonic = require('@bcpros/bitcore-mnemonic');
 var sjcl = require('sjcl');
 var log = require('./log');
 const async = require('async');
@@ -76,6 +76,7 @@ export class Key {
 
   constructor(
     opts: {
+      id?: string;
       seedType: string;
       seedData?: any;
       passphrase?: string; // seed passphrase
@@ -89,7 +90,7 @@ export class Key {
     } = { seedType: 'new' }
   ) {
     this.#version = 1;
-    this.id = Uuid.v4();
+    this.id = opts.id || Uuid.v4();
 
     // bug backwards compatibility flags
     this.use0forBCH = opts.useLegacyCoinType;
@@ -198,8 +199,8 @@ export class Key {
         this.use0forBCH = x.use145forBCH
           ? false
           : x.coin == 'bch'
-          ? true
-          : false;
+            ? true
+            : false;
 
         this.BIP45 = x.derivationStrategy == 'BIP45';
         break;
@@ -359,13 +360,13 @@ export class Key {
     return deriveFn(path);
   };
 
-  _checkCoin = function (coin) {
-    if (!_.includes(Constants.COINS, coin)) throw new Error('Invalid coin');
+  _checkChain = function (chain) {
+    if (!_.includes(Constants.CHAINS, chain)) throw new Error('Invalid chain');
   };
 
   _checkNetwork = function (network) {
-    if (!_.includes(['livenet', 'testnet'], network))
-      throw new Error('Invalid network');
+    if (!_.includes(['livenet', 'testnet', 'regtest'], network))
+      throw new Error('Invalid network ' + network);
   };
 
   /*
@@ -378,18 +379,39 @@ export class Key {
     $.checkArgument(opts, 'Need to provide options');
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
+    const chain = opts.chain || Utils.getChain(opts.coin);
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
-    var coinCode = '0';
+    let coinCode = '0';
 
-    if (opts.network == 'testnet' && Constants.UTXO_COINS.includes(opts.coin)) {
+    // checking in chains for simplicity
+    if (
+      ['testnet', 'regtest]'].includes(opts.network) &&
+      Constants.UTXO_CHAINS.includes(chain)
+    ) {
       coinCode = '1';
-    } else if (opts.coin == 'bch') {
-      if (this.use0forBCH) {
+    } else if (chain == 'bch') {
+      if (this.use0forBCH || opts.use0forBCH) {
         coinCode = '0';
       } else {
         coinCode = '145';
       }
-    } else if (opts.coin == 'xec') {
+    } else if (chain == 'btc') {
+      coinCode = '0';
+    } else if (chain == 'eth') {
+      coinCode = '60';
+    } else if (chain == 'matic') {
+      coinCode = '60'; // the official matic derivation path is 966 but users will expect address to be same as ETH
+    } else if (chain == 'arb') {
+      coinCode = '60';
+    } else if (chain == 'op') {
+      coinCode = '60';
+    } else if (chain == 'base') {
+      coinCode = '60';
+    } else if (chain == 'xrp') {
+      coinCode = '144';
+    } else if (chain == 'doge') {
+      coinCode = '3';
+    } else if (chain == 'xec') {
       coinCode = '899';
       if (opts.isSlpToken) {
         if (opts.isPath899) {
@@ -401,30 +423,19 @@ export class Key {
           coinCode = '145';
         }
       }
-    } else if (opts.coin == 'xpi') {
+    } else if (chain == 'xpi') {
       coinCode = '10605';
-      if (opts.isSlpToken) {
-        coinCode = '1899';
-      }
-    } else if (opts.coin == 'btc') {
-      coinCode = '0';
-    } else if (opts.coin == 'eth') {
-      coinCode = '60';
-    } else if (opts.coin == 'xrp') {
-      coinCode = '144';
-    } else if (opts.coin == 'doge') {
-      coinCode = '3';
-    } else if (opts.coin == 'ltc') {
+    } else if (chain == 'ltc') {
       coinCode = '2';
     } else {
-      throw new Error('unknown coin: ' + opts.coin);
+      throw new Error('unknown chain: ' + chain);
     }
 
     return 'm/' + purpose + "'/" + coinCode + "'/" + opts.account + "'";
   };
 
   /*
-   * opts.coin
+   * opts.chain
    * opts.network
    * opts.account
    * opts.n
@@ -432,6 +443,7 @@ export class Key {
 
   createCredentials = function (password, opts) {
     opts = opts || {};
+    opts.chain = opts.chain || Utils.getChain(opts.coin);
 
     if (password) $.shouldBeString(password, 'provide password');
 
@@ -449,11 +461,11 @@ export class Key {
       Constants.PATHS.REQUEST_KEY
     ).privateKey.toString();
 
-    if (opts.network == 'testnet') {
+    if (['testnet', 'regtest'].includes(opts.network)) {
       // Hacky: BTC/BCH xPriv depends on network: This code is to
-      // convert a livenet xPriv to a testnet xPriv
+      // convert a livenet xPriv to a testnet/regtest xPriv
       let x = xPrivKey.toObject();
-      x.network = 'testnet';
+      x.network = opts.network;
       delete x.xprivkey;
       delete x.checksum;
       x.privateKey = _.padStart(x.privateKey, 64, '0');
@@ -463,6 +475,7 @@ export class Key {
     return Credentials.fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
       coin: opts.coin,
+      chain: opts.chain?.toLowerCase() || Utils.getChain(opts.coin), // getChain -> backwards compatibility
       network: opts.network,
       account: opts.account,
       n: opts.n,
@@ -513,8 +526,10 @@ export class Key {
 
     var t = Utils.buildTx(txp);
 
-    if (Constants.UTXO_COINS.includes(txp.coin)) {
-      _.each(txp.inputs, function (i) {
+    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+
+    if (Constants.UTXO_CHAINS.includes(chain)) {
+      for (const i of txp.inputs) {
         $.checkState(
           i.path,
           'Input derivation path not available (signing transaction)'
@@ -523,31 +538,30 @@ export class Key {
           derived[i.path] = xpriv.deriveChild(i.path).privateKey;
           privs.push(derived[i.path]);
         }
-      });
+      };
 
-      var signatures = _.map(privs, function (priv, i) {
+      var signatures = privs.map(function(priv, i) {
         return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
-      signatures = _.map(
-        _.sortBy(_.flatten(signatures), 'inputIndex'),
-        function (s) {
-          return s.signature.toDER(txp.signingMethod).toString('hex');
-        }
-      );
+      signatures = signatures.flat().sort((a, b) => a.inputIndex - b.inputIndex);
+      // DEBUG
+      // for (let sig of signatures) {
+      //   if (!t.isValidSignature(sig)) {
+      //     throw new Error('INVALID SIGNATURE');
+      //   }
+      // }
+      signatures = signatures.map(sig => sig.signature.toDER().toString('hex'));
 
       return signatures;
     } else {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
-      const chain = txp.chain
-        ? txp.chain.toUpperCase()
-        : Utils.getChain(txp.coin);
       const txArray = _.isArray(tx) ? tx : [tx];
       const isChange = false;
       const addressIndex = 0;
       const { privKey, pubKey } = Deriver.derivePrivateKey(
-        chain,
+        chain.toUpperCase(),
         txp.network,
         derived,
         addressIndex,
@@ -556,7 +570,7 @@ export class Key {
       let signatures = [];
       for (const rawTx of txArray) {
         const signed = Transactions.getSignature({
-          chain,
+          chain: chain.toUpperCase(),
           tx: rawTx,
           key: { privKey, pubKey }
         });

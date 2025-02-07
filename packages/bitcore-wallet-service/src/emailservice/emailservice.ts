@@ -1,7 +1,7 @@
 #!/usr/bin/env node
+import config from '../config';
+import { EmailService } from '../lib/emailservice';
 import logger from '../lib/logger';
-var config = require('../config');
-const EmailService = require('../lib/emailservice');
 
 const emailService = new EmailService();
 emailService.start(config, err => {

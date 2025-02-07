@@ -2,13 +2,13 @@
   {
     "payloadSize": 20,
     "type": 0,
-    "cashaddr": "ecash:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eyx54vzvwa",
+    "cashaddr": "bitcoincash:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2",
     "payload": "F5BF48B397DAE70BE82B3CCA4793F8EB2B6CDAC9"
   },
   {
     "payloadSize": 20,
     "type": 1,
-    "cashaddr": "ectest:pr6m7j9njldwwzlg9v7v53unlr4jkmx6eyh6krzzk3",
+    "cashaddr": "bchtest:pr6m7j9njldwwzlg9v7v53unlr4jkmx6eyvwc0uz5t",
     "payload": "F5BF48B397DAE70BE82B3CCA4793F8EB2B6CDAC9"
   },
   {

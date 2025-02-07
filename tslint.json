@@ -27,6 +27,14 @@
     "no-var-keyword": false,
     "curly": false,
     "member-access": false,
+    "whitespace": [
+      true,
+      "check-branch",
+      "check-decl",
+      "check-operator",
+      "check-type",
+      "check-preblock"
+    ],
     "quotemark": [true, "single", "avoid-escape", "avoid-template"],
     "trailing-comma": [
       true,
@@ -46,7 +54,8 @@
     "space-before-function-paren": [false, "never"],
     "array-type": false,
     "eofline": false,
-    "new-parens": false
+    "new-parens": false,
+    "no-conditional-assignment": false
   },
   "rulesDirectory": []
 }

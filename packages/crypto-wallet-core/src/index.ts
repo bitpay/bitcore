@@ -1,10 +1,12 @@
-import * as BitcoreLib from '@abcpros/bitcore-lib';
-import * as BitcoreLibCash from '@abcpros/bitcore-lib-cash';
-import * as BitcoreLibDoge from '@abcpros/bitcore-lib-doge';
-import * as BitcoreLibLtc from '@abcpros/bitcore-lib-ltc';
-import * as BitcoreLibXec from '@abcpros/bitcore-lib-xec';
-import * as BitcoreLibXpi from '@abcpros/bitcore-lib-xpi';
+import * as BitcoreLib from '@bcpros/bitcore-lib';
+import * as BitcoreLibCash from '@bcpros/bitcore-lib-cash';
+import * as BitcoreLibDoge from '@bcpros/bitcore-lib-doge';
+import * as BitcoreLibLtc from '@bcpros/bitcore-lib-ltc';
+import * as BitcoreLibXec from '@bcpros/bitcore-lib-xec';
+import * as BitcoreLibXpi from '@bcpros/bitcore-lib-xpi';
+import { ethers } from 'ethers';
 import Web3 from 'web3';
+import * as xrpl from 'xrpl';
 import { Constants } from './constants';
 import Deriver from './derivation';
 import Transactions from './transactions';
@@ -19,6 +21,8 @@ export {
   Deriver,
   Transactions,
   Validation,
+  ethers,
   Web3,
-  Constants
+  Constants,
+  xrpl
 };

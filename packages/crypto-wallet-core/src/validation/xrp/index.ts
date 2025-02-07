@@ -1,4 +1,4 @@
-import Bitcore from '@abcpros/bitcore-lib';
+import Bitcore from '@bcpros/bitcore-lib';
 import baseX from 'base-x';
 import { IValidation } from '..';
 

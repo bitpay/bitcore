@@ -2,7 +2,7 @@
 
 var Message = require('../message');
 var inherits = require('util').inherits;
-var bitcore = require('@abcpros/bitcore-lib-xec');
+var bitcore = require('@bcpros/bitcore-lib-xec');
 var utils = require('../utils');
 var BufferUtil = bitcore.util.buffer;
 var BufferWriter = bitcore.encoding.BufferWriter;

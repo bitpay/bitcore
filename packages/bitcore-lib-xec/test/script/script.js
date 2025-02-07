@@ -738,20 +738,20 @@ describe('Script', function() {
   });
   describe('#buildPublicKeyHashOut', function() {
     it('should create script from livenet address', function() {
-      var address = Address.fromString('ecash:qrk2ulgf99rm0mjfnr39f2jgjqxjd5kwr56yskq5vp');
+      var address = Address.fromString('bitcoincash:qrk2ulgf99rm0mjfnr39f2jgjqxjd5kwr5rfyamw2k');
       var s = Script.buildPublicKeyHashOut(address);
       should.exist(s);
       s.toString().should.equal('OP_DUP OP_HASH160 20 0xecae7d092947b7ee4998e254aa48900d26d2ce1d OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
-      s.toAddress().toString().should.equal('ecash:qrk2ulgf99rm0mjfnr39f2jgjqxjd5kwr56yskq5vp');
+      s.toAddress().toString().should.equal('bitcoincash:qrk2ulgf99rm0mjfnr39f2jgjqxjd5kwr5rfyamw2k');
     });
     it('should create script from testnet address', function() {
-      var address = Address.fromString('ectest:qzukhqt0x796hv07tpdhheaze5twhxdnusyj8dua2m');
+      var address = Address.fromString('bchtest:qzukhqt0x796hv07tpdhheaze5twhxdnuslxfpzagp');
       var s = Script.buildPublicKeyHashOut(address);
       should.exist(s);
       s.toString().should.equal('OP_DUP OP_HASH160 20 0xb96b816f378babb1fe585b7be7a2cd16eb99b3e4 OP_EQUALVERIFY OP_CHECKSIG');
       s.isPublicKeyHashOut().should.equal(true);
-      s.toAddress().toString().should.equal('ectest:qzukhqt0x796hv07tpdhheaze5twhxdnusyj8dua2m');
+      s.toAddress().toString().should.equal('bchtest:qzukhqt0x796hv07tpdhheaze5twhxdnuslxfpzagp');
     });
     it('should create script from public key', function() {
       var pubkey = new PublicKey('022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da');
@@ -818,14 +818,14 @@ describe('Script', function() {
     });
 
     it('inherits network property from other script', function() {
-      var s1 = new Script.fromAddress(new Address('1FSMWkjVPAxzUNjbxT52p3mVKC971rfW3S'));
+      var s1 = new Script.fromAddress(new Address('CWuF5o5ZGDwXNWe2eCPxPZPWwKMWuiixY2'));
       var s2 = Script.buildScriptHashOut(s1);
       should.exist(s1._network);
       s1._network.should.equal(s2._network);
     });
 
     it('inherits network property form an address', function() {
-      var address = new Address('34Nn91aTGaULqWsZiunrBPHzFBDrZ3B8XS');
+      var address = new Address('H9Ctbp1Y7th1TgkbabT19mpXGqEsTXggJE');
       var script = Script.buildScriptHashOut(address);
       should.exist(script._network);
       script._network.should.equal(address.network);
@@ -889,6 +889,22 @@ describe('Script', function() {
 
   });
 
+  describe('#getPublicKey', () => {
+    const publicKey = PublicKey.fromString('02371b6955629ea6fd014b9e14612e72de2729d33ff26ad20b9e7c558c6a611221');
+    it('should return the public key for a public key output', () => {
+      const publicKeyOutput = Script.buildPublicKeyOut(publicKey);
+      const retrievedPublicKey = publicKeyOutput.getPublicKey();
+      retrievedPublicKey.toString('hex').should.equal(publicKey.toString('hex'));
+    })
+    it('should return the public key for a public key hash input', () => {
+      const signature = bitcore.crypto.Signature.fromString('e4acdce75b9033de8f3b0384f1e8eba3be6aade38b2c3ea17037b57ccf3c6b82589b6e39d8cd375839fa8990faa45948a70b07dec76140c956d48586404f3123');
+      const sigtype = 0x41;
+      const publicKeyHashInput = Script.buildPublicKeyHashIn(publicKey, signature, sigtype);
+      const retrievedPublicKey = publicKeyHashInput.getPublicKey();
+      retrievedPublicKey.toString('hex').should.equal(publicKey.toString('hex'));
+    });
+  });
+
   describe('getData returns associated data', function() {
     it('works with this testnet transaction', function() {
       // testnet block: 00000000a36400fc06440512354515964bc36ecb0020bd0b0fd48ae201965f54
@@ -900,12 +916,12 @@ describe('Script', function() {
       data.should.deep.equal(Buffer.alloc(0));
     });
     it('for a P2PKH address', function() {
-      var address = Address.fromString('3PGURV1emNcxcP71ruEjnTee8bCBZoRcKG');
+      var address = Address.fromString('Ce3M4ysH6XH7RMK1RYu4wLujcC7sv4EhNU');
       var script = Script.buildPublicKeyHashOut(address);
       expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.equal(true);
     });
     it('for a P2SH address', function() {
-      var address = Address.fromString('ecash:pzjt8lxnl977xtexlycnl5fyt0al9gcnaualltvqpy');
+      var address = Address.fromString('bitcoincash:pzjt8lxnl977xtexlycnl5fyt0al9gcnauyjtqh68n');
       var script = new Script(address);
       expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.equal(true);
     });
@@ -941,13 +957,13 @@ describe('Script', function() {
       script.toAddress().network.should.equal(Networks.defaultNetwork);
     });
     it('for a P2PKH address', function() {
-      var stringAddress = 'ecash:qrk2ulgf99rm0mjfnr39f2jgjqxjd5kwr56yskq5vp';
+      var stringAddress = 'bitcoincash:qrk2ulgf99rm0mjfnr39f2jgjqxjd5kwr5rfyamw2k';
       var address = new Address(stringAddress);
       var script = new Script(address);
       script.toAddress().toString().should.equal(stringAddress);
     });
     it('for a P2SH address', function() {
-      var stringAddress = 'ecash:pzjt8lxnl977xtexlycnl5fyt0al9gcnaualltvqpy';
+      var stringAddress = 'bitcoincash:pzjt8lxnl977xtexlycnl5fyt0al9gcnauyjtqh68n';
       var address = new Address(stringAddress);
       var script = new Script(address);
       script.toAddress().toString().should.equal(stringAddress);
@@ -960,26 +976,26 @@ describe('Script', function() {
       // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
       var script = new Script('OP_DUP OP_HASH160 20 ' +
         '0xc8e11b0eb0d2ad5362d894f048908341fa61b6e1 OP_EQUALVERIFY OP_CHECKSIG');
-      script.toAddress().toString().should.equal('ecash:qrywzxcwkrf265mzmz20qjyssdql5cdkuymc2v04ef');
+      script.toAddress().toString().should.equal('bitcoincash:qrywzxcwkrf265mzmz20qjyssdql5cdkuyz47850l7');
     });
     it('works for p2pkh input', function() {
       // taken from tx 7e519caca256423320b92e3e17be5701f87afecbdb3f53af598032bfd8d164f5
       var script = new Script('72 0x3045022100eff96230ca0f55b1e8c7a63e014f48611ff1af40875ecd33dee9062d7a6f5e2002206320405b5f6992c756e03e66b21a05a812b60996464ac6af815c2638b930dd7a01 65 0x04150defa035a2c7d826d7d5fc8ab2154bd1bb832f1a5c8ecb338f436362ad232e428b57db44677c5a8bd42c5ed9e2d7e04e742c59bee1b40080cfd57dec64b23a');
-      script.toAddress().toString().should.equal('ecash:qrywzxcwkrf265mzmz20qjyssdql5cdkuymc2v04ef');
+      script.toAddress().toString().should.equal('bitcoincash:qrywzxcwkrf265mzmz20qjyssdql5cdkuyz47850l7');
       // taken from tx 7f8f95752a59d715dae9e0008a42e7968d2736741591bbfc6685f6e1649c21ed
       var s2 = new Script('71 0x3044022017053dad84aa06213749df50a03330cfd24d6b8e7ddbb6de66c03697b78a752a022053bc0faca8b4049fb3944a05fcf7c93b2861734d39a89b73108f605f70f5ed3401 33 0x0225386e988b84248dc9c30f784b06e02fdec57bbdbd443768eb5744a75ce44a4c');
-      s2.toAddress().toString().should.equal('ecash:qprjfgyvctp82eddvwrup69dvggw63afzgkwa0lkdy');
+      s2.toAddress().toString().should.equal('bitcoincash:qprjfgyvctp82eddvwrup69dvggw63afzg0rfyyvtn');
     });
 
     it('works for p2sh output', function() {
       // taken from tx fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
       var script = new Script('OP_HASH160 20 0x99d29051af0c29adcb9040034752bba7dde33e35 OP_EQUAL');
-      script.toAddress().toString().should.equal('ecash:pzva9yz34uxzntwtjpqqx36jhwnamce7x5h6vwayfq');
+      script.toAddress().toString().should.equal('bitcoincash:pzva9yz34uxzntwtjpqqx36jhwnamce7x5whc9x70h');
     });
     it('works for p2sh input', function() {
       // taken from tx fe1f764299dc7f3b5a8fae912050df2b633bf99554c68bf1c456edb9c2b63585
       var script = new Script('OP_FALSE 72 0x3045022100e824fbe979fac5834d0062dd5a4e82a898e00ac454bd254cd708ad28530816f202206251ff0fa4dd70c0524c690d4e4deb2bd167297e7bbdf6743b4a8050d681555001 37 0x512102ff3ae0aaa4679ea156d5581dbe6695cc0c311df0aa42af76670d0debbd8f672951ae');
-      script.toAddress().toString().should.equal('ecash:pz30sxmypnge5lv0eyshlt0w5jzu5axu3sxch6986y');
+      script.toAddress().toString().should.equal('bitcoincash:pz30sxmypnge5lv0eyshlt0w5jzu5axu3sl4r37aun');
     });
 
     // no address scripts

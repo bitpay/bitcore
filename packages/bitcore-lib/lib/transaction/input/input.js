@@ -60,7 +60,7 @@ Input.fromObject = function(obj) {
 
 Input.prototype._fromObject = function(params) {
   var prevTxId;
-  if (_.isString(params.prevTxId) && JSUtil.isHexa(params.prevTxId)) {
+  if (typeof params.prevTxId === 'string' && JSUtil.isHexa(params.prevTxId)) {
     prevTxId = Buffer.from(params.prevTxId, 'hex');
   } else {
     prevTxId = params.prevTxId;
@@ -69,10 +69,11 @@ Input.prototype._fromObject = function(params) {
   this.output = params.output ?
     (params.output instanceof Output ? params.output : new Output(params.output)) : undefined;
   this.prevTxId = prevTxId || params.txidbuf;
-  this.outputIndex = _.isUndefined(params.outputIndex) ? params.txoutnum : params.outputIndex;
-  this.sequenceNumber = _.isUndefined(params.sequenceNumber) ?
-    (_.isUndefined(params.seqnum) ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
-  if (_.isUndefined(params.script) && _.isUndefined(params.scriptBuffer)) {
+  this.outputIndex = params.outputIndex == null ? params.txoutnum : params.outputIndex;
+  this.sequenceNumber = params.sequenceNumber == null ?
+    (params.seqnum == null ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
+  // null script is allowed in setScript()
+  if (params.script === undefined && params.scriptBuffer === undefined) {
     throw new errors.Transaction.Input.MissingScript();
   }
   this.setScript(params.scriptBuffer || params.script);
@@ -200,16 +201,15 @@ Input.prototype.setWitnesses = function(witnesses) {
 };
 
 Input.prototype.isValidSignature = function(transaction, signature, signingMethod) {
+  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
   // FIXME: Refactor signature so this is not necessary
-  signingMethod = signingMethod || 'ecdsa';
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
     transaction,
     signature.signature,
     signature.publicKey,
     signature.inputIndex,
-    this.output.script,
-    signingMethod
+    this.output.script
   );
 };
 
@@ -223,6 +223,10 @@ Input.prototype.isNull = function() {
 
 Input.prototype._estimateSize = function() {
   return this.toBufferWriter().toBuffer().length;
+};
+
+Input.prototype._getBaseSize = function() {
+  return 32 + 4 + 4; // outpoint (32 + 4) + sequence (4)
 };
 
 

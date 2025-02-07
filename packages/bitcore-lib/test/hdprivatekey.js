@@ -56,6 +56,18 @@ describe('HDPrivate key interface', function() {
     key.network.name.should.equal('testnet');
   });
 
+  it('should make a new private key from random for testnet when passing specific network "testnet3"', function() {
+    var key = new HDPrivateKey('testnet3');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
+  it('should make a new private key from random for testnet when passing specific network "signet"', function() {
+    var key = new HDPrivateKey('signet');
+    should.exist(key.xprivkey);
+    key.network.name.should.equal('testnet');
+  });
+
   it('should not be able to change read-only properties', function() {
     var hdkey = new HDPrivateKey();
     expect(function() {

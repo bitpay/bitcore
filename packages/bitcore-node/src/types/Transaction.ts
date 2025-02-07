@@ -1,6 +1,5 @@
 export interface TransactionJSON {
   _id: string;
-  hash: string;
   txid: string;
   chain: string;
   network: string;
@@ -15,4 +14,5 @@ export interface TransactionJSON {
   inputCount: number;
   outputCount: number;
   value: number;
+  replacedByTxid?: string;
 }

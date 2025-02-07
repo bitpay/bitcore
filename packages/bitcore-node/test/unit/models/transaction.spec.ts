@@ -9,7 +9,7 @@ import { BitcoinTransaction, TransactionInput } from '../../../src/types/namespa
 import { TransactionFixture } from '../../fixtures/transaction.fixture';
 import { mockStorage } from '../../helpers';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
-const bitcoreLib = require('@abcpros/bitcore-lib');
+const bitcoreLib = require('@bcpros/bitcore-lib');
 
 describe('Transaction Model', function() {
   before(unitBeforeHelper);

@@ -42,6 +42,9 @@ BufferWriter.prototype.writeReverse = function(buf) {
 };
 
 BufferWriter.prototype.writeUInt8 = function(n) {
+  if (n < 0) {
+    n = n >>> 0; // Convert signed int to unsigned int
+  }
   var buf = Buffer.alloc(1);
   buf.writeUInt8(n, 0);
   this.write(buf);
@@ -49,6 +52,9 @@ BufferWriter.prototype.writeUInt8 = function(n) {
 };
 
 BufferWriter.prototype.writeUInt16BE = function(n) {
+  if (n < 0) {
+    n = n >>> 0; // Convert signed int to unsigned int
+  }
   var buf = Buffer.alloc(2);
   buf.writeUInt16BE(n, 0);
   this.write(buf);
@@ -56,6 +62,9 @@ BufferWriter.prototype.writeUInt16BE = function(n) {
 };
 
 BufferWriter.prototype.writeUInt16LE = function(n) {
+  if (n < 0) {
+    n = n >>> 0; // Convert signed int to unsigned int
+  }
   var buf = Buffer.alloc(2);
   buf.writeUInt16LE(n, 0);
   this.write(buf);
@@ -63,6 +72,9 @@ BufferWriter.prototype.writeUInt16LE = function(n) {
 };
 
 BufferWriter.prototype.writeUInt32BE = function(n) {
+  if (n < 0) {
+    n = n >>> 0; // Convert signed int to unsigned int
+  }
   var buf = Buffer.alloc(4);
   buf.writeUInt32BE(n, 0);
   this.write(buf);
@@ -77,6 +89,9 @@ BufferWriter.prototype.writeInt32LE = function(n) {
 };
 
 BufferWriter.prototype.writeUInt32LE = function(n) {
+  if (n < 0) {
+    n = n >>> 0; // Convert signed int to unsigned int
+  }
   var buf = Buffer.alloc(4);
   buf.writeUInt32LE(n, 0);
   this.write(buf);

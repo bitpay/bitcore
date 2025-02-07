@@ -5,19 +5,19 @@ var async = require('async');
 var chai = require('chai');
 var mongodb = require('mongodb');
 var should = chai.should();
-const { BitcoreLib } = require ('@abcpros/crypto-wallet-core');
+const { BitcoreLib } = require ('@bcpros/crypto-wallet-core');
 const { ChainService } = require('../../ts_build/lib/chain');
 const { BtcChain } = require('../../ts_build/lib/chain/btc');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
-const Common = require('../../ts_build/lib/common');
+const { Common } = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
 const segWitToAddress = 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'; //'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 
 
 describe('Chain BTC', function() {
- 
+
   describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
       var txp = TxProposal.fromObj(aTXP());
@@ -57,8 +57,8 @@ describe('Chain BTC', function() {
       t.uncheckedSerialize().should.equal('0100000001c05c50d820b4cbb4432af783a0a0b81f50cbf7c890939e713a9f03fb01eb7f4e0500000000ffffffff0282233101000000001976a9149edd2399faccf4e57df08bef78962fa0228741cf88ac00b4c404000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac00000000');
       t.isFullySigned().should.equal(false);
     });
- 
- 
+
+
   });
 
 
@@ -137,7 +137,7 @@ describe('Chain BTC', function() {
       p2shPublicKey1,
       p2shPublicKey2,
 //      p2shPublicKey3
-    ], 2, 'testnet');
+    ], 2, 'testnet3');
     const p2shUtxoWith1BTC = {
       address: p2shAddress.toString(),
       txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
@@ -150,7 +150,7 @@ describe('Chain BTC', function() {
       p2shPublicKey1,
       p2shPublicKey2,
 //      p2shPublicKey3
-    ], 2, 'testnet', null, BitcoreLib.Address.PayToWitnessScriptHash);
+    ], 2, 'testnet3', null, BitcoreLib.Address.PayToWitnessScriptHash);
     const p2wshUtxoWith1BTC = {
       address: p2wshAddress.toString(),
       txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
@@ -205,7 +205,7 @@ describe('Chain BTC', function() {
       const actualLength = (346 + 2*108) / 4; // this is the vsize
       ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
     });
- 
+
   });
 
 

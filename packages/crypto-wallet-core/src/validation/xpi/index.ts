@@ -1,5 +1,5 @@
 import { IValidation } from '..';
-const BitcoreXpi = require('@abcpros/bitcore-lib-xpi');
+const BitcoreXpi = require('@bcpros/bitcore-lib-xpi');
 
 export class XpiValidation implements IValidation {
   validateAddress(network: string, address: string): boolean {

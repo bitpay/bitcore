@@ -1,4 +1,6 @@
-export const ERC20Abi = [
+export { ERC20Abi, MULTISENDAbi };
+
+const ERC20Abi = [
   {
     constant: true,
     inputs: [],
@@ -218,5 +220,199 @@ export const ERC20Abi = [
     ],
     name: 'Transfer',
     type: 'event'
+  }
+];
+
+const MULTISENDAbi = [
+  {
+    constant: true,
+    inputs: [
+      {
+        name: '',
+        type: 'address'
+      }
+    ],
+    name: 'admins',
+    outputs: [
+      {
+        name: '',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'constructor'
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'newAdmin',
+        type: 'address'
+      }
+    ],
+    name: 'AdminSet',
+    type: 'event'
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'oldAdmin',
+        type: 'address'
+      }
+    ],
+    name: 'AdminRemoved',
+    type: 'event'
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: 'from',
+        type: 'address'
+      },
+      {
+        indexed: true,
+        name: 'to',
+        type: 'address'
+      },
+      {
+        indexed: true,
+        name: 'tokenAddress',
+        type: 'address'
+      },
+      {
+        indexed: false,
+        name: 'tokens',
+        type: 'uint256'
+      }
+    ],
+    name: 'Transfer',
+    type: 'event'
+  },
+  {
+    constant: false,
+    inputs: [
+      {
+        name: 'admin',
+        type: 'address'
+      }
+    ],
+    name: 'setAdmin',
+    outputs: [
+      {
+        name: 'success',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    constant: false,
+    inputs: [
+      {
+        name: 'admin',
+        type: 'address'
+      }
+    ],
+    name: 'removeAdmin',
+    outputs: [
+      {
+        name: 'success',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    constant: false,
+    inputs: [
+      {
+        name: 'returnee',
+        type: 'address'
+      },
+      {
+        name: 'tokenAddress',
+        type: 'address'
+      },
+      {
+        name: 'amount',
+        type: 'uint256'
+      }
+    ],
+    name: 'withdraw',
+    outputs: [
+      {
+        name: 'success',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    constant: false,
+    inputs: [
+      {
+        name: 'recipients',
+        type: 'address[]'
+      },
+      {
+        name: 'amounts',
+        type: 'uint256[]'
+      }
+    ],
+    name: 'sendEth',
+    outputs: [
+      {
+        name: '',
+        type: 'bool'
+      }
+    ],
+    payable: true,
+    stateMutability: 'payable',
+    type: 'function'
+  },
+  {
+    constant: false,
+    inputs: [
+      {
+        name: 'tokenAddress',
+        type: 'address'
+      },
+      {
+        name: 'recipients',
+        type: 'address[]'
+      },
+      {
+        name: 'amounts',
+        type: 'uint256[]'
+      }
+    ],
+    name: 'sendErc20',
+    outputs: [
+      {
+        name: '',
+        type: 'bool'
+      }
+    ],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
   }
 ];

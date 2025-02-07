@@ -32,7 +32,62 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  xpi: {
+    toSatoshis: 1000000,
+    full: {
+      maxDecimals: 6,
+      minDecimals: 6
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
   eth: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  matic: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  arb: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  base: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  op: {
     toSatoshis: 1e18,
     full: {
       maxDecimals: 8,
@@ -98,6 +153,29 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  pyusd: {
+    toSatoshis: 1e6,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  usdp: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  // backwards compatibility
   pax: {
     toSatoshis: 1e18,
     full: {
@@ -142,19 +220,74 @@ export let UNITS = {
       minDecimals: 2
     }
   },
-  xpi: {
-    toSatoshis: 1000000,
+  ltc: {
+    toSatoshis: 100000000,
     full: {
-      maxDecimals: 6,
-      minDecimals: 6
+      maxDecimals: 8,
+      minDecimals: 8
     },
     short: {
       maxDecimals: 6,
       minDecimals: 2
     }
   },
-  ltc: {
-    toSatoshis: 100000000,
+  shib: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  ape: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  euroc: {
+    toSatoshis: 1e6,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  usdt: {
+    toSatoshis: 1e6,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  'usdc.e': {
+    toSatoshis: 1e6,
+    full: {
+      maxDecimals: 8,
+      minDecimals: 8
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
+  weth: {
+    toSatoshis: 1e18,
     full: {
       maxDecimals: 8,
       minDecimals: 8

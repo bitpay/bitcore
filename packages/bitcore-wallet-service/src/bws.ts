@@ -1,13 +1,12 @@
 #!/usr/bin/env node
+import cluster from 'cluster';
 import * as fs from 'fs';
 import 'source-map-support/register';
+import config from './config';
+import { ExpressApp } from './lib/expressapp';
 import logger from './lib/logger';
 
-import { ExpressApp } from './lib/expressapp';
-
-const config = require('./config');
 const port = process.env.BWS_PORT || config.port || 3232;
-const cluster = require('cluster');
 const serverModule = config.https ? require('https') : require('http');
 
 const serverOpts: {
@@ -48,7 +47,7 @@ function startInstance() {
 
   expressApp.start(config, err => {
     if (err) {
-      logger.error('Could not start BWS instance', err);
+      logger.error('Could not start BWS instance: %o', err);
       return;
     }
 

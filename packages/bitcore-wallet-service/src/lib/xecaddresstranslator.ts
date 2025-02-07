@@ -1,7 +1,7 @@
 import _ from 'lodash';
 const Bitcore_ = {
-  btc: require('@abcpros/bitcore-lib'),
-  xec: require('@abcpros/bitcore-lib-xec')
+  btc: require('@bcpros/bitcore-lib'),
+  xec: require('@bcpros/bitcore-lib-xec')
 };
 
 export class XECAddressTranslator {

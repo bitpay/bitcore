@@ -7,7 +7,8 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 import { VerificationPeer } from '../../src/modules/bitcoin/VerificationPeer';
 import { AsyncRPC } from '../../src/rpc';
 import { Config } from '../../src/services/config';
-import { wait } from '../../src/utils/wait';
+import { IUtxoNetworkConfig } from '../../src/types/Config';
+import { wait } from '../../src/utils';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
@@ -15,7 +16,7 @@ const chain = 'BTC';
 const network = 'regtest';
 const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
 
-const chainConfig = config.chains[chain][network];
+const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 

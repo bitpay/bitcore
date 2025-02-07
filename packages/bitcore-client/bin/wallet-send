@@ -2,85 +2,116 @@
 
 'use strict';
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
+const { getCurrencyObj } = require('../ts_build/src/utils');
 const promptly = require('promptly');
-const https = require('https');
+const { Web3 } = require('crypto-wallet-core');
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--to <to>', 'REQUIRED - string address')
-  .option('--amount <amount>', 'REQUIRED - number amount (in btc/bch/eth/xrp)')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--token [token]', 'optional - ERC-20 token to send')
-  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
+  .requiredOption('--name <name>',        'REQUIRED - Wallet Name')
+  .requiredOption('--to <to>',            'REQUIRED - String address')
+  .requiredOption('--amount <amount>',    'REQUIRED - Number amount (in btc/bch/eth/xrp). \'max\' to send all')
+  .option('--token <tokenName>',          'Name of ERC-20 token to send')
+  .option('--feeRate <rate>',             'Fee rate in sats/byte (UTXO), Gwei (EVM), or drops (XRP)')
+  .option('--rbf',                        'Enable Replace-by-Fee')
+  .option('--tag <tag>',                  'Destination tag (XRP only)')
+  .option('--account <index>',            'EVM Account index to use (default 0)')
+  .option('--storageType <storageType>',  'Name of the database to use (default Level)')
+  .option('--path <path>',                'Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
-  const { name, path, to, amount, target, token, storageType } = program;
-  let wallet;
-  let data;
-  try {
-    data = await getCurrencies();
-  } catch (err) {
-    console.error(err);
-  }
-  const currencies = JSON.parse(data);
+  const { name, path, to, amount, token: tokenName, storageType, rbf, tag, account = 0 } = program.opts();
+  let { feeRate: feeRateParam } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
+    const from = await wallet.deriveAddress(account); // only used for non-UTXO chains
     const chain = wallet.chain;
-    const currency = token || chain;
-    const { decimals } = currencies.data.find(element => element.code === currency);
+    const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName is provided
+    const currencyObj = await getCurrencyObj(chain, tokenObj?.address);
+    const { decimals } = currencyObj;
     const scale = Math.pow(10, decimals);
-    const lastAddress = await wallet.deriveAddress(0);
-    const recipients = [{ address: to, amount: amount * scale }];
-    const feerate = await wallet.getNetworkFee();
-    const feeRate = JSON.parse(feerate).feerate || 20 * scale;
-    let nonce;
-    if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
-      nonce = await wallet.getNonce();
+    const recipients = [];
+    const sendMax = amount === 'max';
+    if (isNaN(amount) && !sendMax) {
+      throw new Error('Amount must be a number or \'max\'');
+    }
+    if (!sendMax || !wallet.isUtxoChain()) {
+      recipients.push({ address: to, amount: amount * scale });
     }
     const utxos = await wallet.getUtxosArray();
     const params = {
-      feeRate,
-      nonce: Number(nonce),
       utxos,
-      recipients,
-      from: lastAddress,
-      token
+      recipients: [],
+      from,
+      tokenName,
+      replaceByFee: rbf,
+      tag,
+      isSweep: sendMax
     };
+    
+    let feeRate = feeRateParam;
+    if (!feeRate) {
+      const feerate = await wallet.getNetworkFee();
+      feeRate = feerate.feerate;
+    }
+
+    if (wallet.chain.toUpperCase() === 'XRP') {
+      params.nonce = parseInt(await wallet.getNonce());
+      params.fee = feeRateParam == null ? feeRate : parseInt(feeRateParam);
+      console.log('Fee:', params.fee, 'drops'); // XRP doesn't really have a fee "rate"
+    } else if (wallet.isUtxoChain()) {
+      feeRate = feeRate ?? 1e-8; // default to 1 sat/byte in case wallet.getNetworkFee() returns null
+      params.feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale) : feeRateParam); // convert feeRate from BTC to sats/B
+      console.log('Fee rate:', params.feeRate, 'sats/byte');
+    } else {
+      params.nonce = parseInt(await wallet.getNonce());
+      params.feeRate = feeRateParam == null ? feeRate : parseInt(Web3.utils.toWei(feeRateParam.toString(), 'gwei')); // convert feeRateParam from Gwei to Wei
+      console.log('Fee rate:', Web3.utils.fromWei(params.feeRate.toString(), 'Gwei'), 'Gwei');
+    }
+
+    if (sendMax) {
+      if (wallet.isUtxoChain()) {
+        params.change = to; // send all
+      } else {
+        const balance = await wallet.getBalance({ tokenName, address: from });
+        const tx = await wallet.newTx({ ...params, recipients: [{ address: to, amount: 1 }] }); // create dummy tx to estimate gas
+        const { data } = wallet.getLib().ethers.utils.parseTransaction(tx);
+        const gasLimit = await wallet.estimateGas({ to, from, data, value: balance.confirmed });
+        const l1FeeWei = await wallet.getL1Fee(tx); // OP-stack chains have a "hidden" layer-1 data fee (in wei). Returns 0 for non-OP-stack chains.
+        const amtToSend = (BigInt(balance.confirmed) - (BigInt(gasLimit) * BigInt(params.feeRate)) - BigInt(l1FeeWei)).toString();
+        params.recipients.push({ address: to, amount: amtToSend });
+        params.gasLimit = gasLimit;
+      }
+    } else {
+      params.recipients.push({ address: to, amount: amount * scale });
+    }
+
+    params.change = wallet.isUtxoChain() ? wallet.deriveAddress(wallet.addressIndex, true) : null;
+    const changeIdx = params.change ? wallet.addressIndex : null;
     const tx = await wallet.newTx(params);
-    console.log('unsignedRawTx: ', tx);
+    console.log('UnsignedRawTx: ', tx);
     const passphrase = await promptly.password('Wallet Password:');
     wallet = await wallet.unlock(passphrase);
-    const signedTx = await wallet.signTx({ tx, passphrase });
-    console.log('signedRawTx: ', signedTx);
-    const confirmed = await promptly.confirm('broadcast? (y/n)');
-    if (!confirmed) {
+    const signedTx = await wallet.signTx({ tx, passphrase, changeAddressIdx: changeIdx });
+    console.log('SignedRawTx: ', signedTx);
+    const broadcast = await promptly.confirm('Broadcast? (y/n)');
+    if (!broadcast) {
       return;
     }
-    const transaction = await wallet.broadcast({ tx:signedTx });
-    console.log('txid: ', transaction.txid);
+    const transaction = await wallet.broadcast({ tx: signedTx });
+    console.log('Txid: ', transaction.txid);
     console.log('Transaction broadcasted');
   } catch (e) {
     console.error(e);
   }
 };
 
-function getCurrencies() {
-  return new Promise((resolve, reject) => {
-    https.get('https://bitpay.com/currencies', res => {
-      if (res.statusCode !== 200) {
-        reject(new Error('Request Failed'));
-      }
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      res.on('end', () => resolve(data.toString()));
-    });
-  });
-}
 
-main();
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

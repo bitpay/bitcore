@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var t = require('../ts_build/lib/bchaddresstranslator');
+var t = require('../ts_build/lib/bchaddresstranslator').BCHAddressTranslator;
 
 describe('BCH Address translator', function() {
 

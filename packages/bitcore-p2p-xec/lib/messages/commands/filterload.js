@@ -2,7 +2,7 @@
 
 var Message = require('../message');
 var inherits = require('util').inherits;
-var bitcore = require('@abcpros/bitcore-lib-xec');
+var bitcore = require('@bcpros/bitcore-lib-xec');
 var BufferUtil = bitcore.util.buffer;
 var BloomFilter = require('../../bloomfilter');
 var $ = bitcore.util.preconditions;

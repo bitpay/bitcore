@@ -85,7 +85,7 @@ PublicKeyInput.prototype.isFullySigned = function() {
 PublicKeyInput.SCRIPT_MAX_SIZE = 73; // sigsize (1 + 72)
 
 PublicKeyInput.prototype._estimateSize = function() {
-  return PublicKeyInput.SCRIPT_MAX_SIZE;
+  return this._getBaseSize() + PublicKeyInput.SCRIPT_MAX_SIZE;
 };
 
 module.exports = PublicKeyInput;

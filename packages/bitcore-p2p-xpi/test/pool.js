@@ -6,7 +6,7 @@ var chai = require('chai');
 var should = chai.should();
 var expect = chai.expect;
 
-var bitcore = require('@abcpros/bitcore-lib-xpi');
+var bitcore = require('@bcpros/bitcore-lib-xpi');
 var P2P = require('../');
 var Peer = P2P.Peer;
 var MessagesData = require('./data/messages');

@@ -1,9 +1,10 @@
-import { Deriver } from '@abcpros/crypto-wallet-core';
+import { Deriver } from '@bcpros/crypto-wallet-core';
 import _ from 'lodash';
+import { ChainService } from '../chain/index';
+import { Common } from '../common';
 import { AddressManager } from './addressmanager';
 
 const $ = require('preconditions').singleton();
-const Common = require('../common');
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
@@ -14,9 +15,11 @@ export interface IAddress {
   address: string;
   walletId: string;
   isChange: boolean;
+  isEscrow: boolean;
   path: string;
   publicKeys: string[];
   coin: string;
+  chain: string;
   network: string;
   type: string;
   hasActivity: boolean;
@@ -29,21 +32,23 @@ export class Address {
   address: string;
   walletId: string;
   isChange: boolean;
+  isEscrow: boolean;
   path: string;
   publicKeys: string[];
   coin: string;
+  chain: string;
   network: string;
   type: string;
   hasActivity: boolean;
   beRegistered: boolean;
 
   static Bitcore = {
-    btc: require('@abcpros/bitcore-lib'),
-    bch: require('@abcpros/bitcore-lib-cash'),
-    xec: require('@abcpros/bitcore-lib-xec'),
-    doge: require('@abcpros/bitcore-lib-doge'),
-    xpi: require('@abcpros/bitcore-lib-xpi'),
-    ltc: require('@abcpros/bitcore-lib-ltc')
+    btc: require('@bcpros/bitcore-lib'),
+    bch: require('@bcpros/bitcore-lib-cash'),
+    xec: require('@bcpros/bitcore-lib-xec'),
+    doge: require('@bcpros/bitcore-lib-doge'),
+    xpi: require('@bcpros/bitcore-lib-xpi'),
+    ltc: require('@bcpros/bitcore-lib-ltc')
   };
 
   static create(opts) {
@@ -51,18 +56,21 @@ export class Address {
 
     const x = new Address();
 
-    $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
+    opts.chain = opts.chain || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
+    $.checkArgument(Utils.checkValueInCollection(opts.chain, Constants.CHAINS));
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
     x.address = opts.address;
     x.walletId = opts.walletId;
     x.isChange = opts.isChange;
+    x.isEscrow = opts.isEscrow;
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
-    x.coin = opts.coin;
-    x.network = Address.Bitcore[opts.coin]
-      ? Address.Bitcore[opts.coin].Address(x.address).toObject().network
+    x.coin = opts.chain;
+    x.chain = opts.chain;
+    x.network = Address.Bitcore[opts.chain]
+      ? Address.Bitcore[opts.chain].Address(x.address).toObject().network
       : opts.network;
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
@@ -77,9 +85,11 @@ export class Address {
     x.createdOn = obj.createdOn;
     x.address = obj.address;
     x.walletId = obj.walletId;
-    x.coin = obj.coin || Defaults.COIN;
-    x.network = obj.network;
+    x.coin = obj.chain || ChainService.getChain(obj.coin);
+    x.chain = x.coin;
+    x.network = Utils.getNetworkName(x.chain, obj.network) || obj.network;
     x.isChange = obj.isChange;
+    x.isEscrow = obj.isEscrow;
     x.path = obj.path;
     x.publicKeys = obj.publicKeys;
     x.type = obj.type || Constants.SCRIPT_TYPES.P2SH;
@@ -88,12 +98,21 @@ export class Address {
     return x;
   }
 
-  static _deriveAddress(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr) {
+  static _deriveAddress(scriptType, publicKeyRing, path, m, chain, network, noNativeCashAddr, escrowInputs?, hardwareSourcePublicKey?) {
     $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
 
-    const publicKeys = _.map(publicKeyRing, item => {
-      const xpub = Address.Bitcore[coin]
-        ? new Address.Bitcore[coin].HDPublicKey(item.xPubKey)
+    if (hardwareSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+      return {
+        address: bitcoreAddress.toString(),
+        path,
+        publicKeys: [hardwareSourcePublicKey]
+      }
+    }
+
+    let publicKeys = _.map(publicKeyRing, item => {
+      const xpub = Address.Bitcore[chain]
+        ? new Address.Bitcore[chain].HDPublicKey(item.xPubKey)
         : new Address.Bitcore.btc.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
@@ -102,7 +121,7 @@ export class Address {
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2WSH:
         const nestedWitness = false;
-        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(
+        bitcoreAddress = Address.Bitcore[chain].Address.createMultisig(
           publicKeys,
           m,
           network,
@@ -111,10 +130,17 @@ export class Address {
         );
         break;
       case Constants.SCRIPT_TYPES.P2SH:
-        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(publicKeys, m, network);
+        if (escrowInputs) {
+          var xpub = new Address.Bitcore[chain].HDPublicKey(publicKeyRing[0].xPubKey);
+          const inputPublicKeys = escrowInputs.map(input => xpub.deriveChild(input.path).publicKey);
+          bitcoreAddress = Address.Bitcore[chain].Address.createEscrow(inputPublicKeys, publicKeys[0], network);
+          publicKeys = [publicKeys[0], ...inputPublicKeys];
+        } else {
+          bitcoreAddress = Address.Bitcore[chain].Address.createMultisig(publicKeys, m, network);
+        }
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
-        bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
+        bitcoreAddress = Address.Bitcore[chain].Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(
@@ -122,20 +148,24 @@ export class Address {
           'Failed state: publicKeys length < 1 or publicKeys not an array at <_deriveAddress()>'
         );
 
-        if (Address.Bitcore[coin]) {
-          bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(publicKeys[0], network);
+        if (Address.Bitcore[chain]) {
+          bitcoreAddress = Address.Bitcore[chain].Address.fromPublicKey(publicKeys[0], network);
         } else {
           const { addressIndex, isChange } = new AddressManager().parseDerivationPath(path);
           const [{ xPubKey }] = publicKeyRing;
-          bitcoreAddress = Deriver.deriveAddress(coin.toUpperCase(), network, xPubKey, addressIndex, isChange);
+          bitcoreAddress = Deriver.deriveAddress(chain.toUpperCase(), network, xPubKey, addressIndex, isChange);
         }
+        break;
+      case Constants.SCRIPT_TYPES.P2TR:
+        // TODO: add support for multisig taproot
+        bitcoreAddress = Address.Bitcore[chain].Address.fromPublicKey(publicKeys[0], network, 'taproot');
         break;
     }
 
     let addrStr = bitcoreAddress.toString(true);
-    if (coin == 'xpi') {
+    if (chain == 'xpi') {
       addrStr = bitcoreAddress.toXAddress();
-    } else if (noNativeCashAddr && coin == 'bch') {
+    } else if (noNativeCashAddr && chain == 'bch') {
       addrStr = bitcoreAddress.toLegacyAddress();
     }
 
@@ -148,15 +178,40 @@ export class Address {
   }
 
   // noNativeCashAddr only for testing
-  static derive(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange, noNativeCashAddr = false) {
-    const raw = Address._deriveAddress(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr);
+  static derive(
+    walletId,
+    scriptType,
+    publicKeyRing,
+    path,
+    m,
+    coin,
+    network,
+    isChange,
+    chain,
+    noNativeCashAddr = false,
+    escrowInputs?,
+    hardwareSourcePublicKey?
+  ) {
+    const raw = Address._deriveAddress(
+      scriptType,
+      publicKeyRing,
+      path,
+      m,
+      chain || ChainService.getChain(coin), // getChain -> backwards compatibility
+      network,
+      noNativeCashAddr,
+      escrowInputs,
+      hardwareSourcePublicKey,
+    );
     return Address.create(
       _.extend(raw, {
         coin,
+        chain,
         network,
         walletId,
         type: scriptType,
-        isChange
+        isChange,
+        isEscrow: !!escrowInputs
       })
     );
   }

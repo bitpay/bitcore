@@ -1,0 +1,44 @@
+[
+    {
+        "code": "CA",
+        "name": "Community Artists DEV",
+        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": false
+
+    },
+    {
+        "code": "CHEM",
+        "name": "Morazan Electric and Hydro DEV",
+        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": false
+    },
+        {
+        "code": "MZEDE",
+        "name": "Morazán ZEDE (Taxes/Fees) DEV",
+        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": false
+    },
+        {
+        "code": "CANB",
+        "name": "Community Artists DEV no burn",
+        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "merchantAddress": "",
+        "email": "",
+        "isElpsAccepted": true
+
+    },
+    {
+        "code": "MGYM",
+        "name": "Forever Young Gym - Morazán",
+        "walletAddress": "ecash:qp99c749msrx53hk9kn4dqqrwc0vy23prqpz6enzk2",
+        "merchantAddress": null,
+        "email": "",
+        "isElpsAccepted": true
+    }
+]

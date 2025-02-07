@@ -9,11 +9,11 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var Bitcore = require('@abcpros/bitcore-lib');
+var Bitcore = require('@bcpros/bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('@abcpros/bitcore-lib-cash'),
-  bcha: require('@abcpros/bitcore-lib-cash')
+  bch: require('@bcpros/bitcore-lib-cash'),
+  bcha: require('@bcpros/bitcore-lib-cash')
 };
 
 
@@ -50,6 +50,7 @@ describe('Cash address migration', function() {
   });
   after(function(done) {
     helpers.after(done);
+    sinon.restore();
   });
 
   describe('Migrate wallets', function() {
@@ -59,7 +60,7 @@ describe('Cash address migration', function() {
         let spy = sinon.spy(s.storage, 'migrateToCashAddr');
         s.getWallet({}, function(err, w) {
           let calls = spy.getCalls();
-          calls.should.be.empty();
+          calls.should.be.empty;
           helpers.stubUtxos(s, w, 1, function() {
             s.getStatus({}, function(err, a) {
               should.not.exist(err);

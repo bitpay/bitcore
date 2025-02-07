@@ -59,24 +59,25 @@ Input.fromObject = function(obj) {
 
 Input.prototype._fromObject = function(params) {
   var prevTxId;
-  if (_.isString(params.prevTxId) && JSUtil.isHexa(params.prevTxId)) {
+  if (typeof params.prevTxId === 'string' && JSUtil.isHexa(params.prevTxId)) {
     prevTxId = Buffer.from(params.prevTxId, 'hex');
   } else {
     prevTxId = params.prevTxId;
   }
 
   this.witnesses = [];
-  if (params.witnesses && _.isArray(params.witnesses)) {
+  if (params.witnesses && Array.isArray(params.witnesses)) {
     this.witnesses = params.witnesses;
   }
 
   this.output = params.output ?
     (params.output instanceof Output ? params.output : new Output(params.output)) : undefined;
   this.prevTxId = prevTxId || params.txidbuf;
-  this.outputIndex = _.isUndefined(params.outputIndex) ? params.txoutnum : params.outputIndex;
-  this.sequenceNumber = _.isUndefined(params.sequenceNumber) ?
-    (_.isUndefined(params.seqnum) ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
-  if (_.isUndefined(params.script) && _.isUndefined(params.scriptBuffer)) {
+  this.outputIndex = params.outputIndex == null ? params.txoutnum : params.outputIndex;
+  this.sequenceNumber = params.sequenceNumber == null ?
+    (params.seqnum == null ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
+  // null script is allowed in setScript()
+  if (params.script === undefined && params.scriptBuffer === undefined) {
     throw new errors.Transaction.Input.MissingScript();
   }
   this.setScript(params.scriptBuffer || params.script);
@@ -133,7 +134,7 @@ Input.prototype.setScript = function(script) {
   } else if (JSUtil.isHexa(script)) {
     // hex string script
     this._scriptBuffer = Buffer.from(script, 'hex');
-  } else if (_.isString(script)) {
+  } else if (typeof script === 'string') {
     // human readable string script
     this._script = new Script(script);
     this._script._isInput = true;
@@ -229,6 +230,10 @@ Input.prototype._estimateSize = function() {
   return this.toBufferWriter().toBuffer().length;
 };
 
+Input.prototype._getBaseSize = function() {
+  return 32 + 4 + 4; // outpoint (32 + 4) + sequence (4)
+};
+
 
 /**
  * Sets sequence number so that transaction is not valid until the desired seconds
@@ -238,7 +243,7 @@ Input.prototype._estimateSize = function() {
  * @return {Transaction} this
  */
 Input.prototype.lockForSeconds = function(seconds) {
-  $.checkArgument(_.isNumber(seconds));
+  $.checkArgument(!isNaN(seconds));
   if (seconds < 0 ||  seconds >= SEQUENCE_LOCKTIME_GRANULARITY * SEQUENCE_LOCKTIME_MASK) {
     throw new errors.Transaction.Input.LockTimeRange();
   }
@@ -256,7 +261,7 @@ Input.prototype.lockForSeconds = function(seconds) {
  * @return {Transaction} this
  */
 Input.prototype.lockUntilBlockHeight = function(heightDiff) {
-  $.checkArgument(_.isNumber(heightDiff));
+  $.checkArgument(!isNaN(heightDiff));
   if (heightDiff < 0 || heightDiff >= SEQUENCE_BLOCKDIFF_LIMIT) {
     throw new errors.Transaction.Input.BlockHeightOutOfRange();
   }

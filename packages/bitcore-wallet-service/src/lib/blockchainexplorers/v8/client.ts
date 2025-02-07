@@ -3,7 +3,7 @@ import * as request from 'request-promise-native';
 import { URL } from 'url';
 import logger from '../../logger';
 
-const bitcoreLib = require('@abcpros/bitcore-lib');
+const bitcoreLib = require('@bcpros/bitcore-lib');
 const secp256k1 = require('secp256k1');
 export class Client {
   authKey: { bn: { toBuffer: (arg) => Buffer } };
@@ -24,7 +24,11 @@ export class Client {
     const privateKey = this.authKey.bn.toBuffer({ size: 32 });
     const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
 
-    return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
+    // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
+    // const privateKey = bitcoreLib.PrivateKey.fromBuffer(this.authKey.bn.toBuffer({ size: 32 }));
+    // const sig = bitcoreLib.crypto.ECDSA.sign(messageHash, privateKey);
+    // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
+    return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey).signature).toString('hex');
   }
 
   async register(params) {
@@ -99,7 +103,7 @@ export class Client {
       extra = `?includeSpent=${includeSpent}`;
     }
     const url = `${this.baseUrl}/wallet/${pubKey}/utxos${extra}`;
-    logger.debug('GET UTXOS:', url);
+    logger.debug('GET UTXOS: %o', url);
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -111,7 +115,7 @@ export class Client {
   async getCoinsForTx(params) {
     const { txId } = params;
     const url = `${this.baseUrl}/tx/${txId}/coins`;
-    logger.debug('GET COINS FOR TX:', url);
+    logger.debug('GET COINS FOR TX: %o', url);
     return request.get(url, {
       json: true
     });
@@ -147,7 +151,7 @@ export class Client {
     }
     const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url });
-    logger.debug('List transactions', url);
+    logger.debug('List transactions %o', url);
     return requestStream.get(url, {
       headers: { 'x-signature': signature },
       json: true
@@ -158,7 +162,7 @@ export class Client {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}`;
 
-    logger.debug('addAddresses:', url, payload);
+    logger.debug('addAddresses: %o %o', url, payload);
     const signature = this.sign({ method: 'POST', url, payload });
     const h = { 'x-signature': signature };
     return request.post(url, {
@@ -171,7 +175,7 @@ export class Client {
   async broadcast(params) {
     const { payload } = params;
     const url = `${this.baseUrl}/tx/send`;
-    logger.debug('Broadcast', url);
+    logger.debug('Broadcast %o', url);
     return request.post(url, { body: payload, json: true });
   }
 }

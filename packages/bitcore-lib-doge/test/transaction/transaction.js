@@ -206,7 +206,7 @@ describe('Transaction', function() {
   describe('transaction creation test vector', function() {
     this.timeout(5000);
     var index = 0;
-    transactionVector.forEach(function(vector) {
+    for (const vector of transactionVector) {
       index++;
       it('case ' + index, function() {
         var i = 0;
@@ -222,7 +222,7 @@ describe('Transaction', function() {
           i += 2;
         }
       });
-    });
+    }
   });
 
   // TODO: Migrate this into a test for inputs
@@ -362,7 +362,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.getFee();
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(4973500000);
+      transaction.outputs[1].satoshis.should.equal(4977400000);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -412,6 +412,14 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction.outputs.length.should.equal(2);
     });
+    it('adds no change if fee less than DUST_AMOUNT', function () {
+      var transaction = new Transaction()
+        .from(simpleUtxoWith10DOGE)
+        .to(toAddress, 10*1e8 - Transaction.DUST_AMOUNT)
+        .change(changeAddress)
+        .sign(privateKey);
+      transaction.outputs.length.should.equal(1);
+    });
     it('fee can be set up manually', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith10DOGE)
@@ -423,72 +431,80 @@ describe('Transaction', function() {
       transaction.outputs[1].satoshis.should.equal(10e8 - 80000 - 10000);
     });
     it('fee per kb can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 8000;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerKb(8000)
+        .feePerKb(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate / 1000 * 1, feeRate / 1000 * 1.01);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(9999037584);
+      transaction.outputs[1].satoshis.should.equal(9999037536);
     });
     it('fee per byte (low fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 1;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(1)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(9999048001, 9999049000);
     });
     it('fee per byte (high fee) can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 2;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(2)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(9999046002, 9999048000);
     });
     it('fee per byte can be set up manually', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
+      const feeRate = 13;
       var transaction = new Transaction()
         .from(inputs)
         .to(toAddress, 950000)
-        .feePerByte(13)
+        .feePerByte(feeRate)
         .change(changeAddress)
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
+      (transaction.getFee() / transaction.vsize).should.be.within(feeRate * 1, feeRate * 1.01);
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(9999024013, 9999037000);
     });
     it('fee per byte not enough for change', function () {
-      var inputs = _.map(_.range(10), function (i) {
-        var utxo = _.clone(simpleUtxoWith10DOGE);
+      var inputs = new Array(10).fill(0).map(function(_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
         utxo.outputIndex = i;
         return utxo;
       });
@@ -537,6 +553,23 @@ describe('Transaction', function() {
         .from(simpleUtxoWith100DOGE)
         .to(toAddress, 1e8);
       transaction.getFee().should.equal(99e8);
+    });
+    it('should not under calculate fee', function () {
+      var inputs = Array(10).fill(0).map(function (_, i) {
+        var utxo = JSON.parse(JSON.stringify(simpleUtxoWith10DOGE));
+        utxo.outputIndex = i;
+        return utxo;
+      });
+      const feeRate = 1;
+      var transaction = new Transaction()
+        .from(inputs)
+        .to(toAddress, 95000)
+        .feePerByte(feeRate)
+        .change(changeAddress)
+        .sign(privateKey);
+      // actual fee rate should never be *less* than the given
+      //  fee rate and should only be over by 1% at most.
+      (transaction.getFee() / transaction.size).should.be.within(feeRate * 1, feeRate * 1.01);
     });
   });
 
@@ -592,7 +625,7 @@ describe('Transaction', function() {
     it('fails if a dust output is created', function() {
       var transaction = new Transaction()
         .from(simpleUtxoWith1000DOGE)
-        .to(toAddress, 0.9e8)
+        .to(toAddress, 999999) // Less than 0.01 DOGE
         .change(changeAddress)
         .sign(privateKey);
       expect(function() {
@@ -1062,7 +1095,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1e8);
       transaction.inputAmount.should.equal(1000e8);
-      transaction.outputAmount.should.equal(99973500000);
+      transaction.outputAmount.should.equal(99977400000);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see testnet tx 41245c59aa4f06bc0f13f92ea65e275926591376dffb396a5c0efb7b8c2d0c21
@@ -1154,7 +1187,7 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(tenth);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89973500000);
+      tx.outputs[1].satoshis.should.equal(89977400000);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
@@ -1227,7 +1260,7 @@ describe('Transaction', function() {
           return original.indexOf(value);
         });
       };
-      fixture.inputs.forEach(function(inputSet) {
+      for (const inputSet of fixture.inputs) {
         it(inputSet.description, function() {
           var tx = new Transaction();
           inputSet.inputs = inputSet.inputs.map(function(input) {
@@ -1244,8 +1277,8 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(inputSet.inputs, tx.inputs).should.deep.equal(inputSet.expected);
         });
-      });
-      fixture.outputs.forEach(function(outputSet) {
+      }
+      for (const outputSet of fixture.outputs) {
         it(outputSet.description, function() {
           var tx = new Transaction();
           outputSet.outputs = outputSet.outputs.map(function(output) {
@@ -1258,7 +1291,7 @@ describe('Transaction', function() {
           tx.sort();
           getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
         });
-      });
+      }
 
     });
   });
@@ -1780,7 +1813,7 @@ describe('Transaction', function() {
         txId: '1d732950d99f821b8a8d11972ea56000b0666e4d31fa71861ffd80a83797dc61',
         outputIndex: 1,
         script: Script.buildScriptHashOut(nestedAddress).toHex(),
-        satoshis: 1e8
+        satoshis: 2e8
       };
       var witnessAddress = Address.createMultisig([
         publicKey1
@@ -1801,8 +1834,8 @@ describe('Transaction', function() {
           .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
           .sign(privateKey1);
         var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
-        sighash.toString('hex').should.equal('e132a913b5c0e90d49c1b2017d934f78796a10c784d669cc11d51093a773c0c5');
-        tx.toBuffer().toString('hex').should.equal('010000000161dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d010000006f004730440220223d1cb249d063b743781607c2b3e59195d4b9a15a5e2df7a6c64818f0106e7a02202081733a14e8bcd99582a5a7893dd6e6cd1368e5c0e49a0cec627e9dbe0a9830012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51aeffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac00000000');
+        sighash.toString('hex').should.equal('f2b2dace70c98ecfb8b9b8bfd4697275ca683a250a5437956e120fd4e526aa01');
+        tx.toBuffer().toString('hex').should.equal('010000000161dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d0100000070004830450221009c709313381b0f53fcb2b197862eb23147eceef3ae6714c3b60e9c6cfc2c720402207872f44bdd4f3668c03fac20a922dac16bebe657c3bcd65c3a77a5917449da99012551210304c1a51134235dc282641432811a26d367d4ea52b4ac5e20c107668b010fdd4b51aeffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0b4e80b000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac00000000');
       });
     });
   });

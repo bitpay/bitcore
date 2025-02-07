@@ -10,10 +10,7 @@
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/build/**/*.js"],
       "console": "integratedTerminal",
-      "preLaunchTask": "npm: compile",
-      "env": {
-        "DB_HOST": "127.0.0.1"
-      }
+      "preLaunchTask": "npm: compile"
     },
     {
       "type": "node",
@@ -27,26 +24,9 @@
       "type": "node",
       "request": "launch",
       "name": "Debug Unit Tests",
-      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "program": "${workspaceRoot}/build/test/runners/unit.js",
       "protocol": "auto",
-      "preLaunchTask": "npm: tsc",
-      "args": [
-        "${workspaceRoot}/build/test/unit/*.spec.js"
-      ],
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Resync",
-      "program": "${workspaceFolder}/build/test/verification/resync.js",
-      "protocol": "auto",
-      "preLaunchTask": "npm: tsc",
-      "env": {
-        "CHAIN": "XPI",
-        "NETWORK": "mainnet",
-        "START": "0",
-        "END": "31108"
-      }
+      "preLaunchTask": "npm: tsc"
     },
     {
       "type": "node",

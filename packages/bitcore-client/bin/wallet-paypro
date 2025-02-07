@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const program = require('../ts_build/program');
-const { Wallet } = require('../ts_build/wallet');
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
 const request = require('request-promise-native');
 const promptly = require('promptly');
 const cwc = require('crypto-wallet-core');
@@ -14,25 +14,27 @@ const libs = {
 
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--nonce [nonce]', 'optional - Nonce')
-  .option('--from [from]', 'optional - from account for XRP')
-  .option('--payProUri [payProUri]', 'REQUIRED - payment protocol URI')
-  .option('--token, [token]', 'optional - ERC-20 token to pay with')
-  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo | Level | TextFile)')
+  .requiredOption('--name <name>', 'REQUIRED - Wallet Name')
+  .requiredOption('--payProUri <payProUri>', 'REQUIRED - payment protocol URI')
+  .option('--nonce <nonce>', 'optional - Nonce')
+  .option('--from <from>', 'optional - From account for XRP')
+  .option('--token, <token>', 'optional - ERC-20 token to pay with')
+  .option('--storageType <storageType>', 'optional - name of the database to use (Mongo | Level | TextFile)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
+let wallet;
+
 const main = async () => {
-  const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program;
-  let { payProUri } = program;
-  if (payProUri.includes('=')) {
-    const split = payProUri.split('=');
+  const { name, path, token, nonce: inputNonce, from: inputFrom, storageType } = program.opts();
+  let { payProUri } = program.opts();
+  if (payProUri.includes(':?r=')) {
+    const split = payProUri.split(':?r=');
     console.log(split.length);
     payProUri = split[split.length - 1];
   }
   // Payment-Options
-  const paymentOptionsResponse = await request({
+  const paymentOptionsResponse = await doRequest({
     method: 'GET',
     uri: payProUri,
     headers: {
@@ -58,7 +60,6 @@ const main = async () => {
   });
 
   //  Payment-Request
-  let wallet;
   wallet = await Wallet.loadWallet({ name, path, storageType });
   const from = inputFrom || await wallet.deriveAddress(0);
   let nonce;
@@ -66,9 +67,13 @@ const main = async () => {
   if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
     nonce = inputNonce || await wallet.getNonce();
   }
-  const currency = token || chain;
+
+  const currency = token || paymentOptions.find(o => o.chain === chain && o.native)?.currency;
+  if (!currency) {
+    throw new Error(`No supported currency for ${chain}. Try specifying --token`);
+  }
   console.log(`selecting ${currency}`);
-  const paymentRequestResponse = await request({
+  const paymentRequestResponse = await doRequest({
     method: 'POST',
     uri: payProUri,
     json: { chain, currency },
@@ -99,8 +104,10 @@ const main = async () => {
       invoiceID = outputs[0].invoiceID;
     }
     const utxos = await wallet.getUtxosArray();
-    const params = { recipients, feeRate, from, invoiceID, data, value, utxos };
+    const params = { recipients, feeRate, from, invoiceID, data, value, utxos, gasPrice };
     params.nonce = Number(nonce);
+    params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
+    const changeIdx = params.change ? wallet.addressIndex : null;
     const unsignedTx = await wallet.newTx(params);
     console.log(`unsignedRawTx: ${unsignedTx}`);
 
@@ -109,8 +116,8 @@ const main = async () => {
       password = await promptly.password('Wallet Password:');
     }
     wallet = await wallet.unlock(password);
-    const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password });
-    const txid = cwc.Transactions.getHash({chain, tx: signedTx});
+    const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password, changeAddressIdx: changeIdx });
+    const txid = cwc.Transactions.getHash({ chain, tx: signedTx });
     console.log(`signedRawTx: ${signedTx}`);
     signedTransactions.push({ tx: signedTx });
     console.log(`txid: ${txid}`);
@@ -124,23 +131,23 @@ const main = async () => {
     nonce++;
   }
 
-    // Payment Verification
-    const paymentVerificationResponse = await request({
-      method: 'POST',
-      uri: payProUri,
-      json: { chain, currency, transactions: unsignedTransactions},
-      headers: {
-        'Content-Type' : 'application/payment-verification',
-        'x-paypro-version' : '2'
-      },
-      agentOptions: {
-        rejectUnauthorized: false
-      },
-    });
-    console.log(paymentVerificationResponse);
+  // Payment Verification
+  const paymentVerificationResponse = await doRequest({
+    method: 'POST',
+    uri: payProUri,
+    json: { chain, currency, transactions: unsignedTransactions },
+    headers: {
+      'Content-Type' : 'application/payment-verification',
+      'x-paypro-version' : '2'
+    },
+    agentOptions: {
+      rejectUnauthorized: false
+    },
+  });
+  console.log(paymentVerificationResponse);
 
   //  send-payment
-  const sendPaymentResponse = await request({
+  const sendPaymentResponse = await doRequest({
     method: 'POST',
     uri: payProUri,
     json: { chain, currency, transactions: signedTransactions },
@@ -155,5 +162,14 @@ const main = async () => {
   console.log(sendPaymentResponse);
 };
 
+const doRequest = async (...opts) => {
+  try {
+    return await request(...opts);
+  } catch (e) {
+    throw new Error(e.stack || e.message || e);
+  }
+};
+
 main()
-  .catch(err => console.error(err));
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

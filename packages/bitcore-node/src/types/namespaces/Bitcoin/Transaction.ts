@@ -12,7 +12,6 @@ export interface BitcoinInputObj {
   prevTxId: string;
   outputIndex: number;
   sequenceNumber: number;
-  script?: string;
 }
 export interface BitcoinInput {
   toObject: () => BitcoinInputObj;
@@ -23,8 +22,6 @@ export interface BitcoinOutput {
 }
 export interface BitcoinTransactionType {
   outputAmount: number;
-  txid?: string;
-  _txid?: undefined | string;
   hash: string;
   _hash: undefined | string;
   isCoinbase: () => boolean;

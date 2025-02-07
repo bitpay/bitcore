@@ -4,7 +4,7 @@ var chai = require('chai');
 var should = chai.should();
 
 var assert = require('assert');
-var bitcore = require('@abcpros/bitcore-lib-cash');
+var bitcore = require('@bcpros/bitcore-lib-cash');
 var Data = require('./data/messages');
 var P2P = require('../');
 var BloomFilter = P2P.BloomFilter;

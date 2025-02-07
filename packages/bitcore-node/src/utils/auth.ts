@@ -8,7 +8,7 @@ import { Config } from '../services/config';
 import { ChainNetwork } from '../types/ChainNetwork';
 
 const secp256k1 = require('secp256k1');
-const bitcoreLib = require('@abcpros/bitcore-lib');
+const bitcoreLib = require('@bcpros/bitcore-lib');
 
 export interface VerificationPayload {
   message: string;
@@ -22,7 +22,8 @@ export function verifyRequestSignature(params: VerificationPayload): boolean {
   const pub = new bitcoreLib.PublicKey(pubKey).toBuffer();
   const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
   if (typeof signature === 'string') {
-    return secp256k1.verify(messageHash, Buffer.from(signature, 'hex'), pub);
+    // TODO we should use bitcoreLib.crypto.ECDSA.verify() instead of external dependency.
+    return secp256k1.ecdsaVerify(Buffer.from(signature, 'hex'), messageHash, pub);
   } else {
     throw new Error('Signature must exist');
   }
@@ -38,7 +39,7 @@ export type AuthenticatedRequest = {
 
 const authenticateMiddleware: RequestHandler = async (req: Request, res: Response, next: any) => {
   const { chain, network, pubKey } = (req.params as unknown) as SignedApiRequest;
-  logger.debug('Authenticating request with pubKey: ', pubKey);
+  logger.debug('Authenticating request with pubKey: %o', pubKey);
   let wallet;
   try {
     wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
@@ -67,7 +68,8 @@ const authenticateMiddleware: RequestHandler = async (req: Request, res: Respons
       return res.status(401).send('Authentication failed');
     }
     return next();
-  } catch (e) {
+  } catch (e: any) {
+    logger.error('Unexpected error authenticating request: %o', e?.stack || e?.message || e);
     return res.status(401).send('Authentication failed');
   }
 };

@@ -1,6 +1,6 @@
 'use strict';
 
-var bitcore = require('@abcpros/bitcore-lib');
+var bitcore = require('@bcpros/bitcore-lib');
 var $ = bitcore.util.preconditions;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var Hash = bitcore.crypto.Hash;
