@@ -87,7 +87,7 @@
     "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {
-    "lerna": "^8.1.9",
+    "lerna": "8.1.2",
     "typescript": "4.9.4"
   },
   "husky": {
