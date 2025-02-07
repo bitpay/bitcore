@@ -115,8 +115,10 @@ export class BlockchainMonitor {
             }
             $.checkState(explorer, 'Failed State: explorer undefined at <start()>');
 
-            this._initExplorer(pair.chain, pair.network, explorer);
-            this.explorers[pair.chain][pair.network] = explorer;
+            if (this.explorers[pair.chain]) {
+              this._initExplorer(pair.chain, pair.network, explorer);
+              this.explorers[pair.chain][pair.network] = explorer;
+            }
           });
           done();
         },

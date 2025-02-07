@@ -154,9 +154,9 @@ const Services = Common.Services;
 
 
 
-const BCHJS = require('@bcpros/xpi-js');
-const bchURL = config.supportToken.xec.bchUrl;
-const bchjs = new BCHJS({ restURL: bchURL });
+// const BCHJS = require('@bcpros/xpi-js');
+// const bchURL = config.supportToken.xec.bchUrl;
+// const bchjs = new BCHJS({ restURL: bchURL });
 
 const ecashaddr = require('ecashaddrjs');
 
@@ -6498,7 +6498,7 @@ export class WalletService implements IWalletService {
     // }
     this.getFiatRates({}, (err, fiatRates) => {
       try {
-        _.map(fiatRates, (rates, coin) => {
+        _.map(fiatRates, (rates, coin: any) => {
           const coinRates = {};
           _.each(rates, r => {
             const rate = { [r.code]: r.rate };
@@ -6518,7 +6518,7 @@ export class WalletService implements IWalletService {
       let rateList = [];
       this.getFiatRates({}, (err, fiatRates) => {
         try {
-          _.map(fiatRates, (rates, coin) => {
+          _.map(fiatRates, (rates, coin: any) => {
             const coinRates = {};
             _.each(rates, r => {
               const rate = { [r.code]: r.rate };
@@ -9157,6 +9157,19 @@ export class WalletService implements IWalletService {
     });
   }
 
+
+  /**
+   * Returns exchange rates of the supported fiat currencies for all coins.
+   * @returns {Array} rates - The exchange rate.
+   */
+  getAllFiatRates(cb) {
+
+     return this.fiatRateService.getAllRates((err, rates) => {
+      if (err) return cb(err);
+      return cb(null, rates);
+    });
+  }
+
   /**
    * Returns swap configetOrderInfog.
    */
@@ -10927,7 +10940,7 @@ export class WalletService implements IWalletService {
       };
 
       let qs = [];
-      qs.push('categories=' + req?.body?.categories ?? 'all');
+      qs.push('categories=' + (req?.body?.categories ?? 'all')); 
 
       const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/currencies/details' : '/tokenlist/utils/currencies';
       const URL: string = API + `${uriPath}?${qs.join('&')}`;

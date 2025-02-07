@@ -2,12 +2,12 @@ import { BitcoreLibXpi } from '@bcpros/crypto-wallet-core';
 import { ChronikClient } from 'chronik-client';
 import _ from 'lodash';
 import { IChain } from '..';
+import config from '../../../config'
 import { BtcChain } from '../btc';
-const config = require('../../../config');
 const Common = require('../../common');
 const Utils = Common.Utils;
 const Errors = require('../../errors/errordefinitions');
-const chronikClient = new ChronikClient(config.supportToken.xpi.chronikClientUrl);
+const chronikClient = new ChronikClient(config.chronik.xpiUrl.split(','));
 
 export class XpiChain extends BtcChain implements IChain {
   constructor() {

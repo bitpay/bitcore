@@ -1,5 +1,5 @@
 import _ from 'lodash';
-const Common = require('../common');
+import { Common } from '../common';
 const Defaults = Common.Defaults;
 
 module.exports = {
