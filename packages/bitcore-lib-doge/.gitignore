@@ -21,3 +21,5 @@ dogecore.min.js
 dogecore.js.sig
 dogecore.min.js.sig
 tests.js
+
+tests.js.tmp-browserify-*

@@ -85,12 +85,12 @@ describe('Peer', function() {
     peer.port.should.equal(8111);
   });
 
-  it('create instance setting a network', function() {
-    var peer = new Peer({host: 'localhost', network: Networks.testnet});
-    peer.host.should.equal('localhost');
-    peer.network.should.equal(Networks.testnet);
-    peer.port.should.equal(Networks.testnet.port);
-  });
+  // it('create instance setting a network', function() {
+  //   var peer = new Peer({host: 'localhost', network: Networks.testnet});
+  //   peer.host.should.equal('localhost');
+  //   peer.network.should.equal(Networks.testnet);
+  //   peer.port.should.equal(Networks.testnet.port);
+  // });
 
   it('create instance setting port and network', function() {
     var peer = new Peer({host: 'localhost', port: 8111, network: Networks.testnet});

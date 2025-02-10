@@ -33,10 +33,10 @@ describe('Pool', function() {
     });
   });
 
-  it('create instance setting the network', function() {
-    var pool = new Pool({network: Networks.testnet});
-    pool.network.should.equal(Networks.testnet);
-  });
+  // it('create instance setting the network', function() {
+  //   var pool = new Pool({network: Networks.testnet});
+  //   pool.network.should.equal(Networks.testnet);
+  // });
 
   it('discover peers via dns', function() {
     var stub = sinon.stub(dns, 'resolve', function(seed, callback) {

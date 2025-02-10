@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as crypto from 'crypto';
 import _ from 'lodash';
-import * as request from 'request-promise-native';
+import axios from 'axios';
 import io = require('socket.io-client');
 import config from '../../config';
 import { ChainService } from '../chain/index';
@@ -49,7 +49,7 @@ export class V8 {
   host: string;
   userAgent: string;
   baseUrl: string;
-  request: request;
+  request: Request;
   Client: typeof Client;
   private _cachedReserve: number;
   private _cachedReserveTs: number;
@@ -78,7 +78,7 @@ export class V8 {
 
     // for testing
     //
-    this.request = opts.request || request;
+    this.request = opts.request || axios;
     this.Client = opts.client || Client || require('./v8/client');
   }
 
@@ -374,83 +374,72 @@ export class V8 {
   getAddressActivity(address, cb) {
     const url = this.baseUrl + '/address/' + address + '/txs?limit=1';
     logger.debug('[v8.js] CHECKING ADDRESS ACTIVITY %o', url);
-    this.request
-      .get(url, {})
-      .then(ret => {
-        return cb(null, ret !== '[]');
+    this.request.get(url)
+      .then(response => {
+        return cb(null, response.data !== '[]');
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
   getTransactionCount(address, cb) {
     const url = this.baseUrl + '/address/' + address + '/txs/count';
     logger.debug('[v8.js] CHECKING ADDRESS NONCE %o', url);
-    this.request
-      .get(url, {})
-      .then(ret => {
-        ret = JSON.parse(ret);
-        return cb(null, ret.nonce);
+    this.request.get(url)
+      .then(response => {
+        return cb(null, response.data.nonce);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
   estimateGas(opts, cb) {
     const url = this.baseUrl + '/gas';
     logger.debug('[v8.js] CHECKING GAS LIMIT %o', url);
-    this.request
-      .post(url, { body: opts, json: true })
-      .then(gasLimit => {
-        gasLimit = JSON.parse(gasLimit);
-        return cb(null, gasLimit);
+    this.request.post(url, opts)
+      .then(response => {
+        return cb(null, response.data);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
   getMultisigContractInstantiationInfo(opts, cb) {
     const url = `${this.baseUrl}/ethmultisig/${opts.sender}/instantiation/${opts.txId}`;
     logger.debug('[v8.js] CHECKING CONTRACT INSTANTIATION INFO %o', url);
-    this.request
-      .get(url, {})
-      .then(contractInstantiationInfo => {
-        contractInstantiationInfo = JSON.parse(contractInstantiationInfo);
-        return cb(null, contractInstantiationInfo);
+    this.request.get(url)
+      .then(response => {
+        return cb(null, response.data);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
   getMultisigContractInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/info/' + opts.multisigContractAddress;
     logger.debug('[v8.js] CHECKING CONTRACT INFO %o', url);
-    this.request
-      .get(url, {})
-      .then(contractInfo => {
-        contractInfo = JSON.parse(contractInfo);
-        return cb(null, contractInfo);
+    this.request.get(url)
+      .then(response => {
+        return cb(null, response.data);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
   getTokenContractInfo(opts, cb) {
     const url = this.baseUrl + '/token/' + opts.tokenAddress;
     logger.debug('[v8.js] CHECKING CONTRACT INFO %o', url);
-    this.request
-      .get(url, {})
-      .then(contractInfo => {
-        contractInfo = JSON.parse(contractInfo);
-        return cb(null, contractInfo);
+    this.request.get(url)
+      .then(response => {
+        return cb(null, response.data);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
@@ -458,28 +447,24 @@ export class V8 {
     const url =
       this.baseUrl + '/token/' + opts.tokenAddress + '/allowance/' + opts.ownerAddress + '/for/' + opts.spenderAddress;
     logger.debug('[v8.js] CHECKING TOKEN ALLOWANCE %o', url);
-    this.request
-      .get(url, {})
-      .then(allowance => {
-        allowance = JSON.parse(allowance);
-        return cb(null, allowance);
+    this.request.get(url)
+      .then(response => {
+        return cb(null, response.data);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
   getMultisigTxpsInfo(opts, cb) {
     const url = this.baseUrl + '/ethmultisig/txps/' + opts.multisigContractAddress;
     logger.debug('[v8.js] CHECKING CONTRACT TXPS INFO %o', url);
-    this.request
-      .get(url, {})
-      .then(multisigTxpsInfo => {
-        multisigTxpsInfo = JSON.parse(multisigTxpsInfo);
-        return cb(null, multisigTxpsInfo);
+    this.request.get(url)
+      .then(response => {
+        return cb(null, response.data);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
@@ -491,15 +476,14 @@ export class V8 {
       nbBlocks,
       (x: string, icb) => {
         const url = this.baseUrl + '/fee/' + x;
-        this.request
-          .get(url, {})
-          .then(ret => {
+        this.request.get(url)
+          .then(response => {
             try {
-              ret = JSON.parse(ret);
+              const ret = response.data;
 
               // only process right responses.
               if (!_.isUndefined(ret.blocks) && ret.blocks != x) {
-                logger.info(`[v8.js] Ignoring response for ${x}: %o`, ret?.body || ret);
+                logger.info(`[v8.js] Ignoring response for ${x}: %o`, ret);
                 return icb();
               }
 
@@ -511,7 +495,7 @@ export class V8 {
             return icb();
           })
           .catch(err => {
-            return icb(err);
+            return icb(err.response?.data || err);
           });
       },
       err => {
@@ -532,19 +516,17 @@ export class V8 {
     const nbBlocks = Number(opts.nbBlocks) || 2;
     const url = this.baseUrl + `/fee/${nbBlocks}?txType=${txType}`;
     let result;
-    this.request
-      .get(url, {})
-      .then(ret => {
+    this.request.get(url)
+      .then(response => {
         try {
-          ret = JSON.parse(ret);
-          result = ret.feerate;
+          result = response.data.feerate;
         } catch (e) {
           logger.warn('[v8.js] Fee error: %o', e);
         }
         return cb(null, result);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
@@ -552,67 +534,59 @@ export class V8 {
     const percentile = opts.percentile;
     let result;
     const url = this.baseUrl + `/priorityFee/${percentile}`;
-    this.request
-      .get(url, {})
-      .then(ret => {
+    this.request.get(url)
+      .then(response => {
         try {
-          ret = JSON.parse(ret);
-          result = ret.feerate;
+          result = response.data.feerate;
         } catch (e) {
           logger.warn('[v8.js] Priority fee error: %o', e);
         }
         return cb(null, result);
       })
       .catch(err => {
-        return cb(err);
+        return cb(err.response?.data || err);
       });
   }
 
   getBlockBits(cb) {
     const url = this.baseUrl + '/block/tip';
-    this.request
-      .get(url, {})
-      .then(ret => {
+    this.request.get(url)
+      .then(response => {
         try {
-          ret = JSON.parse(ret);
-          return cb(null, ret.bits);
+          return cb(null, response.data.bits);
         } catch (err) {
           return cb(new Error('Could not get bits from block explorer'));
         }
       })
-      .catch(cb);
+      .catch(err => cb(err.response?.data || err));
   }
 
   getBlockchainHeight(cb) {
     const url = this.baseUrl + '/block/tip';
 
-    this.request
-      .get(url, {})
-      .then(ret => {
+    this.request.get(url)
+      .then(response => {
         try {
-          ret = JSON.parse(ret);
-          return cb(null, ret.height, ret.hash);
+          return cb(null, response.data.height, response.data.hash);
         } catch (err) {
           return cb(new Error('Could not get height from block explorer'));
         }
       })
-      .catch(cb);
+      .catch(err => cb(err.response?.data || err));
   }
 
   getTxidsInBlock(blockHash, cb) {
     const url = this.baseUrl + '/tx/?blockHash=' + blockHash;
-    this.request
-      .get(url, {})
-      .then(ret => {
+    this.request.get(url)
+      .then(response => {
         try {
-          ret = JSON.parse(ret);
-          const res = _.map(ret, 'txid');
+          const res = _.map(response.data, 'txid');
           return cb(null, res);
         } catch (err) {
           return cb(new Error('Could not get height from block explorer'));
         }
       })
-      .catch(cb);
+      .catch(err => cb(err.response?.data || err));
   }
 
   getReserve(cb) {
@@ -620,22 +594,20 @@ export class V8 {
       return cb(null, this._cachedReserve);
     }
     const url = this.baseUrl + '/reserve';
-    this.request
-      .get(url, {})
-      .then(ret => {
+    this.request.get(url)
+      .then(response => {
         try {
-          ret = JSON.parse(ret);
-          if (ret.reserve != null) {
-            this._cachedReserve = ret.reserve;
+          if (response.data.reserve != null) {
+            this._cachedReserve = response.data.reserve;
             this._cachedReserveTs = Date.now();
           }
-          return cb(null, ret.reserve ?? Defaults.MIN_XRP_BALANCE);
+          return cb(null, response.data.reserve ?? Defaults.MIN_XRP_BALANCE);
         } catch (err) {
           logger.error('[v8.js] Error getting reserve: %o', err);
           return cb(null, Defaults.MIN_XRP_BALANCE);
         }
       })
-      .catch(cb);
+      .catch(err => cb(err.response?.data || err));
   }
 
   initSocket(callbacks) {

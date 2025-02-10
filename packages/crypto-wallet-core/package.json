@@ -7,12 +7,12 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf ts_build && tsc --version",
-    "compile": "npm run clean && npm run build",
-    "precommit": "npm run fix",
+    "compile": "pnpm run clean && pnpm run build",
+    "precommit": "pnpm run fix",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "test": "npm run compile && mocha -r ts-node/register test/*.ts",
-    "pub": "npm run compile && npm publish"
+    "test": "pnpm run compile && mocha -r ts-node/register test/*.ts",
+    "pub": "pnpm run compile && npm publish"
   },
   "keywords": [
     "multi-currency",
@@ -23,12 +23,12 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@bcpros/bitcore-lib": "^9.0.7",
-    "@bcpros/bitcore-lib-cash": "^9.0.7",
-    "@bcpros/bitcore-lib-doge": "^9.0.7",
-    "@bcpros/bitcore-lib-ltc": "^9.0.7",
-    "@bcpros/bitcore-lib-xec": "^9.0.7",
-    "@bcpros/bitcore-lib-xpi": "^9.0.7",
+    "@bcpros/bitcore-lib": "workspace:*",
+    "@bcpros/bitcore-lib-cash": "workspace:*",
+    "@bcpros/bitcore-lib-doge": "workspace:*",
+    "@bcpros/bitcore-lib-ltc": "workspace:*",
+    "@bcpros/bitcore-lib-xec": "workspace:*",
+    "@bcpros/bitcore-lib-xpi": "workspace:*",
     "ethers": "^5.7.0",
     "info": "0.0.6-beta.0",
     "web3": "1.7.1",

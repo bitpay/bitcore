@@ -42,10 +42,10 @@
     "typescript": "4.9.4"
   },
   "devDependencies": {
-    "@bcpros/bitcore-wallet-service": "^9.0.7",
+    "@bcpros/bitcore-wallet-service": "workspace:*",
     "@types/lodash": "^4.14.136",
     "@types/node": "^18.11.18",
-    "browserify": "^13.1.0",
+    "browserify": "^16.2.3",
     "chai": "^1.9.1",
     "coveralls": "^3.0.2",
     "istanbul": "*",

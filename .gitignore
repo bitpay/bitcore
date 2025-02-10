@@ -17,3 +17,17 @@ Session.vim
 ts_build
 bitcore-lib.js
 
+# Dependencies
+node_modules
+.pnpm-store/
+
+# Turbo
+.turbo
+
+# Build
+dist
+build
+
+# Logs
+*.log
+*.tmp-browerify-*

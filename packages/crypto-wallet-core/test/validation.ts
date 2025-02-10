@@ -1,6 +1,7 @@
 
 import { expect } from 'chai';
 import { Validation } from '../src';
+import { describe, it } from 'mocha';
 
 describe('Address Validation', () => {
   // BTC

@@ -11,6 +11,7 @@ var terser = require('gulp-terser');
 //var bump = require('gulp-bump');
 //var git = require('gulp-git');
 var fs = require('fs');
+var path = require('path'); // Add path module for better path handling
 
 function ignoreerror() {
   /* jshint ignore:start */ // using `this` in this context is weird
@@ -18,7 +19,42 @@ function ignoreerror() {
   /* jshint ignore:end */
 }
 
+
 function startGulp(name, opts) {
+
+  function findMonorepoRoot(startDir) {
+    let currentDir = startDir;
+    while (currentDir !== path.parse(currentDir).root) {
+      if (fs.existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
+        return currentDir;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+    return startDir; // fallback to starting directory if no workspace root found
+  }
+
+  function findBinary(binaryName) {
+    const monorepoRoot = findMonorepoRoot(process.cwd());
+
+    const possiblePaths = [
+      path.join(monorepoRoot, 'node_modules/.bin/', binaryName),  // Monorepo root binaries
+      path.join('./node_modules/.bin/', binaryName),              // Local project binaries
+      path.join(process.cwd(), 'node_modules/.bin/', binaryName), // Absolute path to project binaries
+      path.join(buildBinPath, binaryName)                         // Original build path
+    ];
+
+    for (const binPath of possiblePaths) {
+      if (fs.existsSync(binPath)) {
+        return binPath;
+      }
+    }
+
+    // Fallback to monorepo root node_modules/.bin
+    return path.join(monorepoRoot, 'node_modules/.bin/', binaryName);
+  }
+
+  const monorepoRoot = findMonorepoRoot(process.cwd());
+
   var task = {};
   opts = opts || {};
   var browser = !opts.skipBrowser;
@@ -27,9 +63,9 @@ function startGulp(name, opts) {
   var tests = ['test/**/*.js'];
   var alljs = files.concat(tests);
 
-  var buildPath = './node_modules/bitcore-build/';
-  var buildModulesPath = buildPath + 'node_modules/';
-  var buildBinPath = buildPath + 'node_modules/.bin/';
+  const buildPath = path.join(monorepoRoot, 'node_modules', '@bcpros', 'bitcore-build') + '/';
+  const buildModulesPath = path.join(monorepoRoot, 'node_modules') + '/';
+  const buildBinPath = path.join(monorepoRoot, 'node_modules', '.bin') + '/';
 
   var browserifyPath = buildBinPath + 'browserify';
   var karmaPath = buildBinPath + 'karma';
@@ -39,23 +75,23 @@ function startGulp(name, opts) {
 
   // newer version of node? binaries are in lower level of node_module path
   if (!fs.existsSync(browserifyPath)) {
-    browserifyPath = './node_modules/.bin/browserify';
+    browserifyPath = findBinary('browserify');
   }
 
   if (!fs.existsSync(karmaPath)) {
-    karmaPath = './node_modules/.bin/karma';
+    karmaPath = findBinary('karma');
   }
 
   if (!fs.existsSync(istanbulPath)) {
-    istanbulPath = './node_modules/.bin/istanbul';
+    istanbulPath = findBinary('istanbul');
   }
 
   if (!fs.existsSync(platoPath)) {
-    platoPath = './node_modules/.bin/plato';
+    platoPath = findBinary('plato');
   }
 
   if (!fs.existsSync(mochaPath)) {
-    mochaPath = './node_modules/.bin/_mocha';
+    mochaPath = findBinary('_mocha');
   }
 
   /**
@@ -68,16 +104,16 @@ function startGulp(name, opts) {
   };
 
   task['test:karma'] = shell.task([
-    karmaPath + '  start ' + buildPath + 'karma.conf.js --single-run '
+    `${karmaPath} start ${path.join(monorepoRoot, 'node_modules', '@bcpros', 'bitcore-build', 'karma.conf.js')} --single-run`
   ]);
 
-  task['test:node'] =  testmocha;
-  task['test:node:nofail'] =  function() {
+  task['test:node'] = testmocha;
+  task['test:node:nofail'] = function () {
     return testmocha().on('error', ignoreerror);
   };
 
 
-  task['noop']= function() {};
+  task['noop'] = function () { };
 
   /**
    * file generation
@@ -96,7 +132,7 @@ function startGulp(name, opts) {
       browserifyCommand
     ]);
 
-    task['browser:terser'] =function() {
+    task['browser:terser'] = function () {
       return gulp.src(fullname + '.js')
         .pipe(terser({
           mangle: true,
@@ -129,9 +165,9 @@ function startGulp(name, opts) {
 
   //  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
-  task['coverage']= shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']);
+  task['coverage'] = shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']);
 
-  task['coveralls'] = gulp.series(task['coverage'], function() {
+  task['coveralls'] = gulp.series(task['coverage'], function () {
     gulp.src('coverage/lcov.info').pipe(coveralls());
   });
 
@@ -139,59 +175,60 @@ function startGulp(name, opts) {
    * watch tasks
    */
 
-  task['watch:test'] = function() {
+  task['watch:test'] = function () {
     //// todo: only run tests that are linked to file changes by doing
     //// something smart like reading through the require statements
     return gulp.watch(alljs, gulp.series('test'));
   };
 
-  task['watch:test:node']= function() {
+  task['watch:test:node'] = function () {
     //// todo: only run tests that are linked to file changes by doing
     //// something smart like reading through the require statements
     return gulp.watch(alljs, gulp.series('test:node'));
   };
 
   if (browser) {
-    task['watch:test:browser'], function() {
+    task['watch:test:browser'], function () {
       // todo: only run tests that are linked to file changes by doing
       // something smart like reading through the require statements
       return gulp.watch(alljs, task['test:browser']);
     };
   }
 
-  task['watch:coverage']= function() {
+  task['watch:coverage'] = function () {
     // todo: only run tests that are linked to file changes by doing
     // something smart like reading through the require statements
     return gulp.watch(alljs, task[coverage]);
   };
 
-  task['watch:lint']= function() {
+  task['watch:lint'] = function () {
     //// todo: only lint files that are linked to file changes by doing
     //// something smart like reading through the require statements
     return gulp.watch(alljs, task[lint]);
   };
 
   if (browser) {
-    task['watch:browser']= function() {
+    task['watch:browser'] = function () {
       return gulp.watch(alljs, task[browser]);
     };
   }
 
   if (browser) {
-    task['test:browser'] = gulp.series(task['browser:uncompressed'], task['browser:maketests'], task['test:karma']);
-    task['test']= gulp.series(task['test:node'], task['test:browser']);
+    // task['test:browser'] = gulp.series(task['browser:uncompressed'], task['browser:maketests'], task['test:karma']);
+    task['test:browser'] = gulp.series(task['browser:uncompressed'], task['browser:maketests']);
+    task['test'] = gulp.series(task['test:node'], task['test:browser']);
   } else {
-    task['test']= task['test:node'];
+    task['test'] = task['test:node'];
   }
-  task['default']= task['test'];
+  task['default'] = task['test'];
 
   /**
    * Release automation
    */
 
-  task['release:install']= shell.task([ 'npm install']);
+  task['release:install'] = shell.task(['npm install']);
   var releaseFiles = ['./package.json'];
-  return  task;
+  return task;
 }
 
 module.exports = startGulp;

@@ -14,6 +14,10 @@
   "keywords": [
     "bitcore"
   ],
+  "files": [
+    "index.js",
+    "karma.conf.js"
+  ],
   "contributors": [
     {
       "name": "Esteban Ordano",

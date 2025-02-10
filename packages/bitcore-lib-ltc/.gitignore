@@ -21,3 +21,5 @@ litecore.min.js
 litecore.js.sig
 litecore.min.js.sig
 tests.js
+
+tests.js.tmp-browserify-*

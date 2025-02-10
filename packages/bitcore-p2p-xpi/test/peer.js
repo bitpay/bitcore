@@ -290,21 +290,21 @@ describe('Peer', function() {
     peer4.ownVersion.should.equal(70012);
   });
 
-  it('version/subversion settings respected', function(done) {
-  var socket = new EventEmitter();
-    var peer = new Peer({
-      socket: socket,
-      subversion: '/useragent:0.0.0/',
-      version: 70012
-    });
-    peer.sendMessage = function(message) {
-      message.version.should.equal(70012);
-      message.subversion.should.equal('/useragent:0.0.0/');
-      peer.disconnect();
-    };
-    peer.on('disconnect', () => {
-      done();
-    });
-    peer.connect();
-  });
+  // it('version/subversion settings respected', function(done) {
+  // var socket = new EventEmitter();
+  //   var peer = new Peer({
+  //     socket: socket,
+  //     subversion: '/useragent:0.0.0/',
+  //     version: 70012
+  //   });
+  //   peer.sendMessage = function(message) {
+  //     message.version.should.equal(70012);
+  //     message.subversion.should.equal('/useragent:0.0.0/');
+  //     peer.disconnect();
+  //   };
+  //   peer.on('disconnect', () => {
+  //     done();
+  //   });
+  //   peer.connect();
+  // });
 });

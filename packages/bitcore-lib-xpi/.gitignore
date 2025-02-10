@@ -22,3 +22,5 @@ bitcore.js.sig
 bitcore.min.js.sig
 tests.js
 bitcore-lib.js
+
+*.tmp-browserify-*
