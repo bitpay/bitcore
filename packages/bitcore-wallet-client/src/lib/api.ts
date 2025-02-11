@@ -3407,6 +3407,15 @@ export class API extends EventEmitter {
     });
   }
 
+  rampGetSellQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/ramp/sellQuote', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
   rampGetSignedPaymentUrl(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request.post(
