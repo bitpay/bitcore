@@ -31,6 +31,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
+    initialHeight?: number;
   }) {
     const { block, chain, network } = params;
     const header = block.header.toObject();
@@ -50,6 +51,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
+    initialHeight?: number;
   }) {
     const { chain, network, block, parentChain, forkHeight, initialSyncComplete } = params;
     const blockOp = await this.getBlockOp(params);
@@ -87,7 +89,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
   }
 
-  async getBlockOp(params: { block: BitcoinBlockType; chain: string; network: string }) {
+  async getBlockOp(params: { block: BitcoinBlockType; chain: string; network: string; initialHeight?: number }) {
     const { block, chain, network } = params;
     const header = block.header.toObject();
     const blockTime = header.time * 1000;
@@ -103,7 +105,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       }
     })();
 
-    const height = (previousBlock && previousBlock.height + 1) || 1;
+    const height = previousBlock?.height! + 1 || params.initialHeight || 0;
     logger.debug('Setting blockheight: ' + height);
 
     const convertedBlock: IBtcBlock = {
