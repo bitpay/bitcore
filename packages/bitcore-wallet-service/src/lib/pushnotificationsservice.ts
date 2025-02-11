@@ -10,6 +10,7 @@ import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
+import axios, {AxiosInstance} from 'axios';
 
 const Mustache = require('mustache');
 const defaultRequest = require('request');
@@ -80,7 +81,7 @@ export interface IPushNotificationService {
 }
 
 export class PushNotificationsService {
-  request: request.RequestAPI<any, any, any>;
+  request: AxiosInstance;
   templatePath: string;
   defaultLanguage: string;
   defaultUnit: string;
@@ -95,7 +96,7 @@ export class PushNotificationsService {
 
   start(opts, cb) {
     opts = opts || {};
-    this.request = opts.request || defaultRequest;
+    this.request = opts.request || axios;
 
     const _readDirectories = (basePath, cb) => {
       fs.readdir(basePath, (err, files) => {
@@ -691,35 +692,25 @@ export class PushNotificationsService {
   }
 
   _makeRequest(opts, cb) {
-    this.request(
-      {
-        url: this.pushServerUrl + '/send',
-        method: 'POST',
-        json: true,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'key=' + this.authorizationKey
-        },
-        body: opts
+    axios.post(`${this.pushServerUrl}/send`, opts, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `key=${this.authorizationKey}`,
       },
-      cb
-    );
+    })
+      .then((response) => cb(null, response.data))
+      .catch((err) => cb(err));
   }
 
   _makeBrazeRequest(opts, cb) {
-    this.request(
-      {
-        url: this.pushServerUrlBraze + '/messages/send',
-        method: 'POST',
-        json: true,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + this.authorizationKeyBraze
-        },
-        body: opts
+    axios.post(`${this.pushServerUrlBraze}/messages/send`, opts, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.authorizationKeyBraze}`,
       },
-      cb
-    );
+    })
+      .then((response) => cb(null, response.data))
+      .catch((err) => cb(err));
   }
 
   private oneInchGetCredentials() {
@@ -743,26 +734,21 @@ export class PushNotificationsService {
           eth: 1,
           matic: 137
         };
-        this.request(
-          {
-            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
-            method: 'GET',
-            json: true,
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-              Authorization: 'Bearer ' + credentials.API_KEY,
-            }
+        axios.get(`${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${credentials.API_KEY}`,
           },
-          (err, data) => {
-            if (err) return reject(err);
-            if (data?.statusCode === 429) {
-              // oneinch rate limit
+        })
+          .then((response) => {
+            if (response.status === 429) {
+              // OneInch rate limit
               return reject();
             }
-            return resolve(data?.body?.tokens);
-          }
-        );
+            resolve(response.data?.tokens);
+          })
+          .catch((err) => reject(err));
       } catch (err) {
         return reject(err);
       }

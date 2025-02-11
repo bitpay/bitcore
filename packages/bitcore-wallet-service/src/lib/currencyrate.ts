@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request';
 import { Storage } from './storage';
+import axios, {AxiosInstance} from 'axios';
 const config = require('../config');
 
 const $ = require('preconditions').singleton();
@@ -11,7 +12,7 @@ const Constants = Common.Constants;
 
 import logger from './logger';
 export class CurrencyRateService {
-  request: request.RequestAPI<any, any, any>;
+  request: AxiosInstance;
   apiKey: string = '';
   providers: any[];
   storage: Storage;
@@ -19,7 +20,7 @@ export class CurrencyRateService {
   init(opts, cb) {
     opts = opts || {};
 
-    this.request = opts.request || request;
+    this.request = opts.request || axios;
     this.apiKey = opts.apiKey || opts.currencyRateServiceOpts.apiKey;
     this.apiUrl = opts.apiUrl || opts.currencyRateServiceOpts.apiUrl;
 
@@ -78,26 +79,21 @@ export class CurrencyRateService {
     let params = {
       apikey: this.apiKey
     };
-    this.request.get(
-      {
-        url: this.apiUrl,
-        qs: params,
-        useQuerystring: true,
-        json: true
-      },
-      (err, res, body) => {
-        if (err || !body) {
-          return cb(err);
+    this.request.get(this.apiUrl, { params })
+      .then((response) => {
+        if (!response.data) {
+          return cb(new Error('No response data'));
         }
         logger.debug('Data for currency rate fetched successfully');
+        
         try {
-          const rates = this.convertRates(body.data);
+          const rates = this.convertRates(response.data.data);
           return cb(null, rates);
         } catch (e) {
           return cb(e);
         }
-      }
-    );
+      })
+      .catch((err) => cb(err));
   }
 
   convertRates(raw): any {

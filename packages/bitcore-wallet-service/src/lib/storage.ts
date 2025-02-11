@@ -32,7 +32,7 @@ import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IUser } from './model/user';
 import { ICoinConfigFilter } from './server';
 // import { Order } from './model/order';
-const mongoDbQueue = require('../../node_modules/mongodb-queue');
+const mongoDbQueue = require('mongodb-queue');
 
 const $ = require('preconditions').singleton();
 

@@ -68,6 +68,7 @@ import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IQPayInfo } from './model/qpayinfo';
 import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
+import axios, {AxiosInstance} from 'axios';
 import { PushNotificationsService } from './pushnotificationsservice';
 
 const Client = require('@bcpros/bitcore-wallet-client').default;
@@ -160,7 +161,7 @@ const Services = Common.Services;
 
 const ecashaddr = require('ecashaddrjs');
 
-let request = require('request');
+let request: AxiosInstance;
 let initialized = false;
 let doNotCheckV8 = false;
 let isMoralisInitialized = false;
@@ -243,7 +244,7 @@ export class WalletService implements IWalletService {
   clientVersion: string;
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
-  request: any;
+  request: AxiosInstance;
 
   constructor() {
     if (!initialized) {
@@ -260,7 +261,7 @@ export class WalletService implements IWalletService {
     this.notifyTicker = 0;
     // for testing
     //
-    this.request = request;
+    this.request = axios;
   }
 
   _checkingValidAddress(address): boolean {
@@ -303,10 +304,7 @@ export class WalletService implements IWalletService {
     blockchainExplorerOpts = opts.blockchainExplorerOpts;
 
     doNotCheckV8 = opts.doNotCheckV8;
-
-    if (opts.request) {
-      request = opts.request;
-    }
+    request = opts.request || axios;
 
     const initStorage = cb => {
       if (opts.storage) {
@@ -10653,20 +10651,10 @@ export class WalletService implements IWalletService {
 
       const URL = API + `/v2/supported_crypto_currencies?public_key=${PUBLIC_KEY}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+  .then((response) => resolve(response.data))
+  .catch((err) => reject(err.response?.data || err));
+
     });
   }
 
@@ -10691,21 +10679,10 @@ export class WalletService implements IWalletService {
         req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
       }
 
-      this.request.post(
-        API + '/wallet/merchant/v2/quote',
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : null);
-          }
-        }
-      );
+      this.request.post(API + '/wallet/merchant/v2/quote', req.body, { headers })
+  .then((response) => resolve(response.data || null))
+  .catch((err) => reject(err.response?.data || err));
+
     });
   }
 
@@ -10737,20 +10714,9 @@ export class WalletService implements IWalletService {
 
       const URL: string = API + `/v3/quote?${qs.join('&')}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+      .then((response) => resolve(response.data))
+      .catch((err) => reject(err.response?.data || err));
     });
   }
 
@@ -10793,25 +10759,15 @@ export class WalletService implements IWalletService {
         Authorization: 'ApiKey ' + API_KEY
       };
 
-      this.request.post(
-        API + '/wallet/merchant/v2/payments/partner/data',
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            data.body.payment_id = paymentId;
-            data.body.order_id = orderId;
-            data.body.app_provider_id = appProviderId;
-            data.body.api_host = apiHost;
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(API + '/wallet/merchant/v2/payments/partner/data', req.body, { headers })
+      .then((response) => {
+        response.data.payment_id = paymentId;
+        response.data.order_id = orderId;
+        response.data.app_provider_id = appProviderId;
+        response.data.api_host = apiHost;
+        resolve(response.data);
+      })
+      .catch((err) => reject(err.response?.data || err));
     });
   }
 
@@ -10828,20 +10784,10 @@ export class WalletService implements IWalletService {
         Authorization: 'ApiKey ' + API_KEY
       };
 
-      this.request.get(
-        API + '/wallet/merchant/v2/events',
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : null);
-          } else {
-            return resolve(data.body ? data.body : null);
-          }
-        }
-      );
+      this.request.get(API + '/wallet/merchant/v2/events', { headers })
+  .then((response) => resolve(response.data ?? null))
+  .catch((err) => reject(err.response?.data ?? null));
+
     });
   }
 
@@ -10908,20 +10854,10 @@ export class WalletService implements IWalletService {
       const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/chains/details' : '/tokenlist/utils/chains';
       const URL: string = API + uriPath;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+  .then((response) => resolve(response.data ?? response))
+  .catch((err) => reject(err.response?.data ?? err));
+
     });
   }
 
@@ -10945,20 +10881,9 @@ export class WalletService implements IWalletService {
       const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/currencies/details' : '/tokenlist/utils/currencies';
       const URL: string = API + `${uriPath}?${qs.join('&')}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+      .then((response) => resolve(response.data ?? response))
+      .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -10997,20 +10922,9 @@ export class WalletService implements IWalletService {
 
       const URL: string = API + `/aggregator/tokens/quote?${qs.join('&')}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+      .then((response) => resolve(response.data ?? response))
+      .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11032,24 +10946,10 @@ export class WalletService implements IWalletService {
         return reject(new ClientError("Thorswap's request missing arguments"));
       }
 
-      this.request.post(
-        API + '/tracker/v2/txn',
-        // API + '/apiusage/v2/txn',
-        // 'https://api.swapkit.dev/track',
-        // /apiusage/v2/txn
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.post(API + '/tracker/v2/txn', req.body, { headers })
+  .then((response) => resolve(response.data ?? response))
+  .catch((err) => reject(err.response?.data ?? err));
+
     });
   }
 
@@ -11098,21 +10998,9 @@ export class WalletService implements IWalletService {
 
       const URL: string = API + '/partners/api/v2/refresh-token';
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.post(URL, req.body, { headers })
+  .then((response) => resolve(response.data ?? response))
+  .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11128,20 +11016,10 @@ export class WalletService implements IWalletService {
 
       const URL: string = API + '/api/v2/currencies/crypto-currencies';
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+  .then((response) => resolve(response.data ?? response))
+  .catch((err) => reject(err.response?.data ?? err));
+
     });
   }
 
@@ -11158,20 +11036,10 @@ export class WalletService implements IWalletService {
 
       const URL: string = API + `/api/v2/currencies/fiat-currencies?apiKey=${API_KEY}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+      .then((response) => resolve(response.data ?? response))
+      .catch((err) => reject(err.response?.data ?? err));
+
     });
   }
 
@@ -11202,20 +11070,9 @@ export class WalletService implements IWalletService {
 
       const URL: string = API + `/api/v2/currencies/price?${qs.join('&')}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+      .then((response) => resolve(response.data ?? response))
+      .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11320,20 +11177,9 @@ export class WalletService implements IWalletService {
 
       const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+      .then((response) => resolve(response.data ?? response))
+      .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11368,21 +11214,9 @@ export class WalletService implements IWalletService {
         'X-Api-Signature': XApiSignatureHash
       };
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, req.body, { headers })
+  .then((response) => resolve(response.data))
+  .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11423,21 +11257,9 @@ export class WalletService implements IWalletService {
         'X-Api-Signature': XApiSignatureHash
       };
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, req.body, { headers })
+  .then((response) => resolve(response.data))
+  .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11547,21 +11369,9 @@ export class WalletService implements IWalletService {
         };
       }
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, message, { headers })
+  .then((response) => resolve(response.data))
+  .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11607,21 +11417,9 @@ export class WalletService implements IWalletService {
         };
       }
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, message, { headers })
+  .then((response) => resolve(response.data))
+  .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11669,21 +11467,10 @@ export class WalletService implements IWalletService {
         };
       }
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, message, { headers })
+      .then((response) => resolve(response.data))
+      .catch((err) => reject(err.response?.data ?? err));
+    
     });
   }
 
@@ -11742,21 +11529,10 @@ export class WalletService implements IWalletService {
         };
       }
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, message, { headers })
+      .then((response) => resolve(response.data))
+      .catch((err) => reject(err.response?.data ?? err));
+    
     });
   }
 
@@ -11802,21 +11578,10 @@ export class WalletService implements IWalletService {
         };
       }
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, message, { headers })
+      .then(response => resolve(response.data))
+      .catch(err => reject(err.response?.data ?? err));
+    
     });
   }
 
@@ -11861,21 +11626,9 @@ export class WalletService implements IWalletService {
         };
       }
 
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.post(URL, message, { headers })
+      .then(response => resolve(response.data))
+      .catch(err => reject(err.response?.data ?? err));    
     });
   }
 
@@ -11939,20 +11692,9 @@ export class WalletService implements IWalletService {
 
       const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+      .then((response) => resolve(response.data ?? response))
+      .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11985,40 +11727,35 @@ export class WalletService implements IWalletService {
 
         const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
 
-        this.request.get(
-          URL,
-          {
-            headers,
-            json: true
-          },
-          (err, data) => {
-            if (err) {
-              this.logw('An error occured while retrieving the token list', err);
-              if (oldvalues) {
-                this.logw('Using old cached values');
-                return resolve(oldvalues);
-              }
-              return reject(err.body ?? err);
-            } else if (data?.statusCode === 429 && oldvalues) {
-              // oneinch rate limit
-              return resolve(oldvalues);
-            } else {
-              if (!data?.body?.tokens) {
-                if (oldvalues) {
-                  this.logw('No token list available... using old cached values');
-                  return resolve(oldvalues);
-                }
-                return reject(new Error('Could not get tokens list'));
-              }
-              this.storage.storeGlobalCache(cacheKey, data.body.tokens, err => {
-                if (err) {
-                  this.logw('Could not store tokens list');
-                }
-                return resolve(data.body.tokens);
-              });
-            }
-          }
-        );
+        this.request.get(URL, { headers })
+  .then(response => {
+    if (!response.data?.tokens) {
+      if (response?.status === 429) {
+        // oneinch rate limit
+        return resolve(oldvalues);
+      } 
+      if (oldvalues) {
+        this.logw('No token list available... using old cached values');
+        return resolve(oldvalues);
+      }
+      return reject(new Error('Could not get tokens list'));
+    }
+
+    this.storage.storeGlobalCache(cacheKey, response.data.tokens, err => {
+      if (err) {
+        this.logw('Could not store tokens list');
+      }
+      return resolve(response.data.tokens);
+    });
+  })
+  .catch(err => {
+    this.logw('An error occurred while retrieving the token list', err);
+    if (oldvalues) {
+      this.logw('Using old cached values');
+      return resolve(oldvalues);
+    }
+    return reject(err.response?.data ?? err);
+  })
       });
     });
   }
@@ -12061,20 +11798,9 @@ export class WalletService implements IWalletService {
         'PayID-Version': '1.0',
         Accept: 'application/payid+json'
       };
-      this.request.get(
-        url,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
+      this.request.get(url, { headers })
+      .then((response) => resolve(response.data ?? response))
+      .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -12085,33 +11811,19 @@ export class WalletService implements IWalletService {
         'PayID-Version': '1.0',
         Accept: 'application/payid+json'
       };
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            let url;
-            if (data.body && data.body.links && data.body.links[0].template) {
-              const template: string = data.body.links[0].template;
-              url = template.replace('{acctpart}', req.handle);
-            } else {
-              url = `https://${req.domain}/${req.handle}`;
-            }
-            this.getPayId(url)
-              .then(data => {
-                return resolve(data);
-              })
-              .catch(err => {
-                return reject(err);
-              });
-          }
-        }
-      );
+      this.request.get(URL, { headers })
+  .then(response => {
+    let url;
+    if (response.data?.links?.[0]?.template) {
+      url = response.data.links[0].template.replace('{acctpart}', req.handle);
+    } else {
+      url = `https://${req.domain}/${req.handle}`;
+    }
+
+    return this.getPayId(url);
+  })
+  .then(data => resolve(data))
+  .catch(err => reject(err.response?.data ?? err));
     });
   }
 

@@ -54,6 +54,9 @@
   "dependencies": {
     "typescript": "4.9.4"
   },
+  "resolutions": {
+    "ecashaddrjs": "npm:ecashaddrjs@^2.0.0"
+  },
   "husky": {
     "hooks": {
     }

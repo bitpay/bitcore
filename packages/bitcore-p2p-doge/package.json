@@ -19,7 +19,7 @@
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-p2p-doge"
   },
   "dependencies": {
-    "@bcpros/bitcore-lib-doge": "^9.0.7",
+    "@bcpros/bitcore-lib-doge": "workspace:*",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
