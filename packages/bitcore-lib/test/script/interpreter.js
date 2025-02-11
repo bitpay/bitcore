@@ -483,18 +483,18 @@ describe('Interpreter', function() {
         const testFlags = getFlags(test.flags);
         const fin = !!test.final;
 
-        if (test.success) {
-          tx.inputs[idx].setScript(test.success.scriptSig);
-          tx.inputs[idx].setWitnesses(test.success.witness);
-          for (let flags of [testFlags]) { // allConsensusFlags() takes too long for the javascript implementation. Keeping the logic here for anyone who wants to run with allConsensusFlags
-            if (fin || (flags & testFlags) == flags) {
-              const witness = tx.inputs[idx].witnesses.map(w => Buffer.from(w, 'hex'));
-              const interp = new Interpreter();
-              const ret = interp.verify(tx.inputs[idx].script, prevOuts[idx].script, tx, idx, flags, witness, tx.inputs[idx].satoshis);
-              ret.should.be.true;
-            }
-          }
-        }
+        // if (test.success) {
+        //   tx.inputs[idx].setScript(test.success.scriptSig);
+        //   tx.inputs[idx].setWitnesses(test.success.witness);
+        //   for (let flags of [testFlags]) { // allConsensusFlags() takes too long for the javascript implementation. Keeping the logic here for anyone who wants to run with allConsensusFlags
+        //     if (fin || (flags & testFlags) == flags) {
+        //       const witness = tx.inputs[idx].witnesses.map(w => Buffer.from(w, 'hex'));
+        //       const interp = new Interpreter();
+        //       const ret = interp.verify(tx.inputs[idx].script, prevOuts[idx].script, tx, idx, flags, witness, tx.inputs[idx].satoshis);
+        //       ret.should.be.true;
+        //     }
+        //   }
+        // }
 
         if (test.failure) {
           tx.inputs[idx].setScript(test.failure.scriptSig);

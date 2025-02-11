@@ -11,6 +11,15 @@ import { LogMiddleware } from './middleware';
 import { IUser } from './model/user';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user?: IUser; // Or specify the actual user type instead of `any`
+}
+
+interface FileUploadRequest extends Request {
+  files?: any; // Adjust type based on your setup
+}
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -807,7 +816,7 @@ export class ExpressApp {
     router.get('/v2/remaining/', (req, res) => {
       const opts: { coin?: string; network?: string } = {};
       // if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.network) opts.network = req.query.network;
+      if (req.query.network) opts.network = req.query.network as string;
 
       let server;
       try {
@@ -825,10 +834,10 @@ export class ExpressApp {
     router.get('/v1/balance/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};
-        if (req.query.coin) opts.coin = req.query.coin;
+        if (req.query.coin) opts.coin = req.query.coin as string;
         if (req.query.twoStep == '1') opts.twoStep = true;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress as string;
 
         server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
@@ -858,7 +867,7 @@ export class ExpressApp {
       SetPublicCache(res, 1 * ONE_MINUTE);
       logDeprecated(req);
       const opts: { network?: string } = {};
-      if (req.query.network) opts.network = req.query.network;
+      if (req.query.network) opts.network = req.query.network as string;
       let server;
       try {
         server = getServer(req, res);
@@ -878,8 +887,8 @@ export class ExpressApp {
     router.get('/v2/feelevels/', (req, res) => {
       const opts: { coin?: string; network?: string } = {};
       SetPublicCache(res, 1 * ONE_MINUTE);
-      if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.network) opts.network = req.query.network;
+      if (req.query.coin) opts.coin = req.query.coin as string;
+      if (req.query.network) opts.network = req.query.network as string;
 
       let server;
       try {
@@ -947,7 +956,7 @@ export class ExpressApp {
           excludeUnconfirmedUtxos?: boolean;
         } = {};
         if (q.feePerKb) opts.feePerKb = +q.feePerKb;
-        if (q.feeLevel) opts.feeLevel = q.feeLevel;
+        if (q.feeLevel) opts.feeLevel = +q.feeLevel;
         if (q.excludeUnconfirmedUtxos == '1') opts.excludeUnconfirmedUtxos = true;
         if (q.returnInputs == '1') opts.returnInputs = true;
         server.getSendMaxInfo(opts, (err, info) => {
@@ -960,7 +969,7 @@ export class ExpressApp {
     router.get('/v1/utxos/', (req, res) => {
       const opts: { addresses?: string[] } = {};
       const addresses = req.query.addresses;
-      if (addresses && _.isString(addresses)) opts.addresses = req.query.addresses.split(',');
+      if (addresses && _.isString(addresses)) opts.addresses = (req.query.addresses as string).split(',');
       getServerWithAuth(req, res, server => {
         server.getUtxos(opts, (err, utxos) => {
           if (err) return returnError(err, res, req);
@@ -1144,8 +1153,8 @@ export class ExpressApp {
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress as string;
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
         opts.includeImmatureStatus = true;
 
@@ -1168,8 +1177,8 @@ export class ExpressApp {
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
-        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress as string;
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
 
         server.getTxHistory(opts, (err, txs) => {
@@ -1201,10 +1210,10 @@ export class ExpressApp {
         to?: string;
       } = {};
 
-      if (req.query.network) opts.network = req.query.network;
-      if (req.query.coin) opts.coin = req.query.coin;
-      if (req.query.from) opts.from = req.query.from;
-      if (req.query.to) opts.to = req.query.to;
+      if (req.query.network) opts.network = req.query.network as string;
+      if (req.query.coin) opts.coin = req.query.coin as string;
+      if (req.query.from) opts.from = req.query.from as string;
+      if (req.query.to) opts.to = req.query.to as string;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {
@@ -1467,7 +1476,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/login/', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/login/', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1489,7 +1498,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/conversion/login/', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/login/', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1508,7 +1517,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/admin/password', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1531,7 +1540,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/conversion/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/admin/password/renew', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1552,7 +1561,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/conversion/admin/password', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/admin/password', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1572,7 +1581,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/admin/password/verify', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1597,7 +1606,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/conversion/admin/password/verify', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/admin/password/verify', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1617,7 +1626,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/admin/seed/import', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       // console.log(reqServer.user);
       let server;
       try {
@@ -1642,7 +1651,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/conversion/admin/seed/import', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/admin/seed/import', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1661,7 +1670,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/conversion/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/restart', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1815,7 +1824,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/uploadCsvMonthly', csvUpload.uploadCsv().array('file'), (req, res) => {
+    router.post('/v3/uploadCsvMonthly', csvUpload.uploadCsv().array('file'), (req: FileUploadRequest, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1827,7 +1836,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/uploadCsvWeekly', csvUpload.uploadCsv().array('file'), (req, res) => {
+    router.post('/v3/uploadCsvWeekly', csvUpload.uploadCsv().array('file'), (req: FileUploadRequest, res) => {
       let server;
       try {
         server = getServer(req, res);
@@ -1853,7 +1862,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/stop', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1883,7 +1892,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/admin/seed/check', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1903,7 +1912,7 @@ export class ExpressApp {
       }
     });
 
-    router.post('/v3/admin/restart', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/admin/restart', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1919,7 +1928,7 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v3/admin/queue/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.get('/v3/admin/queue/check', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1935,7 +1944,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/conversion/admin/seed/check', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/conversion/admin/seed/check', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -1951,7 +1960,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.post('/v3/admin/password/renew', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -2102,7 +2111,7 @@ export class ExpressApp {
       });
     });
 
-    router.put('/v3/admin/order/:id', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.put('/v3/admin/order/:id', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);
@@ -2122,7 +2131,7 @@ export class ExpressApp {
       }
     });
 
-    router.put('/v3/admin/order/status/:id', passport.authenticate('google-id-token'), (reqServer, res) => {
+    router.put('/v3/admin/order/status/:id', passport.authenticate('google-id-token'), (reqServer: AuthenticatedRequest, res) => {
       let server;
       try {
         server = getServer(reqServer, res);

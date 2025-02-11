@@ -20,8 +20,8 @@
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"
   },
   "dependencies": {
-    "@bcpros/bitcore-mnemonic": "^9.0.7",
-    "@bcpros/crypto-wallet-core": "^9.0.7",
+    "@bcpros/bitcore-mnemonic": "workspace:*",
+    "@bcpros/crypto-wallet-core": "workspace:*",
     "JSONStream": "~1.3.1",
     "async": "2.5.0",
     "bcrypt": "5.1.0",

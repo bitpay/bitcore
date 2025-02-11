@@ -14,6 +14,7 @@ import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { Email } from './model';
 import { Storage } from './storage';
+import axios, {AxiosInstance} from 'axios';
 
 export interface Recipient {
   copayerId: string;
@@ -80,12 +81,12 @@ export class EmailService {
   messageBroker: MessageBroker;
   lock: Lock;
   mailer: any;
-  request: request.RequestAPI<any, any, any>;
+  request: AxiosInstance;
   //  mailer: nodemailer.Transporter;
 
   start(opts, cb) {
     opts = opts || {};
-    this.request = opts.request || defaultRequest;
+    this.request = opts.request || axios;
 
     const _readDirectories = (basePath, cb) => {
       fs.readdir(basePath, (err, files) => {
@@ -544,26 +545,21 @@ export class EmailService {
         const credentials = this.oneInchGetCredentials();
         // Get mainnet chainId
         const chainId = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[`${chain.toUpperCase()}_mainnet`]
-        this.request(
-          {
-            url: `${credentials.API}/v5.2/${chainId}/tokens`,
-            method: 'GET',
-            json: true,
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-              Authorization: 'Bearer ' + credentials.API_KEY,
-            }
+        axios.get(`${credentials.API}/v5.2/${chainId}/tokens`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${credentials.API_KEY}`,
           },
-          (err, data) => {
-            if (err) return reject(err);
-            if (data?.statusCode === 429) {
-              // oneinch rate limit
+        })
+          .then((response) => {
+            if (response.status === 429) {
+              // OneInch rate limit
               return reject();
             }
-            return resolve(data?.body?.tokens);
-          }
-        );
+            resolve(response.data?.tokens);
+          })
+          .catch((err) => reject(err));
       } catch (err) {
         return reject(err);
       }

@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as crypto from 'crypto';
 import _ from 'lodash';
-import axios from 'axios';
+import axios, {AxiosInstance} from 'axios';
 import io = require('socket.io-client');
 import config from '../../config';
 import { ChainService } from '../chain/index';
@@ -49,7 +49,7 @@ export class V8 {
   host: string;
   userAgent: string;
   baseUrl: string;
-  request: Request;
+  request: AxiosInstance;
   Client: typeof Client;
   private _cachedReserve: number;
   private _cachedReserveTs: number;

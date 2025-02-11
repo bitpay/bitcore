@@ -4,6 +4,7 @@ import * as request from 'request';
 import config from '../config'
 import { Common } from './common';
 import { Storage } from './storage';
+import axios, {AxiosInstance} from 'axios';
 
 const $ = require('preconditions').singleton();
 const Bitcore = require('@bcpros/bitcore-lib');
@@ -19,7 +20,7 @@ import { BlockChainExplorer } from './blockchainexplorer';
 import logger from './logger';
 import { EtokenSupportPrice } from './model/config-model';
 export class FiatRateService {
-  request: request.RequestAPI<any, any, any>;
+  request: AxiosInstance;
   defaultProvider: any;
   cryptoCompareApiKey: string = '';
   providers: any[];
@@ -27,7 +28,7 @@ export class FiatRateService {
   init(opts, cb) {
     opts = opts || {};
 
-    this.request = opts.request || request;
+    this.request = opts.request || axios;
     this.defaultProvider = opts.defaultProvider || Defaults.FIAT_RATE_PROVIDER;
     this.cryptoCompareApiKey = opts.cryptoCompareApiKey;
 
@@ -205,32 +206,33 @@ export class FiatRateService {
     } else {
       appendString = coin.toUpperCase();
     }
-    this.request.get(
-      {
-        url: provider.url + appendString,
-        qs: params,
-        useQuerystring: true,
-        headers,
-        json: true
-      },
-      (err, res, body) => {
-        if (err || !body) {
-          return cb(err);
-        }
-
-        logger.debug(`Data for ${provider.name} /  ${coin} fetched successfully`);
-
-        if (!provider.parseFn) {
-          return cb(new Error('No parse function for provider ' + provider.name));
-        }
-        try {
-          const rates = _.filter(provider.parseFn(body), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
-          return cb(null, rates);
-        } catch (e) {
-          return cb(e);
-        }
+    this.request.get(provider.url + appendString, {
+      params, 
+      headers,
+    })
+    .then((response) => {
+      const data = response.data; 
+      
+      if (!data) {
+        return cb(new Error('No response data received'));
       }
-    );
+  
+      logger.debug(`Data for ${provider.name} / ${coin} fetched successfully`);
+  
+      if (!provider.parseFn) {
+        return cb(new Error('No parse function for provider ' + provider.name));
+      }
+  
+      try {
+        const rates = _.filter(provider.parseFn(data), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
+        return cb(null, rates);
+      } catch (e) {
+        return cb(e);
+      }
+    })
+    .catch((err) => {
+      cb(err);
+    });
   }
 
   _retrieveLotus(cb) {

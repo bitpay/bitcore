@@ -43,7 +43,7 @@
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "@bcpros/bitcore-lib": "^9.0.7",
+    "@bcpros/bitcore-lib": "workspace:*",
     "unorm": "^1.4.1",
     "browserify": "^16.2.3"
   },
