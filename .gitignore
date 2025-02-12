@@ -31,3 +31,4 @@ build
 # Logs
 *.log
 *.tmp-browerify-*
+packages/*/bitcore-lib.js.tmp-browserify-*
