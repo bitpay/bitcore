@@ -1,4 +1,4 @@
-import { ObjectID } from 'bson';
+import { ObjectId } from 'bson';
 import { Storage, StorageService, StreamingFindOptions } from '../services/storage';
 import { SpentHeightIndicators } from '../types/Coin';
 import { TransformOptions } from '../types/TransformOptions';
@@ -14,7 +14,7 @@ export interface ITransaction {
   blockTimeNormalized?: Date;
   fee: number;
   value: number;
-  wallets: ObjectID[];
+  wallets: ObjectId[];
   replacedByTxid?: string;
 }
 
