@@ -5,7 +5,7 @@
     "singleQuote": true,
     "printWidth": 120
   },
-  "packageManager": "pnpm@10.2.1",
+  "packageManager": "pnpm@9.10.0",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -67,7 +67,8 @@
     "tslint-config-prettier": "^1.18.0",
     "turbo": "^2.4.0",
     "typedoc": "^0.15.0",
-    "typescript-eslint-parser": "^15.0.0"
+    "typescript-eslint-parser": "^15.0.0",
+    "browserify": "^16.2.3"
   },
   "dependencies": {
     "typescript": "4.9.4"
@@ -76,7 +77,6 @@
     "ecashaddrjs": "npm:ecashaddrjs@^2.0.0"
   },
   "husky": {
-    "hooks": {
-    }
+    "hooks": {}
   }
 }
