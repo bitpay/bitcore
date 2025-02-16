@@ -1,15 +1,13 @@
 import { ethers } from 'ethers';
 import Web3 from 'web3';
-import { AbiItem } from 'web3-utils';
+import { AbiItem, toHex, toBN } from 'web3-utils';
 import { Constants } from '../../constants';
-import { 
+import {
   EVM_CHAIN_DEFAULT_TESTNET as defaultTestnet,
-  EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds 
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds
 } from '../../constants/chains';
 import { Key } from '../../derivation';
 import { MULTISENDAbi } from '../erc20/abi';
-const utils = require('web3-utils');
-const { toBN } = Web3.utils;
 export class ETHTxProvider {
   chain: string;
 
@@ -55,19 +53,19 @@ export class ETHTxProvider {
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
     let txData: any = {
-      nonce: utils.toHex(nonce),
-      gasLimit: utils.toHex(gasLimit),
+      nonce: toHex(nonce),
+      gasLimit: toHex(gasLimit),
       to,
       data,
-      value: utils.toHex(amount),
+      value: toHex(amount),
       chainId
     };
     if (maxGasFee) {
-      txData.maxFeePerGas = utils.toHex(maxGasFee);
-      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
+      txData.maxFeePerGas = toHex(maxGasFee);
+      txData.maxPriorityFeePerGas = toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
       txData.type = 2;
     } else {
-      txData.gasPrice = utils.toHex(gasPrice);
+      txData.gasPrice = toHex(gasPrice);
     }
 
     return ethers.utils.serializeTransaction(txData);

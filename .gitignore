@@ -23,6 +23,7 @@ node_modules
 
 # Turbo
 .turbo
+out
 
 # Build
 dist
