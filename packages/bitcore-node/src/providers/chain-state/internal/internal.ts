@@ -175,8 +175,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async getBlock(params: GetBlockParams) {
-    let blocks = await this.getBlocks(params);
-    delete (blocks[0] as any)?._id;
+    const blocks = await this.getBlocks(params);
     return blocks[0];
   }
 
