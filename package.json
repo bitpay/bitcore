@@ -1,11 +1,11 @@
 {
   "version": "9.0.0",
-  "name": "bcpros-bitcore",
+  "name": "@bcpros/bitcore",
   "prettier": {
     "singleQuote": true,
     "printWidth": 120
   },
-  "packageManager": "pnpm@10.2.1",
+  "packageManager": "pnpm@9.10.0",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -16,24 +16,42 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:ci:local": "turbo run test",
-    "test:bitcore-wallet-service": "turbo run test --filter=bitcore-wallet-service",
-    "test:bitcore-wallet-client": "turbo run test --filter=bitcore-wallet-client",
-    "test:bitcore-wallet": "turbo run test --filter=bitcore-wallet",
-    "test:crypto-wallet-core": "turbo run test --filter=crypto-wallet-core",
-    "test:bitcore-node": "turbo run test --filter=bitcore-node",
-    "test:bitcore-lib": "turbo run test --filter=bitcore-lib",
-    "test:bitcore-lib-cash": "turbo run test --filter=bitcore-lib-cash",
-    "test:bitcore-lib-ltc": "turbo run test --filter=bitcore-lib-ltc",
-    "test:bitcore-lib-doge": "turbo run test --filter=bitcore-lib-doge",
-    "test:bitcore-lib-xec": "turbo run test --filter=bitcore-lib-xec",
-    "test:bitcore-lib-xpi": "turbo run test --filter=bitcore-lib-xpi",
-    "test:bitcore-p2p": "turbo run test --filter=bitcore-p2p",
-    "test:bitcore-p2p-cash": "turbo run test --filter=bitcore-p2p-cash",
-    "test:bitcore-p2p-xec": "turbo run test --filter=bitcore-p2p-xec",
-    "test:bitcore-p2p-xpi": "turbo run test --filter=bitcore-p2p-xpi",
-    "test:bitcore-p2p-doge": "turbo run test --filter=bitcore-p2p-doge",
-    "test:bitcore-mnemonic": "turbo run test --filter=bitcore-mnemonic",
-    "test:bitcore-client": "turbo run test --filter=bitcore-client"
+    "test:bitcore-wallet-service": "turbo run test --filter=@bcpros/bitcore-wallet-service",
+    "test:bitcore-wallet-client": "turbo run test --filter=@bcpros/bitcore-wallet-client",
+    "test:bitcore-wallet": "turbo run test --filter=@bcpros/bitcore-wallet",
+    "test:crypto-wallet-core": "turbo run test --filter=@bcpros/crypto-wallet-core",
+    "test:bitcore-node": "turbo run test --filter=@bcpros/bitcore-node",
+    "test:bitcore-lib": "turbo run test --filter=@bcpros/bitcore-lib",
+    "test:bitcore-lib-cash": "turbo run test --filter=@bcpros/bitcore-lib-cash",
+    "test:bitcore-lib-ltc": "turbo run test --filter=@bcpros/bitcore-lib-ltc",
+    "test:bitcore-lib-doge": "turbo run test --filter=@bcpros/bitcore-lib-doge",
+    "test:bitcore-lib-xec": "turbo run test --filter=@bcpros/bitcore-lib-xec",
+    "test:bitcore-lib-xpi": "turbo run test --filter=@bcpros/bitcore-lib-xpi",
+    "test:bitcore-p2p": "turbo run test --filter=@bcpros/bitcore-p2p",
+    "test:bitcore-p2p-cash": "turbo run test --filter=@bcpros/bitcore-p2p-cash",
+    "test:bitcore-p2p-xec": "turbo run test --filter=@bcpros/bitcore-p2p-xec",
+    "test:bitcore-p2p-xpi": "turbo run test --filter=@bcpros/bitcore-p2p-xpi",
+    "test:bitcore-p2p-doge": "turbo run test --filter=@bcpros/bitcore-p2p-doge",
+    "test:bitcore-mnemonic": "turbo run test --filter=@bcpros/bitcore-mnemonic",
+    "test:bitcore-client": "turbo run test --filter=@bcpros/bitcore-client",
+    "build:bitcore-wallet-service": "turbo run build --filter=@bcpros/bitcore-wallet-service",
+    "build:bitcore-wallet-client": "turbo run build --filter=@bcpros/bitcore-wallet-client",
+    "build:bitcore-wallet": "turbo run build --filter=@bcpros/bitcore-wallet",
+    "build:crypto-wallet-core": "turbo run build --filter=@bcpros/crypto-wallet-core",
+    "build:bitcore-node": "turbo run build --filter=@bcpros/bitcore-node",
+    "build:bitcore-lib": "turbo run build --filter=@bcpros/bitcore-lib",
+    "build:bitcore-lib-cash": "turbo run build --filter=@bcpros/bitcore-lib-cash",
+    "build:bitcore-lib-ltc": "turbo run build --filter=@bcpros/bitcore-lib-ltc",
+    "build:bitcore-lib-doge": "turbo run build --filter=@bcpros/bitcore-lib-doge",
+    "build:bitcore-lib-xec": "turbo run build --filter=@bcpros/bitcore-lib-xec",
+    "build:bitcore-lib-xpi": "turbo run build --filter=@bcpros/bitcore-lib-xpi",
+    "build:bitcore-p2p": "turbo run build --filter=@bcpros/bitcore-p2p",
+    "build:bitcore-p2p-cash": "turbo run build --filter=@bcpros/bitcore-p2p-cash",
+    "build:bitcore-p2p-xec": "turbo run build --filter=@bcpros/bitcore-p2p-xec",
+    "build:bitcore-p2p-xpi": "turbo run build --filter=@bcpros/bitcore-p2p-xpi",
+    "build:bitcore-p2p-doge": "turbo run build --filter=@bcpros/bitcore-p2p-doge",
+    "build:bitcore-mnemonic": "turbo run build --filter=@bcpros/bitcore-mnemonic",
+    "build:bitcore-client": "turbo run build --filter=@bcpros/bitcore-client"
   },
   "config": {
     "commitizen": {
@@ -51,7 +69,8 @@
     "tslint-config-prettier": "^1.18.0",
     "turbo": "^2.4.0",
     "typedoc": "^0.15.0",
-    "typescript-eslint-parser": "^15.0.0"
+    "typescript-eslint-parser": "^15.0.0",
+    "browserify": "^16.2.3"
   },
   "dependencies": {
     "typescript": "4.9.4"
@@ -61,7 +80,6 @@
     "web3-utils": "1.10.4"
   },
   "husky": {
-    "hooks": {
-    }
+    "hooks": {}
   }
 }
