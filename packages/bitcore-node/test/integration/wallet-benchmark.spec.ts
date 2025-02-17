@@ -67,7 +67,12 @@ async function checkWalletUtxos(wallet: Wallet, expectedAddress: string) {
 }
 
 async function verifyCoinSpent(coin: MongoBound<ICoin>, spentTxid: string, wallet: IWallet) {
-  const wallet1Coin = await CoinStorage.collection.findOne({ _id: new ObjectId(coin._id) });
+  const wallet1Coin = await CoinStorage.collection.findOne({ 
+    chain: coin.chain,
+    network: coin.network,
+    mintTxid: coin.mintTxid,
+    mintIndex: coin.mintIndex,
+  });
   expect(wallet1Coin!.spentTxid).to.eq(spentTxid);
   expect(wallet1Coin!.wallets[0].toHexString()).to.eq(wallet!._id!.toHexString());
 }
