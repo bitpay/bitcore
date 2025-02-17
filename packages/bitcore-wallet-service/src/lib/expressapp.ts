@@ -14,7 +14,10 @@ import { Stats } from './stats';
 import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
-  user?: IUser; // Or specify the actual user type instead of `any`
+  user?: IUser;
+  //below type for build in docker 
+  body: any;
+  params: any;
 }
 
 interface FileUploadRequest extends Request {

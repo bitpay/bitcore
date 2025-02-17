@@ -1,11 +1,12 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { ETHTxProvider } from '../eth';
+import { Contract } from 'web3-eth-contract';
 import { ERC20Abi, MULTISENDAbi } from './abi';
 const { toBN } = Web3.utils;
 
 export class ERC20TxProvider extends ETHTxProvider {
-  getERC20Contract(tokenContractAddress: string) {
+  getERC20Contract(tokenContractAddress: string): Contract {
     const web3 = new Web3();
     const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], tokenContractAddress);
     return contract;
