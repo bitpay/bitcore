@@ -2,7 +2,7 @@ import requestStream from 'request';
 import request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
 import { URL } from 'url';
-import * as utils from './utils';
+import { utils } from './utils';
 let usingBrowser = (global as any).window;
 const URLClass = usingBrowser ? usingBrowser.URL : URL;
 const bitcoreLib = require('crypto-wallet-core').BitcoreLib;

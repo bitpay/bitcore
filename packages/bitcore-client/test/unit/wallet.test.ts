@@ -1,5 +1,5 @@
 import sinon from 'sinon';
-import chai from 'chai';
+import * as chai from 'chai';
 import crypto from 'crypto';
 import * as CWC from 'crypto-wallet-core';
 import supertest from 'supertest';
@@ -7,11 +7,11 @@ import requestStream from 'request';
 import request from 'request-promise-native';
 import { Server } from 'http';
 import { Wallet, AddressTypes } from '../../src/wallet';
-import * as utils from '../../src/utils';
+import { utils } from '../../src/utils';
 
-const { Modules } = require('../../../../bitcore-node/build/src/modules');
-const { Api: bcnApi } = require('../../../../bitcore-node/build/src/services/api');
-const { Storage: bcnStorage } = require('../../../../bitcore-node/build/src/services/storage');
+const { Modules } = require('../../../bitcore-node/build/src/modules');
+const { Api: bcnApi } = require('../../../bitcore-node/build/src/services/api');
+const { Storage: bcnStorage } = require('../../../bitcore-node/build/src/services/storage');
 
 const should = chai.should();
 const expect = chai.expect;

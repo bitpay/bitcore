@@ -11,7 +11,7 @@
     "precommit": "npm run fix",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "test": "npm run compile && mocha -r ts-node/register test/*.ts",
+    "test": "npm run compile && mocha -r tsx test/*.ts",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
@@ -27,20 +27,20 @@
     "bitcore-lib-cash": "^10.7.0",
     "bitcore-lib-doge": "^10.7.0",
     "bitcore-lib-ltc": "^10.7.0",
-    "ethers": "^5.7.0",
+    "ethers": "6.13.5",
     "info": "0.0.6-beta.0",
     "web3": "1.4.0",
     "xrpl": "2.13.0"
   },
   "devDependencies": {
-    "@types/chai": "4.1.7",
-    "@types/mocha": "5.2.6",
-    "@types/node": "^14.10.0",
-    "chai": "4.2.0",
-    "mocha": "6.1.4",
-    "ts-node": "8.1.0",
+    "@types/chai": "5.0.1",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.13.1",
+    "chai": "5.1.2",
+    "mocha": "11.1.0",
     "tslint": "5.14.0",
-    "typescript": "4.9.4"
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }
