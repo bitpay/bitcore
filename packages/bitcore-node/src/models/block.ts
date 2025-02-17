@@ -177,7 +177,6 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
 
   _apiTransform(block: Partial<MongoBound<IBtcBlock>>, options?: TransformOptions): any {
     const transform = {
-      _id: block._id,
       chain: block.chain,
       network: block.network,
       hash: block.hash,
