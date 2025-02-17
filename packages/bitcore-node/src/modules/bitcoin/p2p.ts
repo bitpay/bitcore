@@ -294,8 +294,8 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
         const block = await this.getBlock(headers[0].hash);
         if (block.header.prevHash) {
           const prevHash = Buffer.from(block.header.prevHash).reverse().toString('hex');
-          const firstBlock = await this.getBlock(prevHash);
-          await this.processBlock(firstBlock);
+          const genesisBlock = await this.getBlock(prevHash);
+          await this.processBlock(genesisBlock);
           currentHeight++;
         }
       }
