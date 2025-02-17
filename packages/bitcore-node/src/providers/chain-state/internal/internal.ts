@@ -119,7 +119,7 @@ export class InternalStateProvider implements IChainStateService {
     const tipHeight = tip ? tip.height : 0;
     const blockTransform = (b: IBtcBlock) => {
       let confirmations = 0;
-      if (b.height && b.height >= 0) {
+      if (b.height > -1) {
         confirmations = tipHeight - b.height + 1;
       }
       const convertedBlock = BitcoinBlockStorage._apiTransform(b, { object: true }) as IBtcBlock;
