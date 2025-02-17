@@ -34,7 +34,6 @@ describe('Coin Model', function() {
 
       const parseResult = JSON.parse(result.toString());
       expect(parseResult).to.deep.equal({
-        _id: id.toHexString(),
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         mintHeight: 1,
         network: 'regtest',
@@ -70,7 +69,6 @@ describe('Coin Model', function() {
 
       const result = CoinStorage._apiTransform(coin, { object: true });
       expect(result).to.deep.equal({
-        _id: id.toHexString(),
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         network: 'regtest',
         chain: 'BTC',
