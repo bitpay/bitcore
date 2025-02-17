@@ -9,8 +9,6 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "build:service": "turbo run build --filter=@bcpros/bitcore-wallet-service",
-    "build:bitcore-node": "turbo run build --filter=@bcpros/bitcore-node",
     "dev": "turbo run dev",
     "watch": "turbo run dev --parallel",
     "lint": "turbo run lint",
