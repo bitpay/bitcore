@@ -1,10 +1,11 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { MultisigAbi } from '../eth-multisig/abi';
+import { Contract } from 'web3-eth-contract';
 import { MATICTxProvider } from '../matic';
 
 export class MATICMULTISIGTxProvider extends MATICTxProvider {
-  getMultisigContract(multisigContractAddress: string) {
+  getMultisigContract(multisigContractAddress: string): Contract {
     const web3 = new Web3();
     const contract = new web3.eth.Contract(MultisigAbi as AbiItem[], multisigContractAddress);
     return contract;

@@ -6,6 +6,7 @@ settings:
 
 overrides:
   ecashaddrjs: npm:ecashaddrjs@^2.0.0
+  web3-utils: 1.10.4
 
 importers:
 
@@ -909,7 +910,7 @@ importers:
     devDependencies:
       '@bcpros/bitcore-wallet-service':
         specifier: ^9.0.7
-        version: 9.0.7(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+        version: 9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
       '@types/lodash':
         specifier: ^4.14.136
         version: 4.17.15
@@ -8699,10 +8700,6 @@ packages:
     resolution: {integrity: sha512-tsu8FiKJLk2PzhDl9fXbGUWTkkVXYhtTA+SmEFkKft+9BgwLxfCRpU96sWv7ICC8zixBNd3JURVoiR3dUXgP8A==}
     engines: {node: '>=8.0.0'}
 
-  web3-utils@1.7.1:
-    resolution: {integrity: sha512-fef0EsqMGJUgiHPdX+KN9okVWshbIumyJPmR+btnD1HgvoXijKEkuKBv0OmUqjbeqmLKP2/N9EiXKJel5+E1Dw==}
-    engines: {node: '>=8.0.0'}
-
   web3@1.7.1:
     resolution: {integrity: sha512-RKVdyZ5FuVEykj62C1o2tc0teJciSOh61jpVB9yb344dBHO3ZV4XPPP24s/PPqIMXmVFN00g2GD9M/v1SoHO/A==}
     engines: {node: '>=8.0.0'}
@@ -9263,7 +9260,7 @@ snapshots:
       inherits: 2.0.1
       lodash: 4.17.20
 
-  '@bcpros/bitcore-wallet-service@9.0.7(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
+  '@bcpros/bitcore-wallet-service@9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)':
     dependencies:
       '@abcpros/xpi-js': 4.0.7
       '@bcpros/bitcore-lib': 9.0.7
@@ -9272,7 +9269,7 @@ snapshots:
       '@bcpros/bitcore-lib-ltc': 9.0.7
       '@bcpros/bitcore-lib-xec': 9.0.7
       '@bcpros/bitcore-lib-xpi': 9.0.7
-      '@bcpros/crypto-wallet-core': 9.0.7(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+      '@bcpros/crypto-wallet-core': 9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
       '@sendgrid/mail': 6.5.5
       '@types/ws': 8.5.4
       abi-decoder: 2.4.0
@@ -9345,7 +9342,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  '@bcpros/crypto-wallet-core@9.0.7(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
+  '@bcpros/crypto-wallet-core@9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)':
     dependencies:
       '@bcpros/bitcore-lib': 9.0.7
       '@bcpros/bitcore-lib-cash': 9.0.7
@@ -18696,7 +18693,7 @@ snapshots:
   web3-core-helpers@1.7.1:
     dependencies:
       web3-eth-iban: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
 
   web3-core-method@1.7.1:
     dependencies:
@@ -18704,7 +18701,7 @@ snapshots:
       web3-core-helpers: 1.7.1
       web3-core-promievent: 1.7.1
       web3-core-subscriptions: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
 
   web3-core-promievent@1.7.1:
     dependencies:
@@ -18733,7 +18730,7 @@ snapshots:
       web3-core-helpers: 1.7.1
       web3-core-method: 1.7.1
       web3-core-requestmanager: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - supports-color
 
@@ -18745,7 +18742,7 @@ snapshots:
   web3-eth-abi@1.7.1:
     dependencies:
       '@ethersproject/abi': 5.0.7
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
 
   web3-eth-accounts@1.7.1:
     dependencies:
@@ -18759,7 +18756,7 @@ snapshots:
       web3-core: 1.7.1
       web3-core-helpers: 1.7.1
       web3-core-method: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - supports-color
 
@@ -18772,7 +18769,7 @@ snapshots:
       web3-core-promievent: 1.7.1
       web3-core-subscriptions: 1.7.1
       web3-eth-abi: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - supports-color
 
@@ -18785,14 +18782,14 @@ snapshots:
       web3-core-promievent: 1.7.1
       web3-eth-abi: 1.7.1
       web3-eth-contract: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - supports-color
 
   web3-eth-iban@1.7.1:
     dependencies:
       bn.js: 4.12.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
 
   web3-eth-personal@1.7.1:
     dependencies:
@@ -18801,7 +18798,7 @@ snapshots:
       web3-core-helpers: 1.7.1
       web3-core-method: 1.7.1
       web3-net: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - supports-color
 
@@ -18818,7 +18815,7 @@ snapshots:
       web3-eth-iban: 1.7.1
       web3-eth-personal: 1.7.1
       web3-net: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - supports-color
 
@@ -18826,7 +18823,7 @@ snapshots:
     dependencies:
       web3-core: 1.7.1
       web3-core-method: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - supports-color
 
@@ -18868,16 +18865,6 @@ snapshots:
       randombytes: 2.1.0
       utf8: 3.0.0
 
-  web3-utils@1.7.1:
-    dependencies:
-      bn.js: 4.12.1
-      ethereum-bloom-filters: 1.2.0
-      ethereumjs-util: 7.1.5
-      ethjs-unit: 0.1.6
-      number-to-bn: 1.7.0
-      randombytes: 2.1.0
-      utf8: 3.0.0
-
   web3@1.7.1(bufferutil@4.0.9)(utf-8-validate@5.0.10):
     dependencies:
       web3-bzz: 1.7.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
@@ -18886,7 +18873,7 @@ snapshots:
       web3-eth-personal: 1.7.1
       web3-net: 1.7.1
       web3-shh: 1.7.1
-      web3-utils: 1.7.1
+      web3-utils: 1.10.4
     transitivePeerDependencies:
       - bufferutil
       - supports-color
