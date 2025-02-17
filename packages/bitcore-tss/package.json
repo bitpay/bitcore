@@ -1,6 +1,6 @@
 {
   "name": "bitcore-tss",
-  "version": "10.7.0",
+  "version": "10.8.0",
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
   "type": "module",
@@ -17,10 +17,10 @@
   "license": "MIT",
   "dependencies": {
     "@bitgo/sdk-lib-mpc": "^10.1.0",
-    "bitcore-lib": "^10.7.0",
-    "bitcore-ecies": "^1.0.3"
+    "bitcore-ecies": "^1.0.3",
+    "bitcore-lib": "^10.8.0"
   },
   "devDependencies": {
-    "crypto-wallet-core": "^10.7.0"
+    "crypto-wallet-core": "^10.8.0"
   }
 }
