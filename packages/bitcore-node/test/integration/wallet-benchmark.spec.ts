@@ -1,7 +1,6 @@
 import { Wallet } from 'bitcore-client';
 import { ParseApiStream } from 'bitcore-client';
 import { expect } from 'chai';
-import { ObjectId } from 'mongodb';
 import * as io from 'socket.io-client';
 import config from '../../src/config';
 import { MongoBound } from '../../src/models/base';
