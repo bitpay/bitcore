@@ -15,7 +15,7 @@ export class DogecoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected bitcoreP2p: any;
   protected chainConfig: any;
   protected messages: any;
-  protected connectInterval?: NodeJS.Timer;
+  protected connectInterval?: NodeJS.Timeout;
   protected invCache: any;
   protected invCacheLimits: any;
   protected initialSyncComplete: boolean;
