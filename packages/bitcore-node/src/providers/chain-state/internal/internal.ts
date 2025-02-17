@@ -119,7 +119,7 @@ export class InternalStateProvider implements IChainStateService {
     const tipHeight = tip ? tip.height : 0;
     const blockTransform = (b: IBtcBlock) => {
       let confirmations = 0;
-      if (b.height && b.height >= 0) {
+      if (b.height > -1) {
         confirmations = tipHeight - b.height + 1;
       }
       const convertedBlock = BitcoinBlockStorage._apiTransform(b, { object: true }) as IBtcBlock;
@@ -175,7 +175,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async getBlock(params: GetBlockParams) {
-    let blocks = await this.getBlocks(params);
+    const blocks = await this.getBlocks(params);
     return blocks[0];
   }
 
@@ -234,7 +234,7 @@ export class InternalStateProvider implements IChainStateService {
     const found = await TransactionStorage.collection.findOne(query);
     if (found) {
       let confirmations = 0;
-      if (found.blockHeight && found.blockHeight >= 0) {
+      if (found.blockHeight != null && found.blockHeight >= 0) {
         confirmations = tipHeight - found.blockHeight + 1;
       }
       const convertedTx = TransactionStorage._apiTransform(found, { object: true }) as TransactionJSON;
@@ -503,12 +503,15 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
-    const tx = await TransactionStorage.collection.countDocuments({ txid });
-    if (tx === 0) {
+    const tx = await TransactionStorage.collection.findOne({ txid });
+    if (!tx) {
       throw new Error(`No such transaction ${txid}`);
     }
 
-    let inputs = await CoinStorage.collection
+    const tip = await this.getLocalTip({ chain, network });
+    const confirmations = (tip && tx.blockHeight! > -1) ? tip.height - tx.blockHeight! + 1 : 0;
+
+    const inputs = await CoinStorage.collection
       .find({
         chain,
         network,
@@ -527,8 +530,8 @@ export class InternalStateProvider implements IChainStateService {
       .toArray();
 
     return {
-      inputs: inputs.map(input => CoinStorage._apiTransform(input, { object: true })),
-      outputs: outputs.map(output => CoinStorage._apiTransform(output, { object: true }))
+      inputs: inputs.map(input => CoinStorage._apiTransform(input, { object: true, confirmations })),
+      outputs: outputs.map(output => CoinStorage._apiTransform(output, { object: true, confirmations }))
     };
   }
 

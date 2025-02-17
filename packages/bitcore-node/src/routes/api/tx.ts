@@ -55,7 +55,7 @@ router.get('/:txId', async (req: Request, res: Response) => {
       return res.status(404).send(`The requested txid ${txId} could not be found.`);
     } else {
       const tip = await ChainStateProvider.getLocalTip({ chain, network });
-      if (tx && tip && tx.blockHeight > 0 && tip.height - tx.blockHeight > 100) {
+      if (tx && tip && tx.blockHeight > -1 && tip.height - tx.blockHeight > 100) {
         SetCache(res, CacheTimes.Month);
       }
       return res.send(tx);
