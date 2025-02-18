@@ -1700,6 +1700,18 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/ramp/sellQuote', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.rampGetSellQuote(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
+    });
+
     router.post('/v1/service/ramp/signedPaymentUrl', (req, res) => {
       getServerWithAuth(req, res, async server => {
         let response;
@@ -1717,6 +1729,17 @@ export class ExpressApp {
       try {
         server = getServer(req, res);
         response = await server.rampGetAssets(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
+    router.post('/v1/service/ramp/sellTransactionDetails', async (req, res) => {
+      let server, response;
+      try {
+        server = getServer(req, res);
+        response = await server.rampGetSellTransactionDetails(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
