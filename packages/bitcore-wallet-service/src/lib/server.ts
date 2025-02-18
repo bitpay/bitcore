@@ -5721,7 +5721,7 @@ export class WalletService implements IWalletService {
       let qs = [];
       qs.push('secret=' + req.body.saleViewToken);
 
-      URL = API + `/host-api/offramp/sale/${req.body.id}?${qs.join('&')}`;
+      URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
 
       this.request.get(
         URL,
