@@ -25,6 +25,8 @@ function findConfig(): ConfigType | undefined {
       try {
         const expanded = path[0] === '~' ? path.replace('~', homedir()) : path;
         const bitcoreConfig = require(expanded) as { bitcoreNode: ConfigType };
+        console.warn("DEBUGPRINT[58]: config.ts:26: path=", path)
+        console.warn("DEBUGPRINT[57]: config.ts:27: bitcoreConfig=", bitcoreConfig)
         foundConfig = bitcoreConfig.bitcoreNode;
       } catch (e) {
         foundConfig = undefined;
@@ -123,8 +125,10 @@ const Config = function(): ConfigType {
       }
     });
   }
+  console.warn("DEBUGPRINT[59]: config.ts:128: config=", config)
   if ((config as any).modules) {
-    throw new Error('The config modules has moved! You can remove the `modules` array from your config to use the defaults, or if you need to use custom modules then you can specify the paths in the specific chain-network config objects with `modulePath`');
+    delete (config as any).modules;
+    // throw new Error('The config modules has moved! You can remove the `modules` array from your config to use the defaults, or if you need to use custom modules then you can specify the paths in the specific chain-network config objects with `modulePath`');
   }
   config = setTrustedPeers(config);
   return config;
