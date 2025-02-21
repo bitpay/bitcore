@@ -12,6 +12,7 @@ function findConfig(): ConfigType | undefined {
   let bitcoreConfigPaths = [
     `${homedir()}/${configFileName}`,
     `../../../../${configFileName}`,
+    `../../../${configFileName}`,
     `../../${configFileName}`
   ];
   const overrideConfig = argConfigPath || envConfigPath;

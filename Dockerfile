@@ -1,81 +1,74 @@
-FROM node:18-bullseye
+ARG NODE_VERSION=18
+ARG APP_VERSION=unspecified
+ARG GIT_COMMIT=unspecified
 
-# Install Chrome
+# alpine
+FROM node:${NODE_VERSION}-alpine AS alpine
+RUN apk update && apk add --no-cache libc6-compat jq
 
-RUN echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/chrome.list
+FROM alpine as base
+RUN npm install -g turbo@2.0.6
+RUN npm install pnpm --global
+RUN pnpm config set store-dir ~/.pnpm-store
+RUN apk add --no-cache openssl
 
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+# prune project
+FROM base AS pruner
+WORKDIR /app
+COPY . ./
 
-RUN set -x \
-    && apt-get update \
-    && apt-get install -y \
-        google-chrome-stable
+# Add packageManager field to package.json if it is missing
+RUN jq '. + { "packageManager": "pnpm@9.10.0" }' package.json > temp.json && mv temp.json package.json
 
-ENV CHROME_BIN /usr/bin/google-chrome
+RUN turbo prune --scope="@bcpros/bitcore-node" --docker
 
-# Log versions
+# install and build
+FROM base AS builder
+WORKDIR /app
+# Copy lockfile and package.json's of isolated subworkspace
+COPY .gitignore .gitignore
+COPY --from=pruner /app/out/json/ ./
+COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-RUN set -x \
-    && node -v \
-    && npm -v \
-    && google-chrome --version
+# Create a .npmrc file dynamically
+RUN echo "store-dir=~/.pnpm-store" > .npmrc
 
+# Install dependencies without enforcing lockfile
+RUN pnpm install --shamefully-hoist
 
-RUN npm i -g npm@8.19.3
+# Copy source code of isolated subworkspace
+COPY --from=pruner /app/out/full/ ./
+COPY --from=pruner /app/turbo.json ./
+COPY --from=pruner /app/tslint.json ./
 
-WORKDIR /bitcore
+RUN pnpm build:bitcore-node
+RUN pnpm prune --prod --no-optional
 
-# Add source
-COPY lerna.json ./
-COPY package*.json ./
+# final image
+FROM builder AS runner
+ARG APP_VERSION
+ARG GIT_COMMIT
+ENV APP_VERSION=$APP_VERSION
+ENV COMMIT_HASH=$GIT_COMMIT
 
-COPY  ./packages/bitcore-client/package.json ./packages/bitcore-client/package.json
-COPY  ./packages/bitcore-client/package-lock.json ./packages/bitcore-client/package-lock.json
+WORKDIR /app
 
-COPY  ./packages/bitcore-build/package.json ./packages/bitcore-build/package.json
-COPY  ./packages/bitcore-build/package-lock.json ./packages/bitcore-build/package-lock.json
+COPY --from=pruner /app/bitcore.config.json ./
+COPY --from=pruner /app/wallet-lotus-donation.json ./
+COPY --from=pruner /app/config.js ./
 
-COPY  ./packages/bitcore-lib-cash/package.json ./packages/bitcore-lib-cash/package.json
-COPY  ./packages/bitcore-lib-cash/package-lock.json ./packages/bitcore-lib-cash/package-lock.json
+RUN echo "Build process completed"
+# RUN adduser -u 8877 -D bitcore
+# RUN chown -R bitcore:bitcore /app/packages/bitcore-node/build
 
-COPY  ./packages/bitcore-lib/package.json ./packages/bitcore-lib/package.json
-COPY  ./packages/bitcore-lib/package-lock.json ./packages/bitcore-lib/package-lock.json
+COPY --from=pruner /app/startservice.sh ./
+RUN chmod +x ./startservice.sh
 
-COPY  ./packages/bitcore-mnemonic/package.json ./packages/bitcore-mnemonic/package.json
-COPY  ./packages/bitcore-mnemonic/package-lock.json ./packages/bitcore-mnemonic/package-lock.json
+# USER bitcore
 
-COPY  ./packages/bitcore-node/package.json ./packages/bitcore-node/package.json
-COPY  ./packages/bitcore-node/package-lock.json ./packages/bitcore-node/package-lock.json
-
-COPY  ./packages/bitcore-p2p-cash/package.json ./packages/bitcore-p2p-cash/package.json
-COPY  ./packages/bitcore-p2p-cash/package-lock.json ./packages/bitcore-p2p-cash/package-lock.json
-
-COPY  ./packages/bitcore-p2p/package.json ./packages/bitcore-p2p/package.json
-COPY  ./packages/bitcore-p2p/package-lock.json ./packages/bitcore-p2p/package-lock.json
-
-COPY  ./packages/bitcore-wallet-client/package.json ./packages/bitcore-wallet-client/package.json
-COPY  ./packages/bitcore-wallet-client/package-lock.json ./packages/bitcore-wallet-client/package-lock.json
-
-COPY  ./packages/bitcore-wallet-service/package.json ./packages/bitcore-wallet-service/package.json
-COPY  ./packages/bitcore-wallet-service/package-lock.json ./packages/bitcore-wallet-service/package-lock.json
-
-COPY  ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
-COPY  ./packages/bitcore-wallet/package-lock.json ./packages/bitcore-wallet/package-lock.json
-
-COPY  ./packages/crypto-wallet-core/package.json ./packages/crypto-wallet-core/package.json
-COPY  ./packages/crypto-wallet-core/package-lock.json ./packages/crypto-wallet-core/package-lock.json
-
-COPY  ./packages/bitcore-lib-ltc/package.json ./packages/bitcore-lib-ltc/package.json
-COPY  ./packages/bitcore-lib-ltc/package-lock.json ./packages/bitcore-lib-ltc/package-lock.json
-
-COPY  ./packages/bitcore-lib-doge/package.json ./packages/bitcore-lib-doge/package.json
-COPY  ./packages/bitcore-lib-doge/package-lock.json ./packages/bitcore-lib-doge/package-lock.json
-
-COPY  ./packages/bitcore-p2p-doge/package.json ./packages/bitcore-p2p-doge/package.json
-COPY  ./packages/bitcore-p2p-doge/package-lock.json ./packages/bitcore-p2p-doge/package-lock.json
-
-
-RUN npm install --ignore-scripts
-RUN npm run bootstrap
-ADD . .
-RUN npm run compile
+# CMD [ "./startservice.sh" ]
+# CMD [ "sh" ]
+RUN echo "Run shell"
+# CMD ["sh", "-c", "sleep infinity"]
+CMD ["sh"]
