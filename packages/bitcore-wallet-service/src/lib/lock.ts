@@ -1,10 +1,10 @@
 import _ from 'lodash';
+import { Common } from './common';
 import { Storage } from './storage';
+import { Errors } from './errors/errordefinitions';
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
 const Defaults = Common.Defaults;
-const Errors = require('./errors/errordefinitions');
 const ACQUIRE_RETRY_STEP = 50; // ms
 
 export class Lock {
