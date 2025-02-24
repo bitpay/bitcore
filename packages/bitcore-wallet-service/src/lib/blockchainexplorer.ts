@@ -48,7 +48,7 @@ const PROVIDERS = {
   }
 };
 
-export function BlockChainExplorer(opts) {
+export function BlockChainExplorer(opts): V8 {
   $.checkArgument(opts, 'Failed state: opts undefined at <BlockChainExplorer()>');
 
   const provider = opts.provider || 'v8';

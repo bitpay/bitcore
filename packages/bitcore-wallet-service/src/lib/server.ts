@@ -1476,7 +1476,7 @@ export class WalletService implements IWalletService {
     });
   }
 
-  _store(wallet, address, cb, checkSync = false) {
+  _store(wallet, address, cb, checkSync = false, forceSync = false) {
     let stoAddress = _.clone(address);
     ChainService.addressToStorageTransform(wallet.chain, wallet.network, stoAddress);
     this.storage.storeAddressAndWallet(wallet, stoAddress, (err, isDuplicate) => {
@@ -1489,7 +1489,9 @@ export class WalletService implements IWalletService {
           }
           return cb(null, isDuplicate);
         },
-        !checkSync
+        !checkSync,
+        null,
+        forceSync
       );
     });
   }
@@ -1589,6 +1591,7 @@ export class WalletService implements IWalletService {
    * Get all addresses.
    * @param {Object} opts
    * @param {Numeric} opts.limit (optional) - Limit the resultset. Return all addresses by default.
+   * @param {Numeric} opts.skip (optional) - Skip this number of addresses in resultset. Useful for paging.
    * @param {Boolean} [opts.reverse=false] (optional) - Reverse the order of returned addresses.
    * @returns {Address[]}
    */
@@ -1600,6 +1603,7 @@ export class WalletService implements IWalletService {
         isChange: true
       });
       if (opts.reverse) onlyMain.reverse();
+      if (opts.skip > 0) onlyMain = _.drop(onlyMain, opts.skip);
       if (opts.limit > 0) onlyMain = _.take(onlyMain, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
@@ -1631,7 +1635,7 @@ export class WalletService implements IWalletService {
     });
   }
 
-  _getBlockchainExplorer(chain, network): ReturnType<typeof BlockChainExplorer> {
+  _getBlockchainExplorer(chain, network): V8 | undefined {
     let opts: Partial<{
       provider: string;
       chain: string;
@@ -1657,7 +1661,7 @@ export class WalletService implements IWalletService {
     opts.chain = chain;
     opts.network = Utils.getNetworkName(chain, network);
     opts.userAgent = WalletService.getServiceVersion();
-    let bc;
+    let bc: V8;
     try {
       bc = BlockChainExplorer(opts);
     } catch (ex) {
@@ -1673,7 +1677,7 @@ export class WalletService implements IWalletService {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet, blockchainHeight;
+    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc: V8, wallet, blockchainHeight;
     async.series(
       [
         next => {
@@ -3709,8 +3713,16 @@ export class WalletService implements IWalletService {
     });
   }
 
-  // Syncs wallet regitration and address with a V8 type blockexplorerer
-  syncWallet(wallet, cb, skipCheck?, count?) {
+  /**
+   * Syncs wallet regitration and address with a V8 type blockexplorerer
+   * @param {Wallet} wallet
+   * @param {Function} cb 
+   * @param {Boolean} skipCheck (optional) skip verification step
+   * @param {Number} count (optional) counter for recursive calls
+   * @param {Boolean} force (optional) force a re-sync
+   * @returns 
+   */
+  syncWallet(wallet, cb, skipCheck?, count?, force?) {
     count = count || 0;
     const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
     if (!bc) {
@@ -3726,20 +3738,21 @@ export class WalletService implements IWalletService {
       // First
       this.checkWalletSync(bc, wallet, true, (err, isOK) => {
         // ignore err
-        if (isOK && !justRegistered) return cb();
+        if (isOK && !justRegistered && !force) return cb();
 
-        this.storage.fetchUnsyncAddresses(this.walletId, (err, addresses) => {
+        const fetchAddresses = (force ? this.storage.fetchAddresses : this.storage.fetchUnsyncAddresses).bind(this.storage);
+        fetchAddresses(this.walletId, (err, addresses) => {
           if (err) {
             return cb(err);
           }
 
           const syncAddr = (addresses, icb) => {
-            if (!addresses || _.isEmpty(addresses)) {
+            if (!addresses?.length) {
               // this.logi('Addresses already sync');
               return icb();
             }
 
-            const addressStr = _.map(addresses, x => {
+            const addressStr = addresses.map(x => {
               ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
               return x.address;
             });
@@ -3748,7 +3761,7 @@ export class WalletService implements IWalletService {
             bc.addAddresses(wallet, addressStr, err => {
               if (err) return cb(err);
               this.storage.markSyncedAddresses(addressStr, icb);
-            });
+            }, { reprocess: force });
           };
 
           syncAddr(addresses, err => {
@@ -3784,14 +3797,11 @@ export class WalletService implements IWalletService {
     let inputs, outputs, foreignCrafted;
 
     const sum = (items, isMine, isChange = false) => {
-      const filter: { isMine?: boolean; isChange?: boolean } = {};
-      if (_.isBoolean(isMine)) filter.isMine = isMine;
-      if (_.isBoolean(isChange)) filter.isChange = isChange;
-      return _.sumBy(_.filter(items, filter), 'amount');
+      return items.filter(i => i.isMine == isMine && i.isChange == isChange).reduce((sum, i) => sum += i.amount, 0);
     };
 
     const classify = items => {
-      return _.map(items, item => {
+      return items.map(item => {
         const address = indexedAddresses[item.address];
         return {
           address: item.address,
@@ -3819,12 +3829,12 @@ export class WalletService implements IWalletService {
       }
 
       amount = Math.abs(amount);
-      if (action == 'sent' || action == 'moved') {
+      if (action === 'sent' || action === 'moved') {
         const firstExternalOutput = outputs.find(o => o.isMine === false);
         addressTo = firstExternalOutput ? firstExternalOutput.address : null;
       }
 
-      if (action == 'sent' && inputs.length != _.filter(inputs, 'isMine').length) {
+      if (action == 'sent' && inputs.length !== inputs.filter(i => i.isMine).length) {
         foreignCrafted = true;
       }
     } else {
@@ -4344,12 +4354,11 @@ export class WalletService implements IWalletService {
    * @returns {TxProposal[]} Transaction proposals, first newer
    */
   getTxHistory(opts, cb) {
-    let bc;
     opts = opts || {};
 
     // 50 is accepted by insight.
     // TODO move it to a bigger number with v8 is fully deployed
-    opts.limit = _.isUndefined(opts.limit) ? 50 : opts.limit;
+    opts.limit = isNaN(opts.limit) ? 50 : Number(opts.limit);
     if (opts.limit > Defaults.HISTORY_LIMIT) return cb(Errors.HISTORY_LIMIT_EXCEEDED);
 
     this.getWallet({}, (err, wallet) => {
@@ -4359,7 +4368,7 @@ export class WalletService implements IWalletService {
 
       if (wallet.scanStatus == 'running') return cb(Errors.WALLET_BUSY);
 
-      bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+      const bc: V8 = this._getBlockchainExplorer(wallet.chain, wallet.network);
       if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
 
       const from = opts.skip || 0;
@@ -4448,6 +4457,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts
    * @param {Boolean} opts.includeCopayerBranches (defaults to false)
    * @param {Boolean} opts.startingStep (estimate address number magniture (dflt to 1k), only
+   * @param {Number} opts.startIdx (optional) start scanning from this index
    * for optimization)
    */
   scan(opts, cb) {
@@ -4495,6 +4505,11 @@ export class WalletService implements IWalletService {
             if (!ChainService.isUTXOChain(wallet.chain)) {
               // non-UTXO chain "scan" is just a resync
               return this.syncWallet(wallet, scanComplete);
+            }
+
+            if (Number.isInteger(opts.startIdx)) {
+              wallet.addressManager.receiveAddressIndex = opts.startIdx;
+              wallet.addressManager.changeAddressIndex = opts.startIdx;
             }
 
             let step = opts.startingStep;
@@ -4551,27 +4566,27 @@ export class WalletService implements IWalletService {
     };
 
     const derivators = [];
-    _.each([false, true], isChange => {
+    for (const isChange of [false, true]) {
       derivators.push({
         id: wallet.addressManager.getBaseAddressPath(isChange),
-        derive: _.bind(wallet.createAddress, wallet, isChange, step),
-        index: _.bind(wallet.addressManager.getCurrentIndex, wallet.addressManager, isChange),
-        rewind: _.bind(wallet.addressManager.rewindIndex, wallet.addressManager, isChange, step),
-        getSkippedAddress: _.bind(wallet.getSkippedAddress, wallet)
+        derive: () => wallet.createAddress(isChange, step, null),
+        index: () => wallet.addressManager.getCurrentIndex(isChange),
+        rewind: (n) => wallet.addressManager.rewindIndex(isChange, step, n),
+        getSkippedAddress: () => wallet.getSkippedAddress()
       });
       if (opts.includeCopayerBranches) {
-        _.each(wallet.copayers, copayer => {
+        for (const copayer of wallet.copayers) {
           if (copayer.addressManager) {
             derivators.push({
               id: copayer.addressManager.getBaseAddressPath(isChange),
-              derive: _.bind(copayer.createAddress, copayer, wallet, isChange),
-              index: _.bind(copayer.addressManager.getCurrentIndex, copayer.addressManager, isChange),
-              rewind: _.bind(copayer.addressManager.rewindIndex, copayer.addressManager, isChange, step)
+              derive: () => copayer.createAddress(wallet, isChange),
+              index: () => copayer.addressManager.getCurrentIndex(isChange),
+              rewind: (n) => copayer.addressManager.rewindIndex(isChange, step, n)
             });
           }
-        });
+        }
       }
-    });
+    }
 
     async.eachSeries(
       derivators,
@@ -4594,7 +4609,8 @@ export class WalletService implements IWalletService {
             // this.logi(i + ' addresses were added.');
           }
 
-          this._store(wallet, addresses, next);
+          const reprocess = Number.isInteger(opts.startIdx);
+          this._store(wallet, addresses, next, reprocess, reprocess);
         });
       },
       cb
@@ -4606,6 +4622,7 @@ export class WalletService implements IWalletService {
    *
    * @param {Object} opts
    * @param {Boolean} opts.includeCopayerBranches (defaults to false)
+   * @param {Number} opts.startIdx (optional) address derivation path start index (support agents only)
    */
   startScan(opts, cb) {
     const scanFinished = err => {
