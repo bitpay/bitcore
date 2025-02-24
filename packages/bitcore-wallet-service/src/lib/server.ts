@@ -68,13 +68,13 @@ let initialized = false;
 let doNotCheckV8 = false;
 let isMoralisInitialized = false;
 
-let lock;
-let storage;
-let blockchainExplorer;
+let lock: Lock;
+let storage: Storage;
+let blockchainExplorer: V8;
 let blockchainExplorerOpts;
-let messageBroker;
-let fiatRateService;
-let serviceVersion;
+let messageBroker: MessageBroker;
+let fiatRateService: FiatRateService;
+let serviceVersion: string;
 
 interface IAddress {
   coin: string;
@@ -86,12 +86,12 @@ interface IAddress {
 }
 
 export interface IWalletService {
-  lock: any;
+  lock: Lock;
   storage: Storage;
-  blockchainExplorer: any;
+  blockchainExplorer: V8;
   blockchainExplorerOpts: any;
-  messageBroker: any;
-  fiatRateService: any;
+  messageBroker: MessageBroker;
+  fiatRateService: FiatRateService;
   notifyTicker: number;
   userAgent: string;
   walletId: string;
@@ -112,12 +112,12 @@ function boolToNum(x: boolean) {
  * @constructor
  */
 export class WalletService implements IWalletService {
-  lock: any;
+  lock: Lock;
   storage: Storage;
   blockchainExplorer: V8;
   blockchainExplorerOpts: any;
-  messageBroker: any;
-  fiatRateService: any;
+  messageBroker: MessageBroker;
+  fiatRateService: FiatRateService;
   notifyTicker: number;
   userAgent: string;
   walletId: string;
