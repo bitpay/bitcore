@@ -6814,25 +6814,6 @@ export class WalletService implements IWalletService {
     });
   }
 
-  private changellyGetKeys(req) {
-    if (!config.changelly) {
-      logger.warn('Changelly missing credentials');
-      throw new Error('ClientError: Service not configured.');
-      if (!config.changelly.v1) {
-        logger.warn('Changelly v1 missing credentials');
-        throw new Error('ClientError: Service v1 not configured.');
-      }
-    }
-
-    const keys = {
-      API: config.changelly.v1.api,
-      API_KEY: config.changelly.v1.apiKey,
-      SECRET: config.changelly.v1.secret
-    };
-
-    return keys;
-  }
-
   private changellyGetKeysV2(req) {
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
@@ -6850,18 +6831,6 @@ export class WalletService implements IWalletService {
 
     return keys;
   }
-
-  changellySignRequests(message, secret: string) {
-    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v1 request');
-
-    const sign: string = Bitcore.crypto.Hash.sha512hmac(
-      Buffer.from(JSON.stringify(message)),
-      Buffer.from(secret)
-    ).toString('hex');
-
-    return sign;
-  }
-
 
   changellySignRequestsV2(message, secret: string) {
     if (!message || !secret) throw new Error('Missing parameters to sign Changelly v2 request');
@@ -6888,7 +6857,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        keys = this.changellyGetKeys(req);
+        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
       }
 
       if (!checkRequired(req.body, ['id'])) {
@@ -6903,22 +6872,12 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
+      const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+      headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+        'X-Api-Signature': signature.toString('base64'),
+      };
 
       this.request.post(
         URL,
@@ -6944,7 +6903,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        keys = this.changellyGetKeys(req);
+        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
       }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
@@ -6964,21 +6923,12 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
+      const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+      headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+        'X-Api-Signature': signature.toString('base64'),
+      };
 
       this.request.post(
         URL,
@@ -7004,7 +6954,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        keys = this.changellyGetKeys(req);
+        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
       }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
@@ -7025,22 +6975,12 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
+      const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+      headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+        'X-Api-Signature': signature.toString('base64'),
+      };
 
       this.request.post(
         URL,
@@ -7066,7 +7006,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        keys = this.changellyGetKeys(req);
+        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
       }
 
       if (
@@ -7098,22 +7038,12 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
+      const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+      headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+        'X-Api-Signature': signature.toString('base64'),
+      };
 
       this.request.post(
         URL,
@@ -7139,7 +7069,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        keys = this.changellyGetKeys(req);
+        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
       }
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
@@ -7158,22 +7088,12 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
+      const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+      headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+        'X-Api-Signature': signature.toString('base64'),
+      };
 
       this.request.post(
         URL,
@@ -7199,7 +7119,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        keys = this.changellyGetKeys(req);
+        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
       }
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
@@ -7216,22 +7136,12 @@ export class WalletService implements IWalletService {
       };
 
       const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
+      const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
+      headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
+        'X-Api-Signature': signature.toString('base64'),
+      };
 
       this.request.post(
         URL,
