@@ -22,12 +22,18 @@ export const Utils = {
     return obj && typeof obj === 'object' && !Array.isArray(obj);
   },
 
-  getMissingFields(obj, args) {
+  isNumber(val) {
+    return val != null && !isNaN(val);
+  },
+
+  isNumberish(val) {
+    return Utils.isNumber(val) || typeof val === 'bigint';
+  },
+
+  getMissingFields(obj: object, args?: Array<string>): Array<string> {
     args = args || [];
     if (!Utils.isObject(obj)) return args;
-    const missing = args.filter(arg => {
-      return !obj.hasOwnProperty(arg);
-    });
+    const missing = args.filter(arg => !obj.hasOwnProperty(arg));
     return missing;
   },
 
