@@ -2,6 +2,8 @@ import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import { URL } from 'url';
 import logger from '../../logger';
+import axios from 'axios';
+import { Readable } from 'stream';
 
 const bitcoreLib = require('@bcpros/bitcore-lib');
 const secp256k1 = require('secp256k1');
@@ -121,7 +123,7 @@ export class Client {
     });
   }
 
-  listTransactions(params) {
+  async listTransactions(params): Promise<Readable> {
     const {
       pubKey,
       startBlock,
@@ -152,10 +154,12 @@ export class Client {
     const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url });
     logger.debug('List transactions %o', url);
-    return requestStream.get(url, {
+    return axios({
+      method: 'get',
+      url,
       headers: { 'x-signature': signature },
-      json: true
-    });
+      responseType: 'stream'
+    }).then(response => response.data);  // return the stream
   }
 
   async importAddresses(params) {
