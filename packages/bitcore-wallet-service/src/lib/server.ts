@@ -74,9 +74,9 @@ import { PushNotificationsService } from './pushnotificationsservice';
 const Client = require('@bcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@bcpros/bitcore-wallet-client/ts_build/lib/common');
-const walletLotus = require('../../../../wallet-lotus-donation.json');
-const merchantList = require('../../../../merchant-list.json');
-const raipayFee = require('../../../../raipay-fee.json');
+import walletLotus from '../../../../wallet-lotus-donation.json';
+import merchantList from '../../../../merchant-list.json';
+import raipayFee from '../../../../raipay-fee.json';
 // const keyFund = require('../../../../key-store.json');
 const { dirname } = require('path');
 const appDir = dirname(require.main.filename);
@@ -11470,7 +11470,7 @@ export class WalletService implements IWalletService {
       this.request.post(URL, message, { headers })
       .then((response) => resolve(response.data))
       .catch((err) => reject(err.response?.data ?? err));
-    
+
     });
   }
 
@@ -11532,7 +11532,7 @@ export class WalletService implements IWalletService {
       this.request.post(URL, message, { headers })
       .then((response) => resolve(response.data))
       .catch((err) => reject(err.response?.data ?? err));
-    
+
     });
   }
 
@@ -11581,7 +11581,7 @@ export class WalletService implements IWalletService {
       this.request.post(URL, message, { headers })
       .then(response => resolve(response.data))
       .catch(err => reject(err.response?.data ?? err));
-    
+
     });
   }
 
@@ -11628,7 +11628,7 @@ export class WalletService implements IWalletService {
 
       this.request.post(URL, message, { headers })
       .then(response => resolve(response.data))
-      .catch(err => reject(err.response?.data ?? err));    
+      .catch(err => reject(err.response?.data ?? err));
     });
   }
 
@@ -11733,7 +11733,7 @@ export class WalletService implements IWalletService {
       if (response?.status === 429) {
         // oneinch rate limit
         return resolve(oldvalues);
-      } 
+      }
       if (oldvalues) {
         this.logw('No token list available... using old cached values');
         return resolve(oldvalues);
