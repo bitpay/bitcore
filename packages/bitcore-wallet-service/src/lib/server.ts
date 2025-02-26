@@ -3497,7 +3497,7 @@ export class WalletService implements IWalletService {
       this.storage.fetchAddressesByWalletId(walletId, moves3.map(m => m.address), (err, addrs) => {
         if (err) return cb(err);
 
-        const isChangeAddress = _.countBy(addrs.filter(a => a.isChange === true), 'address');
+        const isChangeAddress = _.countBy(addrs.filter(a => a.isChange), 'address');
         for (const x of Object.values(moves)) {
           x.outputs = x.outputs.filter(o => !isChangeAddress[o.address]);
         }
