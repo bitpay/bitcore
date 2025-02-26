@@ -39,8 +39,8 @@ const collections = {
   LOCKS: 'locks'
 };
 
-const Constants = Common.Constants;
 const Defaults = Common.Defaults;
+const Utils = Common.Utils;
 
 const ObjectID = mongodb.ObjectID;
 
@@ -651,7 +651,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
 
-        return cb(null, result.map(Address.fromObj));
+        return cb(null, Utils.sortAsc(result.map(Address.fromObj), 'createdOn', 'path'));
       });
   }
 

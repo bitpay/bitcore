@@ -22,16 +22,28 @@ export const Utils = {
     return obj && typeof obj === 'object' && !Array.isArray(obj);
   },
 
+  /**
+   * Checks if val is numeric within the confines of Number
+   * e.g. '1', 1, '1.1', -1, '-1', 0, '0' are all valid numbers. Null is not. BigInts are not.
+   * @param val
+   * @returns {boolean}
+   */
   isNumber(val) {
     return val != null && !isNaN(val);
   },
 
+  /**
+   * Same as isNumber(), but also allows BigInts
+   * @param val 
+   * @returns {boolean}
+   */
   isNumberish(val) {
     return Utils.isNumber(val) || typeof val === 'bigint';
   },
 
-  getMissingFields(obj: object, args?: Array<string>): Array<string> {
+  getMissingFields(obj: object, args?: string | Array<string>): Array<string> {
     args = args || [];
+    if (!Array.isArray(args)) args = [args];
     if (!Utils.isObject(obj)) return args;
     const missing = args.filter(arg => !obj.hasOwnProperty(arg));
     return missing;
@@ -331,10 +343,54 @@ export const Utils = {
     return false;
   },
 
+  /**
+   * Sort array by keys
+   * @param {Array<any>} arr Array to be sorted
+   * @param {...string|Array<string>} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
+   *  e.g.: sortAsc(arr, 'a', 'b', ['c', 'd']) will sort by a, then b, then c.d
+   * @returns 
+   */
   sortAsc(arr, ...keys) {
-    if (!keys.length) return arr.sort((a, b) => a - b);
-    if (keys.length === 1) return arr.sort((a, b) => a[keys[0]] - b[keys[0]]);
-    return arr.sort((a, b) => keys.reduce((val, k) => val[k], a) - keys.reduce((val, k) => val[k], b));
+    function transformVals(val1, val2) {
+      if (val1 === undefined) {
+        val1 = '\uFFFF'; // highest possible string value, otherwise 'undefined' < 'xyz'
+      } else if (val1 === null || val1 === false || val1.toString() === 'NaN') {
+        val1 = '0';
+      } else if (val1 === true) {
+        val1 = '1';
+      }
+
+      if (val2 === undefined) {
+        val2 = '\uFFFF'; // highest possible string value, otherwise 'undefined' < 'xyz'
+      } else if (val2 === null || val2 === false || val2.toString() === 'NaN') {
+        val2 = '0';
+      } else if (val2 === true) {
+        val2 = '1';
+      }
+
+      return [Buffer.from(val1.toString()), Buffer.from(val2.toString())];
+    };
+
+    if (!keys.length) {
+      return arr.sort((a, b) => { const [_a, _b] = transformVals(a, b); return _a.compare(_b) });
+    } else if (keys.length === 1 && !Array.isArray(keys[0])) {
+      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[keys[0]], b[keys[0]]); return _a.compare(_b) });
+    }
+    return arr.sort((a, b) => {
+      // compare concatenated strings for multiple key sorting
+      let aVal = '';
+      let bVal = '';
+      for (let k of keys) {
+        const [aTemp, bTemp] = transformVals(
+          Array.isArray(k) ? k.reduce((val, key) => val[key], a) : a[k],
+          Array.isArray(k) ? k.reduce((val, key) => val[key], b) : b[k]
+        );
+
+        aVal += aTemp.toString();
+        bVal += bTemp.toString();
+      }
+      return Buffer.from(aVal).compare(Buffer.from(bVal));
+    });
   },
 
   sortDesc(arr, ...keys) {

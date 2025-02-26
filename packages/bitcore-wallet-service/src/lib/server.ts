@@ -3399,10 +3399,10 @@ export class WalletService implements IWalletService {
         (err, res) => {
           if (err) return cb(err);
 
-          const notifications = res.flatMap((n: INotification) => {
-            n.walletId = this.walletId;
-            return n;
-          }).sort((a, b) => a.id - b.id);
+          const notifications = res
+            .flat()
+            .map((n: INotification) => ({ ...n, walletId: this.walletId }))
+            .sort((a, b) => a.id - b.id);
 
           return cb(null, notifications);
         }
