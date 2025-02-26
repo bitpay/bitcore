@@ -307,7 +307,7 @@ export class V8 {
       .catch(cb);
   }
 
-  getTransactions(wallet, startBlock, cb) {
+  async getTransactions(wallet, startBlock, cb) {
     const perfKey = getPerformanceKey('V8getTxs');
     console.time(perfKey);
     if (startBlock) {
@@ -331,7 +331,7 @@ export class V8 {
 
     if (_.isNumber(startBlock)) opts.startBlock = startBlock;
 
-    const txStream = client.listTransactions(opts);
+    const txStream = await client.listTransactions(opts);
     txStream.on('data', raw => {
       acum = acum + raw.toString();
     });
