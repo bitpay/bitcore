@@ -348,6 +348,58 @@ describe('Utils', function() {
     });
   });
 
+  describe('#sortAsc', function() {
+    it('should sort a simple array', function() {
+      const res = Utils.sortAsc([3, 1, 2]);
+      res.should.deep.equal([1, 2, 3]);
+    });
 
+    it('should sort a simple array with undefined values', function() {
+      const res = Utils.sortAsc([3, undefined, 1, 2, '\uFFFE']);
+      res.should.deep.equal([1, 2, 3, '\uFFFE', undefined]); // undefined should be in last position
+    });
+
+    it('should sort a simple array with bool values', function() {
+      const res = Utils.sortAsc([3, true, 1, true, 2, false]);
+      res.should.deep.equal([false, true, 1, true, 2, 3]); // false is considered as 0, true as 1
+    });
+
+    it('should sort a simple array with NaN values', function() {
+      const res = Utils.sortAsc([3, NaN, 1, 2]);
+      res.should.deep.equal([NaN, 1, 2, 3]); // NaN should be considered 0
+    });
+
+    it('should sort a simple array with null values', function() {
+      const res = Utils.sortAsc([3, 1, null, 2, 0, null]);
+      res.should.deep.equal([null, 0, null, 1, 2, 3]); // null is considered as 0
+    });
+
+    it('should sort an array of objects', function() {
+      const res = Utils.sortAsc([{ a: 3 }, { a: 1 }, { a: 2 }], 'a');
+      res.should.deep.equal([
+        { a: 1 },
+        { a: 2 },
+        { a: 3 }
+      ]);
+    });
+
+    it('should sort an array of objects with priority', function() {
+      const res = Utils.sortAsc([{ a: 2, b: 2 }, { a: 1, b: 3 }, { a: 2, b: 1 }], 'a', 'b');
+      res.should.deep.equal([
+        { a: 1, b: 3 },
+        { a: 2, b: 1 },
+        { a: 2, b: 2 }
+      ]);
+    });
+
+    it('should sort an array of objects with nested key', function() {
+      const res = Utils.sortAsc([{ a: { b: 3 }}, { a: { b: 1 }}, { a: { b: 2 }}], ['a', 'b']);
+      res.should.deep.equal([
+        { a: { b: 1 }},
+        { a: { b: 2 }},
+        { a: { b: 3 }}
+      ]);
+    });
+  });
 
 });

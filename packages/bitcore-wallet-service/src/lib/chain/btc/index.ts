@@ -38,7 +38,7 @@ export class BtcChain implements IChain {
     return 0;
   }
 
-  getWalletBalance(server, wallet, opts, cb) {
+  getWalletBalance(server: WalletService, wallet, opts, cb) {
     server.getUtxosForCurrentWallet(
       {
         coin: opts.coin,
@@ -74,7 +74,7 @@ export class BtcChain implements IChain {
   }
 
   // opts.payProUrl => only to use different safety margin or not
-  getWalletSendMaxInfo(server, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet, opts, cb) {
     server.getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
 
@@ -167,7 +167,7 @@ export class BtcChain implements IChain {
     return null;
   }
 
-  getChangeAddress(server, wallet, opts) {
+  getChangeAddress(server: WalletService, wallet, opts) {
     return new Promise((resolve, reject) => {
       const getChangeAddress = (wallet, cb) => {
         if (wallet.singleAddress) {
@@ -339,7 +339,7 @@ export class BtcChain implements IChain {
     return parseInt(fee.toFixed(0));
   }
 
-  getFee(server, wallet, opts) {
+  getFee(server: WalletService, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, (err, feePerKb) => {
         return resolve({ feePerKb });
@@ -514,7 +514,7 @@ export class BtcChain implements IChain {
     return bitcoreError;
   }
 
-  checkTxUTXOs(server, txp, opts, cb) {
+  checkTxUTXOs(server: WalletService, txp, opts, cb) {
     logger.debug('Rechecking UTXOs availability for publishTx');
 
     if (txp.replaceTxByFee) {
@@ -561,7 +561,7 @@ export class BtcChain implements IChain {
     return balance;
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb) {
+  selectTxInputs(server: WalletService, txp, wallet, opts, cb) {
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
     // todo: check inputs are ours and have enough value

@@ -371,8 +371,8 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async updateWallet(params: UpdateWalletParams) {
-    const { wallet, addresses } = params;
-    await WalletAddressStorage.updateCoins({ wallet, addresses });
+    const { wallet, addresses, reprocess = false } = params;
+    await WalletAddressStorage.updateCoins({ wallet, addresses, opts: { reprocess } });
   }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
