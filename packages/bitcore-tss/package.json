@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "testt": "npx mocha ./test",
-    "test": "node --test $(find test -name *.test.js)"
+    "test": "node --test $(find test -name *.test.js)",
+    "test:only": "node --test --test-only $(find test -name *.test.js)"
   },
   "keywords": [
     "tss",
@@ -17,7 +17,6 @@
   "license": "MIT",
   "dependencies": {
     "@bitgo/sdk-lib-mpc": "^10.1.0",
-    "bitcore-ecies": "^1.0.3",
     "bitcore-lib": "^10.8.0"
   },
   "devDependencies": {

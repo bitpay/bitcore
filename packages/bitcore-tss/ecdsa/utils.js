@@ -1,5 +1,5 @@
 import bitcoreLib from 'bitcore-lib';
-import ECIES from 'bitcore-ecies';
+import * as ECIES from '../ecies/index.js';
 
 export function detachSignData(data, privateKey) {
   const hashdata = bitcoreLib.crypto.Hash.sha256sha256(data);
@@ -18,18 +18,21 @@ export function verifySignedData(payload, publicKey) {
 };
 
 export function encrypt(data, publicKey, authKey) {
-  const ecies = new ECIES({ noKey: true })
-    .privateKey(new bitcoreLib.PrivateKey(authKey))
-    .publicKey(new bitcoreLib.PublicKey(publicKey));
-  const encryptedMessageBuffer = ecies.encrypt(data);
+  const encryptedMessageBuffer = ECIES.encrypt({
+    message: data,
+    publicKey,
+    privateKey: authKey,
+    opts: { noKey: true },
+  });
   return encryptedMessageBuffer;
 };
 
 export function decrypt(data, publicKey, authKey) {
-  const ecies = new ECIES({ noKey: true })
-    .privateKey(new bitcoreLib.PrivateKey(authKey))
-    .publicKey(new bitcoreLib.PublicKey(publicKey));
-  const decryptedMessageBuffer = ecies.decrypt(data);
+  const decryptedMessageBuffer = ECIES.decrypt({
+    payload: data,
+    privateKey: authKey,
+    publicKey,
+  });
   return decryptedMessageBuffer;
 };
 
