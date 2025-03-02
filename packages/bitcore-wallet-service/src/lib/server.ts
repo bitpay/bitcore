@@ -74,9 +74,9 @@ import { PushNotificationsService } from './pushnotificationsservice';
 const Client = require('@bcpros/bitcore-wallet-client').default;
 const Key = Client.Key;
 const commonBWC = require('@bcpros/bitcore-wallet-client/ts_build/lib/common');
-import walletLotus from '../../../../wallet-lotus-donation.json';
-import merchantList from '../../../../merchant-list.json';
-import raipayFee from '../../../../raipay-fee.json';
+import walletLotus from '/wallet-lotus-donation.json';
+import merchantList from '/merchant-list.json';
+import raipayFee from '/raipay-fee.json';
 // const keyFund = require('../../../../key-store.json');
 const { dirname } = require('path');
 const appDir = dirname(require.main.filename);
@@ -6690,7 +6690,7 @@ export class WalletService implements IWalletService {
   getListRaipayFee(): RaipayFee[] {
     if (raipayFee && raipayFee.length > 0) {
       const raipayFeeConverted = raipayFee.map(fee => RaipayFee.fromObj(fee));
-      return raipayFee;
+      return raipayFeeConverted;
     } else {
       return null;
     }
