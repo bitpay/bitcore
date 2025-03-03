@@ -58,7 +58,7 @@ describe('log utils', function () {
   });
 
   it('should log nothing if logLevel is set to silent', function () {
-    var sandbox = sinon.sandbox.create();
+    var sandbox = sinon.createSandbox();
     var cl = sandbox.stub(console, 'log');
 
     log.setLevel('silent');
