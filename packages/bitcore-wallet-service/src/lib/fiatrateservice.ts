@@ -4,7 +4,7 @@ import * as request from 'request';
 import config from '../config'
 import { Common } from './common';
 import { Storage } from './storage';
-import axios, {AxiosInstance} from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 const $ = require('preconditions').singleton();
 const Bitcore = require('@bcpros/bitcore-lib');
@@ -75,10 +75,12 @@ export class FiatRateService {
     );
     return new Promise((resolve, reject) => {
       _.forEach(listRate, (rate: any) => {
-        newData.push({
-          code: rate.code,
-          value: valueUsd * rate.value
-        });
+        if (rate && rate.code) {
+          newData.push({
+            code: rate.code,
+            value: valueUsd * rate.value
+          });
+        }
       });
       return resolve(newData);
     });
@@ -138,7 +140,7 @@ export class FiatRateService {
   }
 
   async _fetch(cb?) {
-    cb = cb || function() {};
+    cb = cb || function () { };
     let coinsData = ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'xpi', 'ltc'];
     const etoken = this._getEtokenSupportPrice();
     const coins = _.concat(coinsData, etoken);
@@ -207,32 +209,32 @@ export class FiatRateService {
       appendString = coin.toUpperCase();
     }
     this.request.get(provider.url + appendString, {
-      params, 
+      params,
       headers,
     })
-    .then((response) => {
-      const data = response.data; 
-      
-      if (!data) {
-        return cb(new Error('No response data received'));
-      }
-  
-      logger.debug(`Data for ${provider.name} / ${coin} fetched successfully`);
-  
-      if (!provider.parseFn) {
-        return cb(new Error('No parse function for provider ' + provider.name));
-      }
-  
-      try {
-        const rates = _.filter(provider.parseFn(data), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
-        return cb(null, rates);
-      } catch (e) {
-        return cb(e);
-      }
-    })
-    .catch((err) => {
-      cb(err);
-    });
+      .then((response) => {
+        const data = response.data;
+
+        if (!data) {
+          return cb(new Error('No response data received'));
+        }
+
+        logger.debug(`Data for ${provider.name} / ${coin} fetched successfully`);
+
+        if (!provider.parseFn) {
+          return cb(new Error('No parse function for provider ' + provider.name));
+        }
+
+        try {
+          const rates = _.filter(provider.parseFn(data), x => _.some(Defaults.FIAT_CURRENCIES, ['code', x.code]));
+          return cb(null, rates);
+        } catch (e) {
+          return cb(e);
+        }
+      })
+      .catch((err) => {
+        cb(err);
+      });
   }
 
   _retrieveLotus(cb) {
@@ -379,13 +381,13 @@ export class FiatRateService {
           const rates = await Promise.all(
             coins.map(coin => fetchRate(coin, currency.code))
           );
-          
+
           return {
             [currency.code]: rates.filter(rate => rate !== null)
           };
         })
       );
-  
+
       return Object.assign({}, ...results);
     } catch (error) {
       throw error;
