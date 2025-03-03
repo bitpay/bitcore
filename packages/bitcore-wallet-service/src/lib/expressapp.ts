@@ -15,7 +15,7 @@ import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {
   user?: IUser;
-  //below type for build in docker 
+  //below type for build in docker
   body: any;
   params: any;
 }
@@ -35,7 +35,7 @@ const csvUpload = require('./csvUpload');
 
 var GoogleTokenStrategy = require('passport-google-id-token');
 const passport = require('passport');
-const listAccount = require('../../../../accounts.json');
+import listAccount from '../accounts.json';
 import cron from 'node-cron';
 
 const corsOptions = {
