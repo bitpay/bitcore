@@ -17,7 +17,7 @@ export const Constants = {
     XPI: 'xpi'
   },
 
-  CHAINS_RATES: ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'ltc'],
+  CHAINS_RATES: ['btc', 'bch', 'xec', 'eth', 'xrp', 'doge', 'ltc', 'xpi'],
 
   BITPAY_SUPPORTED_COINS: {
     // used for rates
