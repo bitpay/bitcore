@@ -186,15 +186,13 @@ export class TxProposal {
     x.changeAddress = opts.changeAddress;
     x.escrowAddress = opts.escrowAddress;
     x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
-    x.outputs = (opts.outputs || []).map(output => ({
-      amount: output.amount,
-      toAddress: output.toAddress,
-      message: output.message,
-      data: output.data,
-      gasLimit: output.gasLimit,
-      script: output.script,
-      tag: output.tag
-    }));
+    x.outputs = (opts.outputs || []).map(output => {
+      return Object.fromEntries(
+        ['amount', 'toAddress', 'message', 'data', 'gasLimit', 'script', 'tag']
+          .filter(key =>  output[key] !== undefined && output[key] !== null)
+          .map(key => [key, output[key]])
+      );
+    });
     let numOutputs = x.outputs.length;
     if (!opts.multiTx) {
       numOutputs++;
