@@ -2328,22 +2328,24 @@ export class API extends EventEmitter {
     });
   }
 
-  // /**
-  // * Start an address scanning process.
-  // * When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
-  // *
-  // * @param {Object} opts
-  // * @param {Boolean} opts.includeCopayerBranches (defaults to false)
-  // * @param {Callback} cb
-  // */
+  /**
+   * Start an address scanning process.
+   * When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
+   *
+   * @param {Object} opts
+   * @param {Boolean} opts.includeCopayerBranches (defaults to false)
+   * @param {Number} opts.startIdx (optional) address derivation path start index (support agents only)
+   * @param {Callback} cb
+   */
   startScan(opts, cb) {
     $.checkState(
       this.credentials && this.credentials.isComplete(),
       'Failed state: this.credentials at <startScan()>'
     );
 
-    var args = {
-      includeCopayerBranches: opts.includeCopayerBranches
+    const args = {
+      includeCopayerBranches: opts.includeCopayerBranches,
+      startIdx: opts.startIdx
     };
 
     this.request.post('/v1/addresses/scan', args, err => {
@@ -2460,7 +2462,7 @@ export class API extends EventEmitter {
 
     opts = opts || {};
     var args = [];
-    if (_.isNumber(opts.minTs)) {
+    if (opts.minTs != null && !isNaN(opts.minTs)) {
       args.push('minTs=' + opts.minTs);
     }
     var qs = '';
