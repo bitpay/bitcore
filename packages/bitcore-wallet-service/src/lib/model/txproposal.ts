@@ -186,7 +186,7 @@ export class TxProposal {
     x.changeAddress = opts.changeAddress;
     x.escrowAddress = opts.escrowAddress;
     x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
-    x.outputs = opts.outputs.map(output => ({
+    x.outputs = (opts.outputs || []).map(output => ({
       amount: output.amount,
       toAddress: output.toAddress,
       message: output.message,
