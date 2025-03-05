@@ -187,11 +187,15 @@ export class TxProposal {
     x.escrowAddress = opts.escrowAddress;
     x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
     x.outputs = (opts.outputs || []).map(output => {
-      return Object.fromEntries(
-        ['amount', 'toAddress', 'message', 'data', 'gasLimit', 'script', 'tag']
-          .filter(key =>  output[key] !== undefined && output[key] !== null)
-          .map(key => [key, output[key]])
-      );
+      const out: any = {};
+      if (output.amount     !== undefined) out.amount = output.amount;
+      if (output.toAddress  !== undefined) out.toAddress = output.toAddress;
+      if (output.message    !== undefined) out.message = output.message;
+      if (output.data       !== undefined) out.data = output.data;
+      if (output.gasLimit   !== undefined) out.gasLimit = output.gasLimit;
+      if (output.script     !== undefined) out.script = output.script;
+      if (output.tag        !== undefined) out.tag = output.tag;
+      return out; 
     });
     let numOutputs = x.outputs.length;
     if (!opts.multiTx) {
