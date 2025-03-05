@@ -3,7 +3,7 @@
 import { describe, it } from 'node:test';
 import assert from 'assert';
 import bitcore from 'bitcore-lib';
-import * as ECIES from '../ecies/index.js';
+import * as ECIES from '../ecies/ecies.js';
 
 const PrivateKey = bitcore.PrivateKey;
 

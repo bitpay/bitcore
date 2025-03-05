@@ -1,9 +1,9 @@
-import assert from 'assert';
+import bitcoreLib from 'bitcore-lib';
 import { DklsDkg, DklsTypes } from '@bitgo/sdk-lib-mpc';
 import { DklsComms } from './dklsComms.js';
-import { BitcoreLib } from 'crypto-wallet-core';
 import { encrypt, decrypt } from './utils.js';
 
+const $ = bitcoreLib.util.preconditions;
 
 export class KeyGen {
   #partySize;
@@ -25,27 +25,27 @@ export class KeyGen {
    * @param {number} params.round - round number for the DKG
    */
   constructor({ n, m, partyId, seed, authKey, round }) {
-    assert(n != null, 'n is required');
-    assert(m != null, 'm is required');
-    assert(partyId != null, 'partyId is required');
-    assert(authKey != null, 'authKey is required');
+    $.checkArgument(n != null, 'n is required');
+    $.checkArgument(m != null, 'm is required');
+    $.checkArgument(partyId != null, 'partyId is required');
+    $.checkArgument(authKey != null, 'authKey is required');
 
-    assert(n > 1, 'n must be greater than 1');
+    $.checkArgument(n > 1, 'n must be greater than 1');
     this.#partySize = parseInt(n);
 
-    assert(m > 0 && m <= n, 'm must be in the range [1, n]');
+    $.checkArgument(m > 0 && m <= n, 'm must be in the range [1, n]');
     this.#minSigners = parseInt(m);
 
-    assert(partyId >= 0 && partyId < n, 'partyId must be in the range [0, n-1]');
+    $.checkArgument(partyId >= 0 && partyId < n, 'partyId must be in the range [0, n-1]');
     this.#partyId = parseInt(partyId);
 
-    assert(seed == null || Buffer.isBuffer(seed) && seed.length === 32, 'seed must be a 32 byte buffer');
+    $.checkArgument(seed == null || Buffer.isBuffer(seed) && seed.length === 32, 'seed must be a 32 byte buffer');
     this.#seed = seed;
 
-    this.#authKey = new BitcoreLib.PrivateKey(authKey);
-    assert(this.#authKey.toString('hex') === authKey.toString('hex') || this.#authKey.toWIF() === authKey, 'Unrecognized authKey format');
+    this.#authKey = new bitcoreLib.PrivateKey(authKey);
+    $.checkArgument(this.#authKey.toString('hex') === authKey.toString('hex') || this.#authKey.toWIF() === authKey, 'Unrecognized authKey format');
 
-    assert(round == null || (round >= 0 && round <= 5), 'round must be in the range [0, 5]');
+    $.checkArgument(round == null || (round >= 0 && round <= 5), 'round must be in the range [0, 5]');
     this.#round = parseInt(round) || 0;
 
     this.#dkg = new DklsDkg.Dkg(this.#partySize, this.#minSigners, this.#partyId, this.#seed);
@@ -56,8 +56,8 @@ export class KeyGen {
    * @returns {string} Base64 encoded session string
    */
   export() {
-    assert(this.#round > 0, 'Cannot export a session that has not started');
-    assert(!this.isKeyChainReady(), 'Cannot export a completed session. The keychain is ready with getKeyChain()');
+    $.checkState(this.#round > 0, 'Cannot export a session that has not started');
+    $.checkState(!this.isKeyChainReady(), 'Cannot export a completed session. The keychain is ready with getKeyChain()');
     const chainCodeCommitment = this.#dkg.chainCodeCommitment;
     const sessionBytes = this.#dkg.dkgSessionBytes || this.#dkg.dkgSession?.toBytes();
     const payload = this.#round +
@@ -79,8 +79,8 @@ export class KeyGen {
    * @returns {Sign}
    */
   static async restore({ session, authKey, seed }) {
-    const _authKey = new BitcoreLib.PrivateKey(authKey);
-    assert(_authKey.toString('hex') === authKey.toString('hex') || _authKey.toWIF() === authKey, 'Unrecognized authKey format');
+    const _authKey = new bitcoreLib.PrivateKey(authKey);
+    $.checkArgument(_authKey.toString('hex') === authKey.toString('hex') || _authKey.toWIF() === authKey, 'Unrecognized authKey format');
     session = decrypt(Buffer.from(session, 'base64'), _authKey.publicKey, _authKey).toString('utf8');
     const [
       round,
@@ -127,7 +127,7 @@ export class KeyGen {
    * @returns {Promise<{round: number, partyId: number, publicKey: string, p2pMessages: Object[], broadcastMessages: Object[]}>}
    */
   async initJoin() {
-    assert(this.#round == 0, 'initJoin must be called before the rounds ');
+    $.checkState(this.#round == 0, 'initJoin must be called before the rounds ');
 
     const unsignedMessageR1 = await this.#dkg.initDkg();
     const serializedMsg = DklsTypes.serializeBroadcastMessage(unsignedMessageR1);
@@ -147,12 +147,12 @@ export class KeyGen {
    * @returns {{ round: number, partyId: number, publicKey: string, p2pMessages: Object[], broadcastMessage: Object[] }}
    */
   nextRound(prevRoundMessages) {
-    assert(this.#round > 0, 'initJoin must be called before participating in the rounds');
-    assert(this.#round < 5, 'Signing rounds are over');
-    assert(Array.isArray(prevRoundMessages), 'prevRoundMessages must be an array');
-    assert(prevRoundMessages.length === this.#partySize - 1, 'Not ready to proceed to the next round');
-    assert(prevRoundMessages.every(msg => msg.round === this.#round - 1), 'All messages must be from the previous round');
-    assert(prevRoundMessages.every(msg => msg.partyId !== this.#partyId), 'Messages must not be from the yourself');
+    $.checkState(this.#round > 0, 'initJoin must be called before participating in the rounds');
+    $.checkState(this.#round < 5, 'Signing rounds are over');
+    $.checkArgument(Array.isArray(prevRoundMessages), 'prevRoundMessages must be an array');
+    $.checkArgument(prevRoundMessages.length === this.#partySize - 1, 'Not ready to proceed to the next round');
+    $.checkArgument(prevRoundMessages.every(msg => msg.round === this.#round - 1), 'All messages must be from the previous round');
+    $.checkArgument(prevRoundMessages.every(msg => msg.partyId !== this.#partyId), 'Messages must not be from the yourself');
 
     const prevRoundIncomingMsgs = DklsComms.decryptAndVerifyIncomingMessages(prevRoundMessages, this.#authKey);
 
@@ -182,7 +182,7 @@ export class KeyGen {
    * @returns {{ privateKeyShare: Buffer, reducedPrivateKeyShare: Buffer, commonKeyChain: string }} Keychain object
    */
   getKeyChain() {
-    assert(this.isKeyChainReady(), 'Key chain is not ready');
+    $.checkState(this.isKeyChainReady(), 'Key chain is not ready');
 
     const keyShare = this.#dkg.getKeyShare();
     const rKeyShare = this.#dkg.getReducedKeyShare();

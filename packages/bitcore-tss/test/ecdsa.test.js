@@ -45,7 +45,7 @@ describe('ECDSA', function() {
             });
 
             it(`should not export a brand new session for ${party}`, function() {
-              assert.throws(keygens[party].export.bind(keygens[party]), { message: 'Cannot export a session that has not started' });
+              assert.throws(keygens[party].export.bind(keygens[party]), { message: 'Invalid state: Cannot export a session that has not started' });
             });
           }
         });
@@ -242,7 +242,7 @@ describe('ECDSA', function() {
             });
 
             it(`should not export a completed session after round ${round} for ${party}`, async function() {
-              assert.throws(keygens[party].export.bind(keygens[party]), { message: 'Cannot export a completed session. The keychain is ready with getKeyChain()' });
+              assert.throws(keygens[party].export.bind(keygens[party]), { message: 'Invalid state: Cannot export a completed session. The keychain is ready with getKeyChain()' });
             });
           }
         });
@@ -311,7 +311,7 @@ describe('ECDSA', function() {
                 });
 
                 it(`should not export a brand new session for ${party}`, function() {
-                  assert.throws(signers[party].export.bind(signers[party]), { message: 'Cannot export a session that has not started' });
+                  assert.throws(signers[party].export.bind(signers[party]), { message: 'Invalid state: Cannot export a session that has not started' });
                 });
               }
             });
@@ -517,7 +517,7 @@ describe('ECDSA', function() {
                 });
 
                 it(`should not export a completed session after round ${round} for ${party}`, async function() {
-                  assert.throws(signers[party].export.bind(signers[party]), { message: 'Cannot export a completed session. The signature is ready with getSignature()' });
+                  assert.throws(signers[party].export.bind(signers[party]), { message: 'Invalid state: Cannot export a completed session. The signature is ready with getSignature()' });
                 });
               }
             });
