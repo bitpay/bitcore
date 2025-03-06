@@ -1,5 +1,5 @@
 import { BitcoreLibXpi } from '@bcpros/crypto-wallet-core';
-import { ChronikClient } from 'chronik-client';
+import { ChronikClient } from 'legacy-chronik-client';
 import _ from 'lodash';
 import { IChain } from '..';
 import config from '../../../config'
@@ -27,7 +27,7 @@ export class XpiChain extends BtcChain implements IChain {
     return 0;
   }
 
-  getChronikClient() {
+  getLegacyChronikClient() {
     return chronikClient;
   }
 

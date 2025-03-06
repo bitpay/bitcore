@@ -1020,8 +1020,8 @@ importers:
         specifier: ^6.10.2
         version: 6.10.2
       chronik-client:
-        specifier: 0.29.0
-        version: 0.29.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+        specifier: 3.0.0
+        version: 3.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       compression:
         specifier: ^1.6.2
         version: 1.8.0
@@ -1073,6 +1073,9 @@ importers:
       json-stable-stringify:
         specifier: ^1.0.1
         version: 1.0.1
+      legacy-chronik-client:
+        specifier: npm:chronik-client@0.29.0
+        version: chronik-client@0.29.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       linkify-it:
         specifier: ^3.0.3
         version: 3.0.3
@@ -2826,6 +2829,7 @@ packages:
   bson@6.10.2:
     resolution: {integrity: sha512-5afhLTjqDSA3akH56E+/2J6kTDuSIlBxyXPdQslj9hcIgOUE378xdOfZvC/9q3LifJNI6KR/juZ+d0NRNYBwXg==}
     engines: {node: '>=16.20.1'}
+    deprecated: a critical bug affecting only useBigInt64=true deserialization usage is fixed in bson@6.10.3
 
   buffer-compare@1.1.1:
     resolution: {integrity: sha512-O6NvNiHZMd3mlIeMDjP6t/gPG75OqGPeiRZXoMQZJ6iy9GofCls4Ijs5YkPZZwoysizLiedhticmdyx/GyHghA==}
@@ -3027,6 +3031,7 @@ packages:
 
   chokidar@2.1.8:
     resolution: {integrity: sha512-ZmZUazfOzf0Nve7duiCKD23PFSCs4JPoYyccjUFF3aQkQadqBhfzhjkwBH2mNOG9cTBwhamM37EIsIkZw3nRgg==}
+    deprecated: Chokidar 2 does not receive security updates since 2019. Upgrade to chokidar 3 with 15x fewer dependencies
 
   chokidar@3.6.0:
     resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
@@ -3041,6 +3046,9 @@ packages:
 
   chronik-client@0.29.0:
     resolution: {integrity: sha512-NEK9LU0YjrxF3BCDZIFf5Zk2Peg0D3+ADwlYMDymcsxwsdNz8GhRFNacFAJ1mVb89jttXgFj2HrZbeyqsghXng==}
+
+  chronik-client@3.0.0:
+    resolution: {integrity: sha512-jf27j2g3PKNyIxDgY9IQaldWpEB3LG+DOlNa2z4h3eyUYBnHhF8kwNt4onzwc2SvW4IOb5GpG1OMD9hf45Ojqg==}
 
   ci-info@2.0.0:
     resolution: {integrity: sha512-5tK7EtrZ0N+OLFMthtqOj4fI2Jeb88C4CAZPu25LDVUgXJ0A3Js4PMGqrn0JU1W0Mh1/Z8wZzYPxqUrXeBboCQ==}
@@ -4455,7 +4463,7 @@ packages:
     resolution: {integrity: sha512-oWb1Z6mkHIskLzEJ/XWX0srkpkTQ7vaopMQkyaEIoq0fmtFVxOthb8cCxeT+p3ynTdkk/RZwbgG4brR5BeWECw==}
     engines: {node: '>= 4.0'}
     os: [darwin]
-    deprecated: Upgrade to fsevents v2 to mitigate potential security issues
+    deprecated: The v1 package contains DANGEROUS / INSECURE binaries. Upgrade to safe fsevents v2
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -8963,6 +8971,7 @@ packages:
   yaeti@0.0.6:
     resolution: {integrity: sha512-MvQa//+KcZCUkBTIC9blM+CU9J2GzuTytsOUwf2lidtvkx/6gnEp1QvJv34t9vdjhFmha/mUiNDbN0D0mJWdug==}
     engines: {node: '>=0.10.32'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   yallist@2.1.2:
     resolution: {integrity: sha512-ncTzHV7NvsQZkYe1DW7cbDLm0YpzHmZF5r/iyP3ZnQtMiJ+pjzisCiMNI+Sj+xQF5pXhSHxSB3uDbsBTzY/c2A==}
@@ -11649,6 +11658,19 @@ snapshots:
   chownr@2.0.0: {}
 
   chronik-client@0.29.0(bufferutil@4.0.9)(utf-8-validate@5.0.10):
+    dependencies:
+      '@types/ws': 8.5.4
+      axios: 1.7.9
+      ecashaddrjs: 2.0.0
+      isomorphic-ws: 4.0.1(ws@8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      protobufjs: 6.11.4
+      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - utf-8-validate
+
+  chronik-client@3.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10):
     dependencies:
       '@types/ws': 8.5.4
       axios: 1.7.9

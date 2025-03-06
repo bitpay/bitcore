@@ -68,8 +68,8 @@ export class EthChain implements IChain {
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {}
   burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {}
 
+  getLegacyChronikClient() {}
   getChronikClient() {}
-  getChronikClientInNode() {}
   getTokenInfo(tokenId) {}
 
   getInputSizeSafetyMargin() {
@@ -278,7 +278,7 @@ export class EthChain implements IChain {
           const buffer = gasLimitBuffer ? gasLimitBuffer / 100 : Defaults.MS_GAS_LIMIT_BUFFER_PERCENT;
           // If gas estimation fails, fallback to sum of internal gasLimits
           gasLimit = _gasLimit || gasLimit;
-          gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer 
+          gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer
           fee += feePerKb * gasLimit;
           logger.info(`[${from}] Top level gas limit with buffer: ${gasLimit}`);
         }

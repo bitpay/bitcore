@@ -941,8 +941,8 @@ export class BtcChain implements IChain {
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {}
   burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {}
 
+  getLegacyChronikClient() {}
   getChronikClient() {}
-  getChronikClientInNode() {}
   getTokenInfo(tokenId) {}
   addressFromStorageTransform(network, address) {}
 

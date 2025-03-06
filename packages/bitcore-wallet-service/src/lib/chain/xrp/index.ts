@@ -16,8 +16,8 @@ export class XrpChain implements IChain {
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress) {}
   burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId) {}
 
+  getLegacyChronikClient() {}
   getChronikClient() {}
-  getChronikClientInNode() {}
   getTokenInfo(tokenId) {}
 
   /**

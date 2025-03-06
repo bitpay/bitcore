@@ -1,7 +1,7 @@
 import { BitcoreLibXec } from '@bcpros/crypto-wallet-core';
 import BN from 'bignumber.js';
 import { BigNumber } from 'bignumber.js';
-import { ChronikClientNode, TokenInfo as TokenInfoInNode } from 'chronik-client';
+import { ChronikClient, TokenInfo as TokenInfoInNode } from 'chronik-client';
 import _, { isNumber } from 'lodash';
 import { Token } from 'typescript';
 import { IChain } from '..';
@@ -53,13 +53,13 @@ export interface TokenInfo {
   documentUri: string;
 }
 export class XecChain extends BtcChain implements IChain {
-  chronikClientInNode: ChronikClientNode;
+  chronikClientInNode: ChronikClient;
 
   constructor() {
     super(BitcoreLibXec);
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
-    this.chronikClientInNode = new ChronikClientNode(config.chronik.xecUrl.split(','));
+    this.chronikClientInNode = new ChronikClient(config.chronik.xecUrl.split(','));
   }
 
   convertAddressToScriptPayload(address) {

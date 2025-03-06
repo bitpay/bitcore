@@ -44,16 +44,13 @@ import * as forge from 'node-forge';
 
 import {
   ChronikClient,
-  ChronikClientNode,
-  ScriptUtxo_InNode,
-  ScriptUtxos_InNode,
+  ScriptUtxos,
+  ScriptUtxo,
   Tx,
-  Tx_InNode,
   TxInput,
-  TxInput_InNode,
   TxOutput,
-  TxOutput_InNode
 } from 'chronik-client';
+import { ChronikClient as LegacyChronikClient, Tx as LegacyTx, TxInput as LegacyTxInput, TxOutput as LegacyTxOutput } from 'legacy-chronik-client';
 import moment from 'moment';
 import { CurrencyRateService } from './currencyrate';
 import { Appreciation } from './model/appreciation';
@@ -68,7 +65,7 @@ import { OrderInfoNoti } from './model/OrderInfoNoti';
 import { IQPayInfo } from './model/qpayinfo';
 import { RaipayFee } from './model/raipayfee';
 import { TokenInfo, TokenItem } from './model/tokenInfo';
-import axios, {AxiosInstance} from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { PushNotificationsService } from './pushnotificationsservice';
 
 const Client = require('@bcpros/bitcore-wallet-client').default;
@@ -412,7 +409,7 @@ export class WalletService implements IWalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() { };
+    cb = cb || function () { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -1039,7 +1036,7 @@ export class WalletService implements IWalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() { };
+    cb = cb || function () { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -1208,13 +1205,13 @@ export class WalletService implements IWalletService {
       return cb(new Error('Missing required parameter password'));
     }
     const storage = this.storage;
-    bcrypt.hash(opts.password, saltRounds, function(err, hashPass) {
+    bcrypt.hash(opts.password, saltRounds, function (err, hashPass) {
       // Store hash in your password DB.
       if (err) return cb(err);
 
       const recoveryKey = cuid();
 
-      bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey) {
+      bcrypt.hash(recoveryKey, saltRounds, function (err, hashKey) {
         // const user = {
         //   email: opts.email,
         //   hashPassword: hashPass,
@@ -1256,13 +1253,13 @@ export class WalletService implements IWalletService {
       return cb(new Error('Missing required parameter password'));
     }
     const storage = this.storage;
-    bcrypt.hash(opts.password, saltRounds, function(err, hashPass) {
+    bcrypt.hash(opts.password, saltRounds, function (err, hashPass) {
       // Store hash in your password DB.
       if (err) return cb(err);
 
       const recoveryKey = cuid();
 
-      bcrypt.hash(recoveryKey, saltRounds, function(err, hashKey) {
+      bcrypt.hash(recoveryKey, saltRounds, function (err, hashKey) {
         // const user = {
         //   email: opts.email,
         //   hashPassword: hashPass,
@@ -2570,19 +2567,19 @@ export class WalletService implements IWalletService {
   getTxDetail(txId, cb) {
     this.getWallet({}, async (err, wallet) => {
       try {
-        const chronikClient: ChronikClient | ChronikClientNode =
+        const chronikClient: ChronikClient | LegacyChronikClient =
           wallet.chain === 'xec'
-            ? ChainService.getChronikClientInNode(wallet.chain)
-            : ChainService.getChronikClient(wallet.chain);
-        const txDetail: Tx | Tx_InNode = await chronikClient.tx(txId);
+            ? ChainService.getChronikClient(wallet.chain)
+            : ChainService.getLegacyChronikClient(wallet.chain);
+        const txDetail: Tx | LegacyTx = await chronikClient.tx(txId);
         if (!txDetail) return cb('no txDetail');
         const inputAddresses = _.uniq(
-          _.map(txDetail.inputs, (item: TxInput | TxInput_InNode) => {
+          _.map(txDetail.inputs, (item: TxInput | LegacyTxInput) => {
             return this._convertAddressFormInputScript(item.inputScript, wallet.chain, true);
           })
         );
         const outputAddresses = _.uniq(
-          _.map(txDetail.outputs, (item: TxOutput | TxOutput_InNode) => {
+          _.map(txDetail.outputs, (item: TxOutput | LegacyTxOutput) => {
             return this._convertAddressFormInputScript(item.outputScript, wallet.chain, true);
           })
         );
@@ -2608,8 +2605,8 @@ export class WalletService implements IWalletService {
    */
   async getTxDetailForXecWallet(txId, cb) {
     try {
-      const chronikClientInNode = ChainService.getChronikClientInNode('xec');
-      const txDetail: Tx_InNode = await chronikClientInNode.tx(txId);
+      const chronikClient = ChainService.getChronikClient('xec');
+      const txDetail: Tx = await chronikClient.tx(txId);
       if (!txDetail) return cb('no txDetail');
       const inputAddresses = _.uniq(
         _.map(txDetail.inputs, item => {
@@ -2640,8 +2637,8 @@ export class WalletService implements IWalletService {
   async getTxDetailForXecWalletWithPromise(txId): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
-        const chronikClient = ChainService.getChronikClientInNode('xec');
-        const txDetail: Tx_InNode = await chronikClient.tx(txId);
+        const chronikClient = ChainService.getChronikClient('xec');
+        const txDetail: Tx = await chronikClient.tx(txId);
         if (!txDetail) return reject('no txDetail');
         const inputAddresses = _.uniq(
           _.map(txDetail.inputs, item => {
@@ -2672,11 +2669,11 @@ export class WalletService implements IWalletService {
    */
   async getTxDetailForWallet(txId, coin, cb) {
     try {
-      const chronikClient: ChronikClient | ChronikClientNode =
-        coin === 'xec' ? ChainService.getChronikClientInNode(coin) : ChainService.getChronikClient(coin);
+      const chronikClient: ChronikClient | LegacyChronikClient =
+        coin === 'xec' ? ChainService.getChronikClient(coin) : ChainService.getLegacyChronikClient(coin);
 
       if (coin == 'xec') {
-        const txDetail: Tx_InNode = await (chronikClient as ChronikClientNode).tx(txId);
+        const txDetail: Tx = await (chronikClient as ChronikClient).tx(txId);
         if (!txDetail) return cb('no txDetail');
 
         const inputAddresses = _.uniq(
@@ -2697,7 +2694,7 @@ export class WalletService implements IWalletService {
           return cb(null, txDetail);
         }
       } else {
-        const txDetail: Tx = await (chronikClient as ChronikClient).tx(txId);
+        const txDetail = (await (chronikClient as unknown as LegacyChronikClient).tx(txId)) as LegacyTx;
         if (!txDetail) return cb('no txDetail');
         const inputAddresses = _.uniq(
           _.map(txDetail.inputs, item => {
@@ -2729,11 +2726,11 @@ export class WalletService implements IWalletService {
   async getTxDetailForWalletWithPromise(txId, coin): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
-        const chronikClient: ChronikClient | ChronikClientNode =
-          coin === 'xec' ? ChainService.getChronikClientInNode(coin) : ChainService.getChronikClient(coin);
+        const chronikClient: ChronikClient | LegacyChronikClient =
+          coin === 'xec' ? ChainService.getChronikClient(coin) : ChainService.getLegacyChronikClient(coin);
 
         if (coin == 'xec') {
-          const txDetail: Tx_InNode = await (chronikClient as ChronikClientNode).tx(txId);
+          const txDetail: Tx = await (chronikClient as ChronikClient).tx(txId);
           if (!txDetail) return reject('no txDetail');
 
           const inputAddresses = _.uniq(
@@ -2754,7 +2751,7 @@ export class WalletService implements IWalletService {
             return resolve(txDetail);
           }
         } else {
-          const txDetail: Tx = await (chronikClient as ChronikClient).tx(txId);
+          const txDetail: LegacyTx = await (chronikClient as unknown as LegacyChronikClient).tx(txId);
           if (!txDetail) return reject('no txDetail');
           const inputAddresses = _.uniq(
             _.map(txDetail.inputs, item => {
@@ -2894,20 +2891,20 @@ export class WalletService implements IWalletService {
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
       if (coin === 'xec') {
-        let chronikClient: ChronikClientNode = ChainService.getChronikClientInNode(coin);
+        let chronikClient: ChronikClient = ChainService.getChronikClient(coin);
         return chronikClient
           .script('p2pkh', scriptPayload)
           .utxos()
           .then(chronikUtxos => {
-            const utxos = _.map(chronikUtxos.utxos, (utxo: ScriptUtxo_InNode) => {
+            const utxos = _.map(chronikUtxos.utxos, (utxo: ScriptUtxo) => {
               return {
                 txid: utxo.outpoint.txid,
                 outIdx: utxo.outpoint.outIdx,
-                value: Number(utxo.value),
+                value: Number(utxo.sats),
                 isNonSLP: utxo.token ? false : true,
                 slpMeta: utxo.token,
                 tokenId: utxo.token ? utxo.token.tokenId : undefined,
-                amountToken: utxo.token && utxo.token.amount ? Number(utxo.token.amount) : undefined
+                amountToken: utxo.token && utxo.token.atoms ? Number(utxo.token.atoms) : undefined
               };
             });
             return utxos;
@@ -2916,7 +2913,7 @@ export class WalletService implements IWalletService {
             return Promise.reject(err);
           });
       } else {
-        let chronikClient: ChronikClient = ChainService.getChronikClient(coin);
+        let chronikClient: LegacyChronikClient = ChainService.getLegacyChronikClient(coin);
         return chronikClient
           .script('p2pkh', scriptPayload)
           .utxos()
@@ -2952,24 +2949,24 @@ export class WalletService implements IWalletService {
     }
     try {
       scriptPayload = ChainService.convertAddressToScriptPayload(coin, address);
-      chronikClient = coin === 'xec' ? ChainService.getChronikClientInNode(coin) : ChainService.getChronikClient(coin);
+      chronikClient = coin === 'xec' ? ChainService.getChronikClient(coin) : ChainService.getChronikClient(coin);
     } catch {
       return Promise.reject('err funtion _getUxtosByChronik in aws');
     }
     if (coin === 'xec') {
-      return (chronikClient as ChronikClientNode)
+      return (chronikClient as ChronikClient)
         .script('p2pkh', scriptPayload)
         .utxos()
-        .then((chronikUtxos: ScriptUtxos_InNode) => {
-          const utxos = _.flatMap(chronikUtxos, (scriptUtxos: ScriptUtxos_InNode) => {
+        .then((chronikUtxos: ScriptUtxos) => {
+          const utxos = _.flatMap(chronikUtxos, (scriptUtxos: ScriptUtxos) => {
             return _.map(scriptUtxos.utxos, utxo => ({
               txid: utxo.outpoint.txid,
               outIdx: utxo.outpoint.outIdx,
-              value: Number(utxo.value),
+              value: Number(utxo.sats),
               isNonSLP: utxo.token ? false : true,
               slpMeta: utxo.token,
               tokenId: utxo.token ? utxo.token.tokenId : undefined,
-              amountToken: utxo.token && utxo.token.amount ? Number(utxo.token.amount) : undefined
+              amountToken: utxo.token && utxo.token.atoms ? Number(utxo.token.atoms) : undefined
             }));
           });
           return utxos;
@@ -2978,7 +2975,7 @@ export class WalletService implements IWalletService {
           return Promise.reject(err);
         });
     } else {
-      return (chronikClient as ChronikClient)
+      return (chronikClient as LegacyChronikClient)
         .script('p2pkh', scriptPayload)
         .utxos()
         .then(chronikUtxos => {
@@ -4231,7 +4228,7 @@ export class WalletService implements IWalletService {
     } else {
       const coin = opts.coin;
       const chronikClient =
-        coin === 'xec' ? ChainService.getChronikClientInNode(coin) : ChainService.getChronikClient(coin);
+        coin === 'xec' ? ChainService.getChronikClient(coin) : ChainService.getChronikClient(coin);
       this._broadcastRawTxByChronik(chronikClient, opts.rawTx, !!opts.skipSlpCheck, async (err, txid) => {
         if (err || !txid) {
           logger.warn(`Broadcast failed: ${err}`);
@@ -4744,7 +4741,7 @@ export class WalletService implements IWalletService {
     });
   }
 
-  filterCoinconfig(opts, cb) {}
+  filterCoinconfig(opts, cb) { }
 
   async mappingWalletClientsToCoinConfig(walletClients, isSwap: boolean, listCoinConfig: CoinConfig[]) {
     let listCoinFound = [];
@@ -4830,7 +4827,7 @@ export class WalletService implements IWalletService {
     const clientBwc = new Client();
     this._getKeyLotus(clientBwc, (err, client, key) => {
       if (err) return cb(err);
-      this.createAddress({}, function(err, x) {
+      this.createAddress({}, function (err, x) {
         if (err) return cb(err);
         return cb(null, client, key, x.address);
       });
@@ -4883,7 +4880,7 @@ export class WalletService implements IWalletService {
       if (this.storage && this.storage.queue) {
         this.storage.queue.get((err, data) => {
           if (data) {
-            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => {});
+            const ackQueue = this.storage.queue.ack(data.ack, (err, id) => { });
             const saveError = (donationStorage, err) => {
               donationStorage.error = JSON.stringify(err);
               this.storage.updateDonation(donationStorage, err => {
@@ -4914,7 +4911,7 @@ export class WalletService implements IWalletService {
             });
           }
         });
-        this.storage.queue.clean(err => {});
+        this.storage.queue.clean(err => { });
       }
     }, 300000);
   }
@@ -5014,7 +5011,7 @@ export class WalletService implements IWalletService {
                           parse_mode: 'HTML'
                         }
                       );
-                      this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                      this.storage.orderQueue.ack(data.ack, (err, id) => { });
                     });
                   });
                 }
@@ -5022,7 +5019,7 @@ export class WalletService implements IWalletService {
             } else {
               this.storage.updateOrder(orderInfo, err => {
                 if (err) logger.debug(err);
-                this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                this.storage.orderQueue.ack(data.ack, (err, id) => { });
               });
             }
           };
@@ -5172,7 +5169,7 @@ export class WalletService implements IWalletService {
                                 if (
                                   (Math.abs(amountDepositInToCoinCodeUnit - amountDepositInToCoinCodeUnit) /
                                     amountDepositInToCoinCodeUnit) *
-                                    100 >
+                                  100 >
                                   2
                                 ) {
                                   saveError(orderInfo, data, Errors.INVALID_AMOUNT);
@@ -5210,7 +5207,7 @@ export class WalletService implements IWalletService {
                                     this._sendSwapNotificationSuccess(configSwap, orderInfo, txId);
                                     this.storage.updateOrder(orderInfo, err => {
                                       if (err) saveError(orderInfo, data, err);
-                                      return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                      return this.storage.orderQueue.ack(data.ack, (err, id) => { });
                                     });
                                   }
                                 );
@@ -5243,7 +5240,7 @@ export class WalletService implements IWalletService {
                                     this._sendSwapNotificationSuccess(configSwap, orderInfo, txId);
                                     this.storage.updateOrder(orderInfo, err => {
                                       if (err) saveError(orderInfo, data, err);
-                                      return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                                      return this.storage.orderQueue.ack(data.ack, (err, id) => { });
                                     });
                                   }
                                 });
@@ -5262,14 +5259,14 @@ export class WalletService implements IWalletService {
               }
               this.storage.updateOrder(orderInfo, err => {
                 if (err) saveError(orderInfo, data, err);
-                return this.storage.orderQueue.ack(data.ack, (err, id) => {});
+                return this.storage.orderQueue.ack(data.ack, (err, id) => { });
               });
             } else {
-              this.storage.orderQueue.ack(data.ack, (err, id) => {});
+              this.storage.orderQueue.ack(data.ack, (err, id) => { });
             }
           }
         });
-        this.storage.orderQueue.clean(err => {});
+        this.storage.orderQueue.clean(err => { });
       }
     }, 2000);
   }
@@ -5293,16 +5290,16 @@ export class WalletService implements IWalletService {
               bot.sendMessage(
                 config.telegram.channelFailId,
                 conversionOrderInfo.addressFrom +
-                  ' :: Converted amount: ' +
-                  conversionOrderInfo.amountConverted.toFixed(3) +
-                  ' ' +
-                  config.conversion.tokenCodeUnit +
-                  '\n\n' +
-                  this._addExplorerLinkIntoTxIdWithCoin(
-                    conversionOrderInfo.txIdFromUser,
-                    'xec',
-                    'View tx on the Explorer'
-                  ),
+                ' :: Converted amount: ' +
+                conversionOrderInfo.amountConverted.toFixed(3) +
+                ' ' +
+                config.conversion.tokenCodeUnit +
+                '\n\n' +
+                this._addExplorerLinkIntoTxIdWithCoin(
+                  conversionOrderInfo.txIdFromUser,
+                  'xec',
+                  'View tx on the Explorer'
+                ),
                 { parse_mode: 'HTML' }
               );
 
@@ -5310,14 +5307,14 @@ export class WalletService implements IWalletService {
               bot.sendMessage(
                 config.telegram.channelDebugId,
                 new Date().toUTCString() +
-                  ' ::  error: ' +
-                  conversionOrderInfo.error +
-                  '\n\n' +
-                  this._addExplorerLinkIntoTxIdWithCoin(
-                    conversionOrderInfo.txIdFromUser,
-                    'xec',
-                    'View tx on the Explorer'
-                  ),
+                ' ::  error: ' +
+                conversionOrderInfo.error +
+                '\n\n' +
+                this._addExplorerLinkIntoTxIdWithCoin(
+                  conversionOrderInfo.txIdFromUser,
+                  'xec',
+                  'View tx on the Explorer'
+                ),
                 { parse_mode: 'HTML' }
               );
               if (err) throw new Error(err);
@@ -5474,18 +5471,18 @@ export class WalletService implements IWalletService {
                                             bot.sendMessage(
                                               config.telegram.channelSuccessId,
                                               new Date().toUTCString() +
-                                                ' :: ' +
-                                                result.inputAddresses[0] +
-                                                ' :: Converted amount: ' +
-                                                amountElps.toFixed(3) +
-                                                ' ' +
-                                                config.conversion.tokenCodeUnit +
-                                                '\n\n' +
-                                                this._addExplorerLinkIntoTxIdWithCoin(
-                                                  conversionOrderInfo.txIdSentToUser,
-                                                  'xec',
-                                                  'View tx on the Explorer'
-                                                ),
+                                              ' :: ' +
+                                              result.inputAddresses[0] +
+                                              ' :: Converted amount: ' +
+                                              amountElps.toFixed(3) +
+                                              ' ' +
+                                              config.conversion.tokenCodeUnit +
+                                              '\n\n' +
+                                              this._addExplorerLinkIntoTxIdWithCoin(
+                                                conversionOrderInfo.txIdSentToUser,
+                                                'xec',
+                                                'View tx on the Explorer'
+                                              ),
                                               { parse_mode: 'HTML' }
                                             );
                                             this.storage.updateConversionOrder(conversionOrderInfo, (err, result) => {
@@ -5498,7 +5495,7 @@ export class WalletService implements IWalletService {
                                                 saveError(conversionOrderInfo, data, err);
                                                 return;
                                               } else {
-                                                this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
+                                                this.storage.conversionOrderQueue.ack(data.ack, (err, id) => { });
                                               }
                                             });
                                           }
@@ -5525,11 +5522,11 @@ export class WalletService implements IWalletService {
                 saveError(conversionOrderInfo, data, e);
               }
             } else {
-              this.storage.conversionOrderQueue.ack(data.ack, (err, id) => {});
+              this.storage.conversionOrderQueue.ack(data.ack, (err, id) => { });
             }
           }
         });
-        this.storage.conversionOrderQueue.clean(err => {});
+        this.storage.conversionOrderQueue.clean(err => { });
       }
     }, 2000);
   }
@@ -5552,19 +5549,17 @@ export class WalletService implements IWalletService {
                   : '';
               const stringConvert =
                 !merchantOrder.isToken && !!merchantOrder.amountFrom && merchantOrder.amountFrom > 0
-                  ? `:: Not able to convert ${merchantOrder.amountFrom} ${merchantOrder.coin.toUpperCase()} to ${
-                      merchantOrder.amount
-                    } ${config.conversion.tokenCodeUnit}`
+                  ? `:: Not able to convert ${merchantOrder.amountFrom} ${merchantOrder.coin.toUpperCase()} to ${merchantOrder.amount
+                  } ${config.conversion.tokenCodeUnit}`
                   : '';
               // send message to channel Failure Convert Alert
-              const failMessage = `${merchantOrder.userAddress} :: Elps amount: ${merchantOrder.amount.toFixed(3)} ${
-                config.conversion.tokenCodeUnit
-              } ${stringConvert} ${actualAmountConverted}`;
+              const failMessage = `${merchantOrder.userAddress} :: Elps amount: ${merchantOrder.amount.toFixed(3)} ${config.conversion.tokenCodeUnit
+                } ${stringConvert} ${actualAmountConverted}`;
               bot.sendMessage(
                 config.merchantOrder.channelFailId,
                 failMessage +
-                  '\n\n' +
-                  this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
+                '\n\n' +
+                this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
                 { parse_mode: 'HTML' }
               );
 
@@ -5574,8 +5569,8 @@ export class WalletService implements IWalletService {
               bot.sendMessage(
                 config.merchantOrder.channelDebugId,
                 debugMessage +
-                  '\n\n' +
-                  this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
+                '\n\n' +
+                this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdFromUser, 'xec', 'View tx on the Explorer'),
                 { parse_mode: 'HTML' }
               );
               if (err) throw new Error(err);
@@ -5833,7 +5828,7 @@ export class WalletService implements IWalletService {
                                           saveError(merchantOrder, data, err);
                                           return;
                                         } else {
-                                          this.storage.merchantOrderQueue.ack(data.ack, (err, id) => {});
+                                          this.storage.merchantOrderQueue.ack(data.ack, (err, id) => { });
                                         }
                                       });
                                     }
@@ -5875,7 +5870,7 @@ export class WalletService implements IWalletService {
                                       saveError(merchantOrder, data, err);
                                       return;
                                     } else {
-                                      this.storage.merchantOrderQueue.ack(data.ack, (err, id) => {});
+                                      this.storage.merchantOrderQueue.ack(data.ack, (err, id) => { });
                                     }
                                   });
                                 }
@@ -5896,11 +5891,11 @@ export class WalletService implements IWalletService {
                 saveError(merchantOrder, data, e);
               }
             } else {
-              this.storage.merchantOrderQueue.ack(data.ack, (err, id) => {});
+              this.storage.merchantOrderQueue.ack(data.ack, (err, id) => { });
             }
           }
         });
-        this.storage.merchantOrderQueue.clean(err => {});
+        this.storage.merchantOrderQueue.clean(err => { });
       }
     }, 2000);
   }
@@ -5915,45 +5910,45 @@ export class WalletService implements IWalletService {
       bot.sendMessage(
         config.merchantOrder.channelSuccessId,
         merchantOrder.userAddress +
-          ' :: Converted ' +
-          amountCoinUserSentToServer +
-          ' ' +
-          merchantOrder.coin.toUpperCase() +
-          ' to ' +
-          amountElps.toFixed(2) +
-          ' ' +
-          config.conversion.tokenCodeUnit +
-          ' :: ' +
-          this._getPaymentTypeString(merchantOrder.paymentType) +
-          ' : ' +
-          amountElps.toFixed(2) +
-          ' ' +
-          config.conversion.tokenCodeUnit +
-          ' to ' +
-          merchantName +
-          '\n\n' +
-          this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdMerchantPayment, 'xec', 'View tx on the Explorer'),
+        ' :: Converted ' +
+        amountCoinUserSentToServer +
+        ' ' +
+        merchantOrder.coin.toUpperCase() +
+        ' to ' +
+        amountElps.toFixed(2) +
+        ' ' +
+        config.conversion.tokenCodeUnit +
+        ' :: ' +
+        this._getPaymentTypeString(merchantOrder.paymentType) +
+        ' : ' +
+        amountElps.toFixed(2) +
+        ' ' +
+        config.conversion.tokenCodeUnit +
+        ' to ' +
+        merchantName +
+        '\n\n' +
+        this._addExplorerLinkIntoTxIdWithCoin(merchantOrder.txIdMerchantPayment, 'xec', 'View tx on the Explorer'),
         { parse_mode: 'HTML' }
       );
     } else {
       bot.sendMessage(
         config.merchantOrder.channelSuccessId,
         merchantOrder.userAddress +
-          ' :: ' +
-          this._getPaymentTypeString(merchantOrder.paymentType) +
-          ' : ' +
-          amountElps.toFixed(2) +
-          ' ' +
-          config.conversion.tokenCodeUnit +
-          ' to ' +
-          merchantName +
-          (isPaidByUser ? ' :: is Paid by user' : '') +
-          '\n\n' +
-          this._addExplorerLinkIntoTxIdWithCoin(
-            isPaidByUser ? merchantOrder.txIdFromUser : merchantOrder.txIdMerchantPayment,
-            'xec',
-            'View tx on the Explorer'
-          ),
+        ' :: ' +
+        this._getPaymentTypeString(merchantOrder.paymentType) +
+        ' : ' +
+        amountElps.toFixed(2) +
+        ' ' +
+        config.conversion.tokenCodeUnit +
+        ' to ' +
+        merchantName +
+        (isPaidByUser ? ' :: is Paid by user' : '') +
+        '\n\n' +
+        this._addExplorerLinkIntoTxIdWithCoin(
+          isPaidByUser ? merchantOrder.txIdFromUser : merchantOrder.txIdMerchantPayment,
+          'xec',
+          'View tx on the Explorer'
+        ),
         { parse_mode: 'HTML' }
       );
     }
@@ -5997,23 +5992,23 @@ export class WalletService implements IWalletService {
       botSwap.sendMessage(
         config.swapTelegram.channelSuccessId,
         'Completed :: ' +
-          'Order no.' +
-          orderInfo.id +
-          ' :: ' +
-          orderInfo.actualSent.toLocaleString('en-US') +
-          ' ' +
-          unitFrom +
-          ' to ' +
-          orderInfo.actualReceived.toLocaleString('en-US') +
-          ' ' +
-          unitTo +
-          ' :: ' +
-          'Balance: ' +
-          balanceTo.toLocaleString('en-US') +
-          ' ' +
-          unitTo +
-          '\n\n' +
-          this._addExplorerLinkIntoTxIdWithCoin(txId, orderInfo.toCoinCode, 'View tx on the Explorer'),
+        'Order no.' +
+        orderInfo.id +
+        ' :: ' +
+        orderInfo.actualSent.toLocaleString('en-US') +
+        ' ' +
+        unitFrom +
+        ' to ' +
+        orderInfo.actualReceived.toLocaleString('en-US') +
+        ' ' +
+        unitTo +
+        ' :: ' +
+        'Balance: ' +
+        balanceTo.toLocaleString('en-US') +
+        ' ' +
+        unitTo +
+        '\n\n' +
+        this._addExplorerLinkIntoTxIdWithCoin(txId, orderInfo.toCoinCode, 'View tx on the Explorer'),
         {
           parse_mode: 'HTML'
         }
@@ -6024,13 +6019,13 @@ export class WalletService implements IWalletService {
         botSwap.sendMessage(
           config.swapTelegram.channelFailId,
           moneyWithWingsIcon +
-            ' FUND ' +
-            orderInfo.toCoinCode.toUpperCase() +
-            ' IS OUT OF FUND, PLEASE TOP UP! \n' +
-            'Remaining balance: ' +
-            balanceTo +
-            ' ' +
-            unitTo
+          ' FUND ' +
+          orderInfo.toCoinCode.toUpperCase() +
+          ' IS OUT OF FUND, PLEASE TOP UP! \n' +
+          'Remaining balance: ' +
+          balanceTo +
+          ' ' +
+          unitTo
         );
       }
     }
@@ -6064,10 +6059,10 @@ export class WalletService implements IWalletService {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
-          ' FUND XEC REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
-          remaining +
-          ' XEC - ' +
-          addressTopupEcash
+        ' FUND XEC REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
+        remaining +
+        ' XEC - ' +
+        addressTopupEcash
       );
       isNotiFundXecBelowMinimumToTelegram = true;
       setTimeout(() => {
@@ -6077,12 +6072,12 @@ export class WalletService implements IWalletService {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
-          ' FUND TOKEN REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
-          remaining +
-          ' ' +
-          config.conversion.tokenCodeUnit +
-          ' - ' +
-          addressTopupEtoken
+        ' FUND TOKEN REACHED THRESHOLD LIMIT, PLEASE TOP UP! - Remaining: ' +
+        remaining +
+        ' ' +
+        config.conversion.tokenCodeUnit +
+        ' - ' +
+        addressTopupEtoken
       );
       isNotiFundTokenBelowMinimumToTelegram = true;
       setTimeout(() => {
@@ -6093,10 +6088,10 @@ export class WalletService implements IWalletService {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
-          ' INSUFFICIENT XEC FUND. SWAP SERVICE IS PENDING PLEASE TOP UP! - Remaining: ' +
-          remaining +
-          ' XEC - ' +
-          addressTopupEcash
+        ' INSUFFICIENT XEC FUND. SWAP SERVICE IS PENDING PLEASE TOP UP! - Remaining: ' +
+        remaining +
+        ' XEC - ' +
+        addressTopupEcash
       );
       isNotiFundXecInsufficientMinimumToTelegram = true;
       setTimeout(() => {
@@ -6106,12 +6101,12 @@ export class WalletService implements IWalletService {
       bot.sendMessage(
         config.telegram.channelFailId,
         moneyWithWingsIcon +
-          ' INSUFFICIENT TOKEN FUND. SWAP SERVICE IS PENDING PLEASE TOP UP! - Remaining: ' +
-          remaining +
-          ' ' +
-          config.conversion.tokenCodeUnit +
-          ' - ' +
-          addressTopupEtoken
+        ' INSUFFICIENT TOKEN FUND. SWAP SERVICE IS PENDING PLEASE TOP UP! - Remaining: ' +
+        remaining +
+        ' ' +
+        config.conversion.tokenCodeUnit +
+        ' - ' +
+        addressTopupEtoken
       );
       isNotiFundTokenInsufficientMinimumToTelegram = true;
       setTimeout(() => {
@@ -7309,21 +7304,21 @@ export class WalletService implements IWalletService {
         botSwap.sendMessage(
           config.swapTelegram.channelSuccessId,
           'Manually completed :: ' +
-            'Order no.' +
-            orderInfo.id +
-            ' :: ' +
-            stringUserSentToDepositAddress +
-            ' ' +
-            unitFrom +
-            ' to ' +
-            stringUserReceived +
-            ' ' +
-            unitTo +
-            ' :: ' +
-            'Balance: ' +
-            balanceFinal.toLocaleString('en-US') +
-            ' ' +
-            unitTo,
+          'Order no.' +
+          orderInfo.id +
+          ' :: ' +
+          stringUserSentToDepositAddress +
+          ' ' +
+          unitFrom +
+          ' to ' +
+          stringUserReceived +
+          ' ' +
+          unitTo +
+          ' :: ' +
+          'Balance: ' +
+          balanceFinal.toLocaleString('en-US') +
+          ' ' +
+          unitTo,
           {
             parse_mode: 'HTML'
           }
@@ -8414,13 +8409,13 @@ export class WalletService implements IWalletService {
     );
   }
 
-  async getlastTxsByChronik(wallet, address, limit): Promise<Tx[] | Tx_InNode[]> {
+  async getlastTxsByChronik(wallet, address, limit): Promise<Tx[] | LegacyTx[]> {
     let scriptPayload;
     try {
       const chronikClient =
         wallet.chain === 'xec'
-          ? ChainService.getChronikClientInNode(wallet.chain)
-          : ChainService.getChronikClient(wallet.chain);
+          ? ChainService.getChronikClient(wallet.chain)
+          : ChainService.getLegacyChronikClient(wallet.chain);
       scriptPayload = ChainService.convertAddressToScriptPayload(wallet.chain, address);
       const txHistoryPage = await chronikClient.script('p2pkh', scriptPayload).history(0, limit);
       return txHistoryPage.txs;
@@ -8429,7 +8424,7 @@ export class WalletService implements IWalletService {
     }
   }
 
-  updateStatusSlpTxs(inTxs, lastTxsChronik: Array<Tx_InNode>, wallet) {
+  updateStatusSlpTxs(inTxs, lastTxsChronik: Array<Tx>, wallet) {
     const validTxs = [];
     _.forEach(inTxs, item => {
       const txsSlp = _.find(lastTxsChronik, itemTxsChronik => itemTxsChronik.txid == item.txid);
@@ -8445,8 +8440,8 @@ export class WalletService implements IWalletService {
           })
         );
         item.amountTokenUnit =
-          txsSlp.outputs[1].token && txsSlp.outputs[1].token.amount
-            ? Number(txsSlp.outputs[1].token.amount)
+          txsSlp.outputs[1].token && txsSlp.outputs[1].token.atoms
+            ? Number(txsSlp.outputs[1].token.atoms)
             : undefined;
         item.burnAmountToken = this._getBurnAmountToken(txsSlp, tokenEntry.txType);
         if (item.burnAmountToken > 0) {
@@ -8458,16 +8453,16 @@ export class WalletService implements IWalletService {
     return validTxs;
   }
 
-  _getBurnAmountToken(tx: Tx_InNode, type: string): number {
+  _getBurnAmountToken(tx: Tx, type: string): number {
     let burnAmount = 0;
     if (tx.tokenEntries && tx.tokenEntries.length > 0) {
       const tokenEntry = tx.tokenEntries[0];
-      burnAmount += Number(tokenEntry.actualBurnAmount);
+      burnAmount += Number(tokenEntry.actualBurnAtoms);
     }
     return Number(burnAmount);
   }
 
- getTxHistoryV8(bc: V8, wallet, opts, skip, limit, cb) {
+  getTxHistoryV8(bc: V8, wallet, opts, skip, limit, cb) {
     let bcHeight,
       bcHash,
       sinceTx,
@@ -8558,28 +8553,28 @@ export class WalletService implements IWalletService {
             const dustThreshold = ChainService.getDustAmountValue(wallet.chain);
             this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, wallet, async (err, inTxs: any[]) => {
               if (err) return cb(err);
-                if (err) return cb(err);
-                if (this._isSupportToken(wallet) && addressesToken && _.size(inTxs) > 0) {
-                  try {
-                    let promiseList: Promise<Tx[] | Tx_InNode[]>[] = [];
-                    _.each(addressesToken, address => {
-                      promiseList.push(
-                        this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
-                      );
-                    });
-                    await Promise.all(promiseList).then(async lastTxsChronik => {
-                      const result = lastTxsChronik.reduce<(Tx | Tx_InNode)[]>(
-                        (accumulator, value) => [...accumulator, ...value],
-                        []
-                      );
-                      if (result.length > 0) {
-                        inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), result as Tx_InNode[], wallet);
-                      }
-                    });
-                  } catch (err) {
-                    return cb(err);
-                  }
+              if (err) return cb(err);
+              if (this._isSupportToken(wallet) && addressesToken && _.size(inTxs) > 0) {
+                try {
+                  let promiseList: Promise<Tx[] | LegacyTx[]>[] = [];
+                  _.each(addressesToken, address => {
+                    promiseList.push(
+                      this.getlastTxsByChronik(wallet, address.address, _.size(inTxs) > 200 ? 200 : _.size(inTxs))
+                    );
+                  });
+                  await Promise.all(promiseList).then(async lastTxsChronik => {
+                    const result = lastTxsChronik.reduce<(Tx | LegacyTx)[]>(
+                      (accumulator, value) => [...accumulator, ...value],
+                      []
+                    );
+                    if (result.length > 0) {
+                      inTxs = this.updateStatusSlpTxs(_.cloneDeep(inTxs), result as Tx[], wallet);
+                    }
+                  });
+                } catch (err) {
+                  return cb(err);
                 }
+              }
 
               if (cacheStatus.tipTxId) {
                 // first item is the most recent tx.
@@ -8684,7 +8679,7 @@ export class WalletService implements IWalletService {
                     // mapping tx details from chronik with only 2 att : txid and outputScript
                     const opReturnScript =
                       Constants.opReturn.opReturnPrefixHex + Constants.opReturn.opReturnAppPrefixLengthHex;
-                    const txs = _.map(listTx, function(tx) {
+                    const txs = _.map(listTx, function (tx) {
                       if (tx) {
                         return {
                           txid: tx.txid,
@@ -8724,8 +8719,8 @@ export class WalletService implements IWalletService {
           if (this._isSupportToken(wallet)) {
             const chronikClient =
               wallet.chain === 'xec'
-                ? ChainService.getChronikClientInNode(wallet.chain)
-                : ChainService.getChronikClient(wallet.chain);
+                ? ChainService.getChronikClient(wallet.chain)
+                : ChainService.getLegacyChronikClient(wallet.chain);
             let filterResultTxs = _.filter(resultTxs, tx => !tx.burnAmountToken);
             if (filterResultTxs.length > 0) {
               const listTxDetailFromChronik = _.map(filterResultTxs, async tx => {
@@ -8734,7 +8729,7 @@ export class WalletService implements IWalletService {
               });
 
               return Promise.all(listTxDetailFromChronik).then(listTx => {
-                const txs: Tx_InNode[] = _.compact(listTx) as Tx_InNode[];
+                const txs: Tx[] = _.compact(listTx) as Tx[];
                 if (!!listTx && listTx.length > 0) {
                   // remove undefined, false value from list txs return from chronik
                   _.each(txs, async txDetail => {
@@ -8753,8 +8748,8 @@ export class WalletService implements IWalletService {
                       const inputs = txDetail.inputs;
                       if (!!type && type === 'BURN') {
                         inputs.forEach(input => {
-                          if (typeof input.token !== 'undefined' && input.token.amount && input.token.amount !== '0') {
-                            burnAmount = Number(input.token.amount);
+                          if (typeof input.token !== 'undefined' && input.token.atoms && input.token.atoms != 0n) {
+                            burnAmount = Number(input.token.atoms);
                           }
                         });
                       }
@@ -9162,7 +9157,7 @@ export class WalletService implements IWalletService {
    */
   getAllFiatRates(cb) {
 
-     return this.fiatRateService.getAllRates((err, rates) => {
+    return this.fiatRateService.getAllRates((err, rates) => {
       if (err) return cb(err);
       return cb(null, rates);
     });
@@ -10652,8 +10647,8 @@ export class WalletService implements IWalletService {
       const URL = API + `/v2/supported_crypto_currencies?public_key=${PUBLIC_KEY}`;
 
       this.request.get(URL, { headers })
-  .then((response) => resolve(response.data))
-  .catch((err) => reject(err.response?.data || err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data || err));
 
     });
   }
@@ -10680,8 +10675,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(API + '/wallet/merchant/v2/quote', req.body, { headers })
-  .then((response) => resolve(response.data || null))
-  .catch((err) => reject(err.response?.data || err));
+        .then((response) => resolve(response.data || null))
+        .catch((err) => reject(err.response?.data || err));
 
     });
   }
@@ -10715,8 +10710,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + `/v3/quote?${qs.join('&')}`;
 
       this.request.get(URL, { headers })
-      .then((response) => resolve(response.data))
-      .catch((err) => reject(err.response?.data || err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data || err));
     });
   }
 
@@ -10760,14 +10755,14 @@ export class WalletService implements IWalletService {
       };
 
       this.request.post(API + '/wallet/merchant/v2/payments/partner/data', req.body, { headers })
-      .then((response) => {
-        response.data.payment_id = paymentId;
-        response.data.order_id = orderId;
-        response.data.app_provider_id = appProviderId;
-        response.data.api_host = apiHost;
-        resolve(response.data);
-      })
-      .catch((err) => reject(err.response?.data || err));
+        .then((response) => {
+          response.data.payment_id = paymentId;
+          response.data.order_id = orderId;
+          response.data.app_provider_id = appProviderId;
+          response.data.api_host = apiHost;
+          resolve(response.data);
+        })
+        .catch((err) => reject(err.response?.data || err));
     });
   }
 
@@ -10785,8 +10780,8 @@ export class WalletService implements IWalletService {
       };
 
       this.request.get(API + '/wallet/merchant/v2/events', { headers })
-  .then((response) => resolve(response.data ?? null))
-  .catch((err) => reject(err.response?.data ?? null));
+        .then((response) => resolve(response.data ?? null))
+        .catch((err) => reject(err.response?.data ?? null));
 
     });
   }
@@ -10855,8 +10850,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + uriPath;
 
       this.request.get(URL, { headers })
-  .then((response) => resolve(response.data ?? response))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
 
     });
   }
@@ -10882,8 +10877,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + `${uriPath}?${qs.join('&')}`;
 
       this.request.get(URL, { headers })
-      .then((response) => resolve(response.data ?? response))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -10923,8 +10918,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + `/aggregator/tokens/quote?${qs.join('&')}`;
 
       this.request.get(URL, { headers })
-      .then((response) => resolve(response.data ?? response))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -10947,8 +10942,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(API + '/tracker/v2/txn', req.body, { headers })
-  .then((response) => resolve(response.data ?? response))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
 
     });
   }
@@ -10999,8 +10994,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + '/partners/api/v2/refresh-token';
 
       this.request.post(URL, req.body, { headers })
-  .then((response) => resolve(response.data ?? response))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11017,8 +11012,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + '/api/v2/currencies/crypto-currencies';
 
       this.request.get(URL, { headers })
-  .then((response) => resolve(response.data ?? response))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
 
     });
   }
@@ -11037,8 +11032,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + `/api/v2/currencies/fiat-currencies?apiKey=${API_KEY}`;
 
       this.request.get(URL, { headers })
-      .then((response) => resolve(response.data ?? response))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
 
     });
   }
@@ -11071,8 +11066,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + `/api/v2/currencies/price?${qs.join('&')}`;
 
       this.request.get(URL, { headers })
-      .then((response) => resolve(response.data ?? response))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11178,8 +11173,8 @@ export class WalletService implements IWalletService {
       const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
 
       this.request.get(URL, { headers })
-      .then((response) => resolve(response.data ?? response))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11215,8 +11210,8 @@ export class WalletService implements IWalletService {
       };
 
       this.request.post(URL, req.body, { headers })
-  .then((response) => resolve(response.data))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11258,8 +11253,8 @@ export class WalletService implements IWalletService {
       };
 
       this.request.post(URL, req.body, { headers })
-  .then((response) => resolve(response.data))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11370,8 +11365,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(URL, message, { headers })
-  .then((response) => resolve(response.data))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11418,8 +11413,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(URL, message, { headers })
-  .then((response) => resolve(response.data))
-  .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11468,8 +11463,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(URL, message, { headers })
-      .then((response) => resolve(response.data))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data ?? err));
 
     });
   }
@@ -11530,8 +11525,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(URL, message, { headers })
-      .then((response) => resolve(response.data))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data))
+        .catch((err) => reject(err.response?.data ?? err));
 
     });
   }
@@ -11579,8 +11574,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(URL, message, { headers })
-      .then(response => resolve(response.data))
-      .catch(err => reject(err.response?.data ?? err));
+        .then(response => resolve(response.data))
+        .catch(err => reject(err.response?.data ?? err));
 
     });
   }
@@ -11627,8 +11622,8 @@ export class WalletService implements IWalletService {
       }
 
       this.request.post(URL, message, { headers })
-      .then(response => resolve(response.data))
-      .catch(err => reject(err.response?.data ?? err));
+        .then(response => resolve(response.data))
+        .catch(err => reject(err.response?.data ?? err));
     });
   }
 
@@ -11693,8 +11688,8 @@ export class WalletService implements IWalletService {
       const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
       this.request.get(URL, { headers })
-      .then((response) => resolve(response.data ?? response))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11728,34 +11723,34 @@ export class WalletService implements IWalletService {
         const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
 
         this.request.get(URL, { headers })
-  .then(response => {
-    if (!response.data?.tokens) {
-      if (response?.status === 429) {
-        // oneinch rate limit
-        return resolve(oldvalues);
-      }
-      if (oldvalues) {
-        this.logw('No token list available... using old cached values');
-        return resolve(oldvalues);
-      }
-      return reject(new Error('Could not get tokens list'));
-    }
+          .then(response => {
+            if (!response.data?.tokens) {
+              if (response?.status === 429) {
+                // oneinch rate limit
+                return resolve(oldvalues);
+              }
+              if (oldvalues) {
+                this.logw('No token list available... using old cached values');
+                return resolve(oldvalues);
+              }
+              return reject(new Error('Could not get tokens list'));
+            }
 
-    this.storage.storeGlobalCache(cacheKey, response.data.tokens, err => {
-      if (err) {
-        this.logw('Could not store tokens list');
-      }
-      return resolve(response.data.tokens);
-    });
-  })
-  .catch(err => {
-    this.logw('An error occurred while retrieving the token list', err);
-    if (oldvalues) {
-      this.logw('Using old cached values');
-      return resolve(oldvalues);
-    }
-    return reject(err.response?.data ?? err);
-  })
+            this.storage.storeGlobalCache(cacheKey, response.data.tokens, err => {
+              if (err) {
+                this.logw('Could not store tokens list');
+              }
+              return resolve(response.data.tokens);
+            });
+          })
+          .catch(err => {
+            this.logw('An error occurred while retrieving the token list', err);
+            if (oldvalues) {
+              this.logw('Using old cached values');
+              return resolve(oldvalues);
+            }
+            return reject(err.response?.data ?? err);
+          })
       });
     });
   }
@@ -11799,8 +11794,8 @@ export class WalletService implements IWalletService {
         Accept: 'application/payid+json'
       };
       this.request.get(url, { headers })
-      .then((response) => resolve(response.data ?? response))
-      .catch((err) => reject(err.response?.data ?? err));
+        .then((response) => resolve(response.data ?? response))
+        .catch((err) => reject(err.response?.data ?? err));
     });
   }
 
@@ -11812,18 +11807,18 @@ export class WalletService implements IWalletService {
         Accept: 'application/payid+json'
       };
       this.request.get(URL, { headers })
-  .then(response => {
-    let url;
-    if (response.data?.links?.[0]?.template) {
-      url = response.data.links[0].template.replace('{acctpart}', req.handle);
-    } else {
-      url = `https://${req.domain}/${req.handle}`;
-    }
+        .then(response => {
+          let url;
+          if (response.data?.links?.[0]?.template) {
+            url = response.data.links[0].template.replace('{acctpart}', req.handle);
+          } else {
+            url = `https://${req.domain}/${req.handle}`;
+          }
 
-    return this.getPayId(url);
-  })
-  .then(data => resolve(data))
-  .catch(err => reject(err.response?.data ?? err));
+          return this.getPayId(url);
+        })
+        .then(data => resolve(data))
+        .catch(err => reject(err.response?.data ?? err));
     });
   }
 
@@ -11883,7 +11878,7 @@ export class WalletService implements IWalletService {
   }
 
   async startBotNotificationForUser() {
-    const chronikClient = ChainService.getChronikClientInNode('xec');
+    const chronikClient = ChainService.getChronikClient('xec');
     ws = chronikClient.ws({
       onMessage: msg => {
         if (msg.type === 'Tx' && !txIdHandled.includes(msg.txid) && msg.msgType === 'TX_ADDED_TO_MEMPOOL') {
@@ -11927,15 +11922,15 @@ export class WalletService implements IWalletService {
                         botNotification.sendMessage(
                           '@bcProTX',
                           '[ ' +
-                            addressSelected.substr(addressSelected.length - 8) +
-                            ' ] has received a payment of ' +
-                            (outputSelected.amount / 10 ** tokenInfoReturn.decimals).toLocaleString('en-US') +
-                            ' ' +
-                            tokenInfoReturn.symbol +
-                            ' from ' +
-                            result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
-                            '\n\n' +
-                            this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
+                          addressSelected.substr(addressSelected.length - 8) +
+                          ' ] has received a payment of ' +
+                          (outputSelected.amount / 10 ** tokenInfoReturn.decimals).toLocaleString('en-US') +
+                          ' ' +
+                          tokenInfoReturn.symbol +
+                          ' from ' +
+                          result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
+                          '\n\n' +
+                          this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                           { parse_mode: 'HTML' }
                         );
                       });
@@ -11944,13 +11939,13 @@ export class WalletService implements IWalletService {
                       botNotification.sendMessage(
                         '@bcProTX',
                         '[ ' +
-                          addressSelected.substr(addressSelected.length - 8) +
-                          ' ] has received a payment of ' +
-                          (outputSelected.amount / 100).toLocaleString('en-US') +
-                          ' XEC from ' +
-                          result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
-                          '\n\n' +
-                          this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
+                        addressSelected.substr(addressSelected.length - 8) +
+                        ' ] has received a payment of ' +
+                        (outputSelected.amount / 100).toLocaleString('en-US') +
+                        ' XEC from ' +
+                        result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
+                        '\n\n' +
+                        this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                         { parse_mode: 'HTML' }
                       );
                     }
@@ -11968,15 +11963,15 @@ export class WalletService implements IWalletService {
                               botNotification.sendMessage(
                                 msgId,
                                 '[ ' +
-                                  addressSelected.substr(addressSelected.length - 8) +
-                                  ' ] has received a payment of ' +
-                                  (outputSelected.amount / 10 ** tokenInfoReturn.decimals).toLocaleString('en-US') +
-                                  ' ' +
-                                  tokenInfoReturn.symbol +
-                                  ' from ' +
-                                  result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
-                                  '\n\n' +
-                                  this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
+                                addressSelected.substr(addressSelected.length - 8) +
+                                ' ] has received a payment of ' +
+                                (outputSelected.amount / 10 ** tokenInfoReturn.decimals).toLocaleString('en-US') +
+                                ' ' +
+                                tokenInfoReturn.symbol +
+                                ' from ' +
+                                result.inputAddresses.find(input => input.indexOf('etoken') === 0) +
+                                '\n\n' +
+                                this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                                 { parse_mode: 'HTML' }
                               );
                             });
@@ -11985,13 +11980,13 @@ export class WalletService implements IWalletService {
                             botNotification.sendMessage(
                               msgId,
                               '[ ' +
-                                addressSelected.substr(addressSelected.length - 8) +
-                                ' ] has received a payment of ' +
-                                (outputSelected.amount / 100).toLocaleString('en-US') +
-                                'XEC from ' +
-                                result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
-                                '\n\n' +
-                                this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
+                              addressSelected.substr(addressSelected.length - 8) +
+                              ' ] has received a payment of ' +
+                              (outputSelected.amount / 100).toLocaleString('en-US') +
+                              'XEC from ' +
+                              result.inputAddresses.find(input => input.indexOf('ecash') === 0) +
+                              '\n\n' +
+                              this._addExplorerLinkIntoTxIdWithCoin(result.txid, 'xec', 'View tx on the Explorer'),
                               { parse_mode: 'HTML' }
                             );
                           }
@@ -12013,9 +12008,9 @@ export class WalletService implements IWalletService {
           });
         }
       },
-      onReconnect: e => {},
-      onConnect: e => {},
-      onError: e => {}
+      onReconnect: e => { },
+      onConnect: e => { },
+      onError: e => { }
     });
     await ws.waitForOpen();
     this.storage.fetchAllAddressInUserWatchAddress((err, listAddress) => {

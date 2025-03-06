@@ -1,4 +1,5 @@
-import { ChronikClient, ChronikClientNode } from 'chronik-client';
+import { ChronikClient } from 'chronik-client';
+import { ChronikClient as LegacyChronikClient } from 'legacy-chronik-client';
 import { Common } from '../common';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
@@ -55,8 +56,8 @@ export interface IChain {
   convertAddressToScriptPayload(coin: string, address: string);
   sendToken(wallet, mnemonic, tokenId, token, TOKENQTY, etokenAddress);
   burnToken(wallet, mnemonic, tokenId, TOKENQTY, splitTxId);
+  getLegacyChronikClient();
   getChronikClient();
-  getChronikClientInNode();
   getTokenInfo(tokenId);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
@@ -125,12 +126,12 @@ class ChainProxy {
     }
   }
 
-  getChronikClient(coin): ChronikClient {
-    return this.get(coin).getChronikClient();
+  getLegacyChronikClient(coin): LegacyChronikClient {
+    return this.get(coin).getLegacyChronikClient();
   }
 
-  getChronikClientInNode(coin): ChronikClientNode {
-    return this.get(coin).getChronikClientInNode();
+  getChronikClient(coin): ChronikClient {
+    return this.get(coin).getChronikClient();
   }
 
   getWalletBalance(server, wallet, opts, cb) {
