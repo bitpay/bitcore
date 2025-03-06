@@ -1,5 +1,5 @@
 import bitcoreLib from 'bitcore-lib';
-import * as ECIES from '../ecies/index.js';
+import * as ECIES from '../ecies/ecies.js';
 
 export function detachSignData(data, privateKey) {
   const hashdata = bitcoreLib.crypto.Hash.sha256sha256(data);

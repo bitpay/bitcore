@@ -1,8 +1,9 @@
-import assert from 'assert';
+import bitcoreLib from 'bitcore-lib';
 import { DklsDsg, DklsTypes, DklsUtils } from '@bitgo/sdk-lib-mpc';
 import { DklsComms } from './dklsComms.js';
-import bitcoreLib from 'bitcore-lib';
 import { encrypt, decrypt } from './utils.js';
+
+const $ = bitcoreLib.util.preconditions;
 
 export class Sign {
   #keychain;
@@ -31,37 +32,37 @@ export class Sign {
    * @param {number} params.round - round number of the signing process. This should not be explicitly given.
    */
   constructor({ keychain, partyId, n, m, derivationPath, messageHash, authKey, round }) {
-    assert(keychain != null, 'keychain is required');
-    assert(partyId != null, 'partyId is required');
-    assert(n != null, 'n is required');
-    assert(m != null, 'm is required');
-    assert(messageHash != null, 'messageHash is required');
-    assert(authKey != null, 'authKey is required');
+    $.checkArgument(keychain != null, 'keychain is required');
+    $.checkArgument(partyId != null, 'partyId is required');
+    $.checkArgument(n != null, 'n is required');
+    $.checkArgument(m != null, 'm is required');
+    $.checkArgument(messageHash != null, 'messageHash is required');
+    $.checkArgument(authKey != null, 'authKey is required');
 
-    assert(Buffer.isBuffer(keychain.privateKeyShare), 'keychain.privateKeyShare must be a buffer');
-    assert(Buffer.isBuffer(keychain.commonKeyChain), 'keychain.commonKeyChain must be a buffer');
+    $.checkArgument(Buffer.isBuffer(keychain.privateKeyShare), 'keychain.privateKeyShare must be a buffer');
+    $.checkArgument(Buffer.isBuffer(keychain.commonKeyChain), 'keychain.commonKeyChain must be a buffer');
     this.#keychain = keychain;
 
-    assert(partyId >= 0 && partyId < n, 'partyId must be in the range [0, n-1]');
+    $.checkArgument(partyId >= 0 && partyId < n, 'partyId must be in the range [0, n-1]');
     this.#partyId = parseInt(partyId);
 
-    assert(n > 1, 'n must be at least 2');
+    $.checkArgument(n > 1, 'n must be at least 2');
     this.#partySize = parseInt(n);
 
-    assert(m > 0 && m <= this.#partySize, 'm must be in the range [1, n]');
+    $.checkArgument(m > 0 && m <= this.#partySize, 'm must be in the range [1, n]');
     this.#minSigners = parseInt(m);
 
-    assert(derivationPath == null || (typeof derivationPath === 'string' && derivationPath.startsWith('m')), 'derivationPath must be a string starting with "m"');
+    $.checkArgument(derivationPath == null || (typeof derivationPath === 'string' && derivationPath.startsWith('m')), 'derivationPath must be a string starting with "m"');
     this.#derivationPath = derivationPath || 'm';
 
-    assert(Buffer.isBuffer(messageHash) && messageHash.length === 32, 'messageHash must be a 32 byte buffer');
+    $.checkArgument(Buffer.isBuffer(messageHash) && messageHash.length === 32, 'messageHash must be a 32 byte buffer');
     this.#messageHash = messageHash;
 
-    assert(round == null || (round >= 0 && round <= 5), 'round must be in the range [0, 5]');
+    $.checkArgument(round == null || (round >= 0 && round <= 5), 'round must be in the range [0, 5]');
     this.#round = parseInt(round) || 0;
 
     this.#authKey = new bitcoreLib.PrivateKey(authKey);
-    assert(this.#authKey.toString('hex') === authKey.toString('hex') || this.#authKey.toWIF() === authKey, 'Unrecognized authKey format');
+    $.checkArgument(this.#authKey.toString('hex') === authKey.toString('hex') || this.#authKey.toWIF() === authKey, 'Unrecognized authKey format');
 
     this.#dsg = new DklsDsg.Dsg(this.#keychain.privateKeyShare, this.#partyId, this.#derivationPath, this.#messageHash);
   }
@@ -71,8 +72,8 @@ export class Sign {
    * @returns {string} Base64 encoded session string
    */
   export() {
-    assert(this.#round > 0, 'Cannot export a session that has not started');
-    assert(!this.isSignatureReady(), 'Cannot export a completed session. The signature is ready with getSignature()');
+    $.checkState(this.#round > 0, 'Cannot export a session that has not started');
+    $.checkState(!this.isSignatureReady(), 'Cannot export a completed session. The signature is ready with getSignature()');
     
     const sessionBytes = this.#dsg.dsgSessionBytes || this.#dsg.dsgSession?.toBytes();
     const payload = this.#round +
@@ -96,7 +97,7 @@ export class Sign {
    */
   static async restore({ session, keychain, authKey }) {
     const _authKey = new bitcoreLib.PrivateKey(authKey);
-    assert(_authKey.toString('hex') === authKey.toString('hex') || _authKey.toWIF() === authKey, 'Unrecognized authKey format');
+    $.checkArgument(_authKey.toString('hex') === authKey.toString('hex') || _authKey.toWIF() === authKey, 'Unrecognized authKey format');
     session = decrypt(Buffer.from(session, 'base64'), _authKey.publicKey, _authKey).toString('utf8');
     const [
       round,
@@ -142,7 +143,7 @@ export class Sign {
    * @returns {Promise<{round: number, partyId: number, publicKey: string, p2pMessages: Object[], broadcastMessages: Object[]}>}
    */
   async initJoin() {
-    assert(this.#round == 0, 'initJoin must be called before the rounds ');
+    $.checkState(this.#round == 0, 'initJoin must be called before the rounds ');
     const unsignedMessageR1 = await this.#dsg.init();
     const serializedMsg = DklsTypes.serializeBroadcastMessage(unsignedMessageR1);
     const signedMessage = await DklsComms.encryptAndAuthOutgoingMessages(
@@ -161,12 +162,12 @@ export class Sign {
    * @returns {{ round: number, partyId: number, publicKey: string, p2pMessages: Object[], broadcastMessages: Object[] }}
    */
   nextRound(prevRoundMessages) {
-    assert(this.#round > 0, 'initJoin must be called before participating in the rounds');
-    assert(this.#round < 5, 'Signing rounds are over');
-    assert(Array.isArray(prevRoundMessages), 'prevRoundMessages must be an array');
-    assert(prevRoundMessages.length === this.#minSigners - 1, 'Not ready to proceed to the next round');
-    assert(prevRoundMessages.every(msg => msg.round === this.#round - 1), 'All messages must be from the previous round');
-    assert(prevRoundMessages.every(msg => msg.partyId !== this.#partyId), 'Messages must not be from the yourself');
+    $.checkState(this.#round > 0, 'initJoin must be called before participating in the rounds');
+    $.checkState(this.#round < 5, 'Signing rounds are over');
+    $.checkArgument(Array.isArray(prevRoundMessages), 'prevRoundMessages must be an array');
+    $.checkArgument(prevRoundMessages.length === this.#minSigners - 1, 'Not ready to proceed to the next round');
+    $.checkArgument(prevRoundMessages.every(msg => msg.round === this.#round - 1), 'All messages must be from the previous round');
+    $.checkArgument(prevRoundMessages.every(msg => msg.partyId !== this.#partyId), 'Messages must not be from the yourself');
 
     let prevRndMsg = DklsComms.decryptAndVerifyIncomingMessages(prevRoundMessages, this.#authKey);
     prevRndMsg = DklsTypes.deserializeMessages(prevRndMsg);
@@ -197,7 +198,7 @@ export class Sign {
    * @returns {{ r: string, s: string, v: number, pubKey: string }} Signature object
    */
   getSignature() {
-    assert(this.isSignatureReady(), 'Signature not ready');
+    $.checkState(this.isSignatureReady(), 'Signature not ready');
 
     if (this.#signature) {
       return this.#signature;
