@@ -446,6 +446,7 @@ export class PayProV2 {
 
   static processResponse(responseData) {
     let payProDetails: any = {
+      paymentId: responseData.paymentId,
       payProUrl: responseData.paymentUrl,
       memo: responseData.memo
     };
@@ -453,7 +454,6 @@ export class PayProV2 {
     // otherwise, it returns err.
     payProDetails.verified = true;
 
-    // getPaymentOptions
     if (responseData.paymentOptions) {
       payProDetails.paymentOptions = responseData.paymentOptions;
       payProDetails.paymentOptions.forEach(option => {
@@ -461,14 +461,16 @@ export class PayProV2 {
       });
     }
 
-    // network
     if (responseData.network) {
       payProDetails.network = NetworkMap[responseData.network];
     }
 
     if (responseData.chain) {
-      payProDetails.coin = responseData.chain?.toLowerCase(); // TODO responseData.coin ???
       payProDetails.chain = responseData.chain?.toLowerCase();
+    }
+
+    if (responseData.currency) {
+      payProDetails.currency = responseData.currency;
     }
 
     if (responseData.expires) {
@@ -476,6 +478,14 @@ export class PayProV2 {
         payProDetails.expires = new Date(responseData.expires).toISOString();
       } catch (e) {
         throw new Error('Bad expiration');
+      }
+    }
+
+    if (responseData.time) {
+      try {
+        payProDetails.time = new Date(responseData.time).toISOString();
+      } catch (e) {
+        throw new Error('Bad time');
       }
     }
 
