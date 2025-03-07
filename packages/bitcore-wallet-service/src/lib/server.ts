@@ -6857,7 +6857,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
+        return reject(Errors.UPGRADE_NEEDED.withMessage('Credentials expired, please update the app to continue using Changelly services.'));
       }
 
       if (!checkRequired(req.body, ['id'])) {
@@ -6903,7 +6903,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
+        return reject(Errors.UPGRADE_NEEDED.withMessage('Credentials expired, please update the app to continue using Changelly services.'));
       }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
@@ -6954,7 +6954,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
+        return reject(Errors.UPGRADE_NEEDED.withMessage('Credentials expired, please update the app to continue using Changelly services.'));
       }
 
       if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
@@ -7006,7 +7006,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
+        return reject(Errors.UPGRADE_NEEDED.withMessage('Credentials expired, please update the app to continue using Changelly services.'));
       }
 
       if (
@@ -7069,7 +7069,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
+        return reject(Errors.UPGRADE_NEEDED.withMessage('Credentials expired, please update the app to continue using Changelly services.'));
       }
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
@@ -7119,7 +7119,7 @@ export class WalletService implements IWalletService {
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
-        return reject(new Error(`${Errors.codes.UPGRADE_NEEDED}: Credentials expired, please update the app to continue using Changelly services.`));
+        return reject(Errors.UPGRADE_NEEDED.withMessage('Credentials expired, please update the app to continue using Changelly services.'));
       }
 
       if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {

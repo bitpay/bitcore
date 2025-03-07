@@ -27,6 +27,10 @@ export class ClientError {
     this.name = this.code;
   }
 
+  withMessage(message: string) {
+    return new ClientError(this.code, message, this.messageData);
+  }
+
   toString() {
     return '<ClientError:' + this.code + ' ' + this.message + '>';
   }

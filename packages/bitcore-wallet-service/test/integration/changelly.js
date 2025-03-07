@@ -136,7 +136,7 @@ describe('Changelly integration', () => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
-        err.message.should.equal('UPGRADE_NEEDED: Credentials expired, please update the app to continue using Changelly services.');
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -209,7 +209,7 @@ describe('Changelly integration', () => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
-        err.message.should.equal('UPGRADE_NEEDED: Credentials expired, please update the app to continue using Changelly services.');
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -283,7 +283,7 @@ describe('Changelly integration', () => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
-        err.message.should.equal('UPGRADE_NEEDED: Credentials expired, please update the app to continue using Changelly services.');
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -360,7 +360,7 @@ describe('Changelly integration', () => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
-        err.message.should.equal('UPGRADE_NEEDED: Credentials expired, please update the app to continue using Changelly services.');
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -436,7 +436,7 @@ describe('Changelly integration', () => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
-        err.message.should.equal('UPGRADE_NEEDED: Credentials expired, please update the app to continue using Changelly services.');
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -508,7 +508,7 @@ describe('Changelly integration', () => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
-        err.message.should.equal('UPGRADE_NEEDED: Credentials expired, please update the app to continue using Changelly services.');
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
