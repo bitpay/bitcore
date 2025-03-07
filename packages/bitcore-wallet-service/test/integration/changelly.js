@@ -77,22 +77,13 @@ describe('Changelly integration', () => {
         headers: {},
         body: {
           id: "test",
+          useV2: true
         }
       }
     });
 
     it('should work properly if req is OK', () => {
       server.request = fakeRequest;
-      server.changellyGetCurrencies(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
       server.changellyGetCurrencies(req).then(data => {
         should.exist(data);
       }).catch(err => {
@@ -137,6 +128,17 @@ describe('Changelly integration', () => {
         err.message.should.equal('ClientError: Service not configured.');
       });
     });
+
+    it('should return error if req is v1', () => {
+      server.request = fakeRequest;
+      delete req.body.useV2;
+      server.changellyGetCurrencies(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
+      });
+    });
   });
 
   describe('#changellyGetPairsParams', () => {
@@ -146,24 +148,14 @@ describe('Changelly integration', () => {
         body: {
           id: "test",
           coinFrom: 'btc',
-          coinTo: 'eth'
+          coinTo: 'eth',
+          useV2: true
         }
       }
     });
 
     it('should work properly if req is OK', () => {
       server.request = fakeRequest;
-      server.changellyGetPairsParams(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
       server.changellyGetPairsParams(req).then(data => {
         should.exist(data);
       }).catch(err => {
@@ -209,6 +201,17 @@ describe('Changelly integration', () => {
         err.message.should.equal('ClientError: Service not configured.');
       });
     });
+
+    it('should return error if req is v1', () => {
+      server.request = fakeRequest;
+      delete req.body.useV2;
+      server.changellyGetPairsParams(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
+      });
+    });
   });
 
   describe('#changellyGetFixRateForAmount', () => {
@@ -219,23 +222,14 @@ describe('Changelly integration', () => {
           id: "test",
           coinFrom: 'btc',
           coinTo: 'eth',
-          amountFrom: '1.123'
+          amountFrom: '1.123',
+          useV2: true
         }
       }
     });
 
     it('should work properly if req is OK', () => {
       server.request = fakeRequest;
-      server.changellyGetFixRateForAmount(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
       server.changellyGetFixRateForAmount(req).then(data => {
         should.exist(data);
       }).catch(err => {
@@ -281,6 +275,17 @@ describe('Changelly integration', () => {
         err.message.should.equal('ClientError: Service not configured.');
       });
     });
+
+    it('should return error if req is v1', () => {
+      server.request = fakeRequest;
+      delete req.body.useV2;
+      server.changellyGetFixRateForAmount(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
+      });
+    });
   });
 
   describe('#changellyCreateFixTransaction', () => {
@@ -294,23 +299,14 @@ describe('Changelly integration', () => {
           amountFrom: '1.123',
           addressTo: '10.321',
           fixedRateId: '3.123',
-          refundAddress: 'refundAddress'
+          refundAddress: 'refundAddress',
+          useV2: true
         }
       }
     });
 
     it('should work properly if req is OK', () => {
       server.request = fakeRequest;
-      server.changellyCreateFixTransaction(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
       server.changellyCreateFixTransaction(req).then(data => {
         should.exist(data);
       }).catch(err => {
@@ -356,6 +352,17 @@ describe('Changelly integration', () => {
         err.message.should.equal('ClientError: Service not configured.');
       });
     });
+
+    it('should return error if req is v1', () => {
+      server.request = fakeRequest;
+      delete req.body.useV2;
+      server.changellyCreateFixTransaction(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
+      });
+    });
   });
 
   describe('#changellyGetTransactions', () => {
@@ -364,24 +371,14 @@ describe('Changelly integration', () => {
         headers: {},
         body: {
           id: "test",
-          exchangeTxId: 'exchangeTxId'
+          exchangeTxId: 'exchangeTxId',
+          useV2: true
         }
       }
     });
 
     it('should work properly if req is OK', async() => {
       server.request = fakeRequest;
-      try {
-        const data = await server.changellyGetTransactions(req);
-        should.exist(data);
-      } catch (err) {
-        should.not.exist(err);
-      }
-    });
-
-    it('should work properly if req is OK for v2', async() => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
       try {
         const data = await server.changellyGetTransactions(req);
         should.exist(data);
@@ -431,6 +428,17 @@ describe('Changelly integration', () => {
         err.message.should.equal('ClientError: Service not configured.');
       }
     });
+
+    it('should return error if req is v1', () => {
+      server.request = fakeRequest;
+      delete req.body.useV2;
+      server.changellyGetTransactions(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
+      });
+    });
   });
 
   describe('#changellyGetStatus', () => {
@@ -439,23 +447,14 @@ describe('Changelly integration', () => {
         headers: {},
         body: {
           id: "test",
-          exchangeTxId: 'exchangeTxId'
+          exchangeTxId: 'exchangeTxId',
+          useV2: true
         }
       }
     });
 
     it('should work properly if req is OK', () => {
       server.request = fakeRequest;
-      server.changellyGetStatus(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
       server.changellyGetStatus(req).then(data => {
         should.exist(data);
       }).catch(err => {
@@ -499,6 +498,17 @@ describe('Changelly integration', () => {
       }).catch(err => {
         should.exist(err);
         err.message.should.equal('ClientError: Service not configured.');
+      });
+    });
+
+    it('should return error if req is v1', () => {
+      server.request = fakeRequest;
+      delete req.body.useV2;
+      server.changellyGetStatus(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
