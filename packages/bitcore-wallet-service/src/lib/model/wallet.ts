@@ -7,6 +7,7 @@ import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
 
+const $ = require('preconditions').singleton();
 import $ from 'preconditions';
 import { v4 as Uuid } from 'uuid';
 const Constants = Common.Constants,
