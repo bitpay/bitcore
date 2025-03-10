@@ -4,9 +4,8 @@ import _ from 'lodash';
 import { IChain } from '..';
 import config from '../../../config'
 import { BtcChain } from '../btc';
-const Common = require('../../common');
-const Utils = Common.Utils;
-const Errors = require('../../errors/errordefinitions');
+import { Utils } from '../../common/utils';
+import { Errors } from '../../errors/errordefinitions';
 const chronikClient = new ChronikClient(config.chronik.xpiUrl.split(','));
 
 export class XpiChain extends BtcChain implements IChain {

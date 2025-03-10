@@ -1,5 +1,5 @@
 import _ from 'lodash';
-const config = require('../../config');
+import config from '../../config';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
@@ -7,8 +7,8 @@ import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
 
-const $ = require('preconditions').singleton();
-const Uuid = require('uuid');
+import $ from 'preconditions';
+import { v4 as Uuid } from 'uuid';
 const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;

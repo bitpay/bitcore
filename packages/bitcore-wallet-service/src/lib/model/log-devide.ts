@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 const Uuid = require('uuid');
-const Defaults = require('../common/defaults');
+import { Defaults } from '../common/defaults';
 
 const MAX_ATTENDANCE_WEEK = 7;
 

@@ -4,7 +4,7 @@ import moment from 'moment';
 import * as mongodb from 'mongodb';
 import logger from './logger';
 
-const config = require('../config');
+import config from '../config';
 const ObjectID = mongodb.ObjectID;
 const storage = require('./storage');
 

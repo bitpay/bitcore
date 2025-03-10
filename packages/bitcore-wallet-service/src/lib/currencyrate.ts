@@ -1,14 +1,11 @@
 import * as async from 'async';
 import _ from 'lodash';
-import * as request from 'request';
 import { Storage } from './storage';
 import axios, {AxiosInstance} from 'axios';
-const config = require('../config');
 
 const $ = require('preconditions').singleton();
-const Common = require('./common');
+import { Common } from './common';
 const Defaults = Common.Defaults;
-const Constants = Common.Constants;
 
 import logger from './logger';
 export class CurrencyRateService {
@@ -85,7 +82,7 @@ export class CurrencyRateService {
           return cb(new Error('No response data'));
         }
         logger.debug('Data for currency rate fetched successfully');
-        
+
         try {
           const rates = this.convertRates(response.data.data);
           return cb(null, rates);

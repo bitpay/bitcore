@@ -7,10 +7,8 @@ import { Token } from 'typescript';
 import { IChain } from '..';
 import config from '../../../config'
 import { BtcChain } from '../btc';
-
-const Errors = require('../../errors/errordefinitions');
-const Common = require('../../common');
-const Utils = Common.Utils;
+import { Utils } from '../../common/utils';
+import { Errors } from '../../errors/errordefinitions';
 const BCHJS = require('@bcpros/xpi-js');
 const bchjs = new BCHJS({ restURL: '' });
 const ecashaddr = require('ecashaddrjs');

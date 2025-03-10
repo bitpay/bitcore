@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { Common } from '../common';
-const Config = require('../../config');
+import Config from '../../config';
 
 const Defaults = Common.Defaults;
 

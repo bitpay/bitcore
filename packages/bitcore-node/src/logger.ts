@@ -11,7 +11,6 @@ const logger = winston.createLogger({
     })
   ],
   format: winston.format.combine(
-    winston.format.colorize(),
     winston.format.prettyPrint(),
     winston.format.splat(),
     winston.format.simple(),
