@@ -7348,6 +7348,7 @@ export class WalletService implements IWalletService {
         const chainIdMap = {
           eth: 1,
           matic: 137,
+          pol: 137,
           arb: 42161,
           base: 8453,
           op: 10,
