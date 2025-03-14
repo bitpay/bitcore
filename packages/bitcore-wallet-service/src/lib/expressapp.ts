@@ -1534,7 +1534,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.banxaGetPaymentMethods(req);
+        response = await server.externalServices.banxa.banxaGetPaymentMethods(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1545,7 +1545,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.banxaGetQuote(req);
+          response = await server.externalServices.banxa.banxaGetQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1557,7 +1557,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.banxaCreateOrder(req);
+          response = await server.externalServices.banxa.banxaCreateOrder(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1569,7 +1569,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.banxaGetOrder(req);
+        response = await server.externalServices.banxa.banxaGetOrder(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1580,7 +1580,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.moonpayGetCurrencies(req);
+        response = await server.externalServices.moonpay.moonpayGetCurrencies(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1591,7 +1591,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.moonpayGetQuote(req);
+          response = await server.externalServices.moonpay.moonpayGetQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1603,7 +1603,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.moonpayGetSellQuote(req);
+          response = await server.externalServices.moonpay.moonpayGetSellQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1615,7 +1615,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.moonpayGetCurrencyLimits(req);
+        response = await server.externalServices.moonpay.moonpayGetCurrencyLimits(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1626,7 +1626,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, server => {
         let response;
         try {
-          response = server.moonpayGetSignedPaymentUrl(req);
+          response = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1638,7 +1638,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.moonpayGetSellSignedPaymentUrl(req);
+          response = await server.externalServices.moonpay.moonpayGetSellSignedPaymentUrl(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1650,7 +1650,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.moonpayGetTransactionDetails(req);
+        response = await server.externalServices.moonpay.moonpayGetTransactionDetails(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1661,7 +1661,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.moonpayGetSellTransactionDetails(req);
+        response = await server.externalServices.moonpay.moonpayGetSellTransactionDetails(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1672,7 +1672,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.moonpayCancelSellTransaction(req);
+          response = await server.externalServices.moonpay.moonpayCancelSellTransaction(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1684,7 +1684,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.moonpayGetAccountDetails(req);
+        response = await server.externalServices.moonpay.moonpayGetAccountDetails(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1695,7 +1695,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.rampGetQuote(req);
+          response = await server.externalServices.ramp.rampGetQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1707,7 +1707,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.rampGetSellQuote(req);
+          response = await server.externalServices.ramp.rampGetSellQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1719,7 +1719,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.rampGetSignedPaymentUrl(req);
+          response = await server.externalServices.ramp.rampGetSignedPaymentUrl(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1731,7 +1731,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.rampGetAssets(req);
+        response = await server.externalServices.ramp.rampGetAssets(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1742,7 +1742,7 @@ export class ExpressApp {
       let server, response;
       try {
         server = getServer(req, res);
-        response = await server.rampGetSellTransactionDetails(req);
+        response = await server.externalServices.ramp.rampGetSellTransactionDetails(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1751,7 +1751,7 @@ export class ExpressApp {
 
     router.post('/v1/service/sardine/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.sardine
           .sardineGetQuote(req)
           .then(response => {
             res.json(response);
@@ -1764,7 +1764,7 @@ export class ExpressApp {
 
     router.post('/v1/service/sardine/getToken', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.sardine
           .sardineGetToken(req)
           .then(response => {
             res.json(response);
@@ -1779,7 +1779,7 @@ export class ExpressApp {
       let server: WalletService, response;
       try {
         server = getServer(req, res);
-        response = await server.sardineGetSupportedTokens(req);
+        response = await server.externalServices.sardine.sardineGetSupportedTokens(req);
         return res.json(response);
       } catch (ex) {
         return returnError(ex, res, req);
@@ -1794,7 +1794,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.sardine
         .sardineGetCurrencyLimits(req)
         .then(response => {
           res.json(response);
@@ -1812,7 +1812,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.sardine
         .sardineGetOrdersDetails(req)
         .then(response => {
           res.json(response);
@@ -1830,7 +1830,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.simplex
         .simplexGetCurrencies(req)
         .then(response => {
           res.json(response);
@@ -1842,7 +1842,7 @@ export class ExpressApp {
 
     router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.simplex
           .simplexGetQuote(req)
           .then(response => {
             res.json(response);
@@ -1855,7 +1855,7 @@ export class ExpressApp {
 
     router.post('/v1/service/simplex/sellQuote', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.simplex
           .simplexGetSellQuote(req)
           .then(response => {
             res.json(response);
@@ -1868,7 +1868,7 @@ export class ExpressApp {
 
     router.post('/v1/service/simplex/paymentRequest', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.simplex
           .simplexPaymentRequest(req)
           .then(response => {
             res.json(response);
@@ -1881,7 +1881,7 @@ export class ExpressApp {
 
     router.post('/v1/service/simplex/sellPaymentRequest', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.simplex
           .simplexSellPaymentRequest(req)
           .then(response => {
             res.json(response);
@@ -1895,7 +1895,7 @@ export class ExpressApp {
     router.get('/v1/service/simplex/events', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts = { env: req.query.env };
-        server
+        server.externalServices.simplex
           .simplexGetEvents(opts)
           .then(response => {
             res.json(response);
@@ -1903,18 +1903,6 @@ export class ExpressApp {
           .catch(err => {
             return returnError(err ?? 'unknown', res, req);
           });
-      });
-    });
-
-    router.post('/v1/service/transak/getAccessToken', (req, res) => {
-      getServerWithAuth(req, res, async server => {
-        let response;
-        try {
-          response = await server.transakGetAccessToken(req);
-          return res.json(response);
-        } catch (ex) {
-          return returnError(ex, res, req);
-        }
       });
     });
 
@@ -1926,7 +1914,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.thorswap
         .thorswapGetSupportedChains(req)
         .then(response => {
           res.json(response);
@@ -1944,7 +1932,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.thorswap
         .thorswapGetCryptoCurrencies(req)
         .then(response => {
           res.json(response);
@@ -1958,7 +1946,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.thorswapGetSwapQuote(req);
+          response = await server.externalServices.thorswap.thorswapGetSwapQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -1974,7 +1962,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.thorswap
         .thorswapGetSwapTx(req)
         .then(response => {
           res.json(response);
@@ -1982,6 +1970,18 @@ export class ExpressApp {
         .catch(err => {
           return returnError(err ?? 'unknown', res, req);
         });
+    });
+
+    router.post('/v1/service/transak/getAccessToken', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        let response;
+        try {
+          response = await server.externalServices.transak.transakGetAccessToken(req);
+          return res.json(response);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+      });
     });
 
     router.post('/v1/service/transak/cryptoCurrencies', (req, res) => {
@@ -1992,7 +1992,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.transak
         .transakGetCryptoCurrencies(req)
         .then(response => {
           res.json(response);
@@ -2010,7 +2010,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.transak
         .transakGetFiatCurrencies(req)
         .then(response => {
           res.json(response);
@@ -2024,7 +2024,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.transakGetQuote(req);
+          response = await server.externalServices.transak.transakGetQuote(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -2036,7 +2036,7 @@ export class ExpressApp {
       getServerWithAuth(req, res, async server => {
         let response;
         try {
-          response = await server.transakGetSignedPaymentUrl(req);
+          response = await server.externalServices.transak.transakGetSignedPaymentUrl(req);
           return res.json(response);
         } catch (ex) {
           return returnError(ex, res, req);
@@ -2052,7 +2052,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      server
+      server.externalServices.transak
         .transakGetOrderDetails(req)
         .then(response => {
           res.json(response);
@@ -2064,7 +2064,7 @@ export class ExpressApp {
 
     router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.wyre
           .wyreWalletOrderQuotation(req)
           .then(response => {
             res.json(response);
@@ -2077,7 +2077,7 @@ export class ExpressApp {
 
     router.post('/v1/service/wyre/walletOrderReservation', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.wyre
           .wyreWalletOrderReservation(req)
           .then(response => {
             res.json(response);
@@ -2095,7 +2095,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server
+      server.externalServices.changelly
         .changellyGetCurrencies(req)
         .then(response => {
           res.json(response);
@@ -2107,7 +2107,7 @@ export class ExpressApp {
 
     router.post('/v1/service/changelly/getPairsParams', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.changelly
           .changellyGetPairsParams(req)
           .then(response => {
             res.json(response);
@@ -2120,7 +2120,7 @@ export class ExpressApp {
 
     router.post('/v1/service/changelly/getFixRateForAmount', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.changelly
           .changellyGetFixRateForAmount(req)
           .then(response => {
             res.json(response);
@@ -2133,7 +2133,7 @@ export class ExpressApp {
 
     router.post('/v1/service/changelly/createFixTransaction', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.changelly
           .changellyCreateFixTransaction(req)
           .then(response => {
             res.json(response);
@@ -2151,7 +2151,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server
+      server.externalServices.changelly
         .changellyGetTransactions(req)
         .then(response => {
           res.json(response);
@@ -2168,7 +2168,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server
+      server.externalServices.changelly
         .changellyGetStatus(req)
         .then(response => {
           res.json(response);
@@ -2185,7 +2185,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server
+      server.externalServices.oneInch
         .oneInchGetReferrerFee(req)
         .then(response => {
           res.json(response);
@@ -2197,7 +2197,7 @@ export class ExpressApp {
 
     router.post('/v1/service/oneInch/getSwap/:chain?', (req, res) => {
       getServerWithAuth(req, res, server => {
-        server
+        server.externalServices.oneInch
           .oneInchGetSwap(req)
           .then(response => {
             res.json(response);
@@ -2216,7 +2216,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server
+      server.externalServices.oneInch
         .oneInchGetTokens(req)
         .then(response => {
           res.json(response);

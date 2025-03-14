@@ -83,11 +83,11 @@ describe('Thorswap integration', () => {
           includeDetails: true,
         }
       }
+      server.externalServices.thorswap.request = fakeRequest;
     });
 
     it('should work properly if req is OK with includeDetails true', () => {
-      server.request = fakeRequest;
-      server.thorswapGetSupportedChains(req).then(data => {
+      server.externalServices.thorswap.thorswapGetSupportedChains(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -96,8 +96,7 @@ describe('Thorswap integration', () => {
 
     it('should work properly if req is OK with includeDetails false', () => {
       req.body.includeDetails = false;
-      server.request = fakeRequest;
-      server.thorswapGetSupportedChains(req).then(data => {
+      server.externalServices.thorswap.thorswapGetSupportedChains(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -106,8 +105,7 @@ describe('Thorswap integration', () => {
 
     it('should work properly if req is OK without includeDetails param', () => {
       delete req.body.includeDetails;
-      server.request = fakeRequest;
-      server.thorswapGetSupportedChains(req).then(data => {
+      server.externalServices.thorswap.thorswapGetSupportedChains(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -119,8 +117,8 @@ describe('Thorswap integration', () => {
         get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.thorswapGetSupportedChains(req).then(data => {
+      server.externalServices.thorswap.request = fakeRequest2;
+      server.externalServices.thorswap.thorswapGetSupportedChains(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -131,8 +129,7 @@ describe('Thorswap integration', () => {
     it('should return error if Thorswap is commented in config', () => {
       config.thorswap = undefined;
 
-      server.request = fakeRequest;
-      server.thorswapGetSupportedChains(req).then(data => {
+      server.externalServices.thorswap.thorswapGetSupportedChains(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -151,11 +148,11 @@ describe('Thorswap integration', () => {
           categories: 'all',
         }
       }
+      server.externalServices.thorswap.request = fakeRequest;
     });
 
     it('should work properly if req is OK with includeDetails true', () => {
-      server.request = fakeRequest;
-      server.thorswapGetCryptoCurrencies(req).then(data => {
+      server.externalServices.thorswap.thorswapGetCryptoCurrencies(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -164,8 +161,7 @@ describe('Thorswap integration', () => {
 
     it('should work properly if req is OK with includeDetails false', () => {
       req.body.includeDetails = false;
-      server.request = fakeRequest;
-      server.thorswapGetCryptoCurrencies(req).then(data => {
+      server.externalServices.thorswap.thorswapGetCryptoCurrencies(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -174,8 +170,7 @@ describe('Thorswap integration', () => {
 
     it('should work properly if req is OK without includeDetails param', () => {
       delete req.body.includeDetails;
-      server.request = fakeRequest;
-      server.thorswapGetCryptoCurrencies(req).then(data => {
+      server.externalServices.thorswap.thorswapGetCryptoCurrencies(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -184,8 +179,7 @@ describe('Thorswap integration', () => {
 
     it('should work properly if req is OK without categories param', () => {
       delete req.body.categories;
-      server.request = fakeRequest;
-      server.thorswapGetCryptoCurrencies(req).then(data => {
+      server.externalServices.thorswap.thorswapGetCryptoCurrencies(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -197,8 +191,8 @@ describe('Thorswap integration', () => {
         get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.thorswapGetCryptoCurrencies(req).then(data => {
+      server.externalServices.thorswap.request = fakeRequest2;
+      server.externalServices.thorswap.thorswapGetCryptoCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -209,8 +203,7 @@ describe('Thorswap integration', () => {
     it('should return error if Thorswap is commented in config', () => {
       config.thorswap = undefined;
 
-      server.request = fakeRequest;
-      server.thorswapGetCryptoCurrencies(req).then(data => {
+      server.externalServices.thorswap.thorswapGetCryptoCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -230,11 +223,11 @@ describe('Thorswap integration', () => {
           sellAmount: '1.123'
         }
       }
+      server.externalServices.thorswap.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.thorswapGetSwapQuote(req).then(data => {
+      server.externalServices.thorswap.thorswapGetSwapQuote(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -244,8 +237,7 @@ describe('Thorswap integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.sellAmount;
 
-      server.request = fakeRequest;
-      server.thorswapGetSwapQuote(req).then(data => {
+      server.externalServices.thorswap.thorswapGetSwapQuote(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -259,8 +251,8 @@ describe('Thorswap integration', () => {
         get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.thorswapGetSwapQuote(req).then(data => {
+      server.externalServices.thorswap.request = fakeRequest2;
+      server.externalServices.thorswap.thorswapGetSwapQuote(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -271,8 +263,7 @@ describe('Thorswap integration', () => {
     it('should return error if Thorswap is commented in config', () => {
       config.thorswap = undefined;
 
-      server.request = fakeRequest;
-      server.thorswapGetSwapQuote(req).then(data => {
+      server.externalServices.thorswap.thorswapGetSwapQuote(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -290,12 +281,12 @@ describe('Thorswap integration', () => {
           txn: 'txn1'
         }
       }
+      server.externalServices.thorswap.request = fakeRequest;
     });
 
     it('should work properly if req is OK with txn param only', async() => {
-      server.request = fakeRequest;
       try {
-        const data = await server.thorswapGetSwapTx(req);
+        const data = await server.externalServices.thorswap.thorswapGetSwapTx(req);
         should.exist(data);
       } catch (err) {
         should.not.exist(err);
@@ -305,9 +296,8 @@ describe('Thorswap integration', () => {
     it('should work properly if req is OK with hash param only', async() => {
       delete req.body.txn;
       req.body.hash = 'hash1';
-      server.request = fakeRequest;
       try {
-        const data = await server.thorswapGetSwapTx(req);
+        const data = await server.externalServices.thorswap.thorswapGetSwapTx(req);
         should.exist(data);
       } catch (err) {
         should.not.exist(err);
@@ -317,10 +307,9 @@ describe('Thorswap integration', () => {
     it('should return error if it does not have any of the required parameters', async() => {
       delete req.body.txn;
       delete req.body.hash;
-      server.request = fakeRequest;
 
       try {
-        const data = await server.thorswapGetSwapTx(req);
+        const data = await server.externalServices.thorswap.thorswapGetSwapTx(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
@@ -333,10 +322,10 @@ describe('Thorswap integration', () => {
       const fakeRequest2 = {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
-      server.request = fakeRequest2;
+      server.externalServices.thorswap.request = fakeRequest2;
 
       try {
-        const data = await server.thorswapGetSwapTx(req);
+        const data = await server.externalServices.thorswap.thorswapGetSwapTx(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
@@ -346,10 +335,9 @@ describe('Thorswap integration', () => {
 
     it('should return error if Thorswap is commented in config', async() => {
       config.thorswap = undefined;
-      server.request = fakeRequest;
 
       try {
-        const data = await server.thorswapGetSwapTx(req);
+        const data = await server.externalServices.thorswap.thorswapGetSwapTx(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
