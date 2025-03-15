@@ -74,7 +74,7 @@ export const Utils = {
   verifyMessage(message, signature, publicKey) {
     $.checkArgument(message);
 
-    const flattenedMessage = Array.isArray(message) ? message.join('') : message;
+    const flattenedMessage = Array.isArray(message) ? message.join(',') : message;
     const hash = Utils.hashMessage(flattenedMessage, true);
 
     const sig = Utils._tryImportSignature(signature);
