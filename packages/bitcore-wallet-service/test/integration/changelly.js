@@ -80,11 +80,11 @@ describe('Changelly integration', () => {
           useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -93,8 +93,7 @@ describe('Changelly integration', () => {
 
     it('should return error if there is some missing arguments', () => {
       delete req.body.id;
-      server.request = fakeRequest;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -108,8 +107,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -120,8 +119,7 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -130,9 +128,8 @@ describe('Changelly integration', () => {
     });
 
     it('should return error if req is v1', () => {
-      server.request = fakeRequest;
       delete req.body.useV2;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -152,11 +149,11 @@ describe('Changelly integration', () => {
           useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -166,8 +163,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.coinFrom;
 
-      server.request = fakeRequest;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -181,8 +177,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -193,8 +189,7 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -203,9 +198,8 @@ describe('Changelly integration', () => {
     });
 
     it('should return error if req is v1', () => {
-      server.request = fakeRequest;
       delete req.body.useV2;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -226,11 +220,11 @@ describe('Changelly integration', () => {
           useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -240,8 +234,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.coinFrom;
 
-      server.request = fakeRequest;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -255,8 +248,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -267,8 +260,7 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -277,9 +269,8 @@ describe('Changelly integration', () => {
     });
 
     it('should return error if req is v1', () => {
-      server.request = fakeRequest;
       delete req.body.useV2;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -303,11 +294,11 @@ describe('Changelly integration', () => {
           useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -317,8 +308,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.coinFrom;
 
-      server.request = fakeRequest;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -332,8 +322,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -344,8 +334,7 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -354,9 +343,8 @@ describe('Changelly integration', () => {
     });
 
     it('should return error if req is v1', () => {
-      server.request = fakeRequest;
       delete req.body.useV2;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -375,12 +363,12 @@ describe('Changelly integration', () => {
           useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', async() => {
-      server.request = fakeRequest;
       try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.exist(data);
       } catch (err) {
         should.not.exist(err);
@@ -389,10 +377,9 @@ describe('Changelly integration', () => {
 
     it('should return error if there is some missing arguments', async() => {
       delete req.body.exchangeTxId;
-      server.request = fakeRequest;
 
       try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
@@ -405,10 +392,10 @@ describe('Changelly integration', () => {
       const fakeRequest2 = {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
-      server.request = fakeRequest2;
+      server.externalServices.changelly.request = fakeRequest2;
 
       try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
@@ -418,10 +405,9 @@ describe('Changelly integration', () => {
 
     it('should return error if Changelly is commented in config', async() => {
       config.changelly = undefined;
-      server.request = fakeRequest;
 
       try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
@@ -430,9 +416,8 @@ describe('Changelly integration', () => {
     });
 
     it('should return error if req is v1', () => {
-      server.request = fakeRequest;
       delete req.body.useV2;
-      server.changellyGetTransactions(req).then(data => {
+      server.externalServices.changelly.changellyGetTransactions(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -451,11 +436,11 @@ describe('Changelly integration', () => {
           useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -465,8 +450,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.exchangeTxId;
 
-      server.request = fakeRequest;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -480,8 +464,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -492,8 +476,7 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -502,9 +485,8 @@ describe('Changelly integration', () => {
     });
 
     it('should return error if req is v1', () => {
-      server.request = fakeRequest;
       delete req.body.useV2;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);

@@ -58,11 +58,11 @@ describe('OneInch integration', function() {
   describe('#oneInchGetReferrerFee', () => {
     beforeEach(() => {
       req = {}
+      server.externalServices.oneInch.request = fakeRequest;
     });
 
     it('should get referrel fee if it is defined in config', () => {
-      server.request = fakeRequest;
-      server.oneInchGetReferrerFee(req).then(data => {
+      server.externalServices.oneInch.oneInchGetReferrerFee(req).then(data => {
         should.exist(data);
         data.referrerFee.should.equal('referrerFee1');
       }).catch(err => {
@@ -73,8 +73,7 @@ describe('OneInch integration', function() {
     it('should return error if oneInch is commented in config', () => {
       config.oneInch = undefined;
 
-      server.request = fakeRequest;
-      server.oneInchGetReferrerFee(req).then(data => {
+      server.externalServices.oneInch.oneInchGetReferrerFee(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -96,11 +95,11 @@ describe('OneInch integration', function() {
           destReceiver: 'destReceiver1'
         }
       }
+      server.externalServices.oneInch.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.oneInchGetSwap(req).then(data => {
+      server.externalServices.oneInch.oneInchGetSwap(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -110,8 +109,7 @@ describe('OneInch integration', function() {
     it('should return error if there is some missing arguments', () => {
       delete req.body.fromTokenAddress;
 
-      server.request = fakeRequest;
-      server.oneInchGetSwap(req).then(data => {
+      server.externalServices.oneInch.oneInchGetSwap(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -126,8 +124,8 @@ describe('OneInch integration', function() {
         get: (_url, _opts, _cb) => { return _cb(new Error('Error')) }
       };
 
-      server.request = fakeRequest2;
-      server.oneInchGetSwap(req).then(data => {
+      server.externalServices.oneInch.request = fakeRequest2;
+      server.externalServices.oneInch.oneInchGetSwap(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -138,8 +136,7 @@ describe('OneInch integration', function() {
     it('should return error if oneInch is commented in config', () => {
       config.oneInch = undefined;
 
-      server.request = fakeRequest;
-      server.oneInchGetSwap(req).then(data => {
+      server.externalServices.oneInch.oneInchGetSwap(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -154,11 +151,11 @@ describe('OneInch integration', function() {
       fakeRequest = {
         get: (_url, _opts, _cb) => { return _cb(null, { body: { tokens: 'data'}}) },
       };
+      server.externalServices.oneInch.request = fakeRequest;
     });
 
     it('should get oneInch list of supported tokens', () => {
-      server.request = fakeRequest;
-      server.oneInchGetTokens(req).then(data => {
+      server.externalServices.oneInch.oneInchGetTokens(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -168,8 +165,7 @@ describe('OneInch integration', function() {
     it('should return error if oneInch is commented in config', () => {
       config.oneInch = undefined;
 
-      server.request = fakeRequest;
-      server.oneInchGetTokens(req).then(data => {
+      server.externalServices.oneInch.oneInchGetTokens(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);

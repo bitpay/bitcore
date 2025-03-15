@@ -1,10 +1,10 @@
 import { Validation } from 'crypto-wallet-core';
 import { Request, Response, Router } from 'express';
+import config from '../../config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
-import config from '../../config';
 const router = Router({ mergeParams: true });
 
 function isTooLong(field, maxLength = 255) {
