@@ -1,0 +1,232 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{title}}</title>
+    <link href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900' rel='stylesheet' type='text/css'>
+    <style type="text/css">
+        /* Boilerplate - parts from Mailchimp, Ink */
+        #outlook a { padding: 0; }
+        .ReadMsgBody { width: 100%; }
+        .ExternalClass { width: 100%; }
+        .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div { line-height: 100%; }
+        body, table, td, p, a, li, blockquote {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img { -ms-interpolation-mode: bicubic; }
+
+        /* Reset Styles */
+        body, #bodyTable, #bodyCell {
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0;
+            padding: 0;
+        }
+        table { border-collapse: collapse !important; }
+
+        /* Mobile Styles */
+        @media only screen and (max-width: 480px) {
+            body { width: 100% !important; min-width: 100% !important; }
+            td[id="bodyCell"] { padding: 30px 0 !important; }
+            table[id="emailContainer"] { max-width: 600px !important; width: 100% !important; }
+            td[class="bodyContent"] { font-size: 18px !important; }
+            table[class="emailButton"] { width: 100% !important; }
+            td[class="emailButtonContent"] { font-size: 18px !important; }
+            td[class="emailButtonContent"] a { display: block; }
+            td[class="emailColumn"] {
+                display: block !important;
+                max-width: 800px !important;
+                width: 100% !important;
+            }
+            td[class="footerContent"] {
+                font-size: 15px !important;
+                padding-right: 15px;
+                padding-left: 15px;
+            }
+        }
+
+        /* BitPay styles */
+        body, #bodyTable {
+            background: #F5F7FA;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        #emailBody {
+            background-color: #FFFFFF;
+            border-radius: 15px;
+            border-collapse: separate !important;
+            padding-top: 15px;
+        }
+        .emailButton, .emailButtonContent { border-radius: 5px; }
+        .emailButton { cursor: pointer; }
+        .status-icon {
+            width: 100%;
+            text-align: center;
+            padding-top: 2rem;
+            padding-bottom: 0;
+        }
+        .status-icon img {
+            width: 70px;
+            height: auto;
+        }
+        .logoImage {
+            border: 0;
+            color: #162A5C !important;
+            font-size: 42px;
+            height: auto !important;
+            line-height: 100%;
+            outline: none;
+            text-align: left;
+            text-decoration: none;
+            width: 80px;
+        }
+        .bodyContent {
+            color: #616471;
+            font-size: 15px;
+            line-height: 175%;
+            padding: 15px 48px 48px 48px;
+            text-align: left;
+        }
+        .bodyContainer {
+            padding-top: 30px;
+            padding-bottom: 30px;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #000000 !important;
+            line-height: 115%;
+            padding: 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .emailButton {
+            width: 100%;
+            border-collapse: separate !important;
+            margin: 2rem auto;
+        }
+        .emailButtonContent {
+            color: #FFFFFF;
+            background: #4F6EF7;
+            font-size: 18px;
+            line-height: 100%;
+            min-width: 180px;
+            max-width: 300px;
+            margin-bottom: 1em;
+        }
+        .emailButtonText {
+            display: block !important;
+            padding: 20px 13px !important;
+            color: #FFFFFF !important;
+            text-decoration: none !important;
+            text-align: center;
+        }
+        .divider {
+            position: relative;
+            border-bottom: 1px solid rgba(32, 32, 54, 0.10);
+            width: auto;
+            margin: 50px 0 15px;
+        }
+        .footerContent {
+            padding: 10px 0 0;
+            color: #4F6EF7;
+            font-size: 13px;
+            line-height: 179%;
+        }
+        .logoImage, .bodyContent, h1, .emailButtonContent, small, .footerContent, .footerSpan {
+            font-family: 'Roboto', sans-serif;
+        }
+        #bodyCell { padding: 40px 20px; }
+        #emailContainer { max-width: 600px !important; }
+        
+        /* Utility classes */
+        .mb-0 { margin-bottom: 0; }
+        .mb-1 { margin-bottom: 1rem; }
+        .mb-2 { margin-bottom: 2rem; }
+        .mt-0 { margin-top: 0; }
+        .mt-1 { margin-top: 1rem; }
+        .mt-3 { margin-top: 3rem; }
+        .mt-4 { margin-top: 4rem; }
+        .text-16 { 
+            font-size: 16px;
+            margin-top: 2rem;
+        }
+
+        /* Link styles */
+        a {
+            text-decoration: none !important;
+            color: #4F6EF7 !important;
+        }
+
+        /* Small text */
+        small {
+            padding: 0;
+            font-size: 12px;
+            line-height: 18px;
+            text-align: left;
+            color: #898B9D !important;
+        }
+        small a {
+            word-break: break-all !important;
+        }
+        /* Add a new utility class for 32px (2rem) margin bottom */
+        .mb-icon {
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+<center>
+    <table bgcolor="#F6F7FC" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable">
+        <tr>
+            <td align="center" valign="top" id="bodyCell">
+                <table border="0" cellpadding="0" cellspacing="0" id="emailContainer">
+                    <!-- Logo -->
+                    <tr>
+                        <td align="left" valign="top">
+                            <a href="https://bitpay.com" target="_blank" rel="noopener noreferrer">
+                                <img src="https://bitpay.com/img/email/bitpay-logo-blue.png" alt="Live life on crypto with BitPay." height="" width="80" class="logoImage"/>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" valign="top" class="bodyContainer">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" id="emailBody">
+                                <tr>
+                                    <td class="bodyContent">
+                                        {{> htmlContent}}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="line-height: 1px; font-size: 1px;" height="20">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 12px; color: rgb(86, 89, 102); font-family: Roboto, Helvetica, Arial, sans-serif; line-height: 20px; text-align: center;" valign="top">
+                            <div>BitPay, Inc.</div>
+                            <div>1201 W Peachtree St NW Ste 2625, PMB 91017, Atlanta, Georgia 30309-3499</div>
+                            <div>NMLS ID#1496848</div>
+                            <div>BitPay is licensed to engage in Virtual Currency Business Activity by the New York State Department of Financial Services.</div>
+                            <div>©2025 Copyright <a style="color: rgb(70, 131, 232);" href="https://support.bitpay.com" target="_blank">Contact</a> | <a style="color: rgb(70, 131, 232);" href="https://bitpay.com/about/privacy/" target="_blank">Privacy Policy</a></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="line-height: 1px; font-size: 1px;" height="20">&nbsp;</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</center>
+</body>
+</html>
