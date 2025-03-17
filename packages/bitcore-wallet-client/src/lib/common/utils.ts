@@ -569,6 +569,12 @@ export class Utils {
     if (coin.toLowerCase() === 'pol') {
       return 'MATIC';
     }
+    if (coin.toLowerCase() === 'usdt' && chain.toLowerCase() === 'arb') {
+      return 'USDTe_arb';
+    }
+    if (coin.toLowerCase() === 'usdt' && chain.toLowerCase() === 'op') {
+      return 'USDTe_op';
+    }
     const suffix = Constants.EVM_CHAINSUFFIXMAP[chain.toLowerCase()];
     const coinIsAChain = !!Constants.EVM_CHAINSUFFIXMAP[coin.toLowerCase()];
     if (suffix && (coinIsAChain || chain.toLowerCase() !== 'eth')) {
