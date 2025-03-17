@@ -2,7 +2,7 @@
   "name": "@bcpros/bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "9.0.7",
+  "version": "9.0.8",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "./ts_build/index.d.ts",
@@ -24,7 +24,9 @@
   "scripts": {
     "start": "npm run clean && npm run tsc && npm run copy-csv && ./start.sh",
     "start-debug": "npm run clean && npm run tsc && ./start.sh 1",
+    "start-bws": "npm run clean && npm run tsc && ./start-bws.sh",
     "stop": "./stop.sh",
+    "stop-bws": "./stop-bws.sh",
     "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "npm run compile && mocha --exit",
     "test:ci": "npm run test",

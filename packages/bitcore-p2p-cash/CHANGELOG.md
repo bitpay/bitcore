@@ -1,5 +1,14 @@
 # Change Log
 
+## 9.0.8
+
+### Patch Changes
+
+- Bump versions for minor update
+- Updated dependencies
+  - @bcpros/bitcore-lib@9.0.8
+  - @bcpros/bitcore-lib-cash@9.0.8
+
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 

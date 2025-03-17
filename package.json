@@ -8,6 +8,9 @@
   "packageManager": "pnpm@9.10.0",
   "private": true,
   "scripts": {
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "watch": "turbo run dev --parallel",
@@ -57,6 +60,7 @@
     }
   },
   "devDependencies": {
+    "@changesets/cli": "^2.26.2",
     "cz-customizable": "^5.2.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",

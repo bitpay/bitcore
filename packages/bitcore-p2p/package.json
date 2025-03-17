@@ -1,6 +1,6 @@
 {
   "name": "@bcpros/bitcore-p2p",
-  "version": "9.0.7",
+  "version": "9.0.8",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {

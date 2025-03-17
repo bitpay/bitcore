@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "9.0.7",
+  "version": "9.0.8",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",

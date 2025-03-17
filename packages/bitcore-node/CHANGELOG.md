@@ -1,0 +1,22 @@
+# @bcpros/bitcore-node
+
+## 9.0.8
+
+### Patch Changes
+
+- Bump versions for minor update
+- Updated dependencies
+  - @bcpros/bitcore-client@9.0.8
+  - @bcpros/bitcore-lib@9.0.8
+  - @bcpros/bitcore-lib-cash@9.0.8
+  - @bcpros/bitcore-lib-doge@9.0.8
+  - @bcpros/bitcore-lib-ltc@9.0.8
+  - @bcpros/bitcore-lib-xec@9.0.8
+  - @bcpros/bitcore-lib-xpi@9.0.8
+  - @bcpros/bitcore-p2p@9.0.8
+  - @bcpros/bitcore-p2p-cash@9.0.8
+  - @bcpros/bitcore-p2p-doge@9.0.8
+  - @bcpros/bitcore-p2p-xec@9.0.8
+  - @bcpros/bitcore-p2p-xpi@9.0.8
+  - @bcpros/bitcore-wallet-client@9.0.8
+  - @bcpros/crypto-wallet-core@9.0.8
