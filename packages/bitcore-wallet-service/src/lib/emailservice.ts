@@ -1,5 +1,4 @@
 import * as async from 'async';
-import * as _ from 'lodash';
 import 'source-map-support/register';
 
 import sgMail from '@sendgrid/mail';
