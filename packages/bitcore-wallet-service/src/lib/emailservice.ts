@@ -2,10 +2,13 @@ import * as async from 'async';
 import * as _ from 'lodash';
 import 'source-map-support/register';
 
-// This has been changed in favor of @sendgrid.  To use nodemail, change the
-// sending function from `.send` to `.sendMail`.
-// import * as nodemailer from nodemailer';
+import sgMail from '@sendgrid/mail';
 import { Constants as ConstantsCWC } from 'crypto-wallet-core';
+import fs from 'fs';
+import { IncomingMessage } from 'http';
+import Mustache from 'mustache';
+import * as nodemailer from 'nodemailer';
+import path from 'path';
 import request from 'request';
 import config from '../config';
 import { Common } from './common';
@@ -22,13 +25,11 @@ export interface Recipient {
   unit: string;
 }
 
-const Mustache = require('mustache');
-const fs = require('fs');
-const path = require('path');
+const defaultRequest = require('request');
+
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
-const defaultRequest = require('request');
 
 const EMAIL_TYPES = {
   NewCopayer: {
@@ -79,9 +80,9 @@ export class EmailService {
   storage: Storage;
   messageBroker: MessageBroker;
   lock: Lock;
-  mailer: any;
+  mailer: nodemailer.Transporter | typeof sgMail;
   request: request.RequestAPI<any, any, any>;
-  //  mailer: nodemailer.Transporter;
+  sendMail: (opts) => any;
 
   start(opts, cb) {
     opts = opts || {};
@@ -94,7 +95,7 @@ export class EmailService {
           files,
           (file, next) => {
             fs.stat(path.join(basePath, file), (err, stats) => {
-              return next(!err && stats.isDirectory());
+              return next(null, !err && stats.isDirectory());
             });
           },
           dirs => {
@@ -134,7 +135,7 @@ export class EmailService {
         },
         done => {
           this.messageBroker = opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
-          this.messageBroker.onMessage(_.bind(this.sendEmail, this));
+          this.messageBroker.onMessage(this.sendEmail.bind(this));
           done();
         },
         done => {
@@ -142,7 +143,53 @@ export class EmailService {
           done();
         },
         done => {
-          this.mailer = opts.mailer; // || nodemailer.createTransport(opts.emailOpts);
+          try {
+            if (opts.emailOpts.mailer === 'nodemailer') {
+              this.mailer = nodemailer.createTransport(opts.emailOpts);
+              this.sendMail = this.mailer.sendMail.bind(this.mailer);
+            } else if (opts.emailOpts.mailer === 'sendgrid') {
+              sgMail.setApiKey(config.emailOpts.sendGridApiKey);
+              this.mailer = sgMail;
+              this.sendMail = this.mailer.send.bind(this.mailer);
+            } else if (opts.emailOpts.mailer === 'mailersend') {
+              this.sendMail = async function(opts) {
+                return new Promise((resolve, reject) => {
+                  this.request(
+                    {
+                      url: 'https://api.mailersend.com/v1/email',
+                      method: 'POST',
+                      json: true,
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        Authorization: 'Bearer ' + config.emailOpts.mailerSendApiKey,
+                      },
+                      body: {
+                        from: { email: opts.from },
+                        to: [{ email: opts.to }],
+                        subject: opts.subject,
+                        text: opts.text,
+                        html: opts.html
+                      }
+                    },
+                    (err, data) => {
+                      if (err) return reject(err);
+                      data = data.toJSON();
+                      if (data?.statusCode >= 200 && data?.statusCode < 300) {
+                        return resolve(data?.body || data);
+                      }
+                      return reject(data?.body || data);
+                    }
+                  )
+                });
+              }
+            } else {
+              throw new Error('Unknown emailOpts.mailer: ' + config.emailOpts.mailer);
+            }
+          } catch (err) {
+            return done(err);
+          }
           done();
         }
       ],
@@ -162,7 +209,7 @@ export class EmailService {
     }
     return {
       subject: lines[0],
-      body: _.tail(lines).join('\n')
+      body: lines.slice(1).join('\n')
     };
   }
 
@@ -188,14 +235,15 @@ export class EmailService {
     if (!data) return cb(new Error('Could not apply template to empty data'));
 
     let error;
-    const result = _.mapValues(template, t => {
+    const result = {};
+    for (const [key, templateStr] of Object.entries(template)) {
       try {
-        return Mustache.render(t, data);
+        result[key] = Mustache.render(templateStr, data);
       } catch (e) {
         logger.error('Could not apply data to template: %o', e);
         error = e;
       }
-    });
+    }
     if (error) return cb(error);
     return cb(null, result);
   }
@@ -206,44 +254,43 @@ export class EmailService {
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
         if (err) return cb(err);
-        if (_.isEmpty(preferences)) return cb(null, []);
+        if (!preferences?.length) return cb(null, []);
 
         const usedEmails = {};
-        const recipients = _.compact(
-          _.map(preferences, p => {
-            if (!p.email || usedEmails[p.email]) return;
+        const recipients = preferences.map(p => {
+          if (!p.email || usedEmails[p.email]) return;
 
-            usedEmails[p.email] = true;
-            if (notification.creatorId == p.copayerId && !emailType.notifyDoer) return;
-            if (notification.creatorId != p.copayerId && !emailType.notifyOthers) return;
-            if (!_.includes(this.availableLanguages, p.language)) {
-              if (p.language) {
-                logger.warn('Language for email "' + p.language + '" not available.');
-              }
-              p.language = this.defaultLanguage;
+          usedEmails[p.email] = true;
+          if (notification.creatorId == p.copayerId && !emailType.notifyDoer) return;
+          if (notification.creatorId != p.copayerId && !emailType.notifyOthers) return;
+          if (!this.availableLanguages.includes(p.language)) {
+            if (p.language) {
+              logger.warn('Language for email "' + p.language + '" not available.');
             }
+            p.language = this.defaultLanguage;
+          }
 
-            let unit;
-            if (wallet.coin != Defaults.COIN) {
-              switch (wallet.coin) {
-                case 'pax':
-                  unit = 'usdp'; // backwards compatibility
-                  break;
-                default:
-                  unit = wallet.coin;
-              }
-            } else {
-              unit = p.unit || this.defaultUnit;
+          let unit;
+          if (wallet.coin != Defaults.COIN) {
+            switch (wallet.coin) {
+              case 'pax':
+                unit = 'usdp'; // backwards compatibility
+                break;
+              default:
+                unit = wallet.coin;
             }
+          } else {
+            unit = p.unit || this.defaultUnit;
+          }
 
-            return {
-              copayerId: p.copayerId,
-              emailAddress: p.email,
-              language: p.language,
-              unit
-            };
-          })
-        );
+          return {
+            copayerId: p.copayerId,
+            emailAddress: p.email,
+            language: p.language,
+            unit
+          };
+        })
+        .filter(p => !!p); // filter out falsy values (e.g. undefined)
 
         return cb(null, recipients);
       });
@@ -275,8 +322,8 @@ export class EmailService {
       'usdc.e': 'USDC.e',
     };
 
-    const data = _.cloneDeep(notification.data);
-    data.subjectPrefix = _.trim(this.subjectPrefix) + ' ';
+    const data = JSON.parse(JSON.stringify(notification.data));
+    data.subjectPrefix = this.subjectPrefix.trim() + ' ';
     if (data.amount) {
       try {
         let unit = recipient.unit.toLowerCase();
@@ -339,14 +386,14 @@ export class EmailService {
       }
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
-        const rejectors = _.map(data.rejectedBy, copayerId => {
+        const rejectors = data.rejectedBy.map(copayerId => {
           const copayer = wallet.copayers.find(c => c.id == copayerId);
           return copayer.name;
         });
         data.rejectorsNames = rejectors.join(', ');
       }
 
-      if (_.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) && data.txid) {
+      if (['NewIncomingTx', 'NewOutgoingTx'].includes(notification.type) && data.txid) {
         const urlTemplate = this.publicTxUrlTemplate[wallet.chain]?.[wallet.network];
         if (urlTemplate) {
           try {
@@ -374,16 +421,16 @@ export class EmailService {
     if (email.bodyHtml) {
       mailOptions.html = email.bodyHtml;
     }
-    this.mailer
-      .send(mailOptions)
+    this.sendMail(mailOptions)
       .then(result => {
-        logger.debug('Message sent: %o', result || '');
+        result = result[0] instanceof IncomingMessage ? result[0] : result;
+        logger.debug('Message sent: %o %o', mailOptions, result?.toJSON?.() || result || '(no result)');
         return cb(null, result);
       })
       .catch(err => {
         let errStr;
         try {
-          errStr = err.toString().substr(0, 100);
+          errStr = err.toString();
         } catch (e) { }
 
         logger.warn('An error occurred when trying to send email to %o %o', email.to, (errStr || err));
@@ -413,7 +460,7 @@ export class EmailService {
                   });
                 },
                 (err, res: any) => {
-                  return next(err, _.fromPairs(res.filter(Boolean)));
+                  return next(err, Utils.fromPairs(res.filter(Boolean)));
                 }
               );
             },
@@ -427,7 +474,7 @@ export class EmailService {
         );
       },
       (err, res: any) => {
-        return cb(err, _.fromPairs(res.filter(Boolean)));
+        return cb(err, Utils.fromPairs(res.filter(Boolean)));
       }
     );
   }
@@ -450,7 +497,7 @@ export class EmailService {
       if (!should) return cb();
 
       this._getRecipientsList(notification, emailType, (err, recipientsList: Recipient[]) => {
-        if (_.isEmpty(recipientsList)) return cb();
+        if (!recipientsList?.length) return cb();
 
         // TODO: Optimize so one process does not have to wait until all others are done
         // Instead set a flag somewhere in the db to indicate that this process is free
@@ -510,7 +557,7 @@ export class EmailService {
                 if (err) {
                   let errStr;
                   try {
-                    errStr = err.toString().substr(0, 100);
+                    errStr = err.toString();
                   } catch (e) { }
 
                   logger.warn('An error ocurred generating email notification: %o', errStr || err);
