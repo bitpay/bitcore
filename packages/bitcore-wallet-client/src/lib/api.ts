@@ -2602,8 +2602,8 @@ export class API extends EventEmitter {
   // */
   getNonce(opts, cb) {
     $.checkArgument(
-      Constants.EVM_CHAINS.includes(opts.chain),
-      'Invalid chain: must be EVM based'
+      [...Constants.EVM_CHAINS, 'xrp'].includes(opts.chain),
+      'Invalid chain: must be XRP or EVM based'
     );
 
     var qs = [];
