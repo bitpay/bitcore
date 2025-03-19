@@ -2,6 +2,7 @@
 
 const config = require('../../ts_build/config').default;
 const { Storage } = require('../../ts_build');
+const { Constants } = require('../../ts_build/lib/common/constants');
 const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
 const fs = require('fs');
 const os = require('os');
@@ -204,6 +205,12 @@ storage.connect(config.storageOpts, async (err) => {
     console.log(`Fixed ${fixWalletsCount} wallets`);
     console.log(`Fixed ${fixAddressCount} Addresses`);
     console.log(`Fixed ${fixTxsCount} Txs`);
+
+    if (Constants.EVM_CHAINS.includes(chain)) {
+      console.log(); // add a new line between the above output and this note
+      console.log('NOTE: You may now need to run fixEvmTestnetAddressSuffix.js to fix the address suffix from :' + oldNetwork + ' to :' + newNetwork);
+      console.log(`./fixEvmTestnetAddressSuffix.js --chain ${chain} --suffix ${oldNetwork}`);
+    }
 
     return done();
   } catch (err) {
