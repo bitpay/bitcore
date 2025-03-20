@@ -11,6 +11,7 @@ import { logger, transport } from './logger';
 import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import path from 'path';
 
 const compression = require('compression');
 const RateLimit = require('express-rate-limit');
@@ -2398,6 +2399,9 @@ export class ExpressApp {
       res.setHeader('Cache-Control', 'no-store');
       next();
     });
+
+    const staticPath = path.join(__dirname, '../../static/images');
+    this.app.use('/images', express.static(staticPath));
 
     this.app.use(opts.basePath || '/bws/api', router);
 
