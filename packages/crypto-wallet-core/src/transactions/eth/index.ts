@@ -43,15 +43,15 @@ export class ETHTxProvider {
       amount = toBN(0);
       for (let recipient of recipients) {
         addresses.push(recipient.address);
-        amounts.push(toBN(recipient.amount));
-        amount = amount.add(toBN(recipient.amount));
+        amounts.push(toBN(BigInt(recipient.amount).toString()));
+        amount = amount.add(toBN(BigInt(recipient.amount).toString()));
       }
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();
       to = contractAddress;
     } else {
       to = recipients[0].address;
-      amount = recipients[0].amount;
+      amount = toBN(BigInt(recipients[0].amount).toString());
     }
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
