@@ -88,20 +88,13 @@ export class EmailService {
     this.request = opts.request || defaultRequest;
 
     const _readDirectories = (basePath, cb) => {
-      fs.readdir(basePath, (err, files) => {
-        if (err) return cb(err);
-        async.filter(
-          files,
-          (file, next) => {
-            fs.stat(path.join(basePath, file), (err, stats) => {
-              return next(null, !err && stats.isDirectory());
-            });
-          },
-          dirs => {
-            return cb(null, dirs);
-          }
-        );
-      });
+      try {
+        let files = fs.readdirSync(basePath);
+        files = files.filter(file => fs.existsSync(path.join(basePath, file)) && fs.statSync(path.join(basePath, file)).isDirectory());
+        return cb(null, files);
+      } catch (err) {
+        return cb(err);
+      }
     };
 
     opts.emailOpts = opts.emailOpts || {};
