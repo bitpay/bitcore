@@ -147,7 +147,7 @@ export class EmailService {
               this.mailer = nodemailer.createTransport(opts.emailOpts);
               this.sendMail = this.mailer.sendMail.bind(this.mailer);
             } else if (opts.emailOpts.mailer === 'sendgrid') {
-              sgMail.setApiKey(config.emailOpts.sendGridApiKey);
+              sgMail.setApiKey(opts.emailOpts.sendGridApiKey);
               this.mailer = sgMail;
               this.sendMail = this.mailer.send.bind(this.mailer);
             } else if (opts.emailOpts.mailer === 'mailersend') {
@@ -184,7 +184,7 @@ export class EmailService {
                 });
               }
             } else {
-              throw new Error('Unknown emailOpts.mailer: ' + config.emailOpts.mailer);
+              throw new Error('Unknown emailOpts.mailer: ' + opts.emailOpts.mailer);
             }
           } catch (err) {
             return done(err);
