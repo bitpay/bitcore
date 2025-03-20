@@ -2,6 +2,7 @@ import * as async from 'async';
 import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
+import path from 'path';
 import 'source-map-support/register';
 import config from '../config';
 import { Common } from './common';
@@ -2398,6 +2399,9 @@ export class ExpressApp {
       res.setHeader('Cache-Control', 'no-store');
       next();
     });
+
+    const staticPath = path.join(__dirname, '../../static');
+    this.app.use('/bws/static', express.static(staticPath));
 
     this.app.use(opts.basePath || '/bws/api', router);
 

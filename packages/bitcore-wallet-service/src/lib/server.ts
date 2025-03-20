@@ -3092,7 +3092,7 @@ export class WalletService implements IWalletService {
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
-          if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+          if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (let t of txps) {
