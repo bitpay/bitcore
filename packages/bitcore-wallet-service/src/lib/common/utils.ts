@@ -395,5 +395,17 @@ export const Utils = {
 
   sortDesc(arr, ...keys) {
     return Utils.sortAsc(arr, ...keys).reverse();
+  },
+
+  /**
+   * Takes an array of array-pairs and converts them to key-value map
+   * @param {Array<Array<any, any>>} input e.g. [[a, 1], [b, 2]]
+   * @returns {Object} e.g. { a: 1, b: 2 }
+   */
+  fromPairs(input) {
+    return input.reduce((map, [k, v]) => {
+      map[k] = v;
+      return map;
+    }, {});
   }
 }
