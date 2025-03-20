@@ -6,6 +6,8 @@ const Mustache = require('mustache');
 const os = require('os');
 const { exec } = require('child_process');
 const sgMail = require('@sendgrid/mail');
+const { getIconHtml } = require('../templates/email-icons-config');
+const juice = require('juice');
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -30,58 +32,12 @@ const TEMPLATE_TYPES = [
 ];
 
 // Template directory
-const TEMPLATE_DIR = path.join(__dirname, '../../templates');
+const TEMPLATE_DIR = path.join(__dirname, '../templates');
 const MASTER_TEMPLATE_PATH = path.join(TEMPLATE_DIR, 'master-template.html');
 const CONTENT_TEMPLATE_PATH = path.join(TEMPLATE_DIR, language, `${templateName}.html`);
-const IMG_DIR = path.join(TEMPLATE_DIR, 'icons');
 
-// Email type configurations
-const EMAIL_CONFIGS = {
-  new_copayer: {
-    icon: 'new_copayer.svg',
-    iconAlt: 'New Copayer Icon'
-  },
-  wallet_complete: {
-    icon: 'green_check.svg',
-    iconAlt: 'Wallet Complete Icon'
-  },
-  new_tx_proposal: {
-    icon: 'writing.svg',
-    iconAlt: 'Transaction Proposal Icon'
-  },
-  new_outgoing_tx: {
-    icon: 'up_arrow_gray.svg',
-    iconAlt: 'Outgoing Transaction Icon'
-  },
-  new_zero_outgoing_tx: {
-    icon: 'up_arrow_gray.svg',
-    iconAlt: 'Outgoing Transaction Icon'
-  },
-  new_incoming_tx: {
-    icon: 'down_arrow_green.svg',
-    iconAlt: 'Incoming Transaction Icon'
-  },
-  new_incoming_tx_testnet: {
-    icon: 'down_arrow_green.svg',
-    iconAlt: 'Incoming Transaction Testnet Icon'
-  },
-  txp_finally_rejected: {
-    icon: 'red_x.svg',
-    iconAlt: 'Payment Proposal Rejected Icon'
-  },
-  tx_confirmation: {
-    icon: 'green_check.svg',
-    iconAlt: 'Transaction Confirmed Icon'
-  },
-  tx_confirmation_receiver: {
-    icon: 'green_check.svg',
-    iconAlt: 'Transaction Confirmed Icon'
-  },
-  tx_confirmation_sender: {
-    icon: 'green_check.svg',
-    iconAlt: 'Transaction Confirmed Icon'
-  }
-};
+console.log('Template directories:');
+console.log('TEMPLATE_DIR:', TEMPLATE_DIR);
 
 // Validate arguments
 if (!templateName || !TEMPLATE_TYPES.includes(templateName)) {
@@ -114,7 +70,12 @@ const createSampleData = (templateName) => {
     copayerName: 'John Doe'
   };
 
-  // Try to read the title from the plain text file
+  const iconObj = getIconHtml(templateName, sendEmail);
+  if (iconObj) {
+    commonData.icon = iconObj.imgHtml;
+    commonData.iconObj = iconObj;
+  }
+
   try {
     const plainTextPath = path.join(TEMPLATE_DIR, language, `${templateName}.plain`);
     const plainContent = fs.readFileSync(plainTextPath, 'utf8');
@@ -123,14 +84,8 @@ const createSampleData = (templateName) => {
       commonData.title = firstLine.replace('{{subjectPrefix}}', '');
     }
   } catch (err) {
-    // Use default title if plain text file can't be read
   }
 
-  // Add icon path
-  const iconName = EMAIL_CONFIGS[templateName]?.icon || 'success-blue-icon.png';
-  commonData.iconPath = path.join(IMG_DIR, iconName);
-
-  // Template-specific data
   switch (templateName) {
     case 'new_copayer':
       return commonData;
@@ -233,14 +188,9 @@ const createSampleData = (templateName) => {
   }
 };
 
-// Read templates
 const masterTemplate = fs.readFileSync(MASTER_TEMPLATE_PATH, 'utf8');
-const contentTemplate = fs.existsSync(CONTENT_TEMPLATE_PATH) 
-  ? fs.readFileSync(CONTENT_TEMPLATE_PATH, 'utf8')
-  : createBasicHtmlFromPlain(templateName);
 
 function createBasicHtmlFromPlain(templateName) {
-  // Try to read the plain text version first
   const plainTextPath = path.join(TEMPLATE_DIR, language, `${templateName}.plain`);
   let plainContent = '';
   
@@ -255,19 +205,12 @@ function createBasicHtmlFromPlain(templateName) {
   }
 
   return `
-<div class="status-icon mb-1">
-    <img src="icons/{{icon}}" alt="{{iconAlt}}" width="70">
-</div>
-
-<h1 class="mb-2">
-    {{title}}
-</h1>
-
-<div class="divider"></div>
-
-<div class="text-16">
-    ${plainContent}
-</div>`;
+    <h1 class="mb-2">{{title}}</h1>
+    <div class="divider"></div>
+    <div class="text-16 text-center">
+      ${plainContent}
+    </div>
+  `;
 }
 
 // Save HTML to temp file and open in browser
@@ -276,22 +219,10 @@ const previewInBrowser = (html) => {
   const previewDir = path.join(tempDir, `bitcore-email-preview-${Date.now()}`);
   const tempFilePath = path.join(previewDir, 'index.html');
   
-  // Create temp directory structure
   fs.mkdirSync(previewDir);
-  fs.mkdirSync(path.join(previewDir, 'icons'));
-  
-  // Copy icons
-  fs.readdirSync(IMG_DIR).forEach(file => {
-    const srcPath = path.join(IMG_DIR, file);
-    const destPath = path.join(previewDir, 'icons', file);
-    fs.copyFileSync(srcPath, destPath);
-  });
-  
-  // Write HTML file
   fs.writeFileSync(tempFilePath, html, 'utf8');
   console.log(`Opening preview in browser: ${tempFilePath}`);
 
-  // Open browser based on the operating system
   const platform = process.platform;
   try {
     if (platform === 'darwin') { // macOS
@@ -346,18 +277,32 @@ const previewTemplate = async () => {
   // Create sample data
   const data = createSampleData(templateName);
 
+  // Read template
+  const contentTemplate = fs.existsSync(CONTENT_TEMPLATE_PATH) 
+    ? fs.readFileSync(CONTENT_TEMPLATE_PATH, 'utf8')
+    : createBasicHtmlFromPlain(templateName);
+
   // Replace content placeholder with actual content
   const html = masterTemplate.replace('{{> htmlContent}}', contentTemplate);
   
   // Render final HTML with data
   const renderedHtml = Mustache.render(html, data);
+  
+  // Inline CSS for both preview and email
+  const inlinedHtml = juice(renderedHtml, {
+    removeStyleTags: false,
+    preserveImportant: true,
+    preserveMediaQueries: true,
+    preserveFontFaces: true,
+    applyStyleTags: true
+  });
 
   // Display subject
   console.log('\nSubject:', data.title);
 
   // Preview HTML in browser
-  if (renderedHtml) {
-    const tempFilePath = previewInBrowser(renderedHtml);
+  if (inlinedHtml) {
+    const tempFilePath = previewInBrowser(inlinedHtml);
     console.log('HTML preview saved to:', tempFilePath);
   } else {
     console.error('Failed to generate HTML preview');
@@ -366,10 +311,14 @@ const previewTemplate = async () => {
   // Send actual email if requested
   if (sendEmail) {
     console.log(`\nSending test email to ${recipientEmail}...`);
+    
+    // Generate plain text version
+    const plainText = `${data.title}\n\nA new copayer just joined your wallet.`;
+    
     await sendTestEmail(
       data.title,
-      data.buttonVars.text,
-      renderedHtml,
+      plainText,
+      inlinedHtml,
       recipientEmail
     );
   }

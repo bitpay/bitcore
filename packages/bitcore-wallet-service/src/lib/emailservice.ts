@@ -7,6 +7,7 @@ import 'source-map-support/register';
 // import * as nodemailer from nodemailer';
 import { Constants as ConstantsCWC } from 'crypto-wallet-core';
 import request from 'request';
+import { getIconHtml } from '../../templates/email-icons-config';
 import config from '../config';
 import { Common } from './common';
 import { Lock } from './lock';
@@ -277,6 +278,13 @@ export class EmailService {
 
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix) + ' ';
+    
+    const templateName = EMAIL_TYPES[notification.type]?.filename;
+    const icon = getIconHtml(templateName, true);
+    if (icon) {
+      data.icon = icon;
+    }
+
     if (data.amount) {
       try {
         let unit = recipient.unit.toLowerCase();
