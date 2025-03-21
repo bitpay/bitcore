@@ -1,4 +1,10 @@
-const iconMap = {
+import config from "../config";
+
+interface IconMap {
+  [key: string]: string;
+}
+
+const iconMap: IconMap = {
   new_copayer: 'person-plus.png',
   new_incoming_tx: 'down-arrow-green.png',
   new_incoming_tx_testnet: 'down-arrow-green.png',
@@ -12,20 +18,14 @@ const iconMap = {
   wallet_complete: 'green-check.png'
 };
 
-const getIconHtml = (templateName) => {
+export const getIconHtml = (templateName: string, sendEmail?: boolean): string | null => {
   const iconFile = iconMap[templateName];
   if (!iconFile) {
     return null;
   }
 
-  const staticUrl = 'https://bws.bitpay.com';
+  const staticUrl = config.baseUrl || 'https://bws.bitpay.com';
   const iconUrl = `${staticUrl}/bws/static/images/${iconFile}`;
   
-  return {
-    imgHtml: `<img src="${iconUrl}" alt="${templateName} icon" style="width: 70px; height: 70px;" />`
-  };
-};
-
-module.exports = {
-  getIconHtml
+  return `<img src="${iconUrl}" alt="${templateName} icon" style="width: 50px; height: 50px;" />`
 }; 

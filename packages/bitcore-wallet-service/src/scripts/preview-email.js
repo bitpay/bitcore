@@ -207,7 +207,7 @@ function createBasicHtmlFromPlain(templateName) {
   return `
     <h1 class="mb-2">{{title}}</h1>
     <div class="divider"></div>
-    <div class="text-16 text-center">
+    <div class="text-16">
       ${plainContent}
     </div>
   `;

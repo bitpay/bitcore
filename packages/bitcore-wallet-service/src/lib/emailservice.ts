@@ -1,13 +1,14 @@
 import * as async from 'async';
 import * as _ from 'lodash';
 import 'source-map-support/register';
+import juice from 'juice';
 
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
 import { Constants as ConstantsCWC } from 'crypto-wallet-core';
 import request from 'request';
-import { getIconHtml } from '../../templates/email-icons-config';
+import { getIconHtml } from './iconsconfig';
 import config from '../config';
 import { Common } from './common';
 import { Lock } from './lock';
@@ -57,6 +58,16 @@ const EMAIL_TYPES = {
     notifyDoer: true,
     notifyOthers: true
   },
+  NewIncomingTxTestnet: {
+    filename: 'new_incoming_tx_testnet',
+    notifyDoer: true,
+    notifyOthers: true
+  },
+  NewZeroOutgoingTx: {
+    filename: 'new_zero_outgoing_tx',
+    notifyDoer: true,
+    notifyOthers: true
+  },
   TxProposalFinallyRejected: {
     filename: 'txp_finally_rejected',
     notifyDoer: false,
@@ -66,6 +77,16 @@ const EMAIL_TYPES = {
     filename: 'tx_confirmation',
     notifyDoer: true,
     notifyOthers: false
+  },
+  TxConfirmationReceiver: {
+    filename: 'tx_confirmation_receiver',
+    notifyDoer: true,
+    notifyOthers: false
+  },
+  TxConfirmationSender: {
+    filename: 'tx_confirmation_sender',
+    notifyDoer: true,
+    notifyOthers: false
   }
 };
 
@@ -73,6 +94,8 @@ export class EmailService {
   defaultLanguage: string;
   defaultUnit: string;
   templatePath: string;
+  masterTemplatePath: string;
+  masterTemplate: string;
   publicTxUrlTemplate: string;
   subjectPrefix: string;
   from: string;
@@ -109,8 +132,16 @@ export class EmailService {
 
     this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
-    logger.info('Email templates at:' + (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
-    this.templatePath = path.normalize((opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
+    this.templatePath = path.normalize(opts.emailOpts.templatePath || path.join(__dirname, '../../templates'));
+    this.masterTemplatePath = path.join(this.templatePath, 'master-template.html');
+    
+    try {
+      this.masterTemplate = fs.readFileSync(this.masterTemplatePath, 'utf8');
+      logger.debug('Master template loaded successfully from: %s', this.masterTemplatePath);
+    } catch (err) {
+      logger.error('Could not load master template from %s: %o', this.masterTemplatePath, err);
+      return cb(new Error('Could not load master template'));
+    }
 
     this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
     this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
@@ -149,9 +180,39 @@ export class EmailService {
       ],
       err => {
         if (err) {
-          logger.error('%o', err);
+          logger.error('Error initializing email service: %o', err);
+          return cb(err);
         }
-        return cb(err);
+        
+        // Schedule test email after successful initialization
+        setTimeout(() => {
+          logger.debug('Sending test email...');
+          
+          const testNotification = {
+            version: "1.0.0",
+            createdOn: 1742573124,
+            id: "017425731240240000",
+            type: "NewIncomingTx",
+            data: {
+              txid: "708d4d7eaacfd0e7c22a9cacbc11df2a4a39017e2dd9215802e61e832d37a92f",
+              address: "bcrt1q6mxuj68jwdlzfuj0p3ya53mpv9mafgzqlw5p2y",
+              amount: 123000000,
+              network: "regtest",
+            },
+            walletId: "969a0dec-fcd3-4964-8a7a-9778825b404e",
+            _id: "67dd8e44f01b79d0484f9cf1",
+          };
+
+          this.sendEmail(testNotification, (err) => {
+            if (err) {
+              logger.error('Error sending test email: %o', err);
+            } else {
+              logger.debug('Test email sent successfully');
+            }
+          });
+        }, 5000);
+
+        return cb();
       }
     );
   }
@@ -180,8 +241,16 @@ export class EmailService {
   // TODO: cache for X minutes
   _loadTemplate(emailType, recipient, extension, cb) {
     this._readTemplateFile(recipient.language, emailType.filename + extension, (err, template) => {
-      if (err) return cb(err);
-      return cb(null, this._compileTemplate(template, extension));
+      if (err) {
+        logger.error('Could not read template file for language %s: %o', recipient.language, err.message);
+        return cb(err);
+      }
+
+      const compiled = this._compileTemplate(template, extension);
+      if (extension === '.html') {
+        compiled.body = this.masterTemplate.replace('{{> htmlContent}}', compiled.body);
+      }
+      return cb(null, compiled);
     });
   }
 
@@ -278,6 +347,33 @@ export class EmailService {
 
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix) + ' ';
+    
+    // Helper function to properly title case text
+    const toTitleCase = (text: string) => {
+      const minorWords = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'via'];
+      return text.split(' ').map((word, index) => {
+        if (index === 0 || !minorWords.includes(word.toLowerCase())) {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }
+        return word.toLowerCase();
+      }).join(' ');
+    };
+    
+    try {
+      const plainTemplate = await new Promise<string>((resolve, reject) => {
+        this._readTemplateFile(recipient.language, `${EMAIL_TYPES[notification.type].filename}.plain`, (err, template) => {
+          if (err) reject(err);
+          else resolve(template);
+        });
+      });
+      const firstLine = plainTemplate.split('\n')[0];
+      if (firstLine && firstLine.startsWith('{{subjectPrefix}}')) {
+        data.title = toTitleCase(firstLine.replace('{{subjectPrefix}}', ''));
+      }
+    } catch (err) {
+      const templateName = EMAIL_TYPES[notification.type].filename;
+      data.title = toTitleCase(templateName.split('_').join(' '));
+    }
     
     const templateName = EMAIL_TYPES[notification.type]?.filename;
     const icon = getIconHtml(templateName, true);
@@ -380,7 +476,13 @@ export class EmailService {
       html: undefined
     };
     if (email.bodyHtml) {
-      mailOptions.html = email.bodyHtml;
+      mailOptions.html = juice(email.bodyHtml, {
+        removeStyleTags: false,
+        preserveImportant: true,
+        preserveMediaQueries: true,
+        preserveFontFaces: true,
+        applyStyleTags: true
+      });
     }
     this.mailer
       .send(mailOptions)
