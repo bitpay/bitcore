@@ -43,15 +43,15 @@ export class ETHTxProvider {
       amount = toBN(0);
       for (let recipient of recipients) {
         addresses.push(recipient.address);
-        amounts.push(toBN(BigInt(recipient.amount).toString()));
-        amount = amount.add(toBN(BigInt(recipient.amount).toString()));
+        amounts.push(toBN(this._valueToString(recipient.amount)));
+        amount = amount.add(toBN(this._valueToString(recipient.amount)));
       }
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();
       to = contractAddress;
     } else {
       to = recipients[0].address;
-      amount = toBN(BigInt(recipients[0].amount).toString());
+      amount = toBN(this._valueToString(recipients[0].amount));
     }
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
@@ -73,6 +73,19 @@ export class ETHTxProvider {
     }
 
     return ethers.Transaction.from(txData).unsignedSerialized;
+  }
+
+  _valueToString(value) {
+    const type = typeof value;
+    if (type === 'number') {
+      return (value).toLocaleString('fullwide', { useGrouping: false });
+    } else if (type === 'bigint') {
+      return value.toString()
+    } else if (type === 'string') {
+      return value;
+    } else {
+      throw new Error(`Unexpected type of: ${type}`);
+    }
   }
 
   getMultiSendContract(tokenContractAddress: string) {
