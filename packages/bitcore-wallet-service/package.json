@@ -56,6 +56,7 @@
     "inherits": "2.0.4",
     "istanbul": "0.4.5",
     "json-stable-stringify": "1.0.1",
+    "juice": "^11.0.1",
     "lodash": "4.17.19",
     "moment": "2.30.1",
     "mongodb": "3.5.9",
