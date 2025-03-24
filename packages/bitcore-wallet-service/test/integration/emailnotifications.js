@@ -121,7 +121,7 @@ describe('Email notifications', function() {
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment proposal');
             should.exist(one.html);
-            one.html.indexOf('<html>').should.equal(0);
+            one.html.indexOf('<!DOCTYPE html').should.equal(0);
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;
