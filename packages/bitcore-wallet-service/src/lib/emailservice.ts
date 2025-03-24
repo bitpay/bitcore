@@ -24,8 +24,6 @@ export interface Recipient {
   unit: string;
 }
 
-const defaultRequest = require('request');
-
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
@@ -85,7 +83,7 @@ export class EmailService {
 
   start(opts, cb) {
     opts = opts || {};
-    this.request = opts.request || defaultRequest;
+    this.request = opts.request || request;
 
     const _readDirectories = (basePath, cb) => {
       try {
