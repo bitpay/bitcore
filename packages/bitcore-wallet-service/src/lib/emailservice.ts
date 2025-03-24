@@ -1,16 +1,16 @@
 import * as async from 'async';
+import juice from 'juice';
 import * as _ from 'lodash';
 import 'source-map-support/register';
-import juice from 'juice';
 
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
 import { Constants as ConstantsCWC } from 'crypto-wallet-core';
 import request from 'request';
-import { getIconHtml } from './iconsconfig';
 import config from '../config';
 import { Common } from './common';
+import { getIconHtml } from './iconsconfig';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
@@ -189,18 +189,18 @@ export class EmailService {
           logger.debug('Sending test email...');
           
           const testNotification = {
-            version: "1.0.0",
+            version: '1.0.0',
             createdOn: 1742573124,
-            id: "017425731240240000",
-            type: "NewIncomingTx",
+            id: '017425731240240000',
+            type: 'NewIncomingTx',
             data: {
-              txid: "708d4d7eaacfd0e7c22a9cacbc11df2a4a39017e2dd9215802e61e832d37a92f",
-              address: "bcrt1q6mxuj68jwdlzfuj0p3ya53mpv9mafgzqlw5p2y",
+              txid: '708d4d7eaacfd0e7c22a9cacbc11df2a4a39017e2dd9215802e61e832d37a92f',
+              address: 'bcrt1q6mxuj68jwdlzfuj0p3ya53mpv9mafgzqlw5p2y',
               amount: 123000000,
-              network: "regtest",
+              network: 'regtest',
             },
-            walletId: "969a0dec-fcd3-4964-8a7a-9778825b404e",
-            _id: "67dd8e44f01b79d0484f9cf1",
+            walletId: '969a0dec-fcd3-4964-8a7a-9778825b404e',
+            _id: '67dd8e44f01b79d0484f9cf1',
           };
 
           this.sendEmail(testNotification, (err) => {

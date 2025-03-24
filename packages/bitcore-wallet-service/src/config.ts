@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import { logger } from './lib/logger';
-import path from 'path';
 
 const Config = (): any => {
   let defaultConfig = {
@@ -209,15 +208,6 @@ const Config = (): any => {
     },
     suspendedChains: [],
     staticRoot: '/tmp/static',
-    emailOpts: {
-      sendGridApiKey: null,
-      templatePath: path.join(__dirname, '../templates'),
-      defaultLanguage: 'en',
-      defaultUnit: 'btc',
-      subjectPrefix: '[Wallet service]',
-      from: 'noreply@bitpay.com'
-    },
-    mailer: null,
     // banxa : {
     //   sandbox: {
     //     api: 'https://bitpay.banxa-sandbox.com/api',
@@ -482,9 +472,6 @@ const Config = (): any => {
   } catch {
     logger.info('bws.config.js not found, using default configuration values');
   }
-  const sgMail = require('@sendgrid/mail');
-  sgMail.setApiKey(defaultConfig.emailOpts.sendGridApiKey);
-  defaultConfig.mailer = sgMail;
   return defaultConfig;
 };
 

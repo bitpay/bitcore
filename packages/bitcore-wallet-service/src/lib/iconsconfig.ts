@@ -1,4 +1,4 @@
-import config from "../config";
+import config from '../config';
 
 interface IconMap {
   [key: string]: string;
