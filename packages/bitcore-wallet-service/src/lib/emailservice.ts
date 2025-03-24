@@ -180,39 +180,9 @@ export class EmailService {
       ],
       err => {
         if (err) {
-          logger.error('Error initializing email service: %o', err);
-          return cb(err);
+          logger.error('%o', err);
         }
-        
-        // Schedule test email after successful initialization
-        setTimeout(() => {
-          logger.debug('Sending test email...');
-          
-          const testNotification = {
-            version: '1.0.0',
-            createdOn: 1742573124,
-            id: '017425731240240000',
-            type: 'NewIncomingTx',
-            data: {
-              txid: '708d4d7eaacfd0e7c22a9cacbc11df2a4a39017e2dd9215802e61e832d37a92f',
-              address: 'bcrt1q6mxuj68jwdlzfuj0p3ya53mpv9mafgzqlw5p2y',
-              amount: 123000000,
-              network: 'regtest',
-            },
-            walletId: '969a0dec-fcd3-4964-8a7a-9778825b404e',
-            _id: '67dd8e44f01b79d0484f9cf1',
-          };
-
-          this.sendEmail(testNotification, (err) => {
-            if (err) {
-              logger.error('Error sending test email: %o', err);
-            } else {
-              logger.debug('Test email sent successfully');
-            }
-          });
-        }, 5000);
-
-        return cb();
+        return cb(err);
       }
     );
   }
