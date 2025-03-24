@@ -148,9 +148,10 @@ const Config = (): any => {
       maintenanceMode: false
     },
     emailOpts: {
-      mailer: 'sendgrid', // sendgrid, nodemailer, mailersend
-      sendGridApiKey: process.env.SENDGRID_API_KEY,
-      mailerSendApiKey: process.env.MAILERSEND_API_KEY
+      mailer: 'sendgrid', // Valid options: sendgrid, nodemailer, mailersend
+      sendGridApiKey: process.env.SENDGRID_API_KEY, // Override in bws.config.js or set the env var
+      mailerSendApiKey: process.env.MAILERSEND_API_KEY, // Override in bws.config.js or set the env var
+      from: 'override me in bws.config.js',
 
       // // nodemailer config
       // host: 'localhost',
