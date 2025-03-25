@@ -416,4 +416,42 @@ describe('Utils', function() {
     });
   });
 
+  describe('#difference', function() {
+    it('should return the diff', function() {
+      const res = Utils.difference([1, 2, 3], [1, 3, 4]);
+      res.should.deep.equal([2]);
+    });
+
+    it('should return copy of arr1 if arr2 is not given', function() {
+      const arr1 = [1, 2, 3];
+      const res = Utils.difference([1, 2, 3]);
+      res.should.deep.equal([1, 2, 3]);
+      (arr1 === res).should.be.false;
+    });
+
+    it('should return empty array if arr1 is not given', function() {
+      const res = Utils.difference(undefined, [1, 2, 3]);
+      res.should.deep.equal([]);
+    });
+
+    it('should return empty array if no params given', function() {
+      const res = Utils.difference();
+      res.should.deep.equal([]);
+    });
+
+    it('should return empty array if arr1 non-array is given', function() {
+      const res = Utils.difference(1);
+      res.should.deep.equal([]);
+    });
+
+    it('should return all arr1 elemnts if arr2 non-array is given', function() {
+      const res = Utils.difference([1, 2, 3], 1);
+      res.should.deep.equal([1, 2, 3]);
+    });
+
+    it('should return all arr1 elemnts if arr2 non-array is given', function() {
+      const res = Utils.difference([1, 2, 3], 1);
+      res.should.deep.equal([1, 2, 3]);
+    });
+  });
 });

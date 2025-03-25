@@ -407,5 +407,17 @@ export const Utils = {
       map[k] = v;
       return map;
     }, {});
+  },
+
+  /**
+   * Returns the elements of arr1 that are NOT in arr2
+   * @param {Array<any>} arr1 Elements to filter
+   * @param {Array<any>} [arr2] Elements to remove from arr1 if they exist. If not provided, returns arr1 as-is.
+   * @returns 
+   */
+  difference(arr1, arr2) {
+    if (!Array.isArray(arr1)) return [];
+    if (!Array.isArray(arr2)) arr2 = null;
+    return arr1.filter(x => !arr2?.includes(x));
   }
 }
