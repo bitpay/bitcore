@@ -1,19 +1,16 @@
 'use strict';
 
-var _ = require('lodash');
-var async = require('async');
+const async = require('async');
+const chai = require('chai');
+const sinon = require('sinon');
+const should = chai.should();
+const { transport } = require('../../ts_build/lib/logger');
+const EmailService = require('../../ts_build/lib/emailservice').EmailService;
+const { Utils } = require('../../ts_build/lib/common/utils');
+const TestData = require('../testdata');
+const helpers = require('./helpers');
 
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-const { logger, transport } = require('../../ts_build/lib/logger.js');
 transport.level= 'error';
-
-var WalletService = require('../../ts_build/lib/server').WalletService;
-var EmailService = require('../../ts_build/lib/emailservice').EmailService;
-
-var TestData = require('../testdata');
-var helpers = require('./helpers');
 
 const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95d5be530380D0eC0bd388289E1'];
 const CUSTOM_TOKENS = ['0x0d8775f648430679a709e98d2b0cb6250d2887ef'];
@@ -133,10 +130,8 @@ describe('Email notifications', function() {
           setTimeout(function() {
             var calls = mailerStub.send.getCalls();
             calls.length.should.equal(2);
-            var emails = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            _.difference(['copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
+            var emails = calls.map(c => c.args[0]);
+            Utils.difference(['copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment proposal');
@@ -209,7 +204,8 @@ describe('Email notifications', function() {
           },
           function(t, next) {
             txp = t;
-            async.eachSeries(_.range(2), function(i, next) {
+            const range2 = Array.from({ length: 2 }, (_, i) => i);
+            async.eachSeries(range2, function(i, next) {
               var copayer = TestData.copayers[i];
               helpers.getAuthServer(copayer.id44btc, function(server) {
                 var signatures = helpers.clientSign(txp, copayer.xPrivKey_44H_0H_0H);
@@ -238,7 +234,7 @@ describe('Email notifications', function() {
           setTimeout(function() {
             var calls = mailerStub.send.getCalls();
             var emails = calls.slice(-3).map(c => c.args[0]);
-            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
+            Utils.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('Payment sent');
@@ -276,7 +272,8 @@ describe('Email notifications', function() {
           },
           function(txp, next) {
             txpId = txp.id;
-            async.eachSeries(_.range(1, 3), function(i, next) {
+            const range1to2 = Array.from({ length: 2 }, (_, i) => i + 1);
+            async.eachSeries(range1to2, function(i, next) {
               var copayer = TestData.copayers[i];
               helpers.getAuthServer(copayer.id44btc, function(server) {
                 server.rejectTx({
@@ -291,7 +288,7 @@ describe('Email notifications', function() {
           setTimeout(function() {
             var calls = mailerStub.send.getCalls();
             var emails = calls.slice(-2).map(c => c.args[0]);
-            _.difference(['copayer1@domain.com', 'copayer2@domain.com'], emails.map(e => e.to)).should.be.empty;
+            Utils.difference(['copayer1@domain.com', 'copayer2@domain.com'], emails.map(e => e.to)).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('Payment proposal rejected');
@@ -320,7 +317,7 @@ describe('Email notifications', function() {
             var calls = mailerStub.send.getCalls();
             calls.length.should.equal(3);
             var emails = calls.map(c => c.args[0]);
-            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
+            Utils.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment received');
@@ -347,7 +344,7 @@ describe('Email notifications', function() {
           var calls = mailerStub.send.getCalls();
           calls.length.should.equal(3);
           var emails = calls.map(c => c.args[0]);
-          _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
+          Utils.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
           var one = emails[0];
           one.from.should.equal('bws@dummy.net');
           one.subject.should.contain('New payment received');
@@ -417,7 +414,7 @@ describe('Email notifications', function() {
             var calls = mailerStub.send.getCalls();
             calls.length.should.equal(2);
             var emails = calls.map(c => c.args[0]);
-            _.difference(['copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
+            Utils.difference(['copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment received');
@@ -529,7 +526,7 @@ describe('Email notifications', function() {
           var calls = mailerStub.send.getCalls();
           calls.length.should.equal(3);
           var emails = calls.map(c => c.args[0]);
-          _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
+          Utils.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], emails.map(e => e.to)).should.be.empty;
           var one = emails[0];
           one.from.should.equal('bws@dummy.net');
           one.subject.should.contain('New payment received');
@@ -697,7 +694,7 @@ describe('Email notifications', function() {
           var calls = mailerStub.send.getCalls();
           calls.length.should.equal(1);
           var emails = calls.map(c => c.args[0]);
-          _.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
+          Utils.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
           var one = emails[0];
           one.from.should.equal('bws@dummy.net');
           one.subject.should.contain('New payment received');
@@ -789,7 +786,7 @@ describe('Email notifications', function() {
             var calls = mailerStub.send.getCalls();
             calls.length.should.equal(1);
             var emails = calls.map(c => c.args[0]);
-            _.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
+            Utils.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment received');
@@ -883,7 +880,7 @@ describe('Email notifications', function() {
           var calls = mailerStub.send.getCalls();
           calls.length.should.equal(1);
           var emails = calls.map(c => c.args[0]);
-          _.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
+          Utils.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
           var one = emails[0];
           one.from.should.equal('bws@dummy.net');
           one.subject.should.contain('New payment received');
@@ -918,7 +915,7 @@ describe('Email notifications', function() {
           var calls = mailerStub.send.getCalls();
           calls.length.should.equal(1);
           var emails = calls.map(c => c.args[0]);
-          _.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
+          Utils.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
           var one = emails[0];
           one.from.should.equal('bws@dummy.net');
           one.subject.should.contain('New payment received');
