@@ -1,8 +1,8 @@
-import * as twoOfThree from './2of3/index.js';
-import * as threeOfThree from './3of3/index.js';
-import * as oneOfFour from './1of4/index.js';
+const twoOfThree = require('./2of3/index');
+const threeOfThree = require('./3of3/index');
+const oneOfFour = require('./1of4/index');
 
-export const vectors = [
+module.exports.vectors = [
   {
     m: 2,
     n: 3,
