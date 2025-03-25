@@ -11,6 +11,7 @@ var terser = require('gulp-terser');
 //var bump = require('gulp-bump');
 //var git = require('gulp-git');
 var fs = require('fs');
+const assert = require('assert');
 
 function ignoreerror() {
   /* jshint ignore:start */ // using `this` in this context is weird
@@ -21,7 +22,11 @@ function ignoreerror() {
 function startGulp(name, opts) {
   var task = {};
   opts = opts || {};
+  opts.externals = opts.externals || [];
+  assert(!opts.browserRunner || ['karma', 'webdriverio'].includes(opts.browserRunner), 'Invalid option - browserRunner: "' + opts.browserRunner + '"');
+
   var browser = !opts.skipBrowser;
+  var browserRunner = opts.browserRunner || 'karma';
   var fullname = name ? 'bitcore-' + name : 'bitcore';
   var files = ['lib/**/*.js'];
   var tests = ['test/**/*.js'];
@@ -33,6 +38,7 @@ function startGulp(name, opts) {
 
   var browserifyPath = buildBinPath + 'browserify';
   var karmaPath = buildBinPath + 'karma';
+  var webdriverioPath = buildBinPath = 'wdio';
   var platoPath = buildBinPath + 'plato';
   var istanbulPath = buildBinPath + 'istanbul';
   var mochaPath = buildBinPath + '_mocha';
@@ -44,6 +50,10 @@ function startGulp(name, opts) {
 
   if (!fs.existsSync(karmaPath)) {
     karmaPath = './node_modules/.bin/karma';
+  }
+
+  if (!fs.existsSync(webdriverioPath)) {
+    webdriverioPath = './node_modules/.bin/wdio';
   }
 
   if (!fs.existsSync(istanbulPath)) {
@@ -68,7 +78,11 @@ function startGulp(name, opts) {
   };
 
   task['test:karma'] = shell.task([
-    karmaPath + '  start ' + buildPath + 'karma.conf.js --single-run '
+    karmaPath + ' start ' + (opts.karmaConf || (buildPath + 'karma.conf.js')) + ' --single-run'
+  ]);
+
+  task['test:webdriverio'] = shell.task([
+    webdriverioPath + ' run ' + (opts.wdioConf || (buildPath + 'wdio.conf.js'))
   ]);
 
   task['test:node'] =  testmocha;
@@ -86,7 +100,9 @@ function startGulp(name, opts) {
 
     var browserifyCommand;
 
-    if (name !== 'lib') {
+    if (name === 'tss') {
+      browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + ' ' + opts.externals.map(e => '--external ' + e).join(' ') + ' -t [ babelify --global --presets [ @babel/preset-env ] ] -o ' + fullname + '.js';
+    } else if (name !== 'lib') {
       browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + ' --external bitcore-lib -o ' + fullname + '.js';
     } else {
       browserifyCommand = browserifyPath + ' --require ./index.js:bitcore-lib -o bitcore-lib.js';
@@ -111,7 +127,7 @@ function startGulp(name, opts) {
       gulp.series(task['browser:uncompressed'], task['browser:terser']);
 
     task['browser:maketests'] = shell.task([
-      'find test/ -type f -name "*.js" | xargs ' + browserifyPath + ' -t brfs -o tests.js'
+      'find test/ -type f -name "*.js" | xargs ' + browserifyPath + ' ' + opts.externals.map(e => '--external ' + e).join(' ') + ' -t [ babelify --global --presets [ @babel/preset-env ] ] -t brfs -o tests.js'
     ]);
 
     task['browser'] = task['browser:compressed'];
@@ -178,7 +194,7 @@ function startGulp(name, opts) {
   }
 
   if (browser) {
-    task['test:browser'] = gulp.series(task['browser:uncompressed'], task['browser:maketests'], task['test:karma']);
+    task['test:browser'] = gulp.series(task['browser:uncompressed'], task['browser:maketests'], task[`test:${browserRunner}`]);
     task['test']= gulp.series(task['test:node'], task['test:browser']);
   } else {
     task['test']= task['test:node'];
