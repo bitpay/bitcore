@@ -412,7 +412,7 @@ export const Utils = {
   /**
    * Returns the elements of arr1 that are NOT in arr2
    * @param {Array<any>} arr1 Elements to filter
-   * @param {Array<any>} [arr2] Elements to remove from arr1 if they exist. If not provided, returns arr1 as-is.
+   * @param {Array<any>} [arr2] Elements to remove from arr1 if they exist. If not provided, returns a copy of arr1.
    * @returns 
    */
   difference(arr1, arr2) {
