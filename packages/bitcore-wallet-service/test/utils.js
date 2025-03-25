@@ -1,10 +1,9 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-var { Utils } = require('../ts_build/lib/common/utils');
+const chai = require('chai');
+const sinon = require('sinon');
+const should = chai.should();
+const { Utils } = require('../ts_build/lib/common/utils');
 const { logger } = require('../ts_build/lib/logger');
 
 describe('Utils', function() {
@@ -40,9 +39,9 @@ describe('Utils', function() {
         args: ['id', 'dummy'],
         check: ['dummy']
       },];
-      _.each(fixtures, function(f) {
+      for (const f of fixtures) {
         Utils.getMissingFields(obj, f.args).should.deep.equal(f.check);
-      });
+      }
     });
     it('should fail to check required fields on non-object', function() {
       var obj = 'dummy';
@@ -184,9 +183,9 @@ describe('Utils', function() {
         expected: '12 345,679',
       },];
 
-      _.each(cases, function(testCase) {
+      for (const testCase of cases) {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
-      });
+      }
     });
   });
 
