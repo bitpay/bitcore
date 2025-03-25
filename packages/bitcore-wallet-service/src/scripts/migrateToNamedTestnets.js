@@ -182,6 +182,9 @@ storage.connect(config.storageOpts, async (err) => {
     console.log('Mainnet wallets:', skipCountMainnet);
     console.log('Other network wallets:', skipCountOther);
 
+    console.log(); // add a new line between the above output and this note
+    console.log('NOTE: You may now need to run fixEvmTestnetAddressSuffix.js to fix the address suffix for each EVM chain');
+
     return done();
   } catch (err) {
     return done(err);
