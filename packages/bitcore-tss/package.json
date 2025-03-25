@@ -1,6 +1,6 @@
 {
   "name": "bitcore-tss",
-  "version": "10.8.6",
+  "version": "10.8.7",
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
   "type": "module",
@@ -20,6 +20,6 @@
     "bitcore-lib": "^10.8.0"
   },
   "devDependencies": {
-    "crypto-wallet-core": "^10.8.6"
+    "crypto-wallet-core": "^10.8.7"
   }
 }
