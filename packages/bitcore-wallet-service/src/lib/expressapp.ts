@@ -91,7 +91,7 @@ export class ExpressApp {
     this.app.use(compression());
 
     this.app.use((req, res, next) => {
-      res.setHeader('Access-Control-Allow-Origin', 'https://wallet.abcpay.test');
+      res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
       res.setHeader(
         'Access-Control-Allow-Headers',
