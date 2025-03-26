@@ -86,7 +86,7 @@ export class ExpressApp {
     opts = opts || {};
 
     // Add cors middleware before other middleware
-    this.app.use(cors(corsOptions));
+    // this.app.use(cors(corsOptions));
 
     this.app.use(compression());
 
