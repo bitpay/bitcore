@@ -1,7 +1,7 @@
 'use strict';
 
-import bitcore from 'bitcore-lib';
-import crypto from 'crypto';
+const bitcore = require('bitcore-lib');
+const crypto = require('crypto');
 
 const PublicKey = bitcore.PublicKey;
 const PrivateKey = bitcore.PrivateKey;
@@ -11,17 +11,17 @@ const $ = bitcore.util.preconditions;
 
 // http://en.wikipedia.org/wiki/Integrated_Encryption_Scheme
 
-export function KDF(privateKey, publicKey) {
+function KDF(privateKey, publicKey) {
   const r = privateKey.bn;
   const KB = publicKey.point;
   const P = KB.mul(r);
   const S = P.getX();
   const Sbuf = S.toBuffer({ size: 32 });
-  const kEkM = crypto.hash('sha512', Sbuf, 'buffer');
+  const kEkM = Hash.sha512(Sbuf);
   const kE = kEkM.subarray(0, 32);
   const kM = kEkM.subarray(32, 64);
   return [kE, kM];
-}
+};
 
 /**
  * Encrypts the message (String or Buffer) using EC keys.
@@ -40,7 +40,7 @@ export function KDF(privateKey, publicKey) {
  * @param {boolean} params.opts.shortTag - Use 4-byte tag instead of 32-byte. This must be communicated to the payload recipient.
  * @returns {Buffer} Payload buffer with `pubkey|iv|ciphertext|tag` (pubkey is excluded if `noKey` is given).
  */
-export function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
+function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
   $.checkArgument(message, 'message is required');
   $.checkArgument(publicKey, 'publicKey is required');
   $.checkArgument(privateKey, 'privateKey is required');
@@ -64,7 +64,7 @@ export function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
   const cipher = crypto.createCipheriv('aes-256-cbc', kE, ivbuf);
   const cipherText = Buffer.concat([cipher.update(message), cipher.final()]);
   
-  let tag = crypto.createHmac('sha256', kM).update(cipherText).digest();
+  let tag = Hash.sha256hmac(cipherText, kM);
   if (opts.shortTag) {
     tag = tag.subarray(0, 4);
   }
@@ -91,7 +91,7 @@ export function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
  *                              This was decided during encryption and must be communicated by the sender.
  * @returns {Buffer} Decrypted message buffer.
  */
-export function decrypt({ payload, privateKey, publicKey, opts = {} }) {
+function decrypt({ payload, privateKey, publicKey, opts = {} }) {
   $.checkArgument(Buffer.isBuffer(payload), '`buffer` must be a Buffer');
   $.checkArgument(privateKey, 'privateKey is required');
   
@@ -128,7 +128,7 @@ export function decrypt({ payload, privateKey, publicKey, opts = {} }) {
 
   const [kE, kM] = KDF(privateKey, publicKey);
 
-  const tag2 = crypto.createHmac('sha256', kM).update(cipherText).digest().subarray(0, tagLength);
+  const tag2 = Hash.sha256hmac(cipherText, kM).subarray(0, tagLength);
   if (tag2.compare(tag) !== 0) {
     throw new Error('Invalid checksum');
   }
@@ -137,3 +137,7 @@ export function decrypt({ payload, privateKey, publicKey, opts = {} }) {
   const message = Buffer.concat([cipher.update(cipherText), cipher.final()]);
   return message;
 };
+
+module.exports.KDF = KDF;
+module.exports.encrypt = encrypt;
+module.exports.decrypt = decrypt;
