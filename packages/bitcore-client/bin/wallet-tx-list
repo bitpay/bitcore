@@ -3,7 +3,7 @@
 const program = require('commander');
 const { Writable } = require('stream');
 const { Wallet } = require('../ts_build/src/wallet');
-const { getCurrencyObj } = require('../ts_build/src/utils');
+const { utils } = require('../ts_build/src/utils');
 
 program
   .version(require('../package.json').version)
@@ -30,7 +30,7 @@ const main = async () => {
       list.pipe(process.stdout);
     } else {
       const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
-      const currencyObj = await getCurrencyObj(wallet.chain, tokenObj?.address);
+      const currencyObj = await utils.getCurrencyObj(wallet.chain, tokenObj?.address);
       let txs = '[';
       list.pipe(new Writable({
         objectMode: true,
