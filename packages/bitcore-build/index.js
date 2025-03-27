@@ -23,6 +23,7 @@ function startGulp(name, opts) {
   var task = {};
   opts = opts || {};
   opts.externals = opts.externals || [];
+  opts.transforms = opts.transforms || [];
   assert(!opts.browserRunner || ['karma', 'webdriverio'].includes(opts.browserRunner), 'Invalid option - browserRunner: "' + opts.browserRunner + '"');
 
   var browser = !opts.skipBrowser;
@@ -101,7 +102,7 @@ function startGulp(name, opts) {
     var browserifyCommand;
 
     if (name === 'tss') {
-      browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + ' ' + opts.externals.map(e => '--external ' + e).join(' ') + ' -t [ babelify --global --presets [ @babel/preset-env ] ] -o ' + fullname + '.js';
+      browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + opts.externals.map(e => ' --external ' + e).join('') + opts.transforms.map(t => ' -t ' + t).join('') + ' -o ' + fullname + '.js';
     } else if (name !== 'lib') {
       browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + ' --external bitcore-lib -o ' + fullname + '.js';
     } else {
@@ -127,7 +128,7 @@ function startGulp(name, opts) {
       gulp.series(task['browser:uncompressed'], task['browser:terser']);
 
     task['browser:maketests'] = shell.task([
-      'find test/ -type f -name "*.js" | xargs ' + browserifyPath + ' ' + opts.externals.map(e => '--external ' + e).join(' ') + ' -t [ babelify --global --presets [ @babel/preset-env ] ] -t brfs -o tests.js'
+      'find test/ -type f -name "*.js" | xargs ' + browserifyPath + opts.externals.map(e => ' --external ' + e).join('') + opts.transforms.map(t => ' -t ' + t).join('') + ' -t brfs -o tests.js'
     ]);
 
     task['browser'] = task['browser:compressed'];
