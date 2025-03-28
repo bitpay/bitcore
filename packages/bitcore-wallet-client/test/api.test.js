@@ -1,37 +1,32 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
+const chai = require('chai');
 chai.config.includeStack = true;
-var sinon = require('sinon');
-var should = chai.should();
-var async = require('async');
-var Uuid = require('uuid');
-var log = require('../ts_build/lib/log').default;
-var oldCredentials = require('./legacyCredentialsExports');
+const sinon = require('sinon');
+const should = chai.should();
+const async = require('async');
+const Uuid = require('uuid');
+const log = require('../ts_build/lib/log').default;
+const oldCredentials = require('./legacyCredentialsExports');
+const CWC = require('crypto-wallet-core');
+const BWS = require('bitcore-wallet-service');
+const Client = require('../ts_build').default;
+const { Request } = require('../ts_build/lib/request.js');
+const { Utils } = require('../ts_build/lib/common');
+const TestData = require('./testdata');
+const { Errors } = require('../ts_build/lib/errors');
+const { helpers, blockchainExplorerMock } = require('./helpers');
 
-var CWC = require('crypto-wallet-core');
-
-var Bitcore = CWC.BitcoreLib;
-var Bitcore_ = {
+const Key = Client.Key;
+const ExpressApp = BWS.ExpressApp;
+const Storage = BWS.Storage;
+const Bitcore = CWC.BitcoreLib;
+const Bitcore_ = {
   btc: Bitcore,
   bch: CWC.BitcoreLibCash
 };
 
-var BWS = require('bitcore-wallet-service');
-
-var Client = require('../ts_build').default;
-var Key = Client.Key;
-var { Request } = require('../ts_build/lib/request.js');
-var { Utils } = require('../ts_build/lib/common');
-
-var ExpressApp = BWS.ExpressApp;
-var Storage = BWS.Storage;
-var TestData = require('./testdata');
-var { Errors } = require('../ts_build/lib/errors');
-var { helpers, blockchainExplorerMock } = require('./helpers');
-
-var createTxsV8 = (nr, bcHeight, txs) => {
+function createTxsV8(nr, bcHeight, txs) {
   txs = txs || [];
   // Will generate
   // order / confirmations  / height / txid
@@ -40,7 +35,7 @@ var createTxsV8 = (nr, bcHeight, txs) => {
   //  2.  => 2      / bcHeight - 1  /   txid2
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
-  var i = 0;
+  let i = 0;
   if (!txs.length) {
     while (i < nr) {
       txs.push({
@@ -61,11 +56,11 @@ var createTxsV8 = (nr, bcHeight, txs) => {
   return txs;
 };
 
-var db;
+let db;
 describe('client API', function() {
   // DONT USE LAMBAS HERE!!! https://stackoverflow.com/questions/23492043/change-default-timeout-for-mocha, or this.timeout() will BREAK!
   //
-  var clients, app, sandbox, storage, keys, i;
+  let clients, app, sandbox, storage, keys, i;
   this.timeout(8000);
 
   before(done => {
@@ -83,7 +78,7 @@ describe('client API', function() {
   });
 
   beforeEach(done => {
-    var expressApp = new ExpressApp();
+    let expressApp = new ExpressApp();
     expressApp.start(
       {
         ignoreRateLimiter: true,
@@ -1668,7 +1663,7 @@ describe('client API', function() {
           clients[0].openWallet((err, walletStatus) => {
             should.not.exist(err);
             should.exist(walletStatus);
-            _.difference((walletStatus.copayers || []).map(c => c.name), ['creator', 'guest']).length.should.equal(0);
+            (walletStatus.copayers || []).every(c => ['creator', 'guest'].includes(c.name)).should.be.true;
             if (++checks == 2) done();
           });
         });
@@ -2476,8 +2471,10 @@ describe('client API', function() {
       clients[0].credentials = {};
       clients[0].getFeeLevels('btc', 'livenet', (err, levels) => {
         should.not.exist(err);
-        should.exist(levels);
-        _.difference(['priority', 'normal', 'economy'], levels.map(l => l.level)).should.be.empty;
+        Array.isArray(levels).should.be.true;
+        should.exist(levels.find(l => l.level === 'priority'));
+        should.exist(levels.find(l => l.level === 'normal'));
+        should.exist(levels.find(l => l.level === 'economy'));
         done();
       });
     });
@@ -5924,7 +5921,8 @@ describe('client API', function() {
               (err, notes) => {
                 should.not.exist(err);
                 notes.length.should.equal(2);
-                _.difference(notes.map(note => note.txid), ['123', '456']).should.be.empty;
+                notes[0].txid.should.equal('123');
+                notes[1].txid.should.equal('456');
                 next();
               }
             );
@@ -6369,15 +6367,11 @@ describe('client API', function() {
             should.exist(addr);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true, includeLegacyWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 should.not.exist(err);
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6414,11 +6408,7 @@ describe('client API', function() {
               should.not.exist(err);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   // the eth wallet + 2 tokens.
                   c.length.should.equal(3);
@@ -6461,11 +6451,7 @@ describe('client API', function() {
             should.not.exist(err);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the eth wallet + 1 token.
                 c.length.should.equal(2);
@@ -6507,11 +6493,7 @@ describe('client API', function() {
             should.not.exist(err);
               Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the eth wallet + 1 unknown token addresses on preferences.
                 c.length.should.equal(1);
@@ -6548,11 +6530,7 @@ describe('client API', function() {
               should.not.exist(err);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true  },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   // the matic wallet + 2 tokens.
                   c.length.should.equal(3);
@@ -6595,11 +6573,7 @@ describe('client API', function() {
             should.not.exist(err);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true  },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the matic wallet + 1 token.
                 c.length.should.equal(2);
@@ -6641,11 +6615,7 @@ describe('client API', function() {
             should.not.exist(err);
               Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the matic wallet + 1 unknown token addresses on preferences.
                 c.length.should.equal(1);
@@ -6682,11 +6652,7 @@ describe('client API', function() {
               should.not.exist(err);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true  },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   // the op wallet + 2 tokens.
                   c.length.should.equal(3);
@@ -6729,11 +6695,7 @@ describe('client API', function() {
             should.not.exist(err);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true  },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the op wallet + 1 token.
                 c.length.should.equal(2);
@@ -6775,11 +6737,7 @@ describe('client API', function() {
             should.not.exist(err);
               Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the op wallet + 1 unknown token addresses on preferences.
                 c.length.should.equal(1);
@@ -6816,11 +6774,7 @@ describe('client API', function() {
               should.not.exist(err);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   // the base wallet + 2 tokens.
                   c.length.should.equal(3);
@@ -6863,11 +6817,7 @@ describe('client API', function() {
             should.not.exist(err);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true  },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the base wallet + 1 token.
                 c.length.should.equal(2);
@@ -6909,11 +6859,7 @@ describe('client API', function() {
             should.not.exist(err);
               Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the base wallet + unknown token addresses should be ignored.
                 c.length.should.equal(1);
@@ -6950,11 +6896,7 @@ describe('client API', function() {
               should.not.exist(err);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   // the arb wallet + 2 tokens.
                   c.length.should.equal(3);
@@ -6997,11 +6939,7 @@ describe('client API', function() {
             should.not.exist(err);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true  },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the arb wallet + 1 token.
                 c.length.should.equal(2);
@@ -7043,11 +6981,7 @@ describe('client API', function() {
             should.not.exist(err);
               Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 // the arb wallet + unknown token addresses should be ignored.
                 c.length.should.equal(1);
@@ -7079,11 +7013,7 @@ describe('client API', function() {
               should.exist(addr);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   should.not.exist(err);
                   c.length.should.equal(2);
@@ -7122,11 +7052,7 @@ describe('client API', function() {
               should.exist(addr);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true},
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   should.not.exist(err);
                   c.length.should.equal(2);
@@ -7165,11 +7091,7 @@ describe('client API', function() {
                 should.exist(addr);
                 Client.serverAssistedImport(
                   { words, includeTestnetWallets: true },
-                  {
-                    clientFactory: () => {
-                      return helpers.newClient(app);
-                    }
-                  },
+                  helpers.newClient(app),
                   (err, k, c) => {
                     should.not.exist(err);
                     c.length.should.equal(3);
@@ -7222,11 +7144,7 @@ describe('client API', function() {
                         should.exist(addr);
                         Client.serverAssistedImport(
                           { words, includeTestnetWallets: true },
-                          {
-                            clientFactory: () => {
-                              return helpers.newClient(app);
-                            }
-                          },
+                          helpers.newClient(app),
                           (err, k, c) => {
                             should.not.exist(err);
                             c.length.should.equal(7);
@@ -7279,11 +7197,7 @@ describe('client API', function() {
                 should.exist(addr);
                 Client.serverAssistedImport(
                   { words, includeTestnetWallets: true },
-                  {
-                    clientFactory: () => {
-                      return helpers.newClient(app);
-                    }
-                  },
+                  helpers.newClient(app),
                   (err, k, c) => {
                     should.not.exist(err);
                     c.length.should.equal(3);
@@ -7333,11 +7247,7 @@ describe('client API', function() {
             should.exist(addr);
             Client.serverAssistedImport(
               { words, passphrase, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 should.not.exist(err);
                 c.length.should.equal(1);
@@ -7370,11 +7280,7 @@ describe('client API', function() {
             should.exist(addr);
             Client.serverAssistedImport(
               { xPrivKey, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 k = k.toObj();
                 k.xPrivKey.should.equal(xPrivKey);
@@ -7411,11 +7317,7 @@ describe('client API', function() {
             should.exist(addr);
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
-              {
-                clientFactory: () => {
-                  return helpers.newClient(app);
-                }
-              },
+              helpers.newClient(app),
               (err, k, c) => {
                 k.compliantDerivation.should.equal(true);
                 k.use0forBCH.should.equal(false);
@@ -7448,11 +7350,7 @@ describe('client API', function() {
           words = words.get().mnemonic;
           Client.serverAssistedImport(
             { words },
-            {
-              clientFactory: () => {
-                return helpers.newClient(app);
-              }
-            },
+            helpers.newClient(app),
             (err, k, c) => {
               should.not.exist(err);
               c.length.should.equal(0);
@@ -7480,11 +7378,7 @@ describe('client API', function() {
               should.exist(addr);
               Client.serverAssistedImport(
                 { words, includeLegacyWallets: true, includeTestnetWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   should.exist(k);
                   should.exist(c[0]);
@@ -7534,11 +7428,7 @@ describe('client API', function() {
               should.exist(addr);
               Client.serverAssistedImport(
                 { words, includeLegacyWallets: true, includeTestnetWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   should.exist(k);
                   should.exist(c[0]);
@@ -7596,11 +7486,7 @@ describe('client API', function() {
             should.not.exist(err);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: false, includeLegacyWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   should.not.exist(err);
                   should.exist(k);
@@ -7632,11 +7518,7 @@ describe('client API', function() {
 
               Client.serverAssistedImport(
                 { xPrivKey, includeTestnetWallets: true },
-                {
-                  clientFactory: () => {
-                    return helpers.newClient(app);
-                  }
-                },
+                helpers.newClient(app),
                 (err, k, c) => {
                   should.not.exist(err);
                   c.length.should.equal(1);
@@ -7702,7 +7584,7 @@ describe('client API', function() {
                     recoveryClient.getStatus({}, (err, status) => {
                       should.not.exist(err);
                       status.wallet.name.should.equal('mywallet');
-                      _.difference(status.wallet.copayers.map(c => c.name), ['creator', 'copayer 1']).length.should.equal(0);
+                      status.wallet.copayers.every(c => ['creator', 'copayer 1'].includes(c.name)).should.be.true;
                       recoveryClient.createAddress((err, addr2) => {
                         should.not.exist(err);
                         should.exist(addr2);
@@ -7820,7 +7702,7 @@ describe('client API', function() {
                       should.not.exist(err);
                       recoveryClient.getStatus({}, (err, status) => {
                         should.not.exist(err);
-                        _.difference(status.wallet.copayers.map(c => c.name), ['creator', 'copayer 1']).length.should.equal(0);
+                        status.wallet.copayers.every(c => ['creator', 'copayer 1'].includes(c.name)).should.be.true;
                         recoveryClient.createAddress((err, addr2) => {
                           should.not.exist(err);
                           should.exist(addr2);

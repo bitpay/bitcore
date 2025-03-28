@@ -4,7 +4,6 @@ import async from 'async';
 import Mnemonic from 'bitcore-mnemonic';
 import * as CWC from 'crypto-wallet-core';
 import { EventEmitter } from 'events';
-import _ from 'lodash';
 import { singleton } from 'preconditions';
 import querystring from 'querystring';
 import sjcl from 'sjcl';
@@ -160,12 +159,12 @@ export class API extends EventEmitter {
         return cb(err);
       }
       if (notifications.length > 0) {
-        this.lastNotificationId = (_.last(notifications) as any).id;
+        this.lastNotificationId = notifications.slice(-1)[0].id;
       }
 
-      _.each(notifications, notification => {
+      for (const notification of notifications) {
         this.emit('notification', notification);
-      });
+      }
       return cb();
     });
   }
@@ -226,8 +225,8 @@ export class API extends EventEmitter {
   _processTxNotes(notes) {
     if (!notes) return;
 
-    var encryptingKey = this.credentials.sharedEncryptingKey;
-    _.each([].concat(notes), note => {
+    const encryptingKey = this.credentials.sharedEncryptingKey;
+    for (const note of [].concat(notes)) {
       note.encryptedBody = note.body;
       note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
       note.encryptedEditedByName = note.editedByName;
@@ -235,7 +234,7 @@ export class API extends EventEmitter {
         note.editedByName,
         encryptingKey
       );
-    });
+    }
   }
 
   /**
@@ -247,7 +246,7 @@ export class API extends EventEmitter {
     if (!txps) return;
 
     var encryptingKey = this.credentials.sharedEncryptingKey;
-    _.each([].concat(txps), txp => {
+    for (const txp of [].concat(txps)) {
       txp.encryptedMessage = txp.message;
       txp.message =
         Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
@@ -256,30 +255,20 @@ export class API extends EventEmitter {
         encryptingKey
       );
 
-      _.each(txp.actions, action => {
+      for (const action of txp.actions || []) {
         // CopayerName encryption is optional (not available in older wallets)
-        action.copayerName = Utils.decryptMessageNoThrow(
-          action.copayerName,
-          encryptingKey
-        );
-
-        action.comment = Utils.decryptMessageNoThrow(
-          action.comment,
-          encryptingKey
-        );
+        action.copayerName = Utils.decryptMessageNoThrow(action.copayerName, encryptingKey);
+        action.comment = Utils.decryptMessageNoThrow(action.comment, encryptingKey);
         // TODO get copayerName from Credentials -> copayerId to copayerName
         // action.copayerName = null;
-      });
-      _.each(txp.outputs, output => {
+      }
+      for (const output of txp.outputs || []) {
         output.encryptedMessage = output.message;
-        output.message =
-          Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
-      });
-      txp.hasUnconfirmedInputs = _.some(txp.inputs, input => {
-        return input.confirmations == 0;
-      });
+        output.message = Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
+      }
+      txp.hasUnconfirmedInputs = (txp.inputs || []).some(input => input.confirmations == 0);
       this._processTxNotes(txp.note);
-    });
+    }
   }
 
   validateKeyDerivation(opts, cb) {
@@ -378,7 +367,7 @@ export class API extends EventEmitter {
   }
 
   fromObj(credentials) {
-    $.checkArgument(_.isObject(credentials), 'Argument should be an object');
+    $.checkArgument(credentials && typeof credentials === 'object' && !Array.isArray(credentials), 'Argument should be an object');
 
     try {
       credentials = Credentials.fromObj(credentials);
@@ -392,14 +381,16 @@ export class API extends EventEmitter {
       }
     }
     this.request.setCredentials(this.credentials);
+    return this;
   }
 
   /**
    * Import credentials from a string
-   * @param {string} str - The serialized JSON created with #export
+   * @param {string} credentials The serialized JSON created with #export
    */
   fromString(credentials) {
-    if (_.isObject(credentials)) {
+    $.checkArgument(credentials, 'Missing argument: credentials at <fromString>');
+    if (typeof credentials === 'object') {
       log.warn('WARN: Please use fromObj instead of fromString when importing strings');
       return this.fromObj(credentials);
     }
@@ -411,6 +402,21 @@ export class API extends EventEmitter {
       throw new Errors.INVALID_BACKUP();
     }
     return this.fromObj(c);
+  }
+
+  toClone() {
+    $.checkState(this.credentials, 'Failed state: this.credentials at <toClone()>');
+    const clone = new API(Object.assign({}, this, { request: this.request.r, baseUrl: this.request.baseUrl }));
+    clone.fromObj(this.toObj());
+    return clone;
+  }
+
+  static clone(api: API) {
+    const clone = new API(Object.assign({}, api, { request: api.request.r, baseUrl: api.request.baseUrl }));
+    if (api.credentials) {
+      clone.fromObj(api.toObj());
+    }
+    return clone;
   }
 
   decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, progressCallback, cb) {
@@ -443,7 +449,7 @@ export class API extends EventEmitter {
   }
 
   getBalanceFromPrivateKey(privateKey, chain, cb) {
-    if (_.isFunction(chain)) {
+    if (typeof chain === 'function') {
       cb = chain;
       chain = 'btc';
     }
@@ -458,7 +464,7 @@ export class API extends EventEmitter {
       },
       (err, utxos) => {
         if (err) return cb(err);
-        return cb(null, _.sumBy(utxos, 'satoshis'));
+        return cb(null, (utxos || []).reduce((sum, u) => sum += u.satoshis, 0));
       }
     );
   }
@@ -469,7 +475,7 @@ export class API extends EventEmitter {
     var chain = opts.chain?.toLowerCase() || Utils.getChain(opts.coin); // getChain -> backwards compatibility
     var signingMethod = opts.signingMethod || 'ecdsa';
 
-    if (!_.includes(Constants.CHAINS, chain))
+    if (!Constants.CHAINS.includes(chain))
       return cb(new Error('Invalid chain'));
 
     if (Constants.EVM_CHAINS.includes(chain))
@@ -492,18 +498,17 @@ export class API extends EventEmitter {
           );
         },
         (utxos, next) => {
-          if (!_.isArray(utxos) || utxos.length == 0)
+          if (!Array.isArray(utxos) || utxos.length == 0)
             return next(new Error('No utxos found'));
 
-          var fee = opts.fee || 10000;
-          var amount = _.sumBy(utxos, 'satoshis') - fee;
+          const fee = opts.fee || 10000;
+          const utxoSum = (utxos || []).reduce((sum, u) => sum += u.satoshis, 0);
+          const amount = utxoSum - fee;
           if (amount <= 0) return next(new Errors.INSUFFICIENT_FUNDS());
 
-          var tx;
           try {
-            var toAddress = B.Address.fromString(destinationAddress);
-
-            tx = new B.Transaction()
+            const toAddress = B.Address.fromString(destinationAddress);
+            const tx = new B.Transaction()
               .from(utxos)
               .to(toAddress, amount)
               .fee(fee)
@@ -511,11 +516,11 @@ export class API extends EventEmitter {
 
             // Make sure the tx can be serialized
             tx.serialize();
+            return next(null, tx);
           } catch (ex) {
             log.error('Could not build transaction from private key', ex);
             return next(new Errors.COULD_NOT_BUILD_TRANSACTION());
           }
-          return next(null, tx);
         }
       ],
       cb
@@ -528,7 +533,7 @@ export class API extends EventEmitter {
    * @returns {API} Returns instance of API wallet
    */
   openWallet(opts, cb) {
-    if (_.isFunction(opts)) {
+    if (typeof opts === 'function') {
       cb = opts;
     }
     opts = opts || {};
@@ -548,10 +553,7 @@ export class API extends EventEmitter {
       this._processStatus(ret);
 
       if (!this.credentials.hasWalletInfo()) {
-        var me = _.find(wallet.copayers, {
-          id: this.credentials.copayerId
-        });
-
+        const me = (wallet.copayers || []).find(c => c.id === this.credentials.copayerId);
         if (!me) return cb(new Error('Copayer not in wallet'));
 
         try {
@@ -601,7 +603,7 @@ export class API extends EventEmitter {
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
     const networkChar = NetworkChar[network] || 'L';
     return (
-      _.padEnd(widBase58, 22, '0') +
+      widBase58.padEnd(22, '0') +
       walletPrivKey.toWIF() +
       networkChar +
       chain
@@ -649,16 +651,12 @@ export class API extends EventEmitter {
   }
 
   _getCurrentSignatures(txp) {
-    var acceptedActions = _.filter(txp.actions, {
-      type: 'accept'
-    });
+    var acceptedActions = (txp.actions || []).filter(a => a.type === 'accept');
 
-    return _.map(acceptedActions, x => {
-      return {
-        signatures: x.signatures,
-        xpub: x.xpub
-      };
-    });
+    return acceptedActions.map(x => ({
+      signatures: x.signatures,
+      xpub: x.xpub
+    }));
   }
 
   _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
@@ -679,7 +677,7 @@ export class API extends EventEmitter {
     let i = 0;
     const x = new bitcore.HDPublicKey(xpub);
 
-    _.each(signatures, signatureHex => {
+    for (const signatureHex of signatures) {
       try {
         const signature = bitcore.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(txp.inputPaths[i]).publicKey;
@@ -695,7 +693,7 @@ export class API extends EventEmitter {
         t.inputs[i].addSignature(t, s, txp.signingMethod);
         i++;
       } catch (e) { }
-    });
+    }
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
   }
@@ -741,9 +739,9 @@ export class API extends EventEmitter {
     );
 
     var sigs = this._getCurrentSignatures(txp);
-    _.each(sigs, x => {
+    for (const x of sigs) {
       this._addSignaturesToBitcoreTx(txp, t, x.signatures, x.xpub);
-    });
+    }
   }
 
   /**
@@ -777,16 +775,10 @@ export class API extends EventEmitter {
     // Adds encrypted walletPrivateKey to CustomData
     opts.customData = opts.customData || {};
     opts.customData.walletPrivKey = walletPrivKey.toString();
-    var encCustomData = Utils.encryptMessage(
-      JSON.stringify(opts.customData),
-      this.credentials.personalEncryptingKey
-    );
-    var encCopayerName = Utils.encryptMessage(
-      copayerName,
-      this.credentials.sharedEncryptingKey
-    );
+    const encCustomData = Utils.encryptMessage(JSON.stringify(opts.customData), this.credentials.personalEncryptingKey);
+    const encCopayerName = Utils.encryptMessage(copayerName, this.credentials.sharedEncryptingKey);
 
-    var args: any = {
+    const args: any = {
       walletId,
       coin: opts.coin,
       chain: opts.chain,
@@ -798,17 +790,17 @@ export class API extends EventEmitter {
     };
     if (opts.dryRun) args.dryRun = true;
 
-    if (_.isBoolean(opts.supportBIP44AndP2PKH))
+    if ([true, false].includes(opts.supportBIP44AndP2PKH))
       args.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
-    var hash = Utils.getCopayerHash(
+    const hash = Utils.getCopayerHash(
       args.name,
       args.xPubKey,
       args.requestPubKey
     );
     args.copayerSignature = Utils.signMessage(hash, walletPrivKey);
 
-    var url = '/v2/wallets/' + walletId + '/copayers';
+    const url = '/v2/wallets/' + walletId + '/copayers';
     this.request.post(url, args, (err, body) => {
       if (err) return cb(err);
       this._processWallet(body.wallet);
@@ -825,11 +817,11 @@ export class API extends EventEmitter {
   }
 
   _extractPublicKeyRing(copayers) {
-    return _.map(copayers, copayer => {
-      var pkr: any = _.pick(copayer, ['xPubKey', 'requestPubKey']);
-      pkr.copayerName = copayer.name;
-      return pkr;
-    });
+    return (copayers || []).map(copayer => ({
+      xPubKey: copayer.xPubKey,
+      requestPubKey: copayer.requestPubKey,
+      copayerName: copayer.name
+    }));
   }
 
   /**
@@ -840,8 +832,8 @@ export class API extends EventEmitter {
    * @returns {object} An object with fee level information
    */
   getFeeLevels(chain, network, cb) {
-    $.checkArgument(chain || _.includes(Constants.CHAINS, chain));
-    $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
+    $.checkArgument(chain || Constants.CHAINS.includes(chain));
+    $.checkArgument(network || ['livenet', 'testnet'].includes(network));
 
     this.request.get(
       '/v2/feelevels/?coin=' +
@@ -911,11 +903,11 @@ export class API extends EventEmitter {
     var chain = opts.chain?.toLowerCase() || coin;
 
     // checking in chains for simplicity
-    if (!_.includes(Constants.CHAINS, coin))
-      return cb(new Error('Invalid coin'));
+    if (!Constants.CHAINS.includes(chain))
+      return cb(new Error('Invalid chain'));
 
     var network = opts.network || 'livenet';
-    if (!_.includes(['testnet', 'livenet', 'regtest'], network))
+    if (!['testnet', 'livenet', 'regtest'].includes(network))
       return cb(new Error('Invalid network: ' + network));
 
     if (!this.credentials) {
@@ -1009,7 +1001,7 @@ export class API extends EventEmitter {
     var coin = opts.coin || 'btc';
     var chain = opts.chain || coin;
 
-    if (!_.includes(Constants.CHAINS, chain))
+    if (!Constants.CHAINS.includes(chain))
       return cb(new Error('Invalid chain'));
 
     try {
@@ -1154,32 +1146,30 @@ export class API extends EventEmitter {
       wallet.encryptedName = wallet.name;
     }
     wallet.name = name;
-    _.each(wallet.copayers, copayer => {
+    for (const copayer of wallet.copayers || []) {
       var name = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
       if (name != copayer.name) {
         copayer.encryptedName = copayer.name;
       }
       copayer.name = name;
-      _.each(copayer.requestPubKeys, access => {
-        if (!access.name) return;
+      for (const access of copayer.requestPubKeys || []) {
+        if (!access.name) continue;
 
         var name = Utils.decryptMessageNoThrow(access.name, encryptingKey);
         if (name != access.name) {
           access.encryptedName = access.name;
         }
         access.name = name;
-      });
-    });
+      }
+    }
   }
 
   _processStatus(status) {
     var processCustomData = data => {
-      var copayers = data.wallet.copayers;
+      const copayers = data.wallet.copayers;
       if (!copayers) return;
 
-      var me = _.find(copayers, {
-        id: this.credentials.copayerId
-      });
+      const me = copayers.find(c => c.id === this.credentials.copayerId);
       if (!me || !me.customData) return;
 
       var customData;
@@ -1231,14 +1221,8 @@ export class API extends EventEmitter {
 
     this.request.getWithLogin(url, (err, result) => {
       if (err) return cb(err);
-
-      var notifications = _.filter(result, notification => {
-        return (
-          opts.includeOwn ||
-          notification.creatorId != this.credentials.copayerId
-        );
-      });
-
+      result = result || [];
+      const notifications = opts.includeOwn ? result : result.filter(notification => notification.creatorId != this.credentials.copayerId);
       return cb(null, notifications);
     });
   }
@@ -1401,19 +1385,14 @@ export class API extends EventEmitter {
   }
 
   _getCreateTxProposalArgs(opts) {
-    var args = _.cloneDeep(opts);
-    args.message =
-      API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) ||
-      null;
+    const args = JSON.parse(JSON.stringify(opts));
+    args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
     args.payProUrl = opts.payProUrl || null;
     args.isTokenSwap = opts.isTokenSwap || null;
     args.replaceTxByFee = opts.replaceTxByFee || null;
-    _.each(args.outputs, o => {
-      o.message =
-        API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) ||
-        null;
-    });
-
+    for (const o of args.outputs) {
+      o.message = API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) || null;
+    }
     return args;
   }
 
@@ -1569,9 +1548,7 @@ export class API extends EventEmitter {
       if (err) return cb(err);
 
       if (!opts.doNotVerify) {
-        var fake = _.some(addresses, address => {
-          return !Verifier.checkAddress(this.credentials, address);
-        });
+        const fake = (addresses || []).some(address => !Verifier.checkAddress(this.credentials, address));
         if (fake) return cb(new Errors.SERVER_COMPROMISED());
       }
       return cb(null, addresses);
@@ -1734,26 +1711,18 @@ export class API extends EventEmitter {
     $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <pushSignatures()>');
     $.checkArgument(txp.creatorId);
 
-    if (_.isEmpty(signatures)) {
+    if (!signatures?.length) {
       return cb('No signatures to push. Sign the transaction with Key first');
     }
 
     this.getPayProV2(txp)
       .then(paypro => {
-        var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
-          paypro
-        });
-
+        const isLegit = Verifier.checkTxProposal(this.credentials, txp, { paypro });
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
         baseUrl = baseUrl || '/v2/txproposals/';
-        //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
-
-        let url = baseUrl + txp.id + '/signatures/';
-
-        var args = {
-          signatures
-        };
+        const url = baseUrl + txp.id + '/signatures/';
+        const args = { signatures };
         this.request.post(url, args, (err, txp) => {
           if (err) return cb(err);
           this._processTxps(txp);
@@ -1920,7 +1889,7 @@ export class API extends EventEmitter {
     //   throw new Error('Could not decrypt public key ring');
     // }
 
-    // if (!_.isArray(publicKeyRing) || publicKeyRing.length != n) {
+    // if (!Array.isArray(publicKeyRing) || publicKeyRing.length != n) {
     //   throw new Error('Invalid public key ring');
     // }
 
@@ -1955,16 +1924,16 @@ export class API extends EventEmitter {
 
     const chain = opts.chain || opts.coin || 'btc';
     // checking in chains for simplicity
-    if (!_.includes(Constants.CHAINS, chain))
+    if (!Constants.CHAINS.includes(chain))
       return cb(new Error('Invalid coin'));
 
     var publicKeyRing = JSON.parse(unencryptedPkr);
 
-    if (!_.isArray(publicKeyRing) || publicKeyRing.length != n) {
+    if (!Array.isArray(publicKeyRing) || publicKeyRing.length != n) {
       throw new Error('Invalid public key ring');
     }
 
-    var newClient: any = new API({
+    const newClient: any = new API({
       baseUrl: 'https://bws.example.com/bws/api'
     });
 
@@ -2064,8 +2033,8 @@ export class API extends EventEmitter {
     this.getPayProV2(txp)
       .then(paypro => {
         if (paypro) {
-          var t_unsigned = Utils.buildTx(txp);
-          var t = _.cloneDeep(t_unsigned);
+          var t = Utils.buildTx(txp);
+          const rawTxUnsigned = t.uncheckedSerialize();
 
           this._applyAllSignatures(txp, t);
 
@@ -2074,7 +2043,6 @@ export class API extends EventEmitter {
             txp.coin,
             chain
           );
-          const rawTxUnsigned = t_unsigned.uncheckedSerialize();
           const serializedTx = t.serialize({
             disableSmallFees: true,
             disableLargeFees: true,
@@ -2649,8 +2617,8 @@ export class API extends EventEmitter {
   getWalletIdsFromOldCopay(username, password, blob): any[] {
     var p = this._oldCopayDecrypt(username, password, blob);
     if (!p) return null;
-    var ids = p.walletIds.concat(_.keys(p.focusedTimestamps));
-    return _.uniq(ids);
+    var ids = p.walletIds.concat(Object.keys(p.focusedTimestamps));
+    return Array.from(new Set(ids));
   }
 
   /**
@@ -2676,7 +2644,7 @@ export class API extends EventEmitter {
       k = false;
     }
 
-    let obsoleteFields = {
+    const obsoleteFields = {
       version: true,
       xPrivKey: true,
       xPrivKeyEncrypted: true,
@@ -2686,12 +2654,12 @@ export class API extends EventEmitter {
       mnemonicEncrypted: true
     };
 
-    var c = new Credentials();
-    _.each(Credentials.FIELDS, i => {
+    const c = new Credentials();
+    for (const i of Credentials.FIELDS) {
       if (!obsoleteFields[i]) {
         c[i] = v1[i];
       }
-    });
+    }
     if (c.externalSource) {
       throw new Error('External Wallets are no longer supported');
     }
@@ -2706,21 +2674,19 @@ export class API extends EventEmitter {
   /**
    * Upgrade multiple Credentials V1 to Keys and Credentials V2 objects
    * Duplicate keys will be identified and merged.
-   * @param {Object} v1 Credentials V1 Object
+   * @param {Array<Object>} v1 Credentials V1 Object
    * @returns {{ keys, credentials }}
    */
 
-  static upgradeMultipleCredentialsV1(v1) {
+  static upgradeMultipleCredentialsV1(v1: Credentials[]) {
     let newKeys = [];
-    const newCrededentials = [];
+    const newCrededentials: Credentials[] = [];
     // Try to migrate to Credentials 2.0
-    _.each(v1, credentials => {
-      let migrated;
-
+    for (const credentials of v1) {
       if (!credentials.version || credentials.version < 2) {
         log.info('About to migrate : ' + credentials.walletId);
 
-        migrated = API.upgradeCredentialsV1(credentials);
+        const migrated = API.upgradeCredentialsV1(credentials);
         newCrededentials.push(migrated.credentials);
 
         if (migrated.key) {
@@ -2730,36 +2696,38 @@ export class API extends EventEmitter {
           log.info(`READ-ONLY Wallet ${credentials.walletId} migrated`);
         }
       }
-    });
+    }
 
     if (newKeys.length > 0) {
       // Find and merge dup keys.
-      let credGroups = _.groupBy(newCrededentials, x => {
+      const credGroups: { [key: string]: Credentials[] } = {};
+      for (const x of newCrededentials) {
         $.checkState(x.xPubKey, 'Failed state: no xPubKey at credentials!');
-        let xpub = new Bitcore.HDPublicKey(x.xPubKey);
-        let fingerPrint = xpub.fingerPrint.toString('hex');
-        return fingerPrint;
-      });
+        const xpub = new Bitcore.HDPublicKey(x.xPubKey);
+        const fingerPrint = xpub.fingerPrint.toString('hex');
+        credGroups[fingerPrint] = credGroups[fingerPrint] || [];
+        credGroups[fingerPrint].push(x);
+      }
 
-      if (_.keys(credGroups).length < newCrededentials.length) {
+      if (Object.keys(credGroups).length < newCrededentials.length) {
         log.info('Found some wallets using the SAME key. Merging...');
 
-        let uniqIds = {};
+        const uniqIds = {};
 
-        _.each(_.values(credGroups), credList => {
-          let toKeep = credList.shift();
-          if (!toKeep.keyId) return;
+        for (const credList of Object.values(credGroups)) {
+          const toKeep = credList.shift();
+          if (!toKeep.keyId) continue;
           uniqIds[toKeep.keyId] = true;
 
-          if (!credList.length) return;
+          if (!credList.length) continue;
           log.info(`Merging ${credList.length} keys to ${toKeep.keyId}`);
-          _.each(credList, x => {
+          for (const x of credList) {
             log.info(`\t${x.keyId} is now ${toKeep.keyId}`);
             x.keyId = toKeep.keyId;
-          });
-        });
+          }
+        }
 
-        newKeys = _.filter(newKeys, x => uniqIds[x.id]);
+        newKeys = newKeys.filter(x => uniqIds[x.id]);
       }
     }
 
@@ -2784,9 +2752,7 @@ export class API extends EventEmitter {
   static serverAssistedImport(opts, clientOpts, callback) {
     $.checkArgument(opts.words || opts.xPrivKey, 'Missing argument: words or xPrivKey at <serverAssistedImport()>');
 
-    let client = clientOpts.clientFactory
-      ? clientOpts.clientFactory()
-      : new API(clientOpts);
+    let client = clientOpts instanceof API ? API.clone(clientOpts) : new API(clientOpts);
     let includeTestnetWallets = opts.includeTestnetWallets;
     let includeLegacyWallets = opts.includeLegacyWallets;
     let credentials = [];
@@ -2874,30 +2840,24 @@ export class API extends EventEmitter {
       ];
       if (key.use44forMultisig) {
         //  testing old multi sig
-        opts = opts.filter(x => {
-          return x[3];
-        });
+        opts = opts.filter(x => x[3]);
       }
 
       if (key.use0forBCH) {
         //  testing BCH, old coin=0 wallets
-        opts = opts.filter(x => {
-          return x[0] == 'bch';
-        });
+        opts = opts.filter(x => x[0] == 'bch');
       }
 
       if (!key.nonCompliantDerivation && includeTestnetWallets) {
-        let testnet = _.cloneDeep(opts);
-        testnet.forEach(x => {
+        const testnet = JSON.parse(JSON.stringify(opts));
+        for (const x of testnet) {
           x[2] = 'testnet';
-        });
+        }
         opts = opts.concat(testnet);
       }
       if (key.nonCompliantDerivation) {
         //  leave only BTC, and no testnet
-        opts = opts.filter(x => {
-          return x[0] == 'btc';
-        });
+        opts = opts.filter(x => x[0] == 'btc');
       }
 
       for (let i = 0; i < opts.length; i++) {
@@ -2924,10 +2884,7 @@ export class API extends EventEmitter {
           client._processStatus(item.status);
 
           if (!credentials.hasWalletInfo()) {
-            var me = _.find(wallet.copayers, {
-              id: credentials.copayerId
-            });
-
+            const me = (wallet.copayers || []).find(c => c.id === credentials.copayerId);
             if (!me) return cb2(null, new Error('Copayer not in wallet'));
 
             try {
@@ -3091,14 +3048,14 @@ export class API extends EventEmitter {
                 client.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
               }
               // add client to list
-              let newClient = _.cloneDeep(client);
+              let newClient = client.toClone();
               // newClient.credentials = settings.credentials;
               newClient.fromString(wallet.credentials);
               clients.push(newClient);
 
               async function handleChainTokensAndMultisig(chain, tokenAddresses, multisigInfo, tokenOpts, tokenUrlPath) {
                 // Handle importing of tokens
-                if (!_.isEmpty(tokenAddresses)) {
+                if (tokenAddresses?.length) {
                   async function getNetworkTokensData() {
                     return new Promise((resolve, reject) => {
                       newClient.request.get(`/v1/service/oneInch/getTokens/${tokenUrlPath}`, (err, data) => {
@@ -3116,50 +3073,46 @@ export class API extends EventEmitter {
                     customTokensData = null;
                   }
 
-                  _.each(tokenAddresses, t => {
+                  for (const t of tokenAddresses) {
                     const token = tokenOpts[t] || (customTokensData && customTokensData[t]);
                     if (!token) {
                       log.warn(`Token ${t} unknown on ${chain}`);
-                      return;
+                      continue;
                     }
                     log.info(`Importing token: ${token.name} on ${chain}`);
                     const tokenCredentials = newClient.credentials.getTokenCredentials(token, chain);
-                    let tokenClient = _.cloneDeep(newClient);
+                    const tokenClient = newClient.toClone();
                     tokenClient.credentials = tokenCredentials;
                     clients.push(tokenClient);
-                  });
+                  }
                 }
 
                 // Handle importing of multisig wallets
-                if (!_.isEmpty(multisigInfo)) {
-                  _.each(multisigInfo, info => {
-                    log.info(`Importing multisig wallet on ${chain}. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`);
-                    const multisigCredentials = newClient.credentials.getMultisigEthCredentials({
-                      walletName: info.walletName,
-                      multisigContractAddress: info.multisigContractAddress,
-                      n: info.n,
-                      m: info.m
-                    });
-                    let multisigClient = _.cloneDeep(newClient);
-                    multisigClient.credentials = multisigCredentials;
-                    clients.push(multisigClient);
-
-                    const multisigTokenAddresses = info.tokenAddresses;
-                    if (!_.isEmpty(multisigTokenAddresses)) {
-                      _.each(multisigTokenAddresses, t => {
-                        const token = tokenOpts[t];
-                        if (!token) {
-                          log.warn(`Token ${t} unknown in multisig on ${chain}`);
-                          return;
-                        }
-                        log.info(`Importing multisig token: ${token.name} on ${chain}`);
-                        const tokenCredentials = multisigClient.credentials.getTokenCredentials(token, chain);
-                        let tokenClient = _.cloneDeep(multisigClient);
-                        tokenClient.credentials = tokenCredentials;
-                        clients.push(tokenClient);
-                      });
-                    }
+                for (const info of (multisigInfo || [])) {
+                  log.info(`Importing multisig wallet on ${chain}. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`);
+                  const multisigCredentials = newClient.credentials.getMultisigEthCredentials({
+                    walletName: info.walletName,
+                    multisigContractAddress: info.multisigContractAddress,
+                    n: info.n,
+                    m: info.m
                   });
+                  let multisigClient = newClient.toClone();
+                  multisigClient.credentials = multisigCredentials;
+                  clients.push(multisigClient);
+
+                  const multisigTokenAddresses = info.tokenAddresses || [];
+                  for (const t of multisigTokenAddresses) {
+                    const token = tokenOpts[t];
+                    if (!token) {
+                      log.warn(`Token ${t} unknown in multisig on ${chain}`);
+                      continue;
+                    }
+                    log.info(`Importing multisig token: ${token.name} on ${chain}`);
+                    const tokenCredentials = multisigClient.credentials.getTokenCredentials(token, chain);
+                    const tokenClient = multisigClient.toClone();
+                    tokenClient.credentials = tokenCredentials;
+                    clients.push(tokenClient);
+                  }
                 }
               }
 
