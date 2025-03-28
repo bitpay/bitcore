@@ -1,12 +1,10 @@
 'use strict';
 
-import { BitcoreLib } from 'crypto-wallet-core';
-
+import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
+import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
-const $ = require('preconditions').singleton();
-const _ = require('lodash');
-const Bitcore = BitcoreLib;
-const sjcl = require('sjcl');
+
+const $ = singleton();
 
 export class Credentials {
   static FIELDS = [
@@ -56,8 +54,12 @@ export class Credentials {
   m: any;
   n: any;
   copayerName: any;
+  xPrivKey: string; // deprecated
+  xPrivKeyEncrypted: string; // deprecated
   xPubKey: any;
+  requestPrivKey: any;
   requestPubKey: any;
+  copayerId: string;
   publicKeyRing: any;
   rootPath: any;
   derivationStrategy: any;
@@ -65,22 +67,37 @@ export class Credentials {
   coin: string;
   chain: string;
   use145forBCH: any;
-
   addressType: string;
   keyId: string;
-  token?: string;
+  token?: {
+    name: string;
+    symbol: string;
+    address: string;
+  };
   multisigEthInfo?: any;
   externalSource?: boolean; // deprecated property?
+  hardwareSourcePublicKey: string;
+  personalEncryptingKey: string;
 
   constructor() {
     this.version = 2;
     this.account = 0;
   }
 
-  /*
-   *coin, xPrivKey, account, network
+  /**
+   * 
+   * @param opts
+   * @deprecated
+   * @param {string} opts.coin @deprecated Use opts.chain
+   * @param {string} opts.chain
+   * @param {string} opts.network
+   * @param {number} opts.account
+   * @param {string} opts.xPubKey
+   * @param {string} opts.rootPath
+   * @param {string} opts.keyId
+   * @param {string} opts.requestPrivKey
+   * @returns 
    */
-
   static fromDerivedKey(opts) {
     $.shouldBeString(opts.coin);
     $.shouldBeString(opts.chain);
@@ -90,10 +107,10 @@ export class Credentials {
     $.shouldBeString(opts.rootPath, 'Invalid rootPath');
     $.shouldBeString(opts.keyId, 'Invalid keyId');
     $.shouldBeString(opts.requestPrivKey, 'Invalid requestPrivKey');
-    $.checkArgument(_.isUndefined(opts.nonCompliantDerivation));
+    $.checkArgument(opts.nonCompliantDerivation == null);
     opts = opts || {};
 
-    let x: any = new Credentials();
+    let x = new Credentials();
     x.coin = opts.coin;
     x.chain = opts.chain;
     x.network = opts.network;
@@ -103,7 +120,7 @@ export class Credentials {
     x.keyId = opts.keyId;
 
     // this allows to set P2SH in old n=1 wallets
-    if (_.isUndefined(opts.addressType)) {
+    if (opts.addressType == null) {
       x.addressType =
         opts.n == 1
           ? Constants.SCRIPT_TYPES.P2PKH
@@ -152,7 +169,7 @@ export class Credentials {
     },
     chain: string
   ) {
-    const ret = _.cloneDeep(this);
+    const ret = Credentials.fromObj(this.toObj());
     ret.walletId = `${ret.walletId}-${token.address}`;
     ret.coin = token.symbol.toLowerCase();
     ret.chain = chain;
@@ -171,7 +188,7 @@ export class Credentials {
     n: string;
     m: string;
   }) {
-    const ret = _.cloneDeep(this);
+    const ret = Credentials.fromObj(this.toObj());
     ret.walletId = `${ret.walletId}-${multisigEthInfo.multisigContractAddress}`;
     ret.walletName = multisigEthInfo.walletName;
     ret.n = multisigEthInfo.n;
@@ -244,7 +261,7 @@ export class Credentials {
   }
 
   static fromObj(obj) {
-    let x: any = new Credentials();
+    let x = new Credentials();
 
     if (!obj.version || obj.version < x.version) {
       throw new Error('Obsolete credentials version');
@@ -254,9 +271,9 @@ export class Credentials {
       throw new Error('Bad credentials version');
     }
 
-    _.each(Credentials.FIELDS, function (k) {
+    for (const k of Credentials.FIELDS) {
       x[k] = obj[k];
-    });
+    }
 
     if (x.externalSource) {
       throw new Error('External Wallets are no longer supported');
@@ -275,14 +292,13 @@ export class Credentials {
   }
 
   toObj() {
-    let self = this;
-
-    let x = {};
-    _.each(Credentials.FIELDS, function (k) {
-      x[k] = self[k];
-    });
+    const x = {};
+    for (const k of Credentials.FIELDS) {
+      x[k] = this[k];
+    }
     return x;
   }
+
   addWalletPrivateKey(walletPrivKey) {
     this.walletPrivKey = walletPrivKey;
     this.sharedEncryptingKey = Utils.privateKeyToAESKey(walletPrivKey);
@@ -336,7 +352,7 @@ export class Credentials {
   }
 
   addPublicKeyRing(publicKeyRing) {
-    this.publicKeyRing = _.clone(publicKeyRing);
+    this.publicKeyRing = JSON.parse(JSON.stringify(publicKeyRing));
   }
 
   isComplete() {

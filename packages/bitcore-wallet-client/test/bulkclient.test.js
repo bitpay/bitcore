@@ -5,7 +5,7 @@ var chai = require('chai');
 chai.config.includeStack = true;
 var sinon = require('sinon');
 var should = chai.should();
-var log = require('../ts_build/lib/log');
+var log = require('../ts_build/lib/log').default;
 
 var BWS = require('bitcore-wallet-service');
 

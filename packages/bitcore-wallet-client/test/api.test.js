@@ -7,7 +7,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var async = require('async');
 var Uuid = require('uuid');
-var log = require('../ts_build/lib/log');
+var log = require('../ts_build/lib/log').default;
 var oldCredentials = require('./legacyCredentialsExports');
 
 var CWC = require('crypto-wallet-core');
@@ -28,7 +28,7 @@ var { Utils } = require('../ts_build/lib/common');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
-var Errors = require('../ts_build/lib/errors');
+var { Errors } = require('../ts_build/lib/errors');
 var { helpers, blockchainExplorerMock } = require('./helpers');
 
 var createTxsV8 = (nr, bcHeight, txs) => {
@@ -41,7 +41,7 @@ var createTxsV8 = (nr, bcHeight, txs) => {
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
   var i = 0;
-  if (_.isEmpty(txs)) {
+  if (!txs.length) {
     while (i < nr) {
       txs.push({
         id: 'id' + i,
@@ -96,9 +96,8 @@ describe('client API', function() {
         app = expressApp.app;
 
         // Generates 5 clients
-        clients = _.map(_.range(5), i => {
-          return helpers.newClient(app);
-        });
+        const range0to4 = Array.from({ length: 5 }, (_,i) => i);
+        clients = range0to4.map(i => helpers.newClient(app));
         blockchainExplorerMock.reset();
         sandbox = sinon.createSandbox();
 
@@ -409,7 +408,7 @@ describe('client API', function() {
         };
         var t = Client.getRawTx(txp);
         should.exist(t);
-        _.isString(t).should.be.true;
+        (typeof t === 'string').should.be.true;
         /^[\da-f]+$/.test(t).should.be.true;
 
         var t2 = new Bitcore.Transaction(t);
@@ -1416,8 +1415,9 @@ describe('client API', function() {
         });
 
         var notifications = [];
-        clients[0]._fetchLatestNotifications(5, () => {
-          _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete']);
+        clients[0]._fetchLatestNotifications(5, (err) => {
+          should.not.exist(err);
+          notifications.map(n => n.type).should.deep.equal(['NewCopayer', 'WalletComplete']);
           clock.tick(2000);
           notifications = [];
 
@@ -1427,7 +1427,7 @@ describe('client API', function() {
             clients[1].createAddress((err, x) => {
               should.not.exist(err);
               clients[0]._fetchLatestNotifications(5, () => {
-                _.map(notifications, 'type').should.deep.equal(['NewAddress']);
+                notifications.map(n => n.type).should.deep.equal(['NewAddress']);
                 clock.tick(2000);
                 notifications = [];
                 clients[0]._fetchLatestNotifications(5, () => {
@@ -1668,7 +1668,7 @@ describe('client API', function() {
           clients[0].openWallet((err, walletStatus) => {
             should.not.exist(err);
             should.exist(walletStatus);
-            _.difference(_.map(walletStatus.copayers, 'name'), ['creator', 'guest']).length.should.equal(0);
+            _.difference((walletStatus.copayers || []).map(c => c.name), ['creator', 'guest']).length.should.equal(0);
             if (++checks == 2) done();
           });
         });
@@ -2440,8 +2440,9 @@ describe('client API', function() {
       });
     });
     it('Should return UTXOs for specific addresses', done => {
+      const range0to2 = Array.from({ length: 3 }, (_, i) => i);
       async.map(
-        _.range(3),
+        range0to2,
         (i, next) => {
           clients[0].createAddress((err, x) => {
             should.not.exist(err);
@@ -2452,12 +2453,12 @@ describe('client API', function() {
         },
         (err, addresses) => {
           var opts = {
-            addresses: _.take(addresses, 1)
+            addresses: addresses[0]
           };
           clients[0].getUtxos(opts, (err, utxos) => {
             should.not.exist(err);
             utxos.length.should.equal(1);
-            _.sumBy(utxos, 'satoshis').should.equal(1 * 1e8);
+            utxos.reduce((sum, utxo) => sum += utxo.satoshis, 0).should.equal(1 * 1e8);
             done();
           });
         }
@@ -2476,7 +2477,7 @@ describe('client API', function() {
       clients[0].getFeeLevels('btc', 'livenet', (err, levels) => {
         should.not.exist(err);
         should.exist(levels);
-        _.difference(['priority', 'normal', 'economy'], _.map(levels, 'level')).should.be.empty;
+        _.difference(['priority', 'normal', 'economy'], levels.map(l => l.level)).should.be.empty;
         done();
       });
     });
@@ -2823,9 +2824,9 @@ describe('client API', function() {
         should.not.exist(err);
         result.inputs.length.should.not.equal(0);
         var totalSatoshis = 0;
-        _.each(result.inputs, i => {
+        for (const i of result.inputs) {
           totalSatoshis = totalSatoshis + i.satoshis;
-        });
+        }
         result.amount.should.be.equal(totalSatoshis - result.fee);
         done();
       });
@@ -3052,10 +3053,10 @@ describe('client API', function() {
       clients[0].getNotifications({}, (err, notifications) => {
         should.not.exist(err);
         notifications.length.should.equal(3);
-        _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
+        notifications.map(n => n.type).should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
         clients[0].getNotifications(
           {
-            lastNotificationId: _.last(notifications).id
+            lastNotificationId: notifications.slice(-1)[0].id
           },
           (err, notifications) => {
             should.not.exist(err);
@@ -3077,7 +3078,7 @@ describe('client API', function() {
       clients[0].getNotifications({}, (err, notifications) => {
         should.not.exist(err);
         notifications.length.should.equal(3);
-        _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
+        notifications.map(n => n.type).should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
         clients[0].getNotifications(
           {
             includeOwn: true
@@ -3085,7 +3086,7 @@ describe('client API', function() {
           (err, notifications) => {
             should.not.exist(err);
             notifications.length.should.equal(5);
-            _.map(notifications, 'type').should.deep.equal([
+            notifications.map(n => n.type).should.deep.equal([
               'NewCopayer',
               'NewCopayer',
               'WalletComplete',
@@ -3146,10 +3147,10 @@ describe('client API', function() {
         txp.status.should.equal('temporary');
         txp.message.should.equal('hello');
         txp.outputs.length.should.equal(2);
-        _.sumBy(txp.outputs, 'amount').should.equal(3e8);
+        txp.outputs.reduce((sum, output) => sum += output.amount, 0).should.equal(3e8);
         txp.outputs[0].message.should.equal('world');
-        _.uniqBy(txp.outputs, 'toAddress').length.should.equal(1);
-        _.uniq(_.map(txp.outputs, 'toAddress'))[0].should.equal(toAddress);
+        new Set(txp.outputs.map(output => output.toAddress)).size.should.equal(1);
+        Array.from(new Set(txp.outputs.map(o => o.toAddress)))[0].should.equal(toAddress);
         txp.hasUnconfirmedInputs.should.equal(false);
         txp.feeLevel.should.equal('normal');
         txp.feePerKb.should.equal(123e2);
@@ -4451,7 +4452,6 @@ describe('client API', function() {
     var PP, oldreq, DATA, postArgs;
     var header = {};
     var mockRequest = (bodyBuf, headers) => {
-      // bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
       Client.PayProV2.request = {
         get: _url => {
           return {
@@ -4534,7 +4534,7 @@ describe('client API', function() {
     ];
 
     let cas = 0;
-    _.each(tests, x => {
+    for (const x of tests) {
       describe(x.name, () => {
         // Tests will be considered slow after 1 second elapses
         beforeEach(async () => {
@@ -4607,7 +4607,7 @@ describe('client API', function() {
           });
         });
       });
-    });
+    }
 
     describe('Shared wallet BTC', () => {
       // Tests will be considered slow after 1 second elapses
@@ -5693,24 +5693,20 @@ describe('client API', function() {
           (txp, next) => {
             var history = createTxsV8(2, 1000);
             history[0].txid = txp.txid;
-            _.each(history, h => {
+            for (const h of history) {
               h.blockTime = new Date().toISOString();
-            });
+            }
             blockchainExplorerMock.setHistory(history);
             clients[0].getTxHistory({}, (err, txs) => {
               should.not.exist(err);
               should.exist(txs);
               txs.length.should.equal(2);
-              var decorated = _.find(txs, {
-                txid: txp.txid
-              });
+              var decorated = txs.find(tx => tx.txid === txp.txid);
               should.exist(decorated);
               decorated.proposalId.should.equal(txp.id);
               decorated.message.should.equal('some message');
               decorated.actions.length.should.equal(3);
-              var rejection = _.find(decorated.actions, {
-                type: 'reject'
-              });
+              var rejection = decorated.actions.find(a => a.type === 'reject');
               should.exist(rejection);
               rejection.comment.should.equal('some reason');
 
@@ -5774,17 +5770,17 @@ describe('client API', function() {
           });
         });
       });
-      _.each(testCases, testCase => {
+      for (const testCase of testCases) {
         it(`should skip ${testCase.opts.skip} limit ${testCase.opts.limit}`, done => {
           clients[0].getTxHistory(testCase.opts, (err, txs) => {
             should.not.exist(err);
             should.exist(txs);
-            var times = _.map(txs, 'time');
+            var times = txs.map(tx => tx.time);
             times.should.deep.equal(testCase.expected);
             done();
           });
         });
-      });
+      }
     });
   });
 
@@ -5928,7 +5924,7 @@ describe('client API', function() {
               (err, notes) => {
                 should.not.exist(err);
                 notes.length.should.equal(2);
-                _.difference(_.map(notes, 'txid'), ['123', '456']).should.be.empty;
+                _.difference(notes.map(note => note.txid), ['123', '456']).should.be.empty;
                 next();
               }
             );
@@ -5989,7 +5985,7 @@ describe('client API', function() {
 
   describe('from Old credentials', () => {
     describe(`#upgradeCredentialsV1`, () => {
-      _.each(oldCredentials, x => {
+      for (const x of oldCredentials) {
         it(`should  import old ${x.name} credentials`, () => {
 
           let imported = Client.upgradeCredentialsV1(JSON.parse(x.blob));
@@ -5999,38 +5995,39 @@ describe('client API', function() {
             k.decrypt(x.password);
           }
 
-          _.each(x.test.key, (expectedValue, expectedKey) => {
+          for (const [expectedKey, expectedValue] of Object.entries(x.test.key)) {
             k.toObj()[expectedKey].should.be.equal(expectedValue);
-          });
-          _.each(x.test.credentials, (expectedValue, expectedKey) => {
+          }
+          for (const [expectedKey, expectedValue] of Object.entries(x.test.credentials)) {
             c[expectedKey].should.be.equal(expectedValue);
-          });
+          }
         });
-      });
+      }
     });
 
     describe(`#upgradeMultipleCredentialsV1`, () => {
       it(`should  import many credentials`, () => {
-        let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
+        let oldies = oldCredentials.map(x => JSON.parse(x.blob));
         let imported = Client.upgradeMultipleCredentialsV1(oldies);
 
         imported.credentials.length.should.equal(oldies.length);
 
         // 1 read-only
         imported.keys.length.should.equal(oldies.length - 1);
-        _.uniq(_.filter(_.map(imported.credentials, 'keyId'))).length.should.equal(oldies.length - 1);
+        new Set(imported.credentials.map(cred => cred.keyId).filter(c => c)).size.should.equal(oldies.length - 1);
 
-        _.each(oldies, (x, i) => {
+        for (const i in oldies) {
+          const x = oldies[i];
           x.xPubKey.should.equal(imported.credentials[i].xPubKey);
-        });
+        }
       });
 
       it(`should detect and merge with existing keys`, () => {
-        let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
+        let oldies = oldCredentials.map(x => JSON.parse(x.blob));
 
         // Create some keys.
-        oldies[0] = _.clone(oldies[2]);
-        oldies[1] = _.clone(oldies[2]);
+        oldies[0] = JSON.parse(JSON.stringify(oldies[2]));
+        oldies[1] = JSON.parse(JSON.stringify(oldies[2]));
 
         let imported = Client.upgradeMultipleCredentialsV1(oldies);
         imported.credentials.length.should.equal(oldies.length);
@@ -6044,15 +6041,15 @@ describe('client API', function() {
         imported.credentials[2].keyId.should.equal(k);
 
         // the resulting key should be returned
-        _.filter(imported.keys, x => x.id == k).length.should.equal(1);
+        imported.keys.filter(x => x.id == k).length.should.equal(1);
       });
 
       it(`should detect and merge with existing keys (2 wallets)`, () => {
-        let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
+        let oldies = oldCredentials.map(x => JSON.parse(x.blob));
         oldies = oldies.splice(0, 2);
 
         // Create some keys.
-        oldies[0] = _.clone(oldies[1]);
+        oldies[0] = JSON.parse(JSON.stringify(oldies[1]));
 
         let imported = Client.upgradeMultipleCredentialsV1(oldies);
         imported.credentials.length.should.equal(oldies.length);
@@ -6064,7 +6061,7 @@ describe('client API', function() {
         imported.credentials[1].keyId.should.equal(k);
 
         // the resulting key should be returned
-        _.filter(imported.keys, x => x.id == k).length.should.equal(1);
+        imported.keys.filter(x => x.id == k).length.should.equal(1);
       });
     });
   });
@@ -7681,7 +7678,6 @@ describe('client API', function() {
               () => {
                 newApp = expressApp.app;
 
-                var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
                 var recoveryClient = helpers.newClient(newApp);
                 recoveryClient.fromString(clients[0].toString());
 
@@ -7706,9 +7702,7 @@ describe('client API', function() {
                     recoveryClient.getStatus({}, (err, status) => {
                       should.not.exist(err);
                       status.wallet.name.should.equal('mywallet');
-                      _.difference(_.map(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(
-                        0
-                      );
+                      _.difference(status.wallet.copayers.map(c => c.name), ['creator', 'copayer 1']).length.should.equal(0);
                       recoveryClient.createAddress((err, addr2) => {
                         should.not.exist(err);
                         should.exist(addr2);
@@ -7814,7 +7808,6 @@ describe('client API', function() {
               () => {
                 newApp = expressApp.app;
 
-                var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
                 var recoveryClient = helpers.newClient(newApp);
                 recoveryClient.fromString(clients[0].toString());
 
@@ -7827,10 +7820,7 @@ describe('client API', function() {
                       should.not.exist(err);
                       recoveryClient.getStatus({}, (err, status) => {
                         should.not.exist(err);
-                        _.difference(_.map(status.wallet.copayers, 'name'), [
-                          'creator',
-                          'copayer 1'
-                        ]).length.should.equal(0);
+                        _.difference(status.wallet.copayers.map(c => c.name), ['creator', 'copayer 1']).length.should.equal(0);
                         recoveryClient.createAddress((err, addr2) => {
                           should.not.exist(err);
                           should.exist(addr2);
@@ -7899,7 +7889,6 @@ describe('client API', function() {
                 () => {
                   newApp = expressApp.app;
 
-                  var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
                   var recoveryClient = helpers.newClient(newApp);
                   recoveryClient.fromString(clients[0].toString());
                   recoveryClient.credentials.account.should.equal(2);
@@ -8429,9 +8418,7 @@ describe('client API', function() {
             should.not.exist(err);
             var keys = status.wallet.copayers[0].requestPubKeys;
             keys.length.should.equal(2);
-            _.filter(keys, {
-              name: 'pepe'
-            }).length.should.equal(1);
+            keys.filter(key => key.name === 'pepe').length.should.equal(1);
 
             helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
               should.not.exist(err);
@@ -8578,10 +8565,11 @@ describe('client API', function() {
     btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
     bch: ['qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e', 'qznkyz7hdd3jvkqc76zsf585dcp5czmz5udnlj26ya']
   };
-  _.each(['bch', 'btc'], coin => {
-    var addr = addrMap[coin];
-
+  for (const coin of ['bch', 'btc']) {
     describe('Sweep paper wallet ' + coin, () => {
+      const addr = addrMap[coin];
+      const B = Bitcore_[coin];
+
       beforeEach(() => {
         blockchainExplorerMock.supportsGrouping = () => {
           return true;
@@ -8594,7 +8582,6 @@ describe('client API', function() {
         };
       });
 
-      var B = Bitcore_[coin];
       it.skip('should decrypt bip38 encrypted private key', done => {
         this.timeout(60000);
         clients[0].decryptBIP38PrivateKey(
@@ -8723,7 +8710,7 @@ describe('client API', function() {
         });
       });
     });
-  });
+  }
 
   describe('#formatAmount', () => {
     it('should successfully format amount', () => {
@@ -8769,9 +8756,9 @@ describe('client API', function() {
         }
       ];
 
-      _.each(cases, testCase => {
+      for (const testCase of cases) {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
-      });
+      }
     });
   });
 
