@@ -1,22 +1,23 @@
 import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+import { singleton } from 'preconditions';
+import superagent from 'superagent';
+import URL from 'url';
+import dfltTrustedKeys from '../util/JsonPaymentProtocolKeys';
+import { Errors } from './errors';
 
-var $ = require('preconditions').singleton();
-const URL = require('url');
-const _ = require('lodash');
-const superagent = require('superagent');
+const $ = singleton();
+
 const Bitcore = BitcoreLib;
-const Errors = require('./errors');
-var Bitcore_ = {
+const Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash
 };
-// const request = require('request');
+
 const JSON_PAYMENT_REQUEST_CONTENT_TYPE = 'application/payment-request';
 const JSON_PAYMENT_VERIFY_CONTENT_TYPE = 'application/verify-payment';
 const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
 const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
-const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
 const MAX_FEE_PER_KB = 500000;
 
 export class PayPro {
@@ -132,9 +133,9 @@ export class PayPro {
   static runRequest(opts, cb) {
     $.checkArgument(opts.network, 'should pass network');
     var r = this.r[opts.method.toLowerCase()](opts.url);
-    _.each(opts.headers, function (v, k) {
+    for (const [k, v] of Object.entries(opts.headers || {})) {
       if (v) r.set(k, v);
-    });
+    }
     if (opts.args) {
       if (
         opts.method.toLowerCase() == 'post' ||
@@ -258,7 +259,7 @@ export class PayPro {
         return cb(new Error('Must have 1 output'));
       }
 
-      if (!_.isNumber(data.outputs[0].amount)) {
+      if (typeof data.outputs[0].amount !== 'number') {
         return cb(new Error('Bad output amount'));
       }
       ret.amount = data.outputs[0].amount;

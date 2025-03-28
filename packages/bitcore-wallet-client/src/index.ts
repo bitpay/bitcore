@@ -1,11 +1,9 @@
 /**
- * The official client library for bitcore-wallet-service.
- * @module Client
+ * The official client library for bitcore-wallet-service
  */
 
-// /**
-// * Client API.
-// * @alias module:Client.API
-// */
+/**
+ * Client API
+ */
 import { API } from './lib/api';
 export default API;

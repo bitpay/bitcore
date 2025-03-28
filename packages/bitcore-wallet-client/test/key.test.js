@@ -1,11 +1,7 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = chai || require('chai');
-var sinon = sinon || require('sinon');
-var should = chai.should();
-
-var { Key } = require('../ts_build/lib/key');
+const should = require('chai').should();
+const { Key } = require('../ts_build/lib/key');
 
 describe('Key', function() {
   describe('#create', function() {
@@ -498,7 +494,7 @@ describe('Key', function() {
   });
 
   describe('#createWithMnemonic #fromMnemonic roundtrip', function() {
-    _.each(['en', 'es', 'ja', 'zh', 'fr'], function(lang) {
+    for (const lang of ['en', 'es', 'ja', 'zh', 'fr']) {
       it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
         var c = new Key({ seedType: 'new', language: lang });
         c = c.toObj();
@@ -512,7 +508,7 @@ describe('Key', function() {
         words.should.be.equal(c2.mnemonic);
         c2.xPrivKey.should.equal(c.xPrivKey);
       });
-    });
+    }
 
     it('Should fail roundtrip create/from with ES/passphrase with wrong passphrase', function() {
       var c = new Key({ seedType: 'new', language: 'es', passphrase: 'holamundo' });

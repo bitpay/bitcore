@@ -1,12 +1,7 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = chai || require('chai');
-var sinon = sinon || require('sinon');
-var should = chai.should();
-
-var { Verifier } = require('../ts_build/lib/verifier');
-var { Key } = require('../ts_build/lib/key');
+const { Verifier } = require('../ts_build/lib/verifier');
+const { Key } = require('../ts_build/lib/key');
 
 const aKey = new Key({
   seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',

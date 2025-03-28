@@ -1,35 +1,34 @@
 'use strict';
 // Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
-var { setDefaultResultOrder } = require('dns');
+const { setDefaultResultOrder } = require('dns');
 setDefaultResultOrder('ipv4first');
-var _ = require('lodash');
-var $ = require('preconditions').singleton();
-var chai = require('chai');
+
+const $ = require('preconditions').singleton();
+const chai = require('chai');
 chai.config.includeStack = true;
-var sinon = require('sinon');
-var should = chai.should();
-var async = require('async');
-var request = require('supertest');
-var mongodb = require('mongodb');
-var config = require('./test-config');
+const sinon = require('sinon');
+const should = chai.should();
+const async = require('async');
+const request = require('supertest');
+const mongodb = require('mongodb');
+const CWC = require('crypto-wallet-core');
+const config = require('./test-config');
+const { Constants } = require('../ts_build/lib/common');
+const Client = require('../ts_build').default;
+const { Utils } = require('../ts_build/lib/common');
 
-var CWC = require('crypto-wallet-core');
-
-var Bitcore = CWC.BitcoreLib;
-var Bitcore_ = {
+const Key = Client.Key;
+const Bitcore = CWC.BitcoreLib;
+const Bitcore_ = {
   btc: Bitcore,
   bch: CWC.BitcoreLibCash
 };
 
-var { Constants } = require('../ts_build/lib/common');
-var Client = require('../ts_build').default;
-var Key = Client.Key;
-var { Utils } = require('../ts_build/lib/common');
 
 const helpers = {
     toSatoshi: btc => {
-        if (_.isArray(btc)) {
-            return _.map(btc, helpers.toSatoshi);
+        if (Array.isArray(btc)) {
+            return btc.map(helpers.toSatoshi);
         } else {
             return parseFloat((btc * 1e8).toPrecision(12));
         }
@@ -64,7 +63,7 @@ const helpers = {
     },
     generateUtxos: (scriptType, publicKeyRing, path, requiredSignatures, amounts) => {
         var amounts = [].concat(amounts);
-        var utxos = _.map(amounts, (amount, i) => {
+        var utxos = amounts.map((amount, i) => {
             var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet');
 
             var scriptPubKey;
@@ -143,7 +142,7 @@ const helpers = {
                     [
                         next => {
                             async.each(
-                                _.range(1, n),
+                                Array.from({ length: n -1 }, (_, i) => i + 1), // range [1, n-1]
                                 (i, cb) => {
                                     keys[i] = new Key(keyOpts);
                                     clients[i].fromString(
@@ -171,7 +170,7 @@ const helpers = {
                         },
                         next => {
                             async.each(
-                                _.range(n),
+                                Array.from({ length: n }, (_, i) => i), // range [0, n-1]
                                 (i, cb) => {
                                     clients[i].openWallet(cb);
                                 },
@@ -198,12 +197,12 @@ const helpers = {
             should.not.exist(err);
             tamper(result);
             // Return tampered data for every client in the list
-            _.each(clients, client => {
+            for (const client of clients) {
                 client.request.doRequest = sinon
                     .stub()
                     .withArgs(method, url)
                     .yields(null, result);
-            });
+            }
             return cb();
         });
     },
@@ -244,14 +243,14 @@ const blockchainExplorerMock = {
     getCheckData: sinon.stub().callsArgWith(1, null, { sum: 100 }),
     addAddresses: sinon.stub().callsArgWith(2, null, null),
     getUtxos: (wallet, height, cb) => {
-        return cb(null, _.cloneDeep(blockchainExplorerMock.utxos));
+        return cb(null, JSON.parse(JSON.stringify(blockchainExplorerMock.utxos)));
     },
     getAddressUtxos: (address, height, cb) => {
-        var selected = _.filter(blockchainExplorerMock.utxos, utxo => {
-            return _.includes(address, utxo.address);
+        var selected = blockchainExplorerMock.utxos.filter(utxo => {
+            return address.includes(utxo.address);
         });
 
-        return cb(null, _.cloneDeep(selected));
+        return cb(null, JSON.parse(JSON.stringify(selected)));
     },
     setUtxo: (address, amount, m, confirmations) => {
         var B = Bitcore_[address.coin];
@@ -276,7 +275,7 @@ const blockchainExplorerMock = {
             satoshis: amount * 1e8,
             address: address.address,
             scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
-            confirmations: _.isUndefined(confirmations) ? Math.floor(Math.random() * 100 + 1) : +confirmations
+            confirmations: confirmations == null ? Math.floor(Math.random() * 100 + 1) : +confirmations
         });
     },
     supportsGrouping: () => {
@@ -291,7 +290,7 @@ const blockchainExplorerMock = {
         let hash;
         try {
             let tx = new Bitcore.Transaction(raw);
-            if (_.isEmpty(tx.outputs)) {
+            if (!tx.outputs.length) {
                 throw 'no bitcoin';
             }
             hash = tx.id;
@@ -315,24 +314,24 @@ const blockchainExplorerMock = {
     getTransactions: (wallet, startBlock, cb) => {
         var list = [].concat(blockchainExplorerMock.txHistory);
         // -1 = mempool, always included in server' s v8.js
-        list = _.filter(list, x => {
+        list = list.filter(x => {
             return x.height >= startBlock || x.height == -1;
         });
         return cb(null, list);
     },
     getAddressActivity: (address, cb) => {
-        var activeAddresses = _.map(blockchainExplorerMock.utxos || [], 'address');
-        return cb(null, _.includes(activeAddresses, address));
+        var activeAddresses = (blockchainExplorerMock.utxos || []).map(u => u.address);
+        return cb(null, activeAddresses.includes(address));
     },
     setFeeLevels: levels => {
         blockchainExplorerMock.feeLevels = levels;
     },
     estimateFee: (nbBlocks, cb) => {
         var levels = {};
-        _.each(nbBlocks, nb => {
+        for (const nb of nbBlocks) {
             var feePerKb = blockchainExplorerMock.feeLevels[nb];
-            levels[nb] = _.isNumber(feePerKb) ? feePerKb / 1e8 : -1;
-        });
+            levels[nb] = typeof feePerKb === 'number' ? feePerKb / 1e8 : -1;
+        }
 
         return cb(null, levels);
     },

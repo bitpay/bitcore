@@ -33,7 +33,6 @@
     "bitcore-mnemonic": "^10.8.0",
     "crypto-wallet-core": "^10.8.7",
     "json-stable-stringify": "1.0.1",
-    "lodash": "4.17.20",
     "preconditions": "2.2.3",
     "sjcl": "1.0.3",
     "source-map-loader": "0.2.4",
@@ -62,7 +61,6 @@
     "uuid": "^2.0.1"
   },
   "scripts": {
-    "start": "npm run clean && npm run tsc && node app.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "npm run compile && mocha --exit",
     "test:ci": "npm run test",

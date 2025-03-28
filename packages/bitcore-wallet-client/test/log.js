@@ -1,10 +1,8 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = chai || require('chai');
-var sinon = sinon || require('sinon');
-var should = chai.should();
-var log = require('../ts_build/lib/log');
+const should = require('chai').should();
+const sinon = require('sinon');
+const log = require('../ts_build/lib/log').default;
 
 describe('log utils', function () {
   afterEach(function () {

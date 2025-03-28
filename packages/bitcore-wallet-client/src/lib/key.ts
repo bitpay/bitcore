@@ -1,25 +1,21 @@
 'use strict';
 
-var $ = require('preconditions').singleton();
+import Mnemonic from 'bitcore-mnemonic';
 import {
-  BitcoreLib,
-  BitcoreLibCash,
+  BitcoreLib as Bitcore,
   Deriver,
   Transactions
 } from 'crypto-wallet-core';
-import * as _ from 'lodash';
+import { singleton } from 'preconditions';
+import sjcl from 'sjcl';
 import 'source-map-support/register';
+import Uuid from 'uuid';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
+import { Errors } from './errors';
+import log from './log';
 
-var Bitcore = BitcoreLib;
-var Mnemonic = require('bitcore-mnemonic');
-var sjcl = require('sjcl');
-var log = require('./log');
-const async = require('async');
-const Uuid = require('uuid');
-
-var Errors = require('./errors');
+const $ = singleton();
 
 const wordsForLang: any = {
   en: Mnemonic.Words.ENGLISH,
@@ -30,9 +26,10 @@ const wordsForLang: any = {
   it: Mnemonic.Words.ITALIAN
 };
 
-// we always set 'livenet' for xprivs. it has not consecuences
+// we always set 'livenet' for xprivs. it has no consequences
 // other than the serialization
 const NETWORK: string = 'livenet';
+
 export class Key {
   #xPrivKey: string;
   #xPrivKeyEncrypted: string;
@@ -67,13 +64,13 @@ export class Key {
    *    'id': 'id',
    *  };
    */
-  // *
-  // * @param {Object} opts
-  // * @param {String} opts.password   encrypting password
-  // * @param {String} seedType new|extendedPrivateKey|object|mnemonic
-  // * @param {String} seedData
-  // */
-
+  
+  /**
+   * @param {Object} opts
+   * @param {String} opts.password   encrypting password
+   * @param {String} seedType new|extendedPrivateKey|object|mnemonic
+   * @param {String} seedData
+   */
   constructor(
     opts: {
       id?: string;
@@ -112,7 +109,7 @@ export class Key {
         break;
       case 'mnemonic':
         $.checkArgument(x, 'Need to provide opts.seedData');
-        $.checkArgument(_.isString(x), 'sourceData need to be a string');
+        $.checkArgument(typeof x === 'string', 'sourceData need to be a string');
         this.setFromMnemonic(new Mnemonic(x), opts);
         break;
       case 'extendedPrivateKey':
@@ -177,9 +174,9 @@ export class Key {
         this.compliantDerivation = true;
         this.id = Uuid.v4();
 
-        if (!_.isUndefined(x.compliantDerivation))
+        if (x.compliantDerivation != null)
           this.compliantDerivation = x.compliantDerivation;
-        if (!_.isUndefined(x.id)) this.id = x.id;
+        if (x.id != null) this.id = x.id;
 
         this.#xPrivKey = x.xPrivKey;
         this.#xPrivKeyEncrypted = x.xPrivKeyEncrypted;
@@ -243,7 +240,7 @@ export class Key {
     }
   }
 
-  toObj = function () {
+  toObj() {
     const ret = {
       xPrivKey: this.#xPrivKey,
       xPrivKeyEncrypted: this.#xPrivKeyEncrypted,
@@ -260,14 +257,14 @@ export class Key {
       use44forMultisig: this.use44forMultisig,
       id: this.id
     };
-    return _.clone(ret);
+    return JSON.parse(JSON.stringify(ret));
   };
 
-  isPrivKeyEncrypted = function () {
+  isPrivKeyEncrypted() {
     return !!this.#xPrivKeyEncrypted && !this.#xPrivKey;
   };
 
-  checkPassword = function (password) {
+  checkPassword(password) {
     if (this.isPrivKeyEncrypted()) {
       try {
         sjcl.decrypt(password, this.#xPrivKeyEncrypted);
@@ -279,7 +276,7 @@ export class Key {
     return null;
   };
 
-  get = function (password) {
+  get(password) {
     let keys: any = {};
     let fingerPrintUpdated = false;
 
@@ -315,7 +312,7 @@ export class Key {
     return keys;
   };
 
-  encrypt = function (password, opts) {
+  encrypt(password, opts) {
     if (this.#xPrivKeyEncrypted)
       throw new Error('Private key already encrypted');
 
@@ -331,7 +328,7 @@ export class Key {
     this.#mnemonic = null;
   };
 
-  decrypt = function (password) {
+  decrypt(password) {
     if (!this.#xPrivKeyEncrypted)
       throw new Error('Private key is not encrypted');
 
@@ -348,24 +345,24 @@ export class Key {
     }
   };
 
-  derive = function (password, path) {
+  derive(password, path): Bitcore.HDPrivateKey {
     $.checkArgument(path, 'no path at derive()');
-    var xPrivKey = new Bitcore.HDPrivateKey(
+    const xPrivKey = new Bitcore.HDPrivateKey(
       this.get(password).xPrivKey,
       NETWORK
     );
-    var deriveFn = this.compliantDerivation
-      ? _.bind(xPrivKey.deriveChild, xPrivKey)
-      : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
+    const deriveFn = this.compliantDerivation
+      ? xPrivKey.deriveChild.bind(xPrivKey)
+      : xPrivKey.deriveNonCompliantChild.bind(xPrivKey);
     return deriveFn(path);
   };
 
-  _checkChain = function (chain) {
-    if (!_.includes(Constants.CHAINS, chain)) throw new Error('Invalid chain');
+  _checkChain(chain) {
+    if (!Constants.CHAINS.includes(chain)) throw new Error('Invalid chain');
   };
 
-  _checkNetwork = function (network) {
-    if (!_.includes(['livenet', 'testnet', 'regtest'], network))
+  _checkNetwork(network) {
+    if (!['livenet', 'testnet', 'regtest'].includes(network))
       throw new Error('Invalid network ' + network);
   };
 
@@ -375,7 +372,7 @@ export class Key {
    * BIP45
    */
 
-  getBaseAddressDerivationPath = function (opts) {
+  getBaseAddressDerivationPath(opts) {
     $.checkArgument(opts, 'Need to provide options');
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
@@ -427,7 +424,7 @@ export class Key {
    * opts.n
    */
 
-  createCredentials = function (password, opts) {
+  createCredentials(password, opts) {
     opts = opts || {};
     opts.chain = opts.chain || Utils.getChain(opts.coin);
 
@@ -454,7 +451,7 @@ export class Key {
       x.network = opts.network;
       delete x.xprivkey;
       delete x.checksum;
-      x.privateKey = _.padStart(x.privateKey, 64, '0');
+      x.privateKey = x.privateKey.padStart(64, '0');
       xPrivKey = new Bitcore.HDPrivateKey(x);
     }
 
@@ -473,13 +470,13 @@ export class Key {
     });
   };
 
-  /*
-   * opts
-   * opts.path
-   * opts.requestPrivKey
+  /**
+   * @param {string} password
+   * @param {Object} opts
+   * @param {string} opts.path
+   * @param {string|PrivateKey} [opts.requestPrivKey]
    */
-
-  createAccess = function (password, opts) {
+  createAccess(password, opts) {
     opts = opts || {};
     $.shouldBeString(opts.path);
 
@@ -496,7 +493,7 @@ export class Key {
     };
   };
 
-  sign = function (rootPath, txp, password, cb) {
+  sign(rootPath, txp, password, cb) {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
       return cb(new Errors.ENCRYPTED_PRIVATE_KEY());
@@ -540,7 +537,7 @@ export class Key {
     } else {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
-      const txArray = _.isArray(tx) ? tx : [tx];
+      const txArray = Array.isArray(tx) ? tx : [tx];
       const isChange = false;
       const addressIndex = 0;
       const { privKey, pubKey } = Deriver.derivePrivateKey(

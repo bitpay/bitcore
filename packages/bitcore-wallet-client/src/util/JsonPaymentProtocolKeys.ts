@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   '1DbY94wCcLRM1Y6RGFg457JyqBbsYxzfiN': {
     owner: 'BitPay, Inc.',
     networks: ['main'],

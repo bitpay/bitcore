@@ -1,28 +1,23 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
+const chai = require('chai');
 chai.config.includeStack = true;
-var sinon = require('sinon');
-var should = chai.should();
-var log = require('../ts_build/lib/log');
+const sinon = require('sinon');
+const BWS = require('bitcore-wallet-service');
+const log = require('../ts_build/lib/log').default;
+const Client = require('../ts_build').default;
+const { helpers, blockchainExplorerMock } = require('./helpers');
 
-var BWS = require('bitcore-wallet-service');
+const should = chai.should();
+const Key = Client.Key;
+const ExpressApp = BWS.ExpressApp;
+const Storage = BWS.Storage;
 
-var Client = require('../ts_build').default;
-var Key = Client.Key;
-
-var ExpressApp = BWS.ExpressApp;
-var Storage = BWS.Storage;
-
-var { helpers, blockchainExplorerMock } = require('./helpers');
-
-
-var db;
+let db;
 describe('Bulk Client', function () {
     // DONT USE LAMBAS HERE!!! https://stackoverflow.com/questions/23492043/change-default-timeout-for-mocha, or this.timeout() will BREAK!
     //
-    var clients, app, sandbox, storage, keys, i;
+    let clients, app, sandbox, storage, keys, i;
     this.timeout(8000);
 
     before(done => {
@@ -40,7 +35,7 @@ describe('Bulk Client', function () {
     });
 
     beforeEach(done => {
-        var expressApp = new ExpressApp();
+        let expressApp = new ExpressApp();
         expressApp.start(
             {
                 ignoreRateLimiter: true,
@@ -53,9 +48,8 @@ describe('Bulk Client', function () {
                 app = expressApp.app;
 
                 // Generates 5 clients
-                clients = _.map(_.range(5), i => {
-                    return helpers.newClient(app);
-                });
+                const range0to4 = Array.from({ length: 5 }, (_, i) => i);
+                clients = range0to4.map(i => helpers.newClient(app));
                 blockchainExplorerMock.reset();
                 sandbox = sinon.createSandbox();
 
