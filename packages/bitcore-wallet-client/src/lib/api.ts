@@ -880,6 +880,13 @@ export class API extends EventEmitter {
     );
   }
 
+  getRemainingInfo(cb) {
+    this.request.get('/v2/remaining/', (err, result) => {
+      if (err) return cb(err);
+      return cb(err, result);
+    });
+  }
+
   clearCache(opts, cb) {
     if (typeof opts === 'function') {
       cb = opts;
@@ -3034,6 +3041,8 @@ export class API extends EventEmitter {
         ['btc', 'btc', 'livenet'],
         ['bch', 'bch', 'livenet'],
         ['bch', 'bch', 'livenet', false, true], // check for prefork bch wallet
+        ['xec', 'xec', 'livenet'],
+        ['xpi', 'xpi', 'livenet'],
         ['eth', 'eth', 'livenet'],
         ['matic', 'matic', 'livenet'],
         ['eth', 'arb', 'livenet'],
@@ -3047,6 +3056,7 @@ export class API extends EventEmitter {
         ['doge', 'doge', 'livenet', true],
         ['ltc', 'ltc', 'livenet', true],
         ['xec', 'xec', 'livenet', true],
+        ['xpi', 'xpi', 'livenet', true],
         ['ltc', 'xpi', 'livenet', true]
       ];
       if (key.use44forMultisig) {

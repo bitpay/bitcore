@@ -1,5 +1,12 @@
 # @bcpros/bitcore-node
 
+## 9.0.9
+
+### Patch Changes
+
+- Updated dependencies
+  - @bcpros/bitcore-wallet-client@9.0.9
+
 ## 9.0.8
 
 ### Patch Changes

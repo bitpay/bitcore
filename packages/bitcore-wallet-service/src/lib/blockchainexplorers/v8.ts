@@ -96,22 +96,25 @@ export class V8 {
     });
   }
 
-  addAddresses(wallet, addresses, cb) {
+  addAddresses(wallet, addresses, cb, opts?) {
     const client = this._getAuthClient(wallet);
 
-    const payload = _.map(addresses, a => {
-      return {
-        address: a
-      };
-    });
+    const payload = addresses.map(a => ({ address: a }));
 
-    const k = 'addAddresses' + addresses.length;
+    if (opts?.reprocess) {
+      // For peformance, ensure reprocess requests only come from BWS
+      const c = this._getAuthClient({ beAuthPrivateKey2: config.blockchainExplorerOpts.socketApiKey });
+      opts.reprocess = c.sign({ method: 'reprocess', url: 'http://thisdontmatter.com/addAddresses' + wallet.beAuthPublicKey2, payload });
+    }
+
+    const k = 'addAddresses' + !!opts.reprocess + addresses.length;
     const perfKey = getPerformanceKey(k);
     console.time(perfKey);
     client
       .importAddresses({
         payload,
-        pubKey: wallet.beAuthPublicKey2
+        pubKey: wallet.beAuthPublicKey2,
+        reprocess: opts?.reprocess
       })
       .then(ret => {
         console.timeEnd(perfKey);
@@ -280,7 +283,7 @@ export class V8 {
     client
       .getTx({ txid })
       .then(tx => {
-        if (!tx || _.isEmpty(tx)) {
+        if (!tx || JSON.stringify(tx) === '{}') {
           return cb();
         }
         return cb(null, tx);

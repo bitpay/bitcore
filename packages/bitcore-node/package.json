@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "9.0.8",
+  "version": "9.0.9",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -74,7 +74,6 @@
     "@types/socket.io": "1.4.39",
     "@types/socket.io-client": "1.4.32",
     "@types/through2": "2.0.33",
-    "@types/winston": "2.4.4",
     "axios": "0.21.1",
     "chai": "4.1.2",
     "eslint": "4.19.1",
@@ -116,7 +115,8 @@
     "socket.io": "2.1.1",
     "source-map-support": "^0.5.13",
     "web3": "1.7.1",
-    "winston": "3.2.0",
+    "winston": "3.3.3",
+    "winston-daily-rotate-file": "4.5.5",
     "xrpl": "2.13.0"
   },
   "gitHead": "169e28b0b13c25c386faccf38a2fdc4e1275a5db"
