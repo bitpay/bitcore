@@ -17,7 +17,7 @@
 - [Bitcore Wallet](packages/bitcore-wallet) - A command-line based wallet client
 - [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
 - [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
-- [Bitpay Wallet](https://github.com/bitpay/wallet) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
+- [Bitpay Wallet](https://bitpay.com/wallet/) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
 - [Insight](packages/insight) - A blockchain explorer web user interface
 
 ## Libraries
