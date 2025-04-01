@@ -169,6 +169,9 @@ export class Client {
     logger.debug('addAddresses: %o %o', url, payload);
     const signature = this.sign({ method: 'POST', url, payload });
     const h = { 'x-signature': signature };
+    if (params.reprocess) {
+      h['x-reprocess'] = params.reprocess;
+    }
     return request.post(url, {
       headers: h,
       body: payload,

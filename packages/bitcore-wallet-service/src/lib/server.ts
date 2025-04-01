@@ -3256,6 +3256,9 @@ export class WalletService implements IWalletService {
    */
   getFeeLevels(opts, cb) {
     opts = opts || {};
+    if (!opts.chain) {
+      opts.chain = opts.coin; // chain === coin for stored clients
+    }
 
     opts.chain = opts.chain || Defaults.CHAIN;
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid chain'));
@@ -3797,6 +3800,9 @@ export class WalletService implements IWalletService {
                 async next => {
                   opts.signingMethod = opts.signingMethod || 'ecdsa';
                   opts.coin = opts.coin || wallet.coin;
+                  if (!opts.chain) {
+                    opts.chain = opts.coin; // chain === coin for stored clients
+                  }
 
                   if (!['ecdsa', 'schnorr'].includes(opts.signingMethod)) {
                     return next(Errors.WRONG_SIGNING_METHOD);
@@ -4219,6 +4225,9 @@ export class WalletService implements IWalletService {
     if (!checkRequired(opts, ['network', 'rawTx'], cb)) return;
     const ischronik = opts.ischronik ? opts.ischronik : undefined;
     opts.coin = opts.coin || Defaults.COIN;
+    if (!opts.chain) {
+      opts.chain = opts.coin; // chain === coin for stored clients
+    }
     if (!Utils.checkValueInCollection(opts.coin, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     opts.chain = opts.chain || opts.coin || Defaults.COIN;

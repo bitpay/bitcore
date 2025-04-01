@@ -96,6 +96,8 @@ process.on('uncaughtException', (error) => {
     error,
     timestamp: timestamp()
   });
+  // Exit the process to allow Docker to restart the container
+  process.exit(1);
 });
 
 // Error handler for unhandled promise rejections
@@ -107,6 +109,8 @@ process.on('unhandledRejection', (reason, promise) => {
     error,
     timestamp: timestamp()
   });
+  // Exit the process to allow Docker to restart the container
+  process.exit(1);
 });
 
 export default logger;

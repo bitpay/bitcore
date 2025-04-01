@@ -580,8 +580,11 @@ importers:
         specifier: 1.7.1
         version: 1.7.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       winston:
-        specifier: 3.2.0
-        version: 3.2.0
+        specifier: 3.3.3
+        version: 3.3.3
+      winston-daily-rotate-file:
+        specifier: 4.5.5
+        version: 4.5.5(winston@3.3.3)
       xrpl:
         specifier: 2.13.0
         version: 2.13.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
@@ -622,9 +625,6 @@ importers:
       '@types/through2':
         specifier: 2.0.33
         version: 2.0.33
-      '@types/winston':
-        specifier: 2.4.4
-        version: 2.4.4
       axios:
         specifier: 0.21.1
         version: 0.21.1
@@ -915,8 +915,8 @@ importers:
         version: 4.9.4
     devDependencies:
       '@bcpros/bitcore-wallet-service':
-        specifier: ^9.0.7
-        version: 9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
+        specifier: ^9.0.8
+        version: 9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
       '@types/lodash':
         specifier: ^4.14.136
         version: 4.17.15
@@ -1394,32 +1394,41 @@ packages:
     resolution: {integrity: sha512-vHooLfGLewEg5uuaWD5Q7LCk+U1TlGcCRYvaobErAMf92iHz+rUsboso8LHPuXvPCof6Mu96DL7My7r6HcWong==}
     engines: {node: '>=10.15.1'}
 
-  '@bcpros/bitcore-lib-cash@9.0.7':
-    resolution: {integrity: sha512-8Xjz2+Qw+rJg6m5cmNGQtyrzxicBJ65xjXU8tWHePVtKmbTqcPDen/l9Z5iwRLsVZe56h2kbDOQFCcDdvtMmXQ==}
+  '@bcpros/bitcore-lib-cash@9.0.8':
+    resolution: {integrity: sha512-qpE6J0DYXICzM45wfBNxLc+fQgj7oXD4bR6dLEHijsGkKrZ935xb6HBlMXkedVoG/eJKvK1+klySwMAY31qiNQ==}
 
-  '@bcpros/bitcore-lib-doge@9.0.7':
-    resolution: {integrity: sha512-7V9RrXMBM/AWN8q2PIpDiXPRI7ZXd+NP1FNVy16Ua2wVfxnBOE+u3XZAPWE+hRvgyjWWtX7K1gg7DxIs3cKJ/w==}
+  '@bcpros/bitcore-lib-doge@9.0.8':
+    resolution: {integrity: sha512-tngYvEFb+/WNrpmiV0+SUx46Ah4ODS8Y0Be79Wy/PmlgquasFysDYpVPSz9UEYJWOFtfNL9edPeYQhc3saU3Bw==}
 
-  '@bcpros/bitcore-lib-ltc@9.0.7':
-    resolution: {integrity: sha512-1BAQmkFgfGZuoTrWmdrLQ/mKaduFvLhxZTn/Zg15BAUSCNXvIxOC8+i6QRxdPEhgVQJLf6Whc5lC7Ne/FV0f9A==}
+  '@bcpros/bitcore-lib-ltc@9.0.8':
+    resolution: {integrity: sha512-c+uDrvSTRkvw65cGAt+IzNgOJIaq3JBlnbOMSBPLhyagPRCvzrbNtSQuasR1hLqP66svVvf1qiVF+ZYFWJa/nA==}
 
-  '@bcpros/bitcore-lib-xec@9.0.7':
-    resolution: {integrity: sha512-lwWDSaNTt9mUg9Q4fFolpvSAIzMpV3oYGRd83YuTAC4Cmm5gd1lBE1V8lB6FANnMD4ww3MO1bODO4DrEvj6laA==}
+  '@bcpros/bitcore-lib-xec@9.0.8':
+    resolution: {integrity: sha512-8vbesLWtuGAFVPQ1V5JdRoM07j8OqFVRLoy1szIPqHvxCOleTPZcEKPiatWW0EnqaI8+hc/f2Wy0nSoOZGiNyw==}
 
-  '@bcpros/bitcore-lib-xpi@9.0.7':
-    resolution: {integrity: sha512-atP/9eP1DXhQIGecNj58XC41qJLjs3ad2+5FNrupdCtC7QuOI2rOame1Kmz2P1VDzHpdMb2q0HewKh0imMOh9w==}
+  '@bcpros/bitcore-lib-xpi@9.0.8':
+    resolution: {integrity: sha512-eBw97M2WhQ6NCk3FYYamv6sb6GTzhx3w3Pix06rj2nr+ZOfbcuhSKd78gSIZjeoP8wSBPMgD+hOiWVUKIv2DYQ==}
 
-  '@bcpros/bitcore-lib@9.0.7':
-    resolution: {integrity: sha512-Sr1VmN2iciXX8t7Y4pE2Ad0jBtOe3WCCDDh0fgflJ6M1S8f/lp+6+Zw/+OPocT0VXr8SRWGK5tPApjiHbXKhlw==}
+  '@bcpros/bitcore-lib@9.0.8':
+    resolution: {integrity: sha512-gEvMvcOi5+MO+0+bny/unL9Kp00Pj3K3Y7/71DyqnDuCDk1WYDGSRC4jboniSRzgXLFlmQvZm8JBTjuAvmzSYQ==}
 
-  '@bcpros/bitcore-wallet-service@9.0.7':
-    resolution: {integrity: sha512-t/9PTCT1g32r8w82/VVn3Zx/i6LArmhmgAz2aIFj2Bt4E6Vk0AeOCMm8qRtlsHYSLBq2WsFL0aFeo2qvXIR2gQ==}
+  '@bcpros/bitcore-mnemonic@9.0.8':
+    resolution: {integrity: sha512-AOW3uWtWywyKGM+Op5IDlEryTFWGXvf//jpWhyAfGBC7paZtnedk6v8zghYARoq97jz9iifJc8bJE74CH+M7XQ==}
+    peerDependencies:
+      '@bcpros/bitcore-lib': '*'
+
+  '@bcpros/bitcore-wallet-client@9.0.8':
+    resolution: {integrity: sha512-8iHlVT7ns7ZxJlER4e0tBGovRJj/j7Du2+lvEC0KCyBv345ZSiOga2D7oO/C/hRPhCTWQx3lQkGW1g01NsJTfQ==}
+    engines: {node: '>=18.0.0'}
+
+  '@bcpros/bitcore-wallet-service@9.0.8':
+    resolution: {integrity: sha512-hdG0Kqnr9r3hxrDZd5TPbsZhTFYi5iadmxiGOQ3Qolr4CBvt4cN4WipCIo0QM1m4U7CkTWz/0PaAaB62xcqDbQ==}
 
   '@bcpros/coininfo@5.2.1':
     resolution: {integrity: sha512-tPrLuji/1Azb7EWHt1G9XQQ7tnuhXKcZLvJuRJViVrDrU8JK0CyVh7Qa1U8O+7gRVRkGEEbIvzJJ6i8ICuBxzw==}
 
-  '@bcpros/crypto-wallet-core@9.0.7':
-    resolution: {integrity: sha512-KN7wlazVtxh1ydkUWZbnU4YTe9afEAk+xmkNn2o8Hf+EPI5/MZvCHaFFmevtqCZnxfXYkk0WlPlpnpURd5TRmg==}
+  '@bcpros/crypto-wallet-core@9.0.8':
+    resolution: {integrity: sha512-3zTBv/vNc/sc7eHLYsBfUJJaBVaAoyDEpNISD0gapwaXfaPuxwqLyVCbVBhUXwWU6H5ftup2+TDTbGpzIa95mg==}
 
   '@bcpros/xaddress@0.1.1':
     resolution: {integrity: sha512-sxwSOSTnP5jaNt2lcydgMPa+ibOIJB62f2KY/FUAlOqcDf3Dl5QBHZUQnxNE/NNXIVor6/IAEgps6N9+IYMX6w==}
@@ -2127,10 +2136,6 @@ packages:
   '@types/triple-beam@1.3.5':
     resolution: {integrity: sha512-6WaYesThRMCl19iryMYP7/x2OVgCtbIVflDGFpWnb9irXI3UjYE4AzmYuiUKY1AJstGijoY+MgUszMgRxIYTYw==}
 
-  '@types/winston@2.4.4':
-    resolution: {integrity: sha512-BVGCztsypW8EYwJ+Hq+QNYiT/MUyCif0ouBH+flrY66O5W+KIXAMML6E/0fJpm7VjIzgangahl5S03bJJQGrZw==}
-    deprecated: This is a stub types definition. winston provides its own type definitions, so you do not need this installed.
-
   '@types/ws@8.5.4':
     resolution: {integrity: sha512-zdQDHKUgcX/zBc4GrwsE/7dVdAD8JR4EuiAXiiUhhfyIJXXb2+PrGshFyeXWQPMmmZ2XxgaqclgpIC7eTXc1mg==}
 
@@ -2577,9 +2582,6 @@ packages:
 
   async@2.5.0:
     resolution: {integrity: sha512-e+lJAJeNWuPCNyxZKOBdaJGyLGHugXVQtrAwtuAe2vhxTYxFTKE73p8JuTmdH0qdQZtDvI4dhJwjZc5zsfIsYw==}
-
-  async@2.6.4:
-    resolution: {integrity: sha512-mzo5dfJYwAn29PeiJ0zvwTo04zj8HDJj0Mn8TD7sno7q12prdbnasKJHhkm2c1LgrhlJ0teaea8860oxi51mGA==}
 
   async@3.2.4:
     resolution: {integrity: sha512-iAB+JbDEGXhyIUavoDl9WP/Jj106Kz9DEn1DPgYw5ruDn0e3Wgi3sKFm55sASdGBNOQB8F59d9qQ7deqrHA8wQ==}
@@ -3270,9 +3272,6 @@ packages:
   color@3.2.1:
     resolution: {integrity: sha512-aBl7dZI9ENN6fUGC7mWpMTPNHmWUSNan9tuWN6ahh5ZLNk9baLJOnSMlrQkHcrfFgz2/RigjUVAjdx36VcemKA==}
 
-  colornames@1.1.1:
-    resolution: {integrity: sha512-/pyV40IrsdulWv+wFPmERh9k/mjsPZ64yUMDmWrtj/k1nmgrzzIENWKdaVKyBbvFdQWqkcaRxr+polCo3VMe7A==}
-
   colors@0.6.2:
     resolution: {integrity: sha512-OsSVtHK8Ir8r3+Fxw/b4jS1ZLPXkV6ZxDRJQzeD7qo0SqMXWrHDM71DgYzPMHY8SFJ0Ao+nNU2p1MmwdzKqPrw==}
     engines: {node: '>=0.1.90'}
@@ -3761,9 +3760,6 @@ packages:
   di@0.0.1:
     resolution: {integrity: sha512-uJaamHkagcZtHPqCIHZxnFrXlunQXgBOsZSUOWwFw31QJCAbyTBoHMW75YOTur5ZNx8pIeAKgf6GWIgaqqiLhA==}
 
-  diagnostics@1.1.1:
-    resolution: {integrity: sha512-8wn1PmdunLJ9Tqbx+Fx/ZEuHfJf4NKSN2ZBj7SJC/OWRWha843+WsTjqMe1B5E3p28jqBlp+mJ2fPVxPyNgYKQ==}
-
   dicer@0.3.1:
     resolution: {integrity: sha512-ObioMtXnmjYs3aRtpIJt9rgQSPCIhKVkFPip+E9GUDyWl8N435znUxK/JfNwGZJ2wnn5JKQ7Ly3vOK5Q5dylGA==}
     engines: {node: '>=10.0.0'}
@@ -3893,9 +3889,6 @@ packages:
     resolution: {integrity: sha512-/kyM18EfinwXZbno9FyUGeFh87KC8HRQBQGildHZbEuRyWFOmv1U10o9BBp8XVZDVNNuQKyIGIu5ZYAAXJ0V2Q==}
     engines: {node: '>= 4'}
 
-  enabled@1.0.2:
-    resolution: {integrity: sha512-nnzgVSpB35qKrUN8358SjO1bYAmxoThECTWw9s3J0x5G8A9hokKHVDFzBjVpCoSryo6MhN8woVyascN5jheaNA==}
-
   enabled@2.0.0:
     resolution: {integrity: sha512-AKrN98kuwOzMIdAizXGI86UFBoo26CL21UM763y1h/GMSJ4/OHU9k2YlsmBpyScFo/wbLzWQJBMCW4+IO3/+OQ==}
 
@@ -3943,9 +3936,6 @@ packages:
 
   entities@2.1.0:
     resolution: {integrity: sha512-hCx1oky9PFrJ611mf0ifBLBRW8lUUVRlFolb5gWRfIELabBlbp9xZvrqZLZAs+NxFnbfQoeGd8wDkygjg7U85w==}
-
-  env-variable@0.0.6:
-    resolution: {integrity: sha512-bHz59NlBbtS0NhftmR8+ExBEekE7br0e01jw+kk0NDro7TtZzBYZ5ScGPs3OmwnpyfHTHOtr1Y6uedCdrIldtg==}
 
   errno@0.1.8:
     resolution: {integrity: sha512-dJ6oBr5SQ1VSd9qkk7ByRgb/1SH4JZjCHSW/mr63/QcXO9zLVxvJ6Oy13nio03rxpSnVDDjFor75SjVeZWPW/A==}
@@ -5706,9 +5696,6 @@ packages:
   klaw@3.0.0:
     resolution: {integrity: sha512-0Fo5oir+O9jnXu5EefYbVK+mHMBeEVEy2cmctR1O1NECcCkPRreJKrS6Qt/j3KC2C148Dfo9i3pCmCMsdqGr0g==}
 
-  kuler@1.0.1:
-    resolution: {integrity: sha512-J9nVUucG1p/skKul6DU3PUZrhs0LPulNaeUOox0IyXDi8S4CztTHs1gQphhuZmzXG7VOQSf6NJfKuzteQLv9gQ==}
-
   kuler@2.0.0:
     resolution: {integrity: sha512-Xq9nH7KlWZmXAtodXDDRE7vs6DU1gTU8zYDHDiWLSip45Egwq3plLHzPn27NgvzL2r1LMPC1vdqh98sQxtqj4A==}
 
@@ -6659,9 +6646,6 @@ packages:
 
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
-
-  one-time@0.0.4:
-    resolution: {integrity: sha512-qAMrwuk2xLEutlASoiPiAMW3EN3K96Ka/ilSXYr6qR1zSVXw2j7+yDSqGTC4T9apfLYxM3tLLjKvgPdAUK7kYQ==}
 
   one-time@1.0.0:
     resolution: {integrity: sha512-5DXOiRKwuSEcQ/l0kGCF6Q3jcADFv5tSmRaJck/OqkVFcOzutB134KRSfF0xDrL39MNnqxbHBbUUcjZIhTgb2g==}
@@ -8939,10 +8923,6 @@ packages:
     resolution: {integrity: sha512-fPoamsHq8leJ62D1M9V/f15mjQ1UHe4+7j1wpAT3fqgA5JqhJkk4aIfPEjfMTI9x6ZTjaLOpMAjluLtmgO5b6g==}
     engines: {node: '>= 0.6.0'}
 
-  winston@3.2.0:
-    resolution: {integrity: sha512-r2e2ufodByh8U1infSXNLViN7ekqVRoSkcJgpS6AzAyKve0uiUkeQq0kxdSDr8bwaM1rGXprvvoC1B+ocy5L0w==}
-    engines: {node: '>= 6.4.0'}
-
   winston@3.3.3:
     resolution: {integrity: sha512-oEXTISQnC8VlSAKf1KYSSd7J6IWuRPQqDdo8eoRNaYKLvwSb5+79Z3Yi1lrl6KDpU6/VWaxpakDAtb1oQ4n9aw==}
     engines: {node: '>= 6.4.0'}
@@ -9360,7 +9340,7 @@ snapshots:
       varuint-bitcoin: 1.1.2
       wif: 2.0.6
 
-  '@bcpros/bitcore-lib-cash@9.0.7':
+  '@bcpros/bitcore-lib-cash@9.0.8':
     dependencies:
       bn.js: 4.11.8
       bs58: 4.0.1
@@ -9369,7 +9349,7 @@ snapshots:
       inherits: 2.0.1
       lodash: 4.17.20
 
-  '@bcpros/bitcore-lib-doge@9.0.7':
+  '@bcpros/bitcore-lib-doge@9.0.8':
     dependencies:
       bn.js: 4.11.8
       bs58: 4.0.1
@@ -9379,7 +9359,7 @@ snapshots:
       lodash: 4.17.20
       scryptsy: 2.1.0
 
-  '@bcpros/bitcore-lib-ltc@9.0.7':
+  '@bcpros/bitcore-lib-ltc@9.0.8':
     dependencies:
       bech32: 2.0.0
       bn.js: 4.11.8
@@ -9390,9 +9370,9 @@ snapshots:
       lodash: 4.17.20
       scryptsy: 2.1.0
 
-  '@bcpros/bitcore-lib-xec@9.0.7':
+  '@bcpros/bitcore-lib-xec@9.0.8':
     dependencies:
-      '@bcpros/bitcore-lib': 9.0.7
+      '@bcpros/bitcore-lib': 9.0.8
       bn.js: 4.11.8
       bs58: 4.0.1
       buffer-compare: 1.1.1
@@ -9400,9 +9380,9 @@ snapshots:
       inherits: 2.0.1
       lodash: 4.17.20
 
-  '@bcpros/bitcore-lib-xpi@9.0.7':
+  '@bcpros/bitcore-lib-xpi@9.0.8':
     dependencies:
-      '@bcpros/bitcore-lib': 9.0.7
+      '@bcpros/bitcore-lib': 9.0.8
       bn.js: 4.11.8
       bs58: 4.0.1
       buffer-compare: 1.1.1
@@ -9410,7 +9390,7 @@ snapshots:
       inherits: 2.0.1
       lodash: 4.17.20
 
-  '@bcpros/bitcore-lib@9.0.7':
+  '@bcpros/bitcore-lib@9.0.8':
     dependencies:
       bech32: 2.0.0
       bn.js: 4.11.8
@@ -9420,30 +9400,62 @@ snapshots:
       inherits: 2.0.1
       lodash: 4.17.20
 
-  '@bcpros/bitcore-wallet-service@9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)':
+  '@bcpros/bitcore-mnemonic@9.0.8(@bcpros/bitcore-lib@9.0.8)':
+    dependencies:
+      '@bcpros/bitcore-lib': 9.0.8
+      browserify: 16.5.2
+      unorm: 1.6.0
+
+  '@bcpros/bitcore-wallet-client@9.0.8(@bcpros/bitcore-lib@9.0.8)(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@bcpros/bitcore-mnemonic': 9.0.8(@bcpros/bitcore-lib@9.0.8)
+      '@bcpros/crypto-wallet-core': 9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+      ajv: 6.12.0
+      async: 0.9.2
+      bip38: 1.4.0
+      json-stable-stringify: 1.0.1
+      lodash: 4.17.20
+      preconditions: 2.2.3
+      sjcl: 1.0.3
+      source-map-loader: 0.2.4
+      source-map-support: 0.5.19
+      superagent: 5.2.2
+      typescript: 4.9.4
+    transitivePeerDependencies:
+      - '@bcpros/bitcore-lib'
+      - bufferutil
+      - react
+      - react-dom
+      - supports-color
+      - utf-8-validate
+
+  '@bcpros/bitcore-wallet-service@9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
     dependencies:
       '@abcpros/xpi-js': 4.0.7
-      '@bcpros/bitcore-lib': 9.0.7
-      '@bcpros/bitcore-lib-cash': 9.0.7
-      '@bcpros/bitcore-lib-doge': 9.0.7
-      '@bcpros/bitcore-lib-ltc': 9.0.7
-      '@bcpros/bitcore-lib-xec': 9.0.7
-      '@bcpros/bitcore-lib-xpi': 9.0.7
-      '@bcpros/crypto-wallet-core': 9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
+      '@bcpros/bitcore-lib': 9.0.8
+      '@bcpros/bitcore-lib-cash': 9.0.8
+      '@bcpros/bitcore-lib-doge': 9.0.8
+      '@bcpros/bitcore-lib-ltc': 9.0.8
+      '@bcpros/bitcore-lib-xec': 9.0.8
+      '@bcpros/bitcore-lib-xpi': 9.0.8
+      '@bcpros/bitcore-wallet-client': 9.0.8(@bcpros/bitcore-lib@9.0.8)(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+      '@bcpros/crypto-wallet-core': 9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+      '@bcpros/xpi-js': 4.0.12
       '@sendgrid/mail': 6.5.5
-      '@types/ws': 8.5.4
       abi-decoder: 2.4.0
       async: 0.9.2
+      axios: 1.7.9
       bcrypt: 5.1.0
       body-parser: 1.20.3
       bson: 6.10.2
-      chronik-client: 0.29.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      chronik-client: 3.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       compression: 1.8.0
       cors: 2.8.5
       csvtojson: 2.0.10
       cuid: 3.0.0
       ecashaddrjs: 2.0.0
       email-validator: 1.2.3
+      engine.io: 3.4.2(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       ethers: 4.0.0-beta.3
       express: 4.19.2
       express-notify-telegram: 1.6.2
@@ -9454,6 +9466,8 @@ snapshots:
       inherits: 2.0.4
       istanbul: 0.4.5
       json-stable-stringify: 1.0.1
+      legacy-chronik-client: chronik-client@0.29.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      linkify-it: 3.0.3
       lodash: 4.17.20
       moment: 2.30.1
       mongodb: 3.6.12
@@ -9502,17 +9516,18 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  '@bcpros/crypto-wallet-core@9.0.7(react-dom@16.8.6(react@16.8.6))(react@16.8.6)':
+  '@bcpros/crypto-wallet-core@9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
     dependencies:
-      '@bcpros/bitcore-lib': 9.0.7
-      '@bcpros/bitcore-lib-cash': 9.0.7
-      '@bcpros/bitcore-lib-doge': 9.0.7
-      '@bcpros/bitcore-lib-ltc': 9.0.7
-      '@bcpros/bitcore-lib-xec': 9.0.7
-      '@bcpros/bitcore-lib-xpi': 9.0.7
+      '@bcpros/bitcore-lib': 9.0.8
+      '@bcpros/bitcore-lib-cash': 9.0.8
+      '@bcpros/bitcore-lib-doge': 9.0.8
+      '@bcpros/bitcore-lib-ltc': 9.0.8
+      '@bcpros/bitcore-lib-xec': 9.0.8
+      '@bcpros/bitcore-lib-xpi': 9.0.8
       ethers: 5.7.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       info: 0.0.6-beta.0(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
       web3: 1.7.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      web3-utils: 1.10.4
       xrpl: 2.13.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
@@ -10753,10 +10768,6 @@ snapshots:
 
   '@types/triple-beam@1.3.5': {}
 
-  '@types/winston@2.4.4':
-    dependencies:
-      winston: 3.3.3
-
   '@types/ws@8.5.4':
     dependencies:
       '@types/node': 18.11.18
@@ -11225,10 +11236,6 @@ snapshots:
   async@1.5.2: {}
 
   async@2.5.0:
-    dependencies:
-      lodash: 4.17.20
-
-  async@2.6.4:
     dependencies:
       lodash: 4.17.20
 
@@ -12149,8 +12156,6 @@ snapshots:
       color-convert: 1.9.3
       color-string: 1.9.1
 
-  colornames@1.1.1: {}
-
   colors@0.6.2: {}
 
   colors@1.0.3: {}
@@ -12685,12 +12690,6 @@ snapshots:
 
   di@0.0.1: {}
 
-  diagnostics@1.1.1:
-    dependencies:
-      colorspace: 1.1.4
-      enabled: 1.0.2
-      kuler: 1.0.1
-
   dicer@0.3.1:
     dependencies:
       streamsearch: 1.1.0
@@ -12841,10 +12840,6 @@ snapshots:
 
   emojis-list@3.0.0: {}
 
-  enabled@1.0.2:
-    dependencies:
-      env-variable: 0.0.6
-
   enabled@2.0.0: {}
 
   encodeurl@1.0.2: {}
@@ -12962,8 +12957,6 @@ snapshots:
       safe-regex-test: 1.1.0
 
   entities@2.1.0: {}
-
-  env-variable@0.0.6: {}
 
   errno@0.1.8:
     dependencies:
@@ -15391,10 +15384,6 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11
 
-  kuler@1.0.1:
-    dependencies:
-      colornames: 1.1.1
-
   kuler@2.0.0: {}
 
   labeled-stream-splicer@2.0.2:
@@ -16499,8 +16488,6 @@ snapshots:
   once@1.4.0:
     dependencies:
       wrappy: 1.0.2
-
-  one-time@0.0.4: {}
 
   one-time@1.0.0:
     dependencies:
@@ -19397,18 +19384,6 @@ snapshots:
       isstream: 0.1.2
       pkginfo: 0.3.1
       stack-trace: 0.0.10
-
-  winston@3.2.0:
-    dependencies:
-      async: 2.6.4
-      diagnostics: 1.1.1
-      is-stream: 1.1.0
-      logform: 2.7.0
-      one-time: 0.0.4
-      readable-stream: 3.6.2
-      stack-trace: 0.0.10
-      triple-beam: 1.4.1
-      winston-transport: 4.9.0
 
   winston@3.3.3:
     dependencies:

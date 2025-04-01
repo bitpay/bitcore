@@ -1,5 +1,11 @@
 # Change Log
 
+## 9.0.9
+
+### Patch Changes
+
+- Add missing methods
+
 ## 9.0.8
 
 ### Patch Changes
