@@ -12,7 +12,7 @@ executors:
     environment:
       - DB_NAME: bitcore-test
       - DB_PORT: 7357
-      - BITCORE_CONFIG_PATH: ~/bitcore/bitcore-test.config.json
+      - BITCORE_CONFIG_PATH: ~/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/
 
 commands:
   create_concatenated_package_lock:
