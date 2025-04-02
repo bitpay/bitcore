@@ -1,6 +1,6 @@
 {
   "name": "crypto-wallet-core",
-  "version": "10.8.8",
+  "version": "10.8.9",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -23,10 +23,10 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "bitcore-lib": "^10.8.8",
-    "bitcore-lib-cash": "^10.8.8",
-    "bitcore-lib-doge": "^10.8.8",
-    "bitcore-lib-ltc": "^10.8.8",
+    "bitcore-lib": "^10.8.9",
+    "bitcore-lib-cash": "^10.8.9",
+    "bitcore-lib-doge": "^10.8.9",
+    "bitcore-lib-ltc": "^10.8.9",
     "ethers": "6.13.5",
     "info": "0.0.6-beta.0",
     "web3": "1.4.0",
