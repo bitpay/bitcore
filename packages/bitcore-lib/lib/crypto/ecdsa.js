@@ -212,8 +212,8 @@ const sign = function(hashbuf, privkey, opts) {
   s = toLowS(s);
 
   return new Signature({
-    s: BN.fromBuffer(s.toBuffer({ endian }), { endian }),
-    r: BN.fromBuffer(r.toBuffer({ endian }), { endian }),
+    s: BN.fromBuffer(s.toBuffer()),
+    r: BN.fromBuffer(r.toBuffer()),
     compressed: privkey.publicKey.compressed
   });
 };
