@@ -328,7 +328,7 @@ export class Utils {
       var x0 = x[0];
       var x1 = x[1] || '';
 
-      while (x1.split('').reverse()[0] == '0' && x1.length > minDecimals) {
+      while (x1.endsWith('0') && x1.length > minDecimals) {
         x1 = x1.slice(0, -1);
       }
       var x2 = x.length > 1 ? decimal + x1 : '';

@@ -185,7 +185,7 @@ export class Request {
         ret = new Error(
           body.code +
             ': ' +
-            (typeof body.message === 'object'
+            (body.message && typeof body.message === 'object'
               ? JSON.stringify(body.message)
               : body.message)
         );
