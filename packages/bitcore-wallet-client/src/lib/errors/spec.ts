@@ -1,7 +1,7 @@
 
 export interface IErrorSpec {
   name: string;
-  message: string | ((args: any[]) => string);
+  message: string | ((...args: any[]) => string);
   errors?: IErrorSpec[];
 };
 

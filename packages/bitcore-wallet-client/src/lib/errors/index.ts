@@ -65,6 +65,6 @@ function traverseRoot(parent: typeof BwcError, errorsDefinition: IErrorSpec[]): 
 
 export const Errors = traverseRoot(BwcError, errorSpec);
 
-export const extend = function (spec) {
+export const extend = function(spec) {
   return traverseNode(BwcError, spec);
 };

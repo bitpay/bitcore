@@ -187,7 +187,7 @@ export class Request {
             ': ' +
             (body.message && typeof body.message === 'object'
               ? JSON.stringify(body.message)
-              : body.message)
+              : body.message ?? 'Unknown BWC request error')
         );
       }
     } else {
