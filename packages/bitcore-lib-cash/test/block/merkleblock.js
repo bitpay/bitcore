@@ -12,10 +12,17 @@ var transactionVector = require('../data/tx_creation');
 
 
 describe('MerkleBlock', function() {
-  var blockhex  = data.HEX[0];
-  var blockbuf  = new Buffer(blockhex,'hex');
-  var blockJSON = JSON.stringify(data.JSON[0]);
-  var blockObject = JSON.parse(JSON.stringify(data.JSON[0]));
+  var blockhex;
+  var blockbuf;
+  var blockJSON;
+  var blockObject;
+
+  before(function() {
+    blockhex  = data.HEX[0];
+    blockbuf  =  Buffer.from(blockhex,'hex');
+    blockJSON = JSON.stringify(data.JSON[0]);
+    blockObject = JSON.parse(JSON.stringify(data.JSON[0]));
+  });
 
   describe('#constructor', function() {
     it('should make a new merkleblock from buffer', function() {
@@ -60,7 +67,7 @@ describe('MerkleBlock', function() {
 
     it('accepts an object as argument', function() {
       var block = MerkleBlock(blockbuf);
-      MerkleBlock.fromObject(block.toObject()).should.exist();
+      should.exist(MerkleBlock.fromObject(block.toObject()));
     });
 
   });
@@ -155,7 +162,7 @@ describe('MerkleBlock', function() {
   describe('#filterdTxsHash', function() {
 
     it('should validate good merkleblocks', function() {
-      var hashOfFilteredTx = '6f64fd5aa9dd01f74c03656d376625cf80328d83d9afebe60cc68b8f0e245bd9' 
+      var hashOfFilteredTx = '6f64fd5aa9dd01f74c03656d376625cf80328d83d9afebe60cc68b8f0e245bd9'
       var b = MerkleBlock(data.JSON[3]);
       b.filterdTxsHash()[0].should.equal(hashOfFilteredTx);
     });
@@ -186,7 +193,7 @@ describe('MerkleBlock', function() {
 
     it('should find transactions via hash string', function() {
       var jsonData = data.JSON[0];
-      var txId = new Buffer(jsonData.hashes[1],'hex').toString('hex');
+      var txId =  Buffer.from(jsonData.hashes[1],'hex').toString('hex');
       var b = MerkleBlock(jsonData);
       b.hasTransaction(txId).should.equal(true);
       b.hasTransaction(txId + 'abcd').should.equal(false);
@@ -194,7 +201,7 @@ describe('MerkleBlock', function() {
 
     it('should find transactions via Transaction object', function() {
       var jsonData = data.JSON[0];
-      var txBuf = new Buffer(data.TXHEX[0][0],'hex');
+      var txBuf =  Buffer.from(data.TXHEX[0][0],'hex');
       var tx = new Transaction().fromBuffer(txBuf);
       var b = MerkleBlock(jsonData);
       b.hasTransaction(tx).should.equal(true);
@@ -203,7 +210,7 @@ describe('MerkleBlock', function() {
     it('should not find non-existant Transaction object', function() {
       // Reuse another transaction already in data/ dir
       var serialized = transactionVector[0][7];
-      var tx = new Transaction().fromBuffer(new Buffer(serialized, 'hex'));
+      var tx = new Transaction().fromBuffer( Buffer.from(serialized, 'hex'));
       var b = MerkleBlock(data.JSON[0]);
       b.hasTransaction(tx).should.equal(false);
     });
@@ -227,4 +234,3 @@ describe('MerkleBlock', function() {
   });
 
 });
-

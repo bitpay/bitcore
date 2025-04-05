@@ -1,17 +1,25 @@
-import config from '../config';
+import cors from 'cors';
 import { Request, Response } from 'express';
 import express from 'express';
-import cors from 'cors';
+import config from '../config';
+import { Config } from '../services/config';
+import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
+import { Web3Proxy } from './web3';
 
 const app = express();
-const bodyParser = require('body-parser');
-app.use(bodyParser.json());
+
+const bodyLimit = 100 * 1024 * 1024; // 100 MB
 app.use(
-  bodyParser.raw({
-    limit: 100000000
+  express.json({
+    limit: bodyLimit
   })
 );
-const chains = Object.keys(config.chains);
+app.use(
+  express.raw({
+    limit: bodyLimit
+  })
+);
+const chains = Config.chains();
 const networks: any = {};
 for (let chain of chains) {
   for (let network of Object.keys(config.chains[chain])) {
@@ -48,29 +56,37 @@ function getRouterFromFile(path) {
   return router;
 }
 
-app.use('/api/:chain/:network', cors(), (req: Request, resp: Response, next: any) => {
+app.use(cors());
+app.use(LogMiddleware());
+app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
+app.use(RateLimiter('GLOBAL', 10, 200, 4000));
+app.use('/api', getRouterFromFile('status'));
+// Change aliased chain and network params
+app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
+  const { chain: beforeChain, network: beforeNetwork } = req.params;
+  const { chain, network } = Config.aliasFor({ chain: beforeChain, network: beforeNetwork });
+  req.params.chain = chain;
+  req.params.network = network;
+  next();
+});
+app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
   let { chain, network } = req.params;
-  const hasChain = chains.includes(chain);
-  const chainNetworks = networks[chain] || null;
+
+  const hasChain = chains.includes(chain as string);
+  const chainNetworks = networks[chain as string] || null;
   const hasChainNetworks = chainNetworks != null;
-  const hasNetworkForChain = hasChainNetworks ? chainNetworks[network] : false;
+  const hasNetworkForChain = hasChainNetworks ? chainNetworks[network as string] : false;
 
   if (chain && !hasChain) {
-    return resp
-      .status(500)
-      .send(`This node is not configured for the chain ${chain}`);
+    return resp.status(500).send(`This node is not configured for the chain ${chain}`);
   }
   if (network && (!hasChainNetworks || !hasNetworkForChain)) {
-    return resp
-      .status(500)
-      .send(
-        `This node is not configured for the network ${network} on chain ${chain}`
-      );
+    return resp.status(500).send(`This node is not configured for the network ${network} on chain ${chain}`);
   }
   return next();
 });
 
 app.use('/api/:chain/:network', bootstrap('api'));
-app.use('/', getRouterFromFile('admin'));
+app.use('/web3/:chain/:network', Web3Proxy);
 
 export default app;

@@ -103,7 +103,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
     info.network = Networks.get(data);
   } else if (typeof(data) === 'string'){
     if (JSUtil.isHexa(data)) {
-      info.bn = new BN(Buffer.from(data, 'hex'));
+      info.bn = new BN(data, 'hex');
     } else {
       info = PrivateKey._transformWIF(data, network);
     }
@@ -336,8 +336,7 @@ PrivateKey.prototype.toBigNumber = function(){
  * @returns {Buffer} A buffer of the private key
  */
 PrivateKey.prototype.toBuffer = function(){
-  // TODO: use `return this.bn.toBuffer({ size: 32 })` in v1.0.0
-  return this.bn.toBuffer();
+  return this.bn.toBuffer({size: 32});
 };
 
 /**

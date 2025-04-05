@@ -18,8 +18,9 @@ var packageInfo = require('../../../package.json');
  * @see https://en.bitcoin.it/wiki/Protocol_documentation#version
  * @param {Object=} arg - properties for the version message
  * @param {Buffer=} arg.nonce - a random 8 byte buffer
- * @param {String=} arg.subversion - version of the client
- * @param {BN=} arg.services
+ * @param {Number=} arg.version - protocol version of the client
+ * @param {String=} arg.subversion - subversion (user agent) of the client
+ * @param {BN=} arg.services - bitfield of features enabled for this connection
  * @param {Date=} arg.timestamp
  * @param {Number=} arg.startHeight
  * @param {Object} options

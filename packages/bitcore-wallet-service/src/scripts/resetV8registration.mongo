@@ -1,0 +1,21 @@
+// json support
+db.addresses.update({"beRegistered":true}, {'$set':{ "beRegistered":null}  }, {multi:true});
+db.wallets.update({"beRegistered":true}, {'$set':{ "beRegistered":null}  }, {multi:true});
+db.wallets.update({}, {'$set':{ "beRegistered":null}  }, {multi:true});
+
+
+a='888a335d-e360-473d-8e3f-04e293607806';
+db.addresses.update({"walletId":a, "beRegistered":true}, {'$set':{ "beRegistered":null}  }, {multi:true});
+db.wallets.update({'id':'888a335d-e360-473d-8e3f-04e293607806'}, {'$set':{ "beRegistered":null}  });
+
+
+// migration
+
+a='';
+db.addresses.find({"walletId":a}).sort({"_id":-1});
+db.addresses.update({"walletId":a, "beRegistered":true}, {'$set':{ "beRegistered":null}  }, {multi:true});
+
+db.wallets.update({'id':a},{ $set: {"nativeCashAddr":false,"beRegistered":false}});
+
+
+

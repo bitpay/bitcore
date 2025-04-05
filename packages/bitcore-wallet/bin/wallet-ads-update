@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-a, --activate', 'Activate ad, making it live in production', true)
+  .usage('[options] <adId>')
+  .parse(process.argv);
+
+var args = program.args;
+var host = 'https://bws.bitpay.com';
+
+var clientArgs = {
+  host
+}
+
+var adId = args[0];
+
+let adArgs = {
+  adId
+};
+
+utils.getClient(clientArgs, { 
+  mustExist: true
+}, function (client) {
+
+  if (program.activate) {
+    client.activateAdvertisement(adArgs, (err, result) => {
+      utils.die(err);
+      if(!result) {
+        console.log('Couldn\'t activate advertisement');
+      }
+      else {
+        console.log('Activated advertisement ', result);
+      }
+    });
+  } else {
+    client.deactivateAdvertisement(adArgs, (err, result) => {
+      utils.die(err);
+      console.log(err);
+      if(!result) {
+        console.log('Couldn\'t deactivate advertisement');
+      }
+      else {
+        console.log('Deactivated advertisement ', result);
+      }
+    });
+  }
+});

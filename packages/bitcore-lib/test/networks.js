@@ -15,27 +15,18 @@ describe('Networks', function() {
     should.exist(networks.defaultNetwork);
   });
 
-  it('will enable/disable regtest Network', function() {
+  it('should not replace testnet network with regtest', function() {
+    const beforeEnable = networks.testnet;
     networks.enableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('fabfb5da', 'hex'));
-    networks.testnet.port.should.equal(18444);
-    networks.testnet.dnsSeeds.should.deep.equal([]);
-    networks.testnet.regtestEnabled.should.equal(true);
+    networks.testnet.should.deep.equal(beforeEnable);
 
     networks.disableRegtest();
-    networks.testnet.networkMagic.should.deep.equal(new Buffer('0b110907', 'hex'));
-    networks.testnet.port.should.equal(18333);
-    networks.testnet.dnsSeeds.should.deep.equal([
-      'testnet-seed.bitcoin.petertodd.org',
-      'testnet-seed.bluematt.me',
-      'testnet-seed.alexykot.me',
-      'testnet-seed.bitcoin.schildbach.de'
-    ]);
+    networks.testnet.should.deep.equal(beforeEnable);
   });
 
   it('will get network based on string "regtest" value', function() {
     var network = networks.get('regtest');
-    network.should.equal(networks.testnet);
+    network.should.equal(networks.regtest);
   });
 
   it('should be able to define a custom Network', function() {
@@ -60,7 +51,7 @@ describe('Networks', function() {
       if (key !== 'networkMagic') {
         customnet[key].should.equal(custom[key]);
       } else {
-        var expected = new Buffer('e7beb4d4', 'hex');
+        var expected = Buffer.from('e7beb4d4', 'hex');
         customnet[key].should.deep.equal(expected);
       }
     }
@@ -92,7 +83,14 @@ describe('Networks', function() {
     var somenet = networks.get('somenet');
     should.exist(somenet);
     somenet.name.should.equal('somenet');
-    networks.remove(somenet);
+  });
+
+  it('can remove a custom network by name', function() {
+    var net = networks.get('somenet');
+    should.exist(net);
+    networks.remove('somenet');
+    net = networks.get('somenet');
+    should.equal(net, undefined);
   });
 
   var constants = ['name', 'alias', 'pubkeyhash', 'scripthash', 'xpubkey', 'xprivkey'];
@@ -123,6 +121,27 @@ describe('Networks', function() {
     expect(networks.testnet.name).to.equal('testnet')
     var fn = function() { networks.testnet.name = 'livenet' }
     expect(fn).to.throw(TypeError)
+  });
+
+  it('should have not have network magic or port for testnet', function() {
+    var testnet = networks.get('testnet');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(false);
+    isNaN(testnet.port).should.equal(true);
+  });
+
+  it('should have network magic and port for testnet variant "testnet3"', function() {
+    var testnet = networks.get('testnet3');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
+  });
+
+  it('should have network magic and port for testnet variant "signet"', function() {
+    var testnet = networks.get('signet');
+    var buffUtil = require('../lib/util/buffer');
+    buffUtil.isBuffer(testnet.networkMagic).should.equal(true);
+    isNaN(testnet.port).should.equal(false);
   });
 
 });

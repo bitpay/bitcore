@@ -53,7 +53,6 @@ Messages.prototype.parseBuffer = function(dataBuffer) {
     (dataBuffer.get(Messages.PAYLOAD_START + 1) << 8) +
     (dataBuffer.get(Messages.PAYLOAD_START + 2) << 16) +
     (dataBuffer.get(Messages.PAYLOAD_START + 3) << 24);
-
   var messageLength = 24 + payloadLen;
   if (dataBuffer.length < messageLength) {
     return;
@@ -81,6 +80,7 @@ Messages.prototype._discardUntilNextMessage = function(dataBuffer) {
   for (;;) {
     // check if it's the beginning of a new message
     var packageNumber = dataBuffer.slice(0, 4).toString('hex');
+
     if (packageNumber === this.network.networkMagic.toString('hex')) {
       dataBuffer.skip(i);
       return true;

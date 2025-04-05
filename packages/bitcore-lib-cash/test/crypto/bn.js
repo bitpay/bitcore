@@ -94,25 +94,51 @@ describe('BN', function() {
   describe('@fromBuffer', function() {
 
     it('should work with big endian', function() {
-      var bn = BN.fromBuffer(new Buffer('0001', 'hex'), {
+      var bn = BN.fromBuffer( Buffer.from('0001', 'hex'), {
         endian: 'big'
       });
       bn.toString().should.equal('1');
     });
 
     it('should work with big endian 256', function() {
-      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {
+      var bn = BN.fromBuffer( Buffer.from('0100', 'hex'), {
         endian: 'big'
       });
       bn.toString().should.equal('256');
     });
 
     it('should work with little endian if we specify the size', function() {
-      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {
+      var bn = BN.fromBuffer( Buffer.from('0100', 'hex'), {
         size: 2,
         endian: 'little'
       });
       bn.toString().should.equal('1');
+    });
+
+    it('should work with Uint8Array input', function() {
+      var bn = BN.fromBuffer(Uint8Array.from([0xa1, 0xb2, 0xc3]), { endian: 'big' });
+      bn.toString(16).should.equal('a1b2c3');
+    });
+
+    it('should throw on invalid input: Array', function() {
+      should.throw(
+        () => BN.fromBuffer(Array.from([0xa1, 0xb2, 0xc3]), { endian: 'big' }),
+        'Invalid Argument: first argument should be a buffer'
+      );
+    });
+
+    it('should throw on invalid input: string', function() {
+      should.throw(
+        () => BN.fromBuffer('a1b2c3', { endian: 'big' }),
+        'Invalid Argument: first argument should be a buffer'
+      );
+    });
+
+    it('should throw on invalid input: Uint16Array', function() {
+      should.throw(
+        () => BN.fromBuffer(Uint16Array.from([0xa1, 0xb2, 0xc3]), { endian: 'big' }),
+        'Invalid Argument: first argument should be a buffer'
+      );
     });
 
   });

@@ -3,6 +3,7 @@
 var BN = require('bn.js');
 var $ = require('../util/preconditions');
 var _ = require('lodash');
+const BufferUtil = require('../util/buffer');
 
 var reversebuf = function(buf) {
   var buf2 = Buffer.alloc(buf.length);
@@ -27,6 +28,8 @@ BN.fromString = function(str, base) {
 };
 
 BN.fromBuffer = function(buf, opts) {
+  $.checkArgument(BufferUtil.isBuffer(buf), 'first argument should be a buffer');
+  buf = Buffer.from(buf); // ensure Uint8Array is converted to Buffer
   if (typeof opts !== 'undefined' && opts.endian === 'little') {
     buf = reversebuf(buf);
   }
@@ -170,18 +173,6 @@ BN.prototype.toScriptNumBuffer = function() {
   return this.toSM({
     endian: 'little'
   });
-};
-
-BN.prototype.gt = function(b) {
-  return this.cmp(b) > 0;
-};
-
-BN.prototype.gte = function(b) {
-  return this.cmp(b) >= 0;
-};
-
-BN.prototype.lt = function(b) {
-  return this.cmp(b) < 0;
 };
 
 BN.trim = function(buf, natlen) {

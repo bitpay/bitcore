@@ -41,7 +41,7 @@ describe('PublicKeyHashInput', function() {
       .from(output)
       .to(address, 1000000);
     var input = transaction.inputs[0];
-    input._estimateSize().should.equal(107);
+    input._estimateSize().should.equal(148);
   });
   it('it\'s signature can be removed', function() {
     var transaction = new Transaction()

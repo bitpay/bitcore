@@ -3,7 +3,6 @@
 var Message = require('../message');
 var inherits = require('util').inherits;
 var bitcore = require('bitcore-lib');
-var bcoin = require('bcoin');
 var $ = bitcore.util.preconditions;
 var _ = bitcore.deps._;
 
@@ -29,9 +28,7 @@ function TransactionMessage(arg, options) {
 inherits(TransactionMessage, Message);
 
 TransactionMessage.prototype.setPayload = function(payload) {
-  if (this.Transaction.prototype.fromRaw) {
-    this.transaction = bcoin.tx.fromRaw(payload);
-  } else if (this.Transaction.prototype.fromBuffer) {
+  if (this.Transaction.prototype.fromBuffer) {
     this.transaction = new this.Transaction().fromBuffer(payload);
   } else {
     this.transaction = this.Transaction.fromBuffer(payload);
@@ -39,9 +36,6 @@ TransactionMessage.prototype.setPayload = function(payload) {
 };
 
 TransactionMessage.prototype.getPayload = function() {
-  if (this.Transaction.prototype.toRaw) {
-    return this.transaction.toRaw();
-  }
   return this.transaction.toBuffer();
 };
 

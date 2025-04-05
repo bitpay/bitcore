@@ -15,6 +15,14 @@ var MAXINT = 0xffffffff; // Math.pow(2, 32) - 1;
 var DEFAULT_RBF_SEQNUMBER = MAXINT - 2;
 var DEFAULT_SEQNUMBER = MAXINT;
 var DEFAULT_LOCKTIME_SEQNUMBER = MAXINT - 1;
+const SEQUENCE_LOCKTIME_DISABLE_FLAG =  Math.pow(2,31); // (1 << 31);
+const SEQUENCE_LOCKTIME_TYPE_FLAG = Math.pow(2,22); // (1 << 22);
+const SEQUENCE_LOCKTIME_MASK = 0xffff;
+const SEQUENCE_LOCKTIME_GRANULARITY = 512; // 512 seconds
+const SEQUENCE_BLOCKDIFF_LIMIT = Math.pow(2,16)-1; // 16 bits 
+
+
+
 
 function Input(params) {
   if (!(this instanceof Input)) {
@@ -29,6 +37,7 @@ Input.MAXINT = MAXINT;
 Input.DEFAULT_SEQNUMBER = DEFAULT_SEQNUMBER;
 Input.DEFAULT_LOCKTIME_SEQNUMBER = DEFAULT_LOCKTIME_SEQNUMBER;
 Input.DEFAULT_RBF_SEQNUMBER = DEFAULT_RBF_SEQNUMBER;
+Input.SEQUENCE_LOCKTIME_TYPE_FLAG = SEQUENCE_LOCKTIME_TYPE_FLAG;
 
 Object.defineProperty(Input.prototype, 'script', {
   configurable: false,
@@ -53,18 +62,19 @@ Input.fromObject = function(obj) {
 
 Input.prototype._fromObject = function(params) {
   var prevTxId;
-  if (_.isString(params.prevTxId) && JSUtil.isHexa(params.prevTxId)) {
-    prevTxId = new buffer.Buffer(params.prevTxId, 'hex');
+  if (typeof params.prevTxId === 'string' && JSUtil.isHexa(params.prevTxId)) {
+    prevTxId = Buffer.from(params.prevTxId, 'hex');
   } else {
     prevTxId = params.prevTxId;
   }
   this.output = params.output ?
     (params.output instanceof Output ? params.output : new Output(params.output)) : undefined;
   this.prevTxId = prevTxId || params.txidbuf;
-  this.outputIndex = _.isUndefined(params.outputIndex) ? params.txoutnum : params.outputIndex;
-  this.sequenceNumber = _.isUndefined(params.sequenceNumber) ?
-    (_.isUndefined(params.seqnum) ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
-  if (_.isUndefined(params.script) && _.isUndefined(params.scriptBuffer)) {
+  this.outputIndex = params.outputIndex == null ? params.txoutnum : params.outputIndex;
+  this.sequenceNumber = params.sequenceNumber == null ?
+    (params.seqnum == null ? DEFAULT_SEQNUMBER : params.seqnum) : params.sequenceNumber;
+  // null script is allowed in setScript()
+  if (params.script === undefined && params.scriptBuffer === undefined) {
     throw new errors.Transaction.Input.MissingScript();
   }
   this.setScript(params.scriptBuffer || params.script);
@@ -118,17 +128,21 @@ Input.prototype.setScript = function(script) {
     this._script = script;
     this._script._isInput = true;
     this._scriptBuffer = script.toBuffer();
+  } else if (script === null) {
+    this._script = Script.empty();
+    this._script._isInput = true;
+    this._scriptBuffer = this._script.toBuffer();
   } else if (JSUtil.isHexa(script)) {
     // hex string script
-    this._scriptBuffer = new buffer.Buffer(script, 'hex');
-  } else if (_.isString(script)) {
+    this._scriptBuffer = Buffer.from(script, 'hex');
+  } else if (typeof script === 'string') {
     // human readable string script
     this._script = new Script(script);
     this._script._isInput = true;
     this._scriptBuffer = this._script.toBuffer();
   } else if (BufferUtil.isBuffer(script)) {
     // buffer script
-    this._scriptBuffer = new buffer.Buffer(script);
+    this._scriptBuffer = Buffer.from(script);
   } else {
     throw new TypeError('Invalid argument type: script');
   }
@@ -144,6 +158,7 @@ Input.prototype.setScript = function(script) {
  * @param {number} sigType - defaults to Signature.SIGHASH_ALL
  * @param {Buffer} addressHash - if provided, don't calculate the hash of the
  *     public key associated with the private key provided
+ * @param {String} signingMethod "schnorr" or "ecdsa", default to "ecdsa" if not provided
  * @abstract
  */
 Input.prototype.getSignatures = function() {
@@ -169,7 +184,7 @@ Input.prototype.clearSignatures = function() {
   throw new errors.AbstractMethodInvoked('Input#clearSignatures');
 };
 
-Input.prototype.isValidSignature = function(transaction, signature) {
+Input.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
@@ -178,7 +193,9 @@ Input.prototype.isValidSignature = function(transaction, signature) {
     signature.publicKey,
     signature.inputIndex,
     this.output.script,
-    this.output.satoshisBN
+    this.output.satoshisBN,
+    undefined,
+    signingMethod
   );
 };
 
@@ -193,5 +210,71 @@ Input.prototype.isNull = function() {
 Input.prototype._estimateSize = function() {
   return this.toBufferWriter().toBuffer().length;
 };
+
+Input.prototype._getBaseSize = function() {
+  return 32 + 4 + 4; // outpoint (32 + 4) + sequence (4)
+};
+
+
+/**
+ * Sets sequence number so that transaction is not valid until the desired seconds
+ *  since the transaction is mined
+ *
+ * @param {Number} time in seconds
+ * @return {Transaction} this
+ */
+Input.prototype.lockForSeconds = function(seconds) {
+  $.checkArgument(!isNaN(seconds));
+  if (seconds < 0 ||  seconds >= SEQUENCE_LOCKTIME_GRANULARITY * SEQUENCE_LOCKTIME_MASK) {
+    throw new errors.Transaction.Input.LockTimeRange();
+  }
+  seconds = parseInt(Math.floor(seconds / SEQUENCE_LOCKTIME_GRANULARITY));
+
+  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 1 
+  this.sequenceNumber = seconds | SEQUENCE_LOCKTIME_TYPE_FLAG ;
+  return this;
+};
+
+/**
+ * Sets sequence number so that transaction is not valid until the desired block height differnece since the tx is mined
+ *
+ * @param {Number} height
+ * @return {Transaction} this
+ */
+Input.prototype.lockUntilBlockHeight = function(heightDiff) {
+  $.checkArgument(!isNaN(heightDiff));
+  if (heightDiff < 0 || heightDiff >= SEQUENCE_BLOCKDIFF_LIMIT) {
+    throw new errors.Transaction.Input.BlockHeightOutOfRange();
+  }
+  // SEQUENCE_LOCKTIME_TYPE_FLAG = 0
+  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 0
+  this.sequenceNumber = heightDiff ;
+  return this;
+};
+
+
+/**
+ *  Returns a semantic version of the input's sequence nLockTime.
+ *  @return {Number|Date}
+ *  If sequence lock is disabled  it returns null,
+ *  if is set to block height lock, returns a block height (number)
+ *  else it returns a Date object.
+ */
+Input.prototype.getLockTime = function() {
+  if (this.sequenceNumber & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+    return null;
+  }
+
+  if (this.sequenceNumber & SEQUENCE_LOCKTIME_TYPE_FLAG) {
+    var seconds = SEQUENCE_LOCKTIME_GRANULARITY * (this.sequenceNumber & SEQUENCE_LOCKTIME_MASK);
+    return seconds;
+  } else {
+    var blockHeight = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
+    return blockHeight;
+  }
+};
+
+
+
 
 module.exports = Input;

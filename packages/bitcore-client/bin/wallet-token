@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const promptly = require('promptly');
+const { Wallet } = require('../ts_build/src/wallet');
+
+program
+  .version(require('../package.json').version)
+  .requiredOption('--name <name>', 'REQUIRED - Wallet name')
+  .requiredOption('--contractAddress <contractAddress>', 'REQUIRED - Token contract address')
+  .option('--tokenName <tokenName>', 'optional - Custom name for token (default - contract\'s ticker)')
+  .option('--storageType <storageType>', 'optional - Name of the database to use (Mongo | Level | TextFile)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
+  .parse(process.argv);
+
+let wallet;
+
+const main = async () => {
+  const { name, path, contractAddress, storageType, tokenName } = program.opts();
+  try {
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+    if (!wallet.isEvmChain()) {
+      throw new Error('Cannot add token to non-EVM wallet.');
+    }
+    const token = await wallet.getToken(contractAddress);
+    const tokenObj = {
+      symbol: token.symbol,
+      address: contractAddress,
+      decimals: token.decimals,
+      name: tokenName || token.symbol
+    };
+
+    const existing = wallet.tokens.find(t => t.address === contractAddress || t.name === tokenObj.name || (t.name === undefined && t.symbol === tokenObj.name));
+    if (existing) {
+      console.log(`This wallet already has ${existing.name || existing.symbol} (symbol: ${existing.symbol}, contractAddress: ${existing.address})`);
+      const ans = await promptly.confirm('Would you like to replace it? (y/N)', { default: 'n' });
+      if (!ans) {
+        return;
+      }
+      wallet.tokens = wallet.tokens.filter(t => t.address !== existing.address);
+    }
+    await wallet.addToken(tokenObj);
+    console.log(`Successfully added ${token.name} (${token.symbol})`);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main()
+  .catch(console.error)
+  .finally(() => wallet?.storage?.close());

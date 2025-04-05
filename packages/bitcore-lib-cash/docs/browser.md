@@ -1,4 +1,5 @@
 # Browser Builds
+
 Bitcore and most official submodules work in the browser, thanks to [browserify](http://browserify.org/) (some modules are not fully compatible with web browsers).
 
 The easiest and recommended way to use them, is via [Bower](http://bower.io/), a browser package manager, and get the release bundles. For example, when building an app that uses `bitcore` and `bitcore-mnemonic`, you do:
@@ -50,6 +51,7 @@ After this, you can include the bundled release versions in your HTML file:
 ```
 
 ## Building Custom Bundles
+
 If you want to use a specific version of a module, instead of a release version (not recommended), you must run browserify yourself.  You can get a minified browser bundle by running the following on the project root folder.
 
 ```sh
@@ -61,6 +63,7 @@ browserify --require ./index.js:bitcore-mnemonic --external bitcore-lib | uglify
 ```
 
 In many of the modules you can also run the command to build a browser bundle:
+
 ```sh
 gulp browser
 ```

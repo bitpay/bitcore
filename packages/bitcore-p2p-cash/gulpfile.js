@@ -1,8 +1,4 @@
 'use strict';
 
-var gulp = require('gulp');
-var bitcoreTasks = require('bitcore-build');
-
-bitcoreTasks('p2p', {skipBrowser: true});
-
-gulp.task('default', ['lint', 'coverage']);
+var startGulp = require('bitcore-build');
+Object.assign(exports, startGulp('p2p', {skipBrowser: true}))

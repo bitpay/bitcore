@@ -10,6 +10,7 @@ var Point = require('./crypto/point');
 var PublicKey = require('./publickey');
 var Random = require('./crypto/random');
 var $ = require('./util/preconditions');
+const TaggedHash = require('./crypto/taggedhash');
 
 /**
  * Instantiate a PrivateKey from a BN, Buffer and WIF.
@@ -103,7 +104,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
     info.network = Networks.get(data);
   } else if (typeof(data) === 'string'){
     if (JSUtil.isHexa(data)) {
-      info.bn = new BN(Buffer.from(data, 'hex'));
+      info.bn = new BN(data, 'hex');
     } else {
       info = PrivateKey._transformWIF(data, network);
     }
@@ -264,7 +265,6 @@ PrivateKey.fromRandom = function(network) {
  * @param {string=} network - Either "livenet" or "testnet"
  * @returns {null|Error} An error if exists
  */
-
 PrivateKey.getValidationError = function(data, network) {
   var error;
   try {
@@ -336,8 +336,7 @@ PrivateKey.prototype.toBigNumber = function(){
  * @returns {Buffer} A buffer of the private key
  */
 PrivateKey.prototype.toBuffer = function(){
-  // TODO: use `return this.bn.toBuffer({ size: 32 })` in v1.0.0
-  return this.bn.toBuffer();
+  return this.bn.toBuffer({size: 32});
 };
 
 /**
@@ -367,13 +366,14 @@ PrivateKey.prototype.toPublicKey = function(){
 /**
  * Will return an address for the private key
  * @param {Network=} network - optional parameter specifying
+ * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', or 'scripthash'
  * the desired network for the address
  *
  * @returns {Address} An address generated from the private key
  */
-PrivateKey.prototype.toAddress = function(network) {
+PrivateKey.prototype.toAddress = function(network, type) {
   var pubkey = this.toPublicKey();
-  return Address.fromPublicKey(pubkey, network || this.network);
+  return Address.fromPublicKey(pubkey, network || this.network, type);
 };
 
 /**
@@ -384,6 +384,30 @@ PrivateKey.prototype.toObject = PrivateKey.prototype.toJSON = function toObject(
     bn: this.bn.toString('hex'),
     compressed: this.compressed,
     network: this.network.toString()
+  };
+};
+
+/**
+ * Create a tweaked version of this private key
+ * @param {Buffer} merkleRoot (optional)
+ * @returns {{ tweakedPrivKey: Buffer }}
+ */
+PrivateKey.prototype.createTapTweak = function(merkleRoot) {
+  const order = Point.getN();
+  const P = Point.getG().mul(this.bn);
+  const secKey = P.y.isEven() ? this.bn : order.sub(this.bn);
+  const taggedWriter = new TaggedHash('TapTweak');
+  taggedWriter.write(P.x.toBuffer({ size: 32 }));
+
+  if (merkleRoot) {
+    $.checkArgument(Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be 32 byte buffer');
+    taggedWriter.write(merkleRoot);
+  }
+  const tweakHash = taggedWriter.finalize();
+
+  $.checkState(BN.fromBuffer(tweakHash).lt(order), 'TapTweak hash failed secp256k1 order check');
+  return {
+    tweakedPrivKey: secKey.add(new BN(tweakHash)).mod(order).toBuffer({ size: 32 })
   };
 };
 

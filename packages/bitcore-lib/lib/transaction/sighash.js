@@ -1,7 +1,5 @@
 'use strict';
 
-var buffer = require('buffer');
-
 var Signature = require('../crypto/signature');
 var Script = require('../script');
 var Output = require('./output');
@@ -29,6 +27,9 @@ var BITS_64_ON = 'ffffffffffffffff';
 var sighash = function sighash(transaction, sighashType, inputNumber, subscript) {
   var Transaction = require('./transaction');
   var Input = require('./input');
+
+  // Convert a string to a number
+  inputNumber = parseInt(inputNumber);
 
   var i;
   // Copy transaction
@@ -70,7 +71,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
 
     for (i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
-        satoshis: BN.fromBuffer(new buffer.Buffer(BITS_64_ON, 'hex')),
+        satoshis: BN.fromBuffer(Buffer.from(BITS_64_ON, 'hex')),
         script: Script.empty()
       });
     }
@@ -101,12 +102,11 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
  * @return {Signature}
  */
 function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
-  var sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
+  let hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+  const sig = ECDSA.sign(hashbuf, privateKey, { endian: 'little' });
+  sig.nhashtype = sighashType;
   return sig;
-}
+};
 
 /**
  * Verify a signature
@@ -120,11 +120,12 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, subscript) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
-  return ECDSA.verify(hashbuf, signature, publicKey, 'little');
-}
+  $.checkArgument(!_.isUndefined(transaction), "Transaction Undefined");
+  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype), "Signature Undefined");
+
+  let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
+  return ECDSA.verify(hashbuf, signature, publicKey, { endian: 'little' });
+};
 
 /**
  * @namespace Signing

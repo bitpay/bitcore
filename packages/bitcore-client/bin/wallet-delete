@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const { Wallet } = require('../ts_build/src/wallet');
+
+program
+  .version(require('../package.json').version)
+  .requiredOption('--name <name>', 'REQUIRED - Wallet name')
+  .option('--storageType <storageType>', 'optional - name of the database to use (default level)')
+  .option('--path <path>', 'optional - Custom wallet storage path')
+  .parse(process.argv);
+
+
+async function main() {
+  const { name, path, storageType } = program.opts();
+  await Wallet.deleteWallet({ name, path, storageType });
+  console.log('Deleted');
+}
+
+main()
+  .catch(console.error);

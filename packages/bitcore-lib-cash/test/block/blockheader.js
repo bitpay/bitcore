@@ -16,23 +16,34 @@ var dataRawId = '000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa1
 var data = require('../data/blk86756-testnet');
 
 describe('BlockHeader', function() {
+  var version;
+  var prevblockidbuf;
+  var merklerootbuf;
+  var time;
+  var bits;
+  var nonce;
+  var bh;
+  var bhhex;
+  var bhbuf;
 
-  var version = data.version;
-  var prevblockidbuf = new Buffer(data.prevblockidhex, 'hex');
-  var merklerootbuf = new Buffer(data.merkleroothex, 'hex');
-  var time = data.time;
-  var bits = data.bits;
-  var nonce = data.nonce;
-  var bh = new BlockHeader({
-    version: version,
-    prevHash: prevblockidbuf,
-    merkleRoot: merklerootbuf,
-    time: time,
-    bits: bits,
-    nonce: nonce
+  before(function () {
+    version = data.version;
+    prevblockidbuf =  Buffer.from(data.prevblockidhex, 'hex');
+    merklerootbuf = Buffer.from(data.merkleroothex, 'hex');
+    time = data.time;
+    bits = data.bits;
+    nonce = data.nonce;
+    bh = new BlockHeader({
+      version: version,
+      prevHash: prevblockidbuf,
+      merkleRoot: merklerootbuf,
+      time: time,
+      bits: bits,
+      nonce: nonce
+    });
+    bhhex = data.blockheaderhex;
+    bhbuf = Buffer.from(bhhex, 'hex');
   });
-  var bhhex = data.blockheaderhex;
-  var bhbuf = new Buffer(bhhex, 'hex');
 
   it('should make a new blockheader', function() {
     BlockHeader(bhbuf).toBuffer().toString('hex').should.equal(bhhex);
@@ -82,7 +93,7 @@ describe('BlockHeader', function() {
   describe('version', function() {
     it('is interpreted as an int32le', function() {
       var hex = 'ffffffff00000000000000000000000000000000000000000000000000000000000000004141414141414141414141414141414141414141414141414141414141414141010000000200000003000000';
-      var header = BlockHeader.fromBuffer(new Buffer(hex, 'hex'));
+      var header = BlockHeader.fromBuffer(Buffer.from(hex, 'hex'));
       header.version.should.equal(-1);
       header.timestamp.should.equal(1);
     });

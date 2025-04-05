@@ -14,11 +14,12 @@ var Networks = bitcore.Networks;
 
 var validbase58 = require('./data/bitcoind/base58_keys_valid.json');
 var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
+var validCashAddr = require('./data/cashaddr.json')
 
 describe('Address', function() {
 
-  var pubkeyhash = new Buffer('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
-  var buf = Buffer.concat([new Buffer([28]), pubkeyhash]);
+  var pubkeyhash = Buffer.from('3c3fa3d4adcaf8f52d5b1843975e122548269937', 'hex');
+  var buf = Buffer.concat([Buffer.from([28]), pubkeyhash]);
   var str = 'bitcoincash:qq7rlg754h903afdtvvy8967zgj5sf5exueg36nyc7';
 
   it('can\'t build without data', function() {
@@ -128,7 +129,7 @@ describe('Address', function() {
 
     it('should be able to convert a testnet address to a cashaddr without prefix', function() {
       var a = new Address('mysKEM9kN86Nkcqwb4gw7RqtDyc552LQoq');
-      a.toCashAddress(false).should.equal('bchtest:qry5cr6h2qe25pzwwfrz8m653fh2tf6nusj9dl0ujc');
+      a.toCashAddress(true).should.equal('qry5cr6h2qe25pzwwfrz8m653fh2tf6nusj9dl0ujc');
     });
 
     it('should be able to convert a testnet address to a cashaddr with prefix', function() {
@@ -395,25 +396,25 @@ describe('Address', function() {
 
     it('should error because of incorrect length buffer for transform buffer', function() {
       (function() {
-        return Address._transformBuffer(new Buffer(20));
+        return Address._transformBuffer(Buffer.alloc(20));
       }).should.throw('Address buffers must be exactly 21 bytes.');
     });
 
     it('should error because of incorrect type for pubkey transform', function() {
       (function() {
-        return Address._transformPublicKey(new Buffer(20));
+        return Address._transformPublicKey(Buffer.alloc(20));
       }).should.throw('Address must be an instance of PublicKey.');
     });
 
     it('should error because of incorrect type for script transform', function() {
       (function() {
-        return Address._transformScript(new Buffer(20));
+        return Address._transformScript( Buffer.alloc(20));
       }).should.throw('Invalid Argument: script must be a Script instance');
     });
 
     it('should error because of incorrect type for string transform', function() {
       (function() {
-        return Address._transformString(new Buffer(20));
+        return Address._transformString(Buffer.alloc(20));
       }).should.throw('data parameter supplied is not a string.');
     });
 
@@ -675,4 +676,25 @@ describe('Address', function() {
       }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
     });
   });
+
+  describe('cashaddr test vectors', function () {
+    it('should validate each test vector', function () {
+      // vectors from here:
+      // https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
+      // the test vectors include a number of addresses with type "15" which is not explained in the spec,
+      // so those are skipped
+      for (var i in validCashAddr) {
+        var obj = validCashAddr[i]
+        var payloadSize = obj.payloadSize
+        var type = obj.type
+        var cashaddr = obj.cashaddr
+        var payload = obj.payload
+        if (type === 15) continue // unknown type - not described in spec
+        var info = Address._decodeCashAddress(cashaddr)
+        info.type.should.equal(type === 0 ? 'pubkeyhash': 'scripthash')
+        info.hashBuffer.toString('hex').should.equal(payload.toLowerCase())
+        info.hashBuffer.length.should.equal(payloadSize)
+      }
+    })
+  })
 });

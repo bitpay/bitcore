@@ -1,0 +1,138 @@
+{
+  "bitcoreNode": {
+    "services": {
+      "api": {
+        "wallets": {
+          "allowCreationBeforeCompleteSync": true
+        }
+      }
+    },
+    "chains": {
+      "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 8332
+            }
+          ],
+          "rpc": {
+            "host": "localhost",
+            "port": 8333,
+            "username": "bitcorenodetest",
+            "password": "local321"
+          }
+        }
+      },
+      "BCH": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 8332
+            }
+          ],
+          "rpc": {
+            "host": "localhost",
+            "port": 8333,
+            "username": "bitcorenodetest",
+            "password": "local321"
+          }
+        }
+      },
+      "ETH": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 40404
+            }
+          ],
+          "providers": [
+            {
+              "host": "localhost",
+              "protocol": "ws",
+              "port": 9545
+            },
+            {
+              "host": "localhost",
+              "protocol": "ws",
+              "port": 9556
+            }
+          ],
+          "threads": 0
+        }
+      },
+      "MATIC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 40404
+            }
+          ],
+          "providers": [
+            {
+              "host": "localhost",
+              "protocol": "ws",
+              "port": 9556
+            }
+          ],
+          "threads": 0
+        }
+      },
+      "BASE": {
+        "testnet": {
+          "chainSource": "external",
+          "module": "./moralis",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": "30012/ws"
+            }
+          ],
+          "provider": {
+            "host": "docs-demo.base-mainnet.quiknode.pro/",
+            "protocol": "https",
+            "port": "",
+            "dataType": "historical"
+          },
+          "providers": [
+            {
+              "host": "docs-demo.base-mainnet.quiknode.pro/",
+              "protocol": "https",
+              "port": "",
+              "dataType": "combined"
+            }
+          ]
+        }
+      },
+      "XRP": {
+        "testnet": {
+          "chainSource": "rpc",
+          "provider": {
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 6996,
+            "dataHost": "localhost"
+          }
+        }
+      }
+    },
+    "aliasMapping": {
+      "chains": {
+        "BTC": "BTC"
+      },
+      "networks": {
+        "BTC": {
+          "testnet3": "testnet",
+          "testnet4": "testnet"
+        }
+      }
+    }
+  }
+}

@@ -104,7 +104,7 @@ Address.prototype._classifyArguments = function(data, network, type) {
   } else if ((data instanceof Buffer || data instanceof Uint8Array) && data.length === 21) {
     return Address._transformBuffer(data, network, type);
   } else if (data instanceof PublicKey) {
-    return Address._transformPublicKey(data);
+    return Address._transformPublicKey(data, network, type);
   } else if (data instanceof Script) {
     return Address._transformScript(data, network);
   } else if (typeof(data) === 'string') {
@@ -206,7 +206,7 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Unknown network');
   }
 
-  if (!bufferVersion.network || (networkObj && networkObj !== bufferVersion.network)) {
+  if (!bufferVersion.network || (networkObj && networkObj.xpubkey !== bufferVersion.network.xpubkey)) {
     throw new TypeError('Address has mismatched network type.');
   }
 
@@ -215,7 +215,7 @@ Address._transformBuffer = function(buffer, network, type) {
   }
 
   info.hashBuffer = buffer.slice(1);
-  info.network = bufferVersion.network;
+  info.network = networkObj || bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
 };
@@ -224,16 +224,18 @@ Address._transformBuffer = function(buffer, network, type) {
  * Internal function to transform a {@link PublicKey}
  *
  * @param {PublicKey} pubkey - An instance of PublicKey
+ * @param {string} network - mainnet, testnet, or regtest
+ * @param {string} type - Either 'pubkeyhash' or 'scripthash'
  * @returns {Object} An object with keys: hashBuffer, type
  * @private
  */
-Address._transformPublicKey = function(pubkey) {
+Address._transformPublicKey = function(pubkey, network, type) {
   var info = {};
   if (!(pubkey instanceof PublicKey)) {
     throw new TypeError('Address must be an instance of PublicKey.');
   }
   info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
-  info.type = Address.PayToPublicKeyHash;
+  info.type = type || Address.PayToPublicKeyHash;
   return info;
 };
 
@@ -270,6 +272,19 @@ Address.createMultisig = function(publicKeys, threshold, network) {
   return Address.payingTo(Script.buildMultisigOut(publicKeys, threshold), network);
 };
 
+/**
+ * Creates a P2SH Zero-Confirmation Escrow (ZCE) address from a set of input public keys and a reclaim public key.
+ *
+ * @param {Array} inputPublicKeys - the set of public keys needed to sign all inputs in a ZCE transaction
+ * @param {PublicKey} reclaimPublicKey - the public key required to reclaim the escrow
+ * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
+ * @return {Address}
+ */
+ Address.createEscrow = function(inputPublicKeys, reclaimPublicKey, network) {
+  const zceRedeemScript = Script.buildEscrowOut(inputPublicKeys, reclaimPublicKey);
+  network = network || reclaimPublicKey.network || Networks.defaultNetwork;
+  return Address.payingTo(zceRedeemScript, network);
+};
 
 function decodeCashAddress(address) {
 
@@ -292,7 +307,7 @@ function decodeCashAddress(address) {
     }
 
     var prefixData = prefixToArray(prefix).concat([0]);
-    return polymod(prefixData.concat(payload)).eqn(0);
+    return polymod(prefixData.concat(payload)) === 0;
   }
 
   $.checkArgument(hasSingleCase(address), 'Mixed case');
@@ -356,13 +371,13 @@ function decodeCashAddress(address) {
   //return { prefix, type, hash };
 //console.log('[address.js.339]', hash); //TODO
 
-  info.hashBuffer = new Buffer(hash);
+  info.hashBuffer = Buffer.from(hash);
   info.network = network;
   info.type = type;
   return info;
 }
 
-
+Address._decodeCashAddress = decodeCashAddress
 
 /**
  * Internal function to transform a bitcoin cash address string
@@ -380,6 +395,11 @@ Address._transformString = function(data, network, type) {
   if (data.length < 34){
     throw new Error('Invalid Address string provided');
   }
+
+  if(data.length > 100) {
+    throw new TypeError('address string is too long');
+  }
+
   data = data.trim();
   var networkObj = Networks.get(network);
 
@@ -389,7 +409,7 @@ Address._transformString = function(data, network, type) {
 
   if (data.length > 35){
     var info = decodeCashAddress(data);
-    if (!info.network || (networkObj && networkObj.name !== info.network.name)) {
+    if (!info.network || (networkObj && networkObj.prefix !== info.network.prefix)) {
       throw new TypeError('Address has mismatched network type.');
     }
     if (!info.type || (type && type !== info.type)) {
@@ -408,11 +428,12 @@ Address._transformString = function(data, network, type) {
  * Instantiate an address from a PublicKey instance
  *
  * @param {PublicKey} data
- * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
+ * @param {Network|string} network - either a Network instance, 'livenet', or 'testnet'
+ * @param {string} type - 'pubkeyhash' (default) or 'scripthash'
  * @returns {Address} A new valid and frozen instance of an Address
  */
-Address.fromPublicKey = function(data, network) {
-  var info = Address._transformPublicKey(data);
+Address.fromPublicKey = function(data, network, type) {
+  var info = Address._transformPublicKey(data, network, type);
   network = network || Networks.defaultNetwork;
   return new Address(info.hashBuffer, network, info.type);
 };
@@ -582,7 +603,7 @@ Address.prototype.isPayToScriptHash = function() {
  * @returns {Buffer} Bitcoin address buffer
  */
 Address.prototype.toBuffer = function() {
-  var version = new Buffer([this.network[this.type]]);
+  var version = Buffer.from([this.network[this.type]]);
   var buf = Buffer.concat([version, this.hashBuffer]);
   return buf;
 };
@@ -616,7 +637,7 @@ Address.prototype.inspect = function() {
  */
 
 Address.prototype.toCashBuffer = function() {
-  var version = new Buffer([this.network[this.type]]);
+  var version = Buffer.from([this.network[this.type]]);
   var buf = Buffer.concat([version, this.hashBuffer]);
   return buf;
 };
@@ -726,14 +747,13 @@ function getHashSize(versionByte) {
  * Returns an array representation of the given checksum to be encoded
  * within the address' payload.
  *
- * @param {BigInteger} checksum Computed checksum.
+ * @param {number} checksum Computed checksum.
  */
 function checksumToArray(checksum) {
   var result = [];
-  var N31 = new BN(31);
   for (var i = 0; i < 8; ++i) {
-    result.push(checksum.and(N31).toNumber());
-    checksum = checksum.shrn(5);
+    result.push(checksum & 31);
+    checksum /= 32;
   }
   return result.reverse();
 }
@@ -744,32 +764,43 @@ function checksumToArray(checksum) {
  *
  * @param {Array} data Array of 5-bit integers over which the checksum is to be computed.
  */
- var GENERATOR = _.map(
-  [0x98f2bc8e61, 0x79b76d99e2, 0xf33e5fb3c4, 0xae2eabe2a8, 0x1e4f43e470], function(x){
-    return new BN(x);
-  }
-);
+var GENERATOR1 = [0x98, 0x79, 0xf3, 0xae, 0x1e];
+var GENERATOR2 = [0xf2bc8e61, 0xb76d99e2, 0x3e5fb3c4, 0x2eabe2a8, 0x4f43e470];
 
 function polymod(data) {
-
-  var checksum = new BN(1);
-  var C = new BN(0x07ffffffff);
-
-  for (var j=0; j<data.length; j++) {
-    var value = data[j];
-    var topBits = checksum.shrn(35);
-
-    checksum = checksum.and(C);
-    checksum = checksum.shln(5).xor(new BN(value));
-
-    for (var i = 0; i < GENERATOR.length; ++i) {
-      var D = topBits.shrn(i).and(BN.One);
-      if (D.eqn(1)) {
-        checksum = checksum.xor(GENERATOR[i]);
+  // Treat c as 8 bits + 32 bits
+  var c0 = 0, c1 = 1, C = 0;
+  for (var j = 0; j < data.length; j++) {
+    // Set C to c shifted by 35
+    C = c0 >>> 3;
+    // 0x[07]ffffffff
+    c0 &= 0x07;
+    // Shift as a whole number
+    c0 <<= 5;
+    c0 |= c1 >>> 27;
+    // 0xffffffff >>> 5
+    c1 &= 0x07ffffff;
+    c1 <<= 5;
+    // xor the last 5 bits
+    c1 ^= data[j];
+    for (var i = 0; i < GENERATOR1.length; ++i) {
+      if (C & (1 << i)) {
+        c0 ^= GENERATOR1[i];
+        c1 ^= GENERATOR2[i];
       }
     }
   }
-  return checksum.xor(BN.One);
+  c1 ^= 1;
+  // Negative numbers -> large positive numbers
+  if (c1 < 0) {
+    c1 ^= 1 << 31;
+    c1 += (1 << 30) * 2;
+  }
+  // Unless bitwise operations are used,
+  // numbers are consisting of 52 bits, except
+  // the sign bit. The result is max 40 bits,
+  // so it fits perfectly in one number!
+  return c0 * (1 << 30) * 4 + c1;
 }
 
 module.exports = Address;

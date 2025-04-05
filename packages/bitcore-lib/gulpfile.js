@@ -1,5 +1,4 @@
+'use strict';
 
-
-var bitcoreTasks = require('bitcore-build');
-
-bitcoreTasks('lib');
+var startGulp = require('bitcore-build');
+module.exports = startGulp('lib');

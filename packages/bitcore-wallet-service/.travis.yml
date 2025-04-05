@@ -1,0 +1,27 @@
+language: node_js
+sudo: false
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8
+    - clang
+node_js:
+  - '8'
+before_script:
+  - sleep 30  # suggested in https://docs.travis-ci.com/user/database-setup/#mongodb
+  # - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
+  
+before_install:
+  - export CXX="g++-4.8" CC="gcc-4.8"
+install:
+  - npm install
+after_success:
+  - npm run coveralls
+services:
+  - mongodb

@@ -1,5 +1,8 @@
 'use strict';
 
+var should = require('chai').should();
+var expect = require('chai').expect;
+
 var bitcore = require('../../..');
 var Transaction = bitcore.Transaction;
 var PrivateKey = bitcore.PrivateKey;
@@ -44,7 +47,7 @@ describe('PublicKeyInput', function() {
     tx.from(utxo);
     tx.to(destKey.toAddress(), 10000);
     var input = tx.inputs[0];
-    input._estimateSize().should.equal(73);
+    input._estimateSize().should.equal(113);
   });
 
   it('it\'s signature can be removed', function() {
