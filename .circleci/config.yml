@@ -111,6 +111,7 @@ jobs:
             - packages/bitcore-p2p/node_modules
             - packages/bitcore-p2p-cash/node_modules
             - packages/bitcore-p2p-doge/node_modules
+            - packages/bitcore-tss/node_modules
             - packages/bitcore-wallet/node_modules
             - packages/bitcore-wallet-client/node_modules
             - packages/bitcore-wallet-service/node_modules

@@ -3092,7 +3092,7 @@ export class WalletService implements IWalletService {
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
-          if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+          if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (let t of txps) {
@@ -3897,7 +3897,7 @@ export class WalletService implements IWalletService {
       tx.actions = proposal.actions.map(action => {
         return _.pick(action, ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']);
       });
-      for (const output of tx.outputs) {
+      for (const output of tx.outputs || []) {
         const query = {
           toAddress: output.address,
           amount: output.amount

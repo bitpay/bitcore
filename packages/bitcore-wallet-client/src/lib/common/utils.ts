@@ -1,23 +1,21 @@
 'use strict';
 
 import {
-  BitcoreLib,
+  BitcoreLib as Bitcore,
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc,
   Deriver,
   Transactions
 } from 'crypto-wallet-core';
-
-import * as _ from 'lodash';
+import Stringify from 'json-stable-stringify';
+import { singleton } from 'preconditions';
+import sjcl from 'sjcl';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
 
-const $ = require('preconditions').singleton();
-const sjcl = require('sjcl');
-const Stringify = require('json-stable-stringify');
+const $ = singleton();
 
-const Bitcore = BitcoreLib;
 const Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash,
@@ -33,8 +31,6 @@ const Bitcore_ = {
 const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;
 const crypto = Bitcore.crypto;
-
-let SJCL = {};
 
 const MAX_DECIMAL_ANY_CHAIN = 18; // more that 14 gives rounding errors
 
@@ -62,13 +58,10 @@ export class Utils {
     return sjcl.encrypt(
       key,
       message,
-      _.defaults(
-        {
-          ks: 128,
-          iter: 1
-        },
-        SJCL
-      )
+      {
+        ks: 128,
+        iter: 1
+      }
     );
   }
 
@@ -122,7 +115,7 @@ export class Utils {
   static signMessage(message, privKey) {
     $.checkArgument(message);
     var priv = new PrivateKey(privKey);
-    const flattenedMessage = _.isArray(message) ? _.join(message) : message;
+    const flattenedMessage = Array.isArray(message) ? message.join(',') : message;
     var hash = this.hashMessage(flattenedMessage);
     return crypto.ECDSA.sign(hash, priv, { endian: 'little' }).toString();
   }
@@ -134,7 +127,7 @@ export class Utils {
     if (!signature) return false;
 
     var pub = new PublicKey(pubKey);
-    const flattenedMessage = _.isArray(message) ? _.join(message) : message;
+    const flattenedMessage = Array.isArray(message) ? message.join(',') : message;
     const hash = this.hashMessage(flattenedMessage);
     try {
       var sig = new crypto.Signature.fromString(signature);
@@ -145,7 +138,7 @@ export class Utils {
   }
 
   static privateKeyToAESKey(privKey) {
-    $.checkArgument(privKey && _.isString(privKey));
+    $.checkArgument(privKey && typeof privKey === 'string');
     $.checkArgument(
       Bitcore.PrivateKey.isValid(privKey),
       'The private key received is invalid'
@@ -160,10 +153,10 @@ export class Utils {
     return [name, xPubKey, requestPubKey].join('|');
   }
 
-  static getProposalHash(proposalHeader) {
+  static getProposalHash(proposalHeader, ...args) {
     // For backwards compatibility
-    if (arguments.length > 1) {
-      return this.getOldHash.apply(this, arguments);
+    if (args.length > 0) {
+      return this.getOldHash.apply(this, [proposalHeader, ...args]);
     }
 
     return Stringify(proposalHeader);
@@ -190,7 +183,7 @@ export class Utils {
     escrowInputs?,
     hardwareSourcePublicKey?
   ) {
-    $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
+    $.checkArgument(Object.values(Constants.SCRIPT_TYPES).includes(scriptType));
 
     if (hardwareSourcePublicKey) {
       const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
@@ -202,8 +195,8 @@ export class Utils {
     }
 
     chain = chain || 'btc';
-    var bitcore = Bitcore_[chain];
-    var publicKeys = _.map(publicKeyRing, item => {
+    const bitcore = Bitcore_[chain];
+    let publicKeys = (publicKeyRing || []).map(item => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
@@ -248,10 +241,7 @@ export class Utils {
         );
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
-        $.checkState(
-          _.isArray(publicKeys) && publicKeys.length == 1,
-          'publicKeys array undefined'
-        );
+        $.checkState(Array.isArray(publicKeys) && publicKeys.length == 1, 'publicKeys array undefined');
         if (Constants.UTXO_CHAINS.includes(chain)) {
           bitcoreAddress = bitcore.Address.fromPublicKey(
             publicKeys[0],
@@ -281,7 +271,7 @@ export class Utils {
     return {
       address: bitcoreAddress.toString(true),
       path,
-      publicKeys: _.invokeMap(publicKeys, 'toString')
+      publicKeys: publicKeys.map(p => p.toString())
     };
   }
 
@@ -290,7 +280,7 @@ export class Utils {
   // testnet xpub starts with t.
   // livenet xpub starts with x.
   // no matter WHICH chain
-  static xPubToCopayerId(_chain, xpub) {
+  static xPubToCopayerId(_chain, xpub): string {
     // this was introduced because we allowed coinType = 0' wallets for BCH
     // for the  "wallet duplication" feature
     // now it is effective for all coins.
@@ -336,11 +326,11 @@ export class Utils {
       nStr = nStr.replace('.', decimal);
       var x = nStr.split(decimal);
       var x0 = x[0];
-      var x1 = x[1];
+      var x1 = x[1] || '';
 
-      x1 = _.dropRightWhile(x1, (n, i) => {
-        return n == '0' && i >= minDecimals;
-      }).join('');
+      while (x1.endsWith('0') && x1.length > minDecimals) {
+        x1 = x1.slice(0, -1);
+      }
       var x2 = x.length > 1 ? decimal + x1 : '';
 
       x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
@@ -379,17 +369,14 @@ export class Utils {
         t.setVersion(1);
       }
 
-      $.checkState(
-        _.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType),
-        'Failed state: addressType not in SCRIPT_TYPES'
-      );
+      $.checkState(Object.values(Constants.SCRIPT_TYPES).includes(txp.addressType), 'Failed state: addressType not in SCRIPT_TYPES');
 
       switch (txp.addressType) {
         case Constants.SCRIPT_TYPES.P2WSH:
         case Constants.SCRIPT_TYPES.P2SH:
-          _.each(txp.inputs, i => {
+          for (const i of txp.inputs || []) {
             t.from(i, i.publicKeys, txp.requiredSignatures);
-          });
+          }
           break;
         case Constants.SCRIPT_TYPES.P2WPKH:
         case Constants.SCRIPT_TYPES.P2PKH:
@@ -401,7 +388,7 @@ export class Utils {
       if (txp.toAddress && txp.amount && !txp.outputs) {
         t.to(txp.toAddress, txp.amount);
       } else if (txp.outputs) {
-        _.each(txp.outputs, o => {
+        for (const o of (txp.outputs || [])) {
           $.checkState(
             o.script || o.toAddress,
             'Output should have either toAddress or script specified'
@@ -416,7 +403,7 @@ export class Utils {
           } else {
             t.to(o.toAddress, o.amount);
           }
-        });
+        }
       }
 
       t.fee(txp.fee);
@@ -434,44 +421,21 @@ export class Utils {
 
       // Shuffle outputs for improved privacy
       if (t.outputs.length > 1) {
-        var outputOrder = _.reject(txp.outputOrder, order => {
-          return order >= t.outputs.length;
-        });
-        $.checkState(
-          t.outputs.length == outputOrder.length,
-          'Failed state: t.ouputs.length == outputOrder.length at buildTx()'
-        );
-        t.sortOutputs(outputs => {
-          return _.map(outputOrder, i => {
-            return outputs[i];
-          });
-        });
+        const outputOrder = (txp.outputOrder || []).filter(order => order < t.outputs.length);
+        $.checkState(t.outputs.length === outputOrder.length, 'Failed state: t.ouputs.length == outputOrder.length at buildTx()');
+        t.sortOutputs(outputs => outputOrder.map(i => outputs[i]));
       }
 
       // Validate inputs vs outputs independently of Bitcore
-      var totalInputs = _.reduce(
-        txp.inputs,
-        (memo, i) => {
-          return +i.satoshis + memo;
-        },
-        0
-      );
-      var totalOutputs = _.reduce(
-        t.outputs,
-        (memo, o) => {
-          return +o.satoshis + memo;
-        },
-        0
-      );
+      const totalInputs = (txp.inputs || []).reduce((memo, i) => {
+        return +i.satoshis + memo;
+      }, 0);
+      const totalOutputs = (t.outputs || []).reduce((memo, o) => {
+        return +o.satoshis + memo;
+      }, 0);
 
-      $.checkState(
-        totalInputs - totalOutputs >= 0,
-        'Failed state: totalInputs - totalOutputs >= 0 at buildTx'
-      );
-      $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain),
-        'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx'
-      );
+      $.checkState(totalInputs - totalOutputs >= 0, 'Failed state: totalInputs - totalOutputs >= 0 at buildTx');
+      $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain), 'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx');
 
       return t;
     } else {
