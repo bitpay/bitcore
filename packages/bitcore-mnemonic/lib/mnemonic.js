@@ -216,7 +216,7 @@ Mnemonic.prototype.toHDPrivateKey = function(passphrase, network, keyType) {
   let hexa = this.toSeed(passphrase);
   let key = 'Bitcoin seed';
 
-  if (_.isString(hexa) && /^[0-9a-fA-F]+$/.test(hexa)) {
+  if ((typeof hexa === 'string' || hexa instanceof String) && /^[0-9a-fA-F]+$/.test(hexa)) {
     hexa = Buffer.from(hexa, 'hex');
   }
   if (!Buffer.isBuffer(hexa)) {
