@@ -204,11 +204,12 @@ Mnemonic.fromSeed = function(seed, wordlist) {
  *
  * @param {String=} [passphrase]
  * @param {Network|String|number=} [network] - The network: 'livenet' or 'testnet'
+ * @param {String=} [keyType] - The type of key used to compute HMAC-SHA512. Default 'Bitcoin'. Other options included ed25519
  * @returns {HDPrivateKey}
  */
-Mnemonic.prototype.toHDPrivateKey = function(passphrase, network) {
+Mnemonic.prototype.toHDPrivateKey = function(passphrase, network, keyType) {
   var seed = this.toSeed(passphrase);
-  return bitcore.HDPrivateKey.fromSeed(seed, network);
+  return bitcore.HDPrivateKey.fromSeed(seed, network, keyType);
 };
 
 /**

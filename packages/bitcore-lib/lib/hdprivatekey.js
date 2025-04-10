@@ -403,7 +403,7 @@ HDPrivateKey.prototype._generateRandomly = function(network) {
  * @param {*} network
  * @return HDPrivateKey
  */
-HDPrivateKey.fromSeed = function(hexa, network) {
+HDPrivateKey.fromSeed = function(hexa, network, keyType) {
   /* jshint maxcomplexity: 8 */
   if (JSUtil.isHexaString(hexa)) {
     hexa = Buffer.from(hexa, 'hex');
@@ -417,7 +417,8 @@ HDPrivateKey.fromSeed = function(hexa, network) {
   if (hexa.length > MAXIMUM_ENTROPY_BITS * BITS_TO_BYTES) {
     throw new hdErrors.InvalidEntropyArgument.TooMuchEntropy(hexa);
   }
-  var hash = Hash.sha512hmac(hexa, Buffer.from('Bitcoin seed'));
+  keyType = keyType ? `${keyType} seed` : 'Bitcoin seed';
+  var hash = Hash.sha512hmac(hexa, Buffer.from(keyType));
 
   return new HDPrivateKey({
     network: Network.get(network) || Network.defaultNetwork,
@@ -428,8 +429,6 @@ HDPrivateKey.fromSeed = function(hexa, network) {
     chainCode: hash.slice(32, 64)
   });
 };
-
-
 
 HDPrivateKey.prototype._calcHDPublicKey = function() {
   if (!this._hdPublicKey) {
