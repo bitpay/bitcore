@@ -145,9 +145,6 @@ export class SOLTxProvider {
     return SolKit.getBase64Decoder().decode(sigEncoding);
   }
 
-  // the return value is expected to be assigned to tx.uncheckedSerialize 
-  // which is then stored as the raw tx on the txp. this is VEY IMPORTANT
-  // with the raw unsigned tx available as a param we will be able to use decodePartiallyDecodedTransaction to properly decode the signature object
   applySignature(params: { tx: string; signature: string }): string {
     const { tx, signature } = params;
     const encoder = SolKit.getBase64Encoder();
