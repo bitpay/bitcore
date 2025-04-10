@@ -1,9 +1,15 @@
+import * as SolComputeBudget from '@solana-program/compute-budget';
 import * as SolSystem from '@solana-program/system';
-import { pipe }  from '@solana/functional';
+import { pipe } from '@solana/functional';
 import * as SolKit from '@solana/kit'
 import { Key } from '../../derivation';
 
+
 export class SOLTxProvider {
+
+  MAX_TRANSFERS = 12;
+  MINIMUM_PRIORITY_FEE = 1000;
+
   create(params: {
     recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner; }>;
     from: string;
@@ -11,23 +17,25 @@ export class SOLTxProvider {
     feeRate: number;
     network: string;
     txType?: string; // legacy, version 0, etc
-    category?: string; // transfer, create account, create nonce account
+    category?: string; // transfer, create account
     nonce?: string; // nonce is represented as a transaction id
     nonceAddress?: string;
     blockHash?: string;
     blockHeight?: number;
     fromKeyPair?: SolKit.KeyPairSigner,
     space?: number; // amount of space to reserve a new account in bytes
+    priorityFee?: number;
   }) {
-    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight } = params;
-    const { address, amount, addressKeyPair } = recipients[0];
-    const toAddress = SolKit.address(address);
+    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
 
     switch (category?.toLowerCase()) {
       case 'transfer':
       default:
+        if (recipients.length > this.MAX_TRANSFERS) {
+          throw new Error('Too many recipients')
+        }
         let transactionMessage = pipe(
           SolKit.createTransactionMessage({ version: txType }),
           tx => SolKit.setTransactionMessageFeePayer(fromAddress, tx),
@@ -52,20 +60,28 @@ export class SOLTxProvider {
             transactionMessage,
           );
         }
-
-        const transferMessage = SolSystem.getTransferSolInstruction({
-          amount: BigInt(amount),
-          destination: toAddress,
-          source: {
-            address: fromAddress,
-            signTransactions: async () => []
-          } as SolKit.TransactionPartialSigner
-        });
-        const transferTxMessage =  SolKit.appendTransactionMessageInstructions([transferMessage], lifetimeConstrainedTx);
+        const transferMessages = [];
+        for (const recipient of recipients) {
+          const { address: recipientAddress, amount: recipientAmount } = recipient;
+          transferMessages.push(SolSystem.getTransferSolInstruction({
+            amount: BigInt(recipientAmount),
+            destination: SolKit.address(recipientAddress),
+            source: {
+              address: fromAddress,
+              signTransactions: async () => []
+            } as SolKit.TransactionPartialSigner
+          }));
+        }
+        if (priorityFee) {
+          const maxPriorityFee = Math.max(this.MINIMUM_PRIORITY_FEE, priorityFee);
+          transferMessages.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
+        }
+        const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferMessages, lifetimeConstrainedTx);
         const compiledTx = SolKit.compileTransaction(transferTxMessage);
         return SolKit.getBase64EncodedWireTransaction(compiledTx);
       case 'createAcccount':
         const { fromKeyPair } = params;
+        const { amount, addressKeyPair } = recipients[0];
         const _space = space || 200;
         const _amount = Number(amount);
 
@@ -91,7 +107,7 @@ export class SOLTxProvider {
           recentBlockhash,
           txMessage,
         );
-        const completeMessage =  SolKit.appendTransactionMessageInstructions(
+        const completeMessage = SolKit.appendTransactionMessageInstructions(
           [createAccountInstruction],
           lifetimeConstrainedTx
         );
@@ -105,16 +121,17 @@ export class SOLTxProvider {
     }
     const uint8ArrayTx = SolKit.getBase64Encoder().encode(rawTx);
     const txObj = SolKit.getTransactionDecoder().decode(uint8ArrayTx);
-    const compiledTransactionMessage =  SolKit.getCompiledTransactionMessageDecoder().decode(txObj?.messageBytes);
+    const compiledTransactionMessage = SolKit.getCompiledTransactionMessageDecoder().decode(txObj?.messageBytes);
     const decompiledTransactionMessage = SolKit.decompileTransactionMessage(compiledTransactionMessage);
     const compiledTransaction = SolKit.compileTransaction(decompiledTransactionMessage)
-    return {...compiledTransaction, signatures: txObj.signatures };
+    return { ...compiledTransaction, signatures: txObj.signatures };
   }
 
   async sign(params: { tx: string; key: Key; hash?: string; }): Promise<string> {
     const { tx, key, hash } = params;
+    // hash to update latest blockhash?? 
     const decodedTx = this.decodeRawTransaction({ rawTx: tx });
-    const privKeyBytes = SolKit.getBase64Encoder().encode(key.privKey);
+    const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
     const keypair = await SolKit.createKeyPairFromBytes(privKeyBytes);
     const signedTransaciton = await SolKit.signTransaction([keypair], decodedTx);
     return SolKit.getBase64EncodedWireTransaction(signedTransaciton);
@@ -122,25 +139,22 @@ export class SOLTxProvider {
 
   async getSignature(params: { tx: string; keys: Array<Key> }) {
     const { tx, keys } = params;
-    const signedTx = await this.sign( { tx, key: keys[0] });
+    const signedTx = await this.sign({ tx, key: keys[0] });
     const decodedTx = this.decodeRawTransaction({ rawTx: signedTx });
     const sigEncoding = this.getSignaturesEncoder().encode(decodedTx.signatures)
     return SolKit.getBase64Decoder().decode(sigEncoding);
   }
 
-  applySignature(params: { tx: string; signature: string}): string {
+  // the return value is expected to be assigned to tx.uncheckedSerialize 
+  // which is then stored as the raw tx on the txp. this is VEY IMPORTANT
+  // with the raw unsigned tx available as a param we will be able to use decodePartiallyDecodedTransaction to properly decode the signature object
+  applySignature(params: { tx: string; signature: string }): string {
     const { tx, signature } = params;
     const encoder = SolKit.getBase64Encoder();
-    const encodedTx = encoder.encode(tx);
-    const encodedSig = encoder.encode(signature);
-    const signedTx = this.decodeAndApplySignatures({ signatures: [encodedSig], transaction: encodedTx});
-    return SolKit.getBase64EncodedWireTransaction(signedTx);
-  }
-
-  decodeAndApplySignatures(params: { signatures: SolKit.ReadonlyUint8Array[]; transaction: SolKit.ReadonlyUint8Array; }) {
-    const { signatures, transaction } = params;
-    const decodeAppliedSignatures = (tx) => {
-      const { messageBytes } = tx;
+    const signatures = [encoder.encode(signature)];
+    const transaction = encoder.encode(tx);
+    const transformWithNewSignatures = (_tx) => {
+      const { messageBytes } = _tx;
       const signerAddressesDecoder = SolKit.getTupleDecoder([
         // read transaction version
         SolKit.getTransactionVersionDecoder(),
@@ -159,7 +173,7 @@ export class SOLTxProvider {
       for (let index = 0; index < signerAddresses.length; index++) {
         const address = signerAddresses[index];
         const signatureForAddress = signatures[index];
-        
+
         if (signatureForAddress.every((b) => b === 0)) {
           signaturesMap[address] = null;
         } else {
@@ -170,22 +184,23 @@ export class SOLTxProvider {
         messageBytes,
         signatures: Object.freeze(signaturesMap)
       };
-    };  
-    const decoderTransform =  SolKit.transformDecoder(
+    };
+    const decoderTransform = SolKit.transformDecoder(
       SolKit.getStructDecoder([
-        ["signatures", SolKit.getArrayDecoder(SolKit.fixDecoderSize(SolKit.getBytesDecoder(), 64), { size: SolKit.getShortU16Decoder() })],
-        ["messageBytes", SolKit.getBytesDecoder()]
+        ['signatures', SolKit.getArrayDecoder(SolKit.fixDecoderSize(SolKit.getBytesDecoder(), 64), { size: SolKit.getShortU16Decoder() })],
+        ['messageBytes', SolKit.getBytesDecoder()]
       ]),
-      decodeAppliedSignatures
+      transformWithNewSignatures
     );
-    return decoderTransform.decode(transaction);
+    const signedTx = decoderTransform.decode(transaction);
+    return SolKit.getBase64EncodedWireTransaction(signedTx);
   }
 
-  getHash(params: { tx: string;  }): string {
+  getHash(params: { tx: string; }): string {
     const { tx } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx });
     const sigEncoding = this.getSignaturesEncoder().encode(decodedTx.signatures)
-    return SolKit.getBase58Decoder().decode(sigEncoding); //TODO determine correct way to calculate txid beforehand
+    return SolKit.getBase58Decoder().decode(sigEncoding);
   }
 
   getSignaturesToEncode(signaturesMap) {
@@ -197,14 +212,11 @@ export class SOLTxProvider {
       return signature;
     });
   }
+
   getSignaturesEncoder() {
     return SolKit.transformEncoder(
       SolKit.getArrayEncoder(SolKit.fixEncoderSize(SolKit.getBytesEncoder(), 64), { size: SolKit.getShortU16Encoder() }),
       this.getSignaturesToEncode
     );
-  }
-
-  getSignatureObject(params: { tx: string; key: Key;}) {
-    throw new Error('function getSignatureObject not implemented for SVM chains');
   }
 }
