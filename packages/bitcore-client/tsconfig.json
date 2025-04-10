@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["ES2020"],
+    "lib": [
+      "ES2020",
+      "ES2022",
+      "DOM"
+    ],
     "noImplicitAny": false,
     "removeComments": true,
     "declaration": true,
@@ -11,10 +15,16 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "target": "ES2020",
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
     "baseUrl": ".",
     "paths": {
-      "*": ["*", "./src/*", "./test/*"]
+      "*": [
+        "*",
+        "./src/*",
+        "./test/*"
+      ]
     },
     "outDir": "ts_build",
     "sourceMap": true
