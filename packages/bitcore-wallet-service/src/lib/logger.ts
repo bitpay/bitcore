@@ -28,7 +28,7 @@ export const logger = winston.createLogger({
     winston.format.prettyPrint(),
     winston.format.splat(),
     winston.format.simple(),
-    winston.format.printf(function(info) {
+    winston.format.printf(function (info) {
       // fallback in case the above formatters  don't work.
       // eg: logger.log({ some: 'object' })
       if (typeof info.message === 'object') {
@@ -51,19 +51,19 @@ export const formatTimestamp = (date: Date): string =>
     .getDate()
     .toString()
     .padStart(2, '0')} ${date
-    .getHours()
-    .toString()
-    .padStart(2, '0')}:${date
-    .getMinutes()
-    .toString()
-    .padStart(2, '0')}:${date
-    .getSeconds()
-    .toString()
-    .padStart(2, '0')}.${date
-    .getMilliseconds()
-    .toString()
-    // .padEnd(3, '0')} ${timezone}`;
-    .padEnd(3, '0')}`;
+      .getHours()
+      .toString()
+      .padStart(2, '0')}:${date
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}:${date
+          .getSeconds()
+          .toString()
+          .padStart(2, '0')}.${date
+            .getMilliseconds()
+            .toString()
+            // .padEnd(3, '0')} ${timezone}`;
+            .padEnd(3, '0')}`;
 
 export const timestamp = () => formatTimestamp(new Date());
 
@@ -97,7 +97,8 @@ process.on('uncaughtException', (error) => {
     timestamp: timestamp()
   });
   // Exit the process to allow Docker to restart the container
-  process.exit(1);
+  logger.on('finish', () => process.exit(1)); // Ensure logs are flushed
+  logger.end(); // Close transports
 });
 
 // Error handler for unhandled promise rejections
@@ -110,7 +111,13 @@ process.on('unhandledRejection', (reason, promise) => {
     timestamp: timestamp()
   });
   // Exit the process to allow Docker to restart the container
-  process.exit(1);
+  logger.on('finish', () => process.exit(1)); // Ensure logs are flushed
+  logger.end(); // Close transports
+});
+
+process.on('SIGTERM', () => {
+  logger.info('Application shutting down...');
+  logger.end(); // Close transports
 });
 
 export default logger;
