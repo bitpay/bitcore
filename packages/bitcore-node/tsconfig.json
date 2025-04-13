@@ -2,7 +2,13 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020", "esnext", "esnext.asynciterable"],
+    "lib": [
+      "ES2020",
+      "esnext",
+      "esnext.asynciterable",
+      "ES2022",
+      "DOM"
+    ],
     "downlevelIteration": true,
     "allowJs": true,
     "sourceMap": true,
@@ -18,9 +24,14 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["mocha"],
+    "types": [
+      "mocha"
+    ],
     "esModuleInterop": true,
     "experimentalDecorators": true
   },
-  "include": ["./src/**/*", "./test/**/*"]
+  "include": [
+    "./src/**/*",
+    "./test/**/*"
+  ]
 }

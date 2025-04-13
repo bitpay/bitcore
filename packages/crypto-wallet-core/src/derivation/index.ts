@@ -8,6 +8,7 @@ import { LtcDeriver } from './ltc';
 import { MaticDeriver } from './matic';
 import { OpDeriver } from './op';
 import { Paths } from './paths';
+import { SolDeriver } from './sol';
 import { XrpDeriver } from './xrp';
 
 export interface Key {
@@ -21,9 +22,13 @@ export interface IDeriver {
 
   derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Key;
 
+  derivePrivateKeyAsync?(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Promise<Key>;
+
   deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string;
 
   derivePrivateKeyWithPath(network, xprivKey: string, path: string, addressType: string): Key;
+
+  derivePrivateKeyWithPathAsync?(network, xprivKey: string, path: string, addressType: string): Promise<Key>;
 
   getAddress(network: string, pubKey, addressType: string): string;
 }
@@ -39,6 +44,7 @@ const derivers: { [chain: string]: IDeriver } = {
   ARB: new ArbDeriver(),
   BASE: new BaseDeriver(),
   OP: new OpDeriver(),
+  SOL: new SolDeriver()
 };
 
 export class DeriverProxy {
@@ -74,6 +80,11 @@ export class DeriverProxy {
     return this.get(chain).derivePrivateKey(network, privKey, addressIndex, isChange, addressType);
   }
 
+  async derivePrivateKeyAsync(chain, network, privKey, addressIndex, isChange, addressType?) {
+    const deriver = this.get(chain);
+    return deriver?.derivePrivateKeyAsync ? deriver.derivePrivateKeyAsync(network, privKey, addressIndex, isChange, addressType) : deriver.derivePrivateKey(network, privKey, addressIndex, isChange, addressType);
+  }
+
   /**
    * This derives addresses on a specific path.
    * This should probably only be used when importing from another wallet
@@ -104,6 +115,11 @@ export class DeriverProxy {
    */
   derivePrivateKeyWithPath(chain, network, xprivKey, path, addressType) {
     return this.get(chain).derivePrivateKeyWithPath(network, xprivKey, path, addressType);
+  }
+
+  async derivePrivateKeyWithPathAsync(chain, network, xprivKey, path, addressType) {
+    const deriver = this.get(chain);
+    return deriver?.derivePrivateKeyWithPathAsync ? deriver?.derivePrivateKeyWithPathAsync(network, xprivKey, path, addressType) : deriver.derivePrivateKeyWithPath(network, xprivKey, path, addressType);
   }
 
   /**
