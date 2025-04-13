@@ -6193,61 +6193,61 @@ export class WalletService implements IWalletService {
   }
 
   checkMerchantOrderQueueAndNoti() {
-    // setInterval(() => {
-    //   if (!merchantOrderQueueInterval) {
-    //     merchantQueueFailed += 1;
-    //     if (merchantQueueFailed > NOTI_AFTER_MANY_RESTART) {
-    //       merchantQueueFailed = 0;
-    //       merchantNotiCount += 1;
-    //       // notification to telegram
-    //       if (merchantNotiCount < MAXIMUM_NOTI + 1) {
-    //         botSwap.sendMessage(
-    //           config.queueNoti.channelId,
-    //           `Merchant service is not running. Try to restart (${merchantNotiCount})…`
-    //         );
-    //       }
-    //     } else {
-    //       this.restartHandleMerchantQueue((err, result) => {
-    //         if (err) logger.debug('Restart merchant order queue error: ', err);
-    //       });
-    //     }
-    //   } else {
-    //     if (merchantQueueFailed > 0) {
-    //       botSwap.sendMessage(config.queueNoti.channelId, 'Merchant service is running');
-    //     }
-    //     merchantNotiCount = 0;
-    //     merchantQueueFailed = 0;
-    //   }
-    // }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
+    setInterval(() => {
+      if (!merchantOrderQueueInterval) {
+        merchantQueueFailed += 1;
+        if (merchantQueueFailed > NOTI_AFTER_MANY_RESTART) {
+          merchantQueueFailed = 0;
+          merchantNotiCount += 1;
+          // notification to telegram
+          if (merchantNotiCount < MAXIMUM_NOTI + 1) {
+            botSwap.sendMessage(
+              config.queueNoti.channelId,
+              `Merchant service is not running. Try to restart (${merchantNotiCount})…`
+            );
+          }
+        } else {
+          this.restartHandleMerchantQueue((err, result) => {
+            if (err) logger.debug('Restart merchant order queue error: ', err);
+          });
+        }
+      } else {
+        if (merchantQueueFailed > 0) {
+          botSwap.sendMessage(config.queueNoti.channelId, 'Merchant service is running');
+        }
+        merchantNotiCount = 0;
+        merchantQueueFailed = 0;
+      }
+    }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
   }
 
   checkConversionOrderQueueAndNoti() {
-    // setInterval(() => {
-    //   if (!conversionQueueInterval) {
-    //     conversionQueueFailed += 1;
-    //     if (conversionQueueFailed > NOTI_AFTER_MANY_RESTART) {
-    //       conversionQueueFailed = 0;
-    //       conversionNotiCount += 1;
-    //       // notification to telegram
-    //       if (conversionNotiCount < MAXIMUM_NOTI + 1) {
-    //         botSwap.sendMessage(
-    //           config.queueNoti.channelId,
-    //           `Conversion service is not running. Try to restart (${conversionNotiCount})…`
-    //         );
-    //       }
-    //     } else {
-    //       this.restartHandleConversionQueue((err, result) => {
-    //         if (err) logger.debug('Restart conversion order queue error: ', err);
-    //       });
-    //     }
-    //   } else {
-    //     if (conversionQueueFailed > 0) {
-    //       botSwap.sendMessage(config.queueNoti.channelId, 'Conversion service is running');
-    //     }
-    //     conversionNotiCount = 0;
-    //     conversionQueueFailed = 0;
-    //   }
-    // }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
+    setInterval(() => {
+      if (!conversionQueueInterval) {
+        conversionQueueFailed += 1;
+        if (conversionQueueFailed > NOTI_AFTER_MANY_RESTART) {
+          conversionQueueFailed = 0;
+          conversionNotiCount += 1;
+          // notification to telegram
+          if (conversionNotiCount < MAXIMUM_NOTI + 1) {
+            botSwap.sendMessage(
+              config.queueNoti.channelId,
+              `Conversion service is not running. Try to restart (${conversionNotiCount})…`
+            );
+          }
+        } else {
+          this.restartHandleConversionQueue((err, result) => {
+            if (err) logger.debug('Restart conversion order queue error: ', err);
+          });
+        }
+      } else {
+        if (conversionQueueFailed > 0) {
+          botSwap.sendMessage(config.queueNoti.channelId, 'Conversion service is running');
+        }
+        conversionNotiCount = 0;
+        conversionQueueFailed = 0;
+      }
+    }, GAP_RESTART_QUEUE * 10 * 1000); // 5 min
   }
 
   checkSwapQueueAndNoti() {

@@ -2624,9 +2624,9 @@ export class ExpressApp {
     this.app.use(express.static(`${__dirname}/../../public/csv/`));
 
     WalletService.initialize(opts, data => {
-      // const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
-      // const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
-      // const botSwap = new TelegramBot(config.swapTelegram.botTokenId, { polling: true });
+      const bot = new TelegramBot(config.telegram.botTokenId, { polling: true });
+      const botNotification = new TelegramBot(config.botNotification.botTokenId, { polling: true });
+      const botSwap = new TelegramBot(config.swapTelegram.botTokenId, { polling: true });
       const server = WalletService.getInstance(opts);
       if (listAccount && listAccount.length > 0) {
         listAccount.forEach(account => {
@@ -2650,9 +2650,9 @@ export class ExpressApp {
         });
       }
 
-      // server.createBot({ bot, botNotification, botSwap }, finish => {
-      //   server.initializeBot();
-      // });
+      server.createBot({ bot, botNotification, botSwap }, finish => {
+        server.initializeBot();
+      });
       server.initializeCoinConfig(err => {
         if (err) logger.error(err);
         // Start cron job to update daily limit usage for coin config at midnght everyday to 0
