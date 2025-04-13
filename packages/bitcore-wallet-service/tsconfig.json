@@ -12,6 +12,7 @@
     "removeComments": true,
     "declaration": true,
     "declarationMap": true,
+    "skipLibCheck": true,
     "module": "commonjs",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
