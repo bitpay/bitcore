@@ -32,7 +32,8 @@ var BN = require('../crypto/bn');
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
  *
- * @param {*} serialized
+ * @param {*} [serialized]
+ * @param {*} [opts]
  * @constructor
  */
 function Transaction(serialized, opts) {
@@ -627,9 +628,9 @@ Transaction.prototype._newTransaction = function() {
  * ```
  *
  * @param {(Array.<Transaction~fromObject>|Transaction~fromObject)} utxo
- * @param {Array=} pubkeys
- * @param {number=} threshold
- * @param {Object=} opts - Several options:
+ * @param {Array=} [pubkeys]
+ * @param {number=} [threshold]
+ * @param {Object=} [opts] - Several options:
  *        - noSorting: defaults to false, if true and is multisig, don't
  *                      sort the given public keys before creating the script
  */
@@ -1234,9 +1235,9 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  * (matches a public key).
  *
  * @param {Array|String|PrivateKey} privateKey
- * @param {number} sigtype
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
- * @param {Buffer|String} merkleRoot - merkle root for taproot signing
+ * @param {number} [sigtype]
+ * @param {String} [signingMethod] - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Buffer|String} [merkleRoot] - merkle root for taproot signing
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.sign = function(privateKey, sigtype, signingMethod, merkleRoot) {
