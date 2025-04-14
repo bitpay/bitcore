@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+process.env.LOGGER_IDENTIFIER = 'currencyrateservice';
+
 import config from '../config'
 import logger from '../lib/logger';
-
 import { CurrencyRateService } from '../lib/currencyrate';
 
 const service = new CurrencyRateService();

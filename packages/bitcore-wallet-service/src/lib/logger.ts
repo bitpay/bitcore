@@ -1,7 +1,10 @@
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
+
+const identifier = process.env.LOGGER_IDENTIFIER || 'bws';
+
 export const transport = new winston.transports.DailyRotateFile({
-  filename: 'bws-%DATE%.log',
+  filename: `${identifier}-%DATE%.log`,
   handleExceptions: true,
   maxSize: '40m',
   maxFiles: '14d',
