@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+
+process.env.LOGGER_IDENTIFIER = 'pushnotificationsservice';
+
 import config from '../config';
 import logger from '../lib/logger';
 import { PushNotificationsService } from '../lib/pushnotificationsservice';

@@ -107,7 +107,7 @@ export class V8 {
       opts.reprocess = c.sign({ method: 'reprocess', url: 'http://thisdontmatter.com/addAddresses' + wallet.beAuthPublicKey2, payload });
     }
 
-    const k = 'addAddresses' + !!opts.reprocess + addresses.length;
+    const k = 'addAddresses' + !!opts?.reprocess + addresses.length;
     const perfKey = getPerformanceKey(k);
     console.time(perfKey);
     client

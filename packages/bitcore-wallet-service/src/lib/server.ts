@@ -4856,10 +4856,10 @@ export class WalletService implements IWalletService {
 
   getKeyConversionWithFundMnemonic(cb) {
     const clientBwc = new Client();
-    this._getKeyFundConversionWithMnemonic(clientBwc, err => {
-      if (err) return cb(err);
-      return cb(null, true);
-    });
+    // this._getKeyFundConversionWithMnemonic(clientBwc, err => {
+    //   if (err) return cb(err);
+    //   return cb(null, true);
+    // });
   }
 
   _createOtpTxDonation(addressDonation, receiveLotusAddress, receiveAmountLotus) {

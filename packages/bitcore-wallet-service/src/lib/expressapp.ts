@@ -39,6 +39,7 @@ const passport = require('passport');
 import listAccount from '../accounts.json';
 import cron from 'node-cron';
 
+const allowedOrigins = config.allowedOrigins;
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = ['https://wallet.abcpay.test'];
@@ -110,7 +111,7 @@ export class ExpressApp {
     this.app.use(require('express-session')({ secret: 'keyboard cat', resave: true, saveUninitialized: true }));
     this.app.use(passport.initialize());
     this.app.use(passport.session());
-    passport.serializeUser(function(user, done) {
+    passport.serializeUser(function (user, done) {
       done(null, user);
     });
 
@@ -125,7 +126,7 @@ export class ExpressApp {
         {
           clientID: '287411092309-vovtceqbolmrn2krv8knpt0ovpa4u4ta.apps.googleusercontent.com'
         },
-        function(parsedToken, googleId, done) {
+        function (parsedToken, googleId, done) {
           // User.findOrCreate({ googleId: googleId }, function (err, user) {
           //   return done(err, user);
           // });
@@ -146,6 +147,16 @@ export class ExpressApp {
       next();
     };
     this.app.use(allowCORS);
+    this.app.use(cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g., mobile apps)
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }
+    }));
     this.app.enable('trust proxy');
 
     // handle `abort` https://nodejs.org/api/http.html#http_event_abort
@@ -576,62 +587,64 @@ export class ExpressApp {
 
       try {
         responses = await Promise.all(
-          getServerWithMultiAuth(req, res, { silentFailure: req.query.silentFailure == '1' }).map(promise =>
-            promise.then(
-              (server: any) =>
-                new Promise(resolve => {
-                  let options: any = buildOpts(req, server.copayerId);
-                  if (options.tokenAddresses) {
-                    // add a null entry to array so we can get the chain balance
-                    options.tokenAddresses.unshift(null);
-                    return async.concat(
-                      options.tokenAddresses,
-                      (tokenAddress, cb) => {
-                        let optsClone = JSON.parse(JSON.stringify(options));
-                        optsClone.tokenAddresses = null;
-                        optsClone.tokenAddress = tokenAddress;
-                        return server.getStatus(optsClone, (err, status) => {
-                          let result: any = {
+          getServerWithMultiAuth(req, res, { silentFailure: req.query.silentFailure == '1' })
+            .map(promise => {
+              return promise.then(
+                (server: any) => {
+                  return new Promise(resolve => {
+                    let options: any = buildOpts(req, server.copayerId);
+                    if (options.tokenAddresses) {
+                      // add a null entry to array so we can get the chain balance
+                      options.tokenAddresses.unshift(null);
+                      return async.concat(
+                        options.tokenAddresses,
+                        (tokenAddress, cb) => {
+                          let optsClone = JSON.parse(JSON.stringify(options));
+                          optsClone.tokenAddresses = null;
+                          optsClone.tokenAddress = tokenAddress;
+                          return server.getStatus(optsClone, (err, status) => {
+                            let result: any = {
+                              walletId: server.walletId,
+                              tokenAddress: optsClone.tokenAddress,
+                              success: true,
+                              ...(err ? { success: false, message: err.message } : {}),
+                              status
+                            };
+                            if (err && err.message)
+                              logger.error(
+                                `An error occurred retrieving wallet status - id: ${server.walletId} - token address: ${optsClone.tokenAddress} - err: ${err.message}`
+                              );
+                            cb(null, result); // do not throw error, continue with next wallets
+                          });
+                        },
+                        (err, result) => {
+                          return resolve(result);
+                        }
+                      );
+                    } else {
+                      return server.getStatus(options, (err, status) => {
+                        return resolve([
+                          {
                             walletId: server.walletId,
-                            tokenAddress: optsClone.tokenAddress,
+                            tokenAddress: null,
                             success: true,
                             ...(err ? { success: false, message: err.message } : {}),
                             status
-                          };
-                          if (err && err.message)
-                            logger.error(
-                              `An error occurred retrieving wallet status - id: ${server.walletId} - token address: ${optsClone.tokenAddress} - err: ${err.message}`
-                            );
-                          cb(null, result); // do not throw error, continue with next wallets
-                        });
-                      },
-                      (err, result) => {
-                        return resolve(result);
-                      }
-                    );
-                  } else {
-                    return server.getStatus(options, (err, status) => {
-                      return resolve([
-                        {
-                          walletId: server.walletId,
-                          tokenAddress: null,
-                          success: true,
-                          ...(err ? { success: false, message: err.message } : {}),
-                          status
-                        }
-                      ]);
-                    });
-                  }
-                }),
-              ({ message }) => Promise.resolve({ success: false, error: message })
-            )
-          )
+                          }
+                        ]);
+                      });
+                    }
+                  })
+                },
+                ({ message }) => Promise.resolve({ success: false, error: message })
+              )
+            })
         );
       } catch (err) {
         return returnError(err, res, req);
       }
 
-      return res.json(_.flatten(responses));
+      return res.json(_.flatten(responses).filter(response => response !== null));
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {

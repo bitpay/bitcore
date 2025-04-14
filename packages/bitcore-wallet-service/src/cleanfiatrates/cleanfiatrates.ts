@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+process.env.LOGGER_IDENTIFIER = 'cleanfiatrates';
+
 import { CleanFiatRates } from '../lib/cleanfiatrates';
 
 const cleanFiatRatesScript = new CleanFiatRates();

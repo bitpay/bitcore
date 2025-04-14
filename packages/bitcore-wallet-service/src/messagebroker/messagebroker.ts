@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+
+process.env.LOGGER_IDENTIFIER = 'messagebroker';
+
 import io from 'socket.io';
 import logger from '../lib/logger';
 
