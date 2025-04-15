@@ -109,16 +109,6 @@ export class EmailService {
     opts = opts || {};
     this.request = opts.request || request;
 
-    const _readDirectories = (basePath, cb) => {
-      try {
-        let files = fs.readdirSync(basePath);
-        files = files.filter(file => fs.existsSync(path.join(basePath, file)) && fs.statSync(path.join(basePath, file)).isDirectory());
-        return cb(null, files);
-      } catch (err) {
-        return cb(err);
-      }
-    };
-
     opts.emailOpts = opts.emailOpts || {};
 
     this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
@@ -141,10 +131,13 @@ export class EmailService {
     async.parallel(
       [
         done => {
-          _readDirectories(this.templatePath, (err, res) => {
-            this.availableLanguages = res;
+          try {
+            const langs = this._getTemplateLanguages(this.templatePath);
+            this.availableLanguages = langs;
+            done();
+          } catch (err) {
             done(err);
-          });
+          }
         },
         done => {
           if (opts.storage) {
@@ -222,6 +215,12 @@ export class EmailService {
         return cb(err);
       }
     );
+  }
+
+  _getTemplateLanguages(templatePath) {
+    const contents = fs.readdirSync(templatePath, { withFileTypes: true});
+    const langs = contents.filter(item => item.isDirectory()).map(item => item.name);
+    return langs;
   }
 
   _compileTemplate(template, extension) {
