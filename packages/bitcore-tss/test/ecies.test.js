@@ -1,14 +1,13 @@
 'use strict';
 
-import { describe, it } from 'node:test';
-import assert from 'assert';
-import bitcore from 'bitcore-lib';
-import * as ECIES from '../ecies/ecies.js';
+// const { describe, it } = require('node:test');
+const assert = require('assert');
+const bitcore = require('bitcore-lib');
+const ECIES = require('../ecies/ecies');
 
 const PrivateKey = bitcore.PrivateKey;
 
 describe('ECIES', function() {
-
   const aliceKey = new PrivateKey('L1Ejc5dAigm5XrM3mNptMEsNnHzS7s51YxU7J61ewGshZTKkbmzJ');
   const bobKey = new PrivateKey('KxfxrUXSMjJQcb3JgnaaA6MqsrKQ1nBSxvhuigdKRyFiEm6BZDgG');
 

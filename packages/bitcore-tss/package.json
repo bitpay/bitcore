@@ -1,12 +1,17 @@
 {
   "name": "bitcore-tss",
-  "version": "10.8.6",
+  "version": "10.8.10",
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
-    "test": "node --test $(find test -name *.test.js)",
-    "test:only": "node --test --test-only $(find test -name *.test.js)"
+    "build": "webpack -c ./webpack.config.js",
+    "test": "npm run test:mocha",
+    "test:mocha": "npx mocha ./test/**/*.test.js",
+    "test:node": "node --test $(find test -name *.test.js)",
+    "test:node:only": "node --test --test-only $(find test -name *.test.js)",
+    "test:web": "npm run build && npm run wdio",
+    "wdio": "wdio run ./wdio.conf.js"
   },
   "keywords": [
     "tss",
@@ -16,10 +21,20 @@
   "author": "Kenny Joseph",
   "license": "MIT",
   "dependencies": {
-    "@bitgo/sdk-lib-mpc": "^10.1.0",
-    "bitcore-lib": "^10.8.0"
+    "@bitgo/sdk-lib-mpc": "^10.1.2",
+    "bitcore-lib": "^10.8.10"
   },
   "devDependencies": {
-    "crypto-wallet-core": "^10.8.6"
+    "@wdio/browser-runner": "^9.12.0",
+    "@wdio/cli": "^9.12.0",
+    "@wdio/firefox-profile-service": "^9.10.1",
+    "@wdio/spec-reporter": "^9.11.0",
+    "assert": "^2.1.0",
+    "browserify": "^17.0.1",
+    "crypto-wallet-core": "^10.8.10",
+    "mocha": "11.1.0",
+    "webdriverio": "^9.12.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
   }
 }

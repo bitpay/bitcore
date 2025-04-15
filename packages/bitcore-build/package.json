@@ -1,6 +1,6 @@
 {
   "name": "bitcore-build",
-  "version": "10.5.3",
+  "version": "10.8.10",
   "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",
   "scripts": {
@@ -43,6 +43,9 @@
   "homepage": "https://github.com/bitpay/bitcore-build",
   "dependencies": {
     "@kollavarsham/gulp-coveralls": "^0.2.2",
+    "@wdio/browser-runner": "^9.12.0",
+    "@wdio/cli": "^9.12.0",
+    "@wdio/spec-reporter": "^9.11.0",
     "brfs": "^2.0.1",
     "browserify": "^16.2.3",
     "chai": "^4.2.0",
@@ -56,7 +59,8 @@
     "karma-chrome-launcher": "^3.1.1",
     "karma-mocha": "^2.0.1",
     "lodash": "^4.17.15",
-    "mocha": "^6.2.0"
+    "mocha": "^6.2.0",
+    "webdriverio": "^9.12.0"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

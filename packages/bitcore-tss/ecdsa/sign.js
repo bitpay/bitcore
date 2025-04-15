@@ -1,11 +1,11 @@
-import bitcoreLib from 'bitcore-lib';
-import { DklsDsg, DklsTypes, DklsUtils } from '@bitgo/sdk-lib-mpc';
-import { DklsComms } from './dklsComms.js';
-import { encrypt, decrypt } from './utils.js';
+const bitcoreLib = require('bitcore-lib');
+const { DklsDsg, DklsTypes, DklsUtils } = require('@bitgo/sdk-lib-mpc');
+const { DklsComms } = require('./dklsComms');
+const { encrypt, decrypt } = require('./utils');
 
 const $ = bitcoreLib.util.preconditions;
 
-export class Sign {
+class Sign {
   #keychain;
   #partyId;
   #partySize;
@@ -225,3 +225,5 @@ export class Sign {
     return this.#signature;
   }
 };
+
+module.exports.Sign = Sign;

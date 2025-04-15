@@ -1,11 +1,11 @@
-import bitcoreLib from 'bitcore-lib';
-import { DklsDkg, DklsTypes } from '@bitgo/sdk-lib-mpc';
-import { DklsComms } from './dklsComms.js';
-import { encrypt, decrypt } from './utils.js';
+const bitcoreLib = require('bitcore-lib');
+const { DklsDkg, DklsTypes } = require('@bitgo/sdk-lib-mpc');
+const { DklsComms } = require('./dklsComms');
+const { encrypt, decrypt } = require('./utils');
 
 const $ = bitcoreLib.util.preconditions;
 
-export class KeyGen {
+class KeyGen {
   #partySize;
   #minSigners;
   #partyId;
@@ -194,4 +194,6 @@ export class KeyGen {
       commonKeyChain: commonKeyChain
     };
   }
-}
+};
+
+module.exports.KeyGen = KeyGen;

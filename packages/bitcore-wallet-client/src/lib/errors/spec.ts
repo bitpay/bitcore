@@ -1,4 +1,11 @@
-var errorSpec = [
+
+export interface IErrorSpec {
+  name: string;
+  message: string | ((...args: any[]) => string);
+  errors?: IErrorSpec[];
+};
+
+export const errorSpec: IErrorSpec[] = [
   {
     name: 'INVALID_BACKUP',
     message: 'Invalid Backup.'
@@ -187,4 +194,3 @@ var errorSpec = [
     message: 'The request payload is too large.'
   }
 ];
-module.exports = errorSpec;
