@@ -200,6 +200,21 @@ describe('Mnemonic', function() {
     should.exist(pk);
   });
 
+  it('derives an extended private key for keyType ed25519', function() {
+    const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
+    const mnemonic = new Mnemonic(phrase);
+    const pk = mnemonic.toHDPrivateKey('', 'livenet', 'ed25519');
+    should.exist(pk);
+    pk.toString().should.equal('xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X');
+  });
+
+  it('deriving an extended private key should fail for invalid seed', function() {
+    (function() {
+      var mnemonic = new Mnemonic();
+      return mnemonic.toHDPrivateKey('', 'livenet', 'bad seed');
+    }).should.throw('Invalid Key Type: bad seed');
+  });
+
   it('Mnemonic.fromSeed should fail with invalid wordlist', function() {
     (function() {
       return Mnemonic.fromSeed(Buffer.alloc(1));
