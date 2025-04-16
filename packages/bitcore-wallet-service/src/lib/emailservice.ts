@@ -16,7 +16,7 @@ import { getIconHtml } from './iconsconfig';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
-import { Email } from './model';
+import { Email, Notification, Preferences } from './model';
 import { Storage } from './storage';
 
 export interface Recipient {
@@ -26,11 +26,17 @@ export interface Recipient {
   unit: string;
 }
 
+interface EmailType {
+  filename: string;
+  notifyDoer: boolean;
+  notifyOthers: boolean;
+};
+
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 
-const EMAIL_TYPES = {
+const EMAIL_TYPES: { [key: string]: EmailType } = {
   NewCopayer: {
     filename: 'new_copayer',
     notifyDoer: false,
@@ -234,7 +240,7 @@ export class EmailService {
     };
   }
 
-  _readTemplateFile(language, filename, cb) {
+  _readTemplateFile(language: string, filename: string, cb) {
     const fullFilename = path.join(this.templatePath, language, filename);
     fs.readFile(fullFilename, 'utf8', (err, template) => {
       if (err) {
@@ -245,7 +251,7 @@ export class EmailService {
   }
 
   // TODO: cache for X minutes
-  _loadTemplate(emailType, recipient, extension, cb) {
+  _loadTemplate(emailType: EmailType, recipient: Recipient, extension: string, cb) {
     this._readTemplateFile(recipient.language, emailType.filename + extension, (err, template) => {
       if (err) {
         logger.error('Could not read template file for language %s: %o', recipient.language, err.message);
@@ -277,11 +283,11 @@ export class EmailService {
     return cb(null, result);
   }
 
-  _getRecipientsList(notification, emailType, cb) {
+  _getRecipientsList(notification: Notification, emailType: EmailType, cb) {
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
 
-      this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
+      this.storage.fetchPreferences<Preferences[]>(notification.walletId, null, (err, preferences) => {
         if (err) return cb(err);
         if (!preferences?.length) return cb(null, []);
 
@@ -326,7 +332,7 @@ export class EmailService {
     });
   }
 
-  async _getDataForTemplate(notification, recipient, cb) {
+  async _getDataForTemplate(notification: Notification, recipient: Recipient, cb) {
     const UNIT_LABELS = {
       btc: 'BTC',
       bit: 'bits',
@@ -351,7 +357,7 @@ export class EmailService {
       'usdc.e': 'USDC.e',
     };
 
-    const data = JSON.parse(JSON.stringify(notification.data));
+    const data = JSON.parse(JSON.stringify(notification.data)) as Notification['data'];
     data.subjectPrefix = this.subjectPrefix.trim() + ' ';
     
     // Helper function to properly title case text
@@ -507,7 +513,7 @@ export class EmailService {
       });
   }
 
-  _readAndApplyTemplates(notification, emailType, recipientsList: Recipient[], cb) {
+  _readAndApplyTemplates(notification: Notification, emailType: EmailType, recipientsList: Recipient[], cb) {
     async.map(
       recipientsList,
       (recipient, next) => {
@@ -548,14 +554,14 @@ export class EmailService {
     );
   }
 
-  _checkShouldSendEmail(notification, cb) {
+  _checkShouldSendEmail(notification: Notification, cb) {
     if (notification.type != 'NewTxProposal') return cb(null, true);
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       return cb(err, wallet.m > 1);
     });
   }
 
-  sendEmail(notification, cb) {
+  sendEmail(notification: Notification, cb) {
     cb = cb || function() { };
 
     const emailType = EMAIL_TYPES[notification.type];

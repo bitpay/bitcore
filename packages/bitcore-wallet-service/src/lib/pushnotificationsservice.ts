@@ -8,7 +8,7 @@ import config from '../config';
 import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
-import { INotification, IPreferences } from './model';
+import { INotification, IPreferences, Preferences } from './model';
 import { Storage } from './storage';
 
 const Mustache = require('mustache');
@@ -381,7 +381,7 @@ export class PushNotificationsService {
         }
       }
 
-      this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
+      this.storage.fetchPreferences<Preferences[]>(notification.walletId, null, (err, preferences) => {
         if (err) logger.error('%o', err);
         if (_.isEmpty(preferences)) preferences = [];
 

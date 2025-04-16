@@ -16,13 +16,13 @@ const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95
 const CUSTOM_TOKENS = ['0x0d8775f648430679a709e98d2b0cb6250d2887ef'];
 
 describe('Email notifications', function() {
-  // this.timeout(5000);
+  this.timeout(5000);
   var storage, server, wallet, mailerStub, getTokenDataStub, emailService;
 
   function sendEmailInterceptor(testCallback) { 
     // Intercept the msg handler so we can run test assersions on callback
-    const sendEmail = emailService.messageBroker._events.msg.find(fn => fn.name === 'bound sendEmail');
-    const sendEmailIdx = emailService.messageBroker._events.msg.indexOf(sendEmail);
+    const sendEmailIdx = emailService.messageBroker._events.msg.findIndex(fn => fn.name === 'bound sendEmail');
+    const sendEmail = emailService.messageBroker._events.msg[sendEmailIdx]; // original function
     emailService.messageBroker._events.msg[sendEmailIdx] = sinon.stub().callsFake(function(notification, cb) {
       sendEmail(notification, function(err) {
         cb && cb(err);
@@ -106,7 +106,6 @@ describe('Email notifications', function() {
     });
 
     it('should notify copayers a new tx proposal has been created', function(done) {
-
       var _readTemplateFile_old = emailService._readTemplateFile;
       emailService._readTemplateFile = function(language, filename, cb) {
         if (filename.endsWith('.html')) {
@@ -302,7 +301,6 @@ describe('Email notifications', function() {
       });
     });
 
-
     it('should handle small incomming payments (btc)', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
@@ -331,10 +329,6 @@ describe('Email notifications', function() {
         });
       });
     });
-
-
-
-
 
     it('should notify copayers of incoming txs', function(done) {
       server.createAddress({}, function(err, address) {
@@ -400,7 +394,6 @@ describe('Email notifications', function() {
         });
       });
     });
-
 
     it('should notify each email address only once', function(done) {
       // Set same email address for copayer1 and copayer2
@@ -551,9 +544,6 @@ describe('Email notifications', function() {
         });
       });
     });
-
-
-
   });
 
   describe('1-of-N wallet', function() {
@@ -682,8 +672,6 @@ describe('Email notifications', function() {
           });
       });
     });
-
-
 
     it('should handle small incomming payments (bch)', function(done) {
       server.createAddress({}, function(err, address) {
