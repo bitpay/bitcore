@@ -3,8 +3,8 @@
 import { singleton } from 'preconditions';
 import { API } from './api';
 import { Utils } from './common';
-import { Request } from './request';
 import { Credentials } from './credentials';
+import { Request } from './request';
 
 const $ = singleton();
 

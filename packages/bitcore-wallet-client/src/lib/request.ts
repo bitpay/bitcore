@@ -1,9 +1,9 @@
 import request from 'superagent';
 import util from 'util';
 import { Utils } from './common';
+import { Credentials } from './credentials';
 import { Errors } from './errors';
 import log from './log';
-import { Credentials } from './credentials';
 
 const Package = require('../../package.json');
 interface Headers {
