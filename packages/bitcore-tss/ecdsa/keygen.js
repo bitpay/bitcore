@@ -15,14 +15,14 @@ class KeyGen {
   #round;
 
   /**
-   * 
-   * @param {Object} params
-   * @param {number} params.n - number of participants
-   * @param {number} params.m - minimum number of signers
-   * @param {number} params.partyId - party id
-   * @param {Buffer} params.seed - OPTIONAL seed for the DKG
-   * @param {Buffer} params.authKey - authentication key for the DKG
-   * @param {number} params.round - round number for the DKG
+   * Create a new Threshold Signature Scheme (TSS) key generation instance
+   * @param {object} params
+   * @param {number} params.n Number of participants
+   * @param {number} params.m Minimum number of signers
+   * @param {number} params.partyId Party id
+   * @param {Buffer} [params.seed] Seed for the DKG. Randomly generated if not given
+   * @param {Buffer} params.authKey Authentication key for the DKG
+   * @param {number} params.round Round number for the DKG
    */
   constructor({ n, m, partyId, seed, authKey, round }) {
     $.checkArgument(n != null, 'n is required');
@@ -51,6 +51,10 @@ class KeyGen {
     this.#dkg = new DklsDkg.Dkg(this.#partySize, this.#minSigners, this.#partyId, this.#seed);
   }
 
+  getRound() {
+    return this.#round;
+  }
+
   /**
    * Export the keygen session to a base64 encoded string
    * @returns {string} Base64 encoded session string
@@ -60,25 +64,27 @@ class KeyGen {
     $.checkState(!this.isKeyChainReady(), 'Cannot export a completed session. The keychain is ready with getKeyChain()');
     const chainCodeCommitment = this.#dkg.chainCodeCommitment;
     const sessionBytes = this.#dkg.dkgSessionBytes || this.#dkg.dkgSession?.toBytes();
+    const seedBytes = this.#dkg.seed;
     const payload = this.#round +
       ':' + this.#partySize +
       ':' + this.#minSigners +
       ':' + this.#partyId +
       ':' + Buffer.from(sessionBytes).toString('base64') +
-      ':' + Buffer.from(chainCodeCommitment || []).toString('base64');
+      ':' + Buffer.from(chainCodeCommitment || []).toString('base64') +
+      ':' + seedBytes.toString('base64');
+
     const buf = encrypt(Buffer.from(payload, 'utf8'), this.#authKey.publicKey, this.#authKey);
     return buf.toString('base64');
   }
 
   /**
    * Restore a keygen session from an exported session
-   * @param {Object} params
+   * @param {object} params
    * @param {string} params.session Base64 encoded session string
    * @param {bitcoreLib.PrivateKey} params.authKey Private key to use for decrypting the session
-   * @param {Buffer} params.seed Seed used for key generation
    * @returns {Sign}
    */
-  static async restore({ session, authKey, seed }) {
+  static async restore({ session, authKey }) {
     const _authKey = new bitcoreLib.PrivateKey(authKey);
     $.checkArgument(_authKey.toString('hex') === authKey.toString('hex') || _authKey.toWIF() === authKey, 'Unrecognized authKey format');
     session = decrypt(Buffer.from(session, 'base64'), _authKey.publicKey, _authKey).toString('utf8');
@@ -88,7 +94,8 @@ class KeyGen {
       minSigners,
       partyId,
       sessionBytes,
-      chainCodeCommitment
+      chainCodeCommitment,
+      seedBytes
     ] = session.split(':');
     const initParams = {
       round: parseInt(round),
@@ -96,7 +103,7 @@ class KeyGen {
       m: parseInt(minSigners),
       partyId: parseInt(partyId),
       authKey,
-      seed: Buffer.from(seed, 'base64'),
+      seed: Buffer.from(seedBytes, 'base64')
     };
     const keygen = new KeyGen(initParams);
     await keygen.#dkg.loadDklsWasm();
@@ -109,7 +116,7 @@ class KeyGen {
   /**
    * @private
    * Format the message to be sent to the other parties
-   * @param {Object} signedMessage
+   * @param {object} signedMessage
    * @returns 
    */
   _formatMessage(signedMessage) {
@@ -124,7 +131,7 @@ class KeyGen {
 
   /**
    * Initialize the keygen session with a broadcast message to send to the other participants
-   * @returns {Promise<{round: number, partyId: number, publicKey: string, p2pMessages: Object[], broadcastMessages: Object[]}>}
+   * @returns {Promise<{round: number, partyId: number, publicKey: string, p2pMessages: object[], broadcastMessages: object[]}>}
    */
   async initJoin() {
     $.checkState(this.#round == 0, 'initJoin must be called before the rounds ');
@@ -143,8 +150,8 @@ class KeyGen {
   /**
    * Call this after receiving the initJoin broadcast messages from the other participants
    *  and while isKeyChainReady() is false
-   * @param {Array<Object>} prevRoundMessages 
-   * @returns {{ round: number, partyId: number, publicKey: string, p2pMessages: Object[], broadcastMessage: Object[] }}
+   * @param {Array<object>} prevRoundMessages 
+   * @returns {{ round: number, partyId: number, publicKey: string, p2pMessages: object[], broadcastMessage: object[] }}
    */
   nextRound(prevRoundMessages) {
     $.checkState(this.#round > 0, 'initJoin must be called before participating in the rounds');

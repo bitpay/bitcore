@@ -39,7 +39,7 @@ describe('ECIES', function() {
   });
 
   it('correctly encrypts a message', function() {
-    const ciphertext = alice.encrypt(message);
+    const ciphertext = alice.encrypt(message, { deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(ciphertext), true);
     assert.strictEqual(ciphertext.toString('hex'), encrypted)
   });
@@ -51,29 +51,34 @@ describe('ECIES', function() {
   });
 
   it('correctly encrypts a message without key', function() {
-    const ciphertext = alice.encrypt(message, { noKey: true });
+    const ciphertext = alice.encrypt(message, { noKey: true, deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(ciphertext), true);
     assert.strictEqual(ciphertext.toString('hex'), encryptedNoKey)
   });
 
   it('correctly decrypts a message without key', function() {
-    const decrypted = bob.decrypt(encNoKeyBuf, { noKey: true });
+    const decrypted = bob.decrypt(encNoKeyBuf, { noKey: true, deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(decrypted), true);
     assert.strictEqual(decrypted.toString(), message);
   });
 
   it('correctly encrypts a message with short tag', function() {
-    const ciphertext = alice.encrypt(message, { shortTag: true });
+    const ciphertext = alice.encrypt(message, { shortTag: true, deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(ciphertext), true);
     assert.strictEqual(ciphertext.toString('hex'), encryptedShortTag)
   });
 
   it('correctly decrypts a message with short tag', function() {
-    const decrypted = bob.decrypt(encShortTagBuf, { shortTag: true });
+    const decrypted = bob.decrypt(encShortTagBuf, { shortTag: true, deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(decrypted), true);
     assert.strictEqual(decrypted.toString(), message);
   });
 
+  it('encrypts a message with random IV', function() {
+    const ciphertext = alice.encrypt(message);
+    assert.strictEqual(Buffer.isBuffer(ciphertext), true);
+    assert.notEqual(ciphertext.toString('hex'), encrypted);
+  });
 
   it('roundtrips', function() {
     const secret = 'some secret message!!!';
@@ -96,6 +101,16 @@ describe('ECIES', function() {
 
   it('roundtrips (short tag)', function() {
     const opts = { shortTag: true };
+    const secret = 'some secret message!!!';
+    const encrypted = alice.encrypt(secret, opts);
+    const decrypted = bob
+      .decrypt(encrypted, opts)
+      .toString();
+    assert.strictEqual(decrypted, secret);
+  });
+
+  it('roundtrips (deterministic iv)', function() {
+    const opts = { deterministicIv: true };
     const secret = 'some secret message!!!';
     const encrypted = alice.encrypt(secret, opts);
     const decrypted = bob

@@ -419,4 +419,6 @@ export const Defaults = {
     { code: 'JPY', name: 'Japanese Yen' },
     { code: 'NZD', name: 'New Zealand Dollar' }
   ],
+
+  TSS_KEYGEN_SCHEME_VERSION: 1,
 };

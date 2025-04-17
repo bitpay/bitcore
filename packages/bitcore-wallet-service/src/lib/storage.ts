@@ -17,6 +17,7 @@ import {
   TxProposal,
   Wallet
 } from './model';
+import { ITssKeygenMessageObject, TssKeyGenModel } from './model/tsskeygen';
 
 const $ = require('preconditions').singleton();
 
@@ -36,7 +37,9 @@ const collections = {
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
-  LOCKS: 'locks'
+  LOCKS: 'locks',
+  TSS_KEYGEN: 'tss_keygen',
+  TSS_SIGN: 'tss_sign'
 };
 
 const Defaults = Common.Defaults;
@@ -157,6 +160,9 @@ export class Storage {
     db.collection(collections.SESSIONS).createIndex({
       copayerId: 1
     });
+    db.collection(collections.TSS_KEYGEN).createIndex({
+      id: 1
+    }, { unique: true });
   }
 
   connect(opts, cb) {
@@ -1762,5 +1768,51 @@ export class Storage {
       },
       cb
     );
+  }
+
+  async fetchTssKeygen({ id }: { id: string; }) {
+    const doc = await this.db.collection(collections.TSS_KEYGEN).findOne({ id });
+    if (!doc) {
+      return null;
+    }
+    return TssKeyGenModel.fromObj(doc);
+  }
+
+  async storeTssKeygenNew({ doc }: { doc: TssKeyGenModel; }) {
+    return this.db.collection(collections.TSS_KEYGEN).insertOne(doc);
+  }
+
+  async storeTssKeygenParticipant({ id, partyId, copayerId }: { id: string; partyId: number; copayerId: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id },
+      {
+        $set: {
+          [`participants.${partyId}`]: copayerId
+        }
+      },
+      { upsert: false }
+    );
+  }
+
+  async storeTssKeygenMessage({ id, message, __v }: { id: string; message: ITssKeygenMessageObject; __v: number; }) {
+    const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id, __v },
+      {
+        $push: {
+          [`rounds.${message.round}`]: {
+            fromPartyId: message.partyId,
+            messages: message
+          }
+        },
+        $inc: {
+          __v: 1
+        }
+      },
+      { upsert: false }
+    );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
   }
 }

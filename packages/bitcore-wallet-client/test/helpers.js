@@ -227,11 +227,11 @@ const helpers = {
     },
     newDb: (extra, cb) => {
         extra = extra || '';
-        mongodb.MongoClient.connect(config.mongoDb.uri + extra, (err, in_db) => {
+        mongodb.MongoClient.connect(config.mongoDb.uri + extra, (err, connection) => {
             if (err) return cb(err);
-            let db = in_db.db(config.mongoDb.dbname + extra);
+            let db = connection.db(config.mongoDb.dbname + extra);
             db.dropDatabase(function(err) {
-                return cb(err, db);
+                return cb(err, db, connection);
             });
         });
     }

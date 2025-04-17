@@ -10,17 +10,18 @@ import config from '../config';
 import logger from './logger';
 
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
-import { BanxaService } from '../externalServices/banxa';
-import { ChangellyService } from '../externalServices/changelly';
-import { MoonpayService } from '../externalServices/moonpay';
-import { OneInchService } from '../externalServices/oneInch';
-import { RampService } from '../externalServices/ramp';
-import { SardineService } from '../externalServices/sardine';
-import { SimplexService } from '../externalServices/simplex';
-import { ThorswapService } from '../externalServices/thorswap';
-import { TransakService } from '../externalServices/transak';
-import { WyreService } from '../externalServices/wyre';
+import { BanxaService } from '../externalservices/banxa';
+import { ChangellyService } from '../externalservices/changelly';
+import { MoonpayService } from '../externalservices/moonpay';
+import { OneInchService } from '../externalservices/oneInch';
+import { RampService } from '../externalservices/ramp';
+import { SardineService } from '../externalservices/sardine';
+import { SimplexService } from '../externalservices/simplex';
+import { ThorswapService } from '../externalservices/thorswap';
+import { TransakService } from '../externalservices/transak';
+import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
+import { ExternalServicesConfig } from '../types/externalservices';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -34,7 +35,6 @@ import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
   Copayer,
-  ExternalServicesConfig,
   INotification,
   ITxProposal,
   IWallet,
@@ -372,7 +372,7 @@ export class WalletService implements IWalletService {
    * @param {string} [opts.walletId] - The wallet id to use as current wallet
    * for this request (only when copayer is support staff).
    */
-  static getInstanceWithAuth(opts, cb) {
+  static getInstanceWithAuth(opts, cb: (err: Error, server?: WalletService) => void): void {
     const withSignature = cb => {
       if (!checkRequired(opts, ['copayerId', 'message', 'signature'], cb)) {
         return;
@@ -453,6 +453,13 @@ export class WalletService implements IWalletService {
 
     const authFn = opts.session ? withSession : withSignature;
     return authFn(cb);
+  }
+
+  static getStorage() {
+    if (!initialized) {
+      throw new Error('Storage requested before server was initialized');
+    }
+    return storage;
   }
 
   _runLocked(cb, task, waitTime?: number) {

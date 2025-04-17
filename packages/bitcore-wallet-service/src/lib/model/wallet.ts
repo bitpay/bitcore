@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import Uuid from 'uuid';
 import config from '../../config';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
@@ -8,11 +8,12 @@ import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
 
 const $ = require('preconditions').singleton();
-const Uuid = require('uuid');
 
-const Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
+const {
+  Constants,
+  Defaults,
+  Utils
+} = Common;
 
 const Bitcore = {
   btc: require('bitcore-lib'),
@@ -54,6 +55,7 @@ export interface IWallet {
   nativeCashAddr: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
+  isShared?: boolean;
 }
 
 export class Wallet {
@@ -129,7 +131,7 @@ export class Wallet {
     x.beAuthPublicKey2 = null;
 
     // x.nativeCashAddr opts is only for testing
-    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
+    x.nativeCashAddr = opts.nativeCashAddr == null ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
 
     // hardware wallet related
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
@@ -151,9 +153,7 @@ export class Wallet {
     x.singleAddress = !!obj.singleAddress;
     x.status = obj.status;
     x.publicKeyRing = obj.publicKeyRing;
-    x.copayers = _.map(obj.copayers, copayer => {
-      return Copayer.fromObj(copayer);
-    });
+    x.copayers = obj.copayers?.map(copayer => Copayer.fromObj(copayer));
     x.pubKey = obj.pubKey;
     x.coin = obj.coin || Defaults.COIN;
     x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
@@ -179,7 +179,7 @@ export class Wallet {
   }
 
   toObject() {
-    let x: any = _.cloneDeep(this);
+    let x: IWallet = JSON.parse(JSON.stringify(this));
     x.isShared = this.isShared();
     return x;
   }
@@ -213,8 +213,7 @@ export class Wallet {
     const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
-    var seed =
-      _.map(this.copayers, 'xPubKey')
+    var seed = (this.copayers || []).map(c => c.xPubKey)
         .sort()
         .join('') +
       Utils.getGenericName(this.network) + // Maintaining compatibility with previous versions
@@ -229,9 +228,7 @@ export class Wallet {
   }
 
   _updatePublicKeyRing() {
-    this.publicKeyRing = _.map(this.copayers, copayer => {
-      return _.pick(copayer, ['xPubKey', 'requestPubKey']);
-    });
+    this.publicKeyRing = (this.copayers || []).map(c => Utils.pick(c, ['xPubKey', 'requestPubKey']) as { xPubKey: string; requestPubKey: string });
   }
 
   addCopayer(copayer) {

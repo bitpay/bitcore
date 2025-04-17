@@ -61,6 +61,13 @@ interface Errors<T> {
   WALLET_NOT_FOUND: T;
   WALLET_NEED_SCAN: T;
   WRONG_SIGNING_METHOD: T;
+  TSS_KEYGEN_SESSION_NOT_FOUND: T;
+  TSS_KEYGEN_ROUND_ALREADY_DONE: T;
+  TSS_KEYGEN_ROUND_TOO_EARLY: T;
+  TSS_KEYGEN_GENERIC_ERROR: T;
+  TSS_KEYGEN_PUBKEY_MISSING: T;
+  TSS_KEYGEN_INVALID_MESSAGE_SIG: T;
+  TSS_KEYGEN_ROUND_MESSAGE_EXISTS: T;
 };
 
 const errors: Errors<string> = {
@@ -117,7 +124,14 @@ const errors: Errors<string> = {
   WALLET_NOT_COMPLETE: 'Wallet is not complete',
   WALLET_NOT_FOUND: 'Wallet not found',
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
-  WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network'
+  WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network',
+  TSS_KEYGEN_SESSION_NOT_FOUND: 'Session not found',
+  TSS_KEYGEN_ROUND_ALREADY_DONE: 'Your message is for a round that has already finished',
+  TSS_KEYGEN_ROUND_TOO_EARLY: 'Other participants must finish the current round first',
+  TSS_KEYGEN_GENERIC_ERROR: 'An unexpected error occurred',
+  TSS_KEYGEN_PUBKEY_MISSING: 'Pubkey missing',
+  TSS_KEYGEN_INVALID_MESSAGE_SIG: 'Invalid message signature',
+  TSS_KEYGEN_ROUND_MESSAGE_EXISTS: 'You have already sent a message for this round',
 };
 
 const errorsObject = { codes: {} };

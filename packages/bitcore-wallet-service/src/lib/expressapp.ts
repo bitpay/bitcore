@@ -5,11 +5,13 @@ import _ from 'lodash';
 import path from 'path';
 import 'source-map-support/register';
 import config from '../config';
+import * as Types from '../types/expressapp';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { logger, transport } from './logger';
-import { LogMiddleware } from './middleware';
+import { LogMiddleware } from './routes/middleware/log';
+import { TssRouter } from './routes/tss';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
@@ -113,7 +115,7 @@ export class ExpressApp {
 
     const router = express.Router();
 
-    const returnError = (err, res, req) => {
+    const returnError: Types.ReturnErrorFn = (err, res, req) => {
       // make sure headers have not been sent as this leads to an uncaught error
       if (res.headersSent) {
         return;
@@ -152,11 +154,11 @@ export class ExpressApp {
       }
     };
 
-    const logDeprecated = req => {
+    const logDeprecated: Types.LogDeprecatedFn = req => {
       logger.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');
     };
 
-    const getCredentials = req => {
+    const getCredentials: Types.GetCredentialsFn = req => {
       const identity = req.header('x-identity');
       if (!identity) return;
 
@@ -167,7 +169,7 @@ export class ExpressApp {
       };
     };
 
-    const getServer = (req, res): WalletService => {
+    const getServer: Types.GetServerFn = (req, res) => {
       const opts = {
         clientVersion: req.header('x-client-version'),
         userAgent: req.header('user-agent')
@@ -175,24 +177,16 @@ export class ExpressApp {
       return WalletService.getInstance(opts);
     };
 
-    type ServerCallback = (server: WalletService, err?: Error) => void;
-    interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
-    const getServerWithAuth = (req, res, opts: ServerOpts | ServerCallback, cb?: ServerCallback | undefined) => {
-      if (_.isFunction(opts)) {
+    const getServerWithAuth: Types.GetServerWithAuthFn = async (req, res, opts, cb) => {
+      if (typeof opts === 'function') {
         cb = opts;
         opts = {};
       }
-      opts = opts || {};
+      opts = (opts || {}) as Types.ServerOpts;
 
       const credentials = getCredentials(req);
       if (!credentials)
-        return returnError(
-          new ClientError({
-            code: 'NOT_AUTHORIZED'
-          }),
-          res,
-          req
-        );
+        return returnError(new ClientError({ code: 'NOT_AUTHORIZED' }), res, req);
 
       const auth = {
         copayerId: credentials.copayerId,
@@ -206,46 +200,43 @@ export class ExpressApp {
       if (opts.allowSession) {
         auth.session = credentials.session;
       }
-      WalletService.getInstanceWithAuth(auth, (err, server) => {
-        opts = opts as ServerOpts;
-        if (err) {
-          if (opts.silentFailure) {
-            return cb(null, err);
-          } else {
-            return returnError(err, res, req);
-          }
+      try {
+        const server: WalletService = await new Promise((resolve, reject) => {
+          WalletService.getInstanceWithAuth(auth, (err, server) => {
+            if (err) {
+              if (opts.silentFailure) {
+                return resolve(null);
+              } else {
+                return reject(err);
+              }
+            }
+
+            if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
+              return reject(new ClientError({ code: 'NOT_AUTHORIZED' }));
+            }
+
+            if (server.copayerIsSupportStaff) {
+              req.isSupportStaff = true;
+            }
+
+            if (opts.onlyMarketingStaff && !server.copayerIsMarketingStaff) {
+              return reject(new ClientError({ code: 'NOT_AUTHORIZED' }));
+            }
+
+            // For logging
+            req.walletId = server.walletId;
+            req.copayerId = server.copayerId;
+
+            return resolve(server);
+          });
+        });
+        if (cb) {
+          return cb(server);
         }
-
-        if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
-          return returnError(
-            new ClientError({
-              code: 'NOT_AUTHORIZED'
-            }),
-            res,
-            req
-          );
-        }
-
-        if (server.copayerIsSupportStaff) {
-          req.isSupportStaff = true;
-        }
-
-        if (opts.onlyMarketingStaff && !server.copayerIsMarketingStaff) {
-          return returnError(
-            new ClientError({
-              code: 'NOT_AUTHORIZED'
-            }),
-            res,
-            req
-          );
-        }
-
-        // For logging
-        req.walletId = server.walletId;
-        req.copayerId = server.copayerId;
-
-        return cb(server);
-      });
+        return server;
+      } catch (err) {
+        return returnError(err, res, req);
+      }
     };
 
     /**
@@ -255,7 +246,7 @@ export class ExpressApp {
      * @param {Object} opts
      * @returns Array<Promise>
      */
-    const getServerWithMultiAuth = (req, res, opts = {}) => {
+    const getServerWithMultiAuth: Types.GetServerWithMultiAuthFn = (req, res, opts = {}) => {
       const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
       const signature = req.headers['x-signature'];
       if (!identities || !signature) {
@@ -2393,6 +2384,10 @@ export class ExpressApp {
           return returnError(err ?? 'unknown', res, req);
         });
     });
+
+
+    router.use(new TssRouter({ getServerWithAuth, returnError, getServer }).router);
+
 
     // Set no-cache by default
     this.app.use((req, res, next) => {

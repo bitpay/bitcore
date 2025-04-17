@@ -1,8 +1,8 @@
 module.exports = {
-  // ECDSA
-  ...require('./ecdsa/keygen'),
-  ...require('./ecdsa/sign'),
-
-  // ECIES
-  ...require('./ecies/ecies')
+  ECDSA: {
+    KeyGen: require('./ecdsa/keygen').KeyGen,
+    Sign: require('./ecdsa/sign').Sign,
+  },
+  utils: require('./ecdsa/utils'),
+  ECIES: require('./ecies/ecies')
 }
