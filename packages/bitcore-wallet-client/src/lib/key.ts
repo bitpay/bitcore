@@ -30,6 +30,20 @@ const wordsForLang: any = {
 // other than the serialization
 const NETWORK: string = 'livenet';
 
+export interface KeyOptions {
+  id?: string;
+  seedType: string;
+  seedData?: any;
+  passphrase?: string; // seed passphrase
+  password?: string; // encrypting password
+  sjclOpts?: any; // options to SJCL encrypt
+  use0forBCH?: boolean;
+  useLegacyPurpose?: boolean;
+  useLegacyCoinType?: boolean;
+  nonCompliantDerivation?: boolean;
+  language?: string;
+};
+
 export class Key {
   #xPrivKey: string;
   #xPrivKeyEncrypted: string;
@@ -66,26 +80,12 @@ export class Key {
    */
   
   /**
-   * @param {Object} opts
-   * @param {String} opts.password   encrypting password
-   * @param {String} seedType new|extendedPrivateKey|object|mnemonic
-   * @param {String} seedData
+   * @param {object} opts
+   * @param {string} opts.password   encrypting password
+   * @param {string} seedType new|extendedPrivateKey|object|mnemonic
+   * @param {string} seedData
    */
-  constructor(
-    opts: {
-      id?: string;
-      seedType: string;
-      seedData?: any;
-      passphrase?: string; // seed passphrase
-      password?: string; // encrypting password
-      sjclOpts?: any; // options to SJCL encrypt
-      use0forBCH?: boolean;
-      useLegacyPurpose?: boolean;
-      useLegacyCoinType?: boolean;
-      nonCompliantDerivation?: boolean;
-      language?: string;
-    } = { seedType: 'new' }
-  ) {
+  constructor(opts: KeyOptions = { seedType: 'new' }) {
     this.#version = 1;
     this.id = opts.id || Uuid.v4();
 
@@ -277,39 +277,43 @@ export class Key {
   };
 
   get(password) {
-    let keys: any = {};
-    let fingerPrintUpdated = false;
+    const key: {
+      xPrivKey: string;
+      mnemonic: string;
+      mnemonicHasPassphrase: boolean;
+      fingerPrintUpdated?: boolean;
+    } = {
+      xPrivKey: '',
+      mnemonic: '',
+      mnemonicHasPassphrase: this.#mnemonicHasPassphrase || false
+    };
 
     if (this.isPrivKeyEncrypted()) {
-      $.checkArgument(
-        password,
-        'Private keys are encrypted, a password is needed'
-      );
+      $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
-        keys.xPrivKey = sjcl.decrypt(password, this.#xPrivKeyEncrypted);
+        key.xPrivKey = sjcl.decrypt(password, this.#xPrivKeyEncrypted);
 
         // update fingerPrint if not set.
         if (!this.fingerPrint) {
-          let xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
+          const xpriv = new Bitcore.HDPrivateKey(key.xPrivKey);
           this.fingerPrint = xpriv.fingerPrint.toString('hex');
-          fingerPrintUpdated = true;
+          key.fingerPrintUpdated = true;
         }
 
         if (this.#mnemonicEncrypted) {
-          keys.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
+          key.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
+        } else {
+          key.mnemonic = this.#mnemonic;
         }
       } catch (ex) {
         throw new Error('Could not decrypt');
       }
     } else {
-      keys.xPrivKey = this.#xPrivKey;
-      keys.mnemonic = this.#mnemonic;
-      if (fingerPrintUpdated) {
-        keys.fingerPrintUpdated = true;
-      }
+      key.xPrivKey = this.#xPrivKey;
+      key.mnemonic = this.#mnemonic;
     }
-    keys.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
-    return keys;
+    key.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
+    return key;
   };
 
   encrypt(password, opts) {
@@ -371,8 +375,7 @@ export class Key {
    * no need to include/support
    * BIP45
    */
-
-  getBaseAddressDerivationPath(opts) {
+  _getBaseAddressDerivationPath(opts) {
     $.checkArgument(opts, 'Need to provide options');
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
@@ -417,14 +420,27 @@ export class Key {
     return 'm/' + purpose + "'/" + coinCode + "'/" + opts.account + "'";
   };
 
-  /*
-   * opts.chain
-   * opts.network
-   * opts.account
-   * opts.n
+  /**
+   * Create a new set of credentials from this key
+   * @param {string} [password]
+   * @param {object} [opts]
+   * @param {string} [opts.chain]
+   * @param {string} [opts.network]
+   * @param {number} [opts.account]
+   * @param {number} [opts.n]
    */
-
-  createCredentials(password, opts) {
+  createCredentials(
+    password?: string,
+    opts?: {
+      coin?: string;
+      chain?: string;
+      network?: string;
+      account?: number;
+      n?: number;
+      addressType?: string;
+      walletPrivKey?: string;
+    }
+  ) {
     opts = opts || {};
     opts.chain = opts.chain || Utils.getChain(opts.coin);
 
@@ -434,12 +450,12 @@ export class Key {
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
 
-    $.shouldBeUndefined(opts.useLegacyCoinType);
-    $.shouldBeUndefined(opts.useLegacyPurpose);
+    $.shouldBeUndefined(opts['useLegacyCoinType'], 'useLegacyCoinType is deprecated');
+    $.shouldBeUndefined(opts['useLegacyPurpose'], 'useLegacyPurpose is deprecated');
 
-    let path = this.getBaseAddressDerivationPath(opts);
+    const path = this._getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path);
-    let requestPrivKey = this.derive(
+    const requestPrivKey = this.derive(
       password,
       Constants.PATHS.REQUEST_KEY
     ).privateKey.toString();
@@ -472,7 +488,7 @@ export class Key {
 
   /**
    * @param {string} password
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.path
    * @param {string|PrivateKey} [opts.requestPrivKey]
    */

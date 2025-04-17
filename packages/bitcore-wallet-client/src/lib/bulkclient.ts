@@ -4,14 +4,15 @@ import { singleton } from 'preconditions';
 import { API } from './api';
 import { Utils } from './common';
 import { Request } from './request';
+import { Credentials } from './credentials';
 
 const $ = singleton();
 
-export class BulkClient extends Request {
+export class BulkClient extends Request<Array<Credentials>> {
   /**
    * BulkClient constructor
-   * @param {String} url base URL for client
-   * @param {Object} opts configuration values
+   * @param {string} [url] base URL for client
+   * @param {object} [opts] configuration values
    * @constructor
    */
   constructor(url?, opts?) {
@@ -55,19 +56,19 @@ export class BulkClient extends Request {
 
   /**
    * Get wallet balance for all wallets
-   * @param {Credentials} credentials { requestPrivKey: string, copayerIds: string[] }
-   * @param {Object} opts
+   * @param {Array<Credentials>} credentials Array of credentials
+   * @param {object} [opts]
    * @param {boolean} [opts.includeExtendedInfo]
    * @param {boolean} [opts.twoStep]
    * @param {boolean} [opts.silentFailure]
-   * @param {Object} [opts.wallets]
+   * @param {object} [opts.wallets]
    * @param {string} [opts.wallets.copayerId]
    * @param {string} [opts.wallets.copayerId.tokenAddress]
    * @param {string} [opts.wallets.copayerId.multisigContractAddress]
    * @param {function} cb Callback function in the standard form (err, results)
    * @returns
    */
-  getStatusAll(credentials, opts, cb) {
+  getStatusAll(credentials: Array<Credentials>, opts, cb) {
     if (!cb) {
       cb = opts;
       opts = {};
