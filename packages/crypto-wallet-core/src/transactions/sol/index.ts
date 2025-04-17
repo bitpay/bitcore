@@ -15,8 +15,7 @@ export class SOLTxProvider {
     from: string;
     fee?: number;
     feeRate: number;
-    network: string;
-    txType?: string; // legacy, version 0, etc
+    txType?:  'legacy' | '0'; // legacy, version 0
     category?: string; // transfer, create account
     nonce?: string; // nonce is represented as a transaction id
     nonceAddress?: string;
@@ -127,9 +126,8 @@ export class SOLTxProvider {
     return { ...compiledTransaction, signatures: txObj.signatures };
   }
 
-  async sign(params: { tx: string; key: Key; hash?: string; }): Promise<string> {
-    const { tx, key, hash } = params;
-    // hash to update latest blockhash?? 
+  async sign(params: { tx: string; key: Key; }): Promise<string> {
+    const { tx, key } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx });
     const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
     const keypair = await SolKit.createKeyPairFromBytes(privKeyBytes);
