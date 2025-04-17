@@ -1,3 +1,4 @@
+import { ObjectID } from 'mongodb';
 import * as utils from '../../../src/utils';
 import { expect } from 'chai';
 
@@ -56,6 +57,186 @@ describe('Utils', function() {
     it('should return an empty array if no params given', function() {
       const result = (utils.range as any)();
       expect(result).to.deep.equal([]);
+    });
+  });
+  describe('uniqBy', function() {
+    it('should remove the redundant mongo object pairs without messing with order', function() {
+      const objectIds = [
+        new ObjectID('56d6a232ead1dc6e4f565e78'),
+        // redundant pair
+        new ObjectID('65e7573610d3fa8bc4930869'),
+        new ObjectID('65e7573610d3fa8bc4930869'),
+
+        new ObjectID('6f0d45b6dfeafa40f958afbf'),
+
+        // redundant pair
+        new ObjectID('e3b4cff2794d399d10f0a683'),
+        new ObjectID('e3b4cff2794d399d10f0a683'), 
+
+        new ObjectID('d6faff1f3d1ea0cd1ed847a3')
+      ];
+      const result = utils.uniqBy(objectIds, id => id.toHexString());
+      const expectedResult = [
+        new ObjectID('56d6a232ead1dc6e4f565e78'),
+        new ObjectID('65e7573610d3fa8bc4930869'),
+        new ObjectID('6f0d45b6dfeafa40f958afbf'),
+        new ObjectID('e3b4cff2794d399d10f0a683'), 
+        new ObjectID('d6faff1f3d1ea0cd1ed847a3')
+      ];
+      expect(result).deep.equal(expectedResult);
+    });
+
+    it('should remove all but one mongo object if all are redundant', function() {
+      const objectIds = [
+        // all redundant
+        new ObjectID('56d6a232ead1dc6e4f565e78'),
+        new ObjectID('56d6a232ead1dc6e4f565e78'),
+        new ObjectID('56d6a232ead1dc6e4f565e78'),
+        new ObjectID('56d6a232ead1dc6e4f565e78'),
+        new ObjectID('56d6a232ead1dc6e4f565e78')
+      ];
+      const result = utils.uniqBy(objectIds, id => id.toHexString());
+      const expectedResult = [
+        new ObjectID('56d6a232ead1dc6e4f565e78')
+      ];
+      expect(result).deep.equal(expectedResult);
+    });
+
+    it('should remove objects with redundant names and not redundant values', function() {
+      const array = [
+        {
+          name: 'a',
+          value: 10
+        },
+        {
+          name: 'b',
+          value: 3.1
+        },
+        {
+          name: 'a',
+          value: 2.7
+        },
+        {
+          name: 'c',
+          value: 10
+        },
+        {
+          name: 'b',
+          value: 6
+        }
+      ];
+
+      const result = utils.uniqBy(array, item => item.name);
+      const expectedResult = [
+        {
+          name: 'a',
+          value: 10
+        },
+        {
+          name: 'b',
+          value: 3.1
+        },
+        {
+          name: 'c',
+          value: 10
+        },
+      ];
+      expect(result).deep.equal(expectedResult);
+    });
+    it('should handle null, undefined, and NaN', function() {
+      const array = [
+        {
+          name: null,
+          value: 10
+        },
+        {
+          name: undefined,
+          value: 3.1
+        },
+        {
+          name: null,
+          value: 2.7
+        },
+        {
+          name: 'c',
+          value: 10
+        },
+        {
+          name: NaN,
+          value: 10
+        },
+        {
+          name: NaN,
+          value: 101
+        },
+        {
+          name: undefined,
+          value: 6
+        }
+      ];
+
+      const result = utils.uniqBy(array, item => item.name);
+      const expectedResult = [
+        {
+          name: null,
+          value: 10
+        },
+        {
+          name: undefined,
+          value: 3.1
+        },
+        {
+          name: 'c',
+          value: 10
+        },
+        {
+          name: NaN,
+          value: 10
+        },
+      ];
+
+      expect(result).deep.equal(expectedResult);
+    });
+    it('should work using property string', function() {
+      const array = [
+        {
+          name: 'a',
+          value: 10
+        },
+        {
+          name: 'b',
+          value: 3.1
+        },
+        {
+          name: 'a',
+          value: 2.7
+        },
+        {
+          name: 'c',
+          value: 10
+        },
+        {
+          name: 'b',
+          value: 6
+        }
+      ];
+
+      const result = utils.uniqBy(array, 'name');
+      const expectedResult = [
+        {
+          name: 'a',
+          value: 10
+        },
+        {
+          name: 'b',
+          value: 3.1
+        },
+        {
+          name: 'c',
+          value: 10
+        },
+      ];
+      expect(result).deep.equal(expectedResult);
     });
   });
 });

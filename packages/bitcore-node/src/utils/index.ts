@@ -84,3 +84,31 @@ export function castToBool(input: any): boolean {
   }
   return false;
 }
+
+/**
+ * Uses `iteratee` which on each element in `array` to generate the criterion by which
+ * uniqueness is computed. The iteratee is invoked with one argument: (value).
+ *
+ * @category Array
+ * @param array The array to inspect.
+ * @param iteratee The iteratee invoked per element.
+ * @returns Returns the new duplicate free array.
+ * @example
+ *
+ * uniqBy([2.1, 1.2, 2.3], Math.floor);
+ * // => [2.1, 1.2]
+ *
+ * // using the `_.property` iteratee shorthand
+ * uniqBy([{ 'x': 1 }, { 'x': 2 }, { 'x': 1 }], 'x');
+ * // => [{ 'x': 1 }, { 'x': 2 }]
+ */
+export function uniqBy(array: any, iteratee: any) {
+  return [...array.reduce((map, item) => {
+    const key = (item === null || item === undefined) ?
+      item : (typeof iteratee === 'function') ? iteratee(item) : item[iteratee];
+      
+    map.has(key) || map.set(key, item);
+
+    return map;
+  }, new Map()).values()];
+}

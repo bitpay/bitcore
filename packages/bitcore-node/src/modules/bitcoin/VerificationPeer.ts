@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+import _ from 'lodash';
 import logger, { timestamp } from '../../logger';
 import { ITransaction } from '../../models/baseTransaction';
 import { BitcoinBlockStorage } from '../../models/block';
@@ -222,11 +222,11 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
 
     if (block && this.deepScan && p2pBlock) {
       const txs = p2pBlock.transactions ? p2pBlock.transactions.slice(1) : [];
-      const spends = _.chain(txs)
+
+      const spends = txs
         .map(tx => tx.inputs)
-        .flatten()
-        .map(input => input.toObject())
-        .value();
+        .flat()
+        .map(input => input.toObject());
 
       for (let spend of spends) {
         const found = await CoinStorage.collection.findOne({
