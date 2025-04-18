@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const ncrypto = require('crypto'); // renamed in order to prevent redeclaration of block-scoped variable 'crypto' from typescript dom library
 
 const bs58 = require('bs58');
 const kbpgp = require('kbpgp');
@@ -37,7 +37,7 @@ keyRequests.push(
                 'user-agent': 'BitPay Key-Check Utility'
               }
             }).then(body => {
-              let hash = crypto.createHash('sha256').update(body).digest('hex');
+              let hash = ncrypto.createHash('sha256').update(body).digest('hex');
               githubPgpKeys[hash] = body;
               return Promise.resolve();
             });
@@ -61,7 +61,7 @@ keyRequests.push(
       json: true
     }).then(body => {
       body.pgpKeys.forEach(function (key) {
-        let hash = crypto
+        let hash = ncrypto
           .createHash('sha256')
           .update(key.publicKey)
           .digest('hex');
@@ -153,7 +153,7 @@ Promise.all(keyRequests)
       //    if (new Date(parsedEccPayload.expirationDate) < Date.now()) {
       //      return console.log('The currently published ECC keys are expired');
       //    }
-      eccKeysHash = crypto
+      eccKeysHash = ncrypto
         .createHash('sha256')
         .update(rawEccPayload)
         .digest('hex');
@@ -229,11 +229,11 @@ Promise.all(keyRequests)
       parsedEccPayload.publicKeys.forEach(pubkey => {
         // Here we are just generating the pubkey hash (btc address) of each of the public keys received for easy lookup later
         // as this is what will be provided by the x-identity header
-        let a = crypto.createHash('sha256').update(pubkey, 'hex').digest();
-        let b = crypto.createHash('rmd160').update(a).digest('hex');
+        let a = ncrypto.createHash('sha256').update(pubkey, 'hex').digest();
+        let b = ncrypto.createHash('rmd160').update(a).digest('hex');
         let c = '00' + b; // This is assuming livenet
-        let d = crypto.createHash('sha256').update(c, 'hex').digest();
-        let e = crypto.createHash('sha256').update(d).digest('hex');
+        let d = ncrypto.createHash('sha256').update(c, 'hex').digest();
+        let e = ncrypto.createHash('sha256').update(d).digest('hex');
 
         let pubKeyHash = bs58.encode(Buffer.from(c + e.substr(0, 8), 'hex'));
 

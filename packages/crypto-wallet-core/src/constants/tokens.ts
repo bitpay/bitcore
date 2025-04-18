@@ -199,10 +199,26 @@ export let OP_TOKEN_OPTS = {
   }
 };
 
+export let SOL_TOKEN_OPTS = {
+  'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': {
+    name: 'USD Coin',
+    symbol: 'USDC',
+    decimals: 6,
+    address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+  },
+  'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': {
+    name: 'Tether USD',
+    symbol: 'USDT',
+    decimals: 6,
+    address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'
+  },
+};
+
 export const TOKEN_OPTS = {
   ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS,
   ARB_TOKEN_OPTS,
   BASE_TOKEN_OPTS,
-  OP_TOKEN_OPTS
+  OP_TOKEN_OPTS,
+  SOL_TOKEN_OPTS
 }
