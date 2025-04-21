@@ -8,11 +8,11 @@ import requestStream from 'request';
 import request from 'request-promise-native';
 import { Server } from 'http';
 import { Wallet, AddressTypes } from '../../src/wallet';
-import * as utils from '../../src/utils';
+import { utils } from '../../src/utils';
 
-const { Modules } = require('../../../../bitcore-node/build/src/modules');
-const { Api: bcnApi } = require('../../../../bitcore-node/build/src/services/api');
-const { Storage: bcnStorage } = require('../../../../bitcore-node/build/src/services/storage');
+const { Modules } = require('../../../bitcore-node/build/src/modules');
+const { Api: bcnApi } = require('../../../bitcore-node/build/src/services/api');
+const { Storage: bcnStorage } = require('../../../bitcore-node/build/src/services/storage');
 
 const libMap = {
   BTC: CWC.BitcoreLib,

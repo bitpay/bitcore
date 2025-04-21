@@ -136,7 +136,7 @@ class ChainStateProxy implements IChainStateProvider {
     return this.get(params).getLocalTip(params);
   }
 
-  async getLocatorHashes(params) {
+  async getLocatorHashes(params): Promise<Array<string>> {
     return this.get(params).getLocatorHashes(params);
   }
 

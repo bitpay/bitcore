@@ -41,7 +41,7 @@ export interface ITxProposal {
     data?: string;
     gasLimit?: number;
     script?: string;
-    tag?: string;
+    tag?: number;
   }>;
   outputOrder: number[];
   walletM: number;
@@ -111,6 +111,7 @@ export class TxProposal {
     gasLimit?: number;
     script?: string;
     satoshis?: number;
+    tag?: number;
   }>;
   outputOrder: number[];
   walletM: number;
@@ -185,8 +186,16 @@ export class TxProposal {
     x.changeAddress = opts.changeAddress;
     x.escrowAddress = opts.escrowAddress;
     x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
-    x.outputs = _.map(opts.outputs, output => {
-      return _.pick(output, ['amount', 'toAddress', 'message', 'data', 'gasLimit', 'script']);
+    x.outputs = (opts.outputs || []).map(output => {
+      const out: any = {};
+      if (output.amount     !== undefined) out.amount = output.amount;
+      if (output.toAddress  !== undefined) out.toAddress = output.toAddress;
+      if (output.message    !== undefined) out.message = output.message;
+      if (output.data       !== undefined) out.data = output.data;
+      if (output.gasLimit   !== undefined) out.gasLimit = output.gasLimit;
+      if (output.script     !== undefined) out.script = output.script;
+      if (output.tag        !== undefined) out.tag = output.tag;
+      return out; 
     });
     let numOutputs = x.outputs.length;
     if (!opts.multiTx) {

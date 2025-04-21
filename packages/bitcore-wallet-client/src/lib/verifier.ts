@@ -1,13 +1,14 @@
-import * as _ from 'lodash';
+import {
+  BitcoreLib as Bitcore,
+  BitcoreLibCash 
+} from 'crypto-wallet-core';
+import _ from 'lodash';
+import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
-var $ = require('preconditions').singleton();
+import log from './log';
 
-import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
-
-var Bitcore = BitcoreLib;
-var BCHAddress = BitcoreLibCash.Address;
-
-var log = require('./log');
+const $ = singleton();
+const BCHAddress = BitcoreLibCash.Address;
 
 /**
  * @desc Verifier constructor. Checks data given by the server
@@ -33,10 +34,7 @@ export class Verifier {
    * @returns {Boolean} true or false
    */
   static checkAddress(credentials, address, escrowInputs?) {
-    $.checkState(
-      credentials.isComplete(),
-      'Failed state: credentials at <checkAddress>'
-    );
+    $.checkState(credentials.isComplete(), 'Failed state: credentials at <checkAddress>');
 
     let network = credentials.network;
     if (network === 'testnet' && this._useRegtest) {
@@ -83,7 +81,7 @@ export class Verifier {
     // Repeated xpub kes?
     var uniq = [];
     var error;
-    _.each(copayers, copayer => {
+    for (const copayer of copayers || []) {
       if (error) return;
 
       if (uniq[copayers.xPubKey]++) {
@@ -111,11 +109,11 @@ export class Verifier {
           error = true;
         }
       }
-    });
+    }
 
     if (error) return false;
 
-    if (!_.includes(_.map(copayers, 'xPubKey'), credentials.xPubKey)) {
+    if (!copayers.map(c => c.xPubKey).includes(credentials.xPubKey)) {
       log.error('Server response does not contains our public keys');
       return false;
     }
@@ -150,7 +148,7 @@ export class Verifier {
     }
     if (args.changeAddress && !strEqual(changeAddress, args.changeAddress))
       return false;
-    if (_.isNumber(args.feePerKb) && txp.feePerKb != args.feePerKb)
+    if (typeof args.feePerKb === 'number' && txp.feePerKb != args.feePerKb)
       return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
@@ -178,7 +176,7 @@ export class Verifier {
     );
 
     var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
-    var creatorKeys = _.find(credentials.publicKeyRing, item => {
+    var creatorKeys = (credentials.publicKeyRing || []).find(item => {
       if (Utils.xPubToCopayerId(chain, item.xPubKey) === txp.creatorId)
         return true;
     });
@@ -250,7 +248,7 @@ export class Verifier {
       amount = txp.amount;
     }
 
-    if (amount != _.sumBy(payproOpts.instructions, 'amount')) return false;
+    if (amount != (payproOpts.instructions || []).reduce((sum, i) => sum += i.amount, 0)) return false;
 
     if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress)
       return false;

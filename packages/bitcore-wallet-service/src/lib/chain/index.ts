@@ -98,6 +98,9 @@ class ChainProxy {
    */
   getChain(coin: string): string {
     try {
+      if (coin === undefined) { // This happens frequently for very old btc wallets/addresses
+        return Defaults.CHAIN;
+      }
       // TODO add a warning that we are not including chain
       let normalizedChain = coin.toLowerCase();
       if (

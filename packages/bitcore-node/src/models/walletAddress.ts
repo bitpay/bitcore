@@ -37,9 +37,10 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     return JSON.stringify(transform);
   }
 
-  async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
-    const { wallet, addresses } = params;
+  async updateCoins(params: { wallet: IWallet; addresses: string[]; opts?: { reprocess?: boolean } }) {
+    const { wallet, addresses, opts } = params;
     const { chain, network } = wallet;
+    const { reprocess } = opts || {};
 
     class AddressInputStream extends Readable {
       addressBatches: string[][];
@@ -65,19 +66,19 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       }
       async _transform(addressBatch, _, callback) {
         try {
-          let exists = (
-            await WalletAddressStorage.collection
-              .find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } })
-              .project({ address: 1, processed: 1 })
-              .toArray()
-          )
-            .filter(walletAddress => walletAddress.processed)
-            .map(walletAddress => walletAddress.address);
-          this.push(
-            addressBatch.filter(address => {
-              return !exists.includes(address);
-            })
-          );
+          if (reprocess) {
+            this.push(addressBatch);
+          } else {
+            const exists = (
+              await WalletAddressStorage.collection
+                .find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } })
+                .project({ address: 1, processed: 1 })
+                .toArray()
+            )
+              .filter(walletAddress => walletAddress.processed)
+              .map(walletAddress => walletAddress.address);
+            this.push(addressBatch.filter(address => !exists.includes(address)));
+          }
           callback();
         } catch (err) {
           callback(err);
@@ -95,15 +96,13 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         }
         try {
           await WalletAddressStorage.collection.bulkWrite(
-            addressBatch.map(address => {
-              return {
-                insertOne: {
-                  document: { chain, network, wallet: wallet._id, address, processed: false }
-                }
-              };
-            })
-          ),
-            { ordered: false };
+            addressBatch.map(address => ({
+              insertOne: {
+                document: { chain, network, wallet: wallet._id, address, processed: false }
+              }
+            })),
+            { ordered: false }
+          );
         } catch (err: any) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {
@@ -125,14 +124,12 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         }
         try {
           await CoinStorage.collection.bulkWrite(
-            addressBatch.map(address => {
-              return {
-                updateMany: {
-                  filter: { chain, network, address },
-                  update: { $addToSet: { wallets: wallet._id } }
-                }
-              };
-            }),
+            addressBatch.map(address => ({
+              updateMany: {
+                filter: { chain, network, address },
+                update: { $addToSet: { wallets: wallet._id } }
+              }
+            })),
             { ordered: false }
           );
           this.push(addressBatch);

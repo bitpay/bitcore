@@ -14,6 +14,7 @@ interface INetworkConfig {
   }[];
   forkHeight?: number;
   parentChain?: string;
+  syncStartHeight?: number; // Start syncing from this block height. Note: UTXO chains need both this + syncStartHash
 }
 
 export interface IUtxoNetworkConfig extends INetworkConfig {
@@ -24,6 +25,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     password: string;
   };
   defaultFeeMode?: FeeMode;
+  syncStartHash?: string; // Start syncing from this block
 }
 
 export interface IProvider {
@@ -45,7 +47,6 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   provider?: IProvider;
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
-  syncStartHeight?: number; // Start syncing from this block height
   threads?: number; // Defaults to your CPU's capabilities. Currently only available for EVM chains
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases

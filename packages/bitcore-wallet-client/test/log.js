@@ -1,10 +1,8 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = chai || require('chai');
-var sinon = sinon || require('sinon');
-var should = chai.should();
-var log = require('../ts_build/lib/log');
+const should = require('chai').should();
+const sinon = require('sinon');
+const log = require('../ts_build/lib/log').default;
 
 describe('log utils', function () {
   afterEach(function () {
@@ -58,7 +56,7 @@ describe('log utils', function () {
   });
 
   it('should log nothing if logLevel is set to silent', function () {
-    var sandbox = sinon.sandbox.create();
+    var sandbox = sinon.createSandbox();
     var cl = sandbox.stub(console, 'log');
 
     log.setLevel('silent');

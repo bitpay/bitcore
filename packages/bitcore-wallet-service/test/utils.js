@@ -1,10 +1,9 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-var { Utils } = require('../ts_build/lib/common/utils');
+const chai = require('chai');
+const sinon = require('sinon');
+const should = chai.should();
+const { Utils } = require('../ts_build/lib/common/utils');
 const { logger } = require('../ts_build/lib/logger');
 
 describe('Utils', function() {
@@ -40,9 +39,9 @@ describe('Utils', function() {
         args: ['id', 'dummy'],
         check: ['dummy']
       },];
-      _.each(fixtures, function(f) {
+      for (const f of fixtures) {
         Utils.getMissingFields(obj, f.args).should.deep.equal(f.check);
-      });
+      }
     });
     it('should fail to check required fields on non-object', function() {
       var obj = 'dummy';
@@ -108,6 +107,20 @@ describe('Utils', function() {
       should.exist(res);
       res.should.equal(true);
     });
+    it('should verify paypro message', function() {
+      const message = [
+        '0xf868808475727b6b82dcc694a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4880b844095ea7b300000000000000000000000034e158883efc81c5d92fde785fba48db738711ee0000000000000000000000000000000031333830363233333130303030303030018080',
+        '0xf9014a018475727b6b830271009434e158883efc81c5d92fde785fba48db738711ee80b90124b6b4af0500000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000075727b6b0000000000000000000000000000000000000000000000000000000067d4f44bb6a77c3916143d6b6f47f77f4a2ccdaaebae426639a6971390892f47eaf362abc383935d052649b42e0b1c8b6429ba4901b1667e776eece5629bafc985bd3cab000000000000000000000000000000000000000000000000000000000000001cb93377d47517d20cc011ed69f9f31a91feafcea1c42d5c7a92c6a0aa5a1bc74175a3ed1beb148ffef9e289f6903489e227b303f7d3e4254e4eec6439ef4af518000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48018080',
+      ];
+      const sig = '304402201fd726ed086f2f025041cb6ee13e8145dd41c7ecccabbe6fba59d3da7dbec40e022058bc7c174050ed46a831802819478d04f4d71270e2a837b016d49e7b0727921f';
+      const pubkey = {
+        key: '03177c6fcf87bc2e13f61b199fd47fd43710d5cd5601d52487a16d9aad93262084',
+        signature: '3045022100924c5c8396dc3a5c9e6fe28073d29876678bf6ff23eea70cc9499f75e23565550220166113dc785e4ade6aaba959f3f80eca3e667f91ef32fc82fcca7d27efecbb5e'
+      };
+      var res = Utils.verifyMessage(message, sig, pubkey.key);
+      should.exist(res);
+      res.should.equal(true);
+    });
   });
 
   describe('#formatAmount', function() {
@@ -170,9 +183,9 @@ describe('Utils', function() {
         expected: '12 345,679',
       },];
 
-      _.each(cases, function(testCase) {
+      for (const testCase of cases) {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
-      });
+      }
     });
   });
 
@@ -348,6 +361,96 @@ describe('Utils', function() {
     });
   });
 
+  describe('#sortAsc', function() {
+    it('should sort a simple array', function() {
+      const res = Utils.sortAsc([3, 1, 2]);
+      res.should.deep.equal([1, 2, 3]);
+    });
 
+    it('should sort a simple array with undefined values', function() {
+      const res = Utils.sortAsc([3, undefined, 1, 2, '\uFFFE']);
+      res.should.deep.equal([1, 2, 3, '\uFFFE', undefined]); // undefined should be in last position
+    });
 
+    it('should sort a simple array with bool values', function() {
+      const res = Utils.sortAsc([3, true, 1, true, 2, false]);
+      res.should.deep.equal([false, true, 1, true, 2, 3]); // false is considered as 0, true as 1
+    });
+
+    it('should sort a simple array with NaN values', function() {
+      const res = Utils.sortAsc([3, NaN, 1, 2]);
+      res.should.deep.equal([NaN, 1, 2, 3]); // NaN should be considered 0
+    });
+
+    it('should sort a simple array with null values', function() {
+      const res = Utils.sortAsc([3, 1, null, 2, 0, null]);
+      res.should.deep.equal([null, 0, null, 1, 2, 3]); // null is considered as 0
+    });
+
+    it('should sort an array of objects', function() {
+      const res = Utils.sortAsc([{ a: 3 }, { a: 1 }, { a: 2 }], 'a');
+      res.should.deep.equal([
+        { a: 1 },
+        { a: 2 },
+        { a: 3 }
+      ]);
+    });
+
+    it('should sort an array of objects with priority', function() {
+      const res = Utils.sortAsc([{ a: 2, b: 2 }, { a: 1, b: 3 }, { a: 2, b: 1 }], 'a', 'b');
+      res.should.deep.equal([
+        { a: 1, b: 3 },
+        { a: 2, b: 1 },
+        { a: 2, b: 2 }
+      ]);
+    });
+
+    it('should sort an array of objects with nested key', function() {
+      const res = Utils.sortAsc([{ a: { b: 3 }}, { a: { b: 1 }}, { a: { b: 2 }}], ['a', 'b']);
+      res.should.deep.equal([
+        { a: { b: 1 }},
+        { a: { b: 2 }},
+        { a: { b: 3 }}
+      ]);
+    });
+  });
+
+  describe('#difference', function() {
+    it('should return the diff', function() {
+      const res = Utils.difference([1, 2, 3], [1, 3, 4]);
+      res.should.deep.equal([2]);
+    });
+
+    it('should return copy of arr1 if arr2 is not given', function() {
+      const arr1 = [1, 2, 3];
+      const res = Utils.difference([1, 2, 3]);
+      res.should.deep.equal([1, 2, 3]);
+      (arr1 === res).should.be.false;
+    });
+
+    it('should return empty array if arr1 is not given', function() {
+      const res = Utils.difference(undefined, [1, 2, 3]);
+      res.should.deep.equal([]);
+    });
+
+    it('should return empty array if no params given', function() {
+      const res = Utils.difference();
+      res.should.deep.equal([]);
+    });
+
+    it('should return empty array if arr1 non-array is given', function() {
+      const res = Utils.difference(1);
+      res.should.deep.equal([]);
+    });
+
+    it('should return all arr1 elemnts if arr2 non-array is given', function() {
+      const res = Utils.difference([1, 2, 3], 1);
+      res.should.deep.equal([1, 2, 3]);
+    });
+
+    it('should return all arr1 elemnts if arr2 non-array is given', function() {
+      const res = Utils.difference([1, 2, 3], 1);
+      res.should.deep.equal([1, 2, 3]);
+    });
+  });
 });

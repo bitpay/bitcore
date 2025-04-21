@@ -1,3 +1,5 @@
-export { party0Key } from  './party0.key.js'
-export { party1Key } from  './party1.key.js'
-export { party2Key } from  './party2.key.js'
+module.exports = {
+  party0Key: require('./party0.key').party0Key,
+  party1Key: require('./party1.key').party1Key,
+  party2Key: require('./party2.key').party2Key,
+};

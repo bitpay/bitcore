@@ -1,2 +1,8 @@
-export * from './ecdsa/keygen.js';
-export * from './ecdsa/sign.js';
+module.exports = {
+  // ECDSA
+  ...require('./ecdsa/keygen'),
+  ...require('./ecdsa/sign'),
+
+  // ECIES
+  ...require('./ecies/ecies')
+}

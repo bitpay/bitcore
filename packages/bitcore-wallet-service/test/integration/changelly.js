@@ -77,23 +77,14 @@ describe('Changelly integration', () => {
         headers: {},
         body: {
           id: "test",
+          useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetCurrencies(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -102,8 +93,7 @@ describe('Changelly integration', () => {
 
     it('should return error if there is some missing arguments', () => {
       delete req.body.id;
-      server.request = fakeRequest;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -117,8 +107,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -129,12 +119,21 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetCurrencies(req).then(data => {
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
         err.message.should.equal('ClientError: Service not configured.');
+      });
+    });
+
+    it('should return error if req is v1', () => {
+      delete req.body.useV2;
+      server.externalServices.changelly.changellyGetCurrencies(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -146,25 +145,15 @@ describe('Changelly integration', () => {
         body: {
           id: "test",
           coinFrom: 'btc',
-          coinTo: 'eth'
+          coinTo: 'eth',
+          useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetPairsParams(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -174,8 +163,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.coinFrom;
 
-      server.request = fakeRequest;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -189,8 +177,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -201,12 +189,21 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetPairsParams(req).then(data => {
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
         err.message.should.equal('ClientError: Service not configured.');
+      });
+    });
+
+    it('should return error if req is v1', () => {
+      delete req.body.useV2;
+      server.externalServices.changelly.changellyGetPairsParams(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -219,24 +216,15 @@ describe('Changelly integration', () => {
           id: "test",
           coinFrom: 'btc',
           coinTo: 'eth',
-          amountFrom: '1.123'
+          amountFrom: '1.123',
+          useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetFixRateForAmount(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -246,8 +234,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.coinFrom;
 
-      server.request = fakeRequest;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -261,8 +248,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -273,12 +260,21 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetFixRateForAmount(req).then(data => {
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
         err.message.should.equal('ClientError: Service not configured.');
+      });
+    });
+
+    it('should return error if req is v1', () => {
+      delete req.body.useV2;
+      server.externalServices.changelly.changellyGetFixRateForAmount(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -294,24 +290,15 @@ describe('Changelly integration', () => {
           amountFrom: '1.123',
           addressTo: '10.321',
           fixedRateId: '3.123',
-          refundAddress: 'refundAddress'
+          refundAddress: 'refundAddress',
+          useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyCreateFixTransaction(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -321,8 +308,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.coinFrom;
 
-      server.request = fakeRequest;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -336,8 +322,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -348,12 +334,21 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyCreateFixTransaction(req).then(data => {
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
         err.message.should.equal('ClientError: Service not configured.');
+      });
+    });
+
+    it('should return error if req is v1', () => {
+      delete req.body.useV2;
+      server.externalServices.changelly.changellyCreateFixTransaction(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });
@@ -364,26 +359,16 @@ describe('Changelly integration', () => {
         headers: {},
         body: {
           id: "test",
-          exchangeTxId: 'exchangeTxId'
+          exchangeTxId: 'exchangeTxId',
+          useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', async() => {
-      server.request = fakeRequest;
       try {
-        const data = await server.changellyGetTransactions(req);
-        should.exist(data);
-      } catch (err) {
-        should.not.exist(err);
-      }
-    });
-
-    it('should work properly if req is OK for v2', async() => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
-      try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.exist(data);
       } catch (err) {
         should.not.exist(err);
@@ -392,10 +377,9 @@ describe('Changelly integration', () => {
 
     it('should return error if there is some missing arguments', async() => {
       delete req.body.exchangeTxId;
-      server.request = fakeRequest;
 
       try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
@@ -408,10 +392,10 @@ describe('Changelly integration', () => {
       const fakeRequest2 = {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
-      server.request = fakeRequest2;
+      server.externalServices.changelly.request = fakeRequest2;
 
       try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
@@ -421,15 +405,24 @@ describe('Changelly integration', () => {
 
     it('should return error if Changelly is commented in config', async() => {
       config.changelly = undefined;
-      server.request = fakeRequest;
 
       try {
-        const data = await server.changellyGetTransactions(req);
+        const data = await server.externalServices.changelly.changellyGetTransactions(req);
         should.not.exist(data);
       } catch (err) {
         should.exist(err);
         err.message.should.equal('ClientError: Service not configured.');
       }
+    });
+
+    it('should return error if req is v1', () => {
+      delete req.body.useV2;
+      server.externalServices.changelly.changellyGetTransactions(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
+      });
     });
   });
 
@@ -439,24 +432,15 @@ describe('Changelly integration', () => {
         headers: {},
         body: {
           id: "test",
-          exchangeTxId: 'exchangeTxId'
+          exchangeTxId: 'exchangeTxId',
+          useV2: true
         }
       }
+      server.externalServices.changelly.request = fakeRequest;
     });
 
     it('should work properly if req is OK', () => {
-      server.request = fakeRequest;
-      server.changellyGetStatus(req).then(data => {
-        should.exist(data);
-      }).catch(err => {
-        should.not.exist(err);
-      });
-    });
-
-    it('should work properly if req is OK for v2', () => {
-      server.request = fakeRequest;
-      req.body.useV2 = true;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -466,8 +450,7 @@ describe('Changelly integration', () => {
     it('should return error if there is some missing arguments', () => {
       delete req.body.exchangeTxId;
 
-      server.request = fakeRequest;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -481,8 +464,8 @@ describe('Changelly integration', () => {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
-      server.request = fakeRequest2;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.request = fakeRequest2;
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -493,12 +476,21 @@ describe('Changelly integration', () => {
     it('should return error if Changelly is commented in config', () => {
       config.changelly = undefined;
 
-      server.request = fakeRequest;
-      server.changellyGetStatus(req).then(data => {
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
         err.message.should.equal('ClientError: Service not configured.');
+      });
+    });
+
+    it('should return error if req is v1', () => {
+      delete req.body.useV2;
+      server.externalServices.changelly.changellyGetStatus(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Credentials expired, please update the app to continue using Changelly services.');
       });
     });
   });

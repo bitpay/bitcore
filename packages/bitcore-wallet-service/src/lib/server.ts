@@ -1,5 +1,4 @@
 import * as async from 'async';
-import * as crypto from 'crypto'
 import {
   Constants as ConstantsCWC,
   Validation
@@ -11,6 +10,16 @@ import config from '../config';
 import logger from './logger';
 
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
+import { BanxaService } from '../externalServices/banxa';
+import { ChangellyService } from '../externalServices/changelly';
+import { MoonpayService } from '../externalServices/moonpay';
+import { OneInchService } from '../externalServices/oneInch';
+import { RampService } from '../externalServices/ramp';
+import { SardineService } from '../externalServices/sardine';
+import { SimplexService } from '../externalServices/simplex';
+import { ThorswapService } from '../externalServices/thorswap';
+import { TransakService } from '../externalServices/transak';
+import { WyreService } from '../externalServices/wyre';
 import { serverMessages } from '../serverMessages';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
@@ -68,13 +77,13 @@ let initialized = false;
 let doNotCheckV8 = false;
 let isMoralisInitialized = false;
 
-let lock;
-let storage;
-let blockchainExplorer;
+let lock: Lock;
+let storage: Storage;
+let blockchainExplorer: V8;
 let blockchainExplorerOpts;
-let messageBroker;
-let fiatRateService;
-let serviceVersion;
+let messageBroker: MessageBroker;
+let fiatRateService: FiatRateService;
+let serviceVersion: string;
 
 interface IAddress {
   coin: string;
@@ -86,12 +95,12 @@ interface IAddress {
 }
 
 export interface IWalletService {
-  lock: any;
+  lock: Lock;
   storage: Storage;
-  blockchainExplorer: any;
+  blockchainExplorer: V8;
   blockchainExplorerOpts: any;
-  messageBroker: any;
-  fiatRateService: any;
+  messageBroker: MessageBroker;
+  fiatRateService: FiatRateService;
   notifyTicker: number;
   userAgent: string;
   walletId: string;
@@ -112,12 +121,12 @@ function boolToNum(x: boolean) {
  * @constructor
  */
 export class WalletService implements IWalletService {
-  lock: any;
+  lock: Lock;
   storage: Storage;
   blockchainExplorer: V8;
   blockchainExplorerOpts: any;
-  messageBroker: any;
-  fiatRateService: any;
+  messageBroker: MessageBroker;
+  fiatRateService: FiatRateService;
   notifyTicker: number;
   userAgent: string;
   walletId: string;
@@ -129,6 +138,18 @@ export class WalletService implements IWalletService {
   copayerIsSupportStaff: boolean;
   copayerIsMarketingStaff: boolean;
   request: any;
+  externalServices: {
+    banxa: BanxaService;
+    changelly: ChangellyService;
+    moonpay: MoonpayService;
+    oneInch: OneInchService;
+    ramp: RampService;
+    sardine: SardineService;
+    simplex: SimplexService;
+    thorswap: ThorswapService;
+    transak: TransakService;
+    wyre: WyreService;
+  }
 
   constructor() {
     if (!initialized) {
@@ -145,6 +166,19 @@ export class WalletService implements IWalletService {
     // for testing
     //
     this.request = request;
+
+    this.externalServices = {
+      banxa: new BanxaService(),
+      changelly: new ChangellyService(),
+      moonpay: new MoonpayService(),
+      oneInch: new OneInchService(this.storage),
+      ramp: new RampService(),
+      sardine: new SardineService(),
+      simplex: new SimplexService(),
+      thorswap: new ThorswapService(),
+      transak: new TransakService(),
+      wyre: new WyreService(),
+    }
   }
   /**
    * Gets the current version of BWS
@@ -561,7 +595,7 @@ export class WalletService implements IWalletService {
       return;
     }
 
-    if (_.isEmpty(opts.name)) {
+    if (!opts.name) {
       return cb(new ClientError('Invalid wallet name'));
     }
 
@@ -792,13 +826,13 @@ export class WalletService implements IWalletService {
             const walletExtendedKeys = ['publicKeyRing', 'pubKey', 'addressManager'];
             const copayerExtendedKeys = ['xPubKey', 'requestPubKey', 'signature', 'addressManager', 'customData'];
 
-            wallet.copayers = _.map(wallet.copayers, copayer => {
+            wallet.copayers = (wallet.copayers || []).map(copayer => {
               if (copayer.id == this.copayerId) return copayer;
               return _.omit(copayer, 'customData');
             });
             if (!opts.includeExtendedInfo) {
               wallet = _.omit(wallet, walletExtendedKeys);
-              wallet.copayers = _.map(wallet.copayers, copayer => {
+              wallet.copayers = (wallet.copayers || []).map(copayer => {
                 return _.omit(copayer, copayerExtendedKeys);
               });
             }
@@ -880,7 +914,7 @@ export class WalletService implements IWalletService {
    * @param pubKeys
    */
   _getSigningKey(text, signature, pubKeys) {
-    return _.find(pubKeys, item => {
+    return pubKeys.find(item => {
       return this._verifySignature(text, signature, item.key);
     });
   }
@@ -894,7 +928,7 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.isGlobal - If true, the notification is not issued on behalf of any particular copayer (defaults to false)
    */
   _notify(type, data, opts, cb?: (err?: any, data?: any) => void) {
-    if (_.isFunction(opts)) {
+    if (typeof opts === 'function') {
       cb = opts;
       opts = {};
     }
@@ -924,12 +958,12 @@ export class WalletService implements IWalletService {
   }
 
   _notifyTxProposalAction(type, txp, extraArgs, cb?: (err?: any, data?: any) => void) {
-    if (_.isFunction(extraArgs)) {
+    if (typeof extraArgs === 'function') {
       cb = extraArgs;
       extraArgs = {};
     }
 
-    const data = _.assign(
+    const data = Object.assign(
       {
         txProposalId: txp.id,
         creatorId: txp.creatorId,
@@ -1076,7 +1110,7 @@ export class WalletService implements IWalletService {
   }
 
   _parseClientVersion() {
-    if (_.isUndefined(this.parsedClientVersion)) {
+    if (this.parsedClientVersion == null) {
       this.parsedClientVersion = Utils.parseVersion(this.clientVersion);
     }
     return this.parsedClientVersion;
@@ -1110,7 +1144,7 @@ export class WalletService implements IWalletService {
    */
   joinWallet(opts, cb) {
     if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
-    if (_.isEmpty(opts.name)) return cb(new ClientError('Invalid copayer name'));
+    if (!opts.name) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
     if (!opts.chain) {
@@ -1126,7 +1160,7 @@ export class WalletService implements IWalletService {
       } catch (ex) {
         return cb(new ClientError('Invalid extended public key'));
       }
-      if (_.isUndefined(xPubKey.network)) {
+      if (xPubKey.network == null) {
         return cb(new ClientError('Invalid extended public key'));
       }
     }
@@ -1198,11 +1232,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError());
         }
 
-        if (
-          _.find(wallet.copayers, {
-            xPubKey: opts.xPubKey
-          })
-        )
+        if (wallet.copayers?.find(c => c.xPubKey === opts.xPubKey))
           return cb(Errors.COPAYER_IN_WALLET);
 
         if (wallet.copayers.length == wallet.n) return cb(Errors.WALLET_FULL);
@@ -1240,26 +1270,26 @@ export class WalletService implements IWalletService {
       {
         name: 'language',
         isValid(value) {
-          return _.isString(value) && value.length == 2;
+          return typeof value === 'string' && value.length == 2;
         }
       },
       {
         name: 'unit',
         isValid(value) {
-          return _.isString(value) && _.includes(['btc', 'bit'], value.toLowerCase());
+          return typeof value === 'string' && ['btc', 'bit'].includes(value.toLowerCase());
         }
       },
       {
         name: 'tokenAddresses',
         isValid(value) {
-          return _.isArray(value) && value.every(x => Validation.validateAddress('eth', 'mainnet', x));
+          return Array.isArray(value) && value.every(x => Validation.validateAddress('eth', 'mainnet', x));
         }
       },
       {
         name: 'multisigEthInfo',
         isValid(value) {
           return (
-            _.isArray(value) &&
+            Array.isArray(value) &&
             value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress))
           );
         }
@@ -1267,14 +1297,14 @@ export class WalletService implements IWalletService {
       {
         name: 'maticTokenAddresses',
         isValid(value) {
-          return _.isArray(value) && value.every(x => Validation.validateAddress('matic', 'mainnet', x));
+          return Array.isArray(value) && value.every(x => Validation.validateAddress('matic', 'mainnet', x));
         }
       },
       {
         name: 'multisigMaticInfo',
         isValid(value) {
           return (
-            _.isArray(value) &&
+            Array.isArray(value) &&
             value.every(x => Validation.validateAddress('matic', 'mainnet', x.multisigContractAddress))
           );
         }
@@ -1282,32 +1312,32 @@ export class WalletService implements IWalletService {
       {
         name: 'opTokenAddresses',
         isValid(value) {
-          return _.isArray(value) && value.every(x => Validation.validateAddress('op', 'mainnet', x));
+          return Array.isArray(value) && value.every(x => Validation.validateAddress('op', 'mainnet', x));
         }
       },
       {
         name: 'baseTokenAddresses',
         isValid(value) {
-          return _.isArray(value) && value.every(x => Validation.validateAddress('base', 'mainnet', x));
+          return Array.isArray(value) && value.every(x => Validation.validateAddress('base', 'mainnet', x));
         }
       },
       {
         name: 'arbTokenAddresses',
         isValid(value) {
-          return _.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
+          return Array.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
         }
       },
     ];
 
-    opts = _.pick(opts, _.map(preferences, 'name'));
+    opts = _.pick(opts, preferences.map(p => p.name));
     try {
-      _.each(preferences, preference => {
+      for (const preference of preferences) {
         const value = opts[preference.name];
-        if (!value) return;
+        if (!value) continue;
         if (!preference.isValid(value)) {
           throw new Error('Invalid ' + preference.name);
         }
-      });
+      }
     } catch (ex) {
       return cb(new ClientError(ex));
     }
@@ -1326,7 +1356,7 @@ export class WalletService implements IWalletService {
       }
 
       this._runLocked(cb, cb => {
-        this.storage.fetchPreferences(this.walletId, this.copayerId, (err, oldPref) => {
+        this.storage.fetchPreferences<Preferences>(this.walletId, this.copayerId, (err, oldPref) => {
           if (err) return cb(err);
 
           const newPref = Preferences.create({
@@ -1337,20 +1367,20 @@ export class WalletService implements IWalletService {
 
           // merge eth tokenAddresses
           if (opts.tokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.tokenAddresses = oldPref.tokenAddresses || [];
             preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
           }
 
           // merge eth multisigEthInfo
           if (opts.multisigEthInfo) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
 
             preferences.multisigEthInfo = _.uniq(
-              oldPref.multisigEthInfo.concat(opts.multisigEthInfo).reduce((x, y) => {
+              oldPref.multisigEthInfo.concat(opts.multisigEthInfo).reduce((x: any[], y: any) => {
                 let exists = false;
-                x.forEach(e => {
+                for (let e of x) {
                   // add new token addresses linked to the multisig wallet
                   if (e.multisigContractAddress === y.multisigContractAddress) {
                     e.tokenAddresses = e.tokenAddresses || [];
@@ -1358,49 +1388,49 @@ export class WalletService implements IWalletService {
                     e = Object.assign(e, y);
                     exists = true;
                   }
-                });
+                }
                 return exists ? x : [...x, y];
-              }, [])
+              }, []) as object[]
             );
           }
 
           // merge matic tokenAddresses
           if (opts.maticTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.maticTokenAddresses = oldPref.maticTokenAddresses || [];
             preferences.maticTokenAddresses = _.uniq(oldPref.maticTokenAddresses.concat(opts.maticTokenAddresses));
           }
 
           // merge op tokenAddresses
           if (opts.opTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.opTokenAddresses = oldPref.opTokenAddresses || [];
             preferences.opTokenAddresses = _.uniq(oldPref.opTokenAddresses.concat(opts.opTokenAddresses));
           }
 
           // merge base tokenAddresses
           if (opts.baseTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.baseTokenAddresses = oldPref.baseTokenAddresses || [];
             preferences.baseTokenAddresses = _.uniq(oldPref.baseTokenAddresses.concat(opts.baseTokenAddresses));
           }
 
           // merge arb tokenAddresses
           if (opts.arbTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
             preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
           }
 
           // merge matic multisigMaticInfo
           if (opts.multisigMaticInfo) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.multisigMaticInfo = oldPref.multisigMaticInfo || [];
 
             preferences.multisigMaticInfo = _.uniq(
-              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x, y) => {
+              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x: any[], y: any) => {
                 let exists = false;
-                x.forEach(e => {
+                for (let e of x) {
                   // add new token addresses linked to the multisig wallet
                   if (e.multisigContractAddress === y.multisigContractAddress) {
                     e.maticTokenAddresses = e.maticTokenAddresses || [];
@@ -1408,9 +1438,9 @@ export class WalletService implements IWalletService {
                     e = Object.assign(e, y);
                     exists = true;
                   }
-                });
+                }
                 return exists ? x : [...x, y];
-              }, [])
+              }, []) as object[]
             );
           }
           this.storage.storePreferences(preferences, err => {
@@ -1441,9 +1471,7 @@ export class WalletService implements IWalletService {
       const latestAddresses = addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
       if (
         latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
-        _.some(latestAddresses, {
-          hasActivity: true
-        })
+        latestAddresses.some(a => a.hasActivity)
       )
         return cb(null, true);
 
@@ -1476,7 +1504,7 @@ export class WalletService implements IWalletService {
     });
   }
 
-  _store(wallet, address, cb, checkSync = false) {
+  _store(wallet, address, cb, checkSync = false, forceSync = false) {
     let stoAddress = _.clone(address);
     ChainService.addressToStorageTransform(wallet.chain, wallet.network, stoAddress);
     this.storage.storeAddressAndWallet(wallet, stoAddress, (err, isDuplicate) => {
@@ -1489,7 +1517,9 @@ export class WalletService implements IWalletService {
           }
           return cb(null, isDuplicate);
         },
-        !checkSync
+        !checkSync,
+        null,
+        forceSync
       );
     });
   }
@@ -1541,8 +1571,8 @@ export class WalletService implements IWalletService {
     const getFirstAddress = (wallet, cb) => {
       this.storage.fetchAddresses(this.walletId, (err, addresses) => {
         if (err) return cb(err);
-        if (!_.isEmpty(addresses)) {
-          let x = _.head(addresses);
+        if (addresses?.length) {
+          const x = addresses[0];
           ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
           return cb(null, x);
         }
@@ -1589,6 +1619,7 @@ export class WalletService implements IWalletService {
    * Get all addresses.
    * @param {Object} opts
    * @param {Numeric} opts.limit (optional) - Limit the resultset. Return all addresses by default.
+   * @param {Numeric} opts.skip (optional) - Skip this number of addresses in resultset. Useful for paging.
    * @param {Boolean} [opts.reverse=false] (optional) - Reverse the order of returned addresses.
    * @returns {Address[]}
    */
@@ -1596,16 +1627,15 @@ export class WalletService implements IWalletService {
     opts = opts || {};
     this.storage.fetchAddresses(this.walletId, (err, addresses) => {
       if (err) return cb(err);
-      let onlyMain = _.reject(addresses, {
-        isChange: true
-      });
+      let onlyMain = addresses.filter(a => !a.isChange);
       if (opts.reverse) onlyMain.reverse();
-      if (opts.limit > 0) onlyMain = _.take(onlyMain, opts.limit);
+      if (opts.skip > 0) onlyMain = onlyMain.slice(opts.skip);
+      if (opts.limit > 0) onlyMain = onlyMain.slice(0, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
-        _.each(onlyMain, x => {
+        for (const x of onlyMain) {
           ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
-        });
+        }
         return cb(null, onlyMain);
       });
     });
@@ -1631,7 +1661,7 @@ export class WalletService implements IWalletService {
     });
   }
 
-  _getBlockchainExplorer(chain, network): ReturnType<typeof BlockChainExplorer> {
+  _getBlockchainExplorer(chain, network): V8 | undefined {
     let opts: Partial<{
       provider: string;
       chain: string;
@@ -1657,7 +1687,7 @@ export class WalletService implements IWalletService {
     opts.chain = chain;
     opts.network = Utils.getNetworkName(chain, network);
     opts.userAgent = WalletService.getServiceVersion();
-    let bc;
+    let bc: V8;
     try {
       bc = BlockChainExplorer(opts);
     } catch (ex) {
@@ -1669,11 +1699,15 @@ export class WalletService implements IWalletService {
   getUtxosForCurrentWallet(opts, cb) {
     opts = opts || {};
 
-    const utxoKey = utxo => {
-      return utxo.txid + '|' + utxo.vout;
-    };
+    const utxoKey = utxo => utxo.txid + '|' + utxo.vout;
 
-    let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet, blockchainHeight;
+    let allAddresses,
+        allUtxos,
+        utxoIndex,
+        addressStrs: string[],
+        bc: V8,
+        wallet: Wallet,
+        blockchainHeight: number;
     async.series(
       [
         next => {
@@ -1690,16 +1724,16 @@ export class WalletService implements IWalletService {
           });
         },
         next => {
-          if (_.isArray(opts.addresses)) {
+          if (Array.isArray(opts.addresses)) {
             allAddresses = opts.addresses;
             return next();
           }
 
           // even with Grouping we need address for pubkeys and path (see last step)
           this.storage.fetchAddresses(this.walletId, (err, addresses) => {
-            _.each(addresses, x => {
+            for (const x of addresses) {
               ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
-            });
+            }
             allAddresses = addresses;
             if (allAddresses.length == 0) return cb(null, []);
 
@@ -1707,7 +1741,7 @@ export class WalletService implements IWalletService {
           });
         },
         next => {
-          addressStrs = _.map(allAddresses, 'address');
+          addressStrs = allAddresses.map(a => a.address);
           return next();
         },
         next => {
@@ -1787,12 +1821,12 @@ export class WalletService implements IWalletService {
           this.getPendingTxs({}, (err, txps) => {
             if (err) return next(err);
 
-            const lockedInputs = _.map(_.flatten(_.map(txps, 'inputs')), utxoKey);
-            _.each(lockedInputs, input => {
+            const lockedInputs = txps.flatMap(t => t.inputs).map(utxoKey);
+            for (const input of lockedInputs) {
               if (utxoIndex[input]) {
                 utxoIndex[input].locked = true;
               }
-            });
+            }
             logger.debug(`Got  ${lockedInputs.length} locked utxos`);
             return next();
           });
@@ -1811,19 +1845,19 @@ export class WalletService implements IWalletService {
             },
             (err, txs) => {
               if (err) return next(err);
-              const spentInputs = _.map(_.flatten(_.map(txs, 'inputs')), utxoKey);
-              const txIdArray = _.map(opts.inputs, 'txid');
+              const spentInputs = txs.flatMap(t => t.inputs).map(utxoKey);
+              const txIdArray = opts.inputs?.map(i => i.txid) || [];
 
-              _.each(spentInputs, input => {
+              for (const input of spentInputs) {
                 if (utxoIndex[input]) {
                   utxoIndex[input].spent = true;
                 }
-              });
+              }
               // except spent inputs of the RBF transaction if it's a replacement
-              allUtxos = _.reject(allUtxos, utxo => {
-                return (
+              allUtxos = allUtxos.filter(utxo => {
+                return !(
                   (!opts.replaceTxByFee && utxo.spent) ||
-                  (utxo.spent && opts.replaceTxByFee && !_.includes(txIdArray, utxo.txid))
+                  (utxo.spent && opts.replaceTxByFee && !txIdArray.includes(utxo.txid))
                 );
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
@@ -1834,14 +1868,14 @@ export class WalletService implements IWalletService {
         next => {
           // Needed for the clients to sign UTXOs
           const addressToPath = _.keyBy(allAddresses, 'address');
-          _.each(allUtxos, utxo => {
+          for (const utxo of allUtxos) {
             if (!addressToPath[utxo.address]) {
               if (!opts.addresses) this.logw('Ignored UTXO!: ' + utxo.address);
-              return;
+              continue;
             }
             utxo.path = addressToPath[utxo.address].path;
             utxo.publicKeys = addressToPath[utxo.address].publicKeys;
-          });
+          }
           return next();
         }
       ],
@@ -2002,15 +2036,11 @@ export class WalletService implements IWalletService {
 
       const feeLevels = Defaults.FEE_LEVELS[wallet.chain];
       if (opts.feeLevel) {
-        if (
-          !_.some(feeLevels, {
-            name: opts.feeLevel
-          })
-        )
-          return cb(new ClientError('Invalid fee level. Valid values are ' + _.map(feeLevels, 'name').join(', ')));
+        if (!feeLevels.some(lvl => lvl.name === opts.feeLevel))
+          return cb(new ClientError('Invalid fee level. Valid values are ' + feeLevels.map(lvl => lvl.name).join(', ')));
       }
 
-      if (_.isNumber(opts.feePerKb)) {
+      if (Utils.isNumber(opts.feePerKb)) {
         if (opts.feePerKb < Defaults.MIN_FEE_PER_KB || opts.feePerKb > Defaults.MAX_FEE_PER_KB[wallet.chain])
           return cb(new ClientError('Invalid fee per KB'));
       }
@@ -2030,8 +2060,8 @@ export class WalletService implements IWalletService {
 
       const failed = [];
       const levels = _.fromPairs(
-        _.map(points, p => {
-          const feePerKb = _.isObject(result) && result[p] && _.isNumber(result[p]) ? +result[p] : -1;
+        points.map(p => {
+          const feePerKb = Utils.isObject(result) && result[p] && Utils.isNumber(result[p]) ? +result[p] : -1;
           if (feePerKb < 0) failed.push(p);
 
           // NOTE: ONLY BTC/BCH/DOGE/LTC expect feePerKb to be Bitcoin amounts
@@ -2122,10 +2152,10 @@ export class WalletService implements IWalletService {
       */
 
       const samplePoints = () => {
-        const definedPoints = _.uniq(_.map(feeLevels, 'nbBlocks'));
+        const definedPoints = _.uniq(feeLevels.map(lvl => lvl.nbBlocks));
         return _.uniq(
           _.flatten(
-            _.map(definedPoints, p => {
+            definedPoints.map((p: number) => {
               return _.range(p, p + Defaults.FEE_LEVELS_FALLBACK + 1);
             })
           )
@@ -2161,7 +2191,7 @@ export class WalletService implements IWalletService {
           }
         }
 
-        const values = _.map(feeLevels, level => {
+        const values = feeLevels.map(level => {
           const result: {
             feePerKb?: number;
             nbBlocks?: number;
@@ -2264,7 +2294,7 @@ export class WalletService implements IWalletService {
       [
         next => {
           const feeArgs =
-            boolToNum(!!opts.feeLevel) + boolToNum(_.isNumber(opts.feePerKb)) + boolToNum(_.isNumber(opts.fee));
+            boolToNum(!!opts.feeLevel) + boolToNum(Utils.isNumber(opts.feePerKb)) + boolToNum(Utils.isNumber(opts.fee));
           if (feeArgs > 1) return next(new ClientError('Only one of feeLevel/feePerKb/fee can be specified'));
 
           if (feeArgs == 0) {
@@ -2273,13 +2303,9 @@ export class WalletService implements IWalletService {
 
           const feeLevels = Defaults.FEE_LEVELS[wallet.chain];
           if (opts.feeLevel) {
-            if (
-              !_.some(feeLevels, {
-                name: opts.feeLevel
-              })
-            )
+            if (!feeLevels.some(lvl => lvl.name === opts.feeLevel))
               return next(
-                new ClientError('Invalid fee level. Valid values are ' + _.map(feeLevels, 'name').join(', '))
+                new ClientError('Invalid fee level. Valid values are ' + feeLevels.map(lvl => lvl.name).join(', '))
               );
           }
 
@@ -2297,12 +2323,12 @@ export class WalletService implements IWalletService {
 
         next => {
           if (!opts.sendMax) return next();
-          if (!_.isArray(opts.outputs) || opts.outputs.length > 1) {
+          if (!Array.isArray(opts.outputs) || opts.outputs.length > 1) {
             return next(new ClientError('Only one output allowed when sendMax is specified'));
           }
-          if (_.isNumber(opts.outputs[0].amount))
+          if (Utils.isNumber(opts.outputs[0].amount))
             return next(new ClientError('Amount is not allowed when sendMax is specified'));
-          if (_.isNumber(opts.fee))
+          if (Utils.isNumber(opts.fee))
             return next(
               new ClientError('Fee is not allowed when sendMax is specified (use feeLevel/feePerKb instead)')
             );
@@ -2334,7 +2360,7 @@ export class WalletService implements IWalletService {
           if (!opts.noCashAddr) return next();
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
-          opts.origAddrOutputs = _.map(opts.outputs, x => {
+          opts.origAddrOutputs = opts.outputs.map(x => {
             const ret: {
               toAddress?: string;
               amount?: number;
@@ -2350,8 +2376,8 @@ export class WalletService implements IWalletService {
             return ret;
           });
           opts.returnOrigAddrOutputs = false;
-          _.each(opts.outputs, x => {
-            if (!x.toAddress) return;
+          for (const x of opts.outputs) {
+            if (!x.toAddress) continue;
 
             let newAddr;
             try {
@@ -2363,7 +2389,7 @@ export class WalletService implements IWalletService {
               x.toAddress = newAddr;
               opts.returnOrigAddrOutputs = true;
             }
-          });
+          }
           next();
         }
       ],
@@ -2372,7 +2398,7 @@ export class WalletService implements IWalletService {
   }
 
   _getFeePerKb(wallet, opts, cb) {
-    if (_.isNumber(opts.feePerKb)) return cb(null, opts.feePerKb);
+    if (Utils.isNumber(opts.feePerKb)) return cb(null, opts.feePerKb);
     this.getFeeLevels(
       {
         chain: wallet.chain,
@@ -3060,15 +3086,13 @@ export class WalletService implements IWalletService {
             );
           }
 
-          const action = _.find(txp.actions, {
-            copayerId: this.copayerId
-          });
+          const action = txp.actions.find(a => a.copayerId === this.copayerId);
           if (action) return cb(Errors.COPAYER_VOTED);
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
-          if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+          if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (let t of txps) {
@@ -3248,9 +3272,7 @@ export class WalletService implements IWalletService {
       (err, txp) => {
         if (err) return cb(err);
 
-        const action = _.find(txp.actions, {
-          copayerId: this.copayerId
-        });
+        const action = txp.actions.find(a => a.copayerId === this.copayerId);
 
         if (action) return cb(Errors.COPAYER_VOTED);
         if (txp.status != 'pending') return cb(Errors.TX_NOT_PENDING);
@@ -3274,12 +3296,7 @@ export class WalletService implements IWalletService {
               },
               next => {
                 if (txp.status == 'rejected') {
-                  const rejectedBy = _.map(
-                    _.filter(txp.actions, {
-                      type: 'reject'
-                    }),
-                    'copayerId'
-                  );
+                  const rejectedBy = txp.actions.filter(a => a.type === 'reject').map(a => a.copayerId);
 
                   this._notifyTxProposalAction(
                     'TxProposalFinallyRejected',
@@ -3327,9 +3344,9 @@ export class WalletService implements IWalletService {
         if (opts.tokenAddress) {
           txps = txps.filter(txp => opts.tokenAddress?.toLowerCase() === txp.tokenAddress?.toLowerCase());
         }
-        _.each(txps, txp => {
+        for (const txp of txps) {
           txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
-        });
+        };
         async.each(
           txps,
           (txp: ITxProposal, next) => {
@@ -3351,16 +3368,16 @@ export class WalletService implements IWalletService {
 
             if (txps[0] && txps[0].chain == 'bch') {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
-              _.each(txps, x => {
-                if (x.changeAddress) {
-                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, format);
+              for (const t of txps) {
+                if (t.changeAddress) {
+                  t.changeAddress.address = BCHAddressTranslator.translate(t.changeAddress.address, format);
                 }
-                _.each(x.outputs, x => {
-                  if (x.toAddress) {
-                    x.toAddress = BCHAddressTranslator.translate(x.toAddress, format);
+                for (const o of t.outputs) {
+                  if (o.toAddress) {
+                    o.toAddress = BCHAddressTranslator.translate(o.toAddress, format);
                   }
-                });
-              });
+                }
+              }
             }
             return cb(err, txps);
           }
@@ -3416,13 +3433,10 @@ export class WalletService implements IWalletService {
         (err, res) => {
           if (err) return cb(err);
 
-          const notifications = _.sortBy(
-            _.map(_.flatten(res), (n: INotification) => {
-              n.walletId = this.walletId;
-              return n;
-            }),
-            'id'
-          );
+          const notifications = res
+            .flat()
+            .map((n: INotification) => ({ ...n, walletId: this.walletId }))
+            .sort((a, b) => a.id - b.id);
 
           return cb(null, notifications);
         }
@@ -3431,20 +3445,20 @@ export class WalletService implements IWalletService {
   }
 
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
-    if (_.isEmpty(txs)) return cb(null, txs);
+    if (!txs?.length) return cb(null, txs);
 
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
     const now = Math.floor(Date.now() / 1000);
 
     // One fee per TXID
-    const indexedFee: any = _.keyBy(_.filter(txs, { category: 'fee' } as any), 'txid');
-    const indexedSend = _.keyBy(_.filter(txs, { category: 'send' } as any), 'txid');
+    const indexedFee: any = _.keyBy(txs.filter(tx => tx.category === 'fee'), 'txid');
+    const indexedSend = _.keyBy(txs.filter(tx => tx.category === 'send'), 'txid');
     const seenSend = {};
     const seenReceive = {};
 
     const moves: { [txid: string]: ITxProposal } = {};
     // remove 'fees' and 'moves' (probably change addresses)
-    txs = _.filter(txs, tx => {
+    txs = txs.filter(tx => {
       // double spend or error
       // This should be shown on the client, so we dont remove it here
       //    if (tx.height && tx.height <= -3)
@@ -3502,27 +3516,25 @@ export class WalletService implements IWalletService {
     // Filter out moves:
     // This are moves from the wallet to itself. There are 2+ outputs. one if the change
     // the other a main address for the wallet.
-    _.each(moves, (v, k) => {
-      if (v.outputs.length <= 1) {
-        delete moves[k];
+    for (const txid in moves) {
+      if (moves[txid].outputs.length <= 1) {
+        delete moves[txid];
       }
-    });
+    }
 
     const fixMoves = cb2 => {
-      if (_.isEmpty(moves)) return cb2();
+      if (!Object.keys(moves).length) return cb2();
 
       // each detected duplicate output move
-      const moves3 = _.flatten(_.map(_.values(moves), 'outputs'));
+      const moves3 = Object.values(moves).flatMap(m => m.outputs);
       // check output address for change address
-      this.storage.fetchAddressesByWalletId(walletId, _.map(moves3, 'address'), (err, addrs) => {
+      this.storage.fetchAddressesByWalletId(walletId, moves3.map(m => m.address), (err, addrs) => {
         if (err) return cb(err);
 
-        const isChangeAddress = _.countBy(_.filter(addrs, { isChange: true }), 'address');
-        _.each(moves, x => {
-          _.remove(x.outputs, i => {
-            return isChangeAddress[i.address];
-          });
-        });
+        const isChangeAddress = _.countBy(addrs.filter(a => a.isChange), 'address');
+        for (const x of Object.values(moves)) {
+          x.outputs = x.outputs.filter(o => !isChangeAddress[o.address]);
+        }
         return cb2();
       });
     };
@@ -3530,86 +3542,81 @@ export class WalletService implements IWalletService {
     fixMoves(err => {
       if (err) return cb(err);
 
-      const ret = _.filter(
-        _.map([].concat(txs), tx => {
-          const t = new Date(tx.blockTime).getTime() / 1000;
-          const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
+      const ret = (txs || []).map(tx => {
+        const t = new Date(tx.blockTime).getTime() / 1000;
+        const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
 
-          // This adapter rebuilds the abiType property from data contained in the effects so that it returns what wallet is used to
-          // If we remove the slight reliance in the wallet on abiType then we can remove this adapter
-          function recreateAbiType(effects) {
-            // Check if any top level effects are ERC20 transfers
-            if (effects && effects.length) {
-              const erc20Transfer = effects.find(e => e.type == 'ERC20:transfer' && e.callStack == '');
-              if (erc20Transfer) {
-                // This is the only data used in old wallet and bitpay-app
-                return { name: 'transfer' };
-              }
+        // This adapter rebuilds the abiType property from data contained in the effects so that it returns what wallet is used to
+        // If we remove the slight reliance in the wallet on abiType then we can remove this adapter
+        function recreateAbiType(effects) {
+          // Check if any top level effects are ERC20 transfers
+          if (effects && effects.length) {
+            const erc20Transfer = effects.find(e => e.type == 'ERC20:transfer' && e.callStack == '');
+            if (erc20Transfer) {
+              // This is the only data used in old wallet and bitpay-app
+              return { name: 'transfer' };
             }
-            return undefined;
           }
-
-          const ret = {
-            id: tx.id,
-            txid: tx.txid,
-            confirmations: c,
-            blockheight: tx.height > 0 ? tx.height : null,
-            fees: tx.fee ?? (indexedFee[tx.txid] ? Math.abs(indexedFee[tx.txid].satoshis) : null),
-            time: t,
-            size: tx.size,
-            amount: 0,
-            action: undefined,
-            addressTo: undefined,
-            outputs: undefined,
-            dust: false,
-            error: tx.error,
-            internal: tx.internal,
-            network: tx.network,
-            chain: tx.chain,
-            data: tx.data,
-            abiType: tx.abiType || recreateAbiType(tx.effects),
-            gasPrice: tx.gasPrice,
-            maxGasFee: tx.maxGasFee,
-            priorityGasFee: tx.priorityGasFee,
-            txType: tx.txType,
-            gasLimit: tx.gasLimit,
-            receipt: tx.receipt,
-            nonce: tx.nonce,
-            effects: tx.effects
-          };
-          switch (tx.category) {
-            case 'send':
-              ret.action = 'sent';
-              ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
-              ret.addressTo = tx.outputs ? tx.outputs[0].address : null;
-              ret.outputs = tx.outputs;
-              break;
-            case 'receive':
-              ret.action = 'received';
-              ret.outputs = tx.outputs;
-              ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
-              ret.dust = ret.amount < dustThreshold;
-              break;
-            case 'move':
-              ret.action = 'moved';
-              ret.amount = Math.abs(tx.satoshis);
-              ret.addressTo = tx.outputs && tx.outputs.length ? tx.outputs[0].address : null;
-              ret.outputs = tx.outputs;
-              break;
-            default:
-              ret.action = 'invalid';
-          }
-
-          // not available
-          // inputs: inputs,
-          return ret;
-
-          // filter out dust
-        }),
-        x => {
-          return !x.dust;
+          return undefined;
         }
-      );
+
+        const ret = {
+          id: tx.id,
+          txid: tx.txid,
+          confirmations: c,
+          blockheight: tx.height > 0 ? tx.height : null,
+          fees: tx.fee ?? (indexedFee[tx.txid] ? Math.abs(indexedFee[tx.txid].satoshis) : null),
+          time: t,
+          size: tx.size,
+          amount: 0,
+          action: undefined,
+          addressTo: undefined,
+          outputs: undefined,
+          dust: false,
+          error: tx.error,
+          internal: tx.internal,
+          network: tx.network,
+          chain: tx.chain,
+          data: tx.data,
+          abiType: tx.abiType || recreateAbiType(tx.effects),
+          gasPrice: tx.gasPrice,
+          maxGasFee: tx.maxGasFee,
+          priorityGasFee: tx.priorityGasFee,
+          txType: tx.txType,
+          gasLimit: tx.gasLimit,
+          receipt: tx.receipt,
+          nonce: tx.nonce,
+          effects: tx.effects
+        };
+        switch (tx.category) {
+          case 'send':
+            ret.action = 'sent';
+            ret.amount = Math.abs(tx.outputs.reduce((sum, o) => sum += o.amount, 0)) || Math.abs(tx.satoshis);
+            ret.addressTo = tx.outputs ? tx.outputs[0].address : null;
+            ret.outputs = tx.outputs;
+            break;
+          case 'receive':
+            ret.action = 'received';
+            ret.outputs = tx.outputs;
+            ret.amount = Math.abs(tx.outputs.reduce((sum, o) => sum += o.amount, 0)) || Math.abs(tx.satoshis);
+            ret.dust = ret.amount < dustThreshold;
+            break;
+          case 'move':
+            ret.action = 'moved';
+            ret.amount = Math.abs(tx.satoshis);
+            ret.addressTo = tx.outputs && tx.outputs.length ? tx.outputs[0].address : null;
+            ret.outputs = tx.outputs;
+            break;
+          default:
+            ret.action = 'invalid';
+        }
+
+        // not available
+        // inputs: inputs,
+        return ret;
+
+        // filter out dust
+      }).filter(x => !x.dust);
 
       // console.log('[server.js.2965:ret:] END',ret); //TODO
       return cb(null, ret);
@@ -3709,8 +3716,16 @@ export class WalletService implements IWalletService {
     });
   }
 
-  // Syncs wallet regitration and address with a V8 type blockexplorerer
-  syncWallet(wallet, cb, skipCheck?, count?) {
+  /**
+   * Syncs wallet regitration and address with a V8 type blockexplorerer
+   * @param {Wallet} wallet
+   * @param {Function} cb 
+   * @param {Boolean} skipCheck (optional) skip verification step
+   * @param {Number} count (optional) counter for recursive calls
+   * @param {Boolean} force (optional) force a re-sync
+   * @returns 
+   */
+  syncWallet(wallet, cb, skipCheck?, count?, force?) {
     count = count || 0;
     const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
     if (!bc) {
@@ -3726,20 +3741,21 @@ export class WalletService implements IWalletService {
       // First
       this.checkWalletSync(bc, wallet, true, (err, isOK) => {
         // ignore err
-        if (isOK && !justRegistered) return cb();
+        if (isOK && !justRegistered && !force) return cb();
 
-        this.storage.fetchUnsyncAddresses(this.walletId, (err, addresses) => {
+        const fetchAddresses = (force ? this.storage.fetchAddresses : this.storage.fetchUnsyncAddresses).bind(this.storage);
+        fetchAddresses(this.walletId, (err, addresses) => {
           if (err) {
             return cb(err);
           }
 
           const syncAddr = (addresses, icb) => {
-            if (!addresses || _.isEmpty(addresses)) {
+            if (!addresses?.length) {
               // this.logi('Addresses already sync');
               return icb();
             }
 
-            const addressStr = _.map(addresses, x => {
+            const addressStr = addresses.map(x => {
               ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
               return x.address;
             });
@@ -3748,7 +3764,7 @@ export class WalletService implements IWalletService {
             bc.addAddresses(wallet, addressStr, err => {
               if (err) return cb(err);
               this.storage.markSyncedAddresses(addressStr, icb);
-            });
+            }, { reprocess: force });
           };
 
           syncAddr(addresses, err => {
@@ -3784,14 +3800,11 @@ export class WalletService implements IWalletService {
     let inputs, outputs, foreignCrafted;
 
     const sum = (items, isMine, isChange = false) => {
-      const filter: { isMine?: boolean; isChange?: boolean } = {};
-      if (_.isBoolean(isMine)) filter.isMine = isMine;
-      if (_.isBoolean(isChange)) filter.isChange = isChange;
-      return _.sumBy(_.filter(items, filter), 'amount');
+      return items.filter(i => i.isMine == isMine && i.isChange == isChange).reduce((sum, i) => sum += i.amount, 0);
     };
 
     const classify = items => {
-      return _.map(items, item => {
+      return items.map(item => {
         const address = indexedAddresses[item.address];
         return {
           address: item.address,
@@ -3819,25 +3832,18 @@ export class WalletService implements IWalletService {
       }
 
       amount = Math.abs(amount);
-      if (action == 'sent' || action == 'moved') {
+      if (action === 'sent' || action === 'moved') {
         const firstExternalOutput = outputs.find(o => o.isMine === false);
         addressTo = firstExternalOutput ? firstExternalOutput.address : null;
       }
 
-      if (action == 'sent' && inputs.length != _.filter(inputs, 'isMine').length) {
+      if (action == 'sent' && inputs.length !== inputs.filter(i => i.isMine).length) {
         foreignCrafted = true;
       }
     } else {
       action = 'invalid';
       amount = 0;
     }
-
-    const formatOutput = o => {
-      return {
-        amount: o.amount,
-        address: o.address
-      };
-    };
 
     const newTx = {
       txid: tx.txid,
@@ -3853,27 +3859,26 @@ export class WalletService implements IWalletService {
       inputs: undefined
     };
 
-    if (_.isNumber(tx.size) && tx.size > 0) {
+    if (Utils.isNumber(tx.size) && tx.size > 0) {
       newTx.feePerKb = +((tx.fees * 1000) / tx.size).toFixed();
     }
 
     if (opts.includeExtendedInfo) {
-      newTx.inputs = _.map(inputs, input => {
+      newTx.inputs = inputs.map(input => {
         return _.pick(input, 'address', 'amount', 'isMine');
       });
-      newTx.outputs = _.map(outputs, output => {
+      newTx.outputs = outputs.map(output => {
         return _.pick(output, 'address', 'amount', 'isMine');
       });
     } else {
-      outputs = _.filter(outputs, {
-        isChange: false
-      });
+      outputs = outputs.filter(o => !o.isChange);
       if (action == 'received') {
-        outputs = _.filter(outputs, {
-          isMine: true
-        });
+        outputs = outputs.filter(o => o.isMine);
       }
-      newTx.outputs = _.map(outputs, formatOutput);
+      newTx.outputs = outputs.map(o => ({
+        amount: o.amount,
+        address: o.address
+      }));
     }
 
     return newTx;
@@ -3889,10 +3894,10 @@ export class WalletService implements IWalletService {
       tx.creatorName = proposal.creatorName;
       tx.message = proposal.message;
       tx.nonce = proposal.nonce;
-      tx.actions = _.map(proposal.actions, action => {
+      tx.actions = proposal.actions.map(action => {
         return _.pick(action, ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']);
       });
-      _.each(tx.outputs, output => {
+      for (const output of tx.outputs || []) {
         const query = {
           toAddress: output.address,
           amount: output.amount
@@ -3901,7 +3906,7 @@ export class WalletService implements IWalletService {
           const txpOut = proposal.outputs.find(o => o.toAddress === output.address && o.amount === output.amount);
           output.message = txpOut ? txpOut.message : null;
         }
-      });
+      }
       tx.customData = proposal.customData;
 
       tx.createdOn = proposal.createdOn;
@@ -4112,7 +4117,7 @@ export class WalletService implements IWalletService {
 
   tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {
     const unconfirmed = txs.filter(tx => tx.confirmations === 0);
-    if (_.isEmpty(unconfirmed)) return cb();
+    if (!unconfirmed.length) return cb();
 
     this.getFeeLevels(
       {
@@ -4128,9 +4133,9 @@ export class WalletService implements IWalletService {
             this.logi('Cannot compute super economy fee level from blockchain');
           } else {
             const minFeePerKb = level.feePerKb;
-            _.each(unconfirmed, tx => {
+            for (const tx of unconfirmed) {
               tx.lowFees = tx.feePerKb < minFeePerKb;
-            });
+            }
           }
         }
         return cb();
@@ -4279,11 +4284,11 @@ export class WalletService implements IWalletService {
             }
 
             // update confirmations from height
-            _.each(oldTxs, x => {
+            for (const x of oldTxs) {
               if (x.blockheight > 0 && bcHeight >= x.blockheight) {
                 x.confirmations = bcHeight - x.blockheight + 1;
               }
-            });
+            }
 
             resultTxs = resultTxs.concat(oldTxs);
             return next();
@@ -4301,7 +4306,7 @@ export class WalletService implements IWalletService {
             CONFIRMATIONS_TO_START_CACHING = Constants.CONFIRMATIONS_TO_START_CACHING[wallet.chain];
           }
 
-          txsToCache = _.filter(lastTxs, i => {
+          txsToCache = lastTxs.filter(i => {
             if (i.confirmations < CONFIRMATIONS_TO_START_CACHING) {
               return false;
             }
@@ -4344,12 +4349,11 @@ export class WalletService implements IWalletService {
    * @returns {TxProposal[]} Transaction proposals, first newer
    */
   getTxHistory(opts, cb) {
-    let bc;
     opts = opts || {};
 
     // 50 is accepted by insight.
     // TODO move it to a bigger number with v8 is fully deployed
-    opts.limit = _.isUndefined(opts.limit) ? 50 : opts.limit;
+    opts.limit = !Utils.isNumber(opts.limit) ? 50 : Number(opts.limit);
     if (opts.limit > Defaults.HISTORY_LIMIT) return cb(Errors.HISTORY_LIMIT_EXCEEDED);
 
     this.getWallet({}, (err, wallet) => {
@@ -4359,7 +4363,7 @@ export class WalletService implements IWalletService {
 
       if (wallet.scanStatus == 'running') return cb(Errors.WALLET_BUSY);
 
-      bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+      const bc: V8 = this._getBlockchainExplorer(wallet.chain, wallet.network);
       if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
 
       const from = opts.skip || 0;
@@ -4371,7 +4375,7 @@ export class WalletService implements IWalletService {
             this.getTxHistoryV8(bc, wallet, opts, from, opts.limit, next);
           },
           (txs: { items: Array<{ time: number }> }, next) => {
-            if (!txs || _.isEmpty(txs.items)) {
+            if (!txs || !txs.items?.length) {
               return next();
             }
             // TODO optimize this...
@@ -4418,7 +4422,7 @@ export class WalletService implements IWalletService {
           const indexedProposals = _.keyBy(res.txps, 'txid');
           const indexedNotes = _.keyBy(res.notes, 'txid');
 
-          const finalTxs = _.map(res.txs.items, tx => {
+          const finalTxs = res.txs.items.map(tx => {
             WalletService._addProposalInfo(tx, indexedProposals, opts);
             WalletService._addNotesInfo(tx, indexedNotes);
             return tx;
@@ -4448,6 +4452,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts
    * @param {Boolean} opts.includeCopayerBranches (defaults to false)
    * @param {Boolean} opts.startingStep (estimate address number magniture (dflt to 1k), only
+   * @param {Number} opts.startIdx (optional) start scanning from this index
    * for optimization)
    */
   scan(opts, cb) {
@@ -4497,6 +4502,11 @@ export class WalletService implements IWalletService {
               return this.syncWallet(wallet, scanComplete);
             }
 
+            if (Number.isInteger(opts.startIdx)) {
+              wallet.addressManager.receiveAddressIndex = opts.startIdx;
+              wallet.addressManager.changeAddressIndex = opts.startIdx;
+            }
+
             let step = opts.startingStep;
             async.doWhilst(
               next => {
@@ -4523,7 +4533,7 @@ export class WalletService implements IWalletService {
 
       // when powerScanning, we just accept gap<=3
       if (step > 1) {
-        gap = _.min([gap, 3]);
+        gap = Math.min(gap, 3);
       }
 
       async.whilst(
@@ -4545,33 +4555,33 @@ export class WalletService implements IWalletService {
         },
         err => {
           derivator.rewind(gap);
-          return cb(err, _.dropRight(allAddresses, gap));
+          return cb(err, allAddresses.slice(0, -gap));
         }
       );
     };
 
     const derivators = [];
-    _.each([false, true], isChange => {
+    for (const isChange of [false, true]) {
       derivators.push({
         id: wallet.addressManager.getBaseAddressPath(isChange),
-        derive: _.bind(wallet.createAddress, wallet, isChange, step),
-        index: _.bind(wallet.addressManager.getCurrentIndex, wallet.addressManager, isChange),
-        rewind: _.bind(wallet.addressManager.rewindIndex, wallet.addressManager, isChange, step),
-        getSkippedAddress: _.bind(wallet.getSkippedAddress, wallet)
+        derive: () => wallet.createAddress(isChange, step, null),
+        index: () => wallet.addressManager.getCurrentIndex(isChange),
+        rewind: (n) => wallet.addressManager.rewindIndex(isChange, step, n),
+        getSkippedAddress: () => wallet.getSkippedAddress()
       });
       if (opts.includeCopayerBranches) {
-        _.each(wallet.copayers, copayer => {
+        for (const copayer of wallet.copayers) {
           if (copayer.addressManager) {
             derivators.push({
               id: copayer.addressManager.getBaseAddressPath(isChange),
-              derive: _.bind(copayer.createAddress, copayer, wallet, isChange),
-              index: _.bind(copayer.addressManager.getCurrentIndex, copayer.addressManager, isChange),
-              rewind: _.bind(copayer.addressManager.rewindIndex, copayer.addressManager, isChange, step)
+              derive: () => copayer.createAddress(wallet, isChange),
+              index: () => copayer.addressManager.getCurrentIndex(isChange),
+              rewind: (n) => copayer.addressManager.rewindIndex(isChange, step, n)
             });
           }
-        });
+        }
       }
-    });
+    }
 
     async.eachSeries(
       derivators,
@@ -4594,7 +4604,8 @@ export class WalletService implements IWalletService {
             // this.logi(i + ' addresses were added.');
           }
 
-          this._store(wallet, addresses, next);
+          const reprocess = Number.isInteger(opts.startIdx);
+          this._store(wallet, addresses, next, reprocess, reprocess);
         });
       },
       cb
@@ -4606,6 +4617,7 @@ export class WalletService implements IWalletService {
    *
    * @param {Object} opts
    * @param {Boolean} opts.includeCopayerBranches (defaults to false)
+   * @param {Number} opts.startIdx (optional) address derivation path start index (support agents only)
    */
   startScan(opts, cb) {
     const scanFinished = err => {
@@ -4665,7 +4677,7 @@ export class WalletService implements IWalletService {
    * @returns {Array} rates - The exchange rate.
    */
   getFiatRates(opts, cb) {
-    if (_.isNaN(opts.ts) || _.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
+    if (isNaN(opts.ts) || Array.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
 
     this.fiatRateService.getRates(opts, (err, rates) => {
       if (err) return cb(err);
@@ -4684,7 +4696,7 @@ export class WalletService implements IWalletService {
    */
   getFiatRatesByCoin(opts, cb) {
     if (!checkRequired(opts, ['coin'], cb)) return;
-    if (_.isNaN(opts.ts) || _.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
+    if (isNaN(opts.ts) || Array.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
 
     this.fiatRateService.getRatesByCoin(opts, (err, rate) => {
       if (err) return cb(err);
@@ -4861,2482 +4873,6 @@ export class WalletService implements IWalletService {
     }
 
     return cb(null, externalServicesConfig);
-  }
-
-  private banxaGetKeys(req) {
-    if (!config.banxa) throw new Error('Banxa missing credentials');
-
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    env = req.body.env === 'production' ? 'production' : 'sandbox';
-    if (req.body.context === 'web') {
-      env += 'Web';
-    }
-
-    delete req.body.env;
-    delete req.body.context;
-
-    const keys: {
-      API: string;
-      API_KEY: string;
-      SECRET_KEY: string;
-    } = {
-      API: config.banxa[env].api,
-      API_KEY: config.banxa[env].apiKey,
-      SECRET_KEY: config.banxa[env].secretKey
-    };
-
-    return keys;
-  }
-
-  private getBanxaSignature(method: 'get' | 'post', endpoint: string, apiKey: string, secret: string, body?: string) {
-    let signature, auth: string
-    const nonce = Date.now().toString();
-
-    switch (method) {
-      case 'get':
-        signature = 'GET' + '\n' + `/api${endpoint}` + '\n' + nonce;
-        break;
-      case 'post':
-        const stringifiedBody = body ? JSON.stringify(_.cloneDeep(body)) : '';
-        signature = 'POST' + '\n' + `/api${endpoint}` + '\n' + nonce + '\n' + stringifiedBody;
-        break;
-      default:
-        signature = undefined;
-        break;
-    }
-
-    const localSignature = crypto.createHmac('sha256', secret).update(signature).digest('hex');
-    auth = `${apiKey}:${localSignature}:${nonce}`
-    return auth;
-  }
-
-  banxaGetPaymentMethods(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.banxaGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      let qs = [];
-      if (req.body.source) qs.push('source=' + req.body.source);
-      if (req.body.target) qs.push('target=' + req.body.target);
-
-      const UriPath = `/payment-methods${qs.length > 0 ? '?' + qs.join('&') : ''}`;
-      const URL: string = API + UriPath;
-      const auth = this.getBanxaSignature('get', UriPath, API_KEY, SECRET_KEY);
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth}`
-      };
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  banxaGetQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.banxaGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      if (!checkRequired(req.body, ['source', 'target'])) {
-        return reject(new ClientError("Banxa's request missing arguments"));
-      }
-
-      let qs = [];
-      qs.push('source=' + req.body.source);
-      qs.push('target=' + req.body.target);
-
-      if (req.body.source_amount) qs.push('source_amount=' + req.body.source_amount);
-      if (req.body.target_amount) qs.push('target_amount=' + req.body.target_amount);
-      if (req.body.payment_method_id) qs.push('payment_method_id=' + req.body.payment_method_id);
-      if (req.body.account_reference) qs.push('account_reference=' + req.body.account_reference);
-      if (req.body.blockchain) qs.push('blockchain=' + req.body.blockchain);
-
-      const UriPath = `/prices${qs.length > 0 ? '?' + qs.join('&') : ''}`;
-      const URL: string = API + UriPath;
-      const auth = this.getBanxaSignature('get', UriPath, API_KEY, SECRET_KEY);
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth}`
-      };
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  banxaCreateOrder(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.banxaGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      if (!checkRequired(req.body, ['account_reference', 'source', 'target', 'wallet_address', 'return_url_on_success'])) {
-        return reject(new ClientError("Banxa's request missing arguments"));
-      }
-
-      delete req.body.payment_method_id;
-
-      const UriPath = '/orders';
-      const URL: string = API + UriPath;
-      const auth = this.getBanxaSignature('post', UriPath, API_KEY, SECRET_KEY, req.body);
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth}`
-      };
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  banxaGetOrder(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.banxaGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      if (!checkRequired(req.body, ['order_id'])) {
-        return reject(new ClientError("Banxa's request missing arguments"));
-      }
-
-      let qs = [];
-      if (req.body.fx_currency) qs.push('fx_currency=' + req.body.fx_currency);
-
-      const UriPath = `/orders/${req.body.order_id}${qs.length > 0 ? '?' + qs.join('&') : ''}`;
-      const URL: string = API + UriPath;
-      const auth = this.getBanxaSignature('get', UriPath, API_KEY, SECRET_KEY);
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth}`
-      };
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  private moonpayGetKeys(req) {
-    if (!config.moonpay) throw new Error('Moonpay missing credentials');
-
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    env = req.body.env === 'production' ? 'production' : 'sandbox';
-    if (req.body.context === 'web') {
-      env += 'Web';
-    }
-
-    delete req.body.env;
-    delete req.body.context;
-
-    const keys: {
-      API: string;
-      WIDGET_API: string;
-      SELL_WIDGET_API: string;
-      API_KEY: string;
-      SECRET_KEY: string;
-    } = {
-      API: config.moonpay[env].api,
-      WIDGET_API: config.moonpay[env].widgetApi,
-      SELL_WIDGET_API: config.moonpay[env].sellWidgetApi,
-      API_KEY: config.moonpay[env].apiKey,
-      SECRET_KEY: config.moonpay[env].secretKey
-    };
-
-    return keys;
-  }
-
-  moonpayGetCurrencies(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      const URL = API + '/v3/currencies/'
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  moonpayGetQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['currencyAbbreviation', 'baseCurrencyAmount', 'baseCurrencyCode'])) {
-        return reject(new ClientError("Moonpay's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      let qs = [];
-      qs.push('apiKey=' + API_KEY);
-      qs.push('baseCurrencyAmount=' + req.body.baseCurrencyAmount);
-      qs.push('baseCurrencyCode=' + req.body.baseCurrencyCode);
-
-      if (req.body.extraFeePercentage) qs.push('extraFeePercentage=' + req.body.extraFeePercentage);
-      if (req.body.paymentMethod) qs.push('paymentMethod=' + req.body.paymentMethod);
-      if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + req.body.areFeesIncluded);
-
-      const URL: string = API + `/v3/currencies/${req.body.currencyAbbreviation}/buy_quote/?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  moonpayGetSellQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['currencyAbbreviation', 'quoteCurrencyCode', 'baseCurrencyAmount'])) {
-        return reject(new ClientError("Moonpay's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      let qs = [];
-      qs.push('apiKey=' + API_KEY);
-      qs.push('quoteCurrencyCode=' + req.body.quoteCurrencyCode);
-      qs.push('baseCurrencyAmount=' + req.body.baseCurrencyAmount);
-
-      if (req.body.extraFeePercentage) qs.push('extraFeePercentage=' + req.body.extraFeePercentage);
-      if (req.body.payoutMethod) qs.push('payoutMethod=' + req.body.payoutMethod);
-
-      const URL: string = API + `/v3/currencies/${req.body.currencyAbbreviation}/sell_quote?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  moonpayGetCurrencyLimits(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['currencyAbbreviation', 'baseCurrencyCode'])) {
-        return reject(new ClientError("Moonpay's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      let qs = [];
-      qs.push('apiKey=' + API_KEY);
-      qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
-      if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
-      if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
-
-      const URL = API + `/v3/currencies/${req.body.currencyAbbreviation}/limits/?${qs.join('&')}`
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  moonpayGetSignedPaymentUrl(req): { urlWithSignature: string } {
-    const keys = this.moonpayGetKeys(req);
-    const SECRET_KEY = keys.SECRET_KEY;
-    const API_KEY = keys.API_KEY;
-    const WIDGET_API = keys.WIDGET_API;
-
-    if (
-      !checkRequired(req.body, [
-        'currencyCode',
-        'walletAddress',
-        'baseCurrencyCode',
-        'baseCurrencyAmount',
-        'externalTransactionId',
-        'redirectURL'
-      ])
-    ) {
-      throw new ClientError("Moonpay's request missing arguments");
-    }
-
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs = [];
-    qs.push('apiKey=' + API_KEY);
-    qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
-    qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
-    qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
-    qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));
-    qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
-    qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
-    if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
-    if (req.body.showWalletAddressForm)
-      qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
-    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
-    if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
-
-    const URL_SEARCH: string = `?${qs.join('&')}`;
-
-    const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
-      Buffer.from(URL_SEARCH),
-      Buffer.from(SECRET_KEY)
-    ).toString('base64');
-
-    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}&signature=${encodeURIComponent(URLSignatureHash)}`;
-
-    return { urlWithSignature };
-  }
-
-  moonpayGetSellSignedPaymentUrl(req): { urlWithSignature: string } {
-    const keys = this.moonpayGetKeys(req);
-    const SECRET_KEY = keys.SECRET_KEY;
-    const API_KEY = keys.API_KEY;
-    const SELL_WIDGET_API = keys.SELL_WIDGET_API;
-
-    if (
-      !checkRequired(req.body, [
-        'baseCurrencyCode',
-        'baseCurrencyAmount',
-        'externalTransactionId',
-        'redirectURL',
-      ])
-    ) {
-      throw new ClientError("Moonpay's request missing arguments");
-    }
-
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs = [];
-    qs.push('apiKey=' + API_KEY);
-    qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
-    qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));
-    qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
-    qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
-
-    if (req.body.quoteCurrencyCode) qs.push('quoteCurrencyCode=' + encodeURIComponent(req.body.quoteCurrencyCode));
-    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
-    if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
-    if (req.body.refundWalletAddress) qs.push('refundWalletAddress=' + encodeURIComponent(req.body.refundWalletAddress));
-    if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
-    if (req.body.colorCode) qs.push('colorCode=' + encodeURIComponent(req.body.colorCode));
-    if (req.body.theme) qs.push('theme=' + encodeURIComponent(req.body.theme));
-    if (req.body.language) qs.push('language=' + encodeURIComponent(req.body.language));
-    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
-    if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
-    if (req.body.showWalletAddressForm)
-      qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
-    if (req.body.unsupportedRegionRedirectUrl) qs.push('unsupportedRegionRedirectUrl=' + encodeURIComponent(req.body.unsupportedRegionRedirectUrl));
-    if (req.body.skipUnsupportedRegionScreen) qs.push('skipUnsupportedRegionScreen=' + encodeURIComponent(req.body.skipUnsupportedRegionScreen));
-
-    const URL_SEARCH: string = `?${qs.join('&')}`;
-
-    const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
-      Buffer.from(URL_SEARCH),
-      Buffer.from(SECRET_KEY)
-    ).toString('base64');
-
-    const urlWithSignature = `${SELL_WIDGET_API}${URL_SEARCH}&signature=${encodeURIComponent(URLSignatureHash)}`;
-
-    return { urlWithSignature };
-  }
-
-  moonpayGetTransactionDetails(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
-        return reject(new ClientError("Moonpay's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      let URL: string;
-
-      let qs = [];
-      qs.push('apiKey=' + API_KEY);
-      if (req.body.transactionId) {
-        URL = API + `/v1/transactions/${req.body.transactionId}?${qs.join('&')}`;
-      } else if (req.body.externalId) {
-        URL = API + `/v1/transactions/ext/${req.body.externalId}?${qs.join('&')}`;
-      }
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  moonpayGetSellTransactionDetails(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
-        return reject(new ClientError("Moonpay's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      let URL: string;
-
-      let qs = [];
-      qs.push('apiKey=' + API_KEY);
-      if (req.body.transactionId) {
-        URL = API + `/v3/sell_transactions/${req.body.transactionId}?${qs.join('&')}`;
-      } else if (req.body.externalId) {
-        URL = API + `/v3/sell_transactions/ext/${req.body.externalId}?${qs.join('&')}`;
-      }
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  moonpayCancelSellTransaction(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      if (!checkRequired(req.body, ['transactionId']) && !checkRequired(req.body, ['externalId'])) {
-        return reject(new ClientError("Moonpay's request missing arguments"));
-      }
-
-      const headers = {
-        Authorization: 'Api-Key ' + SECRET_KEY,
-        Accept: 'application/json'
-      };
-      let URL: string;
-
-      if (req.body.transactionId) {
-        URL = API + `/v3/sell_transactions/${req.body.transactionId}`;
-      } else if (req.body.externalId) {
-        URL = API + `/v3/sell_transactions/ext/${req.body.externalId}`;
-      }
-
-      this.request.delete(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  moonpayGetAccountDetails(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.moonpayGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      let qs = [];
-      qs.push('apiKey=' + API_KEY);
-
-      const URL = API + `/v3/accounts/me?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  private rampGetKeys(req) {
-    if (!config.ramp) throw new Error('Ramp missing credentials');
-
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    env = req.body.env === 'production' ? 'production' : 'sandbox';
-    if (req.body.context === 'web') {
-      env += 'Web';
-    }
-    delete req.body.env;
-    delete req.body.context;
-
-    const keys: {
-      API: string;
-      WIDGET_API: string;
-      API_KEY: string;
-    } = {
-      API: config.ramp[env].api,
-      WIDGET_API: config.ramp[env].widgetApi,
-      API_KEY: config.ramp[env].apiKey,
-    };
-
-    return keys;
-  }
-
-  rampGetQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.rampGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['cryptoAssetSymbol', 'fiatValue', 'fiatCurrency'])) {
-        return reject(new ClientError("Ramp's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      const URL: string = API + `/host-api/v3/onramp/quote/all?hostApiKey=${API_KEY}`;
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  rampGetSignedPaymentUrl(req): { urlWithSignature: string } {
-    const webRequiredParams = [
-      'swapAsset',
-      'userAddress',
-      'selectedCountryCode',
-      'finalUrl',
-    ];
-    const appRequiredParams = [
-      'swapAsset',
-      'swapAmount',
-      'enabledFlows',
-      'defaultFlow',
-      'userAddress',
-      'selectedCountryCode',
-      'defaultAsset',
-      'finalUrl',
-    ];
-
-    const requiredParams = req.body.context === 'web' ? webRequiredParams : appRequiredParams;
-    const keys = this.rampGetKeys(req);
-    const API_KEY = keys.API_KEY;
-    const WIDGET_API = keys.WIDGET_API;
-
-    if (
-      !checkRequired(req.body, requiredParams)
-    ) {
-      throw new ClientError("Ramp's request missing arguments");
-    }
-
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs = [];
-    qs.push('hostApiKey=' + API_KEY);
-    qs.push('swapAsset=' + encodeURIComponent(req.body.swapAsset));
-    qs.push('userAddress=' + encodeURIComponent(req.body.userAddress));
-    qs.push('selectedCountryCode=' + encodeURIComponent(req.body.selectedCountryCode));
-    qs.push('finalUrl=' + encodeURIComponent(req.body.finalUrl));
-    if (req.body.enabledFlows) qs.push('enabledFlows=' + encodeURIComponent(req.body.enabledFlows));
-    if (req.body.defaultFlow) qs.push('defaultFlow=' + encodeURIComponent(req.body.defaultFlow));
-    if (req.body.hostLogoUrl) qs.push('hostLogoUrl=' + encodeURIComponent(req.body.hostLogoUrl));
-    if (req.body.hostAppName) qs.push('hostAppName=' + encodeURIComponent(req.body.hostAppName));
-    if (req.body.swapAmount) qs.push('swapAmount=' + encodeURIComponent(req.body.swapAmount));
-    if (req.body.fiatValue) qs.push('fiatValue=' + encodeURIComponent(req.body.fiatValue));
-    if (req.body.fiatCurrency) qs.push('fiatCurrency=' + encodeURIComponent(req.body.fiatCurrency));
-    if (req.body.defaultAsset) qs.push('defaultAsset=' + encodeURIComponent(req.body.defaultAsset));
-    if (req.body.userEmailAddress) qs.push('userEmailAddress=' + encodeURIComponent(req.body.userEmailAddress));
-
-    const URL_SEARCH: string = `?${qs.join('&')}`;
-
-    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}`;
-
-    return { urlWithSignature };
-  }
-
-  rampGetAssets(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.rampGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      let URL: string;
-
-      let qs = [];
-      qs.push('hostApiKey=' + API_KEY);
-      if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
-      if (req.body.withDisabled) qs.push('withDisabled=' + encodeURIComponent(req.body.withDisabled));
-      if (req.body.withHidden) qs.push('withHidden=' + encodeURIComponent(req.body.withHidden));
-      if (req.body.useIp) {
-        const ip = Utils.getIpFromReq(req);
-        qs.push('userIp=' + encodeURIComponent(ip));
-      }
-
-      URL = API + `/host-api/v3/assets?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  private sardineGetKeys(req) {
-    if (!config.sardine) throw new Error('Sardine missing credentials');
-
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    env = req.body.env === 'production' ? 'production' : 'sandbox';
-    if (req.body.context === 'web') {
-      env += 'Web';
-    }
-    delete req.body.env;
-    delete req.body.context;
-
-    const keys: {
-      API: string;
-      SECRET_KEY: string;
-      CLIENT_ID: string;
-    } = {
-      API: config.sardine[env].api,
-      SECRET_KEY: config.sardine[env].secretKey,
-      CLIENT_ID: config.sardine[env].clientId,
-    };
-
-    return keys;
-  }
-
-  sardineGetQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.sardineGetKeys(req);
-      const API = keys.API;
-      const CLIENT_ID = keys.CLIENT_ID;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      if (!checkRequired(req.body, ['asset_type', 'network', 'total'])) {
-        return reject(new ClientError("Sardine's request missing arguments"));
-      }
-
-      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
-      const secretBase64 = Buffer.from(secret).toString('base64');
-
-      const headers = {
-        Accept: 'application/json',
-        Authorization: `Basic ${secretBase64}`,
-      };
-
-      let qs = [];
-      qs.push('asset_type=' + req.body.asset_type);
-      qs.push('network=' + req.body.network);
-      qs.push('total=' + req.body.total);
-
-      if (req.body.currency) qs.push('currency=' + req.body.currency);
-      if (req.body.paymentType) qs.push('paymentType=' + req.body.paymentType);
-      if (req.body.quote_type) qs.push('quote_type=' + req.body.quote_type);
-
-      const URL: string = API + `/v1/quotes?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  sardineGetCurrencyLimits(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.sardineGetKeys(req);
-      const API = keys.API;
-      const CLIENT_ID = keys.CLIENT_ID;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
-      const secretBase64 = Buffer.from(secret).toString('base64');
-
-      const headers = {
-        Accept: 'application/json',
-        Authorization: `Basic ${secretBase64}`,
-      };
-
-      const URL: string = API + '/v1/fiat-currencies';
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  sardineGetToken(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.sardineGetKeys(req);
-      const API = keys.API;
-      const CLIENT_ID = keys.CLIENT_ID;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      if (!checkRequired(req.body, ['referenceId', 'externalUserId', 'customerId'])) {
-        return reject(new ClientError("Sardine's request missing arguments"));
-      }
-
-      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
-      const secretBase64 = Buffer.from(secret).toString('base64');
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${secretBase64}`,
-      };
-
-      const URL: string = API + '/v1/auth/client-tokens';
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  sardineGetSupportedTokens(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.sardineGetKeys(req);
-      const API = keys.API;
-      const CLIENT_ID = keys.CLIENT_ID;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
-      const secretBase64 = Buffer.from(secret).toString('base64');
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${secretBase64}`,
-      };
-
-      const URL: string = API + '/v1/supported-tokens';
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  sardineGetOrdersDetails(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.sardineGetKeys(req);
-      const API = keys.API;
-      const CLIENT_ID = keys.CLIENT_ID;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      if (!checkRequired(req.body, ['orderId']) && !checkRequired(req.body, ['externalUserId']) && !checkRequired(req.body, ['referenceId'])) {
-        return reject(new ClientError("Sardine's request missing arguments"));
-      }
-
-      const secret = `${CLIENT_ID}:${SECRET_KEY}`;
-      const secretBase64 = Buffer.from(secret).toString('base64');
-
-      const headers = {
-        Accept: 'application/json',
-        Authorization: `Basic ${secretBase64}`,
-      };
-
-      let qs = [];
-      let URL: string;
-
-      if (req.body.orderId) {
-        URL = API + `/v1/orders/${req.body.orderId}`;
-      } else if (req.body.externalUserId || req.body.referenceId) {
-        if (req.body.externalUserId) qs.push('externalUserId=' + req.body.externalUserId);
-        if (req.body.referenceId) qs.push('referenceId=' + req.body.referenceId);
-        if (req.body.startDate) qs.push('startDate=' + req.body.startDate);
-        if (req.body.endDate) qs.push('endDate=' + req.body.endDate);
-        if (req.body.limit) qs.push('limit=' + req.body.limit);
-
-        URL = API + `/v1/orders?${qs.join('&')}`;
-      }
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  private simplexGetKeys(req) {
-    if (!config.simplex) throw new Error('Simplex missing credentials');
-
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    env = req.body.env === 'production' ? 'production' : 'sandbox';
-    if (req.body.context === 'web') {
-      env += 'Web';
-    }
-
-    delete req.body.env;
-    delete req.body.context;
-
-    const keys = {
-      API: config.simplex[env].api,
-      API_SELL: config.simplex[env].apiSell,
-      API_KEY: config.simplex[env].apiKey,
-      PUBLIC_KEY: config.simplex[env].publicKey,
-      APP_PROVIDER_ID: config.simplex[env].appProviderId,
-      APP_SELL_REF_ID: config.simplex[env].appSellRefId
-    };
-
-    return keys;
-  }
-
-  simplexGetCurrencies(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.simplexGetKeys(req);
-      const API = keys.API;
-      const PUBLIC_KEY = keys.PUBLIC_KEY;
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      const URL = API + `/v2/supported_crypto_currencies?public_key=${PUBLIC_KEY}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  simplexGetQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.simplexGetKeys(req);
-
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const ip = Utils.getIpFromReq(req);
-
-      req.body.client_ip = ip;
-      req.body.wallet_id = keys.APP_PROVIDER_ID;
-
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'ApiKey ' + API_KEY
-      };
-
-      if (req.body && req.body.payment_methods && Array.isArray(req.body.payment_methods)) {
-        // Workaround to fix older versions of the app
-        req.body.payment_methods = req.body.payment_methods.map(item => item === 'simplex_account' ? 'sepa_open_banking' : item);
-      }
-
-      this.request.post(
-        API + '/wallet/merchant/v2/quote',
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : null);
-          }
-        }
-      );
-    });
-  }
-
-  simplexGetSellQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.simplexGetKeys(req);
-
-      const API = keys.API_SELL;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['base_currency', 'base_amount', 'quote_currency', 'pp_payment_method'])) {
-        return reject(new ClientError("Simplex's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'ApiKey ' + API_KEY,
-      };
-
-      if (req.body.userCountry && typeof req.body.userCountry === 'string') {
-        headers['x-country-code'] = req.body.userCountry.toUpperCase();
-      }
-
-      let qs = [];
-      qs.push('base_currency=' + req.body.base_currency);
-      qs.push('base_amount=' + req.body.base_amount);
-      qs.push('quote_currency=' + req.body.quote_currency);
-      qs.push('pp_payment_method=' + req.body.pp_payment_method);
-
-      const URL: string = API + `/v3/quote?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  simplexPaymentRequest(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.simplexGetKeys(req);
-
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const appProviderId = keys.APP_PROVIDER_ID;
-      const paymentId = Uuid.v4();
-      const orderId = Uuid.v4();
-      const apiHost = keys.API;
-      const ip = Utils.getIpFromReq(req);
-
-      if (
-        !checkRequired(req.body, ['account_details', 'transaction_details']) &&
-        !checkRequired(req.body.transaction_details, ['payment_details'])
-      ) {
-        return reject(new ClientError("Simplex's request missing arguments"));
-      }
-
-      req.body.account_details.app_provider_id = appProviderId;
-      req.body.account_details.signup_login = {
-        ip,
-        location: '',
-        uaid: '',
-        accept_language: 'de,en-US;q=0.7,en;q=0.3',
-        http_accept_language: 'de,en-US;q=0.7,en;q=0.3',
-        user_agent: req.body.account_details.signup_login ? req.body.account_details.signup_login.user_agent : '', // Format: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0'
-        cookie_session_id: '',
-        timestamp: req.body.account_details.signup_login ? req.body.account_details.signup_login.timestamp : ''
-      };
-
-      req.body.transaction_details.payment_details.payment_id = paymentId;
-      req.body.transaction_details.payment_details.order_id = orderId;
-
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'ApiKey ' + API_KEY
-      };
-
-      this.request.post(
-        API + '/wallet/merchant/v2/payments/partner/data',
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            data.body.payment_id = paymentId;
-            data.body.order_id = orderId;
-            data.body.app_provider_id = appProviderId;
-            data.body.api_host = apiHost;
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  simplexSellPaymentRequest(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.simplexGetKeys(req);
-
-      const API = keys.API_SELL;
-      const API_KEY = keys.API_KEY;
-      const appSellRefId = keys.APP_SELL_REF_ID;
-
-      if (
-        !checkRequired(req.body, ['referer_url', 'return_url']) ||
-        !checkRequired(req.body.txn_details, ['quote_id'])
-      ) {
-        return reject(new ClientError("Simplex's request missing arguments"));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'ApiKey ' + API_KEY,
-      };
-
-      if (req.body.userCountry && typeof req.body.userCountry === 'string') {
-        headers['x-country-code'] = req.body.userCountry.toUpperCase();
-      }
-
-      this.request.post(
-        API + '/v3/initiate-sell/widget',
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            data.body.app_sell_ref_id = appSellRefId;
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  simplexGetEvents(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
-      if (!req.env || (req.env != 'sandbox' && req.env != 'production'))
-        return reject(new Error("Simplex's request wrong environment"));
-
-      const API = config.simplex[req.env].api;
-      const API_KEY = config.simplex[req.env].apiKey;
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'ApiKey ' + API_KEY
-      };
-
-      this.request.get(
-        API + '/wallet/merchant/v2/events',
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : null);
-          } else {
-            return resolve(data.body ? data.body : null);
-          }
-        }
-      );
-    });
-  }
-
-  private wyreGetKeys(req) {
-    if (!config.wyre) throw new Error('Wyre missing credentials');
-
-    let env = 'sandbox';
-    if (req.body.env && req.body.env == 'production') {
-      env = 'production';
-    }
-    delete req.body.env;
-
-    const keys = {
-      API: config.wyre[env].api,
-      API_KEY: config.wyre[env].apiKey,
-      SECRET_API_KEY: config.wyre[env].secretApiKey,
-      ACCOUNT_ID: config.wyre[env].appProviderAccountId
-    };
-
-    return keys;
-  }
-
-  private thorswapGetKeys(req) {
-    if (!config.thorswap) throw new Error('Thorswap missing credentials');
-
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    env = req.body.env === 'production' ? 'production' : 'sandbox';
-    if (req.body.context === 'web') {
-      env += 'Web';
-    }
-
-    delete req.body.env;
-    delete req.body.context;
-
-    const keys: {
-      API: string;
-      API_KEY: string;
-      SECRET_KEY: string;
-      REFERER: string;
-    } = {
-      API: config.thorswap[env].api,
-      API_KEY: config.thorswap[env].apiKey,
-      SECRET_KEY: config.thorswap[env].secretKey,
-      REFERER: config.thorswap[env].referer
-    };
-
-    return keys;
-  }
-
-  thorswapGetSupportedChains(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.thorswapGetKeys(req);
-      const API = keys.API;
-      const REFERER = keys.REFERER;
-      const API_KEY = keys.API_KEY;
-
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Referer': REFERER,
-        'x-api-key': API_KEY
-      };
-
-      const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/chains/details' : '/tokenlist/utils/chains';
-      const URL: string = API + uriPath;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  thorswapGetCryptoCurrencies(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.thorswapGetKeys(req);
-      const API = keys.API;
-      const REFERER = keys.REFERER;
-      const API_KEY = keys.API_KEY;
-
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Referer': REFERER,
-        'x-api-key': API_KEY
-      };
-
-      let qs = [];
-      qs.push('categories=' + (req?.body?.categories ?? 'all'));
-
-      const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/currencies/details' : '/tokenlist/utils/currencies';
-      const URL: string = API + `${uriPath}?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  thorswapGetSwapQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.thorswapGetKeys(req);
-      const API = keys.API;
-      const REFERER = keys.REFERER;
-      const API_KEY = keys.API_KEY;
-
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Referer': REFERER,
-        'x-api-key': API_KEY
-      };
-
-      let qs = [];
-      if (!checkRequired(req.body, ['sellAsset', 'buyAsset', 'sellAmount'])) {
-        return reject(new ClientError("Thorswap's request missing arguments"));
-      }
-      qs.push('sellAsset=' + req.body.sellAsset);
-      qs.push('buyAsset=' + req.body.buyAsset);
-      qs.push('sellAmount=' + req.body.sellAmount);
-      if (req.body.senderAddress) qs.push('senderAddress=' + req.body.senderAddress);
-      if (req.body.recipientAddress) qs.push('recipientAddress=' + req.body.recipientAddress);
-      if (req.body.slippage) qs.push('slippage=' + req.body.slippage);
-      if (req.body.limit) qs.push('limit=' + req.body.limit);
-      if (req.body.providers) qs.push('providers=' + req.body.providers);
-      if (req.body.subProviders) qs.push('subProviders=' + req.body.subProviders);
-      if (req.body.preferredProvider) qs.push('preferredProvider=' + req.body.preferredProvider);
-      if (req.body.affiliateAddress) qs.push('affiliateAddress=' + req.body.affiliateAddress);
-      if (req.body.affiliateBasisPoints) qs.push('affiliateBasisPoints=' + req.body.affiliateBasisPoints);
-      if (req.body.isAffiliateFeeFlat) qs.push('isAffiliateFeeFlat=' + req.body.isAffiliateFeeFlat);
-      if (req.body.allowSmartContractRecipient) qs.push('allowSmartContractRecipient=' + req.body.allowSmartContractRecipient);
-
-      const URL: string = API + `/aggregator/tokens/quote?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  thorswapGetSwapTx(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.thorswapGetKeys(req);
-      const API = keys.API;
-      const REFERER = keys.REFERER;
-      const API_KEY = keys.API_KEY;
-
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Referer': REFERER,
-        'x-api-key': API_KEY
-      };
-
-      if (!checkRequired(req.body, ['hash']) && !checkRequired(req.body, ['txn'])) {
-        return reject(new ClientError("Thorswap's request missing arguments"));
-      }
-
-      this.request.post(
-        API + '/tracker/v2/txn',
-        // API + '/apiusage/v2/txn',
-        // 'https://api.swapkit.dev/track',
-        // /apiusage/v2/txn
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  private transakGetKeys(req) {
-    if (!config.transak) throw new Error('Transak missing credentials');
-
-    let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
-    env = req.body.env === 'production' ? 'production' : 'sandbox';
-    if (req.body.context === 'web') {
-      env += 'Web';
-    }
-
-    delete req.body.env;
-    delete req.body.context;
-
-    const keys: {
-      API: string;
-      API_KEY: string;
-      SECRET_KEY: string;
-      WIDGET_API: string;
-    } = {
-      API: config.transak[env].api,
-      API_KEY: config.transak[env].apiKey,
-      SECRET_KEY: config.transak[env].secretKey,
-      WIDGET_API: config.transak[env].widgetApi
-    };
-
-    return keys;
-  }
-
-  transakGetAccessToken(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-      const SECRET_KEY = keys.SECRET_KEY;
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'api-secret': SECRET_KEY,
-      };
-
-      req.body = {
-        apiKey: API_KEY
-      }
-
-      const URL: string = API + '/partners/api/v2/refresh-token';
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  transakGetCryptoCurrencies(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
-      const API = keys.API;
-
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      };
-
-      const URL: string = API + '/api/v2/currencies/crypto-currencies';
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  transakGetFiatCurrencies(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      };
-
-      const URL: string = API + `/api/v2/currencies/fiat-currencies?apiKey=${API_KEY}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  transakGetQuote(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
-      const API = keys.API;
-      const API_KEY = keys.API_KEY;
-
-      if (!checkRequired(req.body, ['fiatCurrency', 'cryptoCurrency', 'network', 'paymentMethod'])) {
-        return reject(new ClientError("Transak's request missing arguments"));
-      }
-
-      const headers = {
-        Accept: 'application/json',
-      };
-
-      let qs = [];
-      qs.push('partnerApiKey=' + API_KEY);
-      qs.push('fiatCurrency=' + req.body.fiatCurrency);
-      qs.push('cryptoCurrency=' + req.body.cryptoCurrency);
-      qs.push('isBuyOrSell=BUY');
-      qs.push('network=' + req.body.network);
-      qs.push('paymentMethod=' + req.body.paymentMethod);
-
-      if (req.body.fiatAmount) qs.push('fiatAmount=' + req.body.fiatAmount);
-      if (req.body.cryptoAmount) qs.push('cryptoAmount=' + req.body.cryptoAmount);
-
-      const URL: string = API + `/api/v2/currencies/price?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  transakGetSignedPaymentUrl(req): { urlWithSignature: string } {
-    const appRequiredParams = [
-      'walletAddress',
-      'redirectURL',
-      'fiatAmount',
-      'fiatCurrency',
-      'network',
-      'cryptoCurrencyCode',
-      'partnerOrderId',
-      'partnerCustomerId',
-    ];
-
-    const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
-    const keys = this.transakGetKeys(req);
-    const API_KEY = keys.API_KEY;
-    const WIDGET_API = keys.WIDGET_API;
-
-    if (
-      !checkRequired(req.body, requiredParams)
-    ) {
-      throw new ClientError("Transak's request missing arguments");
-    }
-
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs = [];
-    // Recommended parameters to customize from the app
-    if (req.body.walletAddress) qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
-    if (req.body.disableWalletAddressForm) qs.push('disableWalletAddressForm=' + encodeURIComponent(req.body.disableWalletAddressForm));
-    if (req.body.redirectURL) qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
-    if (req.body.exchangeScreenTitle) qs.push('exchangeScreenTitle=' + encodeURIComponent(req.body.exchangeScreenTitle));
-    if (req.body.fiatAmount) qs.push('fiatAmount=' + encodeURIComponent(req.body.fiatAmount));
-    if (req.body.fiatCurrency) qs.push('fiatCurrency=' + encodeURIComponent(req.body.fiatCurrency));
-    if (req.body.network) qs.push('network=' + encodeURIComponent(req.body.network));
-    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
-    if (req.body.cryptoCurrencyCode) qs.push('cryptoCurrencyCode=' + encodeURIComponent(req.body.cryptoCurrencyCode));
-    if (req.body.cryptoCurrencyList) qs.push('cryptoCurrencyList=' + encodeURIComponent(req.body.cryptoCurrencyList));
-    if (req.body.hideExchangeScreen) qs.push('hideExchangeScreen=' + encodeURIComponent(req.body.hideExchangeScreen));
-    if (req.body.themeColor) qs.push('themeColor=' + encodeURIComponent(req.body.themeColor));
-    if (req.body.hideMenu) qs.push('hideMenu=' + encodeURIComponent(req.body.hideMenu));
-    if (req.body.partnerOrderId) qs.push('partnerOrderId=' + encodeURIComponent(req.body.partnerOrderId));
-    if (req.body.partnerCustomerId) qs.push('partnerCustomerId=' + encodeURIComponent(req.body.partnerCustomerId));
-    // Other parameters
-    if (req.body.environment) qs.push('environment=' + encodeURIComponent(req.body.environment));
-    if (req.body.widgetHeight) qs.push('widgetHeight=' + encodeURIComponent(req.body.widgetHeight));
-    if (req.body.widgetWidth) qs.push('widgetWidth=' + encodeURIComponent(req.body.widgetWidth));
-    if (req.body.productsAvailed) qs.push('productsAvailed=' + encodeURIComponent(req.body.productsAvailed));
-    if (req.body.defaultFiatAmount) qs.push('defaultFiatAmount=' + encodeURIComponent(req.body.defaultFiatAmount));
-    if (req.body.countryCode) qs.push('countryCode=' + encodeURIComponent(req.body.countryCode));
-    if (req.body.excludeFiatCurrencies) qs.push('excludeFiatCurrencies=' + encodeURIComponent(req.body.excludeFiatCurrencies));
-    if (req.body.defaultNetwork) qs.push('defaultNetwork=' + encodeURIComponent(req.body.defaultNetwork));
-    if (req.body.networks) qs.push('networks=' + encodeURIComponent(req.body.networks));
-    if (req.body.defaultPaymentMethod) qs.push('defaultPaymentMethod=' + encodeURIComponent(req.body.defaultPaymentMethod));
-    if (req.body.disablePaymentMethods) qs.push('disablePaymentMethods=' + encodeURIComponent(req.body.disablePaymentMethods));
-    if (req.body.defaultCryptoAmount) qs.push('defaultCryptoAmount=' + encodeURIComponent(req.body.defaultCryptoAmount));
-    if (req.body.cryptoAmount) qs.push('cryptoAmount=' + encodeURIComponent(req.body.cryptoAmount));
-    if (req.body.defaultCryptoCurrency) qs.push('defaultCryptoCurrency=' + encodeURIComponent(req.body.defaultCryptoCurrency));
-    if (req.body.isFeeCalculationHidden) qs.push('isFeeCalculationHidden=' + encodeURIComponent(req.body.isFeeCalculationHidden));
-    if (req.body.walletAddressesData) qs.push('walletAddressesData=' + encodeURIComponent(req.body.walletAddressesData));
-    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
-    if (req.body.userData) qs.push('userData=' + encodeURIComponent(req.body.userData));
-    if (req.body.isAutoFillUserData) qs.push('isAutoFillUserData=' + encodeURIComponent(req.body.isAutoFillUserData));
-
-    const URL_SEARCH: string = `?apiKey=${API_KEY}&${qs.join('&')}`;
-
-    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}`;
-
-    return { urlWithSignature };
-  }
-
-  transakGetOrderDetails(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      const env = _.cloneDeep(req.body.env);
-      const keys = this.transakGetKeys(req);
-      const API = keys.API;
-
-      if (!checkRequired(req.body, ['orderId'])) {
-        return reject(new ClientError("Transak's request missing arguments"));
-      }
-
-      let accessToken;
-      if (req.body.accessToken) {
-        accessToken = req.body.accessToken;
-      } else {
-        try {
-          const accessTokenData = await this.transakGetAccessToken({ body: env });
-          accessToken = accessTokenData?.data?.accessToken;
-        } catch (err) {
-          return reject(err?.body ? err.body : err);
-        }
-      }
-
-      const headers = {
-        Accept: 'application/json',
-        'access-token': accessToken,
-      };
-
-      const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-
-  wyreWalletOrderQuotation(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.wyreGetKeys(req);
-      req.body.accountId = keys.ACCOUNT_ID;
-
-      if (req.body.amountIncludeFees) {
-        if (
-          !checkRequired(req.body, ['sourceAmount', 'sourceCurrency', 'destCurrency', 'dest', 'country', 'walletType'])
-        ) {
-          return reject(new ClientError("Wyre's request missing arguments"));
-        }
-      } else {
-        if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'country'])) {
-          return reject(new ClientError("Wyre's request missing arguments"));
-        }
-      }
-
-      const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
-      const XApiSignature: string = URL + JSON.stringify(req.body);
-      const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
-        Buffer.from(XApiSignature),
-        Buffer.from(keys.SECRET_API_KEY)
-      ).toString('hex');
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'X-Api-Key': keys.API_KEY,
-        'X-Api-Signature': XApiSignatureHash
-      };
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  wyreWalletOrderReservation(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const keys = this.wyreGetKeys(req);
-      req.body.referrerAccountId = keys.ACCOUNT_ID;
-
-      if (req.body.amountIncludeFees) {
-        if (
-          !checkRequired(req.body, [
-            'sourceAmount',
-            'sourceCurrency',
-            'destCurrency',
-            'dest',
-            'country',
-            'paymentMethod'
-          ])
-        ) {
-          return reject(new ClientError("Wyre's request missing arguments"));
-        }
-      } else {
-        if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'paymentMethod'])) {
-          return reject(new ClientError("Wyre's request missing arguments"));
-        }
-      }
-
-      const URL: string = `${keys.API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
-      const XApiSignature: string = URL + JSON.stringify(req.body);
-      const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
-        Buffer.from(XApiSignature),
-        Buffer.from(keys.SECRET_API_KEY)
-      ).toString('hex');
-
-      const headers = {
-        'Content-Type': 'application/json',
-        'X-Api-Key': keys.API_KEY,
-        'X-Api-Signature': XApiSignatureHash
-      };
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: req.body,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  private changellyGetKeys(req) {
-    if (!config.changelly) {
-      logger.warn('Changelly missing credentials');
-      throw new Error('ClientError: Service not configured.');
-      if (!config.changelly.v1) {
-        logger.warn('Changelly v1 missing credentials');
-        throw new Error('ClientError: Service v1 not configured.');
-      }
-    }
-
-    const keys = {
-      API: config.changelly.v1.api,
-      API_KEY: config.changelly.v1.apiKey,
-      SECRET: config.changelly.v1.secret
-    };
-
-    return keys;
-  }
-
-  private changellyGetKeysV2(req) {
-    if (!config.changelly) {
-      logger.warn('Changelly missing credentials');
-      throw new Error('ClientError: Service not configured.');
-      if (!config.changelly.v2) {
-        logger.warn('Changelly v2 missing credentials');
-        throw new Error('ClientError: Service v2 not configured.');
-      }
-    }
-
-    const keys = {
-      API: config.changelly.v2.api,
-      SECRET: config.changelly.v2.secret
-    };
-
-    return keys;
-  }
-
-  changellySignRequests(message, secret: string) {
-    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v1 request');
-
-    const sign: string = Bitcore.crypto.Hash.sha512hmac(
-      Buffer.from(JSON.stringify(message)),
-      Buffer.from(secret)
-    ).toString('hex');
-
-    return sign;
-  }
-
-
-  changellySignRequestsV2(message, secret: string) {
-    if (!message || !secret) throw new Error('Missing parameters to sign Changelly v2 request');
-
-    const privateKey = crypto.createPrivateKey({
-      key: Buffer.from(secret, 'hex'),
-      format: 'der',
-      type: 'pkcs8',
-    });
-
-    const publicKey = crypto.createPublicKey(privateKey).export({
-      type: 'pkcs1',
-      format: 'der'
-    });
-
-    const signature = crypto.sign('sha256', Buffer.from(JSON.stringify(message)), privateKey);
-
-    return { signature, publicKey };
-  }
-
-  changellyGetCurrencies(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let keys, headers;
-      if (req.body.useV2) {
-        keys = this.changellyGetKeysV2(req);
-      } else {
-        keys = this.changellyGetKeys(req);
-      }
-
-      if (!checkRequired(req.body, ['id'])) {
-        return reject(new ClientError('changellyGetCurrencies request missing arguments'));
-      }
-
-      const message = {
-        jsonrpc: '2.0',
-        id: req.body.id,
-        method: req.body.full ? 'getCurrenciesFull' : 'getCurrencies',
-        params: {}
-      };
-
-      const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  changellyGetPairsParams(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let keys, headers;
-      if (req.body.useV2) {
-        keys = this.changellyGetKeysV2(req);
-      } else {
-        keys = this.changellyGetKeys(req);
-      }
-
-      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo'])) {
-        return reject(new ClientError('changellyGetPairsParams request missing arguments'));
-      }
-
-      const message = {
-        id: req.body.id,
-        jsonrpc: '2.0',
-        method: 'getPairsParams',
-        params: [
-          {
-            from: req.body.coinFrom,
-            to: req.body.coinTo
-          }
-        ]
-      };
-
-      const URL: string = keys.API;
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  changellyGetFixRateForAmount(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let keys, headers;
-      if (req.body.useV2) {
-        keys = this.changellyGetKeysV2(req);
-      } else {
-        keys = this.changellyGetKeys(req);
-      }
-
-      if (!checkRequired(req.body, ['id', 'coinFrom', 'coinTo', 'amountFrom'])) {
-        return reject(new ClientError('changellyGetFixRateForAmount request missing arguments'));
-      }
-
-      const message = {
-        id: req.body.id,
-        jsonrpc: '2.0',
-        method: 'getFixRateForAmount',
-        params: [
-          {
-            from: req.body.coinFrom,
-            to: req.body.coinTo,
-            amountFrom: req.body.amountFrom
-          }
-        ]
-      };
-
-      const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  changellyCreateFixTransaction(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let keys, headers;
-      if (req.body.useV2) {
-        keys = this.changellyGetKeysV2(req);
-      } else {
-        keys = this.changellyGetKeys(req);
-      }
-
-      if (
-        !checkRequired(req.body, [
-          'id',
-          'coinFrom',
-          'coinTo',
-          'amountFrom',
-          'addressTo',
-          'fixedRateId',
-          'refundAddress'
-        ])
-      ) {
-        return reject(new ClientError('changellyCreateFixTransaction request missing arguments'));
-      }
-
-      const message = {
-        id: req.body.id,
-        jsonrpc: '2.0',
-        method: 'createFixTransaction',
-        params: {
-          from: req.body.coinFrom,
-          to: req.body.coinTo,
-          address: req.body.addressTo,
-          amountFrom: req.body.amountFrom,
-          rateId: req.body.fixedRateId,
-          refundAddress: req.body.refundAddress
-        }
-      };
-
-      const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  changellyGetTransactions(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let keys, headers;
-      if (req.body.useV2) {
-        keys = this.changellyGetKeysV2(req);
-      } else {
-        keys = this.changellyGetKeys(req);
-      }
-
-      if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
-        return reject(new ClientError('changellyGetTransactions request missing arguments'));
-      }
-
-      const message = {
-        id: req.body.id,
-        jsonrpc: '2.0',
-        method: 'getTransactions',
-        params:
-        {
-          id: req.body.exchangeTxId,
-          limit: req.body.limit ?? 1,
-        }
-      };
-
-      const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  changellyGetStatus(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let keys, headers;
-      if (req.body.useV2) {
-        keys = this.changellyGetKeysV2(req);
-      } else {
-        keys = this.changellyGetKeys(req);
-      }
-
-      if (!checkRequired(req.body, ['id', 'exchangeTxId'])) {
-        return reject(new ClientError('changellyGetStatus request missing arguments'));
-      }
-
-      const message = {
-        jsonrpc: '2.0',
-        id: req.body.id,
-        method: 'getStatus',
-        params: {
-          id: req.body.exchangeTxId
-        }
-      };
-
-      const URL: string = keys.API;
-
-      if (req.body.useV2) {
-        const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
-          'X-Api-Signature': signature.toString('base64'),
-        };
-      } else {
-        const sign: string = this.changellySignRequests(message, keys.SECRET);
-        headers = {
-          'Content-Type': 'application/json',
-          sign,
-          'api-key': keys.API_KEY
-        };
-      }
-
-      this.request.post(
-        URL,
-        {
-          headers,
-          body: message,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  private oneInchGetCredentials() {
-    if (!config.oneInch) throw new Error('1Inch missing credentials');
-
-    const credentials = {
-      API: config.oneInch.api,
-      API_KEY: config.oneInch.apiKey,
-      referrerAddress: config.oneInch.referrerAddress,
-      referrerFee: config.oneInch.referrerFee
-    };
-
-    return credentials;
-  }
-
-  oneInchGetReferrerFee(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const credentials = this.oneInchGetCredentials();
-
-      const referrerFee: number = credentials.referrerFee;
-
-      resolve({ referrerFee });
-    });
-  }
-
-  oneInchGetSwap(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const credentials = this.oneInchGetCredentials();
-
-      if (
-        !checkRequired(req.body, [
-          'fromTokenAddress',
-          'toTokenAddress',
-          'amount',
-          'fromAddress',
-          'slippage',
-          'destReceiver'
-        ])
-      ) {
-        return reject(new ClientError('oneInchGetSwap request missing arguments'));
-      }
-
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-
-      let qs = [];
-      qs.push('fromTokenAddress=' + req.body.fromTokenAddress);
-      qs.push('toTokenAddress=' + req.body.toTokenAddress);
-      qs.push('amount=' + req.body.amount);
-      qs.push('fromAddress=' + req.body.fromAddress);
-      qs.push('slippage=' + req.body.slippage);
-      qs.push('destReceiver=' + req.body.destReceiver);
-
-      if (credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
-      if (credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
-
-      const chainNetwork: string = `${req.params?.['chain']?.toUpperCase()}_mainnet` || 'eth_mainnet';
-      const chainId: number = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[chainNetwork];
-
-      const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  oneInchGetTokens(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-
-      const credentials = this.oneInchGetCredentials();
-      const chain = req.params?.['chain'] || 'eth';
-      const cacheKey = `oneInchTokens:${chain}`;
-
-      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.ONE_INCH_CACHE_DURATION, (err, values, oldvalues) => {
-        if (err) this.logw('Could not get stored tokens list', err);
-        if (values) return resolve(values);
-
-        const headers = {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: 'Bearer ' + credentials.API_KEY,
-        };
-
-        const chainIdMap = {
-          eth: 1,
-          matic: 137,
-          arb: 42161,
-          base: 8453,
-          op: 10,
-        };
-
-        const chainId = chainIdMap[chain];
-
-        const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
-
-        this.request.get(
-          URL,
-          {
-            headers,
-            json: true
-          },
-          (err, data) => {
-            if (err) {
-              this.logw('An error occured while retrieving the token list', err);
-              if (oldvalues) {
-                this.logw('Using old cached values');
-                return resolve(oldvalues);
-              }
-              return reject(err.body ?? err);
-            } else if (data?.statusCode === 429 && oldvalues) {
-              // oneinch rate limit
-              return resolve(oldvalues);
-            } else {
-              if (!data?.body?.tokens) {
-                if (oldvalues) {
-                  this.logw('No token list available... using old cached values');
-                  return resolve(oldvalues);
-                }
-                return reject(new Error('Could not get tokens list'));
-              }
-              this.storage.storeGlobalCache(cacheKey, data.body.tokens, err => {
-                if (err) {
-                  this.logw('Could not store tokens list');
-                }
-                return resolve(data.body.tokens);
-              });
-            }
-          }
-        );
-      });
-    });
   }
 
   checkServiceAvailability(req): boolean {
@@ -7672,14 +5208,14 @@ export class WalletService implements IWalletService {
 }
 
 
-function checkRequired(obj, args, cb?: (e: any) => void) {
+export function checkRequired(obj, args, cb?: (e: any) => void) {
   const missing = Utils.getMissingFields(obj, args);
-  if (_.isEmpty(missing)) {
+  if (!missing.length) {
     return true;
   }
 
-  if (_.isFunction(cb)) {
-    return cb(new ClientError('Required argument: ' + _.first(missing) + ' missing.'));
+  if (typeof cb === 'function') {
+    return cb(new ClientError('Required argument: ' + missing[0] + ' missing.'));
   }
 
   return false;

@@ -1,5 +1,6 @@
 import { Validation } from 'crypto-wallet-core';
 import { Request, Response, Router } from 'express';
+import config from '../../config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
@@ -97,14 +98,26 @@ router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: Authentica
 router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   let keepAlive;
   try {
-    let { chain, network } = req.params;
-    let addressLines: { address: string }[] = req.body.filter(line => !!line.address);
+    const { chain, network, pubKey } = req.params;
+    const addressLines: { address: string }[] = req.body.filter(line => !!line.address);
 
-    let addresses = addressLines.map(({ address }) => address);
+    const addresses = addressLines.map(({ address }) => address);
     for (const address of addresses) {
       if (isTooLong(address) || !Validation.validateAddress(chain, network, address)) {
         return res.status(413).send('Invalid address');
       }
+    }
+    let reprocess = false;
+    if (req.headers['x-reprocess']) {
+      const reprocessOk = Auth.verifyRequestSignature({
+        message: ['reprocess', '/addAddresses' + pubKey, JSON.stringify(req.body)].join('|'),
+        pubKey: config.services.socket.bwsKeys[0],
+        signature: req.headers['x-reprocess']
+      });
+      if (!reprocessOk) {
+        return res.status(401).send('Authentication failed');
+      }
+      reprocess = true;
     }
     res.status(200);
     keepAlive = setInterval(() => {
@@ -114,7 +127,8 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
       chain,
       network,
       wallet: req.wallet!,
-      addresses
+      addresses,
+      reprocess
     });
     clearInterval(keepAlive);
     return res.end();

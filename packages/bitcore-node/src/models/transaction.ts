@@ -729,7 +729,6 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
   _apiTransform(tx: Partial<MongoBound<IBtcTransaction>>, options?: TransformOptions): TransactionJSON | string {
     const transaction: TransactionJSON = {
-      _id: tx._id ? tx._id.toString() : '',
       txid: tx.txid || '',
       network: tx.network || '',
       chain: tx.chain || '',

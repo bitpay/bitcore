@@ -1,20 +1,16 @@
 'use strict';
 
-// Native
-const superagent = require('superagent');
-const query = require('querystring');
-const url = require('url');
-const Errors = require('./errors');
-const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
-const Bitcore = require('crypto-wallet-core').BitcoreLib;
-const _ = require('lodash');
+import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
+import query from 'querystring';
+import superagent from 'superagent';
+import url from 'url';
+import dfltTrustedKeys from '../util/JsonPaymentProtocolKeys';
+import { Errors } from './errors';
+
 const sha256 = Bitcore.crypto.Hash.sha256;
 const BN = Bitcore.crypto.BN;
-var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('crypto-wallet-core').BitcoreLibCash
-};
-var MAX_FEE_PER_KB = {
+
+const MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b
   eth: 1000000000000, // 1000 Gwei
@@ -32,7 +28,7 @@ export enum NetworkMap {
   main = 'livenet',
   test = 'testnet',
   regtest = 'regtest'
-}
+};
 
 export class PayProV2 {
   static options: { headers?: any; args?: string; agent?: boolean } = {
@@ -71,9 +67,9 @@ export class PayProV2 {
       );
 
       var r = this.request[requestOptions.method](requestOptions.url);
-      _.each(requestOptions.headers, (v, k) => {
+      for (const [k, v] of Object.entries(requestOptions.headers || {})) {
         if (v) r.set(k, v);
-      });
+      }
       r.agent(requestOptions.agent);
 
       if (requestOptions.args) {
@@ -446,6 +442,7 @@ export class PayProV2 {
 
   static processResponse(responseData) {
     let payProDetails: any = {
+      paymentId: responseData.paymentId,
       payProUrl: responseData.paymentUrl,
       memo: responseData.memo
     };
@@ -453,7 +450,6 @@ export class PayProV2 {
     // otherwise, it returns err.
     payProDetails.verified = true;
 
-    // getPaymentOptions
     if (responseData.paymentOptions) {
       payProDetails.paymentOptions = responseData.paymentOptions;
       payProDetails.paymentOptions.forEach(option => {
@@ -461,14 +457,16 @@ export class PayProV2 {
       });
     }
 
-    // network
     if (responseData.network) {
       payProDetails.network = NetworkMap[responseData.network];
     }
 
     if (responseData.chain) {
-      payProDetails.coin = responseData.chain?.toLowerCase(); // TODO responseData.coin ???
       payProDetails.chain = responseData.chain?.toLowerCase();
+    }
+
+    if (responseData.currency) {
+      payProDetails.currency = responseData.currency;
     }
 
     if (responseData.expires) {
@@ -476,6 +474,14 @@ export class PayProV2 {
         payProDetails.expires = new Date(responseData.expires).toISOString();
       } catch (e) {
         throw new Error('Bad expiration');
+      }
+    }
+
+    if (responseData.time) {
+      try {
+        payProDetails.time = new Date(responseData.time).toISOString();
+      } catch (e) {
+        throw new Error('Bad time');
       }
     }
 
@@ -499,4 +505,4 @@ export class PayProV2 {
     }
     return payProDetails;
   }
-}
+};
