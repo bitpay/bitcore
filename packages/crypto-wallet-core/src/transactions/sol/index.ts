@@ -22,9 +22,9 @@ export class SOLTxProvider {
     blockHash?: string;
     blockHeight?: number;
     priorityFee?: number;
-    txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>
+    txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
     // account creation fields
-    fromKeyPair?: SolKit.KeyPairSigner,
+    fromKeyPair?: SolKit.KeyPairSigner;
     space?: number; // amount of space to reserve a new account in bytes
   }) {
     const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions } = params;
