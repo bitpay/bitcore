@@ -1,5 +1,4 @@
 import { ObjectID } from 'bson';
-import * as _ from 'lodash';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';

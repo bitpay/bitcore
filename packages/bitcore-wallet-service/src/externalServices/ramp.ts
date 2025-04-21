@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';

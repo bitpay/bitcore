@@ -1,6 +1,5 @@
 import { ObjectId } from 'bson';
 import { expect } from 'chai';
-import * as _ from 'lodash';
 import * as sinon from 'sinon';
 import request from 'request';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
