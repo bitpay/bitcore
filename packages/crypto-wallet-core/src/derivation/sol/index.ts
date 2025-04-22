@@ -48,8 +48,7 @@ export class SolDeriver implements IDeriver {
       .slice(1)
       .map((val) => val.replace("'", ''))
       .map(el => parseInt(el, 10));
-    const derivePath = segmented.reduce((parentKeys, segment) => ed25519.CKDPriv(parentKeys, segment + HARDENED_OFFSET), masterKey);
-    return derivePath;
+    return segmented.reduce((parentKeys, segment) => ed25519.CKDPriv(parentKeys, segment + HARDENED_OFFSET), masterKey);
   }
 
   derivePrivateKeyWithPath(_network: string, seed: string, path: string) {

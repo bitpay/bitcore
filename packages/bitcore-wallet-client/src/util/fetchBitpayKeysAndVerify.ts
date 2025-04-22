@@ -1,4 +1,4 @@
-const ncrypto = require('crypto');
+const ncrypto = require('crypto'); // renamed in order to prevent redeclaration of block-scoped variable 'crypto' from typescript dom library
 
 const bs58 = require('bs58');
 const kbpgp = require('kbpgp');
