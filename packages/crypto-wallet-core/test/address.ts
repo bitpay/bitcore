@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { Deriver } from '../src';
 import { SolDeriver } from '../src/derivation/sol';
+import { createKeyPairFromPrivateKeyBytes, getAddressDecoder } from '@solana/kit'
 
 describe('Address Derivation', () => {
   it('should be able to generate a valid BTC address', () => {
@@ -145,31 +146,33 @@ describe('Address Derivation', () => {
     expect(result.pubKey).to.equal(expectedResult.pubKey);
   });
 
-  it('should be able to generate a valid SOL address from seed', async () => {
-    const path = Deriver.pathFor('SOL', 'mainnet');
-    expect(path).to.equal("m/44'/501'/0'");
-    const fullPath = path + "/0'";
-    const mnemonic = 'crush desk brain index action subject tackle idea trim unveil lawn live';
-    const seed =
-      '845c2dbfd7e878ef64b6e42d3c15aa2035e4b7f0851493b431b970b0e36e6c4ede289b1151daf41610e2b752e0579cd69401179d82f01dccf1de63b2208af0fb';
-    const solDeriver = Deriver.get('SOL') as SolDeriver;
-    const result = await solDeriver.derivePrivateKeyFromSeedWithPathAsync('mainnet', seed, fullPath);
-    const expectedResult = {
-      address: '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD'
-    };
-    expect(result.address).to.equal(expectedResult.address);
-  });
-
   it('should be able to generate a valid SOL address, privKey', async () => {
-    const privKey =
-      'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X';
-    const result = await Deriver.derivePrivateKeyAsync('SOL', 'mainnet', privKey, 0, false);
-    console.log(result)
+    // crush desk brain index action subject tackle idea trim unveil lawn live
+    const privKey = 'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X';
+    const result = Deriver.derivePrivateKey('SOL', 'mainnet', privKey, 0, false);
     const expectedResult = {
       address: '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD',
-      privKey: '4t1miiTfv6eN68SAve89bGYFZXC3UP3fZmTzbRL2y5UwL9FiHsaB3Xso5VNCzoTXKC1s4agzGccMvKZ98ok4CV8R'
+      privKey: 'c20afd00e9373519cb2fa0881db2f33e1266bdd61c5dd5e540790979e3524508',
+      pubKey: '5c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66'
     };
     expect(result.address).to.equal(expectedResult.address);
     expect(result.privKey).to.equal(expectedResult.privKey);
+    expect(result.pubKey).to.equal(expectedResult.pubKey);
+    const a = Deriver.getAddress('SOL', 'mainnet', result.pubKey);
+    expect(a).to.equal(expectedResult.address);
+    const keypair = await createKeyPairFromPrivateKeyBytes(Buffer.from(result.privKey, 'hex'), true);
+    const publicKeyBytes = await crypto.subtle.exportKey("raw", keypair.publicKey);
+    const publicKey = Buffer.from(publicKeyBytes).toString('hex');
+    expect(result.pubKey).to.equal(publicKey);
+    expect(result.address).to.equal(getAddressDecoder().decode(new Uint8Array(publicKeyBytes)));
+  });
+
+  it('should get SOL address from public key string', () => {
+    const expectedResult = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
+    // public key with zero byte padding
+    const a1 = Deriver.getAddress('SOL', 'mainnet', '005c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66'); 
+    expect(a1).to.equal(expectedResult);
+    const a2 = Deriver.getAddress('SOL', 'mainnet', '5c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66');
+    expect(a2).to.equal(expectedResult);
   });
 });
