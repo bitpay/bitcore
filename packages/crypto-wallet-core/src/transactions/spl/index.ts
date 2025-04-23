@@ -11,7 +11,7 @@ export class SPLTxProvider extends SOLTxProvider {
     fee?: number;
     feeRate: number;
     txType?:  'legacy' | '0'; // legacy, version 0
-    category?: string; // transfer, create account
+    category?: 'transfer' | 'createAccount'; // transfer, create account
     nonce?: string; // nonce is represented as a transaction id
     nonceAddress?: string;
     blockHash?: string;

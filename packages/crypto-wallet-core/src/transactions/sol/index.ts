@@ -16,7 +16,7 @@ export class SOLTxProvider {
     fee?: number;
     feeRate: number;
     txType?:  'legacy' | '0'; // legacy, version 0
-    category?: string; // transfer, create account
+    category?: 'transfer' | 'createAccount'; // transfer, create account
     nonce?: string; // nonce is represented as a transaction id
     nonceAddress?: string;
     blockHash?: string;
@@ -86,7 +86,7 @@ export class SOLTxProvider {
         const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferInstructions, lifetimeConstrainedTx);
         const compiledTx = SolKit.compileTransaction(transferTxMessage);
         return SolKit.getBase64EncodedWireTransaction(compiledTx);
-      case 'createAcccount':
+      case 'createAccount':
         const { fromKeyPair } = params;
         const { amount, addressKeyPair } = recipients[0];
         const _space = space || 200;
@@ -99,13 +99,14 @@ export class SOLTxProvider {
           blockhash: blockHash as SolKit.Blockhash,
           lastValidBlockHeight: BigInt(blockHeight)
         }
-        const createAccountInstruction = SolSystem.getCreateAccountInstruction({
+        const createAccountInstructions = []
+        createAccountInstructions.push(SolSystem.getCreateAccountInstruction({
           payer: fromKeyPair,
           newAccount: addressKeyPair,
           lamports: _amount,
           space: _space,
           programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS
-        });
+        }));
         const txMessage = pipe(
           SolKit.createTransactionMessage({ version: txType }),
           (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
@@ -114,11 +115,19 @@ export class SOLTxProvider {
           recentBlockhash,
           txMessage,
         );
+        if (priorityFee) {
+          const maxPriorityFee = Math.max(this.MINIMUM_PRIORITY_FEE, priorityFee);
+          createAccountInstructions.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
+        }
+        if (computeUnits) {
+          createAccountInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
+        }
         const completeMessage = SolKit.appendTransactionMessageInstructions(
-          [createAccountInstruction],
+          createAccountInstructions,
           lifetimeConstrainedTx
         );
-        return SolKit.getBase64EncodedWireTransaction(completeMessage);
+        const compiled = SolKit.compileTransaction(completeMessage);
+        return SolKit.getBase64EncodedWireTransaction(compiled);
     }
   }
 
