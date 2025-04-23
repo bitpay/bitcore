@@ -17,6 +17,7 @@ export class SPLTxProvider extends SOLTxProvider {
     blockHash?: string;
     blockHeight?: number;
     priorityFee?: number;
+    computeUnits?: number;
     // account creation fields
     fromKeyPair?: SolKit.KeyPairSigner,
     space?: number; // amount of space to reserve a new account in bytes

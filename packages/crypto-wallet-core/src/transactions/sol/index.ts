@@ -22,12 +22,13 @@ export class SOLTxProvider {
     blockHash?: string;
     blockHeight?: number;
     priorityFee?: number;
+    computeUnits?: number;
     txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
     // account creation fields
     fromKeyPair?: SolKit.KeyPairSigner;
     space?: number; // amount of space to reserve a new account in bytes
   }) {
-    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions } = params;
+    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
 
@@ -78,6 +79,9 @@ export class SOLTxProvider {
         if (priorityFee) {
           const maxPriorityFee = Math.max(this.MINIMUM_PRIORITY_FEE, priorityFee);
           transferInstructions.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
+        }
+        if (computeUnits) {
+          transferInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
         }
         const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferInstructions, lifetimeConstrainedTx);
         const compiledTx = SolKit.compileTransaction(transferTxMessage);
