@@ -73,9 +73,7 @@
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
     "pub": "npm run build && npm publish",
-    "precommit": "npm run fix && npm run lint",
-    "script": "./src/lib/script.js",
-    "test1:": "mocha --exit" 
+    "precommit": "npm run fix && npm run lint"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }
