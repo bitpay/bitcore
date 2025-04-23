@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Deriver } from '../src';
-import { SolDeriver } from '../src/derivation/sol';
+import { encoding } from 'bitcore-lib';
 import { createKeyPairFromPrivateKeyBytes, getAddressDecoder } from '@solana/kit'
 
 describe('Address Derivation', () => {
@@ -152,7 +152,7 @@ describe('Address Derivation', () => {
     const result = Deriver.derivePrivateKey('SOL', 'mainnet', privKey, 0, false);
     const expectedResult = {
       address: '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD',
-      privKey: 'c20afd00e9373519cb2fa0881db2f33e1266bdd61c5dd5e540790979e3524508',
+      privKey: 'E4Tp4nTgMCa5dtGwqvkWoMGrJC7FKRNjcpeFFXi4nNb9',
       pubKey: '5c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66'
     };
     expect(result.address).to.equal(expectedResult.address);
@@ -160,7 +160,7 @@ describe('Address Derivation', () => {
     expect(result.pubKey).to.equal(expectedResult.pubKey);
     const a = Deriver.getAddress('SOL', 'mainnet', result.pubKey);
     expect(a).to.equal(expectedResult.address);
-    const keypair = await createKeyPairFromPrivateKeyBytes(Buffer.from(result.privKey, 'hex'), true);
+    const keypair = await createKeyPairFromPrivateKeyBytes(encoding.Base58.decode(result.privKey), true);
     const publicKeyBytes = await crypto.subtle.exportKey("raw", keypair.publicKey);
     const publicKey = Buffer.from(publicKeyBytes).toString('hex');
     expect(result.pubKey).to.equal(publicKey);

@@ -50,9 +50,13 @@ export class SolDeriver implements IDeriver {
     const child = this.deriveChild({ key: xpriv._buffers.privateKey, chainCode: xpriv._buffers.chainCode }, path);
     const pubKey = ed25519.getPublicKey(child.key, false);
     const address = encoding.Base58.encode(pubKey);
+    // Solana wallets often represent the private key as a KeyPair consisting of the private key + address/public key.
+    // The Keypair is usually found in two formats: Base58 or Uint8Array.
+    // Here, we represent the keys separately in Base58, which is fine since a keypair can be built or converted by createKeyPairFromPrivateKeyBytes.
+    // Public Key is synonymous with Address. Here they are reprsented in two different formats. 
     return {
       address,
-      privKey: Buffer.from(child.key).toString('hex'), // generate CryptoKeyPair using privKey as Uint8Array
+      privKey: encoding.Base58.encode(child.key),
       pubKey: Buffer.from(pubKey).toString('hex')
     } as Key;
   };
