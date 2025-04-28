@@ -40,34 +40,6 @@ import listAccount from '../accounts.json';
 import cron from 'node-cron';
 
 const allowedOrigins = config.allowedOrigins;
-const corsOptions = {
-  origin: (origin, callback) => {
-    const allowedOrigins = ['https://wallet.abcpay.test'];
-
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'x-signature',
-    'x-identity',
-    'x-identities',
-    'x-session',
-    'x-client-version',
-    'x-wallet-id',
-    'X-Requested-With',
-    'Content-Type',
-    'Authorization'
-  ],
-  credentials: true, // Allow credentials
-  maxAge: 86400 // Cache preflight requests for 24 hours
-};
 
 export class ExpressApp {
   app: express.Express;
@@ -439,12 +411,15 @@ export class ExpressApp {
             } else {
               try {
                 const htmlString = await rp(options);
+                logger.warn("DEBUGPRINT[30]: expressapp.ts:441: htmlString=");
+                logger.warn( htmlString);
                 if (htmlString['tag_name']) {
                   server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], err => {
                     res.json({ version: htmlString['tag_name'] });
                   });
                 }
               } catch (err) {
+                logger.warn("error herer cannot continue");
                 res.send(err);
               }
             }
