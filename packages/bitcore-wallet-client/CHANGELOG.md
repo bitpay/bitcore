@@ -1,5 +1,17 @@
 # Change Log
 
+## 9.0.11
+
+### Patch Changes
+
+- Update querystring-es3
+
+## 9.0.10
+
+### Patch Changes
+
+- Update es6 for some methods
+
 ## 9.0.9
 
 ### Patch Changes

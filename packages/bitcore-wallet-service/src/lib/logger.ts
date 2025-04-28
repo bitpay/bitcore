@@ -106,11 +106,29 @@ process.on('uncaughtException', (error) => {
 
 // Error handler for unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  const error = reason instanceof Error ? reason : new Error(String(reason));
-  console.log(error);
+  const error = reason instanceof Error
+    ? reason
+    : new Error(`Non-error reason: ${String(reason)}`);
+
+  // Keep original stack trace for non-Error reasons
+  if (!(reason instanceof Error) && reason && (reason as any).stack) {
+    error.stack = (reason as any).stack;
+  }
+
+  // Log complete error information
+  console.error('Unhandled Promise Rejection:', error);
+  console.error(error);
+  logger.error(error);
+
   logger.error({
     message: 'Unhandled Promise Rejection',
-    error,
+    error: {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      // Include the original reason for debugging
+      originalReason: reason !== error ? reason : undefined
+    },
     timestamp: timestamp()
   });
   // Exit the process to allow Docker to restart the container

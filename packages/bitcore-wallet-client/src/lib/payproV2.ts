@@ -1,16 +1,16 @@
 'use strict';
 
 // Native
-const superagent = require('superagent');
-const query = require('querystring');
-const url = require('url');
-const Errors = require('./errors');
-const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
+import query from 'querystring';
+import superagent from 'superagent';
+import url from 'url';
+import dfltTrustedKeys from '../util/JsonPaymentProtocolKeys';
+import { Errors } from './errors';
 const Bitcore = require('@bcpros/crypto-wallet-core').BitcoreLib;
 const BitcoreLibCash = require('@bcpros/crypto-wallet-core').BitcoreLibCash;
 const BitcoreLibXpi = require('@bcpros/crypto-wallet-core').BitcoreLibXpi;
 const BitcoreLibXec = require('@bcpros/crypto-wallet-core').BitcoreLibXec;
-const _ = require('lodash');
+import * as _ from 'lodash';
 const sha256 = Bitcore.crypto.Hash.sha256;
 const BN = Bitcore.crypto.BN;
 var Bitcore_ = {
@@ -380,7 +380,7 @@ export class PayProV2 {
 
     try {
       host = url.parse(requestUrl).hostname;
-    } catch (e) {}
+    } catch (e) { }
 
     if (!host) {
       throw new Error('Invalid requestUrl');

@@ -3981,18 +3981,25 @@ export class WalletService implements IWalletService {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
 
+        logger.warn("DEBUGPRINT[34]: server.ts:3983 (after if (err) return cb(err);)")
         if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
           let Err = Errors.NETWORK_SUSPENDED;
           Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
           return cb(Err);
         }
 
+        logger.warn("DEBUGPRINT[35]: server.ts:3990 (after return cb(Err);)")
+
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+          logger.warn("DEBUGPRINT[37]: server.ts:3993 (after this.storage.fetchTx(this.walletId, opts…)")
+          logger.warn(txp)
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
           if (!txp.isTemporary()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
+          logger.warn("DEBUGPRINT[36]: server.ts:3998: copayer=", copayer)
+          logger.warn(copayer)
 
           let raw;
           try {
@@ -4000,11 +4007,14 @@ export class WalletService implements IWalletService {
           } catch (ex) {
             return cb(ex);
           }
+          logger.warn("DEBUGPRINT[38]: server.ts:4009 (after return cb(ex);)")
+          logger.warn(copayer.requestPubKeys)
           const signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
             return cb(new ClientError('Invalid proposal signature'));
           }
 
+          logger.warn("DEBUGPRINT[39]: server.ts:4016 (after return cb(new ClientError(Invalid propos…)")
           // Save signature info for other copayers to check
           txp.proposalSignature = opts.proposalSignature;
           if (signingKey.selfSigned) {

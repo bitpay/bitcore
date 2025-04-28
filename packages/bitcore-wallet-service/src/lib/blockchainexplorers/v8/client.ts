@@ -47,6 +47,7 @@ export class Client {
   }
 
   async getBalance(params) {
+    logger.warn("DEBUGPRINT[33]: client.ts:49: params=", params)
     const { payload, pubKey, tokenAddress, multisigContractAddress } = params;
     let query = '';
     let apiUrl = `${this.baseUrl}/wallet/${pubKey}/balance`;
@@ -65,6 +66,12 @@ export class Client {
       headers: { 'x-signature': signature },
       body: payload,
       json: true
+    }).then(response => {
+      logger.debug('GET BALANCE sucess: %o', response);
+      return response;
+    }).catch(err => {
+      logger.error('GET BALANCE error: %o', err);
+      throw err;
     });
   }
 
@@ -72,11 +79,20 @@ export class Client {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}/check`;
     logger.debug('WALLET CHECK');
+    logger.debug(url);
+    logger.debug(payload);
     const signature = this.sign({ method: 'GET', url, payload });
+    logger.debug(signature);
     return request.get(url, {
       headers: { 'x-signature': signature },
       body: payload,
       json: true
+    }).then(response => {
+      logger.debug('WALLET CHECK sucess: %o', response);
+      return response;
+    }).catch(err => {
+      logger.error('WALLET CHECK error: %o', err);
+      throw err;
     });
   }
 
