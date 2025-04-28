@@ -898,6 +898,9 @@ importers:
       preconditions:
         specifier: 2.2.3
         version: 2.2.3
+      querystring-es3:
+        specifier: ^0.2.1
+        version: 0.2.1
       sjcl:
         specifier: 1.0.3
         version: 1.0.3
@@ -915,8 +918,8 @@ importers:
         version: 4.9.4
     devDependencies:
       '@bcpros/bitcore-wallet-service':
-        specifier: ^9.0.9
-        version: 9.0.9(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+        specifier: ^9.0.10
+        version: 9.0.10(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
       '@types/lodash':
         specifier: ^4.14.136
         version: 4.17.15
@@ -1417,12 +1420,12 @@ packages:
     peerDependencies:
       '@bcpros/bitcore-lib': '*'
 
-  '@bcpros/bitcore-wallet-client@9.0.9':
-    resolution: {integrity: sha512-z4LJQ0eFZv07NjXJjrCfWK/tfliz1DCNAdMKRR1iUzK6NRudE/5q9OGmgqN1W6B/SIY+k6i6laXKfTbPa+xNKw==}
+  '@bcpros/bitcore-wallet-client@9.0.10':
+    resolution: {integrity: sha512-kNT2D1kt2306KrLlRFNKf5dPjbVVf4yTF9qdRvx0Y0pmnaBMjHTyWQM204I5kTgJ17gI4bAMnyRH4OS0hdokqA==}
     engines: {node: '>=18.0.0'}
 
-  '@bcpros/bitcore-wallet-service@9.0.9':
-    resolution: {integrity: sha512-GBGi/DLs7pnoJM7DNlloCA1oN1y6aOvZgXWNclBnW02BPSrs3odjsyOXukpyIh2Vd++P2LWD8HcRVCE1c8ZC/g==}
+  '@bcpros/bitcore-wallet-service@9.0.10':
+    resolution: {integrity: sha512-taI4nI3odOus9mutBiDp6022aSQMfAQxDAovXlcWneZKLUiHkyyCXE6ADMm24NA7NeqXBcvoJ5f7yiVhM3ljBA==}
 
   '@bcpros/coininfo@5.2.1':
     resolution: {integrity: sha512-tPrLuji/1Azb7EWHt1G9XQQ7tnuhXKcZLvJuRJViVrDrU8JK0CyVh7Qa1U8O+7gRVRkGEEbIvzJJ6i8ICuBxzw==}
@@ -9406,10 +9409,10 @@ snapshots:
       browserify: 16.5.2
       unorm: 1.6.0
 
-  '@bcpros/bitcore-wallet-client@9.0.9(@bcpros/bitcore-lib@9.0.8)(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
+  '@bcpros/bitcore-wallet-client@9.0.10(@bcpros/bitcore-lib@9.0.8)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)':
     dependencies:
       '@bcpros/bitcore-mnemonic': 9.0.8(@bcpros/bitcore-lib@9.0.8)
-      '@bcpros/crypto-wallet-core': 9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+      '@bcpros/crypto-wallet-core': 9.0.8(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
       ajv: 6.12.0
       async: 0.9.2
       bip38: 1.4.0
@@ -9429,7 +9432,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@bcpros/bitcore-wallet-service@9.0.9(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
+  '@bcpros/bitcore-wallet-service@9.0.10(react-dom@16.8.6(react@16.8.6))(react@16.8.6)':
     dependencies:
       '@abcpros/xpi-js': 4.0.7
       '@bcpros/bitcore-lib': 9.0.8
@@ -9438,8 +9441,8 @@ snapshots:
       '@bcpros/bitcore-lib-ltc': 9.0.8
       '@bcpros/bitcore-lib-xec': 9.0.8
       '@bcpros/bitcore-lib-xpi': 9.0.8
-      '@bcpros/bitcore-wallet-client': 9.0.9(@bcpros/bitcore-lib@9.0.8)(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
-      '@bcpros/crypto-wallet-core': 9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)
+      '@bcpros/bitcore-wallet-client': 9.0.10(@bcpros/bitcore-lib@9.0.8)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
+      '@bcpros/crypto-wallet-core': 9.0.8(react-dom@16.8.6(react@16.8.6))(react@16.8.6)
       '@bcpros/xpi-js': 4.0.12
       '@sendgrid/mail': 6.5.5
       abi-decoder: 2.4.0
@@ -9516,7 +9519,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  '@bcpros/crypto-wallet-core@9.0.8(bufferutil@4.0.9)(react-dom@16.8.6(react@16.8.6))(react@16.8.6)(utf-8-validate@5.0.10)':
+  '@bcpros/crypto-wallet-core@9.0.8(react-dom@16.8.6(react@16.8.6))(react@16.8.6)':
     dependencies:
       '@bcpros/bitcore-lib': 9.0.8
       '@bcpros/bitcore-lib-cash': 9.0.8
