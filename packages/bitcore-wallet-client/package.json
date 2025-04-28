@@ -2,7 +2,7 @@
   "name": "@bcpros/bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "9.0.9",
+  "version": "9.0.10",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "ts_build/index.d.js",
@@ -42,7 +42,7 @@
     "typescript": "4.9.4"
   },
   "devDependencies": {
-    "@bcpros/bitcore-wallet-service": "^9.0.9",
+    "@bcpros/bitcore-wallet-service": "^9.0.10",
     "@types/lodash": "^4.14.136",
     "@types/node": "^18.11.18",
     "browserify": "^16.2.3",
