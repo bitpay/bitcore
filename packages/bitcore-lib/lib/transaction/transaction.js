@@ -120,7 +120,6 @@ var witnessHashProperty = {
 
 Object.defineProperty(Transaction.prototype, 'witnessHash', witnessHashProperty);
 Object.defineProperty(Transaction.prototype, 'hash', hashProperty);
-Object.defineProperty(Transaction.prototype, '_hash', hashProperty);
 Object.defineProperty(Transaction.prototype, 'id', hashProperty);
 
 var ioProperty = {
