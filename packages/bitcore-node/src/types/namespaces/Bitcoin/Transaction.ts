@@ -23,7 +23,7 @@ export interface BitcoinOutput {
 export interface BitcoinTransactionType {
   outputAmount: number;
   hash: string;
-  _hash: undefined | string;
+  _hash?: string;
   isCoinbase: () => boolean;
   outputs: BitcoinOutput[];
   inputs: BitcoinInput[];
