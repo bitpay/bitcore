@@ -21,6 +21,17 @@ export let UNITS = {
       minDecimals: 2
     }
   },
+  sol: {
+    toSatoshis: 1e9,
+    full: {
+      maxDecimals: 9,
+      minDecimals: 9
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
   eth: {
     toSatoshis: 1e18,
     full: {

@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { Deriver } from '../src';
+import { encoding } from 'bitcore-lib';
+import { createKeyPairFromPrivateKeyBytes, getAddressDecoder } from '@solana/kit'
 
 describe('Address Derivation', () => {
   it('should be able to generate a valid BTC address', () => {
@@ -127,7 +129,6 @@ describe('Address Derivation', () => {
     expect(result).to.equal(expectedResult);
   });
 
-
   it('should be able to generate a valid MATIC address, privKey, pubKey', () => {
     const privKey = 'xprv9ypBjKErGMqCdzd44hfSdy1Vk6PGtU3si8ogZcow7rA23HTxMi9XfT99EKmiNdLMr9BAZ9S8ZKCYfN1eCmzYSmXYHje1jnYQseV1VJDDfdS';
 
@@ -143,5 +144,35 @@ describe('Address Derivation', () => {
     expect(result.address).to.equal(expectedResult.address);
     expect(result.privKey).to.equal(expectedResult.privKey);
     expect(result.pubKey).to.equal(expectedResult.pubKey);
+  });
+
+  it('should be able to generate a valid SOL address, privKey', async () => {
+    // crush desk brain index action subject tackle idea trim unveil lawn live
+    const privKey = 'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X';
+    const result = Deriver.derivePrivateKey('SOL', 'mainnet', privKey, 0, false);
+    const expectedResult = {
+      address: '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD',
+      privKey: 'E4Tp4nTgMCa5dtGwqvkWoMGrJC7FKRNjcpeFFXi4nNb9',
+      pubKey: '5c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66'
+    };
+    expect(result.address).to.equal(expectedResult.address);
+    expect(result.privKey).to.equal(expectedResult.privKey);
+    expect(result.pubKey).to.equal(expectedResult.pubKey);
+    const a = Deriver.getAddress('SOL', 'mainnet', result.pubKey);
+    expect(a).to.equal(expectedResult.address);
+    const keypair = await createKeyPairFromPrivateKeyBytes(encoding.Base58.decode(result.privKey), true);
+    const publicKeyBytes = await crypto.subtle.exportKey("raw", keypair.publicKey);
+    const publicKey = Buffer.from(publicKeyBytes).toString('hex');
+    expect(result.pubKey).to.equal(publicKey);
+    expect(result.address).to.equal(getAddressDecoder().decode(new Uint8Array(publicKeyBytes)));
+  });
+
+  it('should get SOL address from public key string', () => {
+    const expectedResult = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
+    // public key with zero byte padding
+    const a1 = Deriver.getAddress('SOL', 'mainnet', '005c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66'); 
+    expect(a1).to.equal(expectedResult);
+    const a2 = Deriver.getAddress('SOL', 'mainnet', '5c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66');
+    expect(a2).to.equal(expectedResult);
   });
 });

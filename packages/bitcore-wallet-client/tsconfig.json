@@ -4,7 +4,9 @@
       "es5",
       "es6",
       "es2017",
-      "es2019"
+      "es2019",
+      "es2022",
+      "DOM"
     ],
     "noImplicitAny": false,
     "removeComments": true,
