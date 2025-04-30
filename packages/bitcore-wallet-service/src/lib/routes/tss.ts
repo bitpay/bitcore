@@ -1,7 +1,8 @@
 import express from 'express';
 import * as Types from '../../types/expressapp';
 import * as TssKeygen from '../tss';
-import { verifyMessage } from './middleware/tssVerifyMessage';
+import { authTssRequest } from './middleware/authTssRequest';
+import { verifyTssMessage } from './middleware/verifyTssMessage';
 
 
 interface TssRouterOpts {
@@ -17,7 +18,7 @@ export class TssRouter {
     const { getServerWithAuth, returnError, getServer } = opts;
     const router = express.Router();
     
-    router.post('/v1/tss/keygen/:id', verifyMessage, async function(req, res) {
+    router.post('/v1/tss/keygen/:id', verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         const msg = req.body;
@@ -29,7 +30,7 @@ export class TssRouter {
       }
     });
 
-    router.get('/v1/tss/keygen/:id/:round', /* TODO auth request headers */ async function(req, res) {
+    router.get('/v1/tss/keygen/:id/:round', authTssRequest(), async function(req, res) {
       try {
         const { id, round } = req.params as { [key: string]: string };
         const copayerId = req.headers['x-identity']; // ??
@@ -40,8 +41,12 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/keygen/:id/store', function(req, res) {
+    router.post('/v1/tss/keygen/:id/store', authTssRequest(), async function(req, res) {
       try {
+        const id = req.params.id;
+        const message = req.body;
+
+        await TssKeygen.storePublicKey({ id, message });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

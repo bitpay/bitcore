@@ -59,7 +59,7 @@ export interface ITssKeyGenModel {
   /**
    * The public key generated as the result of the TSS key generation process.
    */
-  sharedPubKey?: string;
+  sharedPublicKey?: string;
   /**
    * The mongo doc version
    */
@@ -74,7 +74,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     fromPartyId: number;
     messages: ITssKeygenMessageObject;
   }>>;
-  sharedPubKey?: string;
+  sharedPublicKey?: string;
   schemeVersion: number;
   __v: number;
 
@@ -105,7 +105,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.n = obj.n;
     x.participants = obj.participants;
     x.rounds = obj.rounds;
-    x.sharedPubKey = obj.sharedPubKey;
+    x.sharedPublicKey = obj.sharedPublicKey;
     x.__v = obj.__v;
     return x;
   }

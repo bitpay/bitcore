@@ -133,11 +133,7 @@ export class Request<CredT = Credentials> {
           }
 
           if (res.body)
-            log.debug(
-              util.inspect(res.body, {
-                depth: 10
-              })
-            );
+            log.debug(util.inspect(res.body, { depth: 10 }));
 
           if (res.status !== 200) {
             if (res.status === 503) return reject(new Errors.MAINTENANCE_ERROR());

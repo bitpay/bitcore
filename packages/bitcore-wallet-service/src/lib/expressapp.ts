@@ -10,6 +10,7 @@ import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { logger, transport } from './logger';
+import { error } from './routes/helpers'
 import { LogMiddleware } from './routes/middleware/log';
 import { TssRouter } from './routes/tss';
 import { WalletService } from './server';
@@ -73,7 +74,7 @@ export class ExpressApp {
     const POST_LIMIT_LARGE = 2 * 1024 * 1024; // Max POST 2 MB
 
     this.app.use((req, res, next) => {
-      if (req.path.includes('/txproposals')) {
+      if (req.path.includes('/txproposals') || req.path.includes('/tss/')) {
         // Pushing a lot of utxos to txproposals can make the request much bigger than 100 MB
         return express.json({ limit: POST_LIMIT_LARGE })(req, res, next);
       } else {
@@ -115,44 +116,8 @@ export class ExpressApp {
 
     const router = express.Router();
 
-    const returnError: Types.ReturnErrorFn = (err, res, req) => {
-      // make sure headers have not been sent as this leads to an uncaught error
-      if (res.headersSent) {
-        return;
-      }
-      if (err instanceof ClientError) {
-        const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
-        if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
-
-        const clientError: { code: string; message: string; messageData?: object } = {
-          code: err.code,
-          message: err.message
-        };
-        if (err.messageData) clientError.messageData = err.messageData;
-        res
-          .status(status)
-          .json(clientError)
-          .end();
-      } else {
-        let code = 500,
-          message;
-        if (err && ((err.code && _.isNumber(err.code)) || (err.statusCode && _.isNumber(err.statusCode)))) {
-          code = err.code || err.statusCode;
-          message = err.message || err.body;
-        }
-
-        const m = message || err.toString();
-
-        if (!opts.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
-
-        res
-          .status(code || 500)
-          .json({
-            error: m
-          })
-          .end();
-      }
-    };
+    error.setOpts(opts);
+    const returnError: Types.ReturnErrorFn = error.returnError.bind(error);
 
     const logDeprecated: Types.LogDeprecatedFn = req => {
       logger.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');

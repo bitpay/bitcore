@@ -3,7 +3,7 @@ import { Errors } from '../../errors/errordefinitions';
 import { ITssKeygenMessageObject } from '../../model/tsskeygen';
 
 
-export function verifyMessage(req, res, next) {
+export function verifyTssMessage(req, res, next) {
   const message: ITssKeygenMessageObject = req.body
   const { publicKey } = message;
   if (!publicKey) {

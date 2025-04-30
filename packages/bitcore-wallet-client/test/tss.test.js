@@ -18,7 +18,7 @@ const {
 const Key = Client.Key;
 
 //
-describe.only('TSS', function() {
+describe('TSS', function() {
   //
   // TODO - remove this
   this.timeout(99999999); 
@@ -28,6 +28,7 @@ describe.only('TSS', function() {
   let storage;
   let dbConnection;
   let app;
+  const sandbox = sinon.createSandbox();
 
   const party0Key = new Key({ seedType: 'new' });
   const party1Key = new Key({ seedType: 'new' });
@@ -52,14 +53,10 @@ describe.only('TSS', function() {
         () => {
           app = expressApp.app;
 
-          app.post('/bws/api/v1/tss/keygen/:id', (req, res) => {
-            res.send();
-          });
-
           if (!process.env.BWC_SHOW_LOGS) {
-            sinon.stub(log, 'warn');
-            sinon.stub(log, 'info');
-            sinon.stub(log, 'error');
+            sandbox.stub(log, 'warn');
+            sandbox.stub(log, 'info');
+            sandbox.stub(log, 'error');
           }
           done();
         }
@@ -72,7 +69,7 @@ describe.only('TSS', function() {
   });
 
   afterEach(function() {
-    sinon.restore();
+    sandbox.restore();
   });
 
   it('should make a Tss class', function() {
@@ -163,8 +160,9 @@ describe.only('TSS', function() {
         const tss = new Tss({
           baseUrl: '/bws/api',
           request: request(app),
-          key: party2Key // party2 should not be able to use party1's join code
+          key: party2Key
         });
+        // party2 should not be able to use party1's join code
         const result = await tss.joinKey({ code: joinCode1 });
         throw new Error('Should not have been able to join');
       } catch (err) {
@@ -212,7 +210,7 @@ describe.only('TSS', function() {
     });
 
     it('should not allow party1 to go on to the next round', function(done) {
-      sinon.spy(Request.prototype, 'doRequest');
+      sandbox.spy(Request.prototype, 'doRequest');
       tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
       tss1.subscribe({ timeout: 10, iterHandler: () => {
         tss1.unsubscribe();
@@ -236,13 +234,50 @@ describe.only('TSS', function() {
       submitted2Round.should.equal(1);
     });
 
-    it('should do round 2', async function() {
+    it('should export and restore the session', async function() {
+      const s0 = tss0.exportSession();
+      const s1 = tss1.exportSession();
+      const s2 = tss2.exportSession();
+      should.exist(s0);
+      should.exist(s1);
+      should.exist(s2);
+      s0.should.be.a('string');
+      s1.should.be.a('string');
+      s2.should.be.a('string');
+
+      tss0 = await new Tss({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party0Key
+      }).restoreSession({ session: s0 });
+
+      tss1 = await new Tss({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party1Key
+      }).restoreSession({ session: s1 });
+      
+      tss2 = await new Tss({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party2Key
+      }).restoreSession({ session: s2 });
+    });
+
+    it('should do round 2 (with API fault tolerance)', async function() {
+      // fault tolerance setup
+      sandbox.stub(Request.prototype, 'post').throws(new Error('restore me'));
+      sandbox.spy(tss0, 'restoreSession');
+      sandbox.spy(tss1, 'restoreSession');
+      sandbox.spy(tss2, 'restoreSession');
+      function restore() { Request.prototype.post.restore?.(); };
+
       const response0 = new Promise(r => tss0.once('roundsubmitted', r));
       const response1 = new Promise(r => tss1.once('roundsubmitted', r));
       const response2 = new Promise(r => tss2.once('roundsubmitted', r));
-      tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
-      tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
-      tss2.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss0.on('error', (e) => { e.message === 'restore me' ? restore() : should.not.exist(e?.message ?? e); });
+      tss1.on('error', (e) => { e.message === 'restore me' ? restore() : should.not.exist(e?.message ?? e); });
+      tss2.on('error', (e) => { e.message === 'restore me' ? restore() : should.not.exist(e?.message ?? e); });
       tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
       tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
       tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
@@ -252,6 +287,8 @@ describe.only('TSS', function() {
       submitted1Round.should.equal(2);
       const submitted2Round = await response2;
       submitted2Round.should.equal(2);
+      // check that the fault tolerance worked
+      (tss0.restoreSession.callCount + tss1.restoreSession.callCount + tss2.restoreSession.callCount).should.be.gte(1);
     });
 
     it('should do round 3', async function() {
@@ -271,5 +308,32 @@ describe.only('TSS', function() {
       const submitted2Round = await response2;
       submitted2Round.should.equal(3);
     });
+
+    it('should do round 4', async function() {
+      const response0 = new Promise(r => tss0.once('roundsubmitted', r));
+      const response1 = new Promise(r => tss1.once('roundsubmitted', r));
+      const response2 = new Promise(r => tss2.once('roundsubmitted', r));
+      const complete = new Promise(r => tss0.once('complete', r));
+      tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss2.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
+      tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
+      tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
+      const submitted0Round = await response0;
+      submitted0Round.should.equal(4);
+      const submitted1Round = await response1;
+      submitted1Round.should.equal(4);
+      const submitted2Round = await response2;
+      submitted2Round.should.equal(4);
+      // check that the shared pub key was generated and stored
+      await complete;
+      const session = await storage.fetchTssKeygen({ id: tss0.id });
+      should.exist(session.sharedPublicKey);
+    });
+
+    it('should not export a completed session', function() {
+      should.throw(() => { tss0.exportSession() }, /Cannot export a completed session/);
+    })
   });
 });

@@ -102,3 +102,23 @@ async function _pushMessage(params: { id: string; session: TssKeyGenModel; messa
     throw e;
   }
 };
+
+export async function storePublicKey(params: { id: string; message: Partial<ITssKeygenMessageObject>; }) {
+  const { id, message } = params;
+  const { publicKey } = message;
+  if (!publicKey) {
+    throw Errors.TSS_KEYGEN_GENERIC_ERROR.withMessage('No public key provided');
+  }
+  const storage = WalletService.getStorage();
+  const session = await storage.fetchTssKeygen({ id });
+
+  if (!session) {
+    throw Errors.TSS_KEYGEN_SESSION_NOT_FOUND;
+  }
+
+  const result = await storage.storeTssKeygenSharedPubKey({ id, publicKey });
+  if (!result.result.ok) {
+    logger.error('Failed to store TSS key generation public key %o %o', id, result);
+    throw Errors.TSS_KEYGEN_GENERIC_ERROR.withMessage('Failed to store TSS key generation public key');
+  }
+}

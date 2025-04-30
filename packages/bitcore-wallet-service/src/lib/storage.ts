@@ -8,6 +8,7 @@ import logger from './logger';
 import {
   Address,
   Advertisement,
+  Copayer,
   Email,
   Notification,
   Preferences,
@@ -243,12 +244,9 @@ export class Storage {
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {
-    const copayerLookups = _.map(wallet.copayers, copayer => {
+    const copayerLookups = (wallet.copayers || []).map(copayer => {
       try {
-        $.checkState(
-          copayer.requestPubKeys,
-          'Failed state: copayer.requestPubkeys undefined at <storeWalletAndUpdateCopayersLookup()>'
-        );
+        $.checkState(copayer.requestPubKeys, 'Failed state: copayer.requestPubkeys undefined at <storeWalletAndUpdateCopayersLookup()>');
       } catch (e) {
         return cb(e);
       }
@@ -283,7 +281,7 @@ export class Storage {
     );
   }
 
-  fetchCopayerLookup(copayerId, cb) {
+  fetchCopayerLookup(copayerId: string, cb: (err?: any, copayer?: Copayer) => void) {
     this.db.collection(collections.COPAYERS_LOOKUP).findOne(
       {
         copayerId
@@ -301,7 +299,7 @@ export class Storage {
           ];
         }
 
-        return cb(null, result);
+        return cb(null, Copayer.fromObj(result));
       }
     );
   }
@@ -1813,5 +1811,17 @@ export class Storage {
       throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
     }
     return result;
+  }
+
+  async storeTssKeygenSharedPubKey({ id, publicKey }: { id: string; publicKey: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id },
+      {
+        $set: {
+          sharedPublicKey: publicKey
+        }
+      },
+      { upsert: false }
+    );
   }
 }

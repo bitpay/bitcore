@@ -31,6 +31,12 @@ export interface ITssConstructorParams {
   supportStaffWalletId?: string;
 };
 
+export interface IKeyChain {
+  privateKeyShare: Buffer;
+  reducedPrivateKeyShare: Buffer;
+  commonKeyChain: string;
+};
+
 export class Tss extends EventEmitter {
   #request: Request;
   #keygen: ECDSA.KeyGen;
@@ -71,7 +77,7 @@ export class Tss extends EventEmitter {
   }
 
   /**
-   * Initiate a new Threshold Signature Scheme key
+   * Initiate a new Threshold Signature Scheme key generation session
    * @param {object} params
    * @param {number} params.m Number of required signatures
    * @param {number} params.n Number of parties/signers
@@ -81,7 +87,7 @@ export class Tss extends EventEmitter {
     const keygen = new ECDSA.KeyGen({
       n,
       m,
-      partyId: 0,
+      partyId: 0, // the session initiator is always partyId 0
       seed: this.#seed,
       authKey: this.#credentials.requestPrivKey
     });
@@ -142,6 +148,9 @@ export class Tss extends EventEmitter {
    * @returns {string} Session string
    */
   exportSession(): string {
+    if (this.#keygen.isKeyChainReady()) {
+      throw new Error('Cannot export a completed session. Run getKeyChain() instead.');
+    }
     return [this.id, this.partyId, this.m, this.n, this.#keygen.export()].join(':');
   }
 
@@ -187,7 +196,21 @@ export class Tss extends EventEmitter {
     return code.toString(opts?.encoding || 'hex');
   }
 
-  subscribe({ timeout, iterHandler }: { timeout?: number; iterHandler: () => void }): NodeJS.Timeout {
+  /**
+   * Subscribe to the TSS key generation process.
+   * Various events will be emitted during the process:
+   * - `roundready` => void: A new round is ready to be processed
+   * - `roundprocessed` => void: A round has been processed
+   * - `roundsubmitted` => number: A round has been submitted to the server. Emits the submitted round number
+   * - `keychain` => IKeyChain: The keychain is ready. Emits the keychain object
+   * - `complete` => void: The key generation process is complete
+   * - `error` => Error: An error occurred during the process. Emits the error
+   * @param {object} [params]
+   * @param {number} [params.timeout] Timeout in milliseconds for the subscription to check for new messages (default: 1000)
+   * @param {function} [params.iterHandler] Custom function to fire every iteration. Does not fire on error. 
+   * @returns {NodeJS.Timeout} Subscription ID
+   */
+  subscribe({ timeout, iterHandler }: { timeout?: number; iterHandler?: () => void } = {}): NodeJS.Timeout {
     this.#subscriptionId = setInterval(async () => {
       if (this.#subscriptionRunning) return;
       this.#subscriptionRunning = true;
@@ -197,17 +220,31 @@ export class Tss extends EventEmitter {
 
         if (body.messages?.length === this.n - 1) {
           this.emit('roundready');
-          const msg = await this.#keygen.nextRound(body.messages);
-          // TODO handle msg fails to post. keygen can't re-process the previous message 
-          await this.#request.post('/v1/tss/keygen/' + this.id, msg);
-          this.emit('roundsubmitted', prevRound + 1);
+          // Snapshot the session in case there's an API failure
+          //  since this.#keygen can't re-process the messages
+          const sessionBak = this.exportSession();
+          try {
+            const msg = await this.#keygen.nextRound(body.messages);
+            this.emit('roundprocessed');
+            // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
+            // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
+            await this.#request.post(`/v1/tss/keygen/${this.id}`, msg);
+            this.emit('roundsubmitted', prevRound + 1);
+          } catch (err) {
+            // Restore the session to the previous state
+            await this.restoreSession({ session: sessionBak });
+            throw err;
+          }
         }
 
-        if (this.#keygen.isKeyChainReady()) {
-          const keyChain = this.#keygen.getKeyChain()
-          // TODO push shared pub key to server
+        const keyChain = this.getKeyChain();
+        if (keyChain) {
           this.emit('keychain', keyChain);
+          await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: keyChain.commonKeyChain });
+          this.emit('complete');
+          if (iterHandler) iterHandler();
           this.unsubscribe();
+          // Anything after unsubscribe() will not be executed
         }
         // iteration handler
         // Some custom function to fire every iteration
@@ -222,17 +259,28 @@ export class Tss extends EventEmitter {
     return this.#subscriptionId;
   }
 
+  /**
+   * Unsubscribe from the TSS key generation process
+   * @param {object} [params]
+   * @param {boolean} [params.clearEvents] Whether to remove all event listeners (default: true)
+   */
   unsubscribe({ clearEvents }: { clearEvents: boolean } = { clearEvents: true}): void {
     clearInterval(this.#subscriptionId);
     if (clearEvents) {
       this.removeAllListeners();
     }
     this.#subscriptionId = null;
+    this.#subscriptionRunning = false;
   }
 
-  getKeyChain(): ECDSA.KeyGen {
+  /**
+   * Get the keychain object if the key generation process is complete
+   * @returns {IKeyChain|null} The keychain object if the key generation process is complete, otherwise null
+   */
+  getKeyChain(): IKeyChain | null {
     if (this.#keygen.isKeyChainReady()) {
       return this.#keygen.getKeyChain();
     }
+    return null;
   }
 }
