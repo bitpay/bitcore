@@ -8,9 +8,8 @@ import config from '../config';
 import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
-import { INotification, IPreferences } from './model';
+import { INotification, IPreferences, Preferences } from './model';
 import { Storage } from './storage';
-import axios, {AxiosInstance} from 'axios';
 
 const Mustache = require('mustache');
 const defaultRequest = require('request');
@@ -81,7 +80,7 @@ export interface IPushNotificationService {
 }
 
 export class PushNotificationsService {
-  request: AxiosInstance;
+  request: request.RequestAPI<any, any, any>;
   templatePath: string;
   defaultLanguage: string;
   defaultUnit: string;
@@ -96,7 +95,7 @@ export class PushNotificationsService {
 
   start(opts, cb) {
     opts = opts || {};
-    this.request = opts.request || axios;
+    this.request = opts.request || defaultRequest;
 
     const _readDirectories = (basePath, cb) => {
       fs.readdir(basePath, (err, files) => {
@@ -310,7 +309,6 @@ export class PushNotificationsService {
                   `The recipient list for this push notification is greater than the established limit (${Defaults.PUSH_NOTIFICATION_LIMIT})`
                 );
               }
-
               return next(err, notifications);
             },
             (notifications, next) => {
@@ -386,7 +384,7 @@ export class PushNotificationsService {
         }
       }
 
-      this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
+      this.storage.fetchPreferences<Preferences[]>(notification.walletId, null, (err, preferences) => {
         if (err) logger.error('%o', err);
         if (_.isEmpty(preferences)) preferences = [];
 
@@ -692,25 +690,35 @@ export class PushNotificationsService {
   }
 
   _makeRequest(opts, cb) {
-    axios.post(`${this.pushServerUrl}/send`, opts, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `key=${this.authorizationKey}`,
+    this.request(
+      {
+        url: this.pushServerUrl + '/send',
+        method: 'POST',
+        json: true,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'key=' + this.authorizationKey
+        },
+        body: opts
       },
-    })
-      .then((response) => cb(null, response.data))
-      .catch((err) => cb(err));
+      cb
+    );
   }
 
   _makeBrazeRequest(opts, cb) {
-    axios.post(`${this.pushServerUrlBraze}/messages/send`, opts, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.authorizationKeyBraze}`,
+    this.request(
+      {
+        url: this.pushServerUrlBraze + '/messages/send',
+        method: 'POST',
+        json: true,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + this.authorizationKeyBraze
+        },
+        body: opts
       },
-    })
-      .then((response) => cb(null, response.data))
-      .catch((err) => cb(err));
+      cb
+    );
   }
 
   private oneInchGetCredentials() {
@@ -734,21 +742,26 @@ export class PushNotificationsService {
           eth: 1,
           matic: 137
         };
-        axios.get(`${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${credentials.API_KEY}`,
+        this.request(
+          {
+            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            method: 'GET',
+            json: true,
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: 'Bearer ' + credentials.API_KEY,
+            }
           },
-        })
-          .then((response) => {
-            if (response.status === 429) {
-              // OneInch rate limit
+          (err, data) => {
+            if (err) return reject(err);
+            if (data?.statusCode === 429) {
+              // oneinch rate limit
               return reject();
             }
-            resolve(response.data?.tokens);
-          })
-          .catch((err) => reject(err));
+            return resolve(data?.body?.tokens);
+          }
+        );
       } catch (err) {
         return reject(err);
       }

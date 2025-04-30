@@ -7,15 +7,16 @@ import { ChainStateProvider } from '../../providers/chain-state';
 import { Libs } from '../../providers/libs';
 import { BaseP2PWorker } from '../../services/p2p';
 import { SpentHeightIndicators } from '../../types/Coin';
+import { IUtxoNetworkConfig } from '../../types/Config';
 import { BitcoinBlockType, BitcoinHeaderObj, BitcoinTransaction } from '../../types/namespaces/Bitcoin';
 import { wait } from '../../utils';
 
 export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected bitcoreLib: any;
   protected bitcoreP2p: any;
-  protected chainConfig: any;
+  protected chainConfig: IUtxoNetworkConfig;
   protected messages: any;
-  protected connectInterval?: NodeJS.Timer;
+  protected connectInterval?: NodeJS.Timeout;
   protected invCache: any;
   protected invCacheLimits: any;
   protected initialSyncComplete: boolean;
@@ -230,7 +231,8 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       forkHeight: this.chainConfig.forkHeight,
       parentChain: this.chainConfig.parentChain,
       initialSyncComplete: this.initialSyncComplete,
-      block
+      block,
+      initialHeight: this.chainConfig.syncStartHeight
     });
   }
 
@@ -260,12 +262,11 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     const state = await StateStorage.collection.findOne({});
-    this.initialSyncComplete =
-      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
+    this.initialSyncComplete = state?.initialSyncComplete?.includes(`${chain}:${network}`);
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
-    if (parentChain && (!tip || tip.height < forkHeight)) {
+    if (parentChain && (!tip || tip.height < forkHeight!)) {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
-      while (!parentTip || parentTip.height < forkHeight) {
+      while (!parentTip || parentTip.height < forkHeight!) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
         await wait(5000);
         parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
@@ -273,18 +274,31 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     }
 
     const getHeaders = async () => {
-      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+      let locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+      if (locators.length === 1 && locators[0] === Array(65).join('0') && this.chainConfig.syncStartHash) {
+        locators = [this.chainConfig.syncStartHash];
+      }
       return this.getHeaders(locators);
     };
 
     let headers = await getHeaders();
     while (headers.length > 0) {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
-      let currentHeight = tip ? tip.height : 0;
+      let currentHeight = tip?.height ?? (this.chainConfig.syncStartHeight || 0);
       const startingHeight = currentHeight;
       const startingTime = Date.now();
       let lastLog = startingTime;
       logger.info(`${timestamp()} | Syncing ${headers.length} blocks | Chain: ${chain} | Network: ${network}`);
+      // Default starting hash is the genesis block +1. If we have no blocks, we need to fetch the genesis block
+      if (currentHeight == 0 && headers[0]) {
+        const block = await this.getBlock(headers[0].hash);
+        if (block.header.prevHash) {
+          const prevHash = Buffer.from(block.header.prevHash).reverse().toString('hex');
+          const genesisBlock = await this.getBlock(prevHash);
+          await this.processBlock(genesisBlock);
+          currentHeight++;
+        }
+      }
       for (const header of headers) {
         try {
           const block = await this.getBlock(header.hash);

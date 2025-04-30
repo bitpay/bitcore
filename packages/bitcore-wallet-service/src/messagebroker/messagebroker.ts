@@ -11,7 +11,7 @@ const opts = {
   port: parseInt(process.argv[2]) || DEFAULT_PORT
 };
 
-const server = io(opts.port.toString());
+const server = new io.Server(opts.port);
 server.on('connection', socket => {
   socket.on('msg', data => {
     server.emit('msg', data);

@@ -84,6 +84,7 @@ export type GetWalletParams = ChainNetwork & PubKey;
 export type UpdateWalletParams = ChainNetwork & {
   wallet: MongoBound<IWallet>;
   addresses: string[];
+  reprocess?: boolean;
 };
 
 export type GetWalletBalanceParams = ChainNetwork & {

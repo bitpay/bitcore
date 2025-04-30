@@ -1,20 +1,23 @@
 import * as async from 'async';
-import * as _ from 'lodash';
+import juice from 'juice';
 import 'source-map-support/register';
 
-// This has been changed in favor of @sendgrid.  To use nodemail, change the
-// sending function from `.send` to `.sendMail`.
-// import * as nodemailer from nodemailer';
+import sgMail from '@sendgrid/mail';
 import { Constants as ConstantsCWC } from '@bcpros/crypto-wallet-core';
+import fs from 'fs';
+import { IncomingMessage } from 'http';
+import Mustache from 'mustache';
+import * as nodemailer from 'nodemailer';
+import path from 'path';
 import request from 'request';
 import config from '../config';
 import { Common } from './common';
+import { getIconHtml } from './iconsconfig';
 import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
-import { Email } from './model';
+import { Email, Notification, Preferences } from './model';
 import { Storage } from './storage';
-import axios, {AxiosInstance} from 'axios';
 
 export interface Recipient {
   copayerId: string;
@@ -23,15 +26,17 @@ export interface Recipient {
   unit: string;
 }
 
-const Mustache = require('mustache');
-const fs = require('fs');
-const path = require('path');
+interface EmailType {
+  filename: string;
+  notifyDoer: boolean;
+  notifyOthers: boolean;
+};
+
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
-const defaultRequest = require('request');
 
-const EMAIL_TYPES = {
+const EMAIL_TYPES: { [key: string]: EmailType } = {
   NewCopayer: {
     filename: 'new_copayer',
     notifyDoer: false,
@@ -57,6 +62,16 @@ const EMAIL_TYPES = {
     notifyDoer: true,
     notifyOthers: true
   },
+  NewIncomingTxTestnet: {
+    filename: 'new_incoming_tx_testnet',
+    notifyDoer: true,
+    notifyOthers: true
+  },
+  NewZeroOutgoingTx: {
+    filename: 'new_zero_outgoing_tx',
+    notifyDoer: true,
+    notifyOthers: true
+  },
   TxProposalFinallyRejected: {
     filename: 'txp_finally_rejected',
     notifyDoer: false,
@@ -66,6 +81,16 @@ const EMAIL_TYPES = {
     filename: 'tx_confirmation',
     notifyDoer: true,
     notifyOthers: false
+  },
+  TxConfirmationReceiver: {
+    filename: 'tx_confirmation_receiver',
+    notifyDoer: true,
+    notifyOthers: false
+  },
+  TxConfirmationSender: {
+    filename: 'tx_confirmation_sender',
+    notifyDoer: true,
+    notifyOthers: false
   }
 };
 
@@ -73,6 +98,8 @@ export class EmailService {
   defaultLanguage: string;
   defaultUnit: string;
   templatePath: string;
+  masterTemplatePath: string;
+  masterTemplate: string;
   publicTxUrlTemplate: string;
   subjectPrefix: string;
   from: string;
@@ -80,37 +107,28 @@ export class EmailService {
   storage: Storage;
   messageBroker: MessageBroker;
   lock: Lock;
-  mailer: any;
-  request: AxiosInstance;
-  //  mailer: nodemailer.Transporter;
+  mailer: nodemailer.Transporter | typeof sgMail;
+  request: request.RequestAPI<any, any, any>;
+  sendMail: (opts) => any;
 
   start(opts, cb) {
     opts = opts || {};
-    this.request = opts.request || axios;
-
-    const _readDirectories = (basePath, cb) => {
-      fs.readdir(basePath, (err, files) => {
-        if (err) return cb(err);
-        async.filter(
-          files,
-          (file, next) => {
-            fs.stat(path.join(basePath, file), (err, stats) => {
-              return next(!err && stats.isDirectory());
-            });
-          },
-          dirs => {
-            return cb(null, dirs);
-          }
-        );
-      });
-    };
+    this.request = opts.request || request;
 
     opts.emailOpts = opts.emailOpts || {};
 
     this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
-    logger.info('Email templates at:' + (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
-    this.templatePath = path.normalize((opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
+    this.templatePath = path.normalize(opts.emailOpts.templatePath || path.join(__dirname, '../../templates'));
+    this.masterTemplatePath = path.join(this.templatePath, 'master-template.html');
+    
+    try {
+      this.masterTemplate = fs.readFileSync(this.masterTemplatePath, 'utf8');
+      logger.debug('Master template loaded successfully from: %s', this.masterTemplatePath);
+    } catch (err) {
+      logger.error('Could not load master template from %s: %o', this.masterTemplatePath, err);
+      return cb(new Error('Could not load master template'));
+    }
 
     this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
     this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
@@ -119,10 +137,13 @@ export class EmailService {
     async.parallel(
       [
         done => {
-          _readDirectories(this.templatePath, (err, res) => {
-            this.availableLanguages = res;
+          try {
+            const langs = this._getTemplateLanguages(this.templatePath);
+            this.availableLanguages = langs;
+            done();
+          } catch (err) {
             done(err);
-          });
+          }
         },
         done => {
           if (opts.storage) {
@@ -135,7 +156,7 @@ export class EmailService {
         },
         done => {
           this.messageBroker = opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
-          this.messageBroker.onMessage(_.bind(this.sendEmail, this));
+          this.messageBroker.onMessage(this.sendEmail.bind(this));
           done();
         },
         done => {
@@ -143,7 +164,53 @@ export class EmailService {
           done();
         },
         done => {
-          this.mailer = opts.mailer; // || nodemailer.createTransport(opts.emailOpts);
+          try {
+            if (opts.emailOpts.mailer === 'nodemailer') {
+              this.mailer = nodemailer.createTransport(opts.emailOpts);
+              this.sendMail = this.mailer.sendMail.bind(this.mailer);
+            } else if (opts.emailOpts.mailer === 'sendgrid') {
+              sgMail.setApiKey(opts.emailOpts.sendGridApiKey);
+              this.mailer = sgMail;
+              this.sendMail = this.mailer.send.bind(this.mailer);
+            } else if (opts.emailOpts.mailer === 'mailersend') {
+              this.sendMail = async function(opts) {
+                return new Promise((resolve, reject) => {
+                  this.request(
+                    {
+                      url: 'https://api.mailersend.com/v1/email',
+                      method: 'POST',
+                      json: true,
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        Authorization: 'Bearer ' + config.emailOpts.mailerSendApiKey,
+                      },
+                      body: {
+                        from: { email: opts.from },
+                        to: [{ email: opts.to }],
+                        subject: opts.subject,
+                        text: opts.text,
+                        html: opts.html
+                      }
+                    },
+                    (err, data) => {
+                      if (err) return reject(err);
+                      data = data.toJSON();
+                      if (data?.statusCode >= 200 && data?.statusCode < 300) {
+                        return resolve(data?.body || data);
+                      }
+                      return reject(data?.body || data);
+                    }
+                  )
+                });
+              }
+            } else {
+              throw new Error('Unknown emailOpts.mailer: ' + opts.emailOpts.mailer);
+            }
+          } catch (err) {
+            return done(err);
+          }
           done();
         }
       ],
@@ -156,6 +223,12 @@ export class EmailService {
     );
   }
 
+  _getTemplateLanguages(templatePath) {
+    const contents = fs.readdirSync(templatePath, { withFileTypes: true});
+    const langs = contents.filter(item => item.isDirectory()).map(item => item.name);
+    return langs;
+  }
+
   _compileTemplate(template, extension) {
     const lines = template.split('\n');
     if (extension == '.html') {
@@ -163,11 +236,11 @@ export class EmailService {
     }
     return {
       subject: lines[0],
-      body: _.tail(lines).join('\n')
+      body: lines.slice(1).join('\n')
     };
   }
 
-  _readTemplateFile(language, filename, cb) {
+  _readTemplateFile(language: string, filename: string, cb) {
     const fullFilename = path.join(this.templatePath, language, filename);
     fs.readFile(fullFilename, 'utf8', (err, template) => {
       if (err) {
@@ -178,10 +251,18 @@ export class EmailService {
   }
 
   // TODO: cache for X minutes
-  _loadTemplate(emailType, recipient, extension, cb) {
+  _loadTemplate(emailType: EmailType, recipient: Recipient, extension: string, cb) {
     this._readTemplateFile(recipient.language, emailType.filename + extension, (err, template) => {
-      if (err) return cb(err);
-      return cb(null, this._compileTemplate(template, extension));
+      if (err) {
+        logger.error('Could not read template file for language %s: %o', recipient.language, err.message);
+        return cb(err);
+      }
+
+      const compiled = this._compileTemplate(template, extension);
+      if (extension === '.html') {
+        compiled.body = this.masterTemplate.replace('{{> htmlContent}}', compiled.body);
+      }
+      return cb(null, compiled);
     });
   }
 
@@ -189,69 +270,69 @@ export class EmailService {
     if (!data) return cb(new Error('Could not apply template to empty data'));
 
     let error;
-    const result = _.mapValues(template, t => {
+    const result = {};
+    for (const [key, templateStr] of Object.entries(template)) {
       try {
-        return Mustache.render(t, data);
+        result[key] = Mustache.render(templateStr, data);
       } catch (e) {
         logger.error('Could not apply data to template: %o', e);
         error = e;
       }
-    });
+    }
     if (error) return cb(error);
     return cb(null, result);
   }
 
-  _getRecipientsList(notification, emailType, cb) {
+  _getRecipientsList(notification: Notification, emailType: EmailType, cb) {
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
 
-      this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
+      this.storage.fetchPreferences<Preferences[]>(notification.walletId, null, (err, preferences) => {
         if (err) return cb(err);
-        if (_.isEmpty(preferences)) return cb(null, []);
+        if (!preferences?.length) return cb(null, []);
 
         const usedEmails = {};
-        const recipients = _.compact(
-          _.map(preferences, p => {
-            if (!p.email || usedEmails[p.email]) return;
+        const recipients = preferences.map(p => {
+          if (!p.email || usedEmails[p.email]) return;
 
-            usedEmails[p.email] = true;
-            if (notification.creatorId == p.copayerId && !emailType.notifyDoer) return;
-            if (notification.creatorId != p.copayerId && !emailType.notifyOthers) return;
-            if (!_.includes(this.availableLanguages, p.language)) {
-              if (p.language) {
-                logger.warn('Language for email "' + p.language + '" not available.');
-              }
-              p.language = this.defaultLanguage;
+          usedEmails[p.email] = true;
+          if (notification.creatorId == p.copayerId && !emailType.notifyDoer) return;
+          if (notification.creatorId != p.copayerId && !emailType.notifyOthers) return;
+          if (!this.availableLanguages.includes(p.language)) {
+            if (p.language) {
+              logger.warn('Language for email "' + p.language + '" not available.');
             }
+            p.language = this.defaultLanguage;
+          }
 
-            let unit;
-            if (wallet.coin != Defaults.COIN) {
-              switch (wallet.coin) {
-                case 'pax':
-                  unit = 'usdp'; // backwards compatibility
-                  break;
-                default:
-                  unit = wallet.coin;
-              }
-            } else {
-              unit = p.unit || this.defaultUnit;
+          let unit;
+          if (wallet.coin != Defaults.COIN) {
+            switch (wallet.coin) {
+              case 'pax':
+                unit = 'usdp'; // backwards compatibility
+                break;
+              default:
+                unit = wallet.coin;
             }
+          } else {
+            unit = p.unit || this.defaultUnit;
+          }
 
-            return {
-              copayerId: p.copayerId,
-              emailAddress: p.email,
-              language: p.language,
-              unit
-            };
-          })
-        );
+          return {
+            copayerId: p.copayerId,
+            emailAddress: p.email,
+            language: p.language,
+            unit
+          };
+        })
+        .filter(p => !!p); // filter out falsy values (e.g. undefined)
 
         return cb(null, recipients);
       });
     });
   }
 
-  async _getDataForTemplate(notification, recipient, cb) {
+  async _getDataForTemplate(notification: Notification, recipient: Recipient, cb) {
     const UNIT_LABELS = {
       btc: 'BTC',
       bit: 'bits',
@@ -274,11 +355,46 @@ export class EmailService {
       ape: 'APE',
       euroc: 'EUROC',
       usdt: 'USDT',
-      weth: 'WETH'
+      weth: 'WETH',
+      'usdc.e': 'USDC.e',
     };
 
-    const data = _.cloneDeep(notification.data);
-    data.subjectPrefix = _.trim(this.subjectPrefix) + ' ';
+    const data = JSON.parse(JSON.stringify(notification.data)) as Notification['data'];
+    data.subjectPrefix = this.subjectPrefix.trim() + ' ';
+    
+    // Helper function to properly title case text
+    const toTitleCase = (text: string) => {
+      const minorWords = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'via'];
+      return text.split(' ').map((word, index) => {
+        if (index === 0 || !minorWords.includes(word.toLowerCase())) {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }
+        return word.toLowerCase();
+      }).join(' ');
+    };
+    
+    try {
+      const plainTemplate = await new Promise<string>((resolve, reject) => {
+        this._readTemplateFile(recipient.language, `${EMAIL_TYPES[notification.type].filename}.plain`, (err, template) => {
+          if (err) reject(err);
+          else resolve(template);
+        });
+      });
+      const firstLine = plainTemplate.split('\n')[0];
+      if (firstLine && firstLine.startsWith('{{subjectPrefix}}')) {
+        data.title = toTitleCase(firstLine.replace('{{subjectPrefix}}', ''));
+      }
+    } catch (err) {
+      const templateName = EMAIL_TYPES[notification.type].filename;
+      data.title = toTitleCase(templateName.split('_').join(' '));
+    }
+    
+    const templateName = EMAIL_TYPES[notification.type]?.filename;
+    const icon = getIconHtml(templateName, true);
+    if (icon) {
+      data.icon = icon;
+    }
+
     if (data.amount) {
       try {
         let unit = recipient.unit.toLowerCase();
@@ -341,14 +457,14 @@ export class EmailService {
       }
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
-        const rejectors = _.map(data.rejectedBy, copayerId => {
+        const rejectors = data.rejectedBy.map(copayerId => {
           const copayer = wallet.copayers.find(c => c.id == copayerId);
           return copayer.name;
         });
         data.rejectorsNames = rejectors.join(', ');
       }
 
-      if (_.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) && data.txid) {
+      if (['NewIncomingTx', 'NewOutgoingTx'].includes(notification.type) && data.txid) {
         const urlTemplate = this.publicTxUrlTemplate[wallet.chain]?.[wallet.network];
         if (urlTemplate) {
           try {
@@ -374,18 +490,24 @@ export class EmailService {
       html: undefined
     };
     if (email.bodyHtml) {
-      mailOptions.html = email.bodyHtml;
+      mailOptions.html = juice(email.bodyHtml, {
+        removeStyleTags: false,
+        preserveImportant: true,
+        preserveMediaQueries: true,
+        preserveFontFaces: true,
+        applyStyleTags: true
+      });
     }
-    this.mailer
-      .send(mailOptions)
+    this.sendMail(mailOptions)
       .then(result => {
-        logger.debug('Message sent: %o', result || '');
+        result = result[0] instanceof IncomingMessage ? result[0] : result;
+        logger.debug('Message sent: %o %o', mailOptions, result?.toJSON?.() || result || '(no result)');
         return cb(null, result);
       })
       .catch(err => {
         let errStr;
         try {
-          errStr = err.toString().substr(0, 100);
+          errStr = err.toString();
         } catch (e) { }
 
         logger.warn('An error occurred when trying to send email to %o %o', email.to, (errStr || err));
@@ -393,7 +515,7 @@ export class EmailService {
       });
   }
 
-  _readAndApplyTemplates(notification, emailType, recipientsList: Recipient[], cb) {
+  _readAndApplyTemplates(notification: Notification, emailType: EmailType, recipientsList: Recipient[], cb) {
     async.map(
       recipientsList,
       (recipient, next) => {
@@ -415,7 +537,7 @@ export class EmailService {
                   });
                 },
                 (err, res: any) => {
-                  return next(err, _.fromPairs(res.filter(Boolean)));
+                  return next(err, Utils.fromPairs(res.filter(Boolean)));
                 }
               );
             },
@@ -429,19 +551,19 @@ export class EmailService {
         );
       },
       (err, res: any) => {
-        return cb(err, _.fromPairs(res.filter(Boolean)));
+        return cb(err, Utils.fromPairs(res.filter(Boolean)));
       }
     );
   }
 
-  _checkShouldSendEmail(notification, cb) {
+  _checkShouldSendEmail(notification: Notification, cb) {
     if (notification.type != 'NewTxProposal') return cb(null, true);
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       return cb(err, wallet.m > 1);
     });
   }
 
-  sendEmail(notification, cb) {
+  sendEmail(notification: Notification, cb) {
     cb = cb || function() { };
 
     const emailType = EMAIL_TYPES[notification.type];
@@ -452,7 +574,7 @@ export class EmailService {
       if (!should) return cb();
 
       this._getRecipientsList(notification, emailType, (err, recipientsList: Recipient[]) => {
-        if (_.isEmpty(recipientsList)) return cb();
+        if (!recipientsList?.length) return cb();
 
         // TODO: Optimize so one process does not have to wait until all others are done
         // Instead set a flag somewhere in the db to indicate that this process is free
@@ -512,7 +634,7 @@ export class EmailService {
                 if (err) {
                   let errStr;
                   try {
-                    errStr = err.toString().substr(0, 100);
+                    errStr = err.toString();
                   } catch (e) { }
 
                   logger.warn('An error ocurred generating email notification: %o', errStr || err);
@@ -545,21 +667,26 @@ export class EmailService {
         const credentials = this.oneInchGetCredentials();
         // Get mainnet chainId
         const chainId = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[`${chain.toUpperCase()}_mainnet`]
-        axios.get(`${credentials.API}/v5.2/${chainId}/tokens`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${credentials.API_KEY}`,
+        this.request(
+          {
+            url: `${credentials.API}/v5.2/${chainId}/tokens`,
+            method: 'GET',
+            json: true,
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: 'Bearer ' + credentials.API_KEY,
+            }
           },
-        })
-          .then((response) => {
-            if (response.status === 429) {
-              // OneInch rate limit
+          (err, data) => {
+            if (err) return reject(err);
+            if (data?.statusCode === 429) {
+              // oneinch rate limit
               return reject();
             }
-            resolve(response.data?.tokens);
-          })
-          .catch((err) => reject(err));
+            return resolve(data?.body?.tokens);
+          }
+        );
       } catch (err) {
         return reject(err);
       }

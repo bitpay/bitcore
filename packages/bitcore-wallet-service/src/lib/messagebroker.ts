@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events';
+import * as io from 'socket.io-client';
 import 'source-map-support/register';
 import logger from './logger';
 
 export class MessageBroker extends EventEmitter {
   remote: boolean;
-  mq: SocketIO.Socket;
+  mq: io.Socket;
   constructor(opts) {
     super();
 
@@ -13,7 +14,7 @@ export class MessageBroker extends EventEmitter {
       const url = opts.messageBrokerServer.url;
 
       this.remote = true;
-      this.mq = require('socket.io-client').connect(url);
+      this.mq = io.connect(url);
       this.mq.on('connect', () => {});
       this.mq.on('connect_error', () => {
         logger.warn('Error connecting to message broker server @ ' + url);

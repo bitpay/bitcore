@@ -1,5 +1,4 @@
 import express from 'express';
-import _ from 'lodash';
 import { formatTimestamp, logger } from './logger';
 
 type TimedRequest = {
@@ -29,21 +28,21 @@ function LogPhase(req: TimedRequest, res: express.Response, phase: string) {
     time: formatTimestamp(time),
     walletId: req.walletId,
     userAgent: ua + ':' + ver,
-    ip: _.padStart(ip, 22, ' '),
-    phase: _.padStart(phase, 8, ' '),
-    method: _.padStart(req.method, 6, ' '),
-    status: _.padStart('...', 5, ' '),
+    ip: ip.padStart(22, ' '),
+    phase: phase.padStart(8, ' '),
+    method: req.method.padStart(6, ' '),
+    status: '...'.padStart(5, ' '),
     url: `${req.baseUrl}${req.url}`,
-    took: _.padStart('...', 10, ' '),
-    openConnections: _.padStart(openConnections.toString(), 6, ' ')
+    took: '...'.padStart(10, ' '),
+    openConnections: openConnections.toString().padStart(6, ' ')
   };
   if (req.startTime && ['END', 'CLOSED'].includes(phase)) {
     const endTime = new Date();
     const startTime = req.startTime ? req.startTime : endTime;
     const totalTime = endTime.getTime() - startTime.getTime();
     const totalTimeMsg = `${totalTime} ms`.padStart(10, ' ');
-    logOut.took = _.padStart(totalTimeMsg, 10, ' ');
-    logOut.status = _.padStart(res.statusCode.toString(), 5, ' ');
+    logOut.took = totalTimeMsg.padStart(10, ' ');
+    logOut.status = res.statusCode.toString().padStart(5, ' ');
   }
   LogObj(logOut);
 }
@@ -53,7 +52,6 @@ export function LogMiddleware() {
     openConnections++;
     // LogPhase(req, res, 'START');
     res.on('finish', () => {
-      openConnections--;
       LogPhase(req, res, 'END');
     });
     res.on('close', () => {

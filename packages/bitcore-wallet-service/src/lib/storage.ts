@@ -72,6 +72,7 @@ const collections = {
 
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
+const Utils = Common.Utils;
 
 const ObjectID = mongodb.ObjectID;
 
@@ -1731,7 +1732,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
 
-        return cb(null, result.map(Address.fromObj));
+        return cb(null, Utils.sortAsc(result.map(Address.fromObj), 'createdOn', 'path'));
       });
   }
 
@@ -1950,7 +1951,7 @@ export class Storage {
       });
   }
 
-  fetchPreferences(walletId, copayerId, cb) {
+  fetchPreferences<T extends Preferences | Preferences[]>(walletId: string, copayerId: string | null, cb: (err?: any, preferences?: T) => void) {
     this.db
       .collection(collections.PREFERENCES)
       .find({
@@ -1970,10 +1971,9 @@ export class Storage {
           return Preferences.fromObj(r);
         });
         if (copayerId) {
-          // TODO: review if returs are correct
-          return cb(null, preferences[0]);
+          return cb(null, preferences[0] as T);
         } else {
-          return cb(null, preferences);
+          return cb(null, preferences as T);
         }
       });
   }

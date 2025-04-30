@@ -617,7 +617,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     while (coin = (await batchStream.next())) {
       seen[coin.mintTxid] = true;
       yield coin;
-      
+
       if (coin.spentTxid && !seen[coin.spentTxid]) {
         yield * this.yieldRelatedOutputs(coin.spentTxid);
         seen[coin.spentTxid] = true;
@@ -679,7 +679,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     simple?: boolean; // if true, don't invalidate descendants
   }) {
     const { chain, network, invalidTxid, replacedByTxid, invalidParentTxids = [], simple } = params;
-    
+
     if (!simple) {
       const spentOutputsQuery = {
         chain,

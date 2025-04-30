@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Common } from './common';
-import { Storage } from './storage';
 import { Errors } from './errors/errordefinitions';
+import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
 const Defaults = Common.Defaults;

@@ -65,7 +65,7 @@ export class P2pManager {
 
 export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected lastHeartBeat = '';
-  protected queuedRegistrations = new Array<NodeJS.Timer>();
+  protected queuedRegistrations = new Array<NodeJS.Timeout>();
   protected stopping = false;
   protected chain = '';
   protected network = '';

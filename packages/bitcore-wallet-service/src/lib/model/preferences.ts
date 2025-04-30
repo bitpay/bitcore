@@ -8,6 +8,11 @@ export interface IPreferences {
   unit: number;
   tokenAddresses?: string[];
   multisigEthInfo: object[];
+  maticTokenAddresses?: string[];
+  opTokenAddresses?: string[];
+  baseTokenAddresses?: string[];
+  arbTokenAddresses?: string[];
+  multisigMaticInfo: object[];
 }
 export class Preferences {
   version: string;

@@ -188,7 +188,7 @@ export class CoinModel extends BaseModel<ICoin> {
       .toArray();
   }
 
-  _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean }): any {
+  _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean; confirmations?: number; }): any {
     // try to parse coin.address if its 'false' and script exists
     if (coin.address == 'false' && coin.script != undefined && coin.script.toString() != '') {
       try {
@@ -223,7 +223,7 @@ export class CoinModel extends BaseModel<ICoin> {
       address: valueOrDefault(coin.address, ''),
       script: valueOrDefault(coin.script, Buffer.alloc(0)).toString('hex'),
       value: valueOrDefault(coin.value, -1),
-      confirmations: valueOrDefault(coin.confirmations, -1),
+      confirmations: valueOrDefault(coin.confirmations ?? options?.confirmations, -1),
       sequenceNumber: valueOrDefault(coin.sequenceNumber, undefined)
     };
     if (options && options.object) {

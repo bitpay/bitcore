@@ -13,6 +13,7 @@ import { IUser } from './model/user';
 import { WalletService } from './server';
 import { Stats } from './stats';
 import { Request } from 'express';
+import axios from 'axios';
 
 interface AuthenticatedRequest extends Request {
   user?: IUser;
@@ -28,7 +29,6 @@ interface FileUploadRequest extends Request {
 const bodyParser = require('body-parser');
 const compression = require('compression');
 const RateLimit = require('express-rate-limit');
-const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 const TelegramBot = require('node-telegram-bot-api');
 
@@ -410,7 +410,7 @@ export class ExpressApp {
               res.json({ version });
             } else {
               try {
-                const htmlString = await rp(options);
+                const htmlString = await axios.get(options.uri, { headers: options.headers }).then(response => response.data);
                 logger.warn("DEBUGPRINT[30]: expressapp.ts:441: htmlString=");
                 logger.warn( htmlString);
                 if (htmlString['tag_name']) {

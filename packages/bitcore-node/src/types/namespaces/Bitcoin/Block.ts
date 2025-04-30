@@ -9,6 +9,7 @@ export interface BlockHeaderObj {
   nonce: number;
 }
 export interface BlockHeader {
+  prevHash?: Buffer;
   toObject: () => BlockHeaderObj;
 }
 export interface BitcoinBlockType {

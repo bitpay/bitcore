@@ -1,6 +1,6 @@
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
-
+import { inspect } from 'util';
 const identifier = process.env.LOGGER_IDENTIFIER || 'bws';
 
 export const transport = new winston.transports.DailyRotateFile({
@@ -41,7 +41,10 @@ export const logger = winston.createLogger({
       // Include stack trace if available
       const stack = info.stack ? `\nStack Trace:\n${info.stack}` : '';
 
-      return `${info.level} :: ${formatTimestamp(new Date())} :: ${info.message}${stack}`;
+      let originalReason = inspect(info, { depth: null })
+
+
+      return `${info.level} :: ${formatTimestamp(new Date())} :: ${info.message}${stack}:: ${originalReason}`;
     })
   ),
   transports: [transport],
@@ -115,20 +118,39 @@ process.on('unhandledRejection', (reason, promise) => {
     error.stack = (reason as any).stack;
   }
 
+  // Extract request details if available
+  let requestDetails = '';
+  if (reason instanceof Error && (reason as any).options) {
+    try {
+      const options = (reason as any).options;
+      requestDetails = `\nRequest Details: ${JSON.stringify({
+        url: options.url || options.uri,
+        method: options.method,
+        host: options.host,
+        timeout: options.timeout
+      }, null, 2)}`;
+    } catch (e) {
+      requestDetails = `\nCould not extract request details: ${e.message}`;
+    }
+  }
+
   // Log complete error information
   console.error('Unhandled Promise Rejection:', error);
   console.error(error);
   logger.error(error);
+  logger.info(`Unhandled Promise Rejection: ${error.message}${requestDetails}`);
 
   logger.error({
-    message: 'Unhandled Promise Rejection',
+    message: `Unhandled Promise Rejection: ${error.message}${requestDetails}`,
     error: {
       name: error.name,
       message: error.message,
       stack: error.stack,
+      code: (error as any).code,
       // Include the original reason for debugging
-      originalReason: reason !== error ? reason : undefined
+      originalReason: reason !== error ? inspect(reason, { depth: null }) : undefined
     },
+    callContext: captureCallStack(1),
     timestamp: timestamp()
   });
   // Exit the process to allow Docker to restart the container

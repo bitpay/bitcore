@@ -5,7 +5,7 @@ const { Storage } = require('../build/src/services/storage');
 const { TransactionStorage } = require('../build/src/models/transaction');
 
 function usage(errMsg) {
-  console.log('USAGE: ./fixreplacedTree.js <txid> <replacementTxid> [options]');
+  console.log('USAGE: ./fixReplacedTree.js <txid> <replacementTxid> [options]');
   console.log('OPTIONS:');
   console.log('  --chain <value>      BTC, BCH, DOGE, or LTC');
   console.log('  --network <value>    mainnet, testnet, or regtest');
@@ -42,7 +42,9 @@ if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain) || !['mainnet', 'testnet', 'r
 const real = !!args.find(a => a === '--real');
 const force = !!args.find(a => a === '--force');
 
-real && console.log('~~~~ DRY RUN ~~~~');
+console.log('Real:', real);
+real && console.log('~~~~ REAL RUN ~~~~');
+
 console.log('Connecting to storage...');
 Storage.start()
   .then(async () => {
