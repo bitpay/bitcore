@@ -1,29 +1,31 @@
 {
   "version": "8.25.8",
+  "workspaces": [
+    "packages/*"
+  ],
   "prettier": {
     "singleQuote": true,
     "printWidth": 120
   },
   "scripts": {
     "build": "docker build -t bitcore-node . ",
-    "watch": "./node_modules/.bin/lerna run watch --parallel",
-    "postinstall": "npm run bootstrap && npm run compile",
-    "bootstrap": "./node_modules/.bin/lerna bootstrap",
+    "watch": "npm run watch --workspaces --parallel",
+    "postinstall": "npm run compile",
+    "compile": "npm run compile --workspaces",
+    "lint": "npm run lint --workspaces",
+    "fix": "npm run fix --workspaces",
+    "precommit": "npm run precommit --workspaces --if-present",
     "insight:build": "cd ./packages/insight && npm i && npm run build",
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
-    "compile": "./node_modules/.bin/lerna run compile",
-    "lint": "lerna run lint",
-    "fix": "lerna run fix",
-    "precommit": "lerna run --concurrency 1 --stream precommit --since master",
     "test:ci:local": "npm run test:ci:build:local && npm run test:ci:all",
     "test:ci:build:local": "./ci.sh build local",
     "test:ci": "echo 'This command has been removed. Try running `npm run test:ci:local` to run tests locally using the test_runner docker container as before. The CI pipeline logic is now in .circleci/config.yml.'",
     "test:ci:build": "./ci.sh build ci",
-    "test:ci:all": "./ci.sh 'npm run lerna:ci:all'",
-    "test:ci:unit": "./ci.sh 'npm run lerna:ci:unit'",
-    "test:ci:integration": "./ci.sh 'npm run lerna:ci:integration'",
-    "test:ci:coverage": "./ci.sh 'npm run lerna:ci:coverage'",
+    "test:ci:all": "./ci.sh 'npm run test:ci:all:workspaces'",
+    "test:ci:unit": "./ci.sh 'npm run test:ci:unit:workspaces'",
+    "test:ci:integration": "./ci.sh 'npm run test:ci:integration:workspaces'",
+    "test:ci:coverage": "./ci.sh 'npm run test:ci:coverage:workspaces'",
     "test:bitcore-wallet-service": "cd ./packages/bitcore-wallet-service && npm run test",
     "ci:bitcore-wallet-service": "./ci.sh 'npm run test:bitcore-wallet-service'",
     "test:bitcore-wallet-client": "cd ./packages/bitcore-wallet-client && npm run test",
@@ -58,10 +60,10 @@
     "ci:bitcore-client": "./ci.sh 'npm run test:bitcore-client'",
     "test:bitcore-tss": "cd ./packages/bitcore-tss && npm run test",
     "ci:bitcore-tss": "./ci.sh 'npm run test:bitcore-tss'",
-    "lerna:ci:all": "npx lerna run test:ci --concurrency 1 --stream",
-    "lerna:ci:unit": "npx run test:ci:unit --concurrency 1 --stream",
-    "lerna:ci:integration": "npx run test:ci:integration --concurrency 1 --stream",
-    "lerna:ci:coverage": "npx run coverage --concurrency 1 --stream"
+    "test:ci:all:workspaces": "npm run test:ci --workspaces --if-present",
+    "test:ci:unit:workspaces": "npm run test:ci:unit --workspaces --if-present",
+    "test:ci:integration:workspaces": "npm run test:ci:integration --workspaces --if-present",
+    "test:ci:coverage:workspaces": "npm run coverage --workspaces --if-present"
   },
   "config": {
     "commitizen": {
@@ -81,7 +83,6 @@
     "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {
-    "lerna": "^3.22.1",
     "typescript": "4.9.4"
   },
   "husky": {
