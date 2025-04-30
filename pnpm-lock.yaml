@@ -1174,7 +1174,7 @@ importers:
         specifier: ^2.4.1
         version: 2.4.2
       '@types/bson':
-        specifier: ^4.0.5
+        specifier: ^4.2.4
         version: 4.2.4
       '@types/linkify-it':
         specifier: ^3.0.2
