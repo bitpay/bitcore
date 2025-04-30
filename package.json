@@ -10,8 +10,7 @@
   "scripts": {
     "build": "docker build -t bitcore-node . ",
     "watch": "npm run watch --workspaces --parallel",
-    "postinstall": "npm run compile",
-    "compile": "npm run compile --workspaces",
+    "compile": "npm run compile --workspaces --if-present",
     "lint": "npm run lint --workspaces",
     "fix": "npm run fix --workspaces",
     "precommit": "npm run precommit --workspaces --if-present",
