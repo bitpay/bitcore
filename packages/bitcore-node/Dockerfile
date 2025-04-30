@@ -1,0 +1,19 @@
+FROM node:20.18.0-bullseye
+
+# Log versions
+RUN set -x \
+    && node -v \
+    && npm -v
+
+RUN npm i -g npm@8.19.3
+
+WORKDIR /bitcore
+
+# Add source
+# NOTE(danny): this is really suboptimal, but we will fix as we move to `turbo`
+COPY package*.json ./
+COPY packages/ ./packages/
+
+# Install dependencies and build
+RUN npm install --ignore-scripts
+RUN npm run compile
