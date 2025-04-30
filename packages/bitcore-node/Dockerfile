@@ -16,4 +16,10 @@ COPY packages/ ./packages/
 
 # Install dependencies and build
 RUN npm install --ignore-scripts
+
+# not sure why this isn't being found, so just manually install for now
+RUN npm install xrpl-secret-numbers 
 RUN npm run compile
+
+# Start the server
+CMD ["node", "packages/bitcore-node/build/src/server.js"]
