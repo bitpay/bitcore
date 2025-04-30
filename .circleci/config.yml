@@ -16,14 +16,15 @@ executors:
 
 commands:
   create_concatenated_package_lock:
-    description: "Concatenate all package-lock.json files recognized by lerna.js into single file. File is used as checksum source for part of caching key."
+    description: "Concatenate all package-lock.json files from npm workspaces into a single file. File is used as checksum source for part of caching key."
     parameters:
       filename:
         type: string
     steps:
       - run:
           name: Combine package-lock.json files to single file
-          command: npx lerna la --json | grep '"location":' | awk -F packages '{printf "packages%s\n", $2}' | awk -F '"' '{printf "\"%s/package-lock.json\" ", $1}' | xargs cat > << parameters.filename >>
+          command: |
+            npm query '.workspace[]' | jq -r '.[] | "\(.location)/package-lock.json"' | xargs cat > << parameters.filename >>
   start_docker_images:
     description: Pull docker images for mongo and blockchain nodes
     steps:
@@ -79,44 +80,21 @@ jobs:
       - checkout
       - use_python2
       - use_node
-    #   - run:
-    #       name: Install Chrome
-    #       command: |
-    #         sudo mkdir -p /etc/apt/keyrings
-    #         curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /etc/apt/keyrings/google.gpg
-    #         echo 'deb [arch=amd64 signed-by=/etc/apt/keygrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/chrome.list
-    #         set -x && sudo apt-get update && sudo apt-get install -y google-chrome-stable
-    #         export CHROME_BIN=/usr/bin/google-chrome
       - run:
           name: Print versions
           command: |
             nvm use default
             set -x && node -v && npm -v && google-chrome --version && docker version && python --version
-      # - restore_dependency_cache
-      - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
-          nvm use default
-          npm install
+      - run:
+          name: Install dependencies
+          command: |
+            nvm use default
+            npm install
       - save_cache:
           key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
           paths:
             - node_modules
-            - packages/bitcore-build/node_modules
-            - packages/bitcore-client/node_modules
-            - packages/bitcore-lib/node_modules
-            - packages/bitcore-lib-cash/node_modules
-            - packages/bitcore-lib-doge/node_modules
-            - packages/bitcore-lib-ltc/node_modules
-            - packages/bitcore-mnemonic/node_modules
-            - packages/bitcore-node/node_modules
-            - packages/bitcore-p2p/node_modules
-            - packages/bitcore-p2p-cash/node_modules
-            - packages/bitcore-p2p-doge/node_modules
-            - packages/bitcore-tss/node_modules
-            - packages/bitcore-wallet/node_modules
-            - packages/bitcore-wallet-client/node_modules
-            - packages/bitcore-wallet-service/node_modules
-            - packages/crypto-wallet-core/node_modules
-            - packages/insight/node_modules
+            - packages/*/node_modules
       - persist_to_workspace:
           root: ~/bitcore
           paths:
