@@ -37,7 +37,7 @@ export interface IKeyChain {
   commonKeyChain: string;
 };
 
-export class Tss extends EventEmitter {
+export class TssKeyGen extends EventEmitter {
   #request: Request;
   #keygen: ECDSA.KeyGen;
   #key: Key;
@@ -83,7 +83,7 @@ export class Tss extends EventEmitter {
    * @param {number} params.n Number of parties/signers
    * @returns {Promise<string>} Base64 encoded session. You'll need this along with the authKey and seed to restore the session.
    */
-  async newKey({ m, n }): Promise<Tss> {
+  async newKey({ m, n }): Promise<TssKeyGen> {
     const keygen = new ECDSA.KeyGen({
       n,
       m,
@@ -113,7 +113,7 @@ export class Tss extends EventEmitter {
    * @param {string} [params.opts.noKey] ECIES.decrypt: The public key is not included the payload
    * @param {string} [params.opts.shortTag] ECIES.decrypt: A short tag was used during encryption
    */
-  async joinKey({ code, opts }): Promise<Tss> {
+  async joinKey({ code, opts }): Promise<TssKeyGen> {
     $.checkArgument(code, 'Missing required param: code');
     $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
 
@@ -160,7 +160,7 @@ export class Tss extends EventEmitter {
    * @param {string} params.session Session string to restore
    * @returns {Promise<Tss>} Restored TSS instance
    */
-  async restoreSession({ session }): Promise<Tss> {
+  async restoreSession({ session }): Promise<TssKeyGen> {
     const [id, partyId, m, n, keygenSession] = session.split(':');
     this.id = id;
     this.m = parseInt(m);

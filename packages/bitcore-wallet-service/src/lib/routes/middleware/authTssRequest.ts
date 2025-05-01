@@ -3,37 +3,9 @@ import * as Types from '../../../types/expressapp';
 import { Utils } from '../../common/utils';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
-import { Copayer } from '../../model';
 import { checkRequired, WalletService } from '../../server';
-import { Storage } from '../../storage';
 import { error } from '../helpers';
 import { getCredentials, getMessage } from './authRequest';
-
-
-async function withSignature(storage: Storage, opts): Promise<Copayer> {
-  if (!checkRequired(opts, ['copayerId', 'message', 'signature'])) {
-    return;
-  }
-
-  const copayer = await new Promise<Copayer>((resolve, reject) => {
-    storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-      if (err) {
-        return reject(err);
-      }
-      if (!copayer) {
-        return reject(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
-      }
-      return resolve(copayer);
-    });
-  });
-
-  const isValid = !!copayer.requestPubKeys.find(pubKey => Utils.verifyMessage(opts.message, opts.signature, pubKey.key));
-  if (!isValid) {
-    throw new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature');
-  }
-
-  return copayer;
-};
 
 
 export function authTssRequest(opts?: Types.AuthRequestOpts): express.RequestHandler {

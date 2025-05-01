@@ -7,7 +7,7 @@ const request = require('supertest');
 const { Request } = require('../ts_build/lib/request');
 const crypto = require('crypto');
 const { BitcoreLib } = require('crypto-wallet-core');
-const { Tss } = require('../ts_build/lib/tss');
+const { TssKeyGen } = require('../ts_build/lib/tsskeygen');
 const log = require('../ts_build/lib/log').default;
 const Client = require('../ts_build').default;
 const {
@@ -73,11 +73,11 @@ describe('TSS', function() {
   });
 
   it('should make a Tss class', function() {
-    const tss = new Tss({ baseUrl: '/bws/api', key: party0Key, request: request(app) });
+    const tss = new TssKeyGen({ baseUrl: '/bws/api', key: party0Key, request: request(app) });
     should.exist(tss);
   });
 
-  describe('newKey', function() {
+  describe('key', function() {
     const m = 2;
     const n = 3;
     let tss0;
@@ -87,7 +87,7 @@ describe('TSS', function() {
     let joinCode2;
 
     before(function() {
-      tss0 = new Tss({
+      tss0 = new TssKeyGen({
         baseUrl: '/bws/api',
         request: request(app),
         key: party0Key
@@ -157,7 +157,7 @@ describe('TSS', function() {
 
     it('should not allow other party to use join code', async function() {
       try {
-        const tss = new Tss({
+        const tss = new TssKeyGen({
           baseUrl: '/bws/api',
           request: request(app),
           key: party2Key
@@ -172,7 +172,7 @@ describe('TSS', function() {
 
     it('should use the join code to join a keygen session', async function() {
       // party 1
-      tss1 = new Tss({
+      tss1 = new TssKeyGen({
         baseUrl: '/bws/api',
         request: request(app),
         key: party1Key
@@ -186,7 +186,7 @@ describe('TSS', function() {
       tss1.partyId.should.equal(1);
 
       // party 2
-      tss2 = new Tss({
+      tss2 = new TssKeyGen({
         baseUrl: '/bws/api',
         request: request(app),
         key: party2Key
@@ -245,19 +245,19 @@ describe('TSS', function() {
       s1.should.be.a('string');
       s2.should.be.a('string');
 
-      tss0 = await new Tss({
+      tss0 = await new TssKeyGen({
         baseUrl: '/bws/api',
         request: request(app),
         key: party0Key
       }).restoreSession({ session: s0 });
 
-      tss1 = await new Tss({
+      tss1 = await new TssKeyGen({
         baseUrl: '/bws/api',
         request: request(app),
         key: party1Key
       }).restoreSession({ session: s1 });
       
-      tss2 = await new Tss({
+      tss2 = await new TssKeyGen({
         baseUrl: '/bws/api',
         request: request(app),
         key: party2Key
