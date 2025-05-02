@@ -102,7 +102,7 @@ export class BanxaService {
       const API_KEY = keys.API_KEY;
       const SECRET_KEY = keys.SECRET_KEY;
 
-      let qs = [];
+      let qs: string[] = [];
       if (req.body.source) qs.push('source=' + req.body.source);
       if (req.body.target) qs.push('target=' + req.body.target);
 
@@ -143,7 +143,7 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      let qs = [];
+      let qs: string[] = [];
       qs.push('source=' + req.body.source);
       qs.push('target=' + req.body.target);
 
@@ -230,7 +230,7 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      let qs = [];
+      let qs: string[] = [];
       if (req.body.fx_currency) qs.push('fx_currency=' + req.body.fx_currency);
 
       const UriPath = `/orders/${req.body.order_id}${qs.length > 0 ? '?' + qs.join('&') : ''}`;
