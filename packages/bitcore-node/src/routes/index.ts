@@ -74,8 +74,14 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
 
   const hasChain = chains.includes(chain as string);
   const chainNetworks = networks[chain as string] || null;
+  console.warn("DEBUGPRINT[95]: index.ts:76: chainNetworks=", chainNetworks)
+  console.log(chainNetworks)
   const hasChainNetworks = chainNetworks != null;
+  console.warn("DEBUGPRINT[96]: index.ts:78: hasChainNetworks=", hasChainNetworks)
+  console.log(hasChainNetworks)
   const hasNetworkForChain = hasChainNetworks ? chainNetworks[network as string] : false;
+  console.warn("DEBUGPRINT[97]: index.ts:80: hasNetworkForChain=", hasNetworkForChain)
+  console.log(hasNetworkForChain)
 
   if (chain && !hasChain) {
     return resp.status(500).send(`This node is not configured for the chain ${chain}`);
