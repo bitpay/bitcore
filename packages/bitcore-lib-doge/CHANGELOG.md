@@ -1,5 +1,11 @@
 # @bcpros/bitcore-lib-doge
 
+## 9.0.9
+
+### Patch Changes
+
+- Bump version to 9.0.12
+
 ## 9.0.8
 
 ### Patch Changes

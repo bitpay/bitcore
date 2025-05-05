@@ -1,13 +1,14 @@
+import * as async from 'async';
 import cors from 'cors';
 import express from 'express';
 import _ from 'lodash';
+import path from 'path';
 import 'source-map-support/register';
-import { logger, transport } from './logger';
-
-import config from '../config'
+import config from '../config';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
+import { logger, transport } from './logger';
 import { LogMiddleware } from './middleware';
 import { IUser } from './model/user';
 import { WalletService } from './server';
@@ -58,9 +59,6 @@ export class ExpressApp {
    */
   start(opts, cb) {
     opts = opts || {};
-
-    // Add cors middleware before other middleware
-    // this.app.use(cors(corsOptions));
 
     this.app.use(compression());
 
@@ -249,7 +247,6 @@ export class ExpressApp {
 
     type ServerCallback = (server: WalletService, err?: Error) => void;
     interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
-
     const getServerWithAuth = (req, res, opts: ServerOpts | ServerCallback, cb?: ServerCallback | undefined) => {
       if (_.isFunction(opts)) {
         cb = opts;
@@ -411,8 +408,6 @@ export class ExpressApp {
             } else {
               try {
                 const htmlString = await axios.get(options.uri, { headers: options.headers }).then(response => response.data);
-                logger.warn("DEBUGPRINT[30]: expressapp.ts:441: htmlString=");
-                logger.warn( htmlString);
                 if (htmlString['tag_name']) {
                   server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], err => {
                     res.json({ version: htmlString['tag_name'] });

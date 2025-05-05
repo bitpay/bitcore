@@ -62,7 +62,6 @@ class ModuleManager extends BaseModule {
 
   loadConfigured(params: Partial<ChainNetwork> = {}) {
     const chains = params.chain ? [params.chain] : Config.chains();
-    console.warn("DEBUGPRINT[56]: index.ts:65: chains=", chains)
 
     // Auto register known modules from config.chains
     for (const chain of chains) {

@@ -1,5 +1,14 @@
 # Change Log
 
+## 9.0.12
+
+### Patch Changes
+
+- Bump version to 9.0.12
+- Updated dependencies
+  - @bcpros/bitcore-mnemonic@9.0.9
+  - @bcpros/crypto-wallet-core@9.0.9
+
 ## 9.0.11
 
 ### Patch Changes

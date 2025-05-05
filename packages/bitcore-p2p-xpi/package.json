@@ -1,6 +1,6 @@
 {
   "name": "@bcpros/bitcore-p2p-xpi",
-  "version": "9.0.8",
+  "version": "9.0.9",
   "description": "Interface to the bitcoin P2P network for lotus",
   "main": "index.js",
   "scripts": {

@@ -1,4 +1,4 @@
-import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, ethers, Transactions, Web3, xrpl } from '@bcpros/crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, Transactions } from '@bcpros/crypto-wallet-core';
 import * as Bcrypt from 'bcrypt';
 import 'source-map-support/register';
 import { Client } from './client';
@@ -13,12 +13,6 @@ const chainLibs = {
   BCH: BitcoreLibCash,
   DOGE: BitcoreLibDoge,
   LTC: BitcoreLibLtc,
-  ETH: { Web3, ethers },
-  MATIC: { Web3, ethers },
-  ARB: { Web3, ethers },
-  BASE: { Web3, ethers },
-  OP: { Web3, ethers },
-  XRP: xrpl
 };
 
 export interface KeyImport {
@@ -78,8 +72,6 @@ export class Wallet {
   tokens?: Array<any>;
   lite: boolean;
   addressType: string;
-
-  static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
@@ -339,10 +331,11 @@ export class Wallet {
    * @param params.token DEPRECATED: Token to get by ticker symbol. WARNING: there could be multiple tokens with the same symbol
    * @param params.tokenName Token to get by tokenName (Recommended over `token`)
    * @param params.address EVM Account address to get the balance for
-   * @returns 
+   * @param params.hex Return the balance in hex
+   * @returns
    */
-  getBalance(params: { time?: string, token?: string, tokenName?: string, address?: string } = {}) {
-    const { time, token, tokenName, address } = params;
+  getBalance(params: { time?: string, token?: string, tokenName?: string, address?: string; hex?: boolean } = {}) {
+    const { time, token, tokenName, address, hex } = params;
     let payload;
     if (token || tokenName) {
       const tokenObj = this.getTokenObj({ token, tokenName });
@@ -350,7 +343,7 @@ export class Wallet {
         tokenContractAddress: tokenObj.address
       };
     }
-    return this.client.getBalance({ payload, pubKey: this.authPubKey, time, address });
+    return this.client.getBalance({ payload, pubKey: this.authPubKey, time, address, hex });
   }
 
   getNetworkFee(params: { target?: number, txType?: number } = {}) {
@@ -390,7 +383,7 @@ export class Wallet {
 
   /**
    * Backwards compatible method for getting the token object
-   * 
+   *
    * `token` and `tokenName` are separate parameters because there are legacy token objects
    * without a `name` but modern implementations try to use the tokenName.
    * e.g.:
@@ -400,8 +393,8 @@ export class Wallet {
    * ]
    * params1 = { token: 'USDC', tokenName: 'USDC_m' } => returns tokens[0]
    * params2 = { token: 'USDC', tokenName: 'USDCn_m' } => returns tokens[1]
-   * 
-   * 
+   *
+   *
    * @param tokenName The `name` field on the token object
    * @param token The `symbol` field on the token object (deprecated)
    */
@@ -413,7 +406,7 @@ export class Wallet {
     // If tokenName was given, find the token by name (e.g. USDC_m)
     let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
     // If not found by name AND token was given, find the token by symbol (e.g. USDC)
-    // NOTE: we don't want to 
+    // NOTE: we don't want to
     tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
     if (!tokenObj) {
       throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
@@ -454,7 +447,7 @@ export class Wallet {
     if (!this.tokens) {
       return;
     }
-    this.tokens = this.tokens.filter(tok => 
+    this.tokens = this.tokens.filter(tok =>
       (tok.name && tok.name !== tokenName) ||
       /* legacy object */ (!tok.name && tok.symbol !== tokenName)
     );
@@ -787,43 +780,6 @@ export class Wallet {
 
     // EVM chains
     } else {
-      const { nonce, gasLimit, gasPrice, to, data, value, chainId, type } = existingTx;
-      // converting gasLimit and value with toString avoids a bigNumber warning
-      params.nonce = nonce
-      params.gasLimit = gasLimit?.toString();
-      params.gasPrice = gasPrice;
-      params.data = data;
-      params.chainId = chainId;
-      params.type = type;
-      params.recipients = [{ address: to, amount: value.toString() }];
-      
-      // TODO fix type2 support
-      if (false && existingTx.type === 2) {
-        if (feeRate) {
-          params.maxGasFee = Web3.utils.toWei(feeRate.toString(), 'gwei');
-        } else {
-          // TODO placeholder until for type2 support is merged in another PR
-          // params.maxGasFee = (await wallet.getNetworkFee({ target: feeTarget })).feerate;
-          // console.log(`Bumping max gas price to ${Web3.utils.fromWei(params.maxGasFee.toString(), 'gwei')} gwei`);
-        }
-        if (feePriority) {    
-          params.maxPriorityFee = Web3.utils.toWei(feePriority.toString(), 'gwei');
-        } else {
-          // TODO placeholder until for type2 support is merged in another PR
-          // params.maxPriorityFee = existingTx.maxPriorityFeePerGas;
-          // console.log(`Bumping max priority fee to ${Web3.utils.fromWei(params.maxPriorityFee.toString(), 'gwei')} gwei`);
-        }
-
-      // type 0
-      } else {
-        if (feeRate) {
-          params.gasPrice = Web3.utils.toWei(feeRate.toString(), 'gwei');
-        } else {
-          params.gasPrice = (await this.getNetworkFee({ target: feeTarget })).feerate;
-          console.log(`Bumping gas price to ${Web3.utils.fromWei(params.gasPrice.toString(), 'gwei')} gwei`);
-        }
-      }
-      
     }
 
     const tx: string = await this.newTx(params);
@@ -862,7 +818,7 @@ export const AddressTypes = {
     // witnesspubkeyhash
     witnesspubkeyhash: 'witnesspubkeyhash',
     p2wpkh: 'witnesspubkeyhash',
-    
+
     // taproot
     taproot: 'taproot',
     p2tr: 'taproot'

@@ -1,5 +1,4 @@
-
-let x = [
+module.exports = [
   {
     name: 'btc11b44',
     blob: '{"coin":"btc","network":"testnet","xPrivKey":"tprv8ZgxMBicQKsPdG9XcQ3VH5eN9mSnHD7SbJEZkXmiQuMpjtNqnba1b643y8mH8WjFCJPj2Jjyy2U79Nayd48NoGgCjTx9BPbDLzkQjFGitty","xPubKey":"tpubDCfpUXTQ1tkXgPnEa7nkHEpCWXVeiNcxRZoijFzJ8AcS82UZg9afcLnokD6BwuXoVp6V5jWxfkbXbYYJJeb3fKBNu27ckJa7e5pTwmHxySV","requestPrivKey":"b521ed60246e57edec2c93d4494add7677e1eaa3a849d696bec00147dbb69906","requestPubKey":"03cf496bc2d10c815fe48106e3ebbb43bf027f69532e815f0d604339d91a152b21","copayerId":"7d60a4f031130647aaa80bde0515609745a5819808a6295cc23b9a38a9c707f5","publicKeyRing":[{"xPubKey":"tpubDCfpUXTQ1tkXgPnEa7nkHEpCWXVeiNcxRZoijFzJ8AcS82UZg9afcLnokD6BwuXoVp6V5jWxfkbXbYYJJeb3fKBNu27ckJa7e5pTwmHxySV","requestPubKey":"03cf496bc2d10c815fe48106e3ebbb43bf027f69532e815f0d604339d91a152b21"}],"walletId":"c0d8267c-2375-4229-abb0-7461c71afebb","walletName":"mywallet","m":1,"n":1,"walletPrivKey":"f84fa68481a2f12e0a7b7d37a926434b7febe6f3f40773bfff653998c50a5c75","personalEncryptingKey":"BpWi1ss+i1C1ZxUiLiU5sA==","sharedEncryptingKey":"idK9yGqoNSQ71Cng0GUB6A==","copayerName":"creator","mnemonic":"peace market error couch drift pizza nose sunset total buffalo piece liberty","entropySource":"a1140d313e20412771266186176dc9db29fd103681f83fcc26a4aa6eedaffbaa","mnemonicHasPassphrase":false,"derivationStrategy":"BIP44","account":0,"compliantDerivation":true,"addressType":"P2PKH","use145forBCH":true}',
@@ -120,5 +119,3 @@ let x = [
     },
   }
 ];
-
-module.exports =x;

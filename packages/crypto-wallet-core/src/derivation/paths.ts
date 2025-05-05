@@ -21,12 +21,14 @@ export const Paths = {
   XEC: {
     mainnet: "m/44'/899'/",
     livenet: "m/44'/899'/",
-    testnet: "m/44'/899'/"
+    testnet: "m/44'/899'/",
+    default: "m/44'/899'/"
   },
   XPI: {
     mainnet: "m/44'/10605'/",
     livenet: "m/44'/10605'/",
-    testnet: "m/44'/10605'/"
+    testnet: "m/44'/10605'/",
+    default: "m/44'/10605'/"
   },
   LTC: {
     default: "m/44'/2'/"
@@ -42,6 +44,9 @@ export const Paths = {
   },
   BASE: {
     default: "m/44'/60'/",
+  },
+  SOL: {
+    default: "m/44'/501'/",
   },
   default: {
     testnet: "m/44'/1'/"

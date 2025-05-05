@@ -1,5 +1,14 @@
 # Change Log
 
+## 9.0.9
+
+### Patch Changes
+
+- Bump version to 9.0.12
+- Updated dependencies
+  - @bcpros/bitcore-lib@9.0.9
+  - @bcpros/bitcore-lib-xpi@9.0.9
+
 ## 9.0.8
 
 ### Patch Changes

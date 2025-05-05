@@ -4,7 +4,9 @@
       "es5",
       "es6",
       "es2017",
-      "es2019"
+      "es2019",
+      "es2022",
+      "DOM"
     ],
     "noImplicitAny": false,
     "removeComments": true,
@@ -18,13 +20,21 @@
     "esModuleInterop": true,
     "target": "es2015",
     "typeRoots": [
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "../../node_modules/@types"
+    ],
+    "types": [
+      "node"
     ],
     "baseUrl": ".",
     "paths": {
       "*": [
         "*",
         "./src/*"
+      ],
+      "@types/node": [
+        "./node_modules/@types/node",
+        "../../node_modules/@types/node"
       ]
     },
     "outDir": "ts_build",

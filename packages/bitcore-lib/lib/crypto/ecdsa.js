@@ -17,7 +17,7 @@ const $ = require('../util/preconditions');
  * @param {PulicKey} pubkey
  * @returns {Signature}
  */
-const calci = function (hashbuf, sig, pubkey) {
+const calci = function(hashbuf, sig, pubkey) {
   for (var i = 0; i < 4; i++) {
     var Qprime;
     try {
@@ -40,13 +40,13 @@ const calci = function (hashbuf, sig, pubkey) {
 /**
  * Information about public key recovery:
  * https://bitcointalk.org/index.php?topic=6430.0
- * http://stackoverflow.com/questions/19665491/how-do-i-get-an-ecdsa-public-key-from-just-a-bitcoin-signature-sec1-4-1-6-k
+ * http://stackoverflow.com/questions/19665491/how-do-i-get-an-ecdsa-public-key-from-just-a-bitcoin-signature-sec1-4-1-6-k 
  * @param {Buffer} hashbuf
  * @param {Signature} sig
  * @param {Number} i
  * @returns {PublicKey}
  */
-const getPublicKey = function (hashbuf, sig, i) {
+const getPublicKey = function(hashbuf, sig, i) {
   /* jshint maxstatements: 25 */
   $.checkArgument(i === 0 || i === 1 || i === 2 || i === 3, new Error('i must be equal to 0, 1, 2, or 3'));
 
@@ -97,7 +97,7 @@ const getPublicKey = function (hashbuf, sig, i) {
  * @param {Signature} sig Signature with the recovery factor i.
  * @returns {PublicKey}
  */
-const recoverPublicKey = function (hashbuf, sig) {
+const recoverPublicKey = function(hashbuf, sig) {
   return getPublicKey(hashbuf, sig, sig.i);
 };
 
@@ -106,7 +106,7 @@ const recoverPublicKey = function (hashbuf, sig) {
  * Generate a random k
  * @returns {BN}
  */
-const getRandomK = function () {
+const getRandomK = function() {
   var N = Point.getN();
   var k;
   do {
@@ -124,7 +124,7 @@ const getRandomK = function () {
  * @param {Number} badrs Increment until a valid k is found
  * @returns {BN}
  */
-const getDeterministicK = function (hashbuf, privkey, badrs) {
+const getDeterministicK = function(hashbuf, privkey, badrs) {
   /* jshint maxstatements: 25 */
   // if r or s were invalid when this function was used in signing,
   // we do not want to actually compute r, s here for efficiency, so,
@@ -167,7 +167,7 @@ const getDeterministicK = function (hashbuf, privkey, badrs) {
  * @param {BN} s
  * @returns {BN}
  */
-const toLowS = function (s) {
+const toLowS = function(s) {
   if (s.gt(new BN('7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0', 'hex'))) {
     s = Point.getN().sub(s);
   }
@@ -184,11 +184,11 @@ const toLowS = function (s) {
  * @param {Boolean} opts.randomK Use a random value for k - produces a non-deterministic signature (default: false)
  * @returns {Signature}
  */
-const sign = function (hashbuf, privkey, opts) {
+const sign = function(hashbuf, privkey, opts) {
   const { endian = 'big', randomK = false } = opts || {};
   $.checkState(BufferUtil.isBuffer(hashbuf) && hashbuf.length === 32, 'hashbuf must be a 32 byte buffer');
   $.checkState(privkey && privkey.bn, 'privkey must be a PrivateKey');
-
+  
   var d = privkey.bn;
   hashbuf = Buffer.from(hashbuf);
   if (endian === 'little') {
@@ -212,8 +212,8 @@ const sign = function (hashbuf, privkey, opts) {
   s = toLowS(s);
 
   return new Signature({
-    s,
-    r,
+    s: BN.fromBuffer(s.toBuffer()),
+    r: BN.fromBuffer(r.toBuffer()),
     compressed: privkey.publicKey.compressed
   });
 };
@@ -228,7 +228,7 @@ const sign = function (hashbuf, privkey, opts) {
  * @param {String} opts.endian 'big' or 'little' (default: big)
  * @returns {String|undefined} Returns an error string, or undefined if there is no error
  */
-const verificationError = function (hashbuf, sig, pubkey, opts) {
+const verificationError = function(hashbuf, sig, pubkey, opts) {
   const { endian = 'big' } = opts || {};
 
   if (!BufferUtil.isBuffer(hashbuf) || hashbuf.length !== 32) {
@@ -237,12 +237,8 @@ const verificationError = function (hashbuf, sig, pubkey, opts) {
 
   var r = sig.r;
   var s = sig.s;
-  try {
-    if (!(r.gt(BN.Zero) && r.lt(Point.getN())) || !(s.gt(BN.Zero) && s.lt(Point.getN()))) {
-      return 'r and s not in range';
-    }
-  } catch (e) {
-    return 'Invalid signature';
+  if (!(r.gt(BN.Zero) && r.lt(Point.getN())) || !(s.gt(BN.Zero) && s.lt(Point.getN()))) {
+    return 'r and s not in range';
   }
 
   var e = BN.fromBuffer(hashbuf, { endian });
@@ -273,12 +269,12 @@ const verificationError = function (hashbuf, sig, pubkey, opts) {
  * @param {String} opts.endian 'big' or 'little' (default: big)
  * @returns {Boolean}
  */
-const verify = function (hashbuf, sig, pubkey, opts) {
+const verify = function(hashbuf, sig, pubkey, opts) {
   if (!pubkey) {
     throw new Error('pubkey required for signature verification');
   }
   pubkey = new PublicKey(pubkey);
-
+  
   if (!sig) {
     throw new Error('signature required for verification');
   }
@@ -291,7 +287,7 @@ module.exports = {
   sign,
   verify,
   verificationError,
-
+ 
   // pubkey recovery methods
   calci,
   recoverPublicKey,

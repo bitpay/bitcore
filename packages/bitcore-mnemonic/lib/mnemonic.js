@@ -10,6 +10,8 @@ const errors = require('./errors');
 
 const Hash = bitcore.crypto.Hash;
 const Random = bitcore.crypto.Random;
+const Network = bitcore.Networks;
+const HDErrors = bitcore.errors.HDPrivateKey;
 
 const $ = bitcore.util.preconditions;
 
@@ -35,7 +37,7 @@ const $ = bitcore.util.preconditions;
  * @returns {Mnemonic} A new instance of Mnemonic
  * @constructor
  */
-var Mnemonic = function(data, wordlist) {
+const Mnemonic = function(data, wordlist) {
   if (!(this instanceof Mnemonic)) {
     return new Mnemonic(data, wordlist);
   }
@@ -204,12 +206,48 @@ Mnemonic.fromSeed = function(seed, wordlist) {
  *
  * @param {String=} [passphrase]
  * @param {Network|String|number=} [network] - The network: 'livenet' or 'testnet'
+ * @param {String=} [keyType] - The type of key used to compute HMAC-SHA512. Default 'Bitcoin'. Other options include ed25519
  * @returns {HDPrivateKey}
  */
-Mnemonic.prototype.toHDPrivateKey = function(passphrase, network) {
-  var seed = this.toSeed(passphrase);
-  return bitcore.HDPrivateKey.fromSeed(seed, network);
+Mnemonic.prototype.toHDPrivateKey = function(passphrase, network, keyType) {
+  const MINIMUM_ENTROPY_BITS = 128;
+  const BITS_TO_BYTES = 1 / 8;
+  const MAXIMUM_ENTROPY_BITS = 512;
+  let hexa = this.toSeed(passphrase);
+  let key = 'Bitcoin seed';
+
+  if ((typeof hexa === 'string' || hexa instanceof String) && /^[0-9a-fA-F]+$/.test(hexa)) {
+    hexa = Buffer.from(hexa, 'hex');
+  }
+  if (!Buffer.isBuffer(hexa)) {
+    throw new HDErrors.InvalidEntropyArgument(hexa);
+  }
+  if (keyType && !Mnemonic.validKeyTypes.includes(keyType)) {
+    throw new Error(`Invalid Key Type: ${keyType}`);
+  }
+  if (keyType) {
+    key = `${keyType} seed`;
+  }
+  if (hexa.length < MINIMUM_ENTROPY_BITS * BITS_TO_BYTES) {
+    throw new HDErrors.InvalidEntropyArgument.NotEnoughEntropy(hexa);
+  }
+  if (hexa.length > MAXIMUM_ENTROPY_BITS * BITS_TO_BYTES) {
+    throw new HDErrors.InvalidEntropyArgument.TooMuchEntropy(hexa);
+  }
+   
+  const hash = Hash.sha512hmac(hexa, Buffer.from(key));
+
+  return new bitcore.HDPrivateKey({
+    network: Network.get(network) || Network.defaultNetwork,
+    depth: 0,
+    parentFingerPrint: 0,
+    childIndex: 0,
+    privateKey: hash.slice(0, 32),
+    chainCode: hash.slice(32, 64)
+  });
 };
+
+Mnemonic.validKeyTypes = ['Bitcoin', 'ed25519'];
 
 /**
  * Will return a the string representation of the mnemonic

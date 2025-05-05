@@ -69,12 +69,12 @@ async function deleteOldAddress(e) {
   w = w.trim().replace('ObjectId(', '').replace(')', '').replace(/'/g, '').replace(/,/g, '');
   a = a.replace('}', '').trim().replace(/"/g, '').replace(/,/g, '');
   console.log('Deleting dup:', c, n, w, a);
-  const del1 = await WalletAddressStorage.collection.findOne({ chain, network: oldNetwork, wallet: new ObjectID(w), address: a });
-  const del2 = await WalletAddressStorage.collection.findOne({ chain, network: newNetwork, wallet: new ObjectID(w), address: a });
+  const del1 = await WalletAddressStorage.collection.findOne({ chain, network: oldNetwork, wallet: new ObjectId(w), address: a });
+  const del2 = await WalletAddressStorage.collection.findOne({ chain, network: newNetwork, wallet: new ObjectId(w), address: a });
   console.log(del1);
   console.log(del2);
   if (!!del1 && !!del2) {
-    const del = await WalletAddressStorage.collection.deleteOne({ chain, network: oldNetwork, wallet: new ObjectID(w), address: a });
+    const del = await WalletAddressStorage.collection.deleteOne({ chain, network: oldNetwork, wallet: new ObjectId(w), address: a });
     console.log(del.deletedCount);
   }
 };

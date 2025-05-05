@@ -58,6 +58,16 @@ export class XRPTxProvider {
           Sequence: nonce
         };
         return xrpl.encode(accountSetTx);
+      case 'accountdelete':
+        const accountDeleteTx: xrpl.AccountDelete = {
+          TransactionType: 'AccountDelete',
+          Account: from,
+          Destination: recipients[0].address,
+          DestinationTag: recipients[0].tag,
+          Fee: fee.toString(),
+          Sequence: nonce
+        };
+        return xrpl.encode(accountDeleteTx);
     }
   }
 

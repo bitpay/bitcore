@@ -2,7 +2,7 @@ import requestStream from 'request';
 import request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
 import { URL } from 'url';
-import * as utils from './utils';
+import { utils } from './utils';
 let usingBrowser = (global as any).window;
 const URLClass = usingBrowser ? usingBrowser.URL : URL;
 const bitcoreLib = require('@bcpros/crypto-wallet-core').BitcoreLib;
@@ -68,18 +68,21 @@ export class Client {
     return this._request({ method: 'GET', url, json: true });
   }
 
-  async getBalance(params: { payload?: any; pubKey: string; time?: string; address?: string }) {
-    const { payload, pubKey, time, address } = params;
+  async getBalance(params: { payload?: any; pubKey: string; time?: string; address?: string; hex?: boolean }) {
+    const { payload, pubKey, time, address, hex } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;
     if (time) {
       url += `/${time}`;
     }
     const query = [];
-    if (payload && payload.tokenContractAddress) {
+    if (payload?.tokenContractAddress) {
       query.push(`tokenAddress=${payload.tokenContractAddress}`);
     }
     if (address) {
       query.push(`address=${address}`);
+    }
+    if (hex) {
+      query.push('hex=true');
     }
     url += query.length ? `?${query.join('&')}` : '';
     const signature = this.sign({ method: 'GET', url });

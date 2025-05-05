@@ -1,9 +1,6 @@
 import { BCHTxProvider } from './bch';
 import { BTCTxProvider } from './btc';
 import { DOGETxProvider } from './doge';
-import { ERC20TxProvider } from './erc20';
-import { ETHTxProvider } from './eth';
-import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { LTCTxProvider } from './ltc';
 import { XECTxProvider } from './xec';
 import { XPITxProvider } from './xpi';
@@ -12,9 +9,6 @@ import { XRPTxProvider } from './xrp';
 const providers = {
   BTC: new BTCTxProvider(),
   BCH: new BCHTxProvider(),
-  ETH: new ETHTxProvider(),
-  ERC20: new ERC20TxProvider(),
-  ETHMULTISIG: new ETHMULTISIGTxProvider(),
   XRP: new XRPTxProvider(),
   DOGE: new DOGETxProvider(),
   XEC: new XECTxProvider(),

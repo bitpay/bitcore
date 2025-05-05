@@ -28,6 +28,7 @@ const errorStackFormat = winston.format(info => {
 
 export const logger = winston.createLogger({
   format: winston.format.combine(
+    errorStackFormat(),
     winston.format.prettyPrint(),
     winston.format.splat(),
     winston.format.simple(),
@@ -41,10 +42,7 @@ export const logger = winston.createLogger({
       // Include stack trace if available
       const stack = info.stack ? `\nStack Trace:\n${info.stack}` : '';
 
-      let originalReason = inspect(info, { depth: null })
-
-
-      return `${info.level} :: ${formatTimestamp(new Date())} :: ${info.message}${stack}:: ${originalReason}`;
+      return `${info.level} :: ${formatTimestamp(new Date())} :: ${info.message}${stack}`;
     })
   ),
   transports: [transport],
@@ -135,8 +133,6 @@ process.on('unhandledRejection', (reason, promise) => {
   }
 
   // Log complete error information
-  console.error('Unhandled Promise Rejection:', error);
-  console.error(error);
   logger.error(error);
   logger.info(`Unhandled Promise Rejection: ${error.message}${requestDetails}`);
 

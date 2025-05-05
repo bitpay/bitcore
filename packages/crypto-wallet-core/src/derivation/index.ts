@@ -119,7 +119,7 @@ export class DeriverProxy {
    * @param addressType
    * @returns
    */
-  getAddress(chain, network, pubKey, addressType) {
+  getAddress(chain, network, pubKey, addressType?) {
     return this.get(chain).getAddress(network, pubKey, addressType);
   }
 

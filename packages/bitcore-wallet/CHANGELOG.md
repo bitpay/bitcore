@@ -1,5 +1,14 @@
 # Change Log
 
+## 9.0.12
+
+### Patch Changes
+
+- Bump version to 9.0.12
+- Updated dependencies
+  - @bcpros/bitcore-lib@9.0.9
+  - @bcpros/bitcore-wallet-client@9.0.12
+
 ## 9.0.11
 
 ### Patch Changes

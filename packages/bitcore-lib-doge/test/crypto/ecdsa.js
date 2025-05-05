@@ -90,7 +90,7 @@ describe('ECDSA', function() {
   describe('#recoverPublicKey', function() {
     it('should calculate the correct public key', function() {
       const sig = ECDSA.sign(hashbuf, privkey);
-      ECDSA.calci(hashbuf, sig, privkey.publicKey);
+      ECDSA.calci(hashbuf, sig, privkey.publicKey);      
       const pubkey = ECDSA.recoverPublicKey(hashbuf, sig);
       pubkey.point.eq(privkey.publicKey.point).should.equal(true);
     });
@@ -224,7 +224,7 @@ describe('ECDSA', function() {
       const sig = ECDSA.sign(hashbuf, privkey);
       ECDSA.verify(hashbuf, sig, pubkey).should.equal(true);
       const fakesig = new Signature(sig.r.add(new BN(1)), sig.s);
-      // ECDSA.verify(hashbuf, fakesig, pubkey).should.equal(false);
+      ECDSA.verify(hashbuf, fakesig, pubkey).should.equal(false);
     });
     it('should work with big and little endian', function() {
       let sig = ECDSA.sign(hashbuf, privkey, { endian: 'big' });
@@ -250,7 +250,7 @@ describe('ECDSA', function() {
           s: new BN(obj.signature.s),
           i: obj.i
         });
-
+        
         const sig = ECDSA.sign(hashbuf, privkey);
         ECDSA.calci(hashbuf, sig, privkey.publicKey);
         const k = ECDSA.__testing__.getDeterministicK(hashbuf, privkey)

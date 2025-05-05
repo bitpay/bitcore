@@ -25,11 +25,6 @@ export class Client {
     const message = this.getMessage(params);
     const privateKey = this.authKey.bn.toBuffer({ size: 32 });
     const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
-
-    // TODO: Should use bitcore-lib instead of an external dependency. Will want to add tests.
-    // const privateKey = bitcoreLib.PrivateKey.fromBuffer(this.authKey.bn.toBuffer({ size: 32 }));
-    // const sig = bitcoreLib.crypto.ECDSA.sign(messageHash, privateKey);
-    // return Buffer.concat([ sig.r.toBuffer(), sig.s.toBuffer() ]);
     return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey).signature).toString('hex');
   }
 
@@ -47,7 +42,6 @@ export class Client {
   }
 
   async getBalance(params) {
-    logger.warn("DEBUGPRINT[33]: client.ts:49: params=", params)
     const { payload, pubKey, tokenAddress, multisigContractAddress } = params;
     let query = '';
     let apiUrl = `${this.baseUrl}/wallet/${pubKey}/balance`;
@@ -79,10 +73,7 @@ export class Client {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}/check`;
     logger.debug('WALLET CHECK');
-    logger.debug(url);
-    logger.debug(payload);
     const signature = this.sign({ method: 'GET', url, payload });
-    logger.debug(signature);
     return request.get(url, {
       headers: { 'x-signature': signature },
       body: payload,

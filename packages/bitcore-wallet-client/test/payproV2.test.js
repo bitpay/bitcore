@@ -1,9 +1,7 @@
 'use strict';
 
-var sinon = sinon || require('sinon');
-var { PayProV2: payProV2 } = require('../ts_build/lib/payproV2');
-var TestData = require('./testdata');
-var _ = require('lodash');
+const { PayProV2: payProV2 } = require('../ts_build/lib/payproV2');
+const TestData = require('./testdata');
 
 describe('payproV2', () => {
   var oldreq;

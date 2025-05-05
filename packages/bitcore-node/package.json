@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "9.0.11",
+  "version": "9.0.12",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -66,7 +66,7 @@
     "@types/chai": "4.1.3",
     "@types/express": "4.17.21",
     "@types/lodash": "4.14.116",
-    "@types/mocha": "5.2.0",
+    "@types/mocha": "10.0.10",
     "@types/mongodb": "3.1.22",
     "@types/node": "22.13.1",
     "@types/request": "2.47.0",
@@ -78,12 +78,12 @@
     "eslint-config-airbnb-base": "12.1.0",
     "eslint-plugin-import": "2.8.0",
     "istanbul": "^0.4.5",
-    "mocha": "5.0.5",
+    "mocha": "11.1.0",
     "nyc": "^15.1.0",
     "sinon": "4.4.8",
     "supertest": "3.0.0",
     "ts-node": "^9.0.0",
-    "typescript": "4.9.4",
+    "typescript": "5.7.3",
     "typescript-eslint-parser": "15.0.0"
   },
   "dependencies": {
@@ -112,10 +112,8 @@
     "socket.io": "4.8.1",
     "socket.io-client": "4.8.1",
     "source-map-support": "^0.5.13",
-    "web3": "1.7.1",
     "winston": "3.3.3",
-    "winston-daily-rotate-file": "4.5.5",
-    "xrpl": "2.13.0"
+    "winston-daily-rotate-file": "4.5.5"
   },
   "gitHead": "169e28b0b13c25c386faccf38a2fdc4e1275a5db"
 }

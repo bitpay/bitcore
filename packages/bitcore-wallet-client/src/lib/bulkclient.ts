@@ -1,15 +1,15 @@
 'use strict';
 
-import _ from 'lodash';
+import { singleton } from 'preconditions';
 import { API } from './api';
 import { Utils } from './common';
 import { Request } from './request';
 
-const $ = require('preconditions').singleton();
+const $ = singleton();
 
 export class BulkClient extends Request {
   /**
-   * @description BulkClient constructor
+   * BulkClient constructor
    * @param {String} url base URL for client
    * @param {Object} opts configuration values
    * @constructor
@@ -19,7 +19,7 @@ export class BulkClient extends Request {
   }
 
   /**
-   * @description Override the existing method to use multiple credentials
+   * Override the existing method to use multiple credentials
    * @override
    */
   _populateAuth(
@@ -53,13 +53,20 @@ export class BulkClient extends Request {
     }
   }
 
-  // /**
-  // * Get wallet balance for all wallets
-  // *
-  // * @param {credentials} { requestPrivKey: string, copayerIds: string[] }
-  // * @param {Object} opts { includeExtendedInfo: boolean, twoStep: boolean, silentFailure: boolean, wallets: { :copayerId: { tokenAddress: string, multisigContractAddress: string} } }
-  // * @param {Callback} cb
-  // */
+  /**
+   * Get wallet balance for all wallets
+   * @param {Credentials} credentials { requestPrivKey: string, copayerIds: string[] }
+   * @param {Object} opts
+   * @param {boolean} [opts.includeExtendedInfo]
+   * @param {boolean} [opts.twoStep]
+   * @param {boolean} [opts.silentFailure]
+   * @param {Object} [opts.wallets]
+   * @param {string} [opts.wallets.copayerId]
+   * @param {string} [opts.wallets.copayerId.tokenAddress]
+   * @param {string} [opts.wallets.copayerId.multisigContractAddress]
+   * @param {function} cb Callback function in the standard form (err, results)
+   * @returns
+   */
   getStatusAll(credentials, opts, cb) {
     if (!cb) {
       cb = opts;
@@ -96,10 +103,7 @@ export class BulkClient extends Request {
       });
     }
 
-    this.checkStateOfMultipleCredentials(
-      'Failed state: this.credentials at <getStatusAll()>',
-      { ignoreIncomplete: opts.ignoreIncomplete }
-    );
+    this.checkStateOfMultipleCredentials('Failed state: this.credentials at <getStatusAll()>', { ignoreIncomplete: opts.ignoreIncomplete });
 
     return this.get('/v1/wallets/all/?' + qs.join('&'), (err, results) => {
       if (err || !results) return cb(err, results);
@@ -126,12 +130,10 @@ export class BulkClient extends Request {
 
   _processStatus(status, c) {
     var processCustomData = (data, c) => {
-      var copayers = data.wallet.copayers;
+      const copayers = data.wallet.copayers;
       if (!copayers) return;
 
-      var me = _.find(copayers, {
-        id: c.copayerId
-      });
+      const me = copayers.find(copayer => copayer.id == c.copayerId);
       if (!me || !me.customData) return;
 
       var customData;
@@ -163,13 +165,13 @@ export class BulkClient extends Request {
       wallet.encryptedName = wallet.name;
     }
     wallet.name = name;
-    _.each(wallet.copayers, copayer => {
+    for (const copayer of wallet.copayers || []) {
       var name = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
       if (name != copayer.name) {
         copayer.encryptedName = copayer.name;
       }
       copayer.name = name;
-      _.each(copayer.requestPubKeys, access => {
+      for (const access of copayer.requestPubKeys || []) {
         if (!access.name) return;
 
         var name = Utils.decryptMessageNoThrow(access.name, encryptingKey);
@@ -177,15 +179,15 @@ export class BulkClient extends Request {
           access.encryptedName = access.name;
         }
         access.name = name;
-      });
-    });
+      }
+    }
   }
 
   _processTxps(txps, c) {
     if (!txps) return;
 
-    var encryptingKey = c.sharedEncryptingKey;
-    _.each([].concat(txps), txp => {
+    const encryptingKey = c.sharedEncryptingKey;
+    for (const txp of [].concat(txps)) {
       txp.encryptedMessage = txp.message;
       txp.message =
         Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
@@ -194,7 +196,7 @@ export class BulkClient extends Request {
         encryptingKey
       );
 
-      _.each(txp.actions, action => {
+      for (const action of txp.actions || []) {
         // CopayerName encryption is optional (not available in older wallets)
         action.copayerName = Utils.decryptMessageNoThrow(
           action.copayerName,
@@ -207,24 +209,22 @@ export class BulkClient extends Request {
         );
         // TODO get copayerName from Credentials -> copayerId to copayerName
         // action.copayerName = null;
-      });
-      _.each(txp.outputs, output => {
+      }
+      for (const output of txp.outputs || []) {
         output.encryptedMessage = output.message;
         output.message =
           Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
-      });
-      txp.hasUnconfirmedInputs = _.some(txp.inputs, input => {
-        return input.confirmations == 0;
-      });
+      }
+      txp.hasUnconfirmedInputs = (txp.inputs || []).some(input => input.confirmations == 0);
       this._processTxNotes(txp.note, c);
-    });
+    }
   }
 
   _processTxNotes(notes, c) {
     if (!notes) return;
 
     var encryptingKey = c.sharedEncryptingKey;
-    _.each([].concat(notes), note => {
+    for (const note of [].concat(notes)) {
       note.encryptedBody = note.body;
       note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
       note.encryptedEditedByName = note.editedByName;
@@ -232,6 +232,6 @@ export class BulkClient extends Request {
         note.editedByName,
         encryptingKey
       );
-    });
+    }
   }
 }

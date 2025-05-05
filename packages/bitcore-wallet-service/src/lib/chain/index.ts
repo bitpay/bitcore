@@ -4,15 +4,10 @@ import { Common } from '../common';
 import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import logger from './../logger';
-import { ArbChain } from './arb';
-import { BaseChain } from './base';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { DogeChain } from './doge';
-import { EthChain } from './eth';
 import { LtcChain } from './ltc';
-import { MaticChain } from './matic';
-import { OpChain } from './op';
 import { XecChain } from './xec';
 import { XpiChain } from './xpi';
 import { XrpChain } from './xrp';
@@ -87,11 +82,6 @@ export interface IChain {
 const chains: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
-  ETH: new EthChain(),
-  MATIC: new MaticChain(),
-  ARB: new ArbChain(),
-  BASE: new BaseChain(),
-  OP: new OpChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
   XEC: new XecChain(),

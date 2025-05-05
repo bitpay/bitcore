@@ -115,10 +115,8 @@ export class BlockchainMonitor {
             }
             $.checkState(explorer, 'Failed State: explorer undefined at <start()>');
 
-            if (this.explorers[pair.chain]) {
-              this._initExplorer(pair.chain, pair.network, explorer);
-              this.explorers[pair.chain][pair.network] = explorer;
-            }
+            this._initExplorer(pair.chain, pair.network, explorer);
+            this.explorers[pair.chain][pair.network] = explorer;
           });
           done();
         },
@@ -353,7 +351,7 @@ export class BlockchainMonitor {
               next(null, notification);
             });
           },
-          (notification, next) => {
+          (notification: Notification, next) => {
             this._storeAndBroadcastNotification(notification, next);
           }
         ],
@@ -400,7 +398,7 @@ export class BlockchainMonitor {
     }
   }
 
-  _storeAndBroadcastNotification(notification, cb?: () => void) {
+  _storeAndBroadcastNotification(notification: Notification, cb?: () => void) {
     this.storage.storeNotification(notification.walletId, notification, () => {
       this.messageBroker.send(notification);
       if (cb) return cb();

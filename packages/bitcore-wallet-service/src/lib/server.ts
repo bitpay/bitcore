@@ -945,6 +945,7 @@ export class WalletService implements IWalletService {
                 return next(err);
               }
             } else if (err) {
+              logger.error(err);
               return next(err);
             }
 
@@ -3957,25 +3958,18 @@ export class WalletService implements IWalletService {
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
 
-        logger.warn("DEBUGPRINT[34]: server.ts:3983 (after if (err) return cb(err);)")
         if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
           let Err = Errors.NETWORK_SUSPENDED;
           Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
           return cb(Err);
         }
 
-        logger.warn("DEBUGPRINT[35]: server.ts:3990 (after return cb(Err);)")
-
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
-          logger.warn("DEBUGPRINT[37]: server.ts:3993 (after this.storage.fetchTx(this.walletId, opts…)")
-          logger.warn(txp)
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
           if (!txp.isTemporary()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
-          logger.warn("DEBUGPRINT[36]: server.ts:3998: copayer=", copayer)
-          logger.warn(copayer)
 
           let raw;
           try {
@@ -3983,8 +3977,6 @@ export class WalletService implements IWalletService {
           } catch (ex) {
             return cb(ex);
           }
-          logger.warn("DEBUGPRINT[38]: server.ts:4009 (after return cb(ex);)")
-          logger.warn(copayer.requestPubKeys)
           const signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
             return cb(new ClientError('Invalid proposal signature'));
@@ -7910,6 +7902,7 @@ export class WalletService implements IWalletService {
     this.logd('Registering wallet');
     bc.register(wallet, err => {
       if (err) {
+        logger.error(err);
         return cb(err);
       }
       wallet.beRegistered = true;
@@ -8031,6 +8024,7 @@ export class WalletService implements IWalletService {
             });
           });
         });
+
       });
     });
   }

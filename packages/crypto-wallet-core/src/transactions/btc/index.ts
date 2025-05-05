@@ -88,8 +88,13 @@ export class BTCTxProvider {
       utxos
     });
     bitcoreTx.associateInputs(applicableUtxos, pubkeys, threshold, opts);
-    const privKeys = _.uniq(keys.map(key => key.privKey.toString()));
-    const signedTx = bitcoreTx.sign(privKeys).toString();
+    const uniqePrivKeys = Object.values(keys.reduce((map, key) => {
+      // Need to preserve (un)compressed property, so don't use key.privKey.toString();
+      const pk = new this.lib.PrivateKey(key.privKey);
+      map[pk.publicKey.toString()] = pk;
+      return map;
+    }, {}));
+    const signedTx = bitcoreTx.sign(uniqePrivKeys).toString();
     return signedTx;
   }
 

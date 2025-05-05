@@ -61,6 +61,8 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.2",
+    "@types/node": "22.13.1",
+    "browserify": "^16.2.3",
     "cz-customizable": "^5.2.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
@@ -71,15 +73,13 @@
     "tslint-config-prettier": "^1.18.0",
     "turbo": "^2.4.0",
     "typedoc": "^0.15.0",
-    "typescript-eslint-parser": "^15.0.0",
-    "browserify": "^16.2.3"
+    "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {
-    "typescript": "4.9.4"
+    "typescript": "5.7.3"
   },
   "resolutions": {
-    "ecashaddrjs": "npm:ecashaddrjs@^2.0.0",
-    "web3-utils": "1.10.4"
+    "ecashaddrjs": "npm:ecashaddrjs@^2.0.0"
   },
   "husky": {
     "hooks": {}

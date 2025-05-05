@@ -123,7 +123,6 @@ const Config = function(): ConfigType {
       }
     });
   }
-  console.warn("DEBUGPRINT[59]: config.ts:128: config=", config)
   if ((config as any).modules) {
     delete (config as any).modules;
     // throw new Error('The config modules has moved! You can remove the `modules` array from your config to use the defaults, or if you need to use custom modules then you can specify the paths in the specific chain-network config objects with `modulePath`');
