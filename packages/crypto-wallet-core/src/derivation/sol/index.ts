@@ -1,5 +1,4 @@
-import * as SolKit from '@solana/kit';
-import { HDPrivateKey, PublicKey } from 'bitcore-lib';
+import { encoding, HDPrivateKey } from 'bitcore-lib';
 import * as ed25519 from 'ed25519-hd-key';
 import { default as Deriver, IDeriver, Key } from '..';
 
@@ -18,28 +17,23 @@ export class SolDeriver implements IDeriver {
     return '';
   }
 
-  getAddress(network: string, pubKey) {
-    pubKey = new PublicKey(pubKey, network);
-    return this.addressFromPublicKeyBuffer(pubKey.toBuffer());
+  getAddress(_network: string, pubKey: string) {
+    return this.addressFromPublicKeyBuffer(Buffer.from(pubKey, 'hex'));
   }
 
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
-    return SolKit.getBase58Decoder().decode(pubKey);;
+    if (pubKey.length > 32) {
+      pubKey = pubKey.subarray(pubKey.length - 32);
+    }
+    return encoding.Base58.encode(pubKey);
   }
 
-  derivePrivateKey(network, xPriv, addressIndex, isChange) {
-    if (true) {
-      throw new Error('Solana addresses require the use of the asynchronous method derivePrivateKeyAsync');
-    }
-    return { address: '' } as Key;
-  };
-
-  async derivePrivateKeyAsync(network, xPriv, addressIndex, isChange) {
+  derivePrivateKey(network, xPriv, addressIndex, isChange, addressType) {
     const changeNum = isChange ? 1 : 0;
     const pathPrefix = Deriver.pathFor('SOL', network, addressIndex);
     const path = `${pathPrefix}/${changeNum}'`;
-    return await this.derivePrivateKeyWithPathAsync(network, xPriv, path);
-  }
+    return this.derivePrivateKeyWithPath(network, xPriv, path, addressType);
+  };
 
   deriveChild(masterKey: { key: Buffer, chainCode: Buffer }, path: string) {
     const HARDENED_OFFSET = 0x80000000;
@@ -51,37 +45,19 @@ export class SolDeriver implements IDeriver {
     return segmented.reduce((parentKeys, segment) => ed25519.CKDPriv(parentKeys, segment + HARDENED_OFFSET), masterKey);
   }
 
-  derivePrivateKeyWithPath(_network: string, seed: string, path: string) {
-    if (true) {
-      throw new Error('Solana addresses require the use of the asynchronous version of the method derivePrivateKeyWithPathAsync');
-    }
-    return { address: '' } as Key;
+  derivePrivateKeyWithPath(network: string, xprivKey: string, path: string, addressType: string) {
+    const xpriv = new HDPrivateKey(xprivKey, network);
+    const child = this.deriveChild({ key: xpriv._buffers.privateKey, chainCode: xpriv._buffers.chainCode }, path);
+    const pubKey = ed25519.getPublicKey(child.key, false);
+    const address = encoding.Base58.encode(pubKey);
+    // Solana wallets often represent the private key as a KeyPair consisting of the private key + address/public key.
+    // The Keypair is usually found in two formats: Base58 or Uint8Array.
+    // Here, we represent the keys separately in Base58, which is fine since a keypair can be built or converted by createKeyPairFromPrivateKeyBytes.
+    // Public Key is synonymous with Address. Here they are reprsented in two different formats. 
+    return {
+      address,
+      privKey: encoding.Base58.encode(child.key),
+      pubKey: Buffer.from(pubKey).toString('hex')
+    } as Key;
   };
-
-  async derivePrivateKeyWithPathAsync(network: string, xprivKey: string, path: string) {
-    const hdKey = new HDPrivateKey(xprivKey, network);
-    const child = this.deriveChild({ key: hdKey._buffers.privateKey, chainCode: hdKey._buffers.chainCode }, path);
-    const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(child.key, true);
-    return await this.getKeyFromKeyPair(keypair);
-  }
-
-  async derivePrivateKeyFromSeedWithPathAsync(network: string, seed: string, path: string) {
-    const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(ed25519.derivePath(path, seed).key, true);
-    return await this.getKeyFromKeyPair(keypair);
-  }
-
-  async getKeyFromKeyPair(keypair): Promise<Key> {
-    // Note: Keys must be extractable
-    // Exporting keys in raw format is desired but not supported for Ed25519 CryptoKeys
-    const exportedPrivate = new Uint8Array(await crypto.subtle.exportKey('pkcs8', keypair.privateKey));
-    // The raw key bytes in PKCS8 are at a specific position so we adjust the bytes
-    const privateKey = exportedPrivate.slice(exportedPrivate.length - 32);
-    const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', keypair.publicKey));
-    const address = SolKit.getBase58Decoder().decode(publicKey);
-    const fullPrivateKey = new Uint8Array(64);
-    fullPrivateKey.set(privateKey)
-    fullPrivateKey.set(publicKey, 32)
-    const privKey = SolKit.getBase58Decoder().decode(fullPrivateKey);
-    return { address, privKey, pubKey: address };
-  }
 }

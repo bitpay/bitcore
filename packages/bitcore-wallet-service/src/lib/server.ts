@@ -1356,7 +1356,7 @@ export class WalletService implements IWalletService {
       }
 
       this._runLocked(cb, cb => {
-        this.storage.fetchPreferences(this.walletId, this.copayerId, (err, oldPref) => {
+        this.storage.fetchPreferences<Preferences>(this.walletId, this.copayerId, (err, oldPref) => {
           if (err) return cb(err);
 
           const newPref = Preferences.create({
@@ -1367,20 +1367,20 @@ export class WalletService implements IWalletService {
 
           // merge eth tokenAddresses
           if (opts.tokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.tokenAddresses = oldPref.tokenAddresses || [];
             preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
           }
 
           // merge eth multisigEthInfo
           if (opts.multisigEthInfo) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
 
             preferences.multisigEthInfo = _.uniq(
-              oldPref.multisigEthInfo.concat(opts.multisigEthInfo).reduce((x, y) => {
+              oldPref.multisigEthInfo.concat(opts.multisigEthInfo).reduce((x: any[], y: any) => {
                 let exists = false;
-                x.forEach(e => {
+                for (let e of x) {
                   // add new token addresses linked to the multisig wallet
                   if (e.multisigContractAddress === y.multisigContractAddress) {
                     e.tokenAddresses = e.tokenAddresses || [];
@@ -1388,49 +1388,49 @@ export class WalletService implements IWalletService {
                     e = Object.assign(e, y);
                     exists = true;
                   }
-                });
+                }
                 return exists ? x : [...x, y];
-              }, [])
+              }, []) as object[]
             );
           }
 
           // merge matic tokenAddresses
           if (opts.maticTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.maticTokenAddresses = oldPref.maticTokenAddresses || [];
             preferences.maticTokenAddresses = _.uniq(oldPref.maticTokenAddresses.concat(opts.maticTokenAddresses));
           }
 
           // merge op tokenAddresses
           if (opts.opTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.opTokenAddresses = oldPref.opTokenAddresses || [];
             preferences.opTokenAddresses = _.uniq(oldPref.opTokenAddresses.concat(opts.opTokenAddresses));
           }
 
           // merge base tokenAddresses
           if (opts.baseTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.baseTokenAddresses = oldPref.baseTokenAddresses || [];
             preferences.baseTokenAddresses = _.uniq(oldPref.baseTokenAddresses.concat(opts.baseTokenAddresses));
           }
 
           // merge arb tokenAddresses
           if (opts.arbTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
             preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
           }
 
           // merge matic multisigMaticInfo
           if (opts.multisigMaticInfo) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.multisigMaticInfo = oldPref.multisigMaticInfo || [];
 
             preferences.multisigMaticInfo = _.uniq(
-              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x, y) => {
+              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x: any[], y: any) => {
                 let exists = false;
-                x.forEach(e => {
+                for (let e of x) {
                   // add new token addresses linked to the multisig wallet
                   if (e.multisigContractAddress === y.multisigContractAddress) {
                     e.maticTokenAddresses = e.maticTokenAddresses || [];
@@ -1438,9 +1438,9 @@ export class WalletService implements IWalletService {
                     e = Object.assign(e, y);
                     exists = true;
                   }
-                });
+                }
                 return exists ? x : [...x, y];
-              }, [])
+              }, []) as object[]
             );
           }
           this.storage.storePreferences(preferences, err => {

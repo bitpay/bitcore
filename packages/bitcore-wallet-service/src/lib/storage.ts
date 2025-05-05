@@ -857,7 +857,7 @@ export class Storage {
       });
   }
 
-  fetchPreferences(walletId, copayerId, cb) {
+  fetchPreferences<T extends Preferences | Preferences[]>(walletId: string, copayerId: string | null, cb: (err?: any, preferences?: T) => void) {
     this.db
       .collection(collections.PREFERENCES)
       .find({
@@ -877,10 +877,9 @@ export class Storage {
           return Preferences.fromObj(r);
         });
         if (copayerId) {
-          // TODO: review if returs are correct
-          return cb(null, preferences[0]);
+          return cb(null, preferences[0] as T);
         } else {
-          return cb(null, preferences);
+          return cb(null, preferences as T);
         }
       });
   }
@@ -932,7 +931,7 @@ export class Storage {
       });
   }
 
-  fetchEmailByNotification(notificationId, cb) {
+  fetchEmailByNotification(notificationId: string | number, cb: (err?: any, email?: Email) => void) {
     this.db.collection(collections.EMAIL_QUEUE).findOne(
       {
         notificationId

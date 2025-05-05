@@ -11,12 +11,13 @@ export class SPLTxProvider extends SOLTxProvider {
     fee?: number;
     feeRate: number;
     txType?:  'legacy' | '0'; // legacy, version 0
-    category?: string; // transfer, create account
+    category?: 'transfer' | 'createAccount'; // transfer, create account
     nonce?: string; // nonce is represented as a transaction id
     nonceAddress?: string;
     blockHash?: string;
     blockHeight?: number;
     priorityFee?: number;
+    computeUnits?: number;
     // account creation fields
     fromKeyPair?: SolKit.KeyPairSigner,
     space?: number; // amount of space to reserve a new account in bytes

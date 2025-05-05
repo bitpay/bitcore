@@ -33,8 +33,5 @@
   "include": [
     "./src/**/*",
     "./test/**/*"
-  ],
-  "exclude": [
-    "test/integration/models/coin.spec.ts"
   ]
 }
