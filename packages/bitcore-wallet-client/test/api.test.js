@@ -3024,6 +3024,44 @@ describe('client API', function() {
         );
       });
     });
+
+    describe('SOL address creation', () => {
+      it.only('should be able to create address in 1-of-1 wallet', done => {
+        this.timeout(50000);
+        var xPriv =
+          'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X';
+        let k  = new Key({ seedData: xPriv, seedType: 'extendedPrivateKey', algo: 'EDDSA'});
+
+        clients[0].fromString(
+          k.createCredentials(null, {
+            coin: 'sol',
+            network: 'livenet',
+            account: 0,
+            n: 1
+          })
+        );
+        clients[0].createWallet(
+          'mywallet',
+          'creator',
+          1,
+          1,
+          {
+            network: 'livenet',
+            coin: 'sol',
+            singleAddress: true,
+            addressType: 'P2PKH'
+          },
+          err => {
+            should.not.exist(err);
+            clients[0].createAddress((err, res) => {
+              should.not.exist(err);
+              res.address.should.equal('7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD');
+              done(); 
+            });
+          }
+        );
+      });
+    });
   });
 
   describe('Notifications', () => {

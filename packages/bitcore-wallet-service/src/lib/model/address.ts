@@ -96,15 +96,15 @@ export class Address {
     return x;
   }
 
-  static _deriveAddress(scriptType, publicKeyRing, path, m, chain, network, noNativeCashAddr, escrowInputs?, hardwareSourcePublicKey?) {
+  static _deriveAddress(scriptType, publicKeyRing, path, m, chain, network, noNativeCashAddr, escrowInputs?, hardwareSourcePublicKey?, clientDerivedPublicKey?) {
     $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
-
-    if (hardwareSourcePublicKey) {
-      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+    const externSourcePublicKey = hardwareSourcePublicKey || clientDerivedPublicKey;
+    if (externSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
       return {
         address: bitcoreAddress.toString(),
         path,
-        publicKeys: [hardwareSourcePublicKey]
+        publicKeys: [externSourcePublicKey]
       }
     }
 
@@ -186,7 +186,8 @@ export class Address {
     chain,
     noNativeCashAddr = false,
     escrowInputs?,
-    hardwareSourcePublicKey?
+    hardwareSourcePublicKey?,
+    clientDerivedPublicKey?
   ) {
     const raw = Address._deriveAddress(
       scriptType,
@@ -198,6 +199,7 @@ export class Address {
       noNativeCashAddr,
       escrowInputs,
       hardwareSourcePublicKey,
+      clientDerivedPublicKey
     );
     return Address.create(
       _.extend(raw, {

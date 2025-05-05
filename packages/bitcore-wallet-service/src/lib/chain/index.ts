@@ -11,6 +11,7 @@ import { EthChain } from './eth';
 import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { OpChain } from './op';
+import { SolChain } from './sol';
 import { XrpChain } from './xrp';
 
 const Constants = Common.Constants;
@@ -84,7 +85,8 @@ const chains: { [chain: string]: IChain } = {
   OP: new OpChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
-  LTC: new LtcChain()
+  LTC: new LtcChain(),
+  SOL: new SolChain()
 };
 
 class ChainProxy {
