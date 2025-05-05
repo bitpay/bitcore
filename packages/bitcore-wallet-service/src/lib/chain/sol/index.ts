@@ -1,4 +1,3 @@
-import { ed25519 } from '@noble/curves/ed25519';
 import { BitcoreLib as Bitcore, Transactions, Validation } from 'crypto-wallet-core';
 import { IChain } from '..';
 import { Defaults } from '../../common/defaults';
@@ -242,19 +241,6 @@ export class SolChain implements IChain {
       throw Errors.INVALID_ADDRESS;
     }
     return;
-  }
-
-  verifyMessage(opts) {
-    const pub = Bitcore.bs58.decode(opts.address); // 32 bytes
-    const sig = Bitcore.bs58.decode(opts.signature); // 64 bytes
-    const msg = typeof opts.message === 'string'
-      ? new TextEncoder().encode(opts.message)
-      : opts.message;
-
-    if (pub.length !== 32 || sig.length !== 64)
-      throw new Error('Bad key or signature length');
-
-    return ed25519.verify(sig, msg, pub);
   }
 
   addressFromStorageTransform(network, address): void {
