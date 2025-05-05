@@ -4,12 +4,10 @@ import { DOGETxProvider } from './doge';
 import { LTCTxProvider } from './ltc';
 import { XECTxProvider } from './xec';
 import { XPITxProvider } from './xpi';
-import { XRPTxProvider } from './xrp';
 
 const providers = {
   BTC: new BTCTxProvider(),
   BCH: new BCHTxProvider(),
-  XRP: new XRPTxProvider(),
   DOGE: new DOGETxProvider(),
   XEC: new XECTxProvider(),
   XPI: new XPITxProvider(),

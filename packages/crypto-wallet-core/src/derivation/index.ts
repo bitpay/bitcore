@@ -5,7 +5,6 @@ import { LtcDeriver } from './ltc';
 import { Paths } from './paths';
 import { XecDeriver } from './xec';
 import { XpiDeriver } from './xpi';
-import { XrpDeriver } from './xrp';
 
 export interface Key {
   address: string;
@@ -28,7 +27,6 @@ export interface IDeriver {
 const derivers: { [chain: string]: IDeriver } = {
   BTC: new BtcDeriver(),
   BCH: new BchDeriver(),
-  XRP: new XrpDeriver(),
   DOGE: new DogeDeriver(),
   XEC: new XecDeriver(),
   XPI: new XpiDeriver(),

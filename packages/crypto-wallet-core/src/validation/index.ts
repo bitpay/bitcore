@@ -4,7 +4,6 @@ import { DogeValidation } from './doge';
 import { LtcValidation } from './ltc';
 import { XecValidation } from './xec';
 import { XpiValidation } from './xpi';
-import { XrpValidation } from './xrp';
 
 export interface IValidation {
   validateAddress(network: string, address: string): boolean;
@@ -14,7 +13,6 @@ export interface IValidation {
 const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),
   BCH: new BchValidation(),
-  XRP: new XrpValidation(),
   DOGE: new DogeValidation(),
   XEC: new XecValidation(),
   XPI: new XpiValidation(),
