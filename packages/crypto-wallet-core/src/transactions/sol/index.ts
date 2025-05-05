@@ -16,18 +16,19 @@ export class SOLTxProvider {
     fee?: number;
     feeRate: number;
     txType?:  'legacy' | '0'; // legacy, version 0
-    category?: string; // transfer, create account
+    category?: 'transfer' | 'createAccount'; // transfer, create account
     nonce?: string; // nonce is represented as a transaction id
     nonceAddress?: string;
     blockHash?: string;
     blockHeight?: number;
     priorityFee?: number;
-    txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>
+    computeUnits?: number;
+    txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
     // account creation fields
-    fromKeyPair?: SolKit.KeyPairSigner,
+    fromKeyPair?: SolKit.KeyPairSigner;
     space?: number; // amount of space to reserve a new account in bytes
   }) {
-    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions } = params;
+    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
 
@@ -79,10 +80,13 @@ export class SOLTxProvider {
           const maxPriorityFee = Math.max(this.MINIMUM_PRIORITY_FEE, priorityFee);
           transferInstructions.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
         }
+        if (computeUnits) {
+          transferInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
+        }
         const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferInstructions, lifetimeConstrainedTx);
         const compiledTx = SolKit.compileTransaction(transferTxMessage);
         return SolKit.getBase64EncodedWireTransaction(compiledTx);
-      case 'createAcccount':
+      case 'createAccount':
         const { fromKeyPair } = params;
         const { amount, addressKeyPair } = recipients[0];
         const _space = space || 200;
@@ -95,13 +99,14 @@ export class SOLTxProvider {
           blockhash: blockHash as SolKit.Blockhash,
           lastValidBlockHeight: BigInt(blockHeight)
         }
-        const createAccountInstruction = SolSystem.getCreateAccountInstruction({
+        const createAccountInstructions = []
+        createAccountInstructions.push(SolSystem.getCreateAccountInstruction({
           payer: fromKeyPair,
           newAccount: addressKeyPair,
           lamports: _amount,
           space: _space,
           programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS
-        });
+        }));
         const txMessage = pipe(
           SolKit.createTransactionMessage({ version: txType }),
           (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
@@ -110,11 +115,19 @@ export class SOLTxProvider {
           recentBlockhash,
           txMessage,
         );
+        if (priorityFee) {
+          const maxPriorityFee = Math.max(this.MINIMUM_PRIORITY_FEE, priorityFee);
+          createAccountInstructions.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
+        }
+        if (computeUnits) {
+          createAccountInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
+        }
         const completeMessage = SolKit.appendTransactionMessageInstructions(
-          [createAccountInstruction],
+          createAccountInstructions,
           lifetimeConstrainedTx
         );
-        return SolKit.getBase64EncodedWireTransaction(completeMessage);
+        const compiled = SolKit.compileTransaction(completeMessage);
+        return SolKit.getBase64EncodedWireTransaction(compiled);
     }
   }
 
@@ -134,7 +147,7 @@ export class SOLTxProvider {
     const { tx, key } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx });
     const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
-    const keypair = await SolKit.createKeyPairFromBytes(privKeyBytes);
+    const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
     const signedTransaciton = await SolKit.signTransaction([keypair], decodedTx);
     return SolKit.getBase64EncodedWireTransaction(signedTransaciton);
   }

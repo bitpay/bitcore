@@ -22,13 +22,9 @@ export interface IDeriver {
 
   derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Key;
 
-  derivePrivateKeyAsync?(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Promise<Key>;
-
   deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string;
 
   derivePrivateKeyWithPath(network, xprivKey: string, path: string, addressType: string): Key;
-
-  derivePrivateKeyWithPathAsync?(network, xprivKey: string, path: string, addressType: string): Promise<Key>;
 
   getAddress(network: string, pubKey, addressType: string): string;
 }
@@ -80,11 +76,6 @@ export class DeriverProxy {
     return this.get(chain).derivePrivateKey(network, privKey, addressIndex, isChange, addressType);
   }
 
-  async derivePrivateKeyAsync(chain, network, privKey, addressIndex, isChange, addressType?) {
-    const deriver = this.get(chain);
-    return deriver?.derivePrivateKeyAsync ? deriver.derivePrivateKeyAsync(network, privKey, addressIndex, isChange, addressType) : deriver.derivePrivateKey(network, privKey, addressIndex, isChange, addressType);
-  }
-
   /**
    * This derives addresses on a specific path.
    * This should probably only be used when importing from another wallet
@@ -117,11 +108,6 @@ export class DeriverProxy {
     return this.get(chain).derivePrivateKeyWithPath(network, xprivKey, path, addressType);
   }
 
-  async derivePrivateKeyWithPathAsync(chain, network, xprivKey, path, addressType) {
-    const deriver = this.get(chain);
-    return deriver?.derivePrivateKeyWithPathAsync ? deriver?.derivePrivateKeyWithPathAsync(network, xprivKey, path, addressType) : deriver.derivePrivateKeyWithPath(network, xprivKey, path, addressType);
-  }
-
   /**
    * This is a simple function for getting an address from a
    * given pub key and chain. There is no derivation happening.
@@ -131,7 +117,7 @@ export class DeriverProxy {
    * @param addressType
    * @returns
    */
-  getAddress(chain, network, pubKey, addressType) {
+  getAddress(chain, network, pubKey, addressType?) {
     return this.get(chain).getAddress(network, pubKey, addressType);
   }
 
