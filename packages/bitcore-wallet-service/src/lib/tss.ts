@@ -40,11 +40,21 @@ class TssKeyGenClass {
 
   async processMessage(params: { id: string; message: ITssKeyMessageObject; copayerId: string; }) {
     const { id, message, copayerId } = params;
+    if (!id || typeof id !== 'string') {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
+    }
+    if (typeof copayerId !== 'string') {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid copayerId provided: ' + copayerId);
+    }
 
     const storage = WalletService.getStorage();
     let session = await storage.fetchTssKeyGenSession({ id });
 
     if (session) {
+      if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid message provided');
+      }
+
       if (!session.participants[message.partyId]) {
         await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId });
       }
@@ -57,15 +67,37 @@ class TssKeyGenClass {
         }
       }
     } else if (message.round === 0 && message.partyId === 0) {
+      if (!this._isValidBroadcastMessage({ message })) {
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid broadcast message provided');
+      }
       await this._initSession({ id, message, storage, copayerId });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
   };
 
-  private async _initSession(params: { id: string; message: ITssKeyMessageObject & { n?: number }; storage: Storage; copayerId: string; }) {
+  private _isValidBroadcastMessage(params: { message: ITssKeyMessageObject }) {
+    const { message } = params;
+    return typeof message?.broadcastMessages?.[0]?.from === 'number' &&
+      typeof message?.broadcastMessages?.[0]?.payload?.message === 'string' &&
+      typeof message?.broadcastMessages?.[0]?.payload?.signature === 'string';
+  }
+
+  private _isValidP2pMessage(params: { message: ITssKeyMessageObject }) {
+    const { message } = params;
+    return typeof message?.p2pMessages?.[0]?.from === 'number' &&
+      typeof message?.p2pMessages?.[0]?.to === 'number' &&
+      typeof message?.p2pMessages?.[0]?.payload?.encryptedMessage === 'string' &&
+      typeof message?.p2pMessages?.[0]?.payload?.signature === 'string' &&
+      typeof message?.p2pMessages?.[0]?.commitment === 'string';
+  }
+
+  private async _initSession(params: { id: string; message: ITssKeyMessageObject & { n?: number | string }; storage: Storage; copayerId: string; }) {
     const { id, message, storage, copayerId } = params;
-    const { n } = message;
+    const n = parseInt(message.n as string);
+    if (!n || n < 1) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid n provided: ' + n);
+    }
     delete message.n;
     const doc = TssKeyGenModel.create({
       id,
@@ -78,7 +110,7 @@ class TssKeyGenClass {
       logger.error('Failed to store a new TSS key generation session %o %o', id, result);
       throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation session');
     }
-  };
+  }
 
   private async _pushMessage(params: { id: string; session: TssKeyGenModel; message: ITssKeyMessageObject; storage: Storage; }) {
     const { id, session, message, storage } = params;
@@ -109,7 +141,7 @@ class TssKeyGenClass {
       }
       throw e;
     }
-  };
+  }
 
   async storePublicKey(params: { id: string; message: Partial<ITssKeyMessageObject>; }) {
     const { id, message } = params;
@@ -129,7 +161,7 @@ class TssKeyGenClass {
       logger.error('Failed to store TSS key generation public key %o %o', id, result);
       throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation public key');
     }
-  };
+  }
 };
 
 export const TssKeyGen = new TssKeyGenClass();
@@ -169,11 +201,21 @@ class TssSignClass {
 
   async processMessage(params: { id: string; message: ITssSigMessageObject; copayerId: string; }) {
     const { id, message, copayerId } = params;
+    if (!id || typeof id !== 'string') {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
+    }
+    if (typeof copayerId !== 'string') {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid copayerId provided: ' + copayerId);
+    }
 
     const storage = WalletService.getStorage();
     let session = await storage.fetchTssSigSession({ id });
 
     if (session) {
+      if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid message provided');
+      }
+  
       const isParticipant = !!session.participants.find(p => p.copayerId === copayerId && p.partyId === message.partyId);
       if (!isParticipant) {
         if (session.participants.length === session.m) {
@@ -197,16 +239,33 @@ class TssSignClass {
         }
       }
     } else if (message.round === 0) {
+      if (!this._isValidBroadcastMessage({ message })) {
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid broadcast message provided');
+      }  
       await this._initSession({ id, message, storage, copayerId });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
   }
 
-  private async _initSession(params: { id: string; message: ITssSigMessageObject & { m?: number }; storage: Storage; copayerId: string; }) {
-    // TODO check inputs
+  private _isValidBroadcastMessage(params: { message: ITssSigMessageObject }) {
+    const { message } = params;
+    return typeof message?.broadcastMessages?.[0]?.from === 'number' &&
+      typeof message?.broadcastMessages?.[0]?.payload?.message === 'string' &&
+      typeof message?.broadcastMessages?.[0]?.payload?.signature === 'string';
+  }
+
+  private _isValidP2pMessage(params: { message: ITssSigMessageObject }) {
+    const { message } = params;
+    return typeof message?.p2pMessages?.[0]?.from === 'number' &&
+      typeof message?.p2pMessages?.[0]?.to === 'number' &&
+      typeof message?.p2pMessages?.[0]?.payload?.encryptedMessage === 'string' &&
+      typeof message?.p2pMessages?.[0]?.payload?.signature === 'string';
+  }
+
+  private async _initSession(params: { id: string; message: ITssSigMessageObject & { m?: number | string }; storage: Storage; copayerId: string; }) {
     const { id, message, storage, copayerId } = params;
-    const { m } = message;
+    const m = parseInt(message.m as string);
     if (!m || m < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid m provided: ' + m);
     }
@@ -222,7 +281,7 @@ class TssSignClass {
       logger.error('Failed to store a new TSS sig generation session %o %o', id, result);
       throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS sig generation session');
     }
-  };
+  }
 
   private async _pushMessage(params: { id: string; session: TssSigGenModel; message: ITssSigMessageObject; storage: Storage; }) {
     const { id, session, message, storage } = params;
@@ -253,7 +312,7 @@ class TssSignClass {
       }
       throw e;
     }
-  };
+  }
 
   async storeSignature(params: { id: string; message: Partial<ITssSigMessageObject>; }) {
     const { id, message } = params;
