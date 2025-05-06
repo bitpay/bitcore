@@ -18,7 +18,8 @@ import {
   TxProposal,
   Wallet
 } from './model';
-import { ITssKeygenMessageObject, TssKeyGenModel } from './model/tsskeygen';
+import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
+import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
 
 const $ = require('preconditions').singleton();
 
@@ -1767,7 +1768,7 @@ export class Storage {
     );
   }
 
-  async fetchTssKeygen({ id }: { id: string; }) {
+  async fetchTssKeyGenSession({ id }: { id: string; }) {
     const doc = await this.db.collection(collections.TSS_KEYGEN).findOne({ id });
     if (!doc) {
       return null;
@@ -1775,11 +1776,11 @@ export class Storage {
     return TssKeyGenModel.fromObj(doc);
   }
 
-  async storeTssKeygenNew({ doc }: { doc: TssKeyGenModel; }) {
+  async storeTssKeyGenSession({ doc }: { doc: TssKeyGenModel; }) {
     return this.db.collection(collections.TSS_KEYGEN).insertOne(doc);
   }
 
-  async storeTssKeygenParticipant({ id, partyId, copayerId }: { id: string; partyId: number; copayerId: string; }) {
+  async storeTssKeyGenParticipant({ id, partyId, copayerId }: { id: string; partyId: number; copayerId: string; }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id },
       {
@@ -1791,7 +1792,7 @@ export class Storage {
     );
   }
 
-  async storeTssKeygenMessage({ id, message, __v }: { id: string; message: ITssKeygenMessageObject; __v: number; }) {
+  async storeTssKeyGenMessage({ id, message, __v }: { id: string; message: ITssKeyMessageObject; __v: number; }) {
     const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id, __v },
       {
@@ -1813,7 +1814,7 @@ export class Storage {
     return result;
   }
 
-  async storeTssKeygenSharedPubKey({ id, publicKey }: { id: string; publicKey: string; }) {
+  async storeTssKeySharedPubKey({ id, publicKey }: { id: string; publicKey: string; }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id },
       {
@@ -1824,4 +1825,70 @@ export class Storage {
       { upsert: false }
     );
   }
+
+  async fetchTssSigSession({ id }: { id: string; }) {
+    const doc = await this.db.collection(collections.TSS_SIGN).findOne({ id });
+    if (!doc) {
+      return null;
+    }
+    return TssSigGenModel.fromObj(doc);
+  }
+
+  async storeTssSigSession({ doc }: { doc: TssSigGenModel; }) {
+    return this.db.collection(collections.TSS_SIGN).insertOne(doc);
+  }
+
+  async storeTssSigParticipant({ id, partyId, copayerId, __v }: { id: string; partyId: number; copayerId: string; __v: number; }) {
+    const result = await this.db.collection(collections.TSS_SIGN).updateOne(
+      { id, __v },
+      {
+        $push: {
+          participants: {
+            partyId,
+            copayerId
+          }
+        }
+      },
+      { upsert: false }
+    );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
+  }
+
+  async storeTssSigMessage({ id, message, __v }: { id: string; message: ITssSigMessageObject; __v: number; }) {
+    const result = await this.db.collection(collections.TSS_SIGN).updateOne(
+      { id, __v },
+      {
+        $push: {
+          [`rounds.${message.round}`]: {
+            fromPartyId: message.partyId,
+            messages: message
+          }
+        },
+        $inc: {
+          __v: 1
+        }
+      },
+      { upsert: false }
+    );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
+  }
+
+  async storeTssSignature({ id, signature }: { id: string; signature: ITssSigMessageObject['signature']; }) {
+    return this.db.collection(collections.TSS_SIGN).updateOne(
+      { id },
+      {
+        $set: {
+          signature
+        }
+      },
+      { upsert: false }
+    );
+  }
+
 }

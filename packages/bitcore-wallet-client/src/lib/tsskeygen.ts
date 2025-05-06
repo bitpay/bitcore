@@ -7,7 +7,7 @@ import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
 
-export interface ITssConstructorParams {
+export interface ITssKeyGenConstructorParams {
   /**
    * URL of the BWS server
    */
@@ -25,25 +25,59 @@ export interface ITssConstructorParams {
    * For testing only
    */
   request?: Request;
-  /**
-   * Wallet ID of the support staff
-   */
-  supportStaffWalletId?: string;
 };
 
-export interface IKeyChain {
-  privateKeyShare: Buffer;
-  reducedPrivateKeyShare: Buffer;
-  commonKeyChain: string;
+export interface ITssKey {
+  keychain: {
+    privateKeyShare: Buffer;
+    reducedPrivateKeyShare: Buffer;
+    commonKeyChain: string;
+  },
+  metadata: {
+    id: string;
+    m: number;
+    n: number;
+    partyId: number;
+  }
+};
+
+export class TssKey implements ITssKey {
+  keychain: ITssKey['keychain'];
+  metadata: ITssKey['metadata'];
+
+  static fromTssKeyGen(keyGen: TssKeyGen): TssKey {
+    const key = new TssKey();
+    key.keychain = keyGen.getKeyChain().keychain;
+    key.metadata = {
+      id: keyGen.id,
+      m: keyGen.m,
+      n: keyGen.n,
+      partyId: keyGen.partyId
+    };
+    return key;
+  }
+
+  toObj(): ITssKey {
+    return {
+      keychain: this.keychain,
+      metadata: this.metadata
+    };
+  }
+
+  static fromObj(obj: ITssKey): TssKey {
+    const key = new TssKey();
+    key.keychain = obj.keychain;
+    key.metadata = obj.metadata;
+    return key;
+  }
 };
 
 export class TssKeyGen extends EventEmitter {
   #request: Request;
   #keygen: ECDSA.KeyGen;
-  #key: Key;
   #seed: string;
-  #requestPrivateKey: BitcoreLib.PrivateKey;
   #credentials: Credentials;
+  #requestPrivateKey: BitcoreLib.PrivateKey;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
   id: string;
@@ -54,10 +88,10 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Threshold Signature Scheme (TSS) client class
-   * @param {ITssConstructorParams} params Constructor parameters
+   * @param {ITssKeyGenConstructorParams} params Constructor parameters
    * @param {EventEmitterOptions} eventOpts Options object for EventEmitter
    */
-  constructor(params: ITssConstructorParams, eventOpts) {
+  constructor(params: ITssKeyGenConstructorParams, eventOpts) {
     super(eventOpts);
     $.checkArgument(params.baseUrl, 'Missing required param: baseUrl');
     $.checkArgument(params.key, 'Missing required param: key');
@@ -65,9 +99,7 @@ export class TssKeyGen extends EventEmitter {
 
     this.#request = new Request(params.baseUrl, {
       r: params.request, // For testing only
-      supportStaffWalletId: params.supportStaffWalletId
     });
-    this.#key = params.key;
     const _xPrivKey = params.key.get(params.password).xPrivKey;
     const _seed = BitcoreLib.HDPrivateKey.fromString(_xPrivKey);
     this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
@@ -81,7 +113,7 @@ export class TssKeyGen extends EventEmitter {
    * @param {object} params
    * @param {number} params.m Number of required signatures
    * @param {number} params.n Number of parties/signers
-   * @returns {Promise<string>} Base64 encoded session. You'll need this along with the authKey and seed to restore the session.
+   * @returns {Promise<TssKeyGen>}
    */
   async newKey({ m, n }): Promise<TssKeyGen> {
     const keygen = new ECDSA.KeyGen({
@@ -158,7 +190,7 @@ export class TssKeyGen extends EventEmitter {
    * Restore a session from a previously exported session
    * @param {object} params
    * @param {string} params.session Session string to restore
-   * @returns {Promise<Tss>} Restored TSS instance
+   * @returns {Promise<TssKeyGen>} Restored TSS instance
    */
   async restoreSession({ session }): Promise<TssKeyGen> {
     const [id, partyId, m, n, keygenSession] = session.split(':');
@@ -237,10 +269,12 @@ export class TssKeyGen extends EventEmitter {
           }
         }
 
-        const keyChain = this.getKeyChain();
-        if (keyChain) {
-          this.emit('keychain', keyChain);
-          await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: keyChain.commonKeyChain });
+        const key = this.getKeyChain();
+        if (key) {
+          this.emit('keychain', key);
+          if (!body.publicKey) {
+            await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain });
+          }
           this.emit('complete');
           if (iterHandler) iterHandler();
           this.unsubscribe();
@@ -274,12 +308,21 @@ export class TssKeyGen extends EventEmitter {
   }
 
   /**
-   * Get the keychain object if the key generation process is complete
-   * @returns {IKeyChain|null} The keychain object if the key generation process is complete, otherwise null
+   * Get the key object if the key generation process is complete
+   * @returns {TssKey|null} The keychain object if the key generation process is complete, otherwise null
    */
-  getKeyChain(): IKeyChain | null {
+  getKeyChain(): TssKey | null {
     if (this.#keygen.isKeyChainReady()) {
-      return this.#keygen.getKeyChain();
+      const key = TssKey.fromObj({
+        keychain: this.#keygen.getKeyChain(),
+        metadata: {
+          id: this.id,
+          m: this.m,
+          n: this.n,
+          partyId: this.partyId
+        }
+      });
+      return key;
     }
     return null;
   }

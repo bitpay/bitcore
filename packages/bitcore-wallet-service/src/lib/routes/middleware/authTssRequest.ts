@@ -25,17 +25,27 @@ export function authTssRequest(opts?: Types.AuthRequestOpts): express.RequestHan
       } = credentials;
       
       const { id } = req.params as { [key: string]: string };
-      const session = await storage.fetchTssKeygen({ id });
+      let session;
+      let partyId = null;
+      let pubKey = null;
+      if (req.path.includes('/tss/keygen/')) {
+        session = await storage.fetchTssKeyGenSession({ id });
+        partyId = session?.participants.indexOf(copayerId);
+        pubKey = partyId > -1 ? session.rounds[0][partyId].messages.publicKey : null;
+      } else if (req.path.includes('/tss/sign/')) {
+        session = await storage.fetchTssSigSession({ id });
+        partyId = session?.participants.find(p => p.copayerId === copayerId)?.partyId;
+        pubKey = partyId == null ? null : session.rounds[0].find(r => r.fromPartyId === partyId).messages.publicKey;
+      }
+
       if (!session) {
         throw Errors.NOT_AUTHORIZED.withMessage('Session not found');
       }
-      if (!session.participants.includes(copayerId)) {
+      if (!pubKey) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
       }
 
       const message = getMessage(req);
-      const partyId = session.participants.indexOf(copayerId);
-      const pubKey = session.rounds[0][partyId].messages.publicKey;
       const isValid = !!Utils.verifyMessage(message, signature, pubKey);
       if (!isValid) {
         throw Errors.NOT_AUTHORIZED.withMessage('Invalid signature');

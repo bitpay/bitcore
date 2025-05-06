@@ -61,13 +61,17 @@ interface Errors<T> {
   WALLET_NOT_FOUND: T;
   WALLET_NEED_SCAN: T;
   WRONG_SIGNING_METHOD: T;
-  TSS_KEYGEN_SESSION_NOT_FOUND: T;
-  TSS_KEYGEN_ROUND_ALREADY_DONE: T;
-  TSS_KEYGEN_ROUND_TOO_EARLY: T;
-  TSS_KEYGEN_GENERIC_ERROR: T;
-  TSS_KEYGEN_PUBKEY_MISSING: T;
-  TSS_KEYGEN_INVALID_MESSAGE_SIG: T;
-  TSS_KEYGEN_ROUND_MESSAGE_EXISTS: T;
+  TSS_SESSION_NOT_FOUND: T;
+  TSS_ROUND_ALREADY_DONE: T;
+  TSS_ROUND_TOO_EARLY: T;
+  TSS_GENERIC_ERROR: T;
+  TSS_PUBKEY_MISSING: T;
+  TSS_INVALID_MESSAGE_SIG: T;
+  TSS_ROUND_MESSAGE_EXISTS: T;
+  TSS_NON_PARTICIPANT: T;
+  TSS_MAX_PARTICIPANTS_REACHED: T;
+  TSS_NO_FINAL_SIGNATURE: T;
+  TSS_INVALID_FINAL_SIGNATURE: T;
 };
 
 const errors: Errors<string> = {
@@ -125,13 +129,17 @@ const errors: Errors<string> = {
   WALLET_NOT_FOUND: 'Wallet not found',
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
   WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network',
-  TSS_KEYGEN_SESSION_NOT_FOUND: 'Session not found',
-  TSS_KEYGEN_ROUND_ALREADY_DONE: 'Your message is for a round that has already finished',
-  TSS_KEYGEN_ROUND_TOO_EARLY: 'Other participants must finish the current round first',
-  TSS_KEYGEN_GENERIC_ERROR: 'An unexpected error occurred',
-  TSS_KEYGEN_PUBKEY_MISSING: 'Pubkey missing',
-  TSS_KEYGEN_INVALID_MESSAGE_SIG: 'Invalid message signature',
-  TSS_KEYGEN_ROUND_MESSAGE_EXISTS: 'You have already sent a message for this round',
+  TSS_SESSION_NOT_FOUND: 'Session not found',
+  TSS_ROUND_ALREADY_DONE: 'Your message is for a round that has already finished',
+  TSS_ROUND_TOO_EARLY: 'Other participants must finish the current round first',
+  TSS_GENERIC_ERROR: 'An unexpected error occurred',
+  TSS_PUBKEY_MISSING: 'Pubkey missing',
+  TSS_INVALID_MESSAGE_SIG: 'Invalid message signature',
+  TSS_ROUND_MESSAGE_EXISTS: 'You have already sent a message for this round',
+  TSS_NON_PARTICIPANT: 'You are not a participant in this session',
+  TSS_MAX_PARTICIPANTS_REACHED: 'Maximum number of participants reached',
+  TSS_NO_FINAL_SIGNATURE: 'No signature provided',
+  TSS_INVALID_FINAL_SIGNATURE: 'Invalid signature provided',
 };
 
 const errorsObject = { codes: {} };

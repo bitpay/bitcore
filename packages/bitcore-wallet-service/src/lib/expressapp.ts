@@ -2351,7 +2351,7 @@ export class ExpressApp {
     });
 
 
-    router.use(new TssRouter({ getServerWithAuth, returnError, getServer }).router);
+    router.use(new TssRouter({ returnError }).router);
 
 
     // Set no-cache by default

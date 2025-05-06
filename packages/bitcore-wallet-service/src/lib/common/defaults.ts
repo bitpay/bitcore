@@ -421,4 +421,5 @@ export const Defaults = {
   ],
 
   TSS_KEYGEN_SCHEME_VERSION: 1,
+  TSS_SIGGEN_SCHEME_VERSION: 1,
 };

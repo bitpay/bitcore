@@ -1,13 +1,12 @@
 import { singleton } from 'preconditions';
 import { Common } from '../common';
-import { Storage } from '../storage';
 
 const $ = singleton();
 
 const { Defaults } = Common;
 
 
-export interface ITssKeygenMessageObject {
+export interface ITssKeyMessageObject {
   broadcastMessages: Array<{
     from: number;
     payload: {
@@ -54,7 +53,7 @@ export interface ITssKeyGenModel {
    */
   rounds: Array<Array<{
     fromPartyId: number;
-    messages: ITssKeygenMessageObject;
+    messages: ITssKeyMessageObject;
   }>>;
   /**
    * The public key generated as the result of the TSS key generation process.
@@ -72,14 +71,14 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   participants: Array<string>;
   rounds: Array<Array<{
     fromPartyId: number;
-    messages: ITssKeygenMessageObject;
+    messages: ITssKeyMessageObject;
   }>>;
   sharedPublicKey?: string;
   schemeVersion: number;
   __v: number;
 
 
-  static create(params: { id: string; message: ITssKeygenMessageObject; n: number; copayerId: string; }): TssKeyGenModel {
+  static create(params: { id: string; message: ITssKeyMessageObject; n: number; copayerId: string; }): TssKeyGenModel {
     const { id, message, n, copayerId } = params;
     const { partyId } = message;
     $.checkArgument(partyId === 0, 'Key generation session must be started by partyId 0');
