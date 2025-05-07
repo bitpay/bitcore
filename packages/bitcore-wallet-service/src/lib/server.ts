@@ -346,7 +346,7 @@ export class WalletService implements IWalletService {
     const version = Utils.parseVersion(opts.clientVersion);
     if (version && version.agent === 'bwc') {
       if (version.major === 0 || (version.major === 1 && version.minor < 2)) {
-        throw new ClientError(Errors.codes.UPGRADE_NEEDED, 'BWC clients < 1.2 are no longer supported.');
+        throw Errors.UPGRADE_NEEDED.withMessage('BWC clients < 1.2 are no longer supported.');
       }
     }
 
@@ -390,12 +390,12 @@ export class WalletService implements IWalletService {
           return cb(err);
         }
         if (!copayer) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
         }
 
         const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
         if (!isValid) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Invalid signature'));
         }
 
         server.walletId = copayer.walletId;
@@ -433,7 +433,7 @@ export class WalletService implements IWalletService {
 
         const isValid = s && s.id === opts.session && s.isValid();
         if (!isValid) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Session expired'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Session expired'));
         }
 
         server.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
@@ -441,7 +441,7 @@ export class WalletService implements IWalletService {
             return cb(err);
           }
           if (!copayer) {
-            return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
+            return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
           }
 
           server.copayerId = opts.copayerId;
@@ -588,12 +588,7 @@ export class WalletService implements IWalletService {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-          return cb(
-            new ClientError(
-              Errors.codes.UPGRADE_NEEDED,
-              'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-            )
-          );
+          return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
         }
       }
     }
@@ -1187,12 +1182,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-              return cb(
-                new ClientError(
-                  Errors.codes.UPGRADE_NEEDED,
-                  'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-                )
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
             }
           }
         }
@@ -1201,9 +1191,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 4)) {
-              return cb(
-                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
             }
           }
         }
@@ -1212,9 +1200,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 17)) {
-              return cb(
-                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
             }
           }
         }
@@ -3085,12 +3071,7 @@ export class WalletService implements IWalletService {
           if (err) return cb(err);
 
           if (opts.maxTxpVersion < txp.version) {
-            return cb(
-              new ClientError(
-                Errors.codes.UPGRADE_NEEDED,
-                'Your client does not support signing this transaction. Please upgrade'
-              )
-            );
+            return cb(Errors.UPGRADE_NEEDED.withMessage('Your client does not support signing this transaction. Please upgrade'));
           }
 
           const action = txp.actions.find(a => a.copayerId === this.copayerId);
