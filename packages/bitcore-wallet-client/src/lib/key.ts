@@ -134,21 +134,23 @@ export class Key {
         } catch (e) {
           throw new Error('Invalid argument');
         }
-        const params = { algo: opts.algo }
-        this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
-        if (opts.password) {
-          this.#setPrivKeyEncrypted({
-            value: sjcl.encrypt(
-              opts.password,
-              xpriv.toString(),
-              opts
-            ),
-            ...params
-          });
-          const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
-          if (xPrivKeyEncrypted) throw new Error('Could not encrypt');
-        } else {
-          this.#setPrivKey({ value: xpriv.toString(), ...params }); 
+        for (const algo of SUPPORTED_ALGOS) {
+          const params = { algo }
+          this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
+          if (opts.password) {
+            this.#setPrivKeyEncrypted({
+              value: sjcl.encrypt(
+                opts.password,
+                xpriv.toString(),
+                opts
+              ),
+              ...params
+            });
+            const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
+            if (xPrivKeyEncrypted) throw new Error('Could not encrypt');
+          } else {
+            this.#setPrivKey({ value: xpriv.toString(), ...params }); 
+          }
         }
         this.#mnemonic = null;
         this.#mnemonicHasPassphrase = null;
@@ -248,7 +250,8 @@ export class Key {
           value: sjcl.encrypt(
             opts.password,
             xpriv.toString(),
-            opts.sjclOpts)
+            opts.sjclOpts),
+          algo
         });
         if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
         this.#mnemonicEncrypted = this.#mnemonicEncrypted || sjcl.encrypt(
@@ -288,7 +291,7 @@ export class Key {
   };
 
   isPrivKeyEncrypted(algo?) {
-    switch (algo?.toUpperCase()) {
+    switch (String(algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         return !!this.#xPrivKeyEDDSAEncrypted && !this.#xPrivKeyEDDSA;
       default:
@@ -382,7 +385,7 @@ export class Key {
   derive(password, path, algo?): Bitcore.HDPrivateKey {
     $.checkArgument(path, 'no path at derive()');
     let deriveFn;
-    if (algo?.toUpperCase() === Constants.ALGOS.EDDSA) {
+    if (String(algo).toUpperCase() === Constants.ALGOS.EDDSA) {
       const key = this.#getChildKeyEDDSA(password, path);
       return new Bitcore.HDPrivateKey({
         network: 'livenet',
@@ -600,29 +603,36 @@ export class Key {
       const isChange = false;
       const addressIndex = 0;
       const xPrivKey = this.get(password, Constants.ALGOS.EDDSA).xPrivKey
-      const { privKey, pubKey } = Deriver.derivePrivateKey(
+      const key = Deriver.derivePrivateKey(
         chain.toUpperCase(),
         txp.network,
         xPrivKey, // derived
         addressIndex,
         isChange
       );
-      async.waterfall([
-        function addSignatures( next) {
-          Promise.all(
-            txArray.map((rawTx) =>
-              Transactions.getSignature({
-                chain: chain.toUpperCase(),
-                tx: rawTx,
-                key: { privKey, pubKey }
-              })
-            )
-          )
-          .then((signatures) => next(null, signatures))
-          .catch((err) => next(err));
+      async.map(
+        txArray,
+        function addSignatures(rawTx, next) {
+          (Transactions.getSignature({
+            chain: chain.toUpperCase(),
+            tx: rawTx,
+            keys: [key]
+          }) as any)
+          .then(signatures => {
+            next(null, signatures);
+          })
+          .catch(err => {
+            next(err);
+          });
+        },
+        function(err, signatures) {
+           try {
+            if (err)  return cb(err);
+            return cb(null, signatures);
+          } catch (e) {
+            throw new Error('Missing Callback', e)
+          }
         }
-      ],
-      cb
       );
     } else {
       let tx = t.uncheckedSerialize();
@@ -652,7 +662,7 @@ export class Key {
 
   #setPrivKey(params: { algo?: string; value: any; }) {
     const { value, algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (String(algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         this.#xPrivKeyEDDSA = value;
         break;
@@ -663,7 +673,7 @@ export class Key {
 
   #setPrivKeyEncrypted(params: { value: any; algo?: string; }) {
     const { value, algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (String(algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         this.#xPrivKeyEDDSAEncrypted = value;
         break;
@@ -674,7 +684,7 @@ export class Key {
 
   #setFingerprint(params: { value: any; algo?: string; }) {
     const { value, algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (String(algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         this.fingerPrintEDDSA = value;
         break;
@@ -684,7 +694,7 @@ export class Key {
   }
 
   #getPrivKey(params: { algo?: string; } = {}) {
-    switch (params?.algo?.toUpperCase()) {
+    switch (String(params?.algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         return this.#xPrivKeyEDDSA;
       default:
@@ -693,7 +703,7 @@ export class Key {
   }
 
   #getPrivKeyEncrypted(params: { algo?: string; } = {}) {
-    switch (params?.algo?.toUpperCase()) {
+    switch (String(params?.algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         return this.#xPrivKeyEDDSAEncrypted;
       default:
@@ -702,11 +712,11 @@ export class Key {
   }
 
   #getFingerprint(params: { algo?: string; } = {}) {
-    switch (params?.algo?.toUpperCase()) {
+    switch (String(params?.algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         return this.fingerPrintEDDSA;
       default:
-        return this.#xPrivKey;
+        return this.fingerPrint;
     }
   }
 
