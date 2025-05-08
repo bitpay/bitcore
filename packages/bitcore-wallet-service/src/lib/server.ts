@@ -64,7 +64,8 @@ const Bitcore_ = {
   op: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc')
+  ltc: require('bitcore-lib-ltc'),
+  sol: Bitcore,
 };
 
 const Utils = Common.Utils;
@@ -560,6 +561,7 @@ export class WalletService implements IWalletService {
    * @param {number} opts.n - Total copayers.
    * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
    * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
+   * @param {string} opts.clientDerivedPublicKey - public key from the client for this walet
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
@@ -681,6 +683,7 @@ export class WalletService implements IWalletService {
             nativeCashAddr: opts.nativeCashAddr,
             usePurpose48: opts.n > 1 && !!opts.usePurpose48,
             hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
+            clientDerivedPublicKey: opts.clientDerivedPublicKey
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -985,6 +988,7 @@ export class WalletService implements IWalletService {
       copayerIndex: wallet.copayers.length,
       xPubKey: opts.xPubKey,
       hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
+      clientDerivedPublicKey: opts.clientDerivedPublicKey,
       requestPubKey: opts.requestPubKey,
       signature: opts.copayerSignature,
       customData: opts.customData,
@@ -1137,6 +1141,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.name - The copayer name.
    * @param {string} opts.xPubKey - Extended Public Key for this copayer
    * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
+   * @param {string} opts.clientDerivedPublicKey - public key from the client for this wallet
    * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
    * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
    * @param {string} opts.customData - (optional) Custom data for this copayer.
@@ -1153,7 +1158,7 @@ export class WalletService implements IWalletService {
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
-    if (!opts.hardwareSourcePublicKey) {
+    if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
       if (!checkRequired(opts, ['xPubKey'], cb)) return;
       try {
         xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
@@ -1171,7 +1176,7 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if (opts.hardwareSourcePublicKey) {
+        if (opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) {
           this._addCopayerToWallet(wallet, opts, cb);
           return;
         }
@@ -1254,6 +1259,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.opTokenAddresses - Linked token addresses
    * @param {string} opts.baseTokenAddresses - Linked token addresses
    * @param {string} opts.arbTokenAddresses - Linked token addresses
+   * @param {string} opts.solTokenAddresses - Linked token addresses
    * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
    */
@@ -1325,6 +1331,12 @@ export class WalletService implements IWalletService {
         name: 'arbTokenAddresses',
         isValid(value) {
           return Array.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
+        }
+      },
+      {
+        name: 'solTokenAddresses',
+        isValid(value) {
+          return Array.isArray(value) && value.every(x => Validation.validateAddress('sol', 'mainnet', x));
         }
       },
     ];
@@ -1420,6 +1432,12 @@ export class WalletService implements IWalletService {
             oldPref = oldPref || {} as Preferences;
             oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
             preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
+          }
+
+          if (opts.solTokenAddresses) {
+            oldPref = oldPref || {} as Preferences;
+            oldPref.solTokenAddresses = oldPref.solTokenAddresses || [];
+            preferences.solTokenAddresses = _.uniq(oldPref.solTokenAddresses.concat(opts.solTokenAddresses));
           }
 
           // merge matic multisigMaticInfo
@@ -2065,7 +2083,7 @@ export class WalletService implements IWalletService {
           if (feePerKb < 0) failed.push(p);
 
           // NOTE: ONLY BTC/BCH/DOGE/LTC expect feePerKb to be Bitcoin amounts
-          // others... expect wei.
+          // EVM expects wei, Solana expects Lamports.
 
           return ChainService.convertFeePerKb(chain, p, feePerKb);
         })
@@ -2621,7 +2639,8 @@ export class WalletService implements IWalletService {
                   next();
                 },
                 async next => {
-                  if (!opts.nonce) {
+                  // SOL is skipped since its a non necessary field that is expected to be provided by the client.
+                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
@@ -2697,7 +2716,14 @@ export class WalletService implements IWalletService {
                       isTokenSwap: opts.isTokenSwap,
                       enableRBF: opts.enableRBF,
                       replaceTxByFee: opts.replaceTxByFee,
-                      multiTx: opts.multiTx
+                      multiTx: opts.multiTx,
+                      blockHash: opts.blockHash,
+                      blockHeight: opts.blockHeight,
+                      nonceAddress: opts.nonceAddress,
+                      category: opts.category,
+                      fromKeyPair: opts.fromKeyPair,
+                      priorityFee: opts.priorityFee,
+                      computeUnits: opts.computeUnits
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -4564,7 +4590,7 @@ export class WalletService implements IWalletService {
     for (const isChange of [false, true]) {
       derivators.push({
         id: wallet.addressManager.getBaseAddressPath(isChange),
-        derive: () => wallet.createAddress(isChange, step, null),
+        derive: () => wallet.createAddress(isChange, step),
         index: () => wallet.addressManager.getCurrentIndex(isChange),
         rewind: (n) => wallet.addressManager.rewindIndex(isChange, step, n),
         getSkippedAddress: () => wallet.getSkippedAddress()

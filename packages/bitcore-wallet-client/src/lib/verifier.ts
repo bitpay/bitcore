@@ -49,7 +49,8 @@ export class Verifier {
       network,
       credentials.chain,
       escrowInputs,
-      credentials.hardwareSourcePublicKey
+      credentials.hardwareSourcePublicKey,
+      credentials.clientDerivedPublicKey
     );
     return (
       local.address == address.address &&
