@@ -61,6 +61,11 @@ export interface IXrpNetworkConfig extends INetworkConfig {
   walletOnlySync: boolean;
 }
 
+export interface ISVMNetworkConfig extends INetworkConfig {
+  publicConnection?: boolean; // Allow rpc connection to be open via bitcore-node API endpoint
+  syncStartHeight?: number; // Start syncing from this block height
+}
+
 export interface ConfigType {
   maxPoolSize: number;
   port: number;
@@ -74,7 +79,7 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
+    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig | ISVMNetworkConfig>;
   };
   aliasMapping: {
     chains: {
@@ -117,6 +122,11 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
+    },
+    quicknode: {
+      apiKey: string;
+      webhookBaseUrl?: string;
+      streamSecret?: string;
     }
   };
 }

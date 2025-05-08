@@ -50,7 +50,7 @@ import { PopulateReceiptTransform } from './populateReceiptTransform';
 import {
   getProvider,
   isValidProviderType
-} from './provider';
+} from '../../external/providers/provider';
 import { EVMListTransactionsStream } from './transform';
 
 export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number; };
